@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /GX /Od /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /GX /Od /D "DEBUG" /D "SERVERONLY" /D "WIN32" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -49,8 +49,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o".\SRelease/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /machine:I386 /out:"d:/quake/mvdsv.exe"
-# SUBTRACT LINK32 /profile
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"d:/quake/mvdsv.exe"
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
@@ -192,7 +192,22 @@ SOURCE=.\sv_user.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\sv_windows.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\version.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\winquake.rc
+
+!IF  "$(CFG)" == "qwsv - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -332,6 +347,10 @@ SOURCE=.\spritegn.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\sv_windows.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\sys.h
 # End Source File
 # Begin Source File
@@ -393,7 +412,7 @@ InputName=math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-            $(OUTDIR)\$(InputName).asm 
+                $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -420,7 +439,7 @@ InputName=worlda
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-            $(OUTDIR)\$(InputName).asm 
+                $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build

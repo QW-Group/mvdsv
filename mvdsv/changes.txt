@@ -1,0 +1,336 @@
+----
+QWEX v0.169 Beta DEVELOP
+[server]
+- commands admin and judge unbanned (be sure to use fixed ktpro!)
+- bug with wrong names for tmp recording fixed
+- bug that allowed players to have null names fixed
+
+----
+QWEX v0.168 Beta DEVELOP
+[server]
+- change: sv_getrealip  0/1/2:
+  0 - real ip is not checked
+  1 - server tries to check ip for 5 sec. on failure, client is connected anyway (real ip is unknown)
+  2 - server tries to check ip for 5 sec, on failure, client is dropped.
+- fix: banned clients won't connect via proxy (unless realip check fails)
+- new (MOD stuff): server seeks for localinfoChanged function, if it exists, will be executed everytime
+  locainfo changes. Format: void(string key, string oldvalue, string newvalue) localinfoChanged
+- new cvar: sv_DemoExtraNames 0/1, if enabled, demo names contains player names instead of team names
+  I/E: dag_pietro_vs_insane_balt, insead of la_vs_hgc.
+- change: logs contains more info now
+- change: userinfo modified, only important info is sent to other clients (like top/bottomcolor, team name)
+- ktpro commands 'cmd admin' and 'cmd judge' banned due to the serious bug concerning these commands
+
+
+----
+QWEX v0.165 Beta DEVELOP
+[server]
+- windows version is now a win32 application (nice window instead of msdos console)
+- win32: param -noerrormsgbox will exit program after an error w/o showing error message box
+  usefull if run run server in the loop.
+- win32: param -minimize starts server minimized to system tray
+- few minor changes/bugfixes
+
+----
+QWEX v0.163 Beta DEVELOP
+[server]
+- small change to script command
+  $name works as @name though it will be cleaned out of unreadable characters
+
+----
+QWEX v0.162 Beta DEVELOP
+[server]
+- small changes 
+  sv_maxdownloadrate determines maximum for clients that download files (if set sv_maxrate is ignored)
+  if userinfo drate is found it is used for setting rate when downloading
+  after download is finished rate is changed back to its previous value
+
+----
+QWEX v0.161 Beta DEVELOP
+[server]
+- small changes/bugfixing in download protocol
+- scripts on linux run in background now (I/E adding & in scripts is not neccessery anymore)
+- on windows scripts uses extension .qws now, and are executed on sh.exe which has to be located
+  in quake dir.
+  additionally first parameter is always a digit 0-3 which indicates how the script was executed
+  0 - from the console
+  1,2 - client/rcon
+  3 - mod
+- on map change when downloading, on scoreboard pl of player that did not reconnect due to downloading
+  shows % of downloaded file
+- if sv_getrealip is on, and client won't respond within 5 seconds he won't be dropped anyway
+  just his ip will be unknown
+
+[client]
+- when downloading kb/s shown on the console
+- changes the map even if downloading (continues downloading after map change)
+
+
+----
+QWEX v0.160 Beta DEVELOP
+[server]
+- new command sv_getrealip 0/1
+  if disabled, realip won't be checked, some players had problems with connecting to servers due to that
+- new command sv_minping <msec>
+  server can produce a lag on players, to keep pings higher that sv_minping
+  usefull for making "fair" conditions
+- changed downloading protocol.
+  you can download from server much faster and w/o packet loss.
+  increase your rate and fps to increase download speed
+  with 72 fps and good connection you can get ~7-9kb/s with rate 1000.
+  maximum i could get was 93kb/s (150fps + rate 100000 :) )
+- new cvar sv_maxdownloadrate
+  maximum rate that client can have, while downloading anything from server
+
+----
+QWEX v0.159 Beta DEVELOP
+[server]
+- new command logrcon
+  toggles logging rcon on/off, when enabled all attempts to use rcon are written to rcon.log
+- new cvar sv_cpserver
+  if you have really "cp" machine, this may come in handy, besicly it forces server to sleep
+  for sv_cpserver miliseconds after every 50kb read on map change. it's usefull for reducing lags
+  on other servers due to disk swaping.
+- new command script
+  running scripts on server is now possible
+  usage: script <scriptname> [<param1> <param2> ...]
+  server searches for the script to run in current gamedir.
+  You can specify a path to exec script outside gamedir, however only one ../ is allowed
+  file extension will be appended automatically (.bat for windows, .qws for linux)
+
+  simple formating for parameters is possible. if parameter starts on @, following word is assumed
+  to be serverinfo/localinfo.
+  example:
+  script myscript @hostname
+   server will execute script "myscript.qws"
+   given parameter will be server's hostname
+  script myscript "@hostname"
+   this time a string @hostname will be given as parameter, text put into semicolons is not being formated
+- new command cancel
+  stops recording a demo, and removes it from disk
+
+- new cvar sv_onrecordfinish
+  this cvar contains a name of a script to run after demo recording is finished.
+  for instance: sv_onrecordfinish myscript
+  script is not executed if demo recording was canceled
+
+- new cvar sv_login
+  if set to 1, only players with logins can connect to server
+  if set to 2, both players and spectator need to login
+  server asks for login and password on connect (just type login/pass in the console)
+  user accounts are kept in file 'accounts' in gamedir folder.
+  following commands are used for account menagement:
+  - acc_create <login> [<password>]
+    acc_create <adress> <username>
+    creates an account,
+    login is case sensitive and contains at least 3 chars, if password is not specified it will be assumed to be the same as login
+    if login has a format of ip adress (xxx.xxx.xxx.xxx) also username is required.
+  - acc_remove <login>
+    removes specified login
+  - acc_block <login>
+    blocks specified login, login is not removed, but clients can't login on it
+  - acc_unblock <login>
+    unblocks the login
+  - acc_list
+    list all logins
+  
+  logins are blocked automatically after 10 failed attempts to login
+
+- realip feature
+  server gets two ip's now, ip through which client is connected (basicly ip of last proxy he uses)
+  and client's 'real' ip, that means ip of the computer on which qwcl is executed
+  both ip's are shown in server status
+  MOD's can check realip via infokey ('realip' is the key)
+
+- few more minor changes/bugfixes  
+  
+----
+QWEX v0.153 Beta DEVELOP
+[server]
+- just some changes :)
+----
+
+----
+QWEX v0.151 Beta DEVELOP
+----
+[server]
+- some changes to VIPs
+  since now, not only spectators can become a VIP,
+  therefore vip_spectator_password changed to vip_password
+  There are different levels for vips, however intepretation of level is left for MOD authors
+  Level for vips if determined by password given by client, or IP (if client's ip is on a vip list)
+  For instace:
+  vip_password "blue black red" means:
+  pass "blue" for level 1, pass "black" for level 2 and "red" for level 3
+  vip_password "blue none none green" -> only level 1 and 4 is accesable
+
+  vip_addip requires 2 arguments: <adres> <level>, if level is not specified, level 1 is assumed
+  For instance: vip_addip 23.4.34.234 3 -> level 3 for 23.4.34.234
+  
+  userinfo "password" is checked for VIP password (for spectators also "spectator" value is checked)
+  
+----
+QWEX v0.149 Beta DEVELOP
+----
+[server]
+- lots of bugfixes:
+  roundig errors! demos were running faster even 15sec in 20 min long game
+  on slow machines packet loss was rising when client/spectator connects
+  invalid userinfo could crash the server (qizmo allow to use '\' in userinfo)
+  slowing down of entities after long uptime hopfully fixed (??)
+  demonames made by easyrecord could have prohibited characters
+- new cvars/commands:
+  logerrors		toggles logging errors 
+  maxvip_spectators	max of vip spectators, vip spectators are an alternative for spectators
+  vip_spectator_password password for vip spectators (if password is not set only players from vip_iplist can enter as vip)
+  vip_addip		adds ip to vip list
+  vip_removeip		removes ip from iplist
+  vip_listip		prints ip list
+  vip_writeip		writes ip list to vip_ip.cfg
+  sv_demoPrefix		string added as a prefix to demoname
+  sv_demoSuffix		string added as a suffix to demoname
+- qc stuff
+  new functions:
+  void(string dst, string src) strcpy = #97		// copies src to dst
+  string(string str, string substr) strstr = #98	// searches for substring in str, returns pointer to it or "" if not found
+  void(string dst, string src, float n) strncpy = #99	// copies max n chars to dst
+  void(string logname, float console, string text) = %100 // prints text to file 'logname', if console is non-zero, prints to the server console as well
+  void(entity cl, string text) redirectcmd = #101	// executes string on the console and redirects output to client (eg redirect(self, "status"))
+  void() calltimeofday = #102				// force server to call mod function timeofday
+
+  server searches for following functions in the MOD:
+  void timeofday(float sec, float min, float hour, float day, float mon, float year, string date) = {..}
+  float consolecmd(string cmd) = {..}
+  
+  - timeofday is executed after every worldspawn (can be aslo forced by MOD with calltimeofday func.)
+    argument 'date' is something like "Sat Jan 05, 3:23 2002"
+  - consolecmd allow MOD authors to add new commands accesable by server console
+    function should return true if recognized a command, false otherwise
+
+
+
+
+changes over QWE v0.142 Beta
+[server]
+- new cvars:
+  sv_demoDir              - points to demodir
+  allow_download_demos    - 0/1
+
+- new mod commands:
+  void(string str) conprint = #94   - prints to server console only (no redirects)
+  string (string str) readcmd = #95 - executes command on server, but result is returned by this function instead of writing to the console
+[client]
+- cl_chasecam 2 -> matrix-like chasing, when watching demo, set demotimescale to 0 and set cl_chasecam to 2
+  to adjust rotation speed, and distance, use cvars cl_matrixcam_speed and cl_matrixcam_dist
+
+
+changes over QWE v0.13 Beta
+[server]
+- svc_disconnect message is now written correctly at the end of the demo
+- added interpolation for nails (changes in the protocol, old clients won't read demos,
+  unless nobody shots from ng/sng :) )
+- changes in chatmessage funv (check example.qc)
+
+
+[client]
+- nails fixed, stupid bug coused them to disapear
+- nails are interpolated now (only in demos with new protocol)
+- demotimescale works as it should, i/e it slows/speeds up demo, but it doesn't affect conspeed, cursor blinking and free spec movement
+  also demotimescale can be set to 0, to freeze the map (free spec can still fly around the map)
+
+[qwdtools]
+- svc_disconnect message is now written correctly at the end of the demo
+- "this demos was converted.." message now appears also at the end of demo
+- loads of new options
+- option -debug writes debug data to an output file (debug.txt)
+- option -log writes all text messages to an output file (log.txt)
+- option -c for converting demos (needed only if either -log or -debug is added to cmdline, otherwise assumed to be enabled)
+- option -stdin / -stdout reads/writes from/to pipes
+- option -help prints help :)
+- option -ft - filters team chats
+- option -fc - filters all chat messages
+- option -msg - sets messagelevel (same as QW's msg command)
+- option -noini - ini file won't be loaded
+- option -ini <filename> - ini file to be loaded (default: qwdtools.ini)
+- option -qd - qizmo_dir for decompressing qwz files
+- option -od - output dir, dir where new created files will be stored
+- option -debug_file - file name for debugging
+- option -log_file - file name for logs
+- option -bd <path> - base dir, sets current directory
+- incuded 2 example ini files: qwdtools.ini and example.ini
+- handles ctrl-c and ctrl-break
+- fps setting works correct now (in previous versions, fps was a bit lower then it should be)
+- --<option> disables this option (usefull for disabling some of the settings from the ini)
+
+
+changes over QWE v0.12 Beta
+[server]
+- MAX_PACKE_ENTITIES increased again (128->196)
+- rebuild DemoReliableWrite_Begin, warnings/overflows etc shouldn't happen anymore
+- demo messages will never be greater than MAX_MSGLEN (there were problems with playbacking)
+- MAX_BACK_BUFFERS increased from 8 to 16 (ctf players had problems with connecting
+  due to overflow of back buffers)
+- MOD stuff: changed ChatMessage functions (check example.qc)
+
+[client]
+- MAX_PACKET_ENTITIES increased to 128
+- cl_track_validonly defaults to 1 now
+
+[qwdtools]
+- MAX_PACKET_ENTITIES increased to 128
+- demo messages will never be greater than MAX_MSGLEN (there were problems with playbacking)
+- errors while converting demos due to msg overflow fixed
+
+
+changes over QWE v0.11 Beta
+
+[server]
+- new cvar: version
+- changed the way server sets exact player origin for demo recording.
+  Now interpolation is used instead of prediction
+- bugfix: messages ment for single client sent by the MOD where not written to demo
+- bugfix: player's active weapon were not written to demo
+- for MOD authors:
+  - few fields for world entity has been set
+    .netname contains server version name
+    .targetname contains server executable name
+    .impulse contains QWE version number
+    .items contains number of highest build-in function
+    current new build-in functions are:
+    - void() executecmd       (#83)  - executes buffered text on the console
+                                          (stored by the localcmd funtion)
+    - void(string) tokanize   (#84)  - tokanize the string
+    - float() Argc            (#85)  - returns number of tokens
+    - string(float) Argv      (#86)  - returns token for given number
+
+  - new MOD function ChatMessage, if the function exist in the MOD it will be executed
+    instead of server's sv_say() function
+  - for details about the usage of these function check example.qc
+
+- demo's names are now always lowercase
+- increased MAX_PACKET_ENTITIES from 64 to 128
+- new cvar: sv_demoUseCache 0/1
+  if enabled demo is cached in the memory, and flushed on disk after recording is finished
+  you can set size of the cache in the command line (e/g -democache 4096 will alloc 4MB for cache)
+  if parameter is not given 1MB will be allocated
+  if demo is larger than cache size, server will flush on disk 500kb and continue recording
+- new cvar: sv_demoCacheSize   - CVAR_ROM shows size of demo cache
+- new cvar: sv_demoMaxSize     - defines maximum size of the demo (stops recording if exceeded)
+- new cvar: sv_demoMaxDirSize  - defines maximum size of .mvd demos, doesnt allow to record if exceeded
+- changes to command rmdemo:
+     rmdemo <demoname> - removes the demo
+     rmdemo *<token>   - removes demo with <token> in the name
+     rmdemo *          - removes all demos
+- status shows cpu utilization by demo recording
+
+
+[client]
+- increased MAX_PACKET_ENTITIES from 64 to 128
+
+[qwdtools]
+- increased MAX_PACKET_ENTITIES from 64 to 128
+- increased maximum size of packet. (some qizmo demos with voice coused problems)
+
+
+---
+HighlandeR

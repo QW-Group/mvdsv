@@ -201,7 +201,6 @@ qboolean	CL_CheckOrDownloadFile (char *filename)
 		return true;
 
 	if (cls.download) {
-		Con_Printf("here\n");
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "nextdl");
 		return false;

@@ -1,0 +1,5 @@
+# !/bin/bash
+
+for f in `find source -name '*.[chsS]'`
+do cat $f | tr -d '\015' > $f.; mv $f. $f; done
+

@@ -55,9 +55,9 @@ Sends the first message from the server to a connected client.
 This will be sent on the initial connection and upon each server load.
 ================
 */
+int SV_VIPbyIP (netadr_t adr);
 void SV_New_f (void)
 {
-	int i;
 	char		*gamedir;
 	int			playernum;
 	extern cvar_t sv_login;
@@ -80,9 +80,13 @@ void SV_New_f (void)
 			sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr), host_client - svs.clients, host_client->realip_num));
 		if (realtime - host_client->connection_started > 5)
 		{
+			if (sv_getrealip.value == 2) {
+				Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nfaild to validate client's IP\n\n", A2C_PRINT);
+				SV_DropClient (host_client);
+				return;
+			}
+
 			host_client->state = cs_connected;
-			//Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nfaild to validate client's IP\n\n", A2C_PRINT);
-			//SV_DropClient (host_client);
 		} else
 			return;
 	}
@@ -773,7 +777,6 @@ void SV_BeginDownload_f(void)
 	extern	cvar_t	allow_download_demos;
 	extern	cvar_t	sv_demoDir;
 	extern	int		file_from_pak; // ZOID did file come from pak?
-	extern	cvar_t sv_maxdownloadrate;
 
 	name = Cmd_Argv(1);
 // hacked by zoid to allow more conrol over download
@@ -1264,6 +1267,19 @@ Allow clients to change userinfo
 
 extern func_t UserInfo_Changed;
 
+char *shortinfotbl[] =
+{
+	"name",
+	"team",
+	"skin",
+	"topcolor",
+	"bottomcolor",
+	"*client",
+	"*spectator",
+	"*VIP",
+	NULL
+};
+
 void SV_SetInfo_f (void)
 {
 	int i;
@@ -1313,11 +1329,20 @@ void SV_SetInfo_f (void)
 		PR_ExecuteProgram (UserInfo_Changed);
 	}
 
-	i = host_client - svs.clients;
-	MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-	MSG_WriteByte (&sv.reliable_datagram, i);
-	MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));
-	MSG_WriteString (&sv.reliable_datagram, Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)));
+
+	for (i = 0; shortinfotbl[i] != NULL; i++)
+		if (!strcmp(Cmd_Argv(1), shortinfotbl[i]))
+		{
+			char *new = Info_ValueForKey(host_client->userinfo, Cmd_Argv(1));
+			Info_SetValueForKey (host_client->userinfoshort, Cmd_Argv(1), new, MAX_INFO_STRING);
+
+			i = host_client - svs.clients;
+			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
+			MSG_WriteByte (&sv.reliable_datagram, i);
+			MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));
+			MSG_WriteString (&sv.reliable_datagram, new);
+			break;
+		}
 }
 
 /*

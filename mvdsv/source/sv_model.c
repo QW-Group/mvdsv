@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 model_t	*loadmodel;
+spec_worldmodel_t specworld;
 char	loadname[32];	// for hunk tags
 
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);
@@ -88,14 +89,14 @@ mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
 Mod_DecompressVis
 ===================
 */
-byte *Mod_DecompressVis (byte *in, model_t *model)
+byte *Mod_DecompressVis (byte *in, int numleafs)
 {
 	static byte	decompressed[MAX_MAP_LEAFS/8];
 	int		c;
 	byte	*out;
 	int		row;
 
-	row = (model->numleafs+7)>>3;	
+	row = (numleafs+7)>>3;	
 	out = decompressed;
 
 #if 0
@@ -132,11 +133,13 @@ byte *Mod_DecompressVis (byte *in, model_t *model)
 	return decompressed;
 }
 
-byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
+byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model, qboolean spectator_vis)
 {
 	if (leaf == model->leafs)
 		return mod_novis;
-	return Mod_DecompressVis (leaf->compressed_vis, model);
+	if (spectator_vis)
+		return Mod_DecompressVis (leaf->compressed_vis, specworld.numleafs);
+	return Mod_DecompressVis (leaf->compressed_vis, model->numleafs);
 }
 
 /*

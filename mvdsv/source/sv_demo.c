@@ -37,6 +37,7 @@ extern cvar_t	sv_demofps;
 extern cvar_t	sv_demoPings;
 extern cvar_t	sv_demoNoVis;
 extern cvar_t	sv_demoMaxSize;
+extern cvar_t	sv_demoExtraNames;
 
 static int		demo_max_size;
 static int		demo_size;
@@ -574,6 +575,8 @@ void Demo_Init (void)
 	Cvar_RegisterVariable (&sv_onrecordfinish);
 	Cvar_RegisterVariable (&sv_ondemoremove);
 	Cvar_RegisterVariable (&sv_demotxt);
+	Cvar_RegisterVariable (&sv_demoExtraNames);
+
 
 	p = COM_CheckParm ("-democache");
 	if (p)
@@ -629,6 +632,7 @@ SV_Stop
 stop recording a demo
 ====================
 */
+void SV_Script_f (void);
 void SV_Stop (int reason)
 {
 	if (!sv.demorecording)
@@ -792,7 +796,7 @@ void SV_WriteSetDemoMessage (void)
 static char *SV_PrintTeams(void)
 {
 	char *teams[MAX_CLIENTS], *p;
-	int	id = 0, i, j, numcl = 0, numt = 0;
+	int	i, j, numcl = 0, numt = 0;
 	client_t *clients[MAX_CLIENTS];
 	char buf[2048] = {0};
 	extern cvar_t teamplay;
@@ -841,6 +845,7 @@ static char *SV_PrintTeams(void)
 	return va("%s",buf);
 }
 
+void Sys_TimeOfDay(date_t *date);
 static void SV_Record (char *name)
 {
 	sizebuf_t	buf;
@@ -1052,7 +1057,7 @@ static void SV_Record (char *name)
 		MSG_WriteByte (&buf, i);
 		MSG_WriteFloat (&buf, realtime - player->connection_started);
 
-		strcpy (info, player->userinfo);
+		strcpy (info, player->userinfoshort);
 		Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);
@@ -1197,8 +1202,8 @@ record <demoname>
 */
 void SV_Record_f (void)
 {
-	int		c, i;
-	char	name[MAX_OSPATH+MAX_DEMO_NAME], *s;
+	int		c;
+	char	name[MAX_OSPATH+MAX_DEMO_NAME];
 	char	newname[MAX_DEMO_NAME];
 	dir_t	dir;
 
@@ -1306,12 +1311,58 @@ char *Dem_PlayerName(int num)
 	return "";
 }
 
+// -> scream
+char *Dem_PlayerNameTeam(char *t)
+{
+	int	i;
+	client_t *client;
+	static char	n[1024];
+	int	sep;
+
+	n[0] = 0;
+
+	sep = 0;
+
+	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++)
+	{
+		if (!client->name[0] || client->spectator)
+			continue;
+
+		if (strcmp(t, client->team)==0) 
+		{
+			if (sep >= 1)
+				sprintf (n, "%s_", n);
+			sprintf (n ,"%s%s", n, client->name);
+			sep++;
+		}
+	}
+
+	return n;
+}
+
+int	Dem_CountTeamPlayers (char *t)
+{
+	int	i, count;
+
+	count = 0;
+	for (i = 0; i < MAX_CLIENTS ; i++) {
+		if (svs.clients[i].name[0] && !svs.clients[i].spectator)
+			if (strcmp(&svs.clients[i].team[0], t)==0)
+				count++;
+	}
+
+	return count;
+}
+
+// <-
+
 void SV_EasyRecord_f (void)
 {
 	int		c;
 	dir_t	dir;
-	char	name[1024], *s;
-	char	name2[MAX_OSPATH*2];
+	char	name[1024];
+	char	name2[MAX_OSPATH*7]; // scream
+	//char	name2[MAX_OSPATH*2];
 	int		i;
 	FILE	*f;
 
@@ -1332,9 +1383,11 @@ void SV_EasyRecord_f (void)
 		return;
 	}
 
-	if (c == 2)
+	// -> scream
+	/*if (c == 2)
 		sprintf (name, "%s", Cmd_Argv(1));
-	else {
+		
+	else { 
 		// guess game type and write demo name
 		i = Dem_CountPlayers();
 		if (teamplay.value && i > 2)
@@ -1359,6 +1412,41 @@ void SV_EasyRecord_f (void)
 			}
 		}
 	}
+
+	*/
+	if (c == 2)
+		sprintf (name, "%s", Cmd_Argv(1));
+	else
+	{
+		i = Dem_CountPlayers();
+		if (teamplay.value >= 1 && i > 2)
+		{
+			// Teamplay
+			sprintf (name, "%don%d_", Dem_CountTeamPlayers(Dem_Team(1)), Dem_CountTeamPlayers(Dem_Team(2)));
+			if (sv_demoExtraNames.value > 0)
+			{
+				sprintf (name, "%s[%s]_%s_", name, Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)));
+				sprintf (name, "%svs_[%s]_%s_", name, Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)));
+				sprintf (name, "%s%s", name, sv.name);
+			} else
+				sprintf (name, "%s%s_vs_%s_%s", name, Dem_Team(1), Dem_Team(2), sv.name);
+		} else {
+			if (i == 2) {
+				// Duel
+				sprintf (name, "duel_%s_vs_%s_%s",
+					Dem_PlayerName(1),
+					Dem_PlayerName(2),
+					sv.name);
+			} else {
+				// FFA
+				sprintf (name, "ffa_%s(%d)",
+					sv.name,
+					i);
+			}
+		}
+	}
+
+	// <-
 
 // Make sure the filename doesn't contain illegal characters
 	Q_strncpyz(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)), MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
@@ -1470,7 +1558,7 @@ char *SV_DemoName2Txt(char *name)
 
 char *SV_DemoTxTNum(int num)
 {
-	SV_DemoName2Txt(SV_DemoNum(num));
+	return SV_DemoName2Txt(SV_DemoNum(num));
 }
 
 void SV_DemoRemove_f (void)

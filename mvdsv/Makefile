@@ -110,8 +110,8 @@ tar_sv:  $(BUILDDIR)/mvdsv
 #############################################################################
 
 QWSV_OBJS = \
-	 $(BUILDDIR)/server/sv_demo.o \
-	 $(BUILDDIR)/server/sv_login.o \
+	$(BUILDDIR)/server/sv_demo.o \
+	$(BUILDDIR)/server/sv_login.o \
 	 $(BUILDDIR)/server/pr_cmds.o \
 	 $(BUILDDIR)/server/pr_edict.o \
 	 $(BUILDDIR)/server/pr_exec.o \
@@ -149,7 +149,7 @@ $(BUILDDIR)/mvdsv : $(QWSV_OBJS)
 
 $(BUILDDIR)/server/sv_demo.o :   $(SERVER_DIR)/sv_demo.c 
 	$(DO_SERVER_CC)
-$(BUILDDIR)/server/sv_login.o :  $(SERVER_DIR)/sv_login.c 
+$(BUILDDIR)/server/sv_login.o :   $(SERVER_DIR)/sv_login.c 
 	$(DO_SERVER_CC)
 
 $(BUILDDIR)/server/pr_cmds.o :   $(SERVER_DIR)/pr_cmds.c 

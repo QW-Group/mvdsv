@@ -627,7 +627,6 @@ float MSG_ReadAngle16 (void)
 void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 {
 	int bits;
-	extern int stat_size;
 
 	memcpy (move, from, sizeof(*move));
 
@@ -2036,11 +2035,12 @@ static byte chktbl[1024 + 4] = {
 0x00,0x00,0x00,0x00
 };
 
+#if 0
 static byte chkbuf[16 + 60 + 4];
 
 static unsigned last_mapchecksum = 0;
 
-#if 0
+
 /*
 ====================
 COM_BlockSequenceCheckByte

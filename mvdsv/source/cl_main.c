@@ -408,8 +408,8 @@ The server is changing levels
 */
 void CL_Reconnect_f (void)
 {
-	if (cls.download)  // don't change when downloading
-		return;
+	//if (cls.download)  // don't change when downloading
+	//	return;
 
 	S_StopAllSounds (true);
 

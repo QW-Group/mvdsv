@@ -251,7 +251,7 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 	va_start (argptr,fmt);
 	vsprintf (string, fmt,argptr);
 	va_end (argptr);
-	
+
 	Sys_Printf ("%s", string);	// print to the console
 
 	for (i=0, cl = svs.clients ; i<MAX_CLIENTS ; i++, cl++)
@@ -657,12 +657,26 @@ qboolean SV_SendClientDatagram (client_t *client)
 	byte		buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
 
+
 	msg.data = buf;
 	msg.maxsize = sizeof(buf);
 	msg.cursize = 0;
 	msg.allowoverflow = true;
 	msg.overflowed = false;
 
+	// for faster downloading skip half the frames
+	/*if (client->download && client->netchan.outgoing_sequence & 1) 
+	{
+		// we're sending fake invalid delta update, so that client won't update screen
+		MSG_WriteByte (&msg, svc_deltapacketentities);
+		MSG_WriteByte (&msg, 0);
+		MSG_WriteShort (&msg, 0);
+
+		Netchan_Transmit (&client->netchan, msg.cursize, buf);
+	}
+	*/
+
+	
 	// add the client specific data to the datagram
 	SV_WriteClientdataToMessage (client, &msg);
 
@@ -682,17 +696,6 @@ qboolean SV_SendClientDatagram (client_t *client)
 	// send deltas over reliable stream
 	if (Netchan_CanReliable (&client->netchan))
 		SV_UpdateClientStats (client);
-
-	/*if (!client->realip.ip[0] && realtime - client->realip_time > 5) { // still haven't received packet with real ip
-		char str[128];
-
-		sprintf(str,"packet %s \"ip %d %d\"\n", NET_AdrToString(net_local_adr), svs.clients - client, client->realip_num);
-
-		client->realip_time = realtime;
-		ClientReliableWrite_Begin(client, svc_stufftext, 2 + strlen(str));
-		ClientReliableWrite_String (client, str);
-	}
-	*/
 
 	if (msg.overflowed)
 	{

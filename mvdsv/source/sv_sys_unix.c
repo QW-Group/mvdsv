@@ -131,12 +131,13 @@ dir_t Sys_listdir (char *path, char *ext)
 		oneentry=readdir(dir);
 		if(!oneentry) 
 			break;
-
+#if 1
 		if (oneentry->d_type == DT_DIR || oneentry->d_type == DT_LNK)
 		{
 			d.numdirs++;
 			continue;
 		}
+#endif
 
 		sprintf(pathname, "%s/%s", path, oneentry->d_name);
 		list[d.numfiles].size = Sys_FileSize(pathname);
@@ -364,7 +365,7 @@ main
 =============
 */
 
-void main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 	double			time, oldtime, newtime;
 	quakeparms_t	parms;
@@ -444,5 +445,7 @@ void main (int argc, char *argv[])
 			usleep (sys_extrasleep.value);
 	}
 #endif
+
+	return 1;
 }
 

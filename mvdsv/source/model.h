@@ -394,6 +394,20 @@ typedef struct model_s
 
 } model_t;
 
+typedef struct {
+
+	int			numplanes;
+	mplane_t	*planes;
+
+	int			numleafs;		// number of visible leafs, not counting 0
+	mleaf_t		*leafs;
+
+	int			numnodes;
+	mnode_t		*nodes;
+
+	byte		*visdata;
+} spec_worldmodel_t;
+
 //============================================================================
 
 void	Mod_Init (void);
@@ -403,6 +417,10 @@ void	*Mod_Extradata (model_t *mod);	// handles caching
 void	Mod_TouchModel (char *name);
 
 mleaf_t *Mod_PointInLeaf (float *p, model_t *model);
+#ifdef SERVERONLY
+byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model, qboolean);
+#else
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
+#endif
 
 #endif	// __MODEL__

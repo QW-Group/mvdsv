@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
+#include <time.h>
 
 qboolean	sv_allow_cheats;
 
@@ -357,7 +358,12 @@ void SV_Map (qboolean now)
 	static char	level[MAX_QPATH];
 	static char	expanded[MAX_QPATH];
 	static qboolean changed = false;
+	// -> scream
 	FILE	*f;
+	char	*s;
+	time_t	t;
+	struct tm	*tblock;
+	// <-
 
 	// if now, change it
 	if (now) {
@@ -380,6 +386,18 @@ void SV_Map (qboolean now)
 
 		SV_BroadcastCommand ("changing\n");
 		SV_SendMessagesToAll ();
+
+		// -> scream
+		if (sv_fraglogfile != NULL)
+		{
+			t = time (NULL);
+			tblock = localtime (&t);
+			s = va("\\newmap\\%s\\\\\\\\%d-%d-%d %d:%d:%d\\\n",level, tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+			SZ_Print (&svs.log[svs.logsequence&1], s);
+			fprintf (sv_fraglogfile, s);
+			fflush (sv_fraglogfile);
+		}
+		// <-
 
 		SV_SpawnServer (level);
 
@@ -640,6 +658,7 @@ void SV_ConSay_f(void)
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
 	}
 
+	Sys_Printf("%s\n", text);
 }
 
 
@@ -716,8 +735,11 @@ SV_Serverinfo_f
 ===========
 */
 char *CopyString(char *s);
+extern func_t localinfoChanged;
 void SV_Localinfo_f (void)
 {
+	char *s;
+
 	if (Cmd_Argc() == 1)
 	{
 		Con_Printf ("Local info settings:\n");
@@ -736,7 +758,18 @@ void SV_Localinfo_f (void)
 		Con_Printf ("Star variables cannot be changed.\n");
 		return;
 	}
+
+	s = Info_ValueForKey(localinfo, Cmd_Argv(1));
 	Info_SetValueForKey (localinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_LOCALINFO_STRING);
+
+	if (localinfoChanged) {
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = 0;
+		G_INT(OFS_PARM0) = PR_SetTmpString(Cmd_Argv(1));
+		G_INT(OFS_PARM1) = PR_SetTmpString(s);
+		G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, Cmd_Argv(1)));
+		PR_ExecuteProgram (localinfoChanged);
+	}
 }
 
 

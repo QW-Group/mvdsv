@@ -54,6 +54,7 @@ func_t ChatMessage;
 func_t UserInfo_Changed;
 func_t mod_ConsoleCmd;
 func_t mod_UserCmd;
+func_t localinfoChanged;
 
 
 /*
@@ -984,6 +985,13 @@ qboolean PR_ConsoleCmd(void)
 
 qboolean PR_UserCmd(void)
 {
+	/*if (!strcmp(Cmd_Argv(0), "admin") || !strcmp(Cmd_Argv(0), "judge"))
+	{
+		Con_Printf ("user command %s is banned\n", Cmd_Argv(0));
+		return true;
+	}
+	*/
+
 	if (mod_UserCmd)
 	{
 		pr_global_struct->time = sv.time;
@@ -1089,7 +1097,7 @@ void PR_LoadProgs (void)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
 
 	// Zoid, find the spectator functions
-	mod_UserCmd = mod_ConsoleCmd = UserInfo_Changed = ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
+	localinfoChanged = mod_UserCmd = mod_ConsoleCmd = UserInfo_Changed = ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
 
 	if ((f = ED_FindFunction ("SpectatorConnect")) != NULL)
 		SpectatorConnect = (func_t)(f - pr_functions);
@@ -1105,6 +1113,8 @@ void PR_LoadProgs (void)
 		mod_ConsoleCmd = (func_t)(f - pr_functions);
 	if ((f = ED_FindFunction ("UserCmd")) != NULL)
 		mod_UserCmd = (func_t)(f - pr_functions);
+	if ((f = ED_FindFunction ("localinfoChanged")) != NULL)
+		localinfoChanged = (func_t)(f - pr_functions);
 }
 
 
