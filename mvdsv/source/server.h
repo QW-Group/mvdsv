@@ -142,7 +142,7 @@ typedef struct
 	packet_entities_t	entities;
 } client_frame_t;
 
-#define MAX_BACK_BUFFERS	4
+#define MAX_BACK_BUFFERS	16
 #define MAX_STUFFTEXT		256
 #define	CLIENT_LOGIN_LEN	16
 #define	CLIENT_NAME_LEN		32
@@ -236,6 +236,10 @@ typedef struct client_s
 	int				lastconnect;
 	int				spec_print;
 	double			cuff_time;
+//bliP: 24/9 anti speed ->
+	int				msecs;
+	double			last_check;
+//<-
 //<-
  
 //===== NETWORK ============

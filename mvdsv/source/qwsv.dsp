@@ -42,8 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /Op /Ob1 /D "SERVERONLY" /D "WIN32" /D "id386" /D "LITTLE_ENDIAN" /Fp".\SRelease/mvdsv.pch" /YX /FD /c
-# SUBTRACT CPP /Z<none> /Fr
+# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /Op /D "SERVERONLY" /D "id386" /D "LITTLE_ENDIAN" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe

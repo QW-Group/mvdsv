@@ -246,7 +246,6 @@ int snprintf(char *buffer, size_t count, char const *format, ...)
 }
 int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 {
-	extern int huy;
 	int ret;
 	if (!count) return 0;
 	ret = _vsnprintf(buffer, count, format, argptr);
@@ -322,6 +321,27 @@ char *strnstr(char *s, char *find, size_t slen)
 			if (len > slen)
 				return (NULL);
 		} while (strncmp(s, find, len) != 0);
+		s--;
+	}
+	return ((char *)s);
+}
+/*
+ * Find the first occurrence of find in s, ignore case.
+ */
+char *strcasestr(register const char *s, register const char *find)
+{
+	register char c, sc;
+	register size_t len;
+
+	if ((c = *find++) != 0) {
+		c = tolower((unsigned char)c);
+		len = strlen(find);
+		do {
+			do {
+				if ((sc = *s++) == 0)
+					return (NULL);
+			} while ((char)tolower((unsigned char)sc) != c);
+		} while (strncasecmp(s, find, len) != 0);
 		s--;
 	}
 	return ((char *)s);
@@ -782,12 +802,13 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	if (buf->cursize + length > buf->maxsize)
 	{
 		if (!buf->allowoverflow)
-			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%d)", buf->maxsize);
-		
+			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%i/%i/%i)", buf->cursize, length, buf->maxsize);
+
 		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
+			Sys_Error ("SZ_GetSpace: %i/%i is > full buffer size", length, buf->maxsize);
 			
-		Sys_Printf ("SZ_GetSpace: overflow\n");	// because Con_Printf may be redirected
+		// because Con_Printf may be redirected
+		Sys_Printf ("SZ_GetSpace: overflow: cur = %i, len = %i, max = %i\n", buf->cursize, length, buf->maxsize);
 		SZ_Clear (buf); 
 		buf->overflowed = true;
 	}
@@ -990,7 +1011,7 @@ skipwhite:
 		while (1)
 		{
 			c = *data++;
-			if (c=='\"' || !c)
+			if (c=='\"' || !c || len >= MAX_COM_TOKEN - 1)
 			{
 				com_token[len] = 0;
 				if (!c)
@@ -1008,7 +1029,7 @@ skipwhite:
 		com_token[len] = c;
 		data++;
 		len++;
-		if (len >= MAX_COM_TOKEN-1)
+		if (len >= MAX_COM_TOKEN - 1)
 			break;
 		c = *data;
 	} while (c && c != ' ' && c != '\t' && c != '\n' && c != '\r');

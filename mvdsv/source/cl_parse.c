@@ -477,13 +477,20 @@ void CL_ParseDownload (void)
 	}
 }
 
+/*
+=====================================================================
+
+  UPLOAD FILE FUNCTIONS
+
+=====================================================================
+*/
 /*static byte *upload_data;
 static int upload_pos;
 static int upload_size;*/
 
 void CL_NextUpload(void)
 {
-	static byte	buffer[1024];
+	static byte	buffer[FILE_TRANSFER_BUF_SIZE];
 	int		r;
 	int		percent;
 	int		size;
@@ -578,7 +585,6 @@ void CL_StartUpload (byte *data, int size)
 
 void CL_StartFileUpload (void)
 {
-	char path[MAX_OSPATH];
 	if (cls.state < ca_onserver)
 		return; // gotta be connected
 	cls.is_file = true;
@@ -587,15 +593,14 @@ void CL_StartFileUpload (void)
 		fclose(cls.upload);
 		cls.upload = NULL;
 	}
-	snprintf(path, sizeof(path), "%s/%s", Cmd_Argv(2), Cmd_Argv(3));
-	cls.upload = fopen(path, "rb"); // BINARY
+	strlcpy(cls.uploadname, Cmd_Argv(2), sizeof(cls.uploadname));
+	cls.upload = fopen(cls.uploadname, "rb"); // BINARY
 	if (!cls.upload) {
-		Con_Printf ("Bad file \"%s\"\n", path);
+		Con_Printf ("Bad file \"%s\"\n", cls.uploadname);
 		return;
 	}
 	cls.upload_size = COM_FileLength(cls.upload);
 	cls.upload_pos = 0;
-	strlcpy(cls.uploadname, Cmd_Argv(3), sizeof(cls.uploadname));
 	Con_Printf ("Upload starting: %s (%d bytes)...\n", cls.uploadname, cls.upload_size);
 	CL_NextUpload();
 }
@@ -663,7 +668,7 @@ void CL_ParseServerData (void)
 	protover = MSG_ReadLong ();
 	if (protover != PROTOCOL_VERSION && 
 		!(cls.demoplayback && (protover == 26 || protover == 27 || protover == 28)))
-		Host_EndGame ("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck http://www.quakeworld.net/", protover, PROTOCOL_VERSION);
+		Host_EndGame ("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck http://www.quakeworld.net,\nhttp://mvdsv.sourceforge.net,\nhttp://ezquake.sourceforge.net", protover, PROTOCOL_VERSION);
 
 	cl.servercount = MSG_ReadLong ();
 

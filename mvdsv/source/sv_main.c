@@ -43,11 +43,17 @@ client_t	*host_client;			// current client
 
 cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map changes
 
+#ifdef NEWWAY
 cvar_t	sv_ticrate = {"sv_ticrate","0.014"};	// bound the size of the
+#endif //NEWWAY
 cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	//
 
+cvar_t	sys_select_timeout = {"sys_select_timeout", "10000"};
+// MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
+// (else can occur packets lost if sv_minping > 0)
+// if set too low then occur higher CPU usage
 
 cvar_t	developer = {"developer","0"};		// show extra messages
 
@@ -59,9 +65,16 @@ cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server comm
 cvar_t	master_rcon_password = {"master_rcon_password", ""};	//bliP: password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
 cvar_t	telnet_password = {"telnet_password", ""}; // password for login via telnet
+cvar_t	not_auth_timeout = {"not_auth_timeout", "20"};
+// if no password is sent (telnet_password) in "n" seconds the server refuses connection
+// If set to 0, no timeout will occur
+cvar_t	auth_timeout = {"auth_timeout", "3600"};
+// the server will close the connection "n" seconds after the authentication is completed
+// If set to 0, no timeout will occur
 cvar_t	sv_crypt_rcon = {"sv_crypt_rcon", "0"}; // use SHA1 for encryption of rcon_password and using timestamps
 // Time in seconds during which in rcon command this encryption is valid (change only with master_rcon_password).
 cvar_t	sv_timestamplen = {"sv_timestamplen", "60"};
+cvar_t	sv_rconlim = {"sv_rconlim", "10"};	// rcon bandwith limit: requests per second
 
 //bliP: telnet log level
 //cvar_t	telnet_log_level = {"telnet_log_level", "0"}; // logging level telnet console
@@ -77,19 +90,9 @@ cvar_t	frag_log_type = {"frag_log_type", "0"};
 cvar_t	qconsole_log_say = {"qconsole_log_say", "0"};
 // logging "say" and "say_team" messages to the qconsole_PORT.log file
 
-cvar_t	not_auth_timeout = {"not_auth_timeout", "20"};
-// if no password is sent (telnet_password) in "n" seconds the server refuses connection
-// If set to 0, no timeout will occur
-
-cvar_t	auth_timeout = {"auth_timeout", "3600"};
-// the server will close the connection "n" seconds after the authentication is completed
-// If set to 0, no timeout will occur
+cvar_t	sys_command_line = {"sys_command_line", NULL, CVAR_ROM};
 
 cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status command, 0 - don't use
-cvar_t	sv_showspectators = {"sv_showspectators", "1"};
-// 1 - show spectators in qplug, qspy, servu (irc bot) and etc. (connectionless command status)
-// 0 - don't show (old style)
-
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
 
@@ -109,10 +112,16 @@ cvar_t	sv_reconnectlimit = {"sv_reconnectlimit", "0"};
 qboolean OnChange_admininfo_var (cvar_t *var, char *string);
 cvar_t  sv_admininfo = {"sv_admininfo", "", 0, OnChange_admininfo_var};
 
-cvar_t	sv_kickfake = {"sv_kickfake", "0"};
+cvar_t	sv_unfake = {"sv_unfake", "0"}; //bliP: 24/9 kickfake to unfake
 cvar_t	sv_kicktop = {"sv_kicktop", "0"};
 
 cvar_t	sv_maxlogsize = {"sv_maxlogsize", "0"};
+//bliP: 24/9 ->
+qboolean OnChange_logdir_var (cvar_t *var, char *string);
+cvar_t  sv_logdir = {"sv_logdir", ".", 0, OnChange_logdir_var};
+  
+cvar_t  sv_speedcheck = {"sv_speedcheck", "0"};
+//<-
 //<-
 
 cvar_t	sv_highchars = {"sv_highchars", "1"};
@@ -130,8 +139,8 @@ cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
 cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
 cvar_t	sv_demoMaxSize  = {"sv_demoMaxSize", "20480"};
 cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
+cvar_t	sv_demoClearOld = {"sv_demoClearOld", "0"}; //bliP: 24/9 clear old demos
 cvar_t	sv_demoExtraNames = {"sv_demoExtraNames", "0"};
-
 
 qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value);
 cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
@@ -142,6 +151,7 @@ cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
 cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
+cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 //
 // game rules mirrored in svs.info
 //
@@ -151,7 +161,7 @@ cvar_t	teamplay = {"teamplay","0",CVAR_SERVERINFO};
 cvar_t	samelevel = {"samelevel","0",CVAR_SERVERINFO};
 cvar_t	maxclients = {"maxclients","8",CVAR_SERVERINFO};
 cvar_t	maxspectators = {"maxspectators","8",CVAR_SERVERINFO};
-cvar_t	maxvip_spectators = {"maxvip_spectators","0",CVAR_SERVERINFO};
+cvar_t	maxvip_spectators = {"maxvip_spectators","0"/*,CVAR_SERVERINFO*/};
 cvar_t	deathmatch = {"deathmatch","1",CVAR_SERVERINFO};			// 0, 1, or 2
 cvar_t	spawn = {"spawn","0",CVAR_SERVERINFO};
 cvar_t	watervis = {"watervis","0",CVAR_SERVERINFO};
@@ -455,48 +465,58 @@ Responds with all the info that qplug or qspy can see
 This message can be up to around 5k with worst case string lengths.
 ================
 */
-void SVC_Status_Print (client_t *cl, qboolean spectator)
-{
-	int		top, bottom, ping, frags;
-	char		*name;
-
-	top	= atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
-	bottom	= atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
-	top	= (top < 0) ? 0 : ((top > 13) ? 13 : top);
-	bottom	= (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
-	ping	= SV_CalcPing (cl);
-	name	= cl->name;
-	if (spectator)
-	{
-		ping	= -ping;
-		frags	= -9999;
-		name	= va("%s(s)", name);
-	}
-	else
-		frags	= cl->old_frags;
-	Con_Printf ("%i %i %i %i \"%s\" \"%s\" %i %i\n", cl->userid, frags,
-		(int)(realtime - cl->connection_started)/60, ping, name,
-		Info_ValueForKey (cl->userinfo, "skin"), top, bottom);
-}
+#define STATUS_OLDSTYLE					0
+#define	STATUS_SERVERINFO				1
+#define	STATUS_PLAYERS					2
+#define	STATUS_SPECTATORS				4
+#define	STATUS_SPECTATORS_AS_PLAYERS	8 //for ASE - change only frags: show as "S"
 
 void SVC_Status (void)
 {
-	int		i;
+	int		i, opt = 0;
 	client_t	*cl;
+	int		top, bottom, ping;
+	char		*name, *frags;
+
+	if (Cmd_Argc() > 1)
+		opt = Q_atoi(Cmd_Argv(1));
 
 	SV_BeginRedirect (RD_PACKET);
-	Con_Printf ("%s\n", svs.info);
-	for (i=0 ; i<MAX_CLIENTS ; i++)
-	{
-		cl = &svs.clients[i];
-		if (cl->state >= cs_preconnected/* || cl->state == cs_spawned */)
+	if (opt == STATUS_OLDSTYLE || (opt & STATUS_SERVERINFO))
+		Con_Printf ("%s\n", svs.info);
+	if (opt == STATUS_OLDSTYLE || (opt & (STATUS_PLAYERS | STATUS_SPECTATORS)))
+		for (i = 0; i < MAX_CLIENTS; i++)
 		{
-			if (!cl->spectator)
-				SVC_Status_Print (cl, false);
-			else if (cl->spectator && sv_showspectators.value)
-				SVC_Status_Print (cl, true);
+			cl = &svs.clients[i];
+			if ( (cl->state >= cs_preconnected/* || cl->state == cs_spawned */) &&
+			     ( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
+			       ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
+			{
+				top    = atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
+				bottom = atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
+				top    = (top    < 0) ? 0 : ((top    > 13) ? 13 : top);
+				bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
+				ping   = SV_CalcPing (cl);
+				name   = cl->name;
+				if (cl->spectator)
+				{
+					if (opt & STATUS_SPECTATORS_AS_PLAYERS)
+						frags = "S";
+					else
+					{
+						ping  = -ping;
+						frags = "-9999";
+						name  = va("\\s\\%s", name);
+					}
+				}
+				else
+					frags = va("%i", cl->old_frags);
+
+				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i\n", cl->userid, frags,
+					(int)(realtime - cl->connection_started)/60, ping, name,
+					Info_ValueForKey (cl->userinfo, "skin"), top, bottom);
+			}
 		}
-	}
 	SV_EndRedirect ();
 }
 
@@ -975,14 +995,68 @@ int char2int(int c)
 		return c - 'A' + 10;
 	return 0;
 }
+/*
+ * rcon_bandlim() - check for rcon requests bandwidth limit
+ *
+ *      From kernel of the FreeBSD 4.10 release:
+ *      sys/netinet/ip_icmp.c(846): int badport_bandlim(int which);
+ *
+ *	Return false if it is ok to check rcon_password, true if we have
+ *	hit our bandwidth limit and it is not ok.  
+ *
+ *	If sv_rconlim.value is <= 0, the feature is disabled and false is returned.
+ *
+ *	Note that the printing of the error message is delayed so we can
+ *	properly print the rcon limit error rate that the system was trying to do
+ *	(i.e. 22000/100 rcon pps, etc...).  This can cause long delays in printing
+ *	the 'final' error, but it doesn't make sense to solve the printing 
+ *	delay with more complex code.
+ */
+qboolean rcon_bandlim()
+{
+	static double	lticks = 0;
+	static int	lpackets = 0;
+
+	/*
+	 * Return ok status if feature disabled or argument out of
+	 * ranage.
+	 */
+
+	if (sv_rconlim.value <= 0)
+		return false;
+
+	/*
+	 * reset stats when cumulative dt exceeds one second.
+	 */
+
+	if (realtime - lticks > 1.0)
+	{
+		if (lpackets > sv_rconlim.value)
+			Sys_Printf("WARNING: Limiting rcon tstamp response from %d to %4f rcon pequests per second from %s\n",
+					lpackets, sv_rconlim.value, NET_AdrToString(net_from));
+		lticks = realtime;
+		lpackets = 0;
+	}
+
+	/*
+	 * bump packet count
+	 */
+
+	if (++lpackets > sv_rconlim.value)
+		return true;
+
+	return false;
+}
 //bliP: master rcon/logging ->
-int _Rcon_Validate (char *client_string, char *password)
+int Rcon_Validate (char *client_string, char *password)
 {
 	char	*server_string, *sha1;
-	int		server_string_len, i/*, c1, c2*/;
+	int		server_string_len, i;
 	time_t	server_time, client_time = 0;
 	double	difftime_server_client;
 
+	if (rcon_bandlim())
+		return 0;
 
 	if (!strlen (password))
 		return 0;
@@ -1018,8 +1092,8 @@ int _Rcon_Validate (char *client_string, char *password)
 			strlcat(server_string, " ", server_string_len);
 		}
 		sha1 = SHA1(server_string, server_string_len - 1);
-//		Con_Printf("client_string = %s\nserver_string = %s\nsha1 = %s\n", client_string, server_string, sha1);
-//		Con_Printf("server_string_len = %d, strlen(server_string) = %d\n", server_string_len, strlen(server_string));
+//Con_Printf("client_string = %s\nserver_string = %s\nsha1 = %s\n", client_string, server_string, sha1);
+//Con_Printf("server_string_len = %d, strlen(server_string) = %d\n", server_string_len, strlen(server_string));
 		Q_Free(server_string);
 		if (strncmp (Cmd_Argv(1), sha1, DIGEST_SIZE * 2))
 			return 0;
@@ -1031,17 +1105,7 @@ int _Rcon_Validate (char *client_string, char *password)
 	return 1;
 }
 
-int Rcon_Validate (char *client_string)
-{
-	return _Rcon_Validate (client_string, rcon_password.string);
-}
-
-int Master_Rcon_Validate (char *client_string)
-{
-	return _Rcon_Validate (client_string, master_rcon_password.string);
-}
-
-int Master_Rcon_Validate_ (void)
+int Master_Rcon_Validate (void)
 {
 	char	*client_string;
 	int	i, client_string_len = Cmd_Argc() + 1;
@@ -1057,7 +1121,7 @@ int Master_Rcon_Validate_ (void)
 	}
 //	Sys_Printf("client_string = %s\nclient_string_len = %d, strlen(client_string) = %d\n",
 //		client_string, client_string_len, strlen(client_string));
-	i = _Rcon_Validate (client_string, master_rcon_password.string);
+	i = Rcon_Validate (client_string, master_rcon_password.string);
 	Q_Free(client_string);
 	return i;
 }
@@ -1083,19 +1147,22 @@ void SVC_RemoteCommand (char *client_string)
 	qboolean	bad_cmd = false;
 	qboolean	banned = false;
 
-	if (Master_Rcon_Validate(client_string)) {
+
+	if (Rcon_Validate (client_string, master_rcon_password.string))
 		do_cmd = true;
-	}
-	else if (Rcon_Validate(client_string)) {
+	else if (Rcon_Validate (client_string, rcon_password.string))
+	{
 		admin_cmd = true;
-		if (SV_FilterPacket()) { //banned players can't use rcon, but we log it
+		if (SV_FilterPacket()) //banned players can't use rcon, but we log it
+		{
 			bad_cmd = true;
 			banned = true;
 		}
-		else {
+		else
+		{
 			strlcpy (str, Cmd_Argv(2), sizeof(str));
-			if (str[0] && //normal rcon can't use these commands
-					(!strcmp(str, "master_rcon_password") ||
+			if (	str[0] && //normal rcon can't use these commands
+				(	!strcmp(str, "master_rcon_password") ||
 					!strcmp(str, "rm") ||
 					!strcmp(str, "rmdir") ||
 					!strcmp(str, "ls") ||
@@ -1105,16 +1172,19 @@ void SVC_RemoteCommand (char *client_string)
 					!strcmp(str, "localcommand") ||
 					!strcmp(str, "sv_crypt_rcon") ||
 					!strcmp(str, "sv_timestamplen") ||
-					!strncmp(str, "log", 3) ) ) {
+					!strncmp(str, "log", 3) ||
+					!strcmp(str, "sys_command_line")
+				)
+			)
 				bad_cmd = true;
-			}
 		}
 		do_cmd = !bad_cmd;
 	}
 
 //find player name if rcon came from someone on server
 	plain[0] = '\0';
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+	{
 		if (cl->state == cs_free)
 			continue;
 		if (!NET_CompareBaseAdr(net_from, cl->netchan.remote_address))
@@ -1125,12 +1195,14 @@ void SVC_RemoteCommand (char *client_string)
 		Q_normalizetext(plain);
 	}
 
-	if (do_cmd) {
+	if (do_cmd)
+	{
 		if (!sv_crypt_rcon.value)
 		{
 			hide = net_message.data + 9;
 			p = admin_cmd ? rcon_password.string : master_rcon_password.string;
-			while (*p) {
+			while (*p)
+			{
 				p++;
 				*hide++ = '*';
 			}
@@ -1146,18 +1218,22 @@ void SVC_RemoteCommand (char *client_string)
 		SV_BeginRedirect(RD_PACKET);
 
 		str[0] = '\0';
-		for (i = 2; i < Cmd_Argc(); i++) {
+		for (i = 2; i < Cmd_Argc(); i++)
+		{
 			strlcat(str, Cmd_Argv(i), sizeof(str));
 			strlcat(str, " ", sizeof(str));
 		}
 
 		Cmd_ExecuteString(str);
 	}
-	else {
-		if (admin_cmd && !sv_crypt_rcon.value) {
+	else
+	{
+		if (admin_cmd && !sv_crypt_rcon.value)
+		{
 			hide = net_message.data + 9;
 			p = admin_cmd ? rcon_password.string : master_rcon_password.string;
-			while (*p) {
+			while (*p)
+			{
 				p++;
 				*hide++ = '*';
 			}
@@ -1165,13 +1241,15 @@ void SVC_RemoteCommand (char *client_string)
 
 		Con_Printf ("Bad rcon from %s: %s\n", NET_AdrToString(net_from), net_message.data + 4);
 
-		if (!banned) {
+		if (!banned)
+		{
 			if (plain[0])
 				SV_Write_Log(RCON_LOG, 1, va("Bad rcon from %s (%s):\n%s\n", NET_AdrToString(net_from), plain, net_message.data + 4));
 			else
 				SV_Write_Log(RCON_LOG, 1, va("Bad rcon from %s:\n%s\n",	NET_AdrToString (net_from), net_message.data + 4));
 		}
-		else {
+		else
+		{
 			SV_Write_Log(RCON_LOG, 1, va("Rcon from banned IP: %s: %s\n", NET_AdrToString(net_from), net_message.data + 4));	
 			SV_SendBan();
 			return;
@@ -1186,64 +1264,6 @@ void SVC_RemoteCommand (char *client_string)
 	SV_EndRedirect ();
 }
 //<-
-
-/*
-===============
-SVC_RemoteCommand
-
-A client issued an rcon command.
-Shift down the remaining args
-Redirect all printfs
-===============
-
-void SVC_RemoteCommand (void)
-{
-	int		i;
-	char	remaining[1024];
-	char	*hide, *p;
-
-
-	if (!Rcon_Validate ()) {
-		SV_Write_Log(RCON_LOG, 1, va("Bad rcon from %s:\n%s\n",
-							NET_AdrToString (net_from), net_message.data+4));
-
-		Con_Printf ("Bad rcon from %s: %s\n"
-			, NET_AdrToString (net_from), net_message.data+4);
-
-		SV_BeginRedirect (RD_PACKET);
-
-		Con_Printf ("Bad rcon_password.\n");
-
-	} else {
-		hide = net_message.data + 9;
-		p = rcon_password.string;
-		while (*p) {
-			p++;
-			*hide++ = '*';
-		}
-
-		SV_Write_Log(RCON_LOG, 1, va("Rcon from %s: %s\n",
-							NET_AdrToString (net_from), net_message.data+4));
-		Con_Printf ("Rcon from %s:\n%s\n"
-			, NET_AdrToString (net_from), net_message.data+4);
-
-		SV_BeginRedirect (RD_PACKET);
-
-		remaining[0] = 0;
-
-		for (i=2 ; i<Cmd_Argc() ; i++)
-		{
-			strlcat (remaining, Cmd_Argv(i), sizeof(remaining));
-			strlcat (remaining,         " ", sizeof(remaining));
-		}
-
-		Cmd_ExecuteString (remaining);
-
-	}
-
-	SV_EndRedirect ();
-}
-*/
 
 void SVC_IP(void)
 {
@@ -1304,42 +1324,21 @@ void SV_ConnectionlessPacket (void)
 	c = Cmd_Argv(0);
 
 	if (!strcmp(c, "ping") || ( c[0] == A2A_PING && (c[1] == 0 || c[1] == '\n')) )
-	{
 		SVC_Ping ();
-		return;
-	}
-	if (c[0] == A2A_ACK && (c[1] == 0 || c[1] == '\n') )
-	{
+	else if (c[0] == A2A_ACK && (c[1] == 0 || c[1] == '\n') )
 		Con_Printf ("A2A_ACK from %s\n", NET_AdrToString (net_from));
-		return;
-	}
 	else if (!strcmp(c,"status"))
-	{
 		SVC_Status ();
-		return;
-	}
 	else if (!strcmp(c,"log"))
-	{
 		SVC_Log ();
-		return;
-	}
 	else if (!strcmp(c, "rcon"))
 		SVC_RemoteCommand (s);
 	else if (!strcmp(c, "ip"))
-	{
 		SVC_IP();
-		return;
-	}
 	else if (!strcmp(c,"connect"))
-	{
 		SVC_DirectConnect ();
-		return;
-	}
 	else if (!strcmp(c,"getchallenge"))
-	{
 		SVC_GetChallenge ();
-		return;
-	}
 	else
 		Con_Printf ("bad connectionless packet from %s:\n%s\n"
 		, NET_AdrToString (net_from), s);
@@ -1811,16 +1810,16 @@ void SV_Script_f (void)
 
 	path = Cmd_Argv(1);
 
-  //bliP: no subdirectories ->
-	/*if (!strncmp(path, "../", 3) || !strncmp(path, "..\\", 3))
+//bliP: 24/9 need subdirs here ->
+	if (!strncmp(path, "../", 3) || !strncmp(path, "..\\", 3))
 		path += 3;
 
-	if (strstr(path,"../") || strstr(path,"..\\")) {*/
-  if (strstr(path, "..")) {
-		Con_Printf("Invalid path.\n");
-		return;
+	if (strstr(path, ".."))
+	{
+			Con_Printf("Invalid path.\n");
+			return;
 	}
-  //<-
+//<-
 
 	path = Cmd_Argv(1);
 	
@@ -2279,6 +2278,7 @@ void SV_Frame (double time)
 	SV_GetConsoleCommands ();
 	
 // process console commands
+
 	Cbuf_Execute ();
 // check for map change;
 	SV_Map(true);
@@ -2368,7 +2368,7 @@ void SV_DemoInfo_f (void);
 
 void SV_InitLocal (void)
 {
-	int		i;
+	int		i, len;
 	extern	cvar_t	sv_maxvelocity;
 	extern	cvar_t	sv_gravity;
 	extern	cvar_t	sv_aim;
@@ -2400,23 +2400,42 @@ void SV_InitLocal (void)
 //Added by VVD {
 	Cvar_RegisterVariable (&sv_crypt_rcon);
 	Cvar_RegisterVariable (&sv_timestamplen);
+	Cvar_RegisterVariable (&sv_rconlim);
+
 	Cvar_RegisterVariable (&telnet_password);
 	Cvar_RegisterVariable (&telnet_log_level);
-	Cvar_RegisterVariable (&frag_log_type);
-	Cvar_RegisterVariable (&qconsole_log_say);
 	Cvar_RegisterVariable (&not_auth_timeout);
 	Cvar_RegisterVariable (&auth_timeout);
+
+	Cvar_RegisterVariable (&frag_log_type);
+	Cvar_RegisterVariable (&qconsole_log_say);
 	Cvar_RegisterVariable (&sv_use_dns);
-	Cvar_RegisterVariable (&sv_showspectators);
+
+	for (i = 0, len = 1; i < com_argc; i++)
+		len += strlen(com_argv[i]) + 1;
+	sys_command_line.string = (char *)Q_Malloc(len);
+	sys_command_line.string[0] = 0;
+	for (i = 0; i < com_argc; i++)
+	{
+		strlcat(sys_command_line.string, com_argv[i], len);
+		strlcat(sys_command_line.string, " ", len);
+	}
+	Cvar_RegisterVariable (&sys_command_line);
+
+	snprintf(full_version, SIZEOF_FULL_VERSION, FULL_VERSION "\n" BUILD_DATE "\n", build_number());
+	Cvar_RegisterVariable (&version);
 //Added by VVD }
 	Cvar_RegisterVariable (&spectator_password);
 	Cvar_RegisterVariable (&vip_password);
 
 	Cvar_RegisterVariable (&sv_nailhack);
 
+#ifdef NEWWAY
 	Cvar_RegisterVariable (&sv_ticrate);
+#endif //NEWWAY
 	Cvar_RegisterVariable (&sv_mintic);
 	Cvar_RegisterVariable (&sv_maxtic);
+	Cvar_RegisterVariable (&sys_select_timeout);
 
 	Cvar_RegisterVariable (&skill);
 	Cvar_RegisterVariable (&coop);
@@ -2433,9 +2452,6 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&spawn);
 	Cvar_RegisterVariable (&watervis);
 	Cvar_RegisterVariable (&serverdemo);
-
-	snprintf(full_version, SIZEOF_FULL_VERSION, FULL_VERSION "\n" BUILD_DATE "\n", build_number());
-	Cvar_RegisterVariable (&version);
 
 	Cvar_RegisterVariable (&developer);
 
@@ -2472,8 +2488,11 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_admininfo);
 	Cvar_RegisterVariable (&sv_reconnectlimit);
 	Cvar_RegisterVariable (&sv_maxlogsize);
-
-	Cvar_RegisterVariable (&sv_kickfake);
+//bliP: 24/9 ->
+	Cvar_RegisterVariable (&sv_logdir);
+	Cvar_RegisterVariable (&sv_speedcheck);
+	Cvar_RegisterVariable (&sv_unfake); // kickfake to unfake
+//<-
 	Cvar_RegisterVariable (&sv_kicktop);
 //<-
 
@@ -2484,6 +2503,8 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&pausable);
 
 	Cvar_RegisterVariable (&sv_maxrate);
+
+	Cvar_RegisterVariable (&sv_loadentfiles);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
@@ -2634,23 +2655,33 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 		// trim user name
 		strlcpy (newname, val, sizeof(newname));
 
-		for (p = newname; (*p == ' ' || *p == '\r' || *p == '\n' || *p == (char)160) && *p; p++)
-			;
+		for (i = 0, p = newname; *p; p++)
+			if ((*p & 127) == '\\')
+			{
+				i = 1;
+				break;
+			}
 
-		if (p != newname && !*p) {
+		if (!i)
+			for (p = newname; *p && ((*p & 127) == ' ' || *p == '\r' || *p == '\n'); p++);
+
+		if ((p != newname && !*p) || i) {
 			//white space only
 			strlcpy(newname, "unnamed", sizeof(newname));
 			p = newname;
 		}
-
-		if (p != newname && *p) {
-			for (q = newname; *p; *q++ = *p++)
-			;
-			*q = 0;
+		else
+		{
+			if (p != newname && *p)
+			{
+				for (q = newname; *p; *q++ = *p++);
+				*q = 0;
+			}
+			for (p = newname + strlen(newname) - 1;
+			     p != newname && ((*p & 127) == ' ' || *p == '\r' || *p == '\n');
+			     p--);
+			p[1] = 0;
 		}
-		for (p = newname + strlen(newname) - 1; p != newname && (*p == ' ' || *p == '\r' || *p == '\n' || *p == (char)160) ; p--)
-			;
-		p[1] = 0;
 
 		if (strcmp(val, newname)) {
 			Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING);
@@ -2732,16 +2763,26 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 		cl->messagelevel = atoi(val);
 	}
 
-  //bliP: spectator print ->
+//bliP: spectator print ->
 	val = Info_ValueForKey(cl->userinfo, "sp");
-	if (strlen(val)) {
+	if (strlen(val))
 		cl->spec_print = atoi(val);
-	}
-  //<-
+//<-
 }
 
 
 //============================================================================
+
+//bliP: 24/9 logdir ->
+qboolean OnChange_logdir_var (cvar_t *var, char *value)
+{
+	if (strstr(value, ".."))
+		return true;
+	if (value[0])
+		Sys_mkdir (value);
+	return false;	
+}
+//<-
 
 //bliP: admininfo ->
 qboolean OnChange_admininfo_var (cvar_t *var, char *value)
@@ -3045,13 +3086,14 @@ Q_normalizetext
 returns readable extended quake names
 ==================
 */
-void Q_normalizetext(char *name)
+char *Q_normalizetext(unsigned char *str)
 {
 	extern char chartbl2[];
-	unsigned char	*e;
+	unsigned char	*i;
 
-	for (e = (unsigned char *)name; *e; e++) 
-		*e = chartbl2[*e];
+	for (i = str; *i; i++) 
+		*i = chartbl2[*i];
+	return str;
 }
 
 /*
@@ -3060,13 +3102,33 @@ Q_redtext
 returns extended quake names
 ==================
 */
-void Q_redtext(unsigned char *str)
+char *Q_redtext(unsigned char *str)
 {
-	while (*str)
-	{
-		if ((*str > 32) && (*str < 128))
-			*str += 128;
-		str++;
-	}
+	unsigned char	*i;
+	for (i = str; *i; i++)
+		if (*i > 32 && *i < 128)
+			*i |= 128;
+	return str;
 }
 //<-
+
+/*
+==================
+Q_yelltext
+returns extended quake names (yellow numbers)
+==================
+*/
+char *Q_yelltext(unsigned char *str)
+{
+	unsigned char	*i;
+	for (i = str; *i; i++)
+	{
+		if (*i >= '0' && *i <= '9')
+			*i += 18 - '0';
+		else if (*i > 32 && *i < 128)
+			*i |= 128;
+		else if (*i == 13)
+			*i = ' ';
+	}
+	return str;
+}

@@ -43,11 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	MAX_MSGLEN		1450		// max length of a reliable message
 #define	MAX_DATAGRAM	1450		// max length of unreliable message
-
+#define	FILE_TRANSFER_BUF_SIZE	MAX_MSGLEN - 100
 //
 // per-level limits
 //
-#define	MAX_EDICTS		768			// FIXME: ouch! ouch! ouch!
+#define	MAX_EDICTS		512
+//768			// FIXME: ouch! ouch! ouch! - trying to fix...
 #define	MAX_LIGHTSTYLES	64
 #define	MAX_MODELS		256			// these are sent over the net as bytes
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased

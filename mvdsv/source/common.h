@@ -141,16 +141,18 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 #endif
 
 #if defined(__linux__) || defined(_WIN32)
-size_t strlcpy (char *dst, char *src, size_t siz);
-size_t strlcat (char *dst, char *src, size_t siz);
-char  *strnstr (char *s, char *find, size_t slen);
+size_t	strlcpy (char *dst, char *src, size_t siz);
+size_t	strlcat (char *dst, char *src, size_t siz);
+char	*strnstr (char *s, char *find, size_t slen);
+char	*strcasestr(const char *s, const char *find);
 #endif
 
 int	Q_atoi (char *str);
 float	Q_atof (char *str);
 
-void Q_normalizetext (char *name); //bliP: red to white text
-void Q_redtext(unsigned char *str); //bliP: white to red text
+char	*Q_normalizetext(unsigned char *name); //bliP: red to white text
+char	*Q_redtext(unsigned char *str); //bliP: white to red text
+char	*Q_yelltext(unsigned char *str); //VVD: white to red text and yellow numbers
 
 //============================================================================
 

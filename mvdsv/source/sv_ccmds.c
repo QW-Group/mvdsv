@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #include <Winsock2.h>
 #else
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -36,6 +37,7 @@ qboolean	sv_allow_cheats;
 int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
 extern	cvar_t		cl_warncmd;
+extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
 extern	redirect_t	sv_redirected;
 log_t	logs[MAX_LOG];
 
@@ -145,9 +147,8 @@ void SV_Logfile (int sv_log, qboolean newlog)
 	{
 		for (i = 0; i < 1000; ++i)
 		{
-			snprintf (name, MAX_OSPATH, "%s/%s%i.log", com_gamedir, logs[sv_log].file_name, i);
-			name[MAX_OSPATH - 1] = 0;
-			//if (!(logs[sv_log].sv_logfile = fopen (name, "r")))
+			snprintf (name, sizeof(name), "%s/%s%i.log", 
+				sv_logdir.string, logs[sv_log].file_name, i); //bliP: 24/9 logdir
 			if (Sys_FileTime(name) == -1)
 			{	// can't read it, so create this one
 				if (!(logs[sv_log].sv_logfile = fopen (name, "w")))
@@ -166,18 +167,20 @@ void SV_Logfile (int sv_log, qboolean newlog)
 	}
 	else
 	{
-    //bliP: logging ->
+//bliP: logging ->
 		for (i = 0; i < 1000; i++)
 		{
-			snprintf (name, MAX_OSPATH, "%s%d_%04d.log", logs[sv_log].file_name, sv_port, i);
+			snprintf (name, sizeof(name), "%s/%s%d_%04d.log",
+				sv_logdir.string, logs[sv_log].file_name, sv_port, i); //bliP: 24/9 logdir
 			if (Sys_FileTime(name) == -1)
-			break; // file doesn't exist
+				break; // file doesn't exist
 		}
     
 		if (!newlog) //use last log if possible
-			snprintf (name, MAX_OSPATH, "%s%d_%04d.log", logs[sv_log].file_name, sv_port, (i - 1 > 0) ? i - 1 : 0);
+			snprintf (name, sizeof(name), "%s/%s%d_%04d.log",
+				sv_logdir.string, logs[sv_log].file_name,
+				sv_port, (i - 1 > 0) ? i - 1 : 0); //bliP: 24/9 logdir
 
-		name[MAX_OSPATH - 1] = 0;
 		Con_Printf ("Logging %s to %s\n", logs[sv_log].message_on, name); //bliP: loging to logging
 		if (!(logs[sv_log].sv_logfile = fopen (name, "a")))
 		{
@@ -196,7 +199,7 @@ void SV_Logfile (int sv_log, qboolean newlog)
 			default:
   				logs[sv_log].log_level = 1;
 		}
-    //<-
+//<-
 	}
 }
 
@@ -507,6 +510,17 @@ void SV_Map_f (void)
 	SV_Map(false);
 }
 
+/*==================
+SV_ReplaceChar
+Replace char in string
+==================*/
+void SV_ReplaceChar(char *s, char from, char to)
+{
+	if (s)
+		for ( ;*s ; ++s)
+			if (*s == from)
+				*s = to;
+}
 //bliP: ls, rm, rmdir, chmod ->
 /*==================
 SV_ListFiles_f
@@ -516,51 +530,66 @@ void SV_ListFiles_f (void)
 {
 	dir_t	dir;
 	file_t	*list;
-	int		i;
 	char	*key;
-  char *dirname;
+	char	*dirname;
+	int	i;
 
-  if (Cmd_Argc() < 2) {
-    Con_Printf ("ls [directory] [match]\n");
-    return;
-  }
+	if (Cmd_Argc() < 2)
+	{
+		Con_Printf ("ls <directory> <match>\n");
+		return;
+	}
 
-  dirname = Cmd_Argv(1);
+	dirname = Cmd_Argv(1);
+	SV_ReplaceChar(dirname, '\\', '/');
 
-  if (strstr (dirname, "..") || (*dirname == '/')/* || (*dirname == '.')*/) {
-    Con_Printf("Unable to list\n");
-    return;
-  }
+	if (	!strncmp(dirname, "../", 3) || strstr(dirname, "/../") || *dirname == '/'
+	||	( (i = strlen(dirname)) < 3 ? 0 : !strncmp(dirname + i - 3, "/..", 4) )
+#ifdef _WIN32
+	||	( dirname[1] == ':' && (*dirname >= 'a' && *dirname <= 'z' ||
+					*dirname >= 'A' && *dirname <= 'Z')
+		)
+#endif //_WIN32
+	   )
+	{
+		Con_Printf("Unable to list %s\n", dirname);
+		return;
+	}
 
 	Con_Printf("Content of %s/*.*\n", dirname);
 	dir = Sys_listdir(va("%s", dirname), ".*", SORT_BY_NAME);
 	list = dir.files;
-	if (!list->name[0])	{
+	if (!list->name[0])
+	{
 		Con_Printf("No files\n");
-    return;
+		return;
 	}
 
-  key = (Cmd_Argc() == 3) ? Cmd_Argv(2) : "";
+	key = (Cmd_Argc() == 3) ? Cmd_Argv(2) : "";
 
-  //directories...
-	for (i = 0; list->name[0]; i++, list++) {
+//directories...
+	for (; list->name[0]; list++)
+	{
 		if (!strstr(list->name, key) || !list->isdir)
-      continue;
-	  Con_Printf("- %s\n", list->name);
+			continue;
+		Con_Printf("- %s\n", list->name);
 	}
 
-  list = dir.files;
+	list = dir.files;
 
-  //files...
-	for (i = 0; list->name[0]; i++, list++) {
+//files...
+	for (; list->name[0]; list++)
+	{
 		if (!strstr(list->name, key) || list->isdir)
-      continue;
-    if ((int)list->size/1024 > 0)
-      Con_Printf("%s %.0fKB (%.2fMB)\n", list->name, (float)list->size/1024, (float)list->size/1024/1024);
-    else
-      Con_Printf("%s %dB\n", list->name, list->size);
+			continue;
+		if ((int)list->size / 1024 > 0)
+			Con_Printf("%s %.0fKB (%.2fMB)\n", list->name,
+				(float)list->size / 1024, (float)list->size / 1024 / 1024);
+		else
+			Con_Printf("%s %dB\n", list->name, list->size);
 	}
-  Con_Printf ("Total: %d files, %.0fKB (%.2fMB)\n", dir.numfiles, (float)dir.size/1024, (float)dir.size/1024/1024);
+	Con_Printf("Total: %d files, %.0fKB (%.2fMB)\n", dir.numfiles,
+		(float)dir.size / 1024, (float)dir.size / 1024 / 1024);
 }
 
 /*==================
@@ -569,24 +598,33 @@ Removes an empty directory
 ==================*/
 void SV_RemoveDirectory_f (void)
 {
-  char *path;
+	char	*dirname;
 
-	if (Cmd_Argc() != 2)	{
-		Con_Printf("rmdir [directory]\n");
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("rmdir <directory>\n");
 		return;
 	}
 
-  path = Cmd_Argv(1);
+	dirname = Cmd_Argv(1);
+	SV_ReplaceChar(dirname, '\\', '/');
 
-  if (strstr (path, "..") || (*path == '/') || (*path == '.')) {
-    Con_Printf("Unable to remove\n");
-    return;
-  }
+	if (	!strncmp(dirname, "../", 3) || strstr(dirname, "/../") || *dirname == '/'
+#ifdef _WIN32
+	||	( dirname[1] == ':' && (*dirname >= 'a' && *dirname <= 'z' ||
+					*dirname >= 'A' && *dirname <= 'Z')
+		)
+#endif //_WIN32
+	   )
+	{
+		Con_Printf("Unable to remove\n");
+		return;
+	}
 
-  if (!Sys_rmdir(path))
-    Con_Printf("Directory %s succesfully removed\n", path);
-  else 
-	  Con_Printf("Unable to remove directory %s\n", path);
+	if (!Sys_rmdir(dirname))
+		Con_Printf("Directory %s succesfully removed\n", dirname);
+	else 
+		Con_Printf("Unable to remove directory %s\n", dirname);
 }
 
 /*==================
@@ -597,21 +635,32 @@ void SV_RemoveFile_f (void)
 {
 	char *dirname;
 	char *filename;
-  char path[MAX_OSPATH];
 	int i;
 
-	if (Cmd_Argc() < 3)	{
-		Con_Printf("rm [directory] [[filename] | *<token> | *] - removes a file | with token | all\n");
+	if (Cmd_Argc() < 3)
+	{
+		Con_Printf("rm <directory> {<filename> | *<token> | *} - removes a file | with token | all\n");
 		return;
 	}
 
 	dirname = Cmd_Argv(1);
-  filename = Cmd_Argv(2);
+	filename = Cmd_Argv(2);
+	SV_ReplaceChar(dirname, '\\', '/');
+	SV_ReplaceChar(filename, '\\', '/');
 
-  if (strstr (dirname, "..") || (*dirname == '/') || (*dirname == '.')) {
-    Con_Printf("Unable to remove\n");
-    return;
-  }
+	if (	!strncmp(dirname, "../", 3) || strstr(dirname, "/../")
+	||	*dirname == '/'             || strchr(filename, '/')
+	||	( (i = strlen(filename)) < 3 ? 0 : !strncmp(filename + i - 3, "/..", 4) )
+#ifdef _WIN32
+	||	( dirname[1] == ':' && (*dirname >= 'a' && *dirname <= 'z' ||
+					*dirname >= 'A' && *dirname <= 'Z')
+		)
+#endif //_WIN32
+	   )
+	{
+		Con_Printf("Unable to remove\n");
+		return;
+	}
 
 	if (*filename == '*') //token, many files
 	{
@@ -623,13 +672,15 @@ void SV_RemoveFile_f (void)
 
 		dir = Sys_listdir(va("%s", dirname), ".*", SORT_BY_NAME);
 		list = dir.files;
-		for (i = 0;list->name[0]; list++) {
-  		if (!list->isdir && strstr(list->name, filename)) {
-			  snprintf(path, sizeof(path), "%s/%s", dirname, list->name);
-			  if (!Sys_remove(path)) {
+		for (i = 0; list->name[0]; list++)
+		{
+  			if (!list->isdir && strstr(list->name, filename))
+			{
+				if (!Sys_remove(va("%s/%s", dirname, list->name)))
+				{
  					Con_Printf("Removing %s...\n", list->name);
-				  i++;
-        }
+					i++;
+				}
 			}
 		}
 		if (i)
@@ -637,49 +688,106 @@ void SV_RemoveFile_f (void)
 		else
 			Con_Printf("No matching found\n");
 	}
-  else // 1 file
-  {
-	  snprintf(path, sizeof(path), "%s/%s", dirname, filename);
-    if (!Sys_remove(path))
-   	  Con_Printf("File %s succesfully removed\n", filename);
-    else 
-	    Con_Printf("Unable to remove file %s\n", filename);
-  }
+	else // 1 file
+	{
+		if (!Sys_remove(va("%s/%s", dirname, filename)))
+			Con_Printf("File %s succesfully removed\n", filename);
+		else
+			Con_Printf("Unable to remove file %s\n", filename);
+	}
 }
 
 /*==================
 SV_ChmodFile_f
 Chmod a script
 ==================*/
-#ifndef WIN32
+#ifndef _WIN32
 void SV_ChmodFile_f (void)
 {
-  char path[MAX_OSPATH];
-  char *arg;
-  char *filename;
+	unsigned char	*_mode, *filename;
+	unsigned int	mode, m;
 
-	if (Cmd_Argc() != 3)	{
-		Con_Printf("chmod [mode] [script file]\n");
+	if (Cmd_Argc() != 3)
+	{
+		Con_Printf("chmod <mode> <file>\n");
 		return;
 	}
 
-  arg = Cmd_Argv(1);
-  filename = Cmd_Argv(2);
+	_mode = Cmd_Argv(1);
+	filename = Cmd_Argv(2);
 
-  if (strstr(filename, "..") || (*filename == '/') || (*filename == '.') || !strstr(filename, ".qws")) {
-    Con_Printf("Unable to chmod\n");
-    return;
-  }
+	if (!strncmp(filename, "../",  3) || strstr(filename, "/../") ||
+	    *filename == '/'              || strlen(_mode) != 3 ||
+	    ( (m = strlen(filename)) < 3 ? 0 : !strncmp(filename + m - 3, "/..", 4) ))
+	{
+		Con_Printf("Unable to chmod\n");
+		return;
+	}
+	for (mode = 0; *_mode; _mode++)
+	{
+		m = *_mode - '0';
+		if (m > 7)
+		{
+			Con_Printf("Unable to chmod\n");
+			return;
+		}
+		mode = (mode << 3) + m;
+	}
 
-  snprintf(path, sizeof(path), "chmod %s %s\n", arg, filename);
-
-  if (system(path) == -1)
-    Con_Printf("Unable to chmod %s\n", filename);
-  else 
-    Con_Printf("Chmod %s succesful\n", filename);
+	if (chmod(filename, mode))
+		Con_Printf("Unable to chmod %s\n", filename);
+	else 
+		Con_Printf("Chmod %s succesful\n", filename);
 }
-#endif
-//<-
+#endif //_WIN32
+
+/*==================
+SV_LocalCommand_f
+Execute system command
+==================*/
+//bliP: REMOVE ME REMOVE ME REMOVE ME REMOVE ME REMOVE ME ->
+void SV_LocalCommand_f (void)
+{
+	int i, c;
+	char str[1024], *temp_file = "__output_temp_file__";
+
+	if ((c = Cmd_Argc()) < 2)
+	{	
+		Con_Printf("localcommand [command]\n");
+		return;
+	}
+
+	str[0] = 0;
+	for (i = 1; i < c; i++)
+	{
+		strlcat (str, Cmd_Argv(i), sizeof(str));
+		strlcat (str, " ", sizeof(str));
+	}
+	strlcat (str, va("> %s\n", temp_file), sizeof(str));
+
+	if (system(str))
+		Con_Printf("command failed\n");
+	else
+	{
+		char	buf[512];
+		FILE	*f;
+		if ((f = fopen(temp_file, "rt")) == NULL)
+			Con_Printf("(empty)\n");
+		else
+		{
+			while (!feof(f))
+			{
+				buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
+				Con_Printf("%s", buf);
+			}
+			fclose(f);
+			if (Sys_remove(temp_file))
+				Con_Printf("Unable to remove file %s\n", temp_file);
+		}
+	}
+
+}
+//REMOVE ME REMOVE ME REMOVE ME REMOVE ME REMOVE ME 
 
 /*
 ==================
@@ -1040,51 +1148,24 @@ void SV_Status_f (void)
 // min fps lat drp
 	if (sv_redirected != RD_NONE && sv_redirected != RD_MOD) {
 		// most remote clients are 40 columns
-		//           0123456789012345678901234567890123456789
-		Con_Printf ("name               userid frags\n");
-		Con_Printf ("  address          rate ping drop\n");
+		//           01234567890123456789012345678901234567890123456789
+		Con_Printf ("name               ping frags   id\n");
+		Con_Printf ("  address\n");
 		Con_Printf ("  real ip\n");
-		Con_Printf ("  ---------------- ---- ---- -----\n");
+		Con_Printf ("------------------ ---- ----- ------\n");
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		{
 			if (!cl->state)
 				continue;
 
-			Con_Printf ("%-18s %6i %5i%s\n", cl->name, cl->userid,
-				(int)cl->edict->v.frags, cl->spectator ? " (s)" : "");
-
 			s = NET_BaseAdrToString(cl->netchan.remote_address);
-			Con_Printf ("  %-16s ", sv_use_dns.value ? SV_Resolve(s) : s);
-
-			switch (cl->state)
-			{
-				case cs_connected:
-				case cs_preconnected:
-					Con_Printf ("CONNECTING\n");
-					continue;
-				case cs_zombie:
-					Con_Printf ("ZOMBIE\n");
-					continue;
-			}
-			Con_Printf ("%4i %4i %5.1f\n",
-				(int)(1000 * cl->netchan.frame_rate),
-				(int)SV_CalcPing (cl),
-				100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence);
+			Con_Printf ("%-18s %4i %5i %6s %s\n%-36s\n", cl->name, (int)SV_CalcPing(cl),
+				(int)cl->edict->v.frags, Q_yelltext(va("%d", cl->userid)), 
+				cl->spectator ? " (s)" : "", sv_use_dns.value ? SV_Resolve(s) : s);
 
 			if (cl->realip.ip[0])
-				Con_Printf ("  %-16s\n", NET_BaseAdrToString (cl->realip));
-		}
-	} else {
-		Con_Printf ("frags id  address         name            rate ping drop  real ip\n");
-		Con_Printf ("----- --- --------------- --------------- ---- ---- ----- ---------------\n");
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-		{
-			if (!cl->state)
-				continue;
-			Con_Printf ("%5i %3i ", (int)cl->edict->v.frags,  cl->userid);
+				Con_Printf ("%-36s\n", NET_BaseAdrToString (cl->realip));
 
-			s = NET_BaseAdrToString(cl->netchan.remote_address);
-			Con_Printf ("%-15s %-15s ", sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
 			switch (cl->state)
 			{
 				case cs_connected:
@@ -1094,13 +1175,35 @@ void SV_Status_f (void)
 				case cs_zombie:
 					Con_Printf ("ZOMBIE\n");
 					continue;
+				default:;
 			}
-			Con_Printf ("%4i %4i %5.1f %s %s\n",
-				(int)(1000 * cl->netchan.frame_rate),
-				(int)SV_CalcPing (cl),
-				100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence,
-				cl->realip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
-				cl->spectator ? "(s)" : "");
+		}
+	} else {
+		Con_Printf ("name             ping frags   id   address                real ip\n");
+		Con_Printf ("---------------- ---- ----- ------ ---------------------- ---------------\n");
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		{
+			if (!cl->state)
+				continue;
+			s = NET_BaseAdrToString(cl->netchan.remote_address);
+			Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, (int)SV_CalcPing(cl),
+				(int)cl->edict->v.frags, cl->userid,
+				sv_use_dns.value ? SV_Resolve(s) : s);
+			if (cl->realip.ip[0])
+				Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
+			Con_Printf (cl->spectator ? "(s)\n" : "\n");
+
+			switch (cl->state)
+			{
+				case cs_connected:
+				case cs_preconnected:
+					Con_Printf ("CONNECTING\n");
+					continue;
+				case cs_zombie:
+					Con_Printf ("ZOMBIE\n");
+					continue;
+				default:;
+			}
 		}
 	}
 	Con_Printf ("\n");
@@ -1269,20 +1372,21 @@ void SV_Serverinfo_f (void)
 	{
 		Con_Printf ("Server info settings:\n");
 		Info_Print (svs.info);
+		Con_Printf ("[%d/%d]\n", strlen(svs.info), MAX_SERVERINFO_STRING);
 		return;
 	}
 
-  //bliP: sane serverinfo usage (mercury) -> 
-  if (Cmd_Argc() == 2)
-  {
-    s = Info_ValueForKey(svs.info, Cmd_Argv(1));
-    if (*s)
-      Con_Printf ("Serverinfo %s: \"%s\"\n", Cmd_Argv(1), s);
-    else
-      Con_Printf ("No such key %s\n", Cmd_Argv(1));
-    return;
-  }
-  //<-
+//bliP: sane serverinfo usage (mercury) -> 
+	if (Cmd_Argc() == 2)
+	{
+		s = Info_ValueForKey(svs.info, Cmd_Argv(1));
+		if (*s)
+			Con_Printf ("Serverinfo %s: \"%s\"\n", Cmd_Argv(1), s);
+		else
+			Con_Printf ("No such key %s\n", Cmd_Argv(1));
+		return;
+	}
+//<-
 
 	if (Cmd_Argc() != 3)
 	{
@@ -1312,12 +1416,11 @@ void SV_Serverinfo_f (void)
 
 /*
 ===========
-SV_Serverinfo_f
+SV_Localinfo_f
 
-  Examine or change the serverinfo string
+  Examine or change the localinfo string
 ===========
 */
-char *CopyString(char *s);
 void SV_Localinfo_f (void)
 {
 	char *s;
@@ -1326,21 +1429,21 @@ void SV_Localinfo_f (void)
 	{
 		Con_Printf ("Local info settings:\n");
 		Info_Print (localinfo);
+		Con_Printf ("[%d/%d]\n", strlen(localinfo), MAX_LOCALINFO_STRING);
 		return;
 	}
 
-  //bliP: sane localinfo usage (mercury) -> 
-  if (Cmd_Argc() == 2)
-  {
-    s = Info_ValueForKey(localinfo, Cmd_Argv(1));
-    if (*s)
-      Con_Printf ("Localinfo %s: \"%s\"\n", Cmd_Argv(1), s);
-    else
-      Con_Printf ("No such key %s\n", Cmd_Argv(1));
-    return;
-  }
-  //<-
-
+//bliP: sane localinfo usage (mercury) -> 
+	if (Cmd_Argc() == 2)
+	{
+		s = Info_ValueForKey(localinfo, Cmd_Argv(1));
+		if (*s)
+			Con_Printf ("Localinfo %s: \"%s\"\n", Cmd_Argv(1), s);
+		else
+			Con_Printf ("No such key %s\n", Cmd_Argv(1));
+		return;
+	}
+//<-
 
 	if (Cmd_Argc() != 3)
 	{
@@ -1615,33 +1718,6 @@ void SV_SnapAll_f (void)
 	}
 }
 
-//bliP: REMOVE ME REMOVE ME REMOVE ME REMOVE ME REMOVE ME ->
-void SV_LocalCommand_f (void)
-{
-  int i, c;
-  char str[1024];
-
-  if ((c = Cmd_Argc()) < 2) {	
-		Con_Printf("localcommand [command]\n");
-		return;
-	}
-
-  str[0] = 0;
-  for (i = 1; i < c; i++) {
-	  strlcat (str, Cmd_Argv(i), sizeof(str));
-	  if (i < c - 1)
-		  strlcat (str, " ", sizeof(str));
-  }
-  strlcat (str, "\n", sizeof(str));
-  str[sizeof(str) - 1] = 0;
-
-  if (system(str)) {
-    Con_Printf("command failed\n");
-  }
-}
-//REMOVE ME REMOVE ME REMOVE ME REMOVE ME REMOVE ME 
-//<-
-
 /*
 ==================
 SV_InitOperatorCommands
@@ -1679,7 +1755,7 @@ void SV_InitOperatorCommands (void)
 	
 	logs[CONSOLE_LOG].message_on	= "console";
 	logs[ERROR_LOG].message_on		= "errors";
-	logs[RCON_LOG].message_on		  = "rcon";
+	logs[RCON_LOG].message_on		= "rcon";
 	logs[TELNET_LOG].message_on		= "telnet";
 	logs[FRAG_LOG].message_on	  	= "frags";
 	logs[PLAYER_LOG].message_on		= "players"; //bliP: player logging
@@ -1723,9 +1799,9 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("penaltylist", SV_ListPenalty_f);
 	Cmd_AddCommand ("penaltyremove", SV_RemovePenalty_f);
 
-#ifndef WIN32
+#ifndef _WIN32
 	Cmd_AddCommand ("chmod", SV_ChmodFile_f);
-#endif
+#endif //_WIN32
 //<-
 	i = COM_CheckParm ("-enablelocalcommand");
 	if (i && i < com_argc)
@@ -1752,8 +1828,6 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("sv_gamedir", SV_Gamedir);
 	Cmd_AddCommand ("floodprot", SV_Floodprot_f);
 	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f);
-
-	
 
 	cl_warncmd.value = 1;
 }

@@ -139,90 +139,66 @@ Sys_listdir
 dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
 	static file_t list[MAX_DIRFILES];
-	dir_t	d;
-//	int	i;
-//	int	extsize;
-	DIR	*dir;
+	dir_t	dir;
+	int	i, extsize;
+	char	pathname[MAX_OSPATH];
+	DIR	*d;
 	DIR	*testdir; //bliP: list dir
 	struct dirent *oneentry;
-	char	pathname[MAX_OSPATH];
 	qboolean all;
 
 	memset(list, 0, sizeof(list));
-	memset(&d, 0, sizeof(d));
-	d.files = list;
-//	extsize = strlen(ext);
+	memset(&dir, 0, sizeof(dir));
+	dir.files = list;
+	extsize = strlen(ext);
 	all = !strncmp(ext, ".*", 3);
 
-	dir=opendir(path);
-	if (!dir) {
-		return d;
-	}
-
-	while (1)
+	if (!(d = opendir(path)))
+		return dir;
+	while ((oneentry = readdir(d)))
 	{
-		oneentry=readdir(dir);
-		if(!oneentry) 
-			break;
+		if (!strcmp(oneentry->d_name, ".") || !strcmp(oneentry->d_name, ".."))
+			continue;
+		if (( (i = strlen(oneentry->d_name)) < extsize ?
+		      1 : strcasecmp(oneentry->d_name + i - extsize, ext)
+		    ) && !all
+		   )
+				continue;
 
-    //bliP: list dir ->
-    snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
-    testdir = opendir(pathname);
-    if(testdir) {
-			d.numdirs++;
-			list[d.numfiles].isdir = true;
-      list[d.numfiles].size = 0;
-      list[d.numfiles].time = 0;
-      closedir(testdir);
-      if (!strcmp(oneentry->d_name, ".") || !strcmp(oneentry->d_name, ".."))
-        continue;
-		}
-    else {
-      list[d.numfiles].isdir = false;
-      list[d.numfiles].size = Sys_FileSize(pathname);
-      list[d.numfiles].time = Sys_FileTime(pathname);
-      d.size += list[d.numfiles].size;
-    } 
-/*#if 0
-		if (oneentry->d_type == DT_DIR || oneentry->d_type == DT_LNK)
+		snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
+		if ((testdir = opendir(pathname)))
 		{
-			d.numdirs++;
-			continue;
+			dir.numdirs++;
+			list[dir.numfiles].isdir = true;
+			list[dir.numfiles].size = 0;
+			list[dir.numfiles].time = 0;
+			closedir(testdir);
 		}
-#endif
+		else
+		{
+			list[dir.numfiles].isdir = false;
+			list[dir.numfiles].time = Sys_FileTime(pathname);
+			dir.size += (list[dir.numfiles].size = Sys_FileSize(pathname));
+		} 
+		strlcpy (list[dir.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
-		snprintf(pathname, MAX_OSPATH, "%s/%s", path, oneentry->d_name);
-		list[d.numfiles].size = Sys_FileSize(pathname);
-		list[d.numfiles].time = Sys_FileTime(pathname);
-		d.size += list[d.numfiles].size;
-*/
-    //<-
-
-		//i = strlen(oneentry->d_name);
-		//if (!all && (i < extsize || (strcasecmp(oneentry->d_name+i-extsize, ext))))
-		//	continue;
-		if (!all && !strstr(oneentry->d_name, ext))
-			continue;
-		
-		strlcpy (list[d.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
-
-		if (++d.numfiles == MAX_DIRFILES - 1)
+		if (++dir.numfiles == MAX_DIRFILES - 1)
 			break;
 	}
 
-	closedir(dir);
+	closedir(d);
 	switch (sort_type)
 	{
 		case SORT_NO: break;
 		case SORT_BY_DATE:
-			qsort((void *)list, d.numfiles, sizeof(file_t), Sys_compare_by_date);
+			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
 			break;
 		case SORT_BY_NAME:
-			qsort((void *)list, d.numfiles, sizeof(file_t), Sys_compare_by_name);
+			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_name);
 			break;
 	}
 
-	return d;
+	return dir;
 }
 
 /*
@@ -273,8 +249,9 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
+	extern char	chartbl2[];
 	va_list		argptr;
-	char		text[4096];
+	unsigned char	text[4096];
 	unsigned char	*p;
 
 	va_start (argptr,fmt);
@@ -286,27 +263,19 @@ void Sys_Printf (char *fmt, ...)
 	if (!(telnetport && telnet_connected && authenticated) && sys_nostdout.value)
 		return;
 
-	for (p = (unsigned char *)text; *p; p++) {
-		if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
+	for (p = text; *p; p++)
+	{
+		*p = chartbl2[*p];
+		if (telnetport && telnet_connected && authenticated)
 		{
-			if (telnetport && telnet_connected && authenticated)
-				write (telnet_iosock, va("[%02x]", *p), strlen (va("[%02x]", *p)));
-			if (!sys_nostdout.value)
-				fprintf(stdout, "[%02x]", *p);
+			write (telnet_iosock, p, 1);
+			if (*p == '\n') // demand for M$ WIN 2K telnet support
+				write (telnet_iosock, "\r", 1);
 		}
-		else
-		{
-			if (telnetport && telnet_connected && authenticated)
-			{
-				write (telnet_iosock, p, 1);
-				if (*p == '\n')
-					write (telnet_iosock, "\r", 1);
-					// demand for M$ WIN 2K telnet support
-			}
-			if (!sys_nostdout.value)
-				putc(*p, stdout);
-		}
+		if (!sys_nostdout.value)
+			putc(*p, stdout);
 	}
+
 	if (telnetport && telnet_connected && authenticated)
 		SV_Write_Log(TELNET_LOG, 3, text);
 	if (!sys_nostdout.value)
@@ -319,11 +288,11 @@ void Sys_Printf (char *fmt, ...)
 Sys_Quit
 ================
 */
-char	**_argv;
+char	*argv0;
 void Sys_Quit (qboolean restart)
 {
 	if (restart)
-		if (execv(_argv[0], _argv) == -1)
+		if (execv(argv0, com_argv) == -1)
 			Sys_Printf("Restart failed: %s\n", strerror(errno));
 	exit (0);		// appkit isn't running
 }
@@ -560,10 +529,11 @@ int main (int argc, char *argv[])
 	quakeparms_t	parms;
 
 //Added by VVD {
+	extern cvar_t	not_auth_timeout, auth_timeout, sys_select_timeout;
 	int	j, tempsock;
 	struct	sockaddr_in remoteaddr, remoteaddr_temp;
 	int	sockaddr_len = sizeof(struct sockaddr_in);
-	double	cur_time_not_auth = 0, not_auth_timeout_value, auth_timeout_value;
+	double	cur_time_not_auth;
 	uid_t   user_id;
 	gid_t   group_id;
 	struct passwd	*pw;
@@ -575,7 +545,7 @@ int main (int argc, char *argv[])
 	fd_set	fdset;
 	int	timeout_tv_usec;
 #endif
-	_argv = argv;
+	argv0 = argv[0];
 	telnet_connected = 0;
 
 	memset (&parms, 0, sizeof(parms));
@@ -650,8 +620,7 @@ int main (int argc, char *argv[])
 			group_id = Q_atoi(group_name);
 		else
 		{
-			gr = getgrnam(group_name);
-			if (gr == NULL)
+			if ((gr = getgrnam(group_name)) == NULL)
 				Sys_Printf("group \"%s\" unknown\n", group_name);
 			group_id = gr->gr_gid;
 		}
@@ -692,7 +661,6 @@ int main (int argc, char *argv[])
 //
 	oldtime = Sys_DoubleTime () - 0.1;
 #ifndef NEWWAY 
-	timeout_tv_usec = max(sv_mintic.value, sv_maxtic.value / 2) * 1000000.0;
 	while (1)
 	{
 	// select on the net socket and stdin
@@ -715,12 +683,10 @@ int main (int argc, char *argv[])
 					SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
 						inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
 				}
-				not_auth_timeout_value = Cvar_VariableValue("not_auth_timeout");
-				auth_timeout_value = Cvar_VariableValue("auth_timeout");
-				if ((!authenticated && not_auth_timeout_value &&
-					Sys_DoubleTime () - cur_time_not_auth > not_auth_timeout_value) ||
-					(authenticated && auth_timeout_value &&
-					Sys_DoubleTime () - cur_time_auth > auth_timeout_value))
+				if ((!authenticated && not_auth_timeout.value &&
+					realtime - cur_time_not_auth > not_auth_timeout.value) ||
+					(authenticated && auth_timeout.value &&
+					realtime - cur_time_auth > auth_timeout.value))
 				{
 					telnet_connected = 0;
 					write (telnet_iosock, "Time for authentication finished.\n", 34);
@@ -736,7 +702,7 @@ int main (int argc, char *argv[])
 //					if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 //					{
 						telnet_connected = 1;
-						cur_time_not_auth = Sys_DoubleTime ();
+						cur_time_not_auth = realtime;
 						SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 						write (telnet_iosock, "# ", 2);
 /*					}
@@ -757,8 +723,8 @@ int main (int argc, char *argv[])
 			}
 		}
 // Added by VVD }
-		timeout.tv_sec = 0;
-		timeout.tv_usec = timeout_tv_usec;
+		timeout.tv_sec  = ((int)sys_select_timeout.value) / 1000000;
+		timeout.tv_usec = ((int)sys_select_timeout.value) - timeout.tv_sec;
 
 		if (do_stdin)
 			FD_SET(0, &fdset);

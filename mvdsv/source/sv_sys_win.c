@@ -102,75 +102,48 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	dir_t	dir;
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
-	int		i, pos;//, size;
-	char	name[MAX_DEMO_NAME];
+	int		i, extsize;
 	qboolean all;
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
 
+	extsize = strlen(ext);
 	dir.files = list;
 	all = !strncmp(ext, ".*", 3);
 
-	h = FindFirstFile (va("%s/*.*", path), &fd);
-	if (h == INVALID_HANDLE_VALUE) {
+	if ((h = FindFirstFile (va("%s/*.*", path), &fd)) == INVALID_HANDLE_VALUE)
 		return dir;
-	}
+
 	do {
-    /*if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-      dir.numdirs++;
-      continue;
-    }*/
-
-    /*size = fd.nFileSizeLow;
-	  strlcpy(name, fd.cFileName, MAX_DEMO_NAME);
-		dir.size += size;*/
-
-		if (!all && !strstr(fd.cFileName, ext))
+		if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
 			continue;
+		if (( (i = strlen(fd.cFileName)) < extsize ?
+		      1 : strcasecmp(fd.cFileName + i - extsize, ext)
+		    ) && !all
+		   )
+				continue;
 
-    if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
-      continue;
-
-		/*for (s = fd.cFileName + strlen(fd.cFileName); s > fd.cFileName; s--) {
-			if (*s == '.')
-				break;
-		}
-
-		if (strcmp(s, ext))
-			continue;
-		*/
-
-		// inclusion sort
-		/*
-		for (i=0 ; i<numfiles ; i++)
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) //bliP: list dir
 		{
-			if (strcmp (name, list[i].name) < 0)
-				break;
+			dir.numdirs++;
+			list[dir.numfiles].isdir = true;
+			list[dir.numfiles].size = 0;
+			list[dir.numfiles].time = 0;
 		}
-		*/
+		else
+		{
+			list[dir.numfiles].isdir = false;
+			list[dir.numfiles].time = Sys_FileTime(va("%s/%s", path, fd.cFileName));
+			dir.size += (list[dir.numfiles].size = fd.nFileSizeLow);
+		}
+		strlcpy (list[dir.numfiles].name, fd.cFileName, sizeof(list[0].name));
 
-		dir.numfiles++;
-    dir.size += fd.nFileSizeLow;
-
-		i = dir.numfiles;
-		pos = i;
-		for (i=dir.numfiles-1 ; i>pos ; i--)
-			list[i] = list[i-1];
-
-		strlcpy (list[i].name, fd.cFileName, sizeof(list[i].name));
-    if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { //bliP: list dir
-      dir.numdirs++;
-      list[i].isdir = true;
-    }
-    else {
-      list[i].isdir = false;
-		  list[i].size = fd.nFileSizeLow;
-		  list[i].time = Sys_FileTime(name);
-    }
-		if (dir.numfiles == MAX_DIRFILES - 1)
+		if (++dir.numfiles == MAX_DIRFILES - 1)
 			break;
-	} while ( FindNextFile(h, &fd) );
+
+	} while (FindNextFile(h, &fd));
+
 	FindClose (h);
 
 	switch (sort_type)
@@ -191,19 +164,14 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 Sys_Exit
 ================
 */
-#ifdef _CONSOLE
-char	**_argv;
-#else
-char	*_argv[MAX_NUM_ARGVS];
-#endif
-
+char *argv0;
 void Sys_Exit(int code, qboolean restart)
 {
 #ifndef _CONSOLE
 	RemoveNotifyIcon();
 #endif
 	if (restart)
-		if (execv(_argv[0], _argv) == -1)
+		if (execv(argv0, com_argv) == -1)
 		{
 #ifdef _CONSOLE
 			if (!(sys_nostdout.value || isdaemon))
@@ -407,7 +375,7 @@ char *Sys_ConsoleInput (void)
 			len = strlen(t = Cvar_VariableString ("telnet_password"));
 			if (len && (authenticated = (!strncmp(text, t, min(sizeof(text), len + 1)))))
 			{
-				cur_time_auth = Sys_DoubleTime ();
+				cur_time_auth = realtime;
 				SV_Write_Log(TELNET_LOG, 1, "Authenticated: yes\n");
 				len = 0;
 				return "status";
@@ -450,20 +418,15 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
-/*#ifdef _CONSOLE
-	if (sys_nostdout.value && !(telnetport && telnet_connected && authenticated))
-		return;
-#endif*/
+	extern char	chartbl2[];
 	va_list		argptr;
-	char			text[MAXCMDBUF];
+	unsigned char	text[MAXCMDBUF];
 	unsigned char	*p;
 
-	if (
-#ifndef _CONSOLE
-		(
-#else
-		(sys_nostdout.value ||
-#endif
+	if ((
+#ifdef _CONSOLE
+		sys_nostdout.value ||
+#endif //_CONSOLE
 		isdaemon) && !(telnetport && telnet_connected && authenticated))
 		return;
 
@@ -473,33 +436,23 @@ void Sys_Printf (char *fmt, ...)
 
 #ifndef _CONSOLE
 	if (!isdaemon) ConsoleAddText(text);
-#endif
+#endif //_CONSOLE
 
-	for (p = (unsigned char *)text; *p; p++) {
-		if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
+	for (p = text; *p; p++)
+	{
+		*p = chartbl2[*p];
+		if (telnetport && telnet_connected && authenticated)
 		{
-			if (telnetport && telnet_connected && authenticated)
-				send (telnet_iosock, va("[%02x]", *p), strlen (va("[%02x]", *p)), 0);
-#ifdef _CONSOLE
-			if (!(sys_nostdout.value || isdaemon))
-				printf("[%02x]", *p);
-#endif //_CONSOLE
+			send (telnet_iosock, p, 1, 0);
+			if (*p == '\n') // demand for M$ WIN 2K telnet support
+				send (telnet_iosock, "\r", 1, 0);
 		}
-		else
-		{
-			if (telnetport && telnet_connected && authenticated)
-			{
-				send (telnet_iosock, p, 1, 0);
-				if (*p == '\n')
-					send (telnet_iosock, "\r", 1, 0);
-					// demand for M$ WIN 2K telnet support
-			}
 #ifdef _CONSOLE
-			if (!(sys_nostdout.value || isdaemon))
-				putc(*p, stdout);
+		if (!(sys_nostdout.value || isdaemon))
+			putc(*p, stdout);
 #endif //_CONSOLE
-		}
 	}
+
 	if (telnetport && telnet_connected && authenticated)
 		SV_Write_Log(TELNET_LOG, 3, text);
 #ifdef _CONSOLE
@@ -630,11 +583,10 @@ int main (int argc, char **argv)
 #endif
 	int				t;
 	int				sleep_msec;
-	_argv = argv;
 
 	GetConsoleTitle(title, sizeof(title));
 	COM_InitArgv (argc, argv);
-	
+	argv0 = com_argv[0];
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
@@ -731,30 +683,31 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	register int		sleep_msec;
 	
 //Added by VVD {
-	register int		j;
-	static int			tempsock;
+	extern cvar_t		not_auth_timeout, auth_timeout, sys_select_timeout;
+	static int			j, tempsock;
 	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
 	static int			sockaddr_len = sizeof(struct sockaddr_in);
-	static double		cur_time_not_auth, not_auth_timeout_value, auth_timeout_value;
+	static double		cur_time_not_auth;
+	char				*_argv[MAX_NUM_ARGVS];
 
 	// get the command line parameters
-	LPTSTR				argv2;
-	char				c = '"';
-	int					i;
-	argv2 = GetCommandLine();
-	if (argv2[0] == '"')
-		argv2++;
+	_argv[0] = GetCommandLine();
+	if (_argv[0][0] == '"')
+	{
+		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++);
+		argv0 = (char *)Q_Malloc(j);
+		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++)
+			argv0[j - 1] = _argv[0][j];
+		argv0[j] = 0;
+		if (_argv[0][j] == '"') _argv[0][j + 1] = 0;
+		parms.argc = 1;
+	}
 	else
-		c = ' ';
-
-	for (j = 0; argv2[j] != c && argv2[j]; j++);
-	_argv[0] = (char *)Q_Malloc (j + 1);
-	for (i = 0; i < j; i++)
-		_argv[0][i] = argv2[i];
-	_argv[0][j] = 0;
+	{
+		parms.argc = 0;
+		argv0 = lpCmdLine = _argv[0];
+	}
 //Added by VVD }
-
-	parms.argc = 1;
 
 	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS))
 	{
@@ -821,23 +774,19 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 // main loop
 //
 	oldtime = Sys_DoubleTime () - 0.1;
-	timeout.tv_sec = 0;
-	timeout.tv_usec = max(sv_mintic.value, sv_maxtic.value / 2) * 1000000.0;
 	while(1)
 	{
 		// get messeges sent to windows
 		if( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) )
-        {
-            if( !GetMessage( &msg, NULL, 0, 0 ) )
-            {
-                break;
-            }
-
-            if(!IsDialogMessage(DlgHwnd, &msg)) {
+		{
+			if( !GetMessage( &msg, NULL, 0, 0 ) )
+				break;
+			if(!IsDialogMessage(DlgHwnd, &msg))
+			{
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
-        }
+		}
 
 		CheckIdle();
 
@@ -872,12 +821,10 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 					SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
 						inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
 				}
-				not_auth_timeout_value = Cvar_VariableValue("not_auth_timeout");
-				auth_timeout_value = Cvar_VariableValue("auth_timeout");
-				if ((!authenticated && not_auth_timeout_value &&
-					Sys_DoubleTime () - cur_time_not_auth > not_auth_timeout_value) ||
-					(authenticated && auth_timeout_value &&
-					Sys_DoubleTime () - cur_time_auth > auth_timeout_value))
+				if (	(!authenticated && not_auth_timeout.value &&
+					realtime - cur_time_not_auth > not_auth_timeout.value) ||
+					(authenticated && auth_timeout.value &&
+					realtime - cur_time_auth > auth_timeout.value))
 				{
 					telnet_connected = 0;
 					send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
@@ -893,7 +840,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 //					if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 //					{
 						telnet_connected = 1;
-						cur_time_not_auth = Sys_DoubleTime ();
+						cur_time_not_auth = realtime;
 						SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 						send (telnet_iosock, "# ", 2, 0);
 /*					}
@@ -914,8 +861,8 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 			}
 		}
 // Added by VVD }
-//		timeout.tv_sec = 0;
-//		timeout.tv_usec = 100;
+		timeout.tv_sec  = ((int)sys_select_timeout.value) / 1000000;
+		timeout.tv_usec = ((int)sys_select_timeout.value) - timeout.tv_sec;
 
 		switch (select (j + 1, &fdset, NULL, NULL, &timeout))
 		{
