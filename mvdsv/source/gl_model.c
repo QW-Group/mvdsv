@@ -1252,10 +1252,10 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 		{	// duplicate the basic information
 			char	name[10];
 
-			sprintf (name, "*%i", i+1);
+			snprintf (name, sizeof(name), "*%i", i+1);
 			loadmodel = Mod_FindName (name);
 			*loadmodel = *mod;
-			strcpy (loadmodel->name, name);
+			strlcpy (loadmodel->name, name, MAX_QPATH);
 			mod = loadmodel;
 		}
 	}
@@ -1468,13 +1468,13 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			Mod_FloodFillSkin (skin, pheader->skinwidth, pheader->skinheight);
 
 			// save 8 bit texels for the player model to remap
-			if (!strcmp(loadmodel->name,"progs/player.mdl"))
+			if (!strncmp(loadmodel->name, "progs/player.mdl", sizeof("progs/player.mdl") + 1))
 			{
 				if (s > sizeof(player_8bit_texels))
 					Sys_Error ("Player skin too large");
 				memcpy (player_8bit_texels, (byte *)(pskintype + 1), s);
 			}
-			_snprintf (name, sizeof(name)-1, "%s_%i", loadmodel->name, i);
+			snprintf (name, sizeof(name)-1, "%s_%i", loadmodel->name, i);
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
@@ -1504,7 +1504,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			for (j=0 ; j<groupskins ; j++)
 			{
 					Mod_FloodFillSkin (skin, pheader->skinwidth, pheader->skinheight);
-					_snprintf (name, sizeof(name)-1, "%s_%i_%i", loadmodel->name, i, j);
+					snprintf (name, sizeof(name)-1, "%s_%i_%i", loadmodel->name, i, j);
 					pheader->gl_texturenum[i][j&3] = 
 						GL_LoadTexture (name, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), true, false, false);
@@ -1571,14 +1571,14 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 		for (len = com_filesize, p = buffer; len; len--, p++)
 			CRC_ProcessByte(&crc, *p);
 	
-		sprintf(st, "%d", (int) crc);
+		snprintf(st, sizeof(st), "%d", (int) crc);
 		Info_SetValueForKey (cls.userinfo, 
 			mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
 			st, MAX_INFO_STRING);
 
 		if (cls.state >= ca_connected) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-			sprintf(st, "setinfo %s %d", 
+			snprintf(st, sizeof(st), "setinfo %s %d", 
 				mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
 				(int)crc);
 			SZ_Print (&cls.netchan.message, st);
@@ -1768,7 +1768,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	sprintf (name, "%s_%i", loadmodel->name, framenum);
+	snprintf (name, sizeof(name), "%s_%i", loadmodel->name, framenum);
 	pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, true, false);
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);

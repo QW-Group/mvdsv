@@ -231,7 +231,7 @@ typedef struct
 } interpolate_t;
 
 #define	MAX_PROJECTILES	32
-
+#define SPRINT_BUF_LEN 1024
 typedef struct
 {
 	int			servercount;	// server identification for prespawns
@@ -320,7 +320,7 @@ typedef struct
 // all player information
 	player_info_t	players[MAX_CLIENTS];
 
-	char		sprint_buf[1024];	// Tonik
+	char		sprint_buf[SPRINT_BUF_LEN];	// Tonik
 
 	// interpolation stuff
 	interpolate_t	int_entities[MAX_PACKET_ENTITIES];

@@ -46,14 +46,14 @@ void Skin_Find (player_info_t *sc)
 	static char	*team = "";
 
 	if (allskins[0])
-		strcpy (name, allskins);
+		strlcpy (name, allskins, sizeof(name));
 	else
 	{
 		s = Info_ValueForKey (sc->userinfo, "skin");
 		if (s && s[0])
-			strcpy (name, s);
+			strlcpy (name, s, sizeof(name));
 		else
-			strcpy (name, baseskin.string);
+			strlcpy (name, baseskin.string, sizeof(name));
 	}
 
 	// ZQuake: check teamskin/enemyskin
@@ -78,18 +78,18 @@ void Skin_Find (player_info_t *sc)
 		if (cl_teamskin.string[0] && teamplay && team != NULL &&
 			!strcmp(sc->team, team))
 		{
-			Q_strncpyz (name, cl_teamskin.string, sizeof(name));
+			strlcpy (name, cl_teamskin.string, sizeof(name));
 		}
 		
 		if (cl_enemyskin.string[0] && (!teamplay || team == NULL ||
 			strcmp(sc->team, team)))
 		{
-			Q_strncpyz (name, cl_enemyskin.string, sizeof(name));
+			strlcpy (name, cl_enemyskin.string, sizeof(name));
 		}
 	}
 
 	if (strstr (name, "..") || *name == '.')
-		strcpy (name, "base");
+		strlcpy (name, "base", sizeof(name));
 
 	COM_StripExtension (name, name);
 
@@ -114,7 +114,7 @@ void Skin_Find (player_info_t *sc)
 	numskins++;
 
 	memset (skin, 0, sizeof(*skin));
-	Q_strncpyz (skin->name, name, sizeof(skin->name));
+	strlcpy (skin->name, name, sizeof(skin->name));
 }
 
 
@@ -151,12 +151,12 @@ byte *Skin_Cache (skin_t *skin)
 //
 // load the pic from disk
 //
-	sprintf (name, "skins/%s.pcx", skin->name);
+	snprintf (name, sizeof(name), "skins/%s.pcx", skin->name);
 	raw = COM_LoadTempFile (name);
 	if (!raw)
 	{
 		Con_Printf ("Couldn't load skin %s\n", name);
-		sprintf (name, "skins/%s.pcx", baseskin.string);
+		snprintf (name, sizeof(name), "skins/%s.pcx", baseskin.string);
 		raw = COM_LoadTempFile (name);
 		if (!raw)
 		{
@@ -338,6 +338,6 @@ Sets all skins to one specific one
 */
 void Skin_AllSkins_f (void)
 {
-	strcpy (allskins, Cmd_Argv(1));
+	strlcpy (allskins, Cmd_Argv(1), sizeof(allskins));
 	Skin_Skins_f ();
 }

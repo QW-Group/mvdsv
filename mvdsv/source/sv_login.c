@@ -130,11 +130,11 @@ void SV_LoadAccounts(void)
 	while (!feof(f))
 	{
 		memset(acc, 0, sizeof(account_t));
-
+// Is realy safe to use 'fscanf(f, "%s", s)'? FIXME!
 		fscanf(f, "%s", acc->login);
 		if (StringToFilter(acc->login, &acc->adress))
 		{
-			strcpy(acc->pass, acc->login);
+			strlcpy(acc->pass, acc->login, MAX_LOGINNAME);
 			acc->use = use_ip;
 			fscanf(f, "%s %d\n", acc->pass, &acc->state);
 		} else
@@ -158,7 +158,7 @@ void SV_LoadAccounts(void)
 			continue;
 
 		for (i = 0, acc = accounts; i < num_accounts; i++, acc++)
-			if ( (acc->use == use_log && !strcmp(acc->login, cl->login)) 
+			if ( (acc->use == use_log && !strncmp(acc->login, cl->login, CLIENT_LOGIN_LEN)) 
 				|| (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]))) )
 				break;
 
@@ -168,7 +168,7 @@ void SV_LoadAccounts(void)
 			{
 				cl->logged = i+1;
 				if (acc->use == use_ip)
-					Q_strncpyz(cl->login, acc->pass, sizeof(cl->login));
+					strlcpy(cl->login, acc->pass, CLIENT_LOGIN_LEN);
 
 				acc->inuse++;
 				continue;
@@ -260,11 +260,11 @@ void SV_CreateAccount_f(void)
 
 	// create an account
 	num_accounts++;
-	strcpy(accounts[spot].login, Cmd_Argv(1));
+	strlcpy(accounts[spot].login, Cmd_Argv(1), MAX_LOGINNAME);
 	if (Cmd_Argc() == 3)
-		strcpy(accounts[spot].pass, Cmd_Argv(2));
+		strlcpy(accounts[spot].pass, Cmd_Argv(2), MAX_LOGINNAME);
 	else
-		strcpy(accounts[spot].pass, Cmd_Argv(1));
+		strlcpy(accounts[spot].pass, Cmd_Argv(1), MAX_LOGINNAME);
 
 	accounts[spot].state = a_ok;
 	accounts[spot].use = use;
@@ -513,7 +513,7 @@ qboolean SV_Login(client_t *cl)
 	ip = va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]);
 	if ((cl->logged = checklogin(ip, ip, cl - svs.clients + 1, use_ip)) > 0)
 	{
-		strcpy(cl->login, accounts[cl->logged-1].pass);
+		strlcpy(cl->login, accounts[cl->logged-1].pass, CLIENT_LOGIN_LEN);
 		return true;
 	}
 
@@ -561,12 +561,12 @@ void SV_ParseLogin(client_t *cl)
 		pass = log;
 		log = cl->login;
 	} else {
-		Q_strncpyz(cl->login, log, sizeof(cl->login));
+		strlcpy(cl->login, log, CLIENT_LOGIN_LEN);
 	}
 
 	if (!*pass)
 	{
-		Q_strncpyz(cl->login, log, sizeof(cl->login));
+		strlcpy(cl->login, log, CLIENT_LOGIN_LEN);
 		MSG_WriteByte (&cl->netchan.message, svc_print);
 		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
 		MSG_WriteString (&cl->netchan.message, va("Password for %s:\n", cl->login));

@@ -306,9 +306,9 @@ void	VID_SetPalette (unsigned char *palette)
 			}
 			d_15to8table[i]=k;
 		}
-		sprintf(s, "%s/glquake", com_gamedir);
+		snprintf(s, sizeof(s), "%s/glquake", com_gamedir);
  		Sys_mkdir (s);
-		sprintf(s, "%s/glquake/15to8.pal", com_gamedir);
+		snprintf(s, sizeof(s), "%s/glquake/15to8.pal", com_gamedir);
 		if ((f = fopen(s, "wb")) != NULL) {
 			fwrite(d_15to8table, 1<<15, 1, f);
 			fclose(f);
@@ -669,7 +669,7 @@ void VID_Init(unsigned char *palette)
 
 	GL_Init();
 
-	sprintf (gldir, "%s/glquake", com_gamedir);
+	snprintf (gldir, MAX_OSPATH, "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);
 
 	VID_SetPalette(palette);

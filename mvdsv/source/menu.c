@@ -842,7 +842,7 @@ void M_Keys_Key (int k)
 		}
 		else if (k != '`')
 		{
-			sprintf (cmd, "bind %s \"%s\"\n", Key_KeynumToString (k), bindnames[keys_cursor][0]);			
+			snprintf (cmd, sizeof(cmd), "bind %s \"%s\"\n", Key_KeynumToString (k), bindnames[keys_cursor][0]);			
 			Cbuf_InsertText (cmd);
 		}
 		
@@ -1246,13 +1246,13 @@ void M_ScanSaves (void)
 	{
 		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
 		loadable[i] = false;
-		sprintf (name, "%s/s%i.sav", com_gamedir, i);
+		snprintf (name, MAX_OSPATH, "%s/s%i.sav", com_gamedir, i);
 		f = fopen (name, "r");
 		if (!f)
 			continue;
 		fscanf (f, "%i\n", &version);
 		fscanf (f, "%79s\n", name);
-		Q_strncpyz (m_filenames[i], name, sizeof(m_filenames[i]));
+		strlcpy (m_filenames[i], name, sizeof(m_filenames[i]));
 
 	// change _ back to space
 		for (j=0 ; j<SAVEGAME_COMMENT_LENGTH ; j++)
@@ -1543,7 +1543,7 @@ static void ReadDir (void)
 			type = 0;
 		}
 
-		Q_strncpyz (name, fname, MAX_DEMO_NAME);
+		strlcpy (name, fname, MAX_DEMO_NAME);
 
 		// inclusion sort
 		for (i=0 ; i<numfiles ; i++)
@@ -1607,7 +1607,7 @@ static char *toyellow (char *s)
 {
 	static char buf[20];
 
-	Q_strncpyz (buf, s, sizeof(buf));
+	strlcpy (buf, s, sizeof(buf));
 	for (s=buf ; *s ; s++)
 		if (*s >= '0' && *s <= '9')
 			*s = *s - '0' + 18;
@@ -1628,7 +1628,7 @@ void M_Demos_Draw (void)
 	d = dir + demo_base;
 	for (i=0, y=32 ; i<numfiles-demo_base && i<MAXLINES ; i++, y+=8, d++)
 	{
-		Q_strncpyz (str, d->name, sizeof(str));
+		strlcpy (str, d->name, sizeof(str));
 		if (d->type)
 			M_PrintWhite (24, y, str);
 		else
@@ -1773,8 +1773,8 @@ void M_Menu_Setup_f (void)
 	key_dest = key_menu;
 	m_state = m_setup;
 	m_entersound = true;
-	Q_strncpyz (setup_name, name.string, sizeof(setup_name));
-	Q_strncpyz (setup_team, team.string, sizeof(setup_team));
+	strlcpy (setup_name, name.string, sizeof(setup_name));
+	strlcpy (setup_team, team.string, sizeof(setup_team));
 	setup_top = setup_oldtop = (int)topcolor.value;
 	setup_bottom = setup_oldbottom = (int)bottomcolor.value;
 }
@@ -2081,7 +2081,7 @@ void M_ServerList_Key (key)
 		m_state = m_main;
 		M_ToggleMenu_f();
 		CL_Disconnect();
-		Q_strncpyz (cls.servername, slist[m_multip_cursor].server, sizeof(cls.servername));
+		strlcpy (cls.servername, slist[m_multip_cursor].server, sizeof(cls.servername));
 		CL_BeginServerConnect();
 		break;
 
@@ -2151,8 +2151,8 @@ void M_Menu_SEdit_f (void) {
 	m_entersound = true;
 	m_state = m_sedit;
 	sedit_state = 0;
-	Q_strncpyz (serv, slist[m_multip_cursor].server, sizeof(serv));
-	Q_strncpyz (desc, slist[m_multip_cursor].description, sizeof(desc));
+	strlcpy (serv, slist[m_multip_cursor].server, sizeof(serv));
+	strlcpy (desc, slist[m_multip_cursor].description, sizeof(desc));
 	serv_max = strlen(serv) > SERV_L ? strlen(serv) : SERV_L;
 	serv_min = serv_max - (SERV_L);
 	desc_max = strlen(desc) > DESC_L ? strlen(desc) : DESC_L;

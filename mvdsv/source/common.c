@@ -231,13 +231,78 @@ float Q_atof (char *str)
 	return val*sign;
 }
 
-
-void Q_strncpyz (char *dest, char *src, size_t size)
+#if defined(__linux__) || defined(_WIN32)
+size_t strlcpy(char *dst, char *src, size_t siz)
 {
-	strncpy (dest, src, size-1);
-	dest[size-1] = 0;
+        register char *d = dst;
+        register const char *s = src;
+        register size_t n = siz;
+
+        /* Copy as many bytes as will fit */
+        if (n != 0 && --n != 0) {
+                do {
+                        if ((*d++ = *s++) == 0)
+                                break;
+                } while (--n != 0);
+        }
+
+        /* Not enough room in dst, add NUL and traverse rest of src */
+        if (n == 0) {
+                if (siz != 0)
+                        *d = '\0';              /* NUL-terminate dst */
+                while (*s++)
+                        ;
+        }
+
+        return(s - src - 1);    /* count does not include NUL */
 }
 
+size_t strlcat(char *dst, char *src, size_t siz)
+{
+        register char *d = dst;
+        register const char *s = src;
+        register size_t n = siz;
+        size_t dlen;
+
+        /* Find the end of dst and adjust bytes left but don't go past end */
+        while (n-- != 0 && *d != '\0')
+                d++;
+        dlen = d - dst;
+        n = siz - dlen;
+
+        if (n == 0)
+                return(dlen + strlen(s));
+        while (*s != '\0') {
+                if (n != 1) {
+                        *d++ = *s;
+                        n--;
+                }
+                s++;
+        }
+        *d = '\0';
+
+        return(dlen + (s - src));       /* count does not include NUL */
+}
+char *strnstr(char *s, char *find, size_t slen)
+{
+        char c, sc;
+        size_t len;
+
+        if ((c = *find++) != '\0') {
+                len = strlen(find);
+                do {
+                        do {
+                                if ((sc = *s++) == '\0' || slen-- < 1)
+                                        return (NULL);
+                        } while (sc != c);
+                        if (len > slen)
+                                return (NULL);
+                } while (strncmp(s, find, len) != 0);
+                s--;
+        }
+        return ((char *)s);
+}
+#endif
 
 /*
 ============================================================================
@@ -800,12 +865,11 @@ void COM_FileBase (char *in, char *out)
 	;
 	
 	if (s-s2 < 2)
-		strcpy (out,"?model?");
+		strlcpy (out, "?model?", 8);
 	else
 	{
 		s--;
-		strncpy (out,s2+1, s-s2);
-		out[s-s2] = 0;
+		strlcpy (out, s2 + 1, s - s2);
 	}
 }
 
@@ -855,8 +919,6 @@ void COM_ForceExtension (char *path, char *extension)
 }
 
 //============================================================================
-
-#define MAX_COM_TOKEN	1024
 
 char	com_token[MAX_COM_TOKEN];
 int		com_argc;
@@ -1081,8 +1143,7 @@ char	*va(char *format, ...)
 	
 	index = (index + 1)&3;
 	va_start (argptr, format);
-	_vsnprintf (string[index], 1024, format,argptr);
-	string[index][1023] = 0;
+	vsnprintf (string[index], sizeof(string[index]), format, argptr);
 	va_end (argptr);
 
 	return string[index];
@@ -1227,8 +1288,7 @@ void COM_WriteFile (char *filename, void *data, int len)
 	FILE	*f;
 	char	name[MAX_OSPATH];
 	
-	_snprintf (name, MAX_OSPATH, "%s/%s", com_gamedir, filename);
-	name[MAX_OSPATH-1] = 0;
+	snprintf (name, MAX_OSPATH, "%s/%s", com_gamedir, filename);
 	
 	f = fopen (name, "wb");
 	if (!f) {
@@ -1349,8 +1409,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 		}
 		else
 		{		
-			_snprintf (netpath, sizeof(netpath), "%s/%s",search->filename, filename);
-			netpath[sizeof(netpath)-1] = 0;
+			snprintf (netpath, sizeof(netpath), "%s/%s",search->filename, filename);
 			
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1)
@@ -1544,13 +1603,13 @@ pack_t *COM_LoadPackFile (char *packfile)
 // parse the directory
 	for (i=0 ; i<numpackfiles ; i++)
 	{
-		strcpy (newfiles[i].name, info[i].name);
+		strlcpy (newfiles[i].name, info[i].name, MAX_QPATH);
 		newfiles[i].filepos = LittleLong(info[i].filepos);
 		newfiles[i].filelen = LittleLong(info[i].filelen);
 	}
 
 	pack = Z_Malloc (sizeof (pack_t));
-	strcpy (pack->filename, packfile);
+	strlcpy (pack->filename, packfile, MAX_OSPATH);
 	pack->handle = packhandle;
 	pack->numfiles = numpackfiles;
 	pack->files = newfiles;
@@ -1577,16 +1636,16 @@ void COM_AddGameDirectory (char *dir)
 	char			*p;
 
 	if ((p = strrchr(dir, '/')) != NULL)
-		strcpy(gamedirfile, ++p);
+		strlcpy(gamedirfile, ++p, MAX_OSPATH);
 	else
-		strcpy(gamedirfile, p);
-	strcpy (com_gamedir, dir);
+		strlcpy(gamedirfile, p, MAX_OSPATH);
+	strlcpy (com_gamedir, dir, MAX_OSPATH);
 
 //
 // add the directory to the search path
 //
 	search = Hunk_Alloc (sizeof(searchpath_t));
-	strcpy (search->filename, dir);
+	strlcpy (search->filename, dir, MAX_OSPATH);
 	search->next = com_searchpaths;
 	com_searchpaths = search;
 
@@ -1595,7 +1654,7 @@ void COM_AddGameDirectory (char *dir)
 //
 	for (i=0 ; ; i++)
 	{
-		sprintf (pakfile, "%s/pak%i.pak", dir, i);
+		snprintf (pakfile, MAX_OSPATH, "%s/pak%i.pak", dir, i);
 		pak = COM_LoadPackFile (pakfile);
 		if (!pak)
 			break;
@@ -1621,16 +1680,16 @@ void COM_Gamedir (char *dir)
 	pack_t			*pak;
 	char			pakfile[MAX_OSPATH];
 
-	if (strstr(dir, "..") || strstr(dir, "/")
-		|| strstr(dir, "\\") || strstr(dir, ":") )
+	if (strnstr(dir, "..", MAX_OSPATH) || strnstr(dir, "/", MAX_OSPATH)
+		|| strnstr(dir, "\\", MAX_OSPATH) || strnstr(dir, ":", MAX_OSPATH) )
 	{
 		Con_Printf ("Gamedir should be a single filename, not a path\n");
 		return;
 	}
 
-	if (!strcmp(gamedirfile, dir))
+	if (!strncmp(gamedirfile, dir, MAX_OSPATH))
 		return;		// still the same
-	strcpy (gamedirfile, dir);
+	strlcpy (gamedirfile, dir, MAX_OSPATH);
 
 	//
 	// free up any current game dir info
@@ -1653,16 +1712,16 @@ void COM_Gamedir (char *dir)
 	//
 	Cache_Flush ();
 
-	if (!strcmp(dir,"id1") || !strcmp(dir, "qw"))
+	if (!strncmp(dir, "id1", 4) || !strncmp(dir, "qw", 3))
 		return;
 
-	sprintf (com_gamedir, "%s/%s", com_basedir, dir);
+	snprintf (com_gamedir, MAX_OSPATH, "%s/%s", com_basedir, dir);
 
 	//
 	// add the directory to the search path
 	//
 	search = Z_Malloc (sizeof(searchpath_t));
-	strcpy (search->filename, com_gamedir);
+	strlcpy (search->filename, com_gamedir, MAX_OSPATH);
 	search->next = com_searchpaths;
 	com_searchpaths = search;
 
@@ -1671,7 +1730,7 @@ void COM_Gamedir (char *dir)
 	//
 	for (i=0 ; ; i++)
 	{
-		sprintf (pakfile, "%s/pak%i.pak", com_gamedir, i);
+		snprintf (pakfile, MAX_OSPATH, "%s/pak%i.pak", com_gamedir, i);
 		pak = COM_LoadPackFile (pakfile);
 		if (!pak)
 			break;
@@ -1697,9 +1756,9 @@ void COM_InitFilesystem (void)
 //
 	i = COM_CheckParm ("-basedir");
 	if (i && i < com_argc-1)
-		Q_strncpyz (com_basedir, com_argv[i+1], sizeof(com_basedir));
+		strlcpy (com_basedir, com_argv[i + 1], MAX_OSPATH);
 	else
-		Q_strncpyz (com_basedir, host_parms.basedir, sizeof(com_basedir));
+		strlcpy (com_basedir, host_parms.basedir, MAX_OSPATH);
 
 	i = strlen(com_basedir)-1;
 	if ((i >= 0) && (com_basedir[i]=='/' || com_basedir[i]=='\\'))
@@ -1749,7 +1808,7 @@ char *Info_ValueForKey (char *s, char *key)
 		o = pkey;
 		while (*s != '\\')
 		{
-			if (!*s)
+			if (!*s || o >= pkey + sizeof(pkey) - 1)
 				return "";
 			*o++ = *s++;
 		}
@@ -1760,13 +1819,13 @@ char *Info_ValueForKey (char *s, char *key)
 
 		while (*s != '\\' && *s)
 		{
-			if (!*s)
+			if (!*s || o >= value[valueindex] + sizeof(value[valueindex]) - 1)
 				return "";
 			*o++ = *s++;
 		}
 		*o = 0;
 
-		if (!strcmp (key, pkey) )
+		if (!strncmp (key, pkey, sizeof(pkey)) )
 			return value[valueindex];
 
 		if (!*s)
@@ -1799,8 +1858,8 @@ char *Info_KeyNameForKeyNum (char *s, int key)
 		o = pkey[keyindex];
 		while (*s != '\\')
 		{
-			if (!*s)
-				return "";
+			if (!*s || o >= pkey[keyindex] + sizeof(pkey[keyindex]) - 1)
+				return NULL;
 			*o++ = *s++;
 		}
 		*o = 0;
@@ -1840,7 +1899,7 @@ void Info_RemoveKey (char *s, char *key)
 		o = pkey;
 		while (*s != '\\')
 		{
-			if (!*s)
+			if (!*s || o >= pkey + sizeof(pkey) - 1)
 				return;
 			*o++ = *s++;
 		}
@@ -1850,15 +1909,15 @@ void Info_RemoveKey (char *s, char *key)
 		o = value;
 		while (*s != '\\' && *s)
 		{
-			if (!*s)
+			if (!*s || o >= value + sizeof(value) - 1)
 				return;
 			*o++ = *s++;
 		}
 		*o = 0;
 
-		if (!strcmp (key, pkey) )
+		if (!strncmp (key, pkey, sizeof(pkey)) )
 		{
-			strcpy (start, s);	// remove this part
+			strlcpy (start, s, strlen(s) + 1);	// remove this part
 			return;
 		}
 
@@ -1884,7 +1943,7 @@ void Info_RemovePrefixedKeys (char *start, char prefix)
 		o = pkey;
 		while (*s != '\\')
 		{
-			if (!*s)
+			if (!*s || o >= pkey + sizeof(pkey) - 1)
 				return;
 			*o++ = *s++;
 		}
@@ -1894,7 +1953,7 @@ void Info_RemovePrefixedKeys (char *start, char prefix)
 		o = value;
 		while (*s != '\\' && *s)
 		{
-			if (!*s)
+			if (!*s || o >= value + sizeof(value) - 1)
 				return;
 			*o++ = *s++;
 		}
@@ -1915,7 +1974,7 @@ void Info_RemovePrefixedKeys (char *start, char prefix)
 
 void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 {
-	char	new[1024], *v;
+	char	_new[1024], *v;
 	int		c;
 #ifdef SERVERONLY
 	extern cvar_t sv_highchars;
@@ -1944,7 +2003,8 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 		// key exists, make sure we have enough room for new value, if we don't,
 		// don't change it!
 		if (strlen(value) - strlen(v) + strlen(s) > maxsize) {
-			Con_Printf ("Info string length exceeded\n");
+			Con_Printf ("Info string length exceeded (change: key = %s, old value = %s, new value = %s, strlen info = %d, maxsize = %d)\n",
+						key, v, value, strlen(s), maxsize);
 			return;
 		}
 	}
@@ -1952,17 +2012,18 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 	if (!value || !strlen(value))
 		return;
 
-	sprintf (new, "\\%s\\%s", key, value);
+	snprintf (_new, sizeof(_new), "\\%s\\%s", key, value);
 
-	if ((int)(strlen(new) + strlen(s)) > maxsize)
+	if (strlen(_new) + strlen(s) > maxsize)
 	{
-		Con_Printf ("Info string length exceeded\n");
+		Con_Printf ("Info string length exceeded (add: key = %s, value = %s, strlen info = %d, maxsize = %d)\n",
+					key, value, strlen(s), maxsize);
 		return;
 	}
 
 	// only copy ascii values
 	s += strlen(s);
-	v = new;
+	v = _new;
 	while (*v)
 	{
 		c = (unsigned char)*v++;

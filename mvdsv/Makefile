@@ -37,7 +37,7 @@ MESA_DIR=/usr/local/src/Mesa-3.0
 
 
 CC=gcc
-BASE_CFLAGS=-Wall -Dstricmp=strcasecmp -D_snprintf=snprintf -D_vsnprintf=vsnprintf -I$(CLIENT_DIR) -I$(SERVER_DIR)
+BASE_CFLAGS=-Wall -Dstricmp=strcasecmp -I$(CLIENT_DIR) -I$(SERVER_DIR)
 DEBUG_CFLAGS=$(BASE_CFLAGS) -g
 ifeq ($(ARCH),axp)
 RELEASE_CFLAGS=$(BASE_CFLAGS) -ffast-math -funroll-loops \

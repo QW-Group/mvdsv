@@ -71,6 +71,8 @@ char *Macro_Location_f (void);
 void TP_FindModelNumbers (void);
 
 #define MAX_LOC_NAME 32
+#define	TVARS_TOOKITEMS_LEN 32
+#define	TVARS_LAST_TOOKTRIGGER 32
 
 // this structure is cleared after entering a new map
 typedef struct tvars_s {
@@ -80,8 +82,8 @@ typedef struct tvars_s {
 	float	deathtrigger_time;
 	float	f_version_reply_time;
 	char	lastdeathloc[MAX_LOC_NAME];
-	char	tookitem[32];
-	char	last_tooktrigger[32];
+	char	tookitem[TVARS_TOOKITEMS_LEN];
+	char	last_tooktrigger[TVARS_LAST_TOOKTRIGGER];
 } tvars_t;
 
 tvars_t vars;
@@ -128,43 +130,43 @@ static char	macro_buf[MAX_MACRO_VALUE];
 
 char *Macro_Health_f (void)
 {
-	sprintf(macro_buf, "%i", cl.stats[STAT_HEALTH]);
+	snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_HEALTH]);
 	return macro_buf;
 }
 
 char *Macro_Armor_f (void)
 {
-	sprintf(macro_buf, "%i", cl.stats[STAT_ARMOR]);
+	snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_ARMOR]);
 	return macro_buf;
 }
 
 char *Macro_Shells_f (void)
 {
-	sprintf(macro_buf, "%i", cl.stats[STAT_SHELLS]);
+	snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_SHELLS]);
 	return macro_buf;
 }
 
 char *Macro_Nails_f (void)
 {
-	sprintf(macro_buf, "%i", cl.stats[STAT_NAILS]);
+	snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_NAILS]);
 	return macro_buf;
 }
 
 char *Macro_Rockets_f (void)
 {
-	sprintf(macro_buf, "%i", cl.stats[STAT_ROCKETS]);
+	snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_ROCKETS]);
 	return macro_buf;
 }
 
 char *Macro_Cells_f (void)
 {
-	sprintf(macro_buf, "%i", cl.stats[STAT_CELLS]);
+	snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_CELLS]);
 	return macro_buf;
 }
 
 char *Macro_Ammo_f (void)
 {
-	sprintf(macro_buf, "%i", cl.stats[STAT_AMMO]);
+	snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_AMMO]);
 	return macro_buf;
 }
 
@@ -249,19 +251,19 @@ char *Macro_BestAmmo_f (void)
 	switch (_Macro_BestWeapon())
 	{
 	case IT_SHOTGUN: case IT_SUPER_SHOTGUN: 
-		sprintf(macro_buf, "%i", cl.stats[STAT_SHELLS]);
+		snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_SHELLS]);
 		return macro_buf;
 
 	case IT_NAILGUN: case IT_SUPER_NAILGUN:
-		sprintf(macro_buf, "%i", cl.stats[STAT_NAILS]);
+		snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_NAILS]);
 		return macro_buf;
 
 	case IT_GRENADE_LAUNCHER: case IT_ROCKET_LAUNCHER:
-		sprintf(macro_buf, "%i", cl.stats[STAT_ROCKETS]);
+		snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_ROCKETS]);
 		return macro_buf;
 
 	case IT_LIGHTNING:
-		sprintf(macro_buf, "%i", cl.stats[STAT_CELLS]);
+		snprintf(macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_CELLS]);
 		return macro_buf;
 
 	default:
@@ -273,8 +275,8 @@ char *Macro_BestAmmo_f (void)
 char *Macro_BestWeaponAndAmmo_f (void)
 {
 	char buf[MAX_MACRO_VALUE];
-	sprintf (buf, "%s:%s", Macro_BestWeapon_f(), Macro_BestAmmo_f());
-	strcpy (macro_buf, buf);
+	snprintf (buf, MAX_MACRO_VALUE, "%s:%s", Macro_BestWeapon_f(), Macro_BestAmmo_f());
+	strlcpy (macro_buf, buf, MAX_MACRO_VALUE);
 	return macro_buf;
 }
 
@@ -297,18 +299,18 @@ char *Macro_Powerups_f (void)
 	macro_buf[0] = 0;
 
 	if (cl.stats[STAT_ITEMS] & IT_QUAD)
-		strcpy(macro_buf, "quad");
+		strlcpy(macro_buf, "quad", MAX_MACRO_VALUE);
 
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
 		if (macro_buf[0])
-			strcat(macro_buf, "/");
-		strcat(macro_buf, "pent");
+			strlcat(macro_buf, "/", MAX_MACRO_VALUE);
+		strlcat(macro_buf, "pent", MAX_MACRO_VALUE);
 	}
 
 	if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
 		if (macro_buf[0])
-			strcat(macro_buf, "/");
-		strcat(macro_buf, "ring");
+			strlcat(macro_buf, "/", MAX_MACRO_VALUE);
+		strlcat(macro_buf, "ring", MAX_MACRO_VALUE);
 	}
 
 	effects = cl.frames[cl.parsecount&UPDATE_MASK].playerstate[cl.playernum].effects;
@@ -317,8 +319,8 @@ char *Macro_Powerups_f (void)
 		/*&& (effects & EF_DIMLIGHT))*/) )
 	{
 		if (macro_buf[0])
-			strcat(macro_buf, "/");
-		strcat(macro_buf, "flag");
+			strlcat(macro_buf, "/", MAX_MACRO_VALUE);
+		strlcat(macro_buf, "flag", MAX_MACRO_VALUE);
 	}
 
 	return macro_buf;
@@ -366,14 +368,14 @@ char *Macro_Date_f (void)
 // returns the last item picked up
 char *Macro_Item_f (void)
 {
-	strcpy (macro_buf, vars.tookitem);
+	strlcpy (macro_buf, vars.tookitem, MAX_MACRO_VALUE);
 	return macro_buf;
 }
 
 // returns the last item that triggered f_took
 char *Macro_Took_f (void)
 {
-	strcpy (macro_buf, vars.last_tooktrigger);
+	strlcpy (macro_buf, vars.last_tooktrigger, MAX_MACRO_VALUE);
 	return macro_buf;
 }
 
@@ -471,24 +473,24 @@ char *TP_ParseMacroString (char *string)
 				if (!macro_string[0])
 					macro_string = "a";
 				if (cl.stats[STAT_ARMOR] < 30)
-					sprintf (mbuf, "\x10%s:%i\x11", macro_string, cl.stats[STAT_ARMOR]);
+					snprintf (mbuf, MAX_MACRO_STRING, "\x10%s:%i\x11", macro_string, cl.stats[STAT_ARMOR]);
 				else
-					sprintf (mbuf, "%s:%i", macro_string, cl.stats[STAT_ARMOR]);
+					snprintf (mbuf, MAX_MACRO_STRING, "%s:%i", macro_string, cl.stats[STAT_ARMOR]);
 				macro_string = mbuf;
 				break;
 				
 			case 'h':
 				if (cl.stats[STAT_HEALTH] >= 50)
-					sprintf (macro_buf, "%i", cl.stats[STAT_HEALTH]);
+					snprintf (macro_buf, MAX_MACRO_VALUE, "%i", cl.stats[STAT_HEALTH]);
 				else
-					sprintf (macro_buf, "\x10%i\x11", cl.stats[STAT_HEALTH]);
+					snprintf (macro_buf, MAX_MACRO_VALUE, "\x10%i\x11", cl.stats[STAT_HEALTH]);
 				macro_string = macro_buf;
 				break;
 				
 			case 'P':
 				macro_string = Macro_Powerups_f();
 				if (macro_string[0])
-					sprintf (mbuf, "\x10%s\x11", macro_string);
+					snprintf (mbuf, MAX_MACRO_VALUE, "\x10%s\x11", macro_string);
 				else
 					mbuf[0] = 0;
 				macro_string = mbuf;
@@ -502,7 +504,7 @@ char *TP_ParseMacroString (char *string)
 			}
 			if (i + strlen(macro_string) >= MAX_MACRO_STRING-1)
 				Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
-			strcpy (&buf[i], macro_string);
+			strlcpy (buf + i, macro_string, MAX_MACRO_STRING - i);
 			i += strlen(macro_string);
 			s += 4;	// skip %[<char>]
 			continue;
@@ -534,7 +536,7 @@ char *TP_ParseMacroString (char *string)
 			}
 			if (i + strlen(macro_string) >= MAX_MACRO_STRING-1)
 				Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
-			strcpy (&buf[i], macro_string);
+			strlcpy (buf + i, macro_string, MAX_MACRO_STRING - i);
 			i += strlen(macro_string);
 			s += 2;	// skip % and letter
 			continue;
@@ -619,15 +621,15 @@ void TP_LoadLocFile (char *path, qboolean quiet)
 	if (!*path)
 		return;
 
-	strcpy (locname, "locs/");
+	strlcpy (locname, "locs/", MAX_OSPATH);
 	if (strlen(path) + strlen(locname) + 2+4 > MAX_OSPATH)
 	{
 		Con_Printf ("TP_LoadLocFile: path name > MAX_OSPATH\n");
 		return;
 	}
-	strcat (locname, path);
-	if (!strstr(locname, "."))	
-		strcat (locname, ".loc");	// Add default extension
+	strlcat (locname, path, MAX_OSPATH);
+	if (!strnstr(locname, ".", MAX_OSPATH))	
+		strlcat (locname, ".loc", MAX_OSPATH);	// Add default extension
 
 	mark = Hunk_LowMark ();
 	buf = (char *) COM_LoadHunkFile (locname);
@@ -793,9 +795,9 @@ char *Macro_Location_f (void)
 
 =============================================================================
 */
-
+#define	MSG_TRIGGER_NAME_LEN	32
 typedef struct msg_trigger_s {
-	char	name[32];
+	char	name[MSG_TRIGGER_NAME_LEN];
 	char	string[64];
 	int		level;
 	struct msg_trigger_s *next;
@@ -808,7 +810,7 @@ msg_trigger_t *TP_FindTrigger (char *name)
 	msg_trigger_t *t;
 
 	for (t=msg_triggers; t; t=t->next)
-		if (!strcmp(t->name, name))
+		if (!strncmp(t->name, name, MSG_TRIGGER_NAME_LEN))
 			return t;
 
 	return NULL;
@@ -865,11 +867,11 @@ void TP_MsgTrigger_f (void)
 			trig = Z_Malloc (sizeof(msg_trigger_t));
 			trig->next = msg_triggers;
 			msg_triggers = trig;
-			strcpy (trig->name, name);
+			strlcpy (trig->name, name, MSG_TRIGGER_NAME_LEN);
 			trig->level = PRINT_HIGH;
 		}
 
-		strcpy (trig->string, Cmd_Argv(2));
+		strlcpy (trig->string, Cmd_Argv(2), MSG_TRIGGER_NAME_LEN);
 		if (c == 5 && !Q_strcasecmp (Cmd_Argv(3), "-l")) {
 			trig->level = Q_atoi (Cmd_Argv(4));
 			if ((unsigned)trig->level > PRINT_CHAT)
@@ -1052,13 +1054,13 @@ char *TP_EnemyTeam ()
 	char		myteam[MAX_INFO_STRING];
 	static char	enemyteam[MAX_INFO_STRING];
 
-	strcpy (myteam, Info_ValueForKey(cls.userinfo, "team"));
+	strlcpy (myteam, Info_ValueForKey(cls.userinfo, "team"), MAX_INFO_STRING);
 
 	for (i = 0; i < MAX_CLIENTS ; i++) {
 		if (cl.players[i].name[0] && !cl.players[i].spectator)
 		{
-			strcpy (enemyteam, Info_ValueForKey(cl.players[i].userinfo, "team"));
-			if (strcmp(myteam, enemyteam) != 0)
+			strlcpy (enemyteam, Info_ValueForKey(cl.players[i].userinfo, "team"), MAX_INFO_STRING);
+			if (strncmp(myteam, enemyteam, MAX_INFO_STRING) != 0)
 				return enemyteam;
 		}
 	}
@@ -1069,7 +1071,7 @@ char *TP_PlayerName ()
 {
 	static char	myname[MAX_INFO_STRING];
 
-	strcpy (myname, Info_ValueForKey(cl.players[cl.playernum].userinfo, "name"));
+	strlcpy (myname, Info_ValueForKey(cl.players[cl.playernum].userinfo, "name"), MAX_INFO_STRING);
 	return myname;
 }
 
@@ -1077,7 +1079,7 @@ char *TP_PlayerTeam ()
 {
 	static char	myteam[MAX_INFO_STRING];
 
-	strcpy (myteam, Info_ValueForKey(cl.players[cl.playernum].userinfo, "team"));
+	strlcpy (myteam, Info_ValueForKey(cl.players[cl.playernum].userinfo, "team"), MAX_INFO_STRING);
 	return myteam;
 }
 
@@ -1092,8 +1094,8 @@ char *TP_EnemyName ()
 	for (i = 0; i < MAX_CLIENTS ; i++) {
 		if (cl.players[i].name[0] && !cl.players[i].spectator)
 		{
-			strcpy (enemyname, Info_ValueForKey(cl.players[i].userinfo, "name"));
-			if (strcmp(enemyname, myname) != 0)
+			strlcpy (enemyname, Info_ValueForKey(cl.players[i].userinfo, "name"), MAX_INFO_STRING);
+			if (strncmp(enemyname, myname, MAX_INFO_STRING) != 0)
 				return enemyname;
 		}
 	}
@@ -1132,7 +1134,7 @@ void TP_TeamColor_f (void)
 		return;
 	}
 
-	if (!strcmp(Cmd_Argv(1), "off"))
+	if (!strncmp(Cmd_Argv(1), "off", 4))
 	{
 		cl_teamtopcolor = -1;
 		for (i = 0; i < MAX_CLIENTS; i++)
@@ -1233,15 +1235,15 @@ void TP_NewMap ()
 	TP_FindModelNumbers ();
 
 	COM_StripExtension (COM_SkipPath (cl.worldmodel->name), mapname);
-	if (strcmp(mapname, last_map))
+	if (strncmp(mapname, last_map, MAX_QPATH))
 	{	// map name has changed
 		loc_numentries = 0;	// clear loc file
 		if (cl_loadlocs.value && !cls.demoplayback ) {
 			char locname[MAX_OSPATH];
-			_snprintf (locname, MAX_OSPATH, "%s.loc", mapname);
+			snprintf (locname, MAX_OSPATH, "%s.loc", mapname);
 			TP_LoadLocFile (locname, true);
 		}
-		strcpy (last_map, mapname);
+		strlcpy (last_map, mapname, MAX_QPATH);
 		Cvar_SetROM (&cl_mapname, mapname);
 	}
 
@@ -1335,13 +1337,13 @@ void TP_TookTrigger_f (void)
 	if (c == 1)
 	{
 		if (!pkflags)
-			strcpy (str, "nothing");
+			strlcpy (str, "nothing", sizeof(str));
 		for (i=0 ; i<MAX_PKFLAGS ; i++)
 			if (pkflags & (1<<i))
 			{
 				if (*str)
-					strcat (str, " ");
-				strcat (str, pknames[i]);
+					strlcat (str, " ", sizeof(str));
+				strlcat (str, pknames[i], sizeof(str));
 			}
 		Con_Printf ("%s\n", str);
 		return;
@@ -1571,12 +1573,12 @@ static int CountTeammates ()
 
 static void ExecTookTrigger (char *s, int flag)
 {
-	strcpy (vars.tookitem, s);
+	strlcpy (vars.tookitem, s, TVARS_TOOKITEMS_LEN);
 	if (pkflags & (1<<flag))
 	{
 		if (CountTeammates () > 0)
 		{
-			strcpy (vars.last_tooktrigger, s);
+			strlcpy (vars.last_tooktrigger, s, TVARS_LAST_TOOKTRIGGER);
 			TP_ExecTrigger ("f_took");
 		}
 	}
@@ -1690,7 +1692,7 @@ void TP_StatChanged (int stat, int value)
 		}
 		if (vars.health > 0) {		// We just died
 			vars.deathtrigger_time = realtime;
-			strcpy (vars.lastdeathloc, Macro_Location_f());
+			strlcpy (vars.lastdeathloc, Macro_Location_f(), MAX_LOC_NAME);
 			if (!cl.spectator)
 				TP_ExecTrigger ("f_death");
 		}

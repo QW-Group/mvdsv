@@ -55,6 +55,17 @@ cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 
 cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
+cvar_t	telnet_password = {"telnet_password", ""}; // password for telnet login
+cvar_t	telnet_log_level = {"telnet_log_level", "0"}; // loging level telnet console
+cvar_t	frag_log_type = {"frag_log_type", "0"};
+//	frag log type:
+//		0 - old style (  qwsv - v0.165)
+//		1 - new style (v0.168 - v0.171)
+cvar_t	not_auth_timeout = {"not_auth_timeout", "10"};
+// if password not inputed (telnet_password) in "n" seconds, then server refuse connection
+cvar_t	auth_timeout = {"auth_timeout", "3600"};
+// server refuse connection in "n" seconds after authentication comleted
+// If set to 0, then no this timeout
 
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
@@ -114,16 +125,14 @@ cvar_t	version = {"version", "QWExtended " QWE_VERSION, CVAR_ROM};
 
 cvar_t	hostname = {"hostname","unnamed",CVAR_SERVERINFO};
 
-FILE	*sv_logfile;
-FILE	*sv_fraglogfile;
-FILE	*sv_errorlogfile;
-FILE	*sv_rconlogfile;
+log_t	logs[MAX_LOG];
 
 qboolean sv_error = 0;
 
 void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void Master_Shutdown (void);
 
+int sv_port, telnetport;
 //============================================================================
 
 qboolean ServerPaused(void)
@@ -141,28 +150,17 @@ Quake calls this before calling Sys_Quit or Sys_Error
 */
 void SV_Shutdown (void)
 {
+	int		i;
 	Master_Shutdown ();
-	if (sv_logfile)
+	if (telnetport)
+		SV_Write_Log(TELNET_LOG, 1, "Server shutdown.\n");
+	for (i = CONSOLE_LOG; i < MAX_LOG; ++i)
 	{
-		fclose (sv_logfile);
-		sv_logfile = NULL;
-	}
-	if (sv_fraglogfile)
-	{
-		fclose (sv_fraglogfile);
-		sv_logfile = NULL;
-	}
-
-	if (sv_errorlogfile)
-	{
-		fclose (sv_errorlogfile);
-		sv_errorlogfile = NULL;
-	}
-
-	if (sv_rconlogfile)
-	{
-		fclose (sv_rconlogfile);
-		sv_rconlogfile = NULL;
+		if (logs[i].sv_logfile)
+		{
+			fclose (logs[i].sv_logfile);
+			logs[i].sv_logfile = NULL;
+		}
 	}
 	if (sv.demorecording)
 		SV_Stop_f();
@@ -192,7 +190,7 @@ void SV_Error (char *error, ...)
 	inerror = true;
 
 	va_start (argptr,error);
-	vsprintf (string,error,argptr);
+	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 
 	Con_Printf ("SV_Error: %s\n",string);
@@ -361,7 +359,7 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	MSG_WriteByte (buf, i);
 	MSG_WriteFloat (buf, realtime - client->connection_started);
 
-	strcpy (info, client->userinfoshort);
+	strlcpy (info, client->userinfoshort, MAX_INFO_STRING);
 	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 	MSG_WriteByte (buf, svc_updateuserinfo);
@@ -480,7 +478,7 @@ void SVC_Log (void)
 	else
 		seq = -1;
 
-	if (seq == svs.logsequence-1 || !sv_fraglogfile)
+	if (seq == svs.logsequence-1 || !logs[FRAG_LOG].sv_logfile)
 	{	// they already have this data, or we aren't logging frags
 		data[0] = A2A_NACK;
 		NET_SendPacket (net_serversocket, 1, data, net_from);
@@ -489,8 +487,8 @@ void SVC_Log (void)
 
 	Con_DPrintf ("sending log %i to %s\n", svs.logsequence-1, NET_AdrToString(net_from));
 
-	sprintf (data, "stdlog %i\n", svs.logsequence-1);
-	strcat (data, (char *)svs.log_buf[((svs.logsequence-1)&1)]);
+	snprintf (data, MAX_DATAGRAM + 64, "stdlog %i\n", svs.logsequence-1);
+	strlcat (data, (char *)svs.log_buf[((svs.logsequence-1)&1)], MAX_DATAGRAM + 64);
 
 	NET_SendPacket (net_serversocket, strlen(data)+1, data, net_from);
 }
@@ -614,7 +612,7 @@ void SVC_DirectConnect (void)
 	challenge = atoi(Cmd_Argv(3));
 
 	// note an extra byte is needed to replace spectator key
-	Q_strncpyz (userinfo, Cmd_Argv(4), sizeof(userinfo)-1);
+	strlcpy (userinfo, Cmd_Argv(4), sizeof(userinfo)-1);
 	if (!ValidateUserInfo(userinfo)) {
 		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nInvalid userinfo. Restart your qwcl\n", A2C_PRINT);
 		return;
@@ -704,7 +702,7 @@ void SVC_DirectConnect (void)
 			if (*q > 31 && *q <= 127)
 				*p++ = *q;
 	} else
-		Q_strncpyz (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
+		strlcpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
 
 	// if there is already a slot for this ip, drop it
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
@@ -894,12 +892,8 @@ void SVC_RemoteCommand (void)
 
 
 	if (!Rcon_Validate ()) {
-		if (sv_rconlogfile) {
-			fprintf(sv_rconlogfile, "Bad rcon from %s:\n%s\n"
-			, NET_AdrToString (net_from), net_message.data+4);
-			fflush (sv_rconlogfile);
-
-		}
+		SV_Write_Log(RCON_LOG, 1, va("Bad rcon from %s:\n%s\n",
+							NET_AdrToString (net_from), net_message.data+4));
 
 		Con_Printf ("Bad rcon from %s: %s\n"
 			, NET_AdrToString (net_from), net_message.data+4);
@@ -916,11 +910,8 @@ void SVC_RemoteCommand (void)
 			*hide++ = '*';
 		}
 
-		if (sv_rconlogfile) {
-			fprintf(sv_rconlogfile, "Rcon from %s: %s\n"
-			, NET_AdrToString (net_from), net_message.data+4);
-			fflush (sv_rconlogfile);
-		}
+		SV_Write_Log(RCON_LOG, 1, va("Rcon from %s: %s\n",
+							NET_AdrToString (net_from), net_message.data+4));
 
 		Con_Printf ("Rcon from %s:\n%s\n"
 			, NET_AdrToString (net_from), net_message.data+4);
@@ -931,8 +922,8 @@ void SVC_RemoteCommand (void)
 
 		for (i=2 ; i<Cmd_Argc() ; i++)
 		{
-			strcat (remaining, Cmd_Argv(i) );
-			strcat (remaining, " ");
+			strlcat (remaining, Cmd_Argv(i), sizeof(remaining));
+			strlcat (remaining,         " ", sizeof(remaining));
 		}
 
 		Cmd_ExecuteString (remaining);
@@ -1234,7 +1225,7 @@ void SV_WriteIPVIP_f (void)
 	byte	b[4];
 	int		i;
 
-	sprintf (name, "%s/vip_ip.cfg", com_gamedir);
+	snprintf (name, MAX_OSPATH, "%s/vip_ip.cfg", com_gamedir);
 
 	Con_Printf ("Writing %s.\n", name);
 
@@ -1346,7 +1337,7 @@ void SV_WriteIP_f (void)
 	byte	b[4];
 	int		i;
 
-	sprintf (name, "%s/listip.cfg", com_gamedir);
+	snprintf (name, MAX_OSPATH, "%s/listip.cfg", com_gamedir);
 
 	Con_Printf ("Writing %s.\n", name);
 
@@ -1378,7 +1369,7 @@ void SV_SendBan (void)
 	data[0] = data[1] = data[2] = data[3] = 0xff;
 	data[4] = A2C_PRINT;
 	data[5] = 0;
-	strcat (data, "\nbanned.\n");
+	strlcat (data, "\nbanned.\n", sizeof(data));
 	
 	NET_SendPacket (net_serversocket, strlen(data), data, net_from);
 }
@@ -1780,9 +1771,9 @@ void SV_CheckVars (void)
 	if (strcmp(password.string, pw) ||
 		strcmp(spectator_password.string, spw) || strcmp(vip_password.string, vspw))
 	{
-		Q_strncpyz (pw, password.string, sizeof(pw));
-		Q_strncpyz (spw, spectator_password.string, sizeof(spw));
-		Q_strncpyz (vspw, vip_password.string, sizeof(vspw));
+		strlcpy (pw, password.string, MAX_INFO_STRING);
+		strlcpy (spw, spectator_password.string, MAX_INFO_STRING);
+		strlcpy (vspw, vip_password.string, MAX_INFO_STRING);
 		Cvar_Set (&password, pw);
 		Cvar_Set (&spectator_password, spw);
 		Cvar_Set (&vip_password, vspw);
@@ -1996,6 +1987,14 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_cpserver);
 	Cvar_RegisterVariable (&rcon_password);
 	Cvar_RegisterVariable (&password);
+//Added by VVD {
+	Cvar_RegisterVariable (&telnet_password);
+	Cvar_RegisterVariable (&telnet_log_level);
+	Cvar_RegisterVariable (&frag_log_type);
+	Cvar_RegisterVariable (&not_auth_timeout);
+	Cvar_RegisterVariable (&auth_timeout);
+//	logs[TELNET_LOG].log_level = Cvar_VariableValue("telnet_log_level");
+//Added by VVD }
 	Cvar_RegisterVariable (&spectator_password);
 	Cvar_RegisterVariable (&vip_password);
 
@@ -2078,7 +2077,7 @@ void SV_InitLocal (void)
 	Cmd_AddCommand ("demoInfo", SV_DemoInfo_f);
 
 	for (i=0 ; i<MAX_MODELS ; i++)
-		sprintf (localmodels[i], "*%i", i);
+		snprintf (localmodels[i], MODEL_NAME_LEN, "*%i", i);
 
 	Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*version", va("%4.2f", QW_VERSION), MAX_SERVERINFO_STRING);
@@ -2136,7 +2135,7 @@ void Master_Heartbeat (void)
 			active++;
 
 	svs.heartbeat_sequence++;
-	sprintf (string, "%c\n%i\n%i\n", S2M_HEARTBEAT,
+	snprintf (string, sizeof(string), "%c\n%i\n%i\n", S2M_HEARTBEAT,
 		svs.heartbeat_sequence, active);
 
 
@@ -2161,7 +2160,7 @@ void Master_Shutdown (void)
 	char		string[2048];
 	int			i;
 
-	sprintf (string, "%c\n", S2M_SHUTDOWN);
+	snprintf (string, sizeof(string), "%c\n", S2M_SHUTDOWN);
 
 	// send to group master
 	for (i=0 ; i<MAX_MASTERS ; i++)
@@ -2204,14 +2203,14 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 		val = Info_ValueForKey (cl->userinfo, "name");
 
 		// trim user name
-		Q_strncpyz (newname, val, sizeof(newname));
+		strlcpy (newname, val, sizeof(newname));
 
 		for (p = newname; (*p == ' ' || *p == '\r' || *p == '\n') && *p; p++)
 			;
 
 		if (p != newname && !*p) {
 			//white space only
-			strcpy(newname, "unnamed");
+			strlcpy(newname, "unnamed", sizeof(newname));
 			p = newname;
 		}
 
@@ -2254,7 +2253,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 						p = val + 4;
 				}
 
-				sprintf(newname, "(%d)%-.40s", dupc++, p);
+				snprintf(newname, sizeof(newname), "(%d)%-.40s", dupc++, p);
 				Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING);
 				val = Info_ValueForKey (cl->userinfo, "name");
 			} else
@@ -2278,11 +2277,11 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 				SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n", cl->name, val);
 		}
 
-		Q_strncpyz (cl->name, val, sizeof(cl->name));
+		strlcpy (cl->name, val, sizeof(cl->name));
 	}
 
 	// team
-	Q_strncpyz (cl->team, Info_ValueForKey (cl->userinfo, "team"), sizeof(cl->team));
+	strlcpy (cl->team, Info_ValueForKey (cl->userinfo, "team"), sizeof(cl->team));
 
 	// rate
 	if (cl->download) {
@@ -2309,22 +2308,32 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 SV_InitNet
 ====================
 */
-int sv_port;
 void SV_InitNet (void)
 {
 	int	p;
 
 	sv_port = PORT_SERVER;
+
 	p = COM_CheckParm ("-port");
-	if (p && p < com_argc)
+	if (p && p + 1 < com_argc)
 	{
-		sv_port = atoi(com_argv[p+1]);
+		sv_port = atoi(com_argv[p + 1]);
 		Con_Printf ("Port: %i\n", sv_port);
 	}
-	sv_port = NET_Init (0, sv_port);
+	sv_port = NET_Init (0, sv_port, 0);
+
+	p = COM_CheckParm ("-telnetport");
+	if (p && p + 1 < com_argc)
+	{
+		telnetport = atoi(com_argv[p + 1]);
+		Con_Printf ("Telnet port: %i\n", telnetport);
+	}
+	else
+		telnetport = sv_port;
+	if (telnetport)
+		telnetport = NET_Init (0, 0, telnetport);
 
 	Netchan_Init ();
-
 	// heartbeats will always be sent to the id master
 	svs.last_heartbeat = -99999;		// send immediately
 //	NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
@@ -2332,6 +2341,7 @@ void SV_InitNet (void)
 #if defined (_WIN32) && !defined(_CONSOLE) && defined(SERVERONLY)
 	SetWindowText_(va("mvdsv:%d - QuakeWorld server", sv_port));
 #endif
+
 }
 
 
@@ -2364,6 +2374,7 @@ void SV_Init (quakeparms_t *parms)
 	SV_InitNet ();
 
 	SV_InitLocal ();
+
 	Sys_Init ();
 	Pmove_Init ();
 
@@ -2394,6 +2405,12 @@ void SV_Init (quakeparms_t *parms)
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute ();
 
+	if (telnetport)
+	{
+		SV_Write_Log(TELNET_LOG, 1, "============================================\n");
+		SV_Write_Log(TELNET_LOG, 1, va("mvdsv %s started\n", QWE_VERSION));
+	}
+
 	SV_Map(true);
 
 // if a map wasn't specified on the command line, spawn start map
@@ -2404,4 +2421,60 @@ void SV_Init (quakeparms_t *parms)
 
 	if (sv.state == ss_dead)
 		SV_Error ("Couldn't spawn a server");
+}
+
+
+/*
+============
+SV_TimeOfDay
+============
+*/
+void SV_TimeOfDay(date_t *date)
+{
+	struct tm *newtime;
+	time_t long_time;
+	
+	time( &long_time );
+	newtime = localtime( &long_time );
+
+	date->day = newtime->tm_mday;
+	date->mon = newtime->tm_mon;
+	date->year = newtime->tm_year + 1900;
+	date->hour = newtime->tm_hour;
+	date->min = newtime->tm_min;
+	date->sec = newtime->tm_sec;
+	strftime( date->str, 128,
+         "%a %b %d, %H:%M:%S %Y", newtime);
+}
+
+/*
+============
+SV_Write_Log
+============
+*/
+void SV_Write_Log(int sv_log, int level, char *msg)
+{
+	static date_t date;
+	if (!logs[sv_log].sv_logfile) return;
+	if (sv_log == TELNET_LOG)
+		logs[sv_log].log_level = Cvar_VariableValue("telnet_log_level");
+	if (logs[sv_log].log_level < level) return;
+
+	SV_TimeOfDay(&date);
+	if (sv_log == FRAG_LOG)
+	{
+		if (!fprintf(logs[sv_log].sv_logfile, "%s", msg))
+			Sys_Error("Can't write in %s log file: "/*%s/ */"%sN.log.\n",
+						/*com_gamedir,*/ logs[sv_log].message_on,
+						logs[sv_log].file_name);
+	}
+	else
+	{
+		if (!fprintf(logs[sv_log].sv_logfile, "[%s].[%d] %s", date.str, level, msg))
+			Sys_Error("Can't write in %s log file: %s/%s%i.log.\n",
+						com_gamedir, logs[sv_log].message_on,
+						logs[sv_log].file_name, sv_port);
+	}
+	fflush(logs[sv_log].sv_logfile);
+	return;
 }

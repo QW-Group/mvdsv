@@ -197,7 +197,7 @@ void CL_SendConnectPacket (void)
 	cls.qport = Cvar_VariableValue("qport");
 
 //	Con_Printf ("Connecting to %s...\n", cls.servername);
-	sprintf (data, "\xff\xff\xff\xff" "connect %i %i %i \"%s\"\n",
+	snprintf (data, sizeof(data), "\xff\xff\xff\xff" "connect %i %i %i \"%s\"\n",
 		PROTOCOL_VERSION, cls.qport, cls.challenge, cls.userinfo);
 	NET_SendPacket (net_clientsocket, strlen(data), data, adr);
 }
@@ -237,7 +237,7 @@ void CL_CheckForResend (void)
 	connect_time = realtime+t2-t1;	// for retransmit requests
 
 	Con_Printf ("Connecting to %s...\n", cls.servername);
-	sprintf (data, "\xff\xff\xff\xff" "getchallenge\n");
+	snprintf (data, sizeof(data), "\xff\xff\xff\xff" "getchallenge\n");
 	NET_SendPacket (net_clientsocket, strlen(data), data, adr);
 }
 
@@ -267,7 +267,7 @@ void CL_Connect_f (void)
 
 	CL_Disconnect ();
 
-	Q_strncpyz (cls.servername, server, sizeof(cls.servername));
+	strlcpy (cls.servername, server, sizeof(cls.servername), MAX_OSPATH);
 	CL_BeginServerConnect();
 }
 
@@ -341,7 +341,7 @@ void CL_Disconnect (void)
 			CL_Stop_f ();
 
 		final[0] = clc_stringcmd;
-		strcpy (final+1, "drop");
+		strlcpy (final+1, "drop", sizeof(final) - 1);
 		Netchan_Transmit (&cls.netchan, 6, final);
 		Netchan_Transmit (&cls.netchan, 6, final);
 		Netchan_Transmit (&cls.netchan, 6, final);
@@ -393,7 +393,7 @@ void CL_NextDemo (void)
 		}
 	}
 
-	sprintf (str,"playdemo %s\n", cls.demos[cls.demonum]);
+	snprintf (str, sizeof(str), "playdemo %s\n", cls.demos[cls.demonum]);
 	Cbuf_InsertText (str);
 	cls.demonum++;
 }
@@ -484,7 +484,7 @@ void CL_ConnectionlessPacket (void)
 #endif
 		s = MSG_ReadString ();
 
-		Q_strncpyz (cmdtext, s, sizeof(cmdtext));
+		strlcpy (cmdtext, s, sizeof(cmdtext));
 
 		s = MSG_ReadString ();
 
@@ -764,7 +764,7 @@ void Host_EndGame (char *message, ...)
 	char		string[1024];
 	
 	va_start (argptr,message);
-	vsprintf (string,message,argptr);
+	vsnprintf (string, sizeof(string), message, argptr);
 	va_end (argptr);
 	Con_Printf ("\n===========================\n");
 	Con_Printf ("Host_EndGame: %s\n",string);
@@ -793,7 +793,7 @@ void Host_Error (char *error, ...)
 	inerror = true;
 	
 	va_start (argptr,error);
-	vsprintf (string,error,argptr);
+	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 	Con_Printf ("Host_Error: %s\n",string);
 	

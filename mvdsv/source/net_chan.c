@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <stdlib.h>
+
 #include "quakedef.h"
 
 #ifdef _WIN32
@@ -88,15 +90,18 @@ Netchan_Init
 */
 void Netchan_Init (void)
 {
-	int		port;
+	int		port = 0xffff;
 
 	// pick a port value that should be nice and random
+	srand((unsigned)time(NULL));
+	port &= rand();
+/*
 #ifdef _WIN32
 	port = ((int)(timeGetTime()*1000) * time(NULL)) & 0xffff;
 #else
 	port = ((int)(getpid()+getuid()*1000) * time(NULL)) & 0xffff;
 #endif
-
+*/
 	Cvar_RegisterVariable (&showpackets);
 	Cvar_RegisterVariable (&showdrop);
 	Cvar_RegisterVariable (&qport);
@@ -141,10 +146,10 @@ Sends a text message in an out-of-band datagram
 void Netchan_OutOfBandPrint (int net_socket, netadr_t adr, char *format, ...)
 {
 	va_list		argptr;
-	static char		string[8192];		// ??? why static?
+	static char		string[8192];		// ??? why static? - make program look big :-D
 	
 	va_start (argptr, format);
-	vsprintf (string, format,argptr);
+	vsnprintf (string, sizeof(string), format, argptr);
 	va_end (argptr);
 
 

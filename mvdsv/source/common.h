@@ -33,7 +33,6 @@ typedef enum {false, true}	qboolean;
 #define	MAX_LOCALINFO_STRING	32768
 
 //============================================================================
-
 typedef struct sizebuf_s
 {
 	qboolean	allowoverflow;	// if false, do a Sys_Error
@@ -134,24 +133,31 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 #ifdef _WIN32
 
-#define Q_strcasecmp(s1, s2) _stricmp((s1), (s2))
-#define Q_strncasecmp(s1, s2, n) _strnicmp((s1), (s2), (n))
+#define Q_strcasecmp(s1, s2)		_stricmp  ((s1),   (s2))
+#define Q_strncasecmp(s1, s2, n)	_strnicmp ((s1),   (s2),   (n))
+#define snprintf					_snprintf
+#define vsnprintf					_vsnprintf
 
 #else
 
-#define Q_strcasecmp(s1, s2) strcasecmp((s1), (s2))
-#define Q_strncasecmp(s1, s2, n) strncasecmp((s1), (s2), (n))
+#define Q_strcasecmp(s1, s2)		strcasecmp((s1), (s2))
+#define Q_strncasecmp(s1, s2, n)	strncasecmp((s1), (s2), (n))
 
 #endif
 
-int	Q_atoi (char *str);
-float Q_atof (char *str);
+#if defined(__linux__) || defined(_WIN32)
+size_t strlcpy (char *dst, char *src, size_t siz);
+size_t strlcat (char *dst, char *src, size_t siz);
+char  *strnstr (char *s, char *find, size_t slen);
+#endif
 
-void Q_strncpyz (char *dest, char *src, size_t size);
+int	Q_atoi (char *str);
+float	Q_atof (char *str);
 
 //============================================================================
 
-extern	char		com_token[1024];
+#define MAX_COM_TOKEN	1024
+extern	char		com_token[MAX_COM_TOKEN];
 extern	qboolean	com_eof;
 
 char *COM_Parse (char *data);

@@ -1002,7 +1002,7 @@ char *VID_ModeInfo (int modenum)
 
 	if (modenum == 0)
 	{
-		sprintf (modestr, "%d x %d, %d bpp",
+		snprintf (modestr, sizeof(modestr), "%d x %d, %d bpp",
 				 vid.width, vid.height, modes[current_mode].bytesperpixel*8);
 		return (modestr);
 	}

@@ -782,7 +782,7 @@ void CL_Record_f (void)
 	if (cls.demorecording)
 		CL_Stop_f();
   
-	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
+	snprintf (name, MAX_OSPATH, "%s/%s", com_gamedir, Cmd_Argv(1));
 
 //
 // open the demo file
@@ -832,13 +832,13 @@ void CL_EasyRecord_f (void)
 	if (cls.demorecording)
 		CL_Stop_f();
 
-/// FIXME: check buffer sizes!!!
+/// FIXME: check buffer sizes!!! - FIXED
 
 	if (c == 2)
-		sprintf (name, "%s", Cmd_Argv(1));
+		snprintf (name, sizeof(name), "%s", Cmd_Argv(1));
 	else if (cl.spectator) {
 		// FIXME: if tracking a player, use his name
-		sprintf (name, "spec_%s_%s",
+		snprintf (name, sizeof(name), "spec_%s_%s",
 			TP_PlayerName(),
 			TP_MapName());
 	} else {
@@ -848,7 +848,7 @@ void CL_EasyRecord_f (void)
 			&& i >= 3)
 		{
 			// Teamplay
-			sprintf (name, "%s_%s_vs_%s_%s",
+			snprintf (name, sizeof(name), "%s_%s_vs_%s_%s",
 				TP_PlayerName(),
 				TP_PlayerTeam(),
 				TP_EnemyTeam(),
@@ -856,20 +856,20 @@ void CL_EasyRecord_f (void)
 		} else {
 			if (i == 2) {
 				// Duel
-				sprintf (name, "%s_vs_%s_%s",
+				snprintf (name, sizeof(name), "%s_vs_%s_%s",
 					TP_PlayerName(),
 					TP_EnemyName(),
 					TP_MapName());
 			}
 			else if (i > 2) {
 				// FFA
-				sprintf (name, "%s_ffa_%s",
+				snprintf (name, sizeof(name), "%s_ffa_%s",
 					TP_PlayerName, 
 					TP_MapName());
 			}
 			else {
 				// one player
-				sprintf (name, "%s_%s",
+				snprintf (name, sizeof(name), "%s_%s",
 					TP_PlayerName(),
 					TP_MapName());
 			}
@@ -886,17 +886,17 @@ void CL_EasyRecord_f (void)
 			*p = '_';
 	}
 
-	Q_strncpyz (name, va("%s/%s", com_gamedir, name), MAX_OSPATH);
+	strlcpy (name, va("%s/%s", com_gamedir, name), MAX_OSPATH);
 
 // find a filename that doesn't exist yet
-	strcpy (name2, name);
+	strlcpy (name2, name, sizeof(name2));
 	COM_ForceExtension (name2, ".qwd");
 	f = fopen (name2, "rb");
 	if (f) {
 		i = 0;
 		do {
 			fclose (f);
-			strcpy (name2, va("%s_%02i", name, i));
+			strlcpy (name2, va("%s_%02i", name, i), sizeof(name2));
 			COM_ForceExtension (name2, ".qwd");
 			f = fopen (name2, "rb");
 			i++;
@@ -945,7 +945,7 @@ void CL_ReRecord_f (void)
 	if (cls.demorecording)
 		CL_Stop_f();
   
-	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
+	snprintf (name, MAX_OSPATH, "%s/%s", com_gamedir, Cmd_Argv(1));
 
 //
 // open the demo file
@@ -1045,12 +1045,12 @@ void PlayQWZDemo (void)
 	name = Cmd_Argv(1);
 
 	if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3))
-		Q_strncpyz (qwz_name, va("%s/%s", com_basedir, name+3), sizeof(qwz_name));
+		strlcpy (qwz_name, va("%s/%s", com_basedir, name+3), sizeof(qwz_name));
 	else
 		if (name[0] == '/' || name[0] == '\\')
-			Q_strncpyz (qwz_name, va("%s/%s", com_gamedir, name+1), sizeof(qwz_name));
+			strlcpy (qwz_name, va("%s/%s", com_gamedir, name+1), sizeof(qwz_name));
 		else
-			Q_strncpyz (qwz_name, va("%s/%s", com_gamedir, name), sizeof(qwz_name));
+			strlcpy (qwz_name, va("%s/%s", com_gamedir, name), sizeof(qwz_name));
 
 	// check if the file exists
 	cls.demofile = fopen (qwz_name, "rb");
@@ -1061,18 +1061,18 @@ void PlayQWZDemo (void)
 	}
 	fclose (cls.demofile);
 	
-	Q_strncpyz (tempqwd_name, qwz_name, sizeof(tempqwd_name)-4);
+	strlcpy (tempqwd_name, qwz_name, sizeof(tempqwd_name) - 4);
 #if 0
 	// the right way
-	strcpy (tempqwd_name + strlen(tempqwd_name) - 4, ".qwd");
+	strlcpy (tempqwd_name + strlen(tempqwd_name) - 4, ".qwd", sizeof(tempqwd_name) - strlen(tempqwd_name) + 4);
 #else
 	// the way Qizmo does it, sigh
-	p = strstr (tempqwd_name, ".qwz");
+	p = strnstr (tempqwd_name, ".qwz", sizeof(tempqwd_name));
 	if (!p)
-		p = strstr (tempqwd_name, ".QWZ");
+		p = strnstr (tempqwd_name, ".QWZ", sizeof(tempqwd_name));
 	if (!p)
 		p = tempqwd_name + strlen(tempqwd_name);
-	strcpy (p, ".qwd");
+	strlcpy (p, ".qwd", sizeof(tempqwd_name) - (tempqwd_name - p));
 #endif
 
 	cls.demofile = fopen (tempqwd_name, "rb");
@@ -1093,7 +1093,7 @@ void PlayQWZDemo (void)
 	si.wShowWindow = SW_HIDE;
 	si.dwFlags = STARTF_USESHOWWINDOW;
 	
-	Q_strncpyz (cmdline, va("%s/%s/qizmo.exe -D %s", com_basedir,
+	strlcpy (cmdline, va("%s/%s/qizmo.exe -D %s", com_basedir,
 		qizmo_dir.string, qwz_name), sizeof(cmdline));
 	
 	if (!CreateProcess (NULL, cmdline, NULL, NULL,
@@ -1148,7 +1148,7 @@ void CL_PlayDemo_f (void)
 //
 // open the demo file
 //
-	Q_strncpyz (name, Cmd_Argv(1), sizeof(name)-4);
+	strlcpy (name, Cmd_Argv(1), sizeof(name)-4);
 
 	nextdemotime = 0;
 

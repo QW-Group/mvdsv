@@ -163,7 +163,7 @@ void Cvar_Set (cvar_t *var, char *value)
 	Z_Free (var->string);	// free the old value string
 	
 	var->string = Z_Malloc (strlen(value)+1);
-	strcpy (var->string, value);
+	strlcpy (var->string, value, strlen(value) + 1);
 	var->value = Q_atof (var->string);
 
 #if defined(SERVERONLY)
@@ -171,6 +171,7 @@ void Cvar_Set (cvar_t *var, char *value)
 	{
 		if (strcmp(var->string, Info_ValueForKey (svs.info, var->name)))
 		{
+//			Con_Printf("var->name = %s, value = %s, var->string = %s\n", var->name, value, var->string);
 			Info_SetValueForKey (svs.info, var->name, var->string, MAX_SERVERINFO_STRING);
 			SV_SendServerInfoChange(var->name, var->string);
 		}
@@ -220,7 +221,7 @@ void Cvar_SetValue (cvar_t *var, float value)
 	char	val[32];
 	int	i;
 	
-	sprintf (val, "%f", value);
+	snprintf (val, sizeof(val), "%f", value);
 	for (i=strlen(val)-1 ; i>0 && val[i]=='0' ; i--)
 		val[i] = 0;
 	if (val[i] == '.')
@@ -263,7 +264,7 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	cvar_vars = variable;
 
 // copy the value off, because future sets will Z_Free it
-	strcpy (value, variable->string);
+	strlcpy (value, variable->string, sizeof(value));
 	variable->string = Z_Malloc (1);	
 	
 // set it through the function to be consistent
@@ -301,8 +302,8 @@ qboolean Cvar_Command (void)
 	for (i=1 ; i < c ; i++)
 	{
 		if (i > 1)
-			strcat (string, " ");
-		strcat (string, Cmd_Argv(i));
+			strlcat (string, " ", sizeof(string));
+		strlcat (string, Cmd_Argv(i), sizeof(string));
 	}
 
 	Cvar_Set (v, string);
@@ -398,9 +399,9 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	cvar_hash[key] = v;
 
 	v->name = Z_Malloc(strlen(name)+1);
-	strcpy (v->name, name);
+	strlcpy (v->name, name, strlen(name) + 1);
 	v->string = Z_Malloc (strlen(string)+1);
-	strcpy (v->string, string);
+	strlcpy (v->string, string, strlen(string) + 1);
 	v->flags = cvarflags;
 	v->value = Q_atof (v->string);
 
