@@ -778,13 +778,16 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	if (buf->cursize + length > buf->maxsize)
 	{
 		if (!buf->allowoverflow)
-			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%i/%i/%i)", buf->cursize, length, buf->maxsize);
+			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%i/%i/%i)",
+					buf->cursize, length, buf->maxsize);
 
 		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i/%i is > full buffer size", length, buf->maxsize);
+			Sys_Error ("SZ_GetSpace: %i/%i is > full buffer size",
+					length, buf->maxsize);
 			
 		// because Con_Printf may be redirected
-		Sys_Printf ("SZ_GetSpace: overflow: cur = %i, len = %i, max = %i\n", buf->cursize, length, buf->maxsize);
+		Sys_Printf ("SZ_GetSpace: overflow: cur = %i, len = %i, max = %i\n",
+				buf->cursize, length, buf->maxsize);
 		SZ_Clear (buf); 
 		buf->overflowed = true;
 	}
@@ -1676,6 +1679,27 @@ void COM_AddGameDirectory (char *dir)
 		com_searchpaths = search;		
 	}
 
+}
+
+char *COM_NextPath (char *prevpath)
+{
+	searchpath_t	*s;
+	char			*prev;
+
+	if (!prevpath)
+		return com_gamedir;
+
+	prev = com_gamedir;
+	for (s=com_searchpaths ; s ; s=s->next)
+	{
+		if (s->pack)
+			continue;
+		if (prevpath == prev)
+			return s->filename;
+		prev = s->filename;
+	}
+
+	return NULL;
 }
 
 /*

@@ -82,7 +82,13 @@ void 	Cvar_Set (cvar_t *var, char *value);
 void Cvar_SetROM (cvar_t *var, char *value);
 // force a set even if the cvar is read only
 
+void	Cvar_SetByName (char *var_name, char *value);
+// equivalent to "<name> <variable>" typed at the console
+
 void	Cvar_SetValue (cvar_t *var, float value);
+// expands value to a string and calls Cvar_Set
+
+void	Cvar_SetValueByName (char *var_name, float value);
 // expands value to a string and calls Cvar_Set
 
 float	Cvar_VariableValue (char *var_name);

@@ -64,6 +64,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pmove.h"
 #include "log.h"
 
+#ifdef USE_PR2
+// Angel -->
+#include "pr2_vm.h"
+#include "pr2.h"
+// <-- Angel
+#endif
+
 //=============================================================================
 
 // the host system specifies the base of the directory tree, the

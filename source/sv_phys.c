@@ -107,12 +107,24 @@ void SV_CheckVelocity (edict_t *ent)
 	{
 		if (IS_NAN(ent->v.velocity[i]))
 		{
-			Con_DPrintf ("Got a NaN velocity on %s\n", PR_GetString(ent->v.classname));
+			Con_DPrintf ("Got a NaN velocity on %s\n",
+#ifdef USE_PR2
+				PR2_GetString(ent->v.classname)
+#else
+				PR_GetString(ent->v.classname)
+#endif
+				);
 			ent->v.velocity[i] = 0;
 		}
 		if (IS_NAN(ent->v.origin[i]))
 		{
-			Con_DPrintf ("Got a NaN origin on %s\n", PR_GetString(ent->v.classname));
+			Con_DPrintf ("Got a NaN origin on %s\n",
+#ifdef USE_PR2
+				PR2_GetString(ent->v.classname)
+#else
+				PR_GetString(ent->v.classname)
+#endif
+				);
 			ent->v.origin[i] = 0;
 		}
 /*		if (ent->v.velocity[i] > sv_maxvelocity.value)
@@ -161,6 +173,11 @@ qboolean SV_RunThink (edict_t *ent)
 		pr_global_struct->time = thinktime;
 		pr_global_struct->self = EDICT_TO_PROG(ent);
 		pr_global_struct->other = EDICT_TO_PROG(sv.edicts);
+#ifdef USE_PR2
+		if ( sv_vm )
+			PR2_EdictThink();
+		else
+#endif
 		PR_ExecuteProgram (ent->v.think);
 
 		if (ent->free)
@@ -189,6 +206,11 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 	{
 		pr_global_struct->self = EDICT_TO_PROG(e1);
 		pr_global_struct->other = EDICT_TO_PROG(e2);
+#ifdef USE_PR2
+		if ( sv_vm )
+			PR2_EdictTouch();
+		else
+#endif
 		PR_ExecuteProgram (e1->v.touch);
 	}
 	
@@ -196,6 +218,11 @@ void SV_Impact (edict_t *e1, edict_t *e2)
 	{
 		pr_global_struct->self = EDICT_TO_PROG(e2);
 		pr_global_struct->other = EDICT_TO_PROG(e1);
+#ifdef USE_PR2
+		if( sv_vm )
+			PR2_EdictTouch();
+		else
+#endif
 		PR_ExecuteProgram (e2->v.touch);
 	}
 
@@ -545,12 +572,21 @@ qboolean SV_Push (edict_t *pusher, vec3_t move)
 
 		// if the pusher has a "blocked" function, call it
 		// otherwise, just stay in place until the obstacle is gone
-		if (pusher->v.blocked)
+#ifdef USE_PR2
+		if ( sv_vm )
 		{
 			pr_global_struct->self = EDICT_TO_PROG(pusher);
 			pr_global_struct->other = EDICT_TO_PROG(check);
-			PR_ExecuteProgram (pusher->v.blocked);
+			PR2_EdictBlocked();
 		}
+		else
+#endif
+			if (pusher->v.blocked)
+			{
+				pr_global_struct->self = EDICT_TO_PROG(pusher);
+				pr_global_struct->other = EDICT_TO_PROG(check);
+				PR_ExecuteProgram (pusher->v.blocked);
+			}
 		
 	// move back any entities we already moved
 		for (i=0 ; i<num_moved ; i++)
@@ -600,8 +636,8 @@ void SV_Physics_Pusher (edict_t *ent)
 	float	thinktime;
 	float	oldltime;
 	float	movetime;
-vec3_t oldorg, move;
-float	l;
+	vec3_t oldorg, move;
+	float	l;
 
 	oldltime = ent->v.ltime;
 	
@@ -622,23 +658,28 @@ float	l;
 		
 	if (thinktime > oldltime && thinktime <= ent->v.ltime)
 	{
-VectorCopy (ent->v.origin, oldorg);
+		VectorCopy (ent->v.origin, oldorg);
 		ent->v.nextthink = 0;
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(ent);
 		pr_global_struct->other = EDICT_TO_PROG(sv.edicts);
-		PR_ExecuteProgram (ent->v.think);
+#ifdef USE_PR2
+		if ( sv_vm )
+			PR2_EdictThink();
+		else
+#endif
+			PR_ExecuteProgram (ent->v.think);
 		if (ent->free)
 			return;
-VectorSubtract (ent->v.origin, oldorg, move);
+		VectorSubtract (ent->v.origin, oldorg, move);
 
-l = Length(move);
-if (l > 1.0/64)
-{
-//	Con_Printf ("**** snap: %f\n", Length (l));
-	VectorCopy (oldorg, ent->v.origin);
-	SV_Push (ent, move);
-}
+		l = Length(move);
+		if (l > 1.0/64)
+		{
+//			Con_Printf ("**** snap: %f\n", Length (l));
+			VectorCopy (oldorg, ent->v.origin);
+			SV_Push (ent, move);
+		}
 
 	}
 
@@ -846,7 +887,12 @@ void SV_ProgStartFrame (void)
 	pr_global_struct->self = EDICT_TO_PROG(sv.edicts);
 	pr_global_struct->other = EDICT_TO_PROG(sv.edicts);
 	pr_global_struct->time = sv.time;
-	PR_ExecuteProgram (pr_global_struct->StartFrame);
+#ifdef USE_PR2
+	if ( sv_vm )
+		PR2_GameStartFrame();
+	else
+#endif
+		PR_ExecuteProgram (pr_global_struct->StartFrame);
 }
 
 /*

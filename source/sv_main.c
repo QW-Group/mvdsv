@@ -152,6 +152,7 @@ cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
+cvar_t	sv_default_name = {"sv_default_name", "unnamed"};
 //
 // game rules mirrored in svs.info
 //
@@ -290,15 +291,15 @@ or crashing.
 */
 void SV_DropClient (client_t *drop)
 {
-  //bliP: cuff, mute ->
-  SV_SavePenaltyFilter (drop, ft_mute, drop->lockedtill);
-  SV_SavePenaltyFilter (drop, ft_cuff, drop->cuff_time);
-  //<-
+//bliP: cuff, mute ->
+	SV_SavePenaltyFilter (drop, ft_mute, drop->lockedtill);
+	SV_SavePenaltyFilter (drop, ft_cuff, drop->cuff_time);
+//<-
 
-  //bliP: player logging
-  if (drop->name[0])
-    SV_LogPlayer(drop, "disconnect", 1);
-  //<-
+//bliP: player logging
+	if (drop->name[0])
+		SV_LogPlayer(drop, "disconnect", 1);
+//<-
 
 	// add the disconnect
 	MSG_WriteByte (&drop->netchan.message, svc_disconnect);
@@ -309,14 +310,24 @@ void SV_DropClient (client_t *drop)
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
 			pr_global_struct->self = EDICT_TO_PROG(drop->edict);
-			PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
+#ifdef USE_PR2
+			if ( sv_vm )
+				PR2_GameClientDisconnect(0);
+			else
+#endif
+				PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
 		}
 		else if (SpectatorDisconnect)
 		{
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
 			pr_global_struct->self = EDICT_TO_PROG(drop->edict);
-			PR_ExecuteProgram (SpectatorDisconnect);
+#ifdef USE_PR2
+			if ( sv_vm )
+				PR2_GameClientDisconnect(1);
+			else
+#endif
+				PR_ExecuteProgram (SpectatorDisconnect);
 		}
 	}
 
@@ -685,6 +696,9 @@ A connection request that did not come from the master
 int SV_VIPbyIP(netadr_t adr);
 int SV_VIPbyPass (char *pass);
 
+#ifdef USE_PR2
+extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
+#endif
 void SVC_DirectConnect (void)
 {
 	char		userinfo[1024];
@@ -822,12 +836,12 @@ void SVC_DirectConnect (void)
 			|| adr.port == cl->netchan.remote_address.port ))
 		{
 //bliP: reconnect limit
-  		if ((realtime - cl->lastconnect) < ((int)sv_reconnectlimit.value * 1000))
-	  	{
-		  	Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
-			userid--;
-			return;
-		}
+			if ((realtime - cl->lastconnect) < ((int)sv_reconnectlimit.value * 1000))
+			{
+				Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
+				userid--;
+				return;
+			}
 //<-
 
 			if (cl->state == cs_connected || cl->state == cs_preconnected) {
@@ -870,7 +884,7 @@ void SVC_DirectConnect (void)
 	}
 
 	// if at server limits, refuse connection
-	if ( maxclients.value > MAX_CLIENTS )
+	if (maxclients.value > MAX_CLIENTS)
 		Cvar_SetValue (&maxclients, MAX_CLIENTS);
 	if (maxspectators.value > MAX_CLIENTS)
 		Cvar_SetValue (&maxspectators, MAX_CLIENTS);
@@ -881,8 +895,9 @@ void SVC_DirectConnect (void)
 		Cvar_SetValue (&maxspectators, MAX_CLIENTS - maxclients.value);
 	if (maxspectators.value + maxclients.value + maxvip_spectators.value > MAX_CLIENTS)
 		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS - maxclients.value - maxspectators.value);
-	
-	if ( (vip && spectator && vips >= (int)maxvip_spectators.value && (spectators >= (int)maxspectators.value || !spass))
+
+	if ( (vip && spectator && vips >= (int)maxvip_spectators.value &&
+	      (spectators >= (int)maxspectators.value || !spass))
 		|| (!vip && spectator && (spectators >= (int)maxspectators.value || !spass))
 		|| (!spectator && clients >= (int)maxclients.value))
 	{
@@ -915,13 +930,13 @@ void SVC_DirectConnect (void)
 			Con_Printf ("WARNING: miscounted available clients\n");
 			return;
 		}
+		// build a new connection
+		// accept the new client
+		// this is the only place a client_t is ever initialized
+		*newcl = temp;
 	}
 //<-
 
-	// build a new connection
-	// accept the new client
-	// this is the only place a client_t is ever initialized
-	*newcl = temp;
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
 
@@ -929,7 +944,7 @@ void SVC_DirectConnect (void)
 
 	edictnum = (newcl-svs.clients)+1;
 	
-	Netchan_Setup (&newcl->netchan , adr, qport, net_serversocket);
+	Netchan_Setup (&newcl->netchan, adr, qport, net_serversocket);
 
 	newcl->state = cs_preconnected;
 
@@ -943,6 +958,16 @@ void SVC_DirectConnect (void)
 
 	ent = EDICT_NUM(edictnum);
 	newcl->edict = ent;
+#ifdef USE_PR2
+//restore pointer to client name
+//for -progtype 0 (VM_NONE) names stored in clientnames array
+//for -progtype 1 (VM_NAITVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
+	if(sv_vm)
+		newcl->name = PR2_GetString(ent->v.netname);
+	else
+		newcl->name = clientnames[edictnum - 1];
+	memset(newcl->name, 0, CLIENT_NAME_LEN);
+#endif
 
 	if (vip) s = va("%d", vip);
 	else s = "";
@@ -983,8 +1008,12 @@ void SVC_DirectConnect (void)
 //<-
 
 	// call the progs to get default spawn parms for the new client
-	
-	PR_ExecuteProgram (pr_global_struct->SetNewParms);
+#ifdef USE_PR2
+	if ( sv_vm )
+		PR2_GameSetNewParms();
+	else
+#endif
+		PR_ExecuteProgram (pr_global_struct->SetNewParms);
 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
 		newcl->spawn_parms[i] = (&pr_global_struct->parm1)[i];
 
@@ -2521,6 +2550,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_maxrate);
 
 	Cvar_RegisterVariable (&sv_loadentfiles);
+	Cvar_RegisterVariable (&sv_default_name);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
@@ -2676,7 +2706,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 
 		if ((p != newname && !*p) || i) {
 			//white space only
-			strlcpy(newname, "unnamed", sizeof(newname));
+			strlcpy(newname, sv_default_name.string, sizeof(newname));
 			p = newname;
 		}
 		else
@@ -2698,7 +2728,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 		}
 
 		if (!val[0] || !strcasecmp(val, "console")) {
-			Info_SetValueForKey (cl->userinfo, "name", "unnamed", MAX_INFO_STRING);
+			Info_SetValueForKey (cl->userinfo, "name", sv_default_name.string, MAX_INFO_STRING);
 			val = Info_ValueForKey (cl->userinfo, "name");
 		}
 
@@ -2711,8 +2741,8 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 					break;
 			}
 			if (i != MAX_CLIENTS) { // dup name
-				if (strlen(val) > sizeof(cl->name) - 1)
-					val[sizeof(cl->name) - 4] = 0;
+				if (strlen(val) > CLIENT_NAME_LEN - 1)
+					val[CLIENT_NAME_LEN - 4] = 0;
 				p = val;
 
 				if (val[0] == '(') {
@@ -2735,9 +2765,9 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 					cl->lastnamecount = 0;
 					cl->lastnametime = realtime;
 				} else if (cl->lastnamecount++ > 4) {
-					SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name spam\n", cl->name);
+					SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name spamming\n", cl->name);
 					SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game for name spamming\n");
-			SV_LogPlayer(cl, "name spam", 1); //bliP: player logging
+					SV_LogPlayer(cl, "name spam", 1); //bliP: player logging
 					SV_DropClient (cl); 
 					return;
 				}
@@ -2747,7 +2777,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 				SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n", cl->name, val);
 		}
 
-		strlcpy (cl->name, val, sizeof(cl->name));
+		strlcpy (cl->name, val, CLIENT_NAME_LEN);
 
 		if (cl->state >= cs_spawned) //bliP: player logging
 			SV_LogPlayer(cl, "name change", 1);
@@ -2877,7 +2907,11 @@ void SV_Init (quakeparms_t *parms)
 
 	COM_Init ();
 	
+#ifdef USE_PR2
+	PR2_Init();
+#else
 	PR_Init ();
+#endif
 	Mod_Init ();
 
 	SV_InitNet ();

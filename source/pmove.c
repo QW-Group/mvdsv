@@ -29,6 +29,8 @@ cvar_t	pm_slidefix = {"pm_slidefix","0"};	// FIXME: remove?
 cvar_t	pm_ktphysics = {"pm_ktphysics", "0"};	// set this when
 			// playing on a server running Kombat Teams 2.10 or later
 
+cvar_t	pm_spawnjumpfix = {"pm_spawnjumpfix", "1"};
+
 movevars_t		movevars;
 
 playermove_t	pmove;
@@ -70,6 +72,7 @@ void Pmove_Init (void)
 
 	Cvar_RegisterVariable (&pm_slidefix);
 	Cvar_RegisterVariable (&pm_ktphysics);
+	Cvar_RegisterVariable (&pm_spawnjumpfix);
 	PM_InitBoxHull ();
 }
 
@@ -982,7 +985,7 @@ void PlayerMove (void)
 	}
 #endif
 
-	if (pmove.cmd.buttons & BUTTON_JUMP)
+	if ((pmove.cmd.buttons & BUTTON_JUMP) || (pmove.dead && pm_spawnjumpfix.value))
 		JumpButton ();
 	else
 		pmove.oldbuttons &= ~BUTTON_JUMP;

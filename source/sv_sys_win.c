@@ -18,8 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "qwsvdef.h"
-#include <winsock.h>
 #include <conio.h>
 #include <limits.h>
 #include <direct.h>		// _mkdir
@@ -27,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <process.h>
 #include <sys/stat.h>
 
+#include "qwsvdef.h"
 #include "sv_windows.h"
 
 #include <errno.h>
@@ -571,6 +570,21 @@ int Sys_Script(char *path, char *args)
 
 	return CreateProcess (NULL, cmdline, NULL, NULL,
 		FALSE, 0/*DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
+}
+
+DL_t Sys_DLOpen(const char *path)
+{
+	return LoadLibrary(path);
+}
+
+qboolean Sys_DLClose(DL_t dl)
+{
+	return FreeLibrary(dl);
+}
+
+void *Sys_DLProc(DL_t dl, const char *name)
+{
+	return GetProcAddress(dl, name);
 }
 
 #ifdef _CONSOLE

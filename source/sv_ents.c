@@ -598,7 +598,13 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM(e); e < sv.num_edicts/*max_edicts*/; e++, ent = NEXT_EDICT(ent))
 	{
 		// ignore ents without visible models
-		if (!ent->v.modelindex || !*PR_GetString(ent->v.model))
+		if (!ent->v.modelindex || !*
+#ifdef USE_PR2
+			PR2_GetString(ent->v.model)
+#else
+			PR_GetString(ent->v.model)
+#endif
+			)
 			continue;
 
 		if (!sv_demoNoVis.value || !recorder) {

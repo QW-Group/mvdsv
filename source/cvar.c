@@ -210,6 +210,24 @@ void Cvar_SetROM (cvar_t *var, char *value)
 	var->flags = saved_flags;
 }
 
+/*
+============
+Cvar_SetByName
+============
+*/
+void Cvar_SetByName (char *var_name, char *value)
+{
+	cvar_t	*var;
+	
+	var = Cvar_FindVar (var_name);
+	if (!var)
+	{	// there is an error in C code if this happens
+		Con_Printf ("Cvar_Set: variable %s not found\n", var_name);
+		return;
+	}
+
+	Cvar_Set (var, value);
+}
 
 /*
 ============
@@ -227,6 +245,19 @@ void Cvar_SetValue (cvar_t *var, float value)
 	if (val[i] == '.')
 		val[i] = 0;
 	Cvar_Set (var, val);
+}
+
+/*
+============
+Cvar_SetValueByName
+============
+*/
+void Cvar_SetValueByName (char *var_name, float value)
+{
+	char	val[32];
+	
+	sprintf (val, "%.8g",value);
+	Cvar_SetByName (var_name, val);
 }
 
 

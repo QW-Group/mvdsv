@@ -29,6 +29,10 @@ entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; /
 char	localmodels[MAX_MODELS][5];	// inline model names for precache
 
 char localinfo[MAX_LOCALINFO_STRING+1]; // local game info
+#ifdef USE_PR2
+//storage for client names for -progtype 0 (VM_NONE)
+char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN]; //clientnames for -progtype 0
+#endif
 
 extern spec_worldmodel_t specworld;
 
@@ -114,8 +118,13 @@ void SV_CreateBaseline (void)
 		else
 		{
 			svent->baseline.colormap = 0;
-			svent->baseline.modelindex =
-				SV_ModelIndex(PR_GetString(svent->v.model));
+			svent->baseline.modelindex = SV_ModelIndex(
+#ifdef USE_PR2
+				PR2_GetString(svent->v.model)
+#else
+				PR_GetString(svent->v.model)
+#endif
+				);
 		}
 
 		//
@@ -172,7 +181,12 @@ void SV_SaveSpawnparms (void)
 
 		// call the progs to get default spawn parms for the new client
 		pr_global_struct->self = EDICT_TO_PROG(host_client->edict);
-		PR_ExecuteProgram (pr_global_struct->SetChangeParms);
+#ifdef USE_PR2
+		if (sv_vm)
+			PR2_GameSetChangeParms();
+		else
+#endif
+			PR_ExecuteProgram (pr_global_struct->SetChangeParms);
 		for (j=0 ; j<NUM_SPAWN_PARMS ; j++)
 			host_client->spawn_parms[j] = (&pr_global_struct->parm1)[j];
 		
@@ -479,6 +493,9 @@ void SV_SpawnServer (char *server)
 {
 	edict_t		*ent;
 	int			i;
+#ifdef USE_PR2
+        char savenames[MAX_CLIENTS][CLIENT_NAME_LEN];
+#endif
 	extern cvar_t version;
 	dfunction_t *f;
 	extern cvar_t sv_loadentfiles;
@@ -488,6 +505,17 @@ void SV_SpawnServer (char *server)
 	
 	SV_SaveSpawnparms ();
 	SV_LoadAccounts();
+#ifdef USE_PR2
+//save client names from mod memory before unload mod and clearing VM memory by Hunk_FreeToLowMark
+        memset(savenames, 0, sizeof(savenames));
+       	for (i = 0; i < MAX_CLIENTS; i++)
+        {
+            if (svs.clients[i].name)
+            	strlcpy(savenames[i], svs.clients[i].name, CLIENT_NAME_LEN);
+        }
+        if ( sv_vm )
+        	PR2_GameShutDown();
+#endif
 
 	svs.spawncount++;		// any partially connected client will be
 							// restarted
@@ -532,17 +560,34 @@ void SV_SpawnServer (char *server)
 
 	// load progs to get entity field count
 	// which determines how big each edict is
-	PR_LoadProgs ();
-
-	// allocate edicts
-
-	sv.edicts = Hunk_AllocName (MAX_EDICTS*pr_edict_size, "edicts");
+	// and allocate edicts
+#ifdef USE_PR2
+	sv.time = 1.0;
+	sv_vm = VM_Load(sv_vm, sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex); 
+	if ( sv_vm )
+		PR2_InitProg();
+	else
+#endif
+	{
+		PR_LoadProgs ();
+		sv.edicts = Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
+	}
 
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS+1;
 	for (i=0 ; i<MAX_CLIENTS ; i++)
 	{
 		ent = EDICT_NUM(i+1);
+#ifdef USE_PR2
+//restore client names
+//for -progtype 0 (VM_NONE) names stored in clientnames array
+//for -progtype 1 (VM_NAITVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
+		if(sv_vm)
+			svs.clients[i].name = PR2_GetString(ent->v.netname);
+		else
+			svs.clients[i].name = clientnames[i];
+		strlcpy(svs.clients[i].name, savenames[i], CLIENT_NAME_LEN);
+#endif
 		svs.clients[i].edict = ent;
 //ZOID - make sure we update frags right
 		svs.clients[i].old_frags = 0;
@@ -564,8 +609,20 @@ void SV_SpawnServer (char *server)
 	
 	sv.sound_precache[0] = pr_strings;
 
-	sv.model_precache[0] = pr_strings;
-	sv.model_precache[1] = sv.modelname;
+#ifdef USE_PR2
+	if ( !sv_vm )
+	{
+#endif
+		sv.model_precache[0] = pr_strings;
+		sv.model_precache[1] = sv.modelname;
+#ifdef USE_PR2
+	}
+	else
+	{
+		sv.sound_precache[0] = "";
+		sv.model_precache[0] = "";
+	}
+#endif
 	sv.models[1] = sv.worldmodel;
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
 	{
@@ -587,18 +644,38 @@ void SV_SpawnServer (char *server)
 
 	ent = EDICT_NUM(0);
 	ent->free = false;
-	ent->v.model = PR_SetString(sv.worldmodel->name);
+#ifdef USE_PR2
+	if ( sv_vm )
+		strlcpy(PR2_GetString(ent->v.model), sv.worldmodel->name, 64);
+	else 
+#endif
+		ent->v.model = PR_SetString(sv.worldmodel->name);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
 	// information about the server
-	ent->v.netname = PR_SetString(version.string);
-	ent->v.targetname = PR_SetString("mvdsv");
+#ifdef USE_PR2
+	if ( sv_vm )
+		strlcpy(PR2_GetString(ent->v.netname), sv.worldmodel->name, 64);
+	else 
+#endif
+		ent->v.netname = PR_SetString(version.string);
+#ifdef USE_PR2
+	if ( sv_vm )
+		strlcpy(PR2_GetString(ent->v.targetname), sv.worldmodel->name, 64);
+	else 
+#endif
+		ent->v.targetname = PR_SetString("mvdsv");
 	ent->v.impulse = QWE_VERNUM;
 	ent->v.items = pr_numbuiltins - 1;
 
-	pr_global_struct->mapname = /*sv.name - pr_strings;*/PR_SetString(sv.name);
+#ifdef USE_PR2
+        if(sv_vm)
+        	strlcpy((char*)PR2_GetString(pr_global_struct->mapname) , sv.name, 64);
+        else
+#endif
+		pr_global_struct->mapname = /*sv.name - pr_strings;*/PR_SetString(sv.name);
 	// serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
 
@@ -616,14 +693,23 @@ void SV_SpawnServer (char *server)
 	{
 		Con_DPrintf ("Using entfile maps/%s.ent\n", sv.name);
 		//Info_SetValueForStarKey (svs.info, "*entfile", va("%i", CRC_Block(entitystring, fs_filesize)), MAX_SERVERINFO_STRING);
-		ED_LoadFromFile (entitystring);
+#ifdef USE_PR2
+		if ( sv_vm )
+			PR2_LoadEnts(entitystring);
+		else
+#endif
+			ED_LoadFromFile (entitystring);
 	}
-	
-	if (!entitystring)
+	else
 	{
-		//Info_SetValueForStarKey (svs.info,  "*entfile", "", MAX_SERVERINFO_STRING);
+		//Info_SetValueForStarKey (svs.info, "*entfile", "", MAX_SERVERINFO_STRING);
 		//entitystring = CM_EntityString();
-		ED_LoadFromFile (sv.worldmodel->entities); //just use the QWE way of doing it if no entfile.
+#ifdef USE_PR2
+		if ( sv_vm )
+			PR2_LoadEnts(sv.worldmodel->entities);
+		else
+#endif
+			ED_LoadFromFile (sv.worldmodel->entities); //just use the QWE way of doing it if no entfile.
 	}
 	// ********* End of External Entity support code *********
 
