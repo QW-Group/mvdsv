@@ -627,26 +627,44 @@ float MSG_ReadAngle16 (void)
 void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 {
 	int bits;
+	extern int stat_size;
 
 	memcpy (move, from, sizeof(*move));
 
 	bits = MSG_ReadByte ();
+	//stat_size +=1;
 		
 // read current angles
-	if (bits & CM_ANGLE1)
+	if (bits & CM_ANGLE1) {
 		move->angles[0] = MSG_ReadAngle16 ();
-	if (bits & CM_ANGLE2)
+		//stat_size += 2;
+	}
+	if (bits & CM_ANGLE2) {
 		move->angles[1] = MSG_ReadAngle16 ();
+		//stat_size += 2;
+	}
 	if (bits & CM_ANGLE3)
+	{
 		move->angles[2] = MSG_ReadAngle16 ();
+		//stat_size += 2;
+	}
 		
 // read movement
 	if (bits & CM_FORWARD)
+	{
 		move->forwardmove = MSG_ReadShort ();
+		//stat_size += 2;
+	}
 	if (bits & CM_SIDE)
+	{
 		move->sidemove = MSG_ReadShort ();
-	if (bits & CM_UP)
+		//stat_size += 2;
+	}
+	if (bits & CM_UP) 
+	{
 		move->upmove = MSG_ReadShort ();
+		//stat_size += 2;
+	}
 	
 // read buttons
 	if (bits & CM_BUTTONS)
@@ -657,6 +675,7 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 // read time to run command
 	move->msec = MSG_ReadByte ();
+	//stat_size += 1;
 }
 
 

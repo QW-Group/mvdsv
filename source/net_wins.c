@@ -77,10 +77,6 @@ char	*NET_AdrToString (netadr_t a)
 {
 	static	char	s[64];
 
-#ifdef QW_BOTH
-	if (*(int *)&a == 0 && a.port == PORT_LOOPBACK)
-		return "loopback";
-#endif
 
 	sprintf (s, "%i.%i.%i.%i:%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3], ntohs(a.port));
 
@@ -113,17 +109,6 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 	char	*colon;
 	char	copy[128];
 
-// Tonik -->	
-#ifdef QW_BOTH
-	if (!strcmp(s, "local"))
-	{
-		memset(a, 0, sizeof(*a));
-		a->port = PORT_LOOPBACK;
-		return true;
-	}
-#endif
-// <-- Tonik
-	
 	memset (&sadr, 0, sizeof(sadr));
 	sadr.sin_family = AF_INET;
 	
@@ -302,11 +287,6 @@ int UDP_OpenSocket (int port, qboolean crash)
 		address.sin_port = htons((short)port);
 	if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
 	{
-#ifdef QW_BOTH
-		if (!crash)
-			return -1;
-		else
-#endif
 		Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
 	}
 
@@ -356,20 +336,9 @@ void NET_Init (int clientport, int serverport)
 //	net_socket = UDP_OpenSocket (port);
 	if (clientport)
 		net_clientsocket = UDP_OpenSocket (clientport, true);
-#ifndef QW_BOTH
+
 	if (serverport)
 		net_serversocket = UDP_OpenSocket (serverport, false);
-#else
-	// An ugly hack to let you run zquake and qwsv or proxy without
-	// changing ports via the command line	-- Tonik, 5 Aug 2000
-	__serverport = serverport;
-	net_serversocket = -1;
-/*	if (net_serversocket == -1)
-	{
-		Con_Printf ("NET_Init: Could not open server socket\n");
-	}	*/
-#endif
-
 	//
 	// init the message buffer
 	//

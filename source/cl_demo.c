@@ -66,6 +66,7 @@ void CL_StopPlayback (void)
 	cls.demofile = NULL;
 	cls.state = ca_disconnected;
 	cls.demoplayback = 0;
+	cls.demoplayback2 = 0;
 #ifdef _WIN32
 	if (qwz_playback)
 		StopQWZPlayback ();
@@ -161,13 +162,16 @@ CL_GetDemoMessage
   FIXME...
 ====================
 */
+float olddemotime, nextdemotime;
+
 qboolean CL_GetDemoMessage (void)
 {
-	int		r, i, j;
-	float	f;
-	float	demotime;
+	int		r, i, j, size, tracknum;
+	float	f, demotime;
+	byte	newtime;
 	byte	c;
 	usercmd_t *pcmd;
+	static float prevtime = 0.0;
 
 	if (qwz_unpacking)
 		return 0;
@@ -175,9 +179,52 @@ qboolean CL_GetDemoMessage (void)
 	if (cl.paused & 2)
 		return 0;
 
+	//if (realtime < nextdemotime)
+	//	return 0;
+
+	if (prevtime < nextdemotime)
+		prevtime = nextdemotime;
+
+	if (!cls.demoplayback2)
+		nextdemotime = (float) realtime;
+
+	if (realtime + 1.0 < nextdemotime)
+	{
+		realtime = nextdemotime - 1.0;
+	}
+
+nextdemomessage:
+
+	size = 0;
 	// read the time from the packet
-	fread(&demotime, sizeof(demotime), 1, cls.demofile);
-	demotime = LittleFloat(demotime);
+	newtime = 0;
+	if (cls.demoplayback2)
+	{
+		fread(&newtime, sizeof(newtime), 1, cls.demofile);
+		demotime =  prevtime + newtime*0.001;
+	} else {
+		fread(&demotime, sizeof(demotime), 1, cls.demofile);
+		demotime = LittleFloat(demotime);
+		if (!nextdemotime)
+			realtime = nextdemotime = demotime;
+	}
+
+	if (realtime - nextdemotime > 0.0001)
+	{
+		if (nextdemotime != demotime)
+		{
+			olddemotime = nextdemotime;
+			if (cls.demoplayback2) {
+				cls.netchan.incoming_sequence++;
+				cls.netchan.incoming_acknowledged++;
+				cls.netchan.frame_latency = 0;
+				cls.netchan.last_received = realtime; // just to happy timeout check
+				//Con_Printf("%d\n", cls.netchan.incoming_sequence);
+			}
+		}
+
+		nextdemotime = demotime;
+	}
 
 // decide if it is time to grab the next message		
 	if (cls.timedemo) {
@@ -186,7 +233,12 @@ qboolean CL_GetDemoMessage (void)
 		else if (demotime > cls.td_lastframe) {
 			cls.td_lastframe = demotime;
 			// rewind back to time
-			fseek(cls.demofile, ftell(cls.demofile) - sizeof(demotime),
+			if (cls.demoplayback2)
+			{
+				fseek(cls.demofile, ftell(cls.demofile) - sizeof(newtime),
+					SEEK_SET);
+			} else 
+				fseek(cls.demofile, ftell(cls.demofile) - sizeof(demotime),
 					SEEK_SET);
 			return 0;		// already read this frame's message
 		}
@@ -196,29 +248,35 @@ qboolean CL_GetDemoMessage (void)
 		}
 		realtime = demotime; // warp
 	} else if (!(cl.paused & 1) && cls.state >= ca_onserver) {	// always grab until fully connected
-		if (realtime + 1.0 < demotime) {
+		if (!cls.demoplayback2 && realtime + 1.0 < demotime) {
 			// too far back
 			realtime = demotime - 1.0;
 			// rewind back to time
 			fseek(cls.demofile, ftell(cls.demofile) - sizeof(demotime),
 					SEEK_SET);
 			return 0;
-		} else if (realtime < demotime) {
+		} else if (nextdemotime < demotime) {
 			// rewind back to time
-			fseek(cls.demofile, ftell(cls.demofile) - sizeof(demotime),
+			if (cls.demoplayback2)
+			{
+				fseek(cls.demofile, ftell(cls.demofile) - sizeof(newtime),
+					SEEK_SET);
+			} else 
+				fseek(cls.demofile, ftell(cls.demofile) - sizeof(demotime),
 					SEEK_SET);
 			return 0;		// don't need another message yet
 		}
 	} else
 		realtime = demotime; // we're warping
 
+	prevtime = demotime;
 	if (cls.state < ca_demostart)
 		Host_Error ("CL_GetDemoMessage: cls.state != ca_active");
 	
 	// get the msg type
 	fread (&c, sizeof(c), 1, cls.demofile);
 	
-	switch (c) {
+	switch (c&7) {
 	case dem_cmd :
 		// user sent input
 		i = cls.netchan.outgoing_sequence & UPDATE_MASK;
@@ -237,19 +295,22 @@ qboolean CL_GetDemoMessage (void)
 		pcmd->upmove      = LittleShort(pcmd->upmove);
 		cl.frames[i].senttime = demotime;
 		cl.frames[i].receivedtime = -1;		// we haven't gotten a reply yet
+		//cl.frames[i].playerstate[cl.playernum].command = *pcmd;
 		cls.netchan.outgoing_sequence++;
-		for (i=0 ; i<3 ; i++)
+		for (j=0 ; j<3 ; j++)
 		{
 			r = fread (&f, 4, 1, cls.demofile);
-			cl.viewangles[i] = LittleFloat (f);
+			cl.viewangles[j] = LittleFloat (f);
+
 		}
 		break;
 
 	case dem_read:
+readit:
 		// get the next message
 		fread (&net_message.cursize, 4, 1, cls.demofile);
 		net_message.cursize = LittleLong (net_message.cursize);
-	//Con_Printf("read: %ld bytes\n", net_message.cursize);
+		
 		if (net_message.cursize > MAX_MSGLEN)
 			Host_EndGame ("Demo message > MAX_MSGLEN");
 		r = fread (net_message.data, net_message.cursize, 1, cls.demofile);
@@ -258,6 +319,23 @@ qboolean CL_GetDemoMessage (void)
 			CL_StopPlayback ();
 			return 0;
 		}
+
+		if (cls.demoplayback2)
+		{
+			tracknum = Cam_TrackNum();
+		
+			if (cls.lasttype == dem_multiple) {
+				if (tracknum == -1)
+					goto nextdemomessage;
+	
+				if (!(cls.lastto & (1 << (tracknum))))
+					goto nextdemomessage;
+			} else if (cls.lasttype == dem_single)
+			{
+				if (tracknum == -1 || cls.lastto != spec_track)
+					goto nextdemomessage;
+			}
+		}
 		break;
 
 	case dem_set :
@@ -265,8 +343,36 @@ qboolean CL_GetDemoMessage (void)
 		cls.netchan.outgoing_sequence = LittleLong(i);
 		fread (&i, 4, 1, cls.demofile);
 		cls.netchan.incoming_sequence = LittleLong(i);
+		if (cls.demoplayback2) {
+			cls.netchan.incoming_acknowledged = cls.netchan.incoming_sequence;
+			goto nextdemomessage;
+		}
 		break;
 
+	case dem_multiple:
+		r = fread (&i, 4, 1, cls.demofile);
+		if (r != 1)
+		{
+			CL_StopPlayback ();
+			return 0;
+		}
+
+		cls.lastto = LittleLong(i);
+		cls.lasttype = dem_multiple;
+		goto readit;
+		
+	case dem_single:
+		cls.lastto = c>>3;
+		cls.lasttype = dem_single;
+		goto readit;
+	case dem_stats:
+		cls.lastto = c>>3;
+		cls.lasttype = dem_stats;
+		goto readit;
+	case dem_all:
+		cls.lastto = 0;
+		cls.lasttype = dem_all;
+		goto readit;
 	default :
 		Con_Printf("Corrupted demo.\n");
 		CL_StopPlayback ();
@@ -596,7 +702,7 @@ static void CL_Record (void)
 		
 		MSG_WriteByte (&buf, svc_updateentertime);
 		MSG_WriteByte (&buf, i);
-		MSG_WriteFloat (&buf, player->entertime);
+		MSG_WriteFloat (&buf, realtime - player->entertime); // stupid, stupid, stupid!
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);
 		MSG_WriteByte (&buf, i);
@@ -1025,8 +1131,11 @@ CL_PlayDemo_f
 play [demoname]
 ====================
 */
+void CL_ClearPredict(void);
+
 void CL_PlayDemo_f (void)
 {
+	extern float olddemotime;
 	char	name[256];
 
 	if (Cmd_Argc() != 2)
@@ -1045,6 +1154,8 @@ void CL_PlayDemo_f (void)
 //
 	Q_strncpyz (name, Cmd_Argv(1), sizeof(name)-4);
 
+	nextdemotime = 0;
+
 #ifdef _WIN32
 	if (strlen(name) > 4 && !Q_strcasecmp(name + strlen(name) - 4, ".qwz")) {
 		PlayQWZDemo ();
@@ -1052,7 +1163,8 @@ void CL_PlayDemo_f (void)
 	}
 #endif
 
-	COM_DefaultExtension (name, ".qwd");
+	//COM_DefaultExtension (name, ".qwd");
+	COM_DefaultExtension (name, ".mvd");
 
 	Con_Printf ("Playing demo from %s.\n", name);
 
@@ -1069,9 +1181,19 @@ void CL_PlayDemo_f (void)
 	}
 
 	cls.demoplayback = true;
+	if (!strcmp(name + strlen(name)-3, "mvd")) {
+		cls.demoplayback2 = true;
+		Con_Printf("mvd\n");
+	} else
+		Con_Printf("qwd\n");
 	cls.state = ca_demostart;
+	olddemotime = 0;
 	Netchan_Setup (&cls.netchan, net_from, 0, net_clientsocket);
 	realtime = 0;
+	cls.findtrack = true;
+	cls.lasttype = 0;
+	cls.lastto = 0;
+	CL_ClearPredict();
 }
 
 /*

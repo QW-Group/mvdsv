@@ -84,6 +84,8 @@ typedef struct player_info_s
 	int		spectator;
 	byte	translations[VID_GRADES*256];
 	skin_t	*skin;
+	int		stats[MAX_CL_STATS];	// health, etc
+	int		prevcount; // for delta update from previous
 } player_info_t;
 
 
@@ -194,6 +196,9 @@ typedef struct
 // entering a map (and clearing client_state_t)
 	qboolean	demorecording;
 	qboolean	demoplayback;
+	qboolean	demoplayback2;
+	int			lastto;
+	int			lasttype;
 	qboolean	timedemo;
 	FILE		*demofile;
 	float		td_lastframe;		// to meter out one message a frame
@@ -203,6 +208,7 @@ typedef struct
 	int			challenge;
 
 	float		latency;		// rolling average
+	qboolean	findtrack;
 } client_static_t;
 
 extern client_static_t	cls;
@@ -211,6 +217,15 @@ extern client_static_t	cls;
 // the client_state_t structure is wiped completely at every
 // server signon
 //
+
+typedef struct
+{
+	qboolean	interpolate;
+	vec3_t		origin;
+	vec3_t		angles;
+	int			oldindex;
+} interpolate_t;
+
 typedef struct
 {
 	int			servercount;	// server identification for prespawns
@@ -222,6 +237,7 @@ typedef struct
 	int			fpd;			// FAQ proxy flags
 
 	int			parsecount;		// server message counter
+	int			oldparsecount;	// previouse server message used for interpolation
 	int			validsequence;	// this is the sequence number of the last good
 								// packetentity_t we got.  If this is 0, we can't
 								// render a frame yet
@@ -299,6 +315,12 @@ typedef struct
 	player_info_t	players[MAX_CLIENTS];
 
 	char		sprint_buf[1024];	// Tonik
+
+	// interpolation stuff
+	interpolate_t	int_entities[MAX_PACKET_ENTITIES];
+	int				int_packet;
+	int				int_prevnum[MAX_CLIENTS];
+
 } client_state_t;
 
 
@@ -346,6 +368,9 @@ extern	cvar_t	r_rocketlight;
 extern	cvar_t	r_rockettrail;
 extern	cvar_t	r_grenadetrail;
 extern	cvar_t	r_powerupglow;
+
+extern	cvar_t	cl_teamskin;
+extern	cvar_t	cl_enemyskin;
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
 
@@ -480,12 +505,14 @@ void CL_ParseProjectiles (void);
 void CL_ParsePacketEntities (qboolean delta);
 void CL_SetSolidEntities (void);
 void CL_ParsePlayerinfo (void);
+void CL_Interpolate(void);
+void CL_ParseClientdata (void);
 
 //
 // cl_pred.c
 //
 void CL_InitPrediction (void);
-void CL_PredictMove (void);
+void CL_PredictMove (qboolean nopred);
 void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, qboolean spectator);
 
 //
@@ -503,6 +530,8 @@ void Cam_Track(usercmd_t *cmd);
 void Cam_FinishMove(usercmd_t *cmd);
 void Cam_Reset(void);
 void CL_InitCam(void);
+int Cam_TrackNum(void);
+void Cam_Lock(int playernum);
 
 //
 // skin.c

@@ -463,7 +463,7 @@ void CL_SendCmd (void)
 	static int	dropcount = 0;
 	qboolean	dontdrop;
 
-	if (cls.demoplayback)
+	if (cls.demoplayback && !cls.demoplayback2)
 		return; // sendcmds come from the demo
 
 	// save this command off for prediction
@@ -488,6 +488,11 @@ void CL_SendCmd (void)
 	CL_FinishMove(cmd);
 
 	Cam_FinishMove(cmd);
+
+	if (cls.demoplayback2) {
+		cls.netchan.outgoing_sequence++;
+		return;
+	}
 
 // send this and the previous cmds in the message, so
 // if the last packet was dropped, it can be recovered

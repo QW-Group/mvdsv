@@ -130,6 +130,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_updatepl		53		// [byte] [byte]
 
 
+
 //==============================================
 
 //
@@ -144,6 +145,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define clc_tmove		6		// teleport request, spectator only
 #define clc_upload		7		// teleport request, spectator only
 
+
+//==============================================
+
+//
+// demo recording
+//
+
+#define dem_cmd		0
+#define dem_read	1
+#define dem_set		2
+#define dem_multiple	3
+#define	dem_single		4
+#define dem_stats		5
+#define dem_all			6
 
 //==============================================
 

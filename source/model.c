@@ -282,6 +282,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 
 // call the apropriate loader
 	mod->needload = false;
+	mod->modhint = 0;
 	
 	switch (LittleLong(*(unsigned *)buf))
 	{
@@ -380,7 +381,7 @@ void Mod_LoadTextures (lump_t *l)
 		// the pixels immediately follow the structures
 		memcpy ( tx+1, mt+1, pixels);
 		
-		if (!Q_strncmp(mt->name,"sky",3))	
+		if (!strncmp(mt->name,"sky",3))	
 			R_InitSky (tx);
 	}
 
@@ -393,7 +394,7 @@ void Mod_LoadTextures (lump_t *l)
 		if (!tx || tx->name[0] != '+')
 			continue;
 		if (tx->anim_next)
-			continue;	// allready sequenced
+			continue;	// already sequenced
 
 	// find the number of frames in the animation
 		memset (anims, 0, sizeof(anims));
@@ -790,13 +791,13 @@ void Mod_LoadFaces (lump_t *l)
 		
 	// set the drawing flags flag
 		
-		if (!Q_strncmp(out->texinfo->texture->name,"sky",3))	// sky
+		if (!strncmp(out->texinfo->texture->name,"sky",3))	// sky
 		{
 			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
 			continue;
 		}
 		
-		if (!Q_strncmp(out->texinfo->texture->name,"*",1))		// turbulent
+		if (!strncmp(out->texinfo->texture->name,"*",1))		// turbulent
 		{
 			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
 			for (i=0 ; i<2 ; i++)
@@ -1355,7 +1356,7 @@ void * Mod_LoadAliasSkin (void * pin, int *pskinindex, int skinsize,
 
 	if (r_pixbytes == 1)
 	{
-		Q_memcpy (pskin, pinskin, skinsize);
+		memcpy (pskin, pinskin, skinsize);
 	}
 	else if (r_pixbytes == 2)
 	{
@@ -1452,8 +1453,20 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	int					skinsize;
 	int					start, end, total;
 	
-	if (!strcmp(loadmodel->name, "progs/player.mdl") ||
-		!strcmp(loadmodel->name, "progs/eyes.mdl")) {
+// some models are special
+	if(!strcmp(mod->name, "progs/player.mdl"))
+		mod->modhint = MOD_PLAYER;
+	else if(!strcmp(mod->name, "progs/eyes.mdl"))
+		mod->modhint = MOD_EYES;
+	else if (!strcmp(mod->name, "progs/flame.mdl") ||
+		!strcmp(mod->name, "progs/flame2.mdl"))
+		mod->modhint = MOD_FLAME;
+/*	else if (!strcmp(mod->name, "progs/bolt.mdl") ||
+		!strcmp(mod->name, "progs/bolt2.mdl") ||
+		!strcmp(mod->name, "progs/bolt3.mdl"))
+		mod->modhint = MOD_THUNDERBOLT;	*/
+
+	if (mod->modhint == MOD_PLAYER || mod->modhint == MOD_EYES) {
 		unsigned short crc;
 		byte *p;
 		int len;
@@ -1465,13 +1478,13 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	
 		sprintf(st, "%d", (int) crc);
 		Info_SetValueForKey (cls.userinfo, 
-			!strcmp(loadmodel->name, "progs/player.mdl") ? pmodel_name : emodel_name,
+			mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
 			st, MAX_INFO_STRING);
 
 		if (cls.state >= ca_connected) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			sprintf(st, "setinfo %s %d", 
-				!strcmp(loadmodel->name, "progs/player.mdl") ? pmodel_name : emodel_name,
+				mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
 				(int)crc);
 			SZ_Print (&cls.netchan.message, st);
 		}
@@ -1706,7 +1719,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe)
 	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size*r_pixbytes,
 								   loadname);
 
-	Q_memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
+	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
 	*ppframe = pspriteframe;
 
 	pspriteframe->width = width;
@@ -1721,7 +1734,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe)
 
 	if (r_pixbytes == 1)
 	{
-		Q_memcpy (&pspriteframe->pixels[0], (byte *)(pinframe + 1), size);
+		memcpy (&pspriteframe->pixels[0], (byte *)(pinframe + 1), size);
 	}
 	else if (r_pixbytes == 2)
 	{

@@ -62,7 +62,7 @@ void Pmove_Init (void)
 	Cvar_RegisterVariable (&pm_jumpfixtime);
 #endif
 
-#if defined(SERVERONLY) || defined(QW_BOTH)
+#if defined(SERVERONLY)
 	Cvar_RegisterVariable (&pm_jumpfix);
 #else
 	pm_jumpfix.value = 1;
@@ -275,6 +275,7 @@ void PM_GroundMove (void)
 	// first try moving directly to the next spot
 	VectorCopy (dest, start);
 	trace = PM_PlayerMove (pmove.origin, dest);
+	
 	if (trace.fraction == 1)
 	{
 		VectorCopy (trace.endpos, pmove.origin);

@@ -41,8 +41,9 @@ Skin_Find
 void Skin_Find (player_info_t *sc)
 {
 	skin_t		*skin;
-	int			i;
+	int			i, tracknum;
 	char		name[128], *s;
+	static char	*team = "";
 
 	if (allskins[0])
 		strcpy (name, allskins);
@@ -57,20 +58,31 @@ void Skin_Find (player_info_t *sc)
 
 	// ZQuake: check teamskin/enemyskin
 	// FIXME: does this work?
+
+	if (cl.spectator)
+	{
+		tracknum = Cam_TrackNum();
+		if (tracknum != -1)
+			//team = NULL;
+		//else 
+			team = cl.players[tracknum].team;
+	} else
+		team = cl.players[cl.playernum].team;
+
 	if ( !cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_SKIN) )
 	{
 		int teamplay;
 
 		teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
 		
-		if (cl_teamskin.string[0] && teamplay && 
-			!strcmp(sc->team, cl.players[cl.playernum].team))
+		if (cl_teamskin.string[0] && teamplay && team != NULL &&
+			!strcmp(sc->team, team))
 		{
 			Q_strncpyz (name, cl_teamskin.string, sizeof(name));
 		}
 		
-		if (cl_enemyskin.string[0] && (!teamplay || 
-			strcmp(sc->team, cl.players[cl.playernum].team)))
+		if (cl_enemyskin.string[0] && (!teamplay || team == NULL ||
+			strcmp(sc->team, team)))
 		{
 			Q_strncpyz (name, cl_enemyskin.string, sizeof(name));
 		}

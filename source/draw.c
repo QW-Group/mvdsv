@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // vid buffer
 
 #include "quakedef.h"
+#include "sound.h"
+#include "version.h"
 
 typedef struct {
 	vrect_t	rect;
@@ -109,9 +111,9 @@ Draw_Init
 */
 void Draw_Init (void)
 {
-	draw_chars = W_GetLumpName ("conchars");
-	draw_disc = W_GetLumpName ("disc");
-	draw_backtile = W_GetLumpName ("backtile");
+	draw_chars = (byte *) Draw_PicFromWad ("conchars");
+	draw_disc = Draw_PicFromWad ("disc");
+	draw_backtile = Draw_PicFromWad ("backtile");
 
 	r_rectdesc.width = draw_backtile->width;
 	r_rectdesc.height = draw_backtile->height;
@@ -286,6 +288,16 @@ void Draw_Crosshair(void)
 		Draw_Pixel(x, y - 3, c);
 		Draw_Pixel(x, y + 1, c);
 		Draw_Pixel(x, y + 3, c);
+// Tonik -->
+	} else if (crosshair.value == 3) {
+		x = scr_vrect.x + scr_vrect.width/2 + cl_crossx.value; 
+		y = scr_vrect.y + scr_vrect.height/2 + cl_crossy.value;
+		Draw_Pixel(x, y, c);
+		Draw_Pixel(x - 1, y, c);
+		Draw_Pixel(x + 1, y, c);
+		Draw_Pixel(x, y - 1, c);
+		Draw_Pixel(x, y + 1, c);
+// <-- Tonik
 	} else if (crosshair.value)
 		Draw_Character (
 			scr_vrect.x + scr_vrect.width/2-4 + cl_crossx.value, 
@@ -363,7 +375,7 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 
 		for (v=0 ; v<pic->height ; v++)
 		{
-			Q_memcpy (dest, source, pic->width);
+			memcpy (dest, source, pic->width);
 			dest += vid.rowbytes;
 			source += pic->width;
 		}
@@ -414,7 +426,7 @@ void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int h
 
 		for (v=0 ; v<height ; v++)
 		{
-			Q_memcpy (dest, source, width);
+			memcpy (dest, source, width);
 			dest += vid.rowbytes;
 			source += pic->width;
 		}
@@ -656,17 +668,11 @@ void Draw_ConsoleBackground (int lines)
 
 // hack the version number directly into the pic
 
-	//sprintf (ver, "start commands with a \\ character %4.2f", VERSION);
-
 	if (cls.download) {
-		sprintf (ver, "%4.2f", VERSION);
+		strcpy (ver, QWE_VERSION);
 		dest = conback->data + 320 + 320*186 - 11 - 8*strlen(ver);
 	} else {
-#if defined(__linux__)
-		sprintf (ver, "Linux (%4.2f) QuakeWorld %4.2f", LINUX_VERSION, VERSION);
-#else
-		sprintf (ver, "QuakeWorld %4.2f", VERSION);
-#endif
+		sprintf (ver, "QWExtended client %s", QWE_VERSION);
 		dest = conback->data + 320 - (strlen(ver)*8 + 11) + 320*186;
 	}
 

@@ -274,6 +274,12 @@ void PF_centerprint (void)
 
 	ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen(s));
 	ClientReliableWrite_String (cl, s);
+
+	if (sv.demorecording) {
+		DemoReliableWrite_Begin (dem_single, entnum - 1, 2 + strlen(s));
+		MSG_WriteByte (&demo.buf, svc_centerprint);
+		MSG_WriteString (&demo.buf, s);
+	}
 }
 
 
@@ -711,6 +717,11 @@ void PF_stuffcmd (void)
 			}
 			ClientReliableWrite_Begin (cl, svc_stufftext, 2+strlen(buf));
 			ClientReliableWrite_String (cl, buf);
+			if (sv.demorecording) {
+				DemoReliableWrite_Begin ( dem_single, cl - svs.clients, 2+strlen(buf));
+				MSG_WriteByte(&demo.buf, svc_stufftext);
+				MSG_WriteString(&demo.buf, buf);
+			}
 			buf[0] = 0;
 		}
 	}
@@ -731,6 +742,85 @@ void PF_localcmd (void)
 	
 	str = G_STRING(OFS_PARM0);	
 	Cbuf_AddText (str);
+}
+
+void PF_executecmd (void)
+{
+	Cbuf_Execute();
+}
+
+char	pr_string_temp[128];
+
+/*
+=================
+PF_tokanize
+
+tokanize string
+
+void tokanize(string)
+=================
+*/
+
+void PF_tokanize (void)
+{
+	char *str;
+
+	str = G_STRING(OFS_PARM0);
+	Cmd_TokenizeString(str);
+}
+
+/*
+=================
+PF_argc
+
+returns number of tokens (must be executed after PF_Tokanize!)
+
+float argc(void)
+=================
+*/
+
+void PF_argc (void)
+{
+	G_FLOAT(OFS_RETURN) = (float) Cmd_Argc();
+}
+
+/*
+=================
+PF_argv
+
+returns token requested by user (must be executed after PF_Tokanize!)
+
+string argc(float)
+=================
+*/
+
+void PF_argv (void)
+{
+	int num;
+
+	num = (int) G_FLOAT(OFS_PARM0);
+
+	if (num < 0 ) num = 0;
+	if (num > Cmd_Argc()-1) num = Cmd_Argc()-1;
+
+	sprintf (pr_string_temp, "%s", Cmd_Argv(num));
+	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
+}
+
+/*
+=================
+PF_conprint
+
+Does Sys_Printf
+
+void conprint(string)
+=================
+*/
+
+void PF_conprint(void)
+{
+
+	Sys_Printf(G_STRING(OFS_PARM0));
 }
 
 /*
@@ -1089,6 +1179,13 @@ void PF_lightstyle (void)
 			ClientReliableWrite_Char (client, style);
 			ClientReliableWrite_String (client, val);
 		}
+	if (sv.demorecording)
+	{
+		DemoReliableWrite_Begin( dem_all, 0, strlen(val)+3);
+		MSG_WriteByte(&demo.buf, svc_lightstyle);
+		MSG_WriteChar(&demo.buf, style);
+		MSG_WriteString(&demo.buf, val);
+	}
 }
 
 void PF_rint (void)
@@ -1737,7 +1834,12 @@ PF_logfrag,
 
 PF_infokey,
 PF_stof,
-PF_multicast
+PF_multicast,
+PF_executecmd,	// #83
+PF_tokanize,
+PF_argc,
+PF_argv,
+PF_conprint		// #87
 };
 
 builtin_t *pr_builtins = pr_builtin;

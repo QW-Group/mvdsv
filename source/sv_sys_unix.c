@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include <sys/types.h>
+#include <dirent.h>
 #include "qwsvdef.h"
 
 #ifdef NeXT
@@ -76,6 +77,62 @@ void Sys_mkdir (char *path)
 		return;
 	if (errno != EEXIST)
 		Sys_Error ("mkdir %s: %s",path, strerror(errno)); 
+}
+
+/*
+================
+Sys_remove
+================
+*/
+int Sys_remove (char *path)
+{
+	return system(va("rm \"%s\"", path));
+}
+
+/*
+================
+Sys_listdir
+================
+*/
+
+dir_t *Sys_listdir (char *path, char *ext)
+{
+	static dir_t list[MAX_DIRFILES];
+	int		i;
+	int		numfiles;
+	DIR		*dir;
+    struct dirent *oneentry;
+
+	numfiles = 0;
+	memset(list, 0, sizeof(list));
+
+	dir=opendir(path);
+	if (!dir) {
+		return list;
+	}
+
+	for(;;)
+	{
+		oneentry=readdir(dir);
+		if(!oneentry) 
+			break;
+
+		if (oneentry->d_type == DT_DIR || oneentry->d_type == DT_LNK)
+			continue;
+
+		i = strlen(oneentry->d_name);
+		if (i < 5 || (Q_strcasecmp(oneentry->d_name+i-4, ext)))
+			continue;
+
+		Q_strncpyz (list[numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
+
+		if (++numfiles == MAX_DIRFILES)
+			break;
+	}
+
+	closedir(dir);
+
+	return list;
 }
 
 

@@ -18,13 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifdef QW_BOTH
-#include "quakedef.h"
-#include "server.h"
-#include "sound.h"
-#else
 #include "qwsvdef.h"
-#endif
 
 qboolean	sv_allow_cheats;
 
@@ -332,35 +326,8 @@ void SV_Map_f (void)
 	}
 	fclose (f);
 
-#ifdef QW_BOTH
-	// An ugly hack to let you run zquake and qwsv or proxy without
-	// changing ports via the command line
-	if  (net_serversocket == -1)
-	{
-		extern int	__serverport;
-		int	i;
-		for (i = 0; i < 10; i++) {
-			net_serversocket = UDP_OpenSocket (__serverport+i, false);
-			if (net_serversocket != -1)
-				break;
-		}
-		if (net_serversocket == -1) {
-			Con_Printf ("Can't start server because server socket could not be opened.\n");
-			return;
-		}
-		if (i)
-			Con_Printf ("Server socket opened on port %i\n", __serverport + i);
-	}
-
-	// make sure we're not connected to an external server,
-	// and demo playback is stopped
-	if (sv.state == ss_dead)
-		CL_Disconnect();
-
-	S_StopAllSounds (true);
-	cl.worldmodel = NULL;
-	Host_ConnectLocal ();
-#endif
+	if (sv.demorecording)
+		SV_Stop_f();
 
 	SV_BroadcastCommand ("changing\n");
 	SV_SendMessagesToAll ();
@@ -389,13 +356,6 @@ void SV_Kick_f (void)
 
 	c = Cmd_Argc ();
 	if (c < 2) {
-#ifdef QW_BOTH
-		// some mods use a "kick" alias for their own needs, sigh
-		if (cls.state >= ca_onserver && Cmd_FindAlias("kick")) {
-			Cmd_ExecuteString (Cmd_AliasString("kick"));
-			return;
-		}
-#endif
 		Con_Printf ("kick <userid> [reason]\n");
 		return;
 	}
@@ -446,15 +406,6 @@ void SV_Status_f (void)
 	client_t	*cl;
 	float		cpu, avg, pak;
 	char		*s;
-
-#ifdef QW_BOTH
-	// some mods use a "status" alias for their own needs, sigh
-	if (!sv_redirected && !Q_strcasecmp(Cmd_Argv(0), "status")
-		&& cls.state >= ca_onserver && Cmd_FindAlias("status")) {
-		Cmd_ExecuteString (Cmd_AliasString("status"));
-		return;
-	}
-#endif
 
 	cpu = (svs.stats.latched_active+svs.stats.latched_idle);
 	if (cpu)
@@ -579,8 +530,16 @@ void SV_ConSay_f(void)
 	{
 		if (client->state != cs_spawned)
 			continue;
-		SV_ClientPrintf(client, PRINT_CHAT, "%s\n", text);
+		SV_ClientPrintf2(client, PRINT_CHAT, "%s\n", text);
 	}
+
+	if (sv.demorecording) {
+		DemoReliableWrite_Begin (dem_all, 0, strlen(text)+3);
+		MSG_WriteByte (&demo.buf, svc_print);
+		MSG_WriteByte (&demo.buf, PRINT_CHAT);
+		MSG_WriteString (&demo.buf, text);
+	}
+
 }
 
 
@@ -948,30 +907,29 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
 	Cmd_AddCommand ("kick", SV_Kick_f);
 	Cmd_AddCommand ("status", SV_Status_f);
-#ifdef QW_BOTH
-	Cmd_AddCommand ("serverstatus", SV_Status_f);
-#endif
 
 	Cmd_AddCommand ("map", SV_Map_f);
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
 
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
-#ifndef QW_BOTH
+
 	Cmd_AddCommand ("say", SV_ConSay_f);
 	Cmd_AddCommand ("quit", SV_Quit_f);
-#endif
+
 	Cmd_AddCommand ("god", SV_God_f);
 	Cmd_AddCommand ("give", SV_Give_f);
 	Cmd_AddCommand ("noclip", SV_Noclip_f);
 	Cmd_AddCommand ("localinfo", SV_Localinfo_f);
-#ifndef QW_BOTH	// FIXME
+
 	Cmd_AddCommand ("serverinfo", SV_Serverinfo_f);
 	Cmd_AddCommand ("user", SV_User_f);
-#endif
+
 	Cmd_AddCommand ("gamedir", SV_Gamedir_f);
 	Cmd_AddCommand ("sv_gamedir", SV_Gamedir);
 	Cmd_AddCommand ("floodprot", SV_Floodprot_f);
 	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f);
+
+	
 
 	cl_warncmd.value = 1;
 }

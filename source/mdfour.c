@@ -24,7 +24,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: mdfour.c,v 1.1.1.2 2004/09/28 19:04:30 vvd0 Exp $
+	$Id: mdfour.c,v 1.1.1.3 2004/10/13 18:54:38 vvd0 Exp $
 */
 
 #include <string.h>		/* XoXus: needed for memset call */

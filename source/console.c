@@ -368,12 +368,6 @@ Handles cursor positioning, line wrapping, etc
 // FIXME: make a buffer size safe vsprintf?
 void Con_Printf (char *fmt, ...)
 {
-#ifdef QW_BOTH
-	extern qboolean	sv_redirected;
-	extern FILE *	sv_logfile;
-	extern char		outputbuf[8000];
-	void SV_FlushRedirect ();
-#endif
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 	
@@ -381,20 +375,6 @@ void Con_Printf (char *fmt, ...)
 	vsprintf (msg,fmt,argptr);
 	va_end (argptr);
 	
-#ifdef QW_BOTH
-	// add to redirected message
-	if (sv_redirected)
-	{
-		if (strlen (msg) + strlen(outputbuf) > sizeof(outputbuf) - 1)
-			SV_FlushRedirect ();
-		strcat (outputbuf, msg);
-		return;
-	}
-
-	if (sv_logfile)
-		fprintf (sv_logfile, "%s", msg);
-#endif
-
 // also echo to debugging console
 	Sys_Printf ("%s", msg);	// also echo to debugging console
 

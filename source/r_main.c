@@ -198,9 +198,6 @@ void R_Init (void)
 	R_InitTurb ();
 	
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);
-#ifdef QW_BOTH
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);	
-#endif
 
 	Cvar_RegisterVariable (&r_draworder);
 	Cvar_RegisterVariable (&r_speeds);

@@ -115,6 +115,11 @@ int		cl_spikeindex, cl_playerindex, cl_flagindex;
 int		cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index; // Tonik
 int		cl_rocketindex, cl_grenadeindex; // Tonik
 
+extern int stat_packets;
+extern int	stat_headers;
+extern int	stat_size;
+
+
 //=============================================================================
 
 int packet_latency[NET_TIMINGS];
@@ -553,6 +558,7 @@ void CL_ParseServerData (void)
 	extern	char	gamedirfile[MAX_OSPATH];
 	int protover;
 	extern cshift_t	cshift_empty;
+	extern float nextdemotime, olddemotime;
 	
 	Con_DPrintf ("Serverdata packet received.\n");
 //
@@ -616,12 +622,19 @@ void CL_ParseServerData (void)
 		Cbuf_AddText(fn);
 	}
 
-	// parse player slot, high bit means spectator
-	cl.playernum = MSG_ReadByte ();
-	if (cl.playernum & 128)
-	{
+	if (cls.demoplayback2) {
+		cls.netchan.last_received = nextdemotime = olddemotime = MSG_ReadFloat();
+		cl.playernum = 31;
 		cl.spectator = true;
-		cl.playernum &= ~128;
+	} else {
+		// parse player slot, high bit means spectator
+		cl.playernum = MSG_ReadByte ();
+		if (cl.playernum & 128)
+		{
+			cl.spectator = true;
+			cl.playernum &= ~128;
+			//Con_Printf("pn:%d\n", cl.playernum);
+		}
 	}
 
 	// get the full level name
@@ -851,7 +864,7 @@ CL_ParseStartSoundPacket
 void CL_ParseStartSoundPacket(void)
 {
     vec3_t  pos;
-    int 	channel, ent;
+    int 	channel, ent, tracknum;
     int 	sound_num;
     int 	volume;
     float 	attenuation;  
@@ -879,9 +892,14 @@ void CL_ParseStartSoundPacket(void)
 
 	if (ent > MAX_EDICTS)
 		Host_EndGame ("CL_ParseStartSoundPacket: ent = %i", ent);
-	
+
+	tracknum = Cam_TrackNum();
+	if (cl.spectator && tracknum != -1 && ent == tracknum + 1)
+		ent = cl.playernum + 1;
+
     S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
-	if (ent == cl.playernum+1)
+
+	if (ent == cl.playernum+1) 
 		TP_CheckPickupSound (cl.sound_name[sound_num]);
 }       
 
@@ -903,10 +921,17 @@ void CL_ParseClientdata (void)
 	oldparsecountmod = parsecountmod;
 
 	i = cls.netchan.incoming_acknowledged;
+	if (cls.demoplayback2)
+		cl.oldparsecount = i - 1;
+	//else
+	//	cl.oldparsecount = cl.parsecount;
+
 	cl.parsecount = i;
 	i &= UPDATE_MASK;
 	parsecountmod = i;
 	frame = &cl.frames[i];
+	if (cls.demoplayback2)
+		frame->senttime = realtime - host_frametime;//realtime;
 	parsecounttime = cl.frames[i].senttime;
 
 	frame->receivedtime = realtime;
@@ -936,9 +961,10 @@ CL_NewTranslation
 #ifdef GLQUAKE
 void CL_NewTranslation (int slot)
 {
-	int		teamplay;
-	char	s[512];
+	int		teamplay, tracknum;
+	//char	s[512];
 	player_info_t	*player;
+	static char *team = "";
 
 	if (slot > MAX_CLIENTS)
 		Sys_Error ("CL_NewTranslation: slot > MAX_CLIENTS");
@@ -951,19 +977,29 @@ void CL_NewTranslation (int slot)
 	player->topcolor = player->real_topcolor;
 	player->bottomcolor = player->real_bottomcolor;
 
-	strcpy (s, cl.players[cl.playernum].team);
+	if (cl.spectator)
+	{
+		tracknum = Cam_TrackNum();
+		if (tracknum != -1)
+		//	team = NULL;
+		//else 
+			team = cl.players[tracknum].team;
+	} else
+		team = cl.players[cl.playernum].team;
+
+	//strcpy (s, cl.players[cl.playernum].team);
 	teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
 
 	if ( !cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_COLOR) ) {
-		if (cl_teamtopcolor >= 0 && teamplay && 
-			!strcmp(player->team, s))
+		if (cl_teamtopcolor >= 0 && teamplay && team != NULL &&
+			!strcmp(player->team, team))
 		{
 			player->topcolor = cl_teamtopcolor;
 			player->bottomcolor = cl_teambottomcolor;
 		}
 		
 		if (cl_enemytopcolor >= 0 && slot != cl.playernum &&
-			(!teamplay || strcmp(player->team, s)))
+			(!teamplay || team == NULL || strcmp(player->team, team)))
 		{
 			player->topcolor = cl_enemytopcolor;
 			player->bottomcolor = cl_enemybottomcolor;
@@ -976,12 +1012,13 @@ void CL_NewTranslation (int slot)
 #else
 void CL_NewTranslation (int slot)
 {
-	int		teamplay;
+	int		teamplay, tracknum;
 	int		i, j;
 	int		top, bottom;
 	byte	*dest, *source;
 	player_info_t	*player;
 	char	s[512];
+	static char *team = "";
 
 	if (slot > MAX_CLIENTS)
 		Sys_Error ("CL_NewTranslation: slot > MAX_CLIENTS");
@@ -999,19 +1036,29 @@ void CL_NewTranslation (int slot)
 	player->topcolor = player->real_topcolor;
 	player->bottomcolor = player->real_bottomcolor;
 
-	strcpy (s, cl.players[cl.playernum].team);
+	if (cl.spectator)
+	{
+		tracknum = Cam_TrackNum();
+		if (tracknum != -1)
+		//	team = NULL;
+		//else 
+			team = cl.players[tracknum].team;
+	} else {
+		team = cl.players[cl.playernum].team;
+	}
+
 	teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
 
 	if ( !cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_COLOR) ) {
-		if (cl_teamtopcolor >= 0 && teamplay && 
-			!strcmp(player->team, s))
+		if (cl_teamtopcolor >= 0 && teamplay && team != NULL &&
+			!strcmp(player->team, team))
 		{
 			player->topcolor = cl_teamtopcolor;
 			player->bottomcolor = cl_teambottomcolor;
 		}
 		
 		if (cl_enemytopcolor >= 0 && slot != cl.playernum &&
-			(!teamplay || strcmp(player->team, s)))
+			(!teamplay || team == NULL || strcmp(player->team, team)))
 		{
 			player->topcolor = cl_enemytopcolor;
 			player->bottomcolor = cl_enemybottomcolor;
@@ -1200,6 +1247,7 @@ void CL_ParseServerInfoChange (void)
 CL_ParsePrint
 ==============
 */
+
 void CL_ParsePrint (void)
 {
 	char	*s, str[1024];
@@ -1209,6 +1257,9 @@ void CL_ParsePrint (void)
 
 	level = MSG_ReadByte ();
 	s = MSG_ReadString ();
+
+	//stat_size += 3 + sizeof(s);
+	//Con_Printf("msg_size:%d\n", stat_size);
 
 	strncat (cl.sprint_buf, s, sizeof(cl.sprint_buf)-1);
 
@@ -1253,6 +1304,9 @@ void CL_ParseStufftext (void)
 	s = MSG_ReadString ();
 
 	Con_DPrintf ("stufftext: %s\n", s);
+	//if (!strncmp(s, "fullserverinfo", 10))
+	//	return;
+
 	Cbuf_AddTextEx (&cbuf_svc, s);
 
 	// QW servers send this without the ending \n
@@ -1270,11 +1324,18 @@ void CL_ParseStufftext (void)
 CL_SetStat
 =====================
 */
+
 void CL_SetStat (int stat, int value)
 {
 	int	j;
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_EndGame ("CL_SetStat: %i is invalid", stat);
+
+	if (cls.demoplayback2) {
+		cl.players[cls.lastto].stats[stat]=value;
+		if ( Cam_TrackNum() != cls.lastto )
+			return;
+	}
 
 	Sbar_Changed ();
 	
@@ -1319,7 +1380,7 @@ void CL_MuzzleFlash (void)
 			ent = &cl.frames[cls.netchan.incoming_sequence&UPDATE_MASK].packet_entities.entities[j];
 			if (ent->number == i)
 			{
-				dl = CL_AllocDlight (i);
+				dl = CL_AllocDlight (-i);
 				VectorCopy (ent->origin,  dl->origin);
 				AngleVectors (ent->angles, fv, rv, uv);
 				VectorMA (dl->origin, 18, fv, dl->origin);
@@ -1347,7 +1408,7 @@ void CL_MuzzleFlash (void)
 
 	pl = &cl.frames[parsecountmod].playerstate[i-1];
 
-	dl = CL_AllocDlight (i);
+	dl = CL_AllocDlight (-i);
 	VectorCopy (pl->origin,  dl->origin);
 	AngleVectors (pl->viewangles, fv, rv, uv);
 		
@@ -1369,6 +1430,7 @@ CL_ParseServerMessage
 =====================
 */
 int	received_framecount;
+extern int	fixangle;
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
@@ -1453,8 +1515,19 @@ void CL_ParseServerMessage (void)
 			break;
 			
 		case svc_setangle:
-			for (i=0 ; i<3 ; i++)
-				cl.viewangles[i] = MSG_ReadAngle ();
+			if (cls.demoplayback2) {
+				j = MSG_ReadByte();
+				fixangle |= 1 << j;
+				if (j != Cam_TrackNum())
+					for (i=0; i<3; i++)
+						MSG_ReadAngle();
+			}
+
+			if (!cls.demoplayback2 || (cls.demoplayback2 && j == Cam_TrackNum()))
+			{
+				for (i=0 ; i<3 ; i++)
+					cl.viewangles[i] = MSG_ReadAngle ();
+			}
 //			cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 			break;
 			
@@ -1462,7 +1535,7 @@ void CL_ParseServerMessage (void)
 			i = MSG_ReadByte ();
 			if (i >= MAX_LIGHTSTYLES)
 				Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
-			strcpy (cl_lightstyle[i].map,  MSG_ReadString());
+			strncpy (cl_lightstyle[i].map,  MSG_ReadString(), MAX_STYLESTRING);
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
 			
@@ -1503,6 +1576,7 @@ void CL_ParseServerMessage (void)
 			if (i >= MAX_CLIENTS)
 				Host_EndGame ("CL_ParseServerMessage: svc_updateentertime > MAX_CLIENTS");
 			cl.players[i].entertime = realtime - MSG_ReadFloat ();
+			//Con_Printf("enter:%f, real:%f\n", realtime - cl.players[i].entertime, realtime);
 			break;
 			
 		case svc_spawnbaseline:
@@ -1527,11 +1601,13 @@ void CL_ParseServerMessage (void)
 		case svc_updatestat:
 			i = MSG_ReadByte ();
 			j = MSG_ReadByte ();
+			//stat_size += 8;
 			CL_SetStat (i, j);
 			break;
 		case svc_updatestatlong:
 			i = MSG_ReadByte ();
 			j = MSG_ReadLong ();
+			//stat_size += 11;
 			CL_SetStat (i, j);
 			break;
 			

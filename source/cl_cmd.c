@@ -23,10 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "teamplay.h"
 #include "version.h"
 
-#ifdef QW_BOTH
-#include "server.h"
-#endif
-
 void SCR_RSShot_f (void);
 void CL_ProcessServerInfo (void);
 void SV_Serverinfo_f (void);
@@ -284,6 +280,11 @@ void CL_Download_f (void)
 			break;
 	}
 
+	if (cls.download)
+	{
+		fclose(cls.download);
+	}
+
 	strcpy(cls.downloadtempname, cls.downloadname);
 	cls.download = fopen (cls.downloadname, "wb");
 	cls.downloadtype = dl_single;
@@ -518,12 +519,6 @@ CL_Serverinfo_f
 */
 void CL_Serverinfo_f (void)
 {
-#ifdef QW_BOTH
-	if (cls.state < ca_connected || sv.state != ss_dead) {
-		SV_Serverinfo_f();
-		return;
-	}
-#endif
 
 // Tonik: no need to request serverinfo from server, because we
 // already have it cached in cl.serverinfo
@@ -682,16 +677,13 @@ void CL_FullServerinfo_f (void)
 
 	strcpy (cl.serverinfo, Cmd_Argv(1));
 
+	
 	server_version = 0;
 
-	if ((p = Info_ValueForKey(cl.serverinfo, "*z_version")) && *p) {
+	if ((p = Info_ValueForKey(cl.serverinfo, "*qwex_version")) && *p) {
 		v = Q_atof(p);
 		if (v) {
-#ifdef QW_BOTH
-			// only print version if connecting to a remote server
-			if (sv.state == ss_dead)
-#endif
-				Con_Printf("ZQuake Version %s Server\n", p);
+				Con_Printf("QWExtended Server Version %s\n", p);
 			server_version = 2.40;
 		}
 	}
@@ -703,6 +695,7 @@ void CL_FullServerinfo_f (void)
 			server_version = v;
 		}
 	}
+	
 
 	CL_ProcessServerInfo ();
 }

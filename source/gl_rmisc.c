@@ -171,9 +171,6 @@ void R_Init (void)
 {	
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);
 	Cmd_AddCommand ("envmap", R_Envmap_f);
-#ifdef QW_BOTH
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);	
-#endif
 
 	Cvar_RegisterVariable (&r_watervishack);
 	if (gl_vendor && strstr(gl_vendor, "3Dfx"))

@@ -49,6 +49,7 @@ static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 func_t SpectatorConnect;
 func_t SpectatorThink;
 func_t SpectatorDisconnect;
+func_t ChatMessage;
 
 
 /*
@@ -966,6 +967,7 @@ void ED_LoadFromFile (char *data)
 PR_LoadProgs
 ===============
 */
+
 void PR_LoadProgs (void)
 {
 	int		i;
@@ -1056,6 +1058,8 @@ void PR_LoadProgs (void)
 		SpectatorThink = (func_t)(f - pr_functions);
 	if ((f = ED_FindFunction ("SpectatorDisconnect")) != NULL)
 		SpectatorDisconnect = (func_t)(f - pr_functions);
+	if ((f = ED_FindFunction ("ChatMessage")) != NULL)
+		ChatMessage = (func_t)(f - pr_functions);
 }
 
 

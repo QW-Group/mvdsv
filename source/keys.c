@@ -943,7 +943,7 @@ void Key_Event (int key, qboolean down)
 //
 // during demo playback, most keys bring up the main menu
 //
-	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game
+	if (cls.demoplayback && !cls.demoplayback2 && down && consolekeys[key] && key_dest == key_game
 		&& key != K_ALT && key != K_CTRL && key != K_SHIFT
 		&& key != K_INS && key != K_DEL && key != K_HOME
 		&& key != K_END && key != K_TAB)

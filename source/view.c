@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "r_local.h"
+#include "pmove.h"
 
 /*
 
@@ -31,39 +32,42 @@ when crossing a water boudnary.
 
 */
 
-cvar_t	lcd_x = {"lcd_x", "0"};	// FIXME: make this work sometime...
-
 cvar_t	cl_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	cl_rollangle = {"cl_rollangle", "2.0"};
 
-cvar_t	cl_bob = {"cl_bob","0.02", false};
-cvar_t	cl_bobcycle = {"cl_bobcycle","0.6", false};
-cvar_t	cl_bobup = {"cl_bobup","0.5", false};
+cvar_t	cl_bob = {"cl_bob","0.02"};
+cvar_t	cl_bobcycle = {"cl_bobcycle","0.6"};
+cvar_t	cl_bobup = {"cl_bobup","0.5"};
 
-cvar_t	v_kicktime = {"v_kicktime", "0.5", false};
-cvar_t	v_kickroll = {"v_kickroll", "0.6", false};
-cvar_t	v_kickpitch = {"v_kickpitch", "0.6", false};
+cvar_t	v_kicktime = {"v_kicktime", "0.5"};
+cvar_t	v_kickroll = {"v_kickroll", "0.6"};
+cvar_t	v_kickpitch = {"v_kickpitch", "0.6"};
 
-cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", false};
-cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", false};
-cvar_t	v_ipitch_cycle = {"v_ipitch_cycle", "1", false};
-cvar_t	v_iyaw_level = {"v_iyaw_level", "0.3", false};
-cvar_t	v_iroll_level = {"v_iroll_level", "0.1", false};
-cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", false};
+qboolean V_OnIdleChange (cvar_t *var, char *value);
+cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", 0, V_OnIdleChange};
+cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", 0, V_OnIdleChange};
+cvar_t	v_ipitch_cycle = {"v_ipitch_cycle", "1", 0, V_OnIdleChange};
+cvar_t	v_iyaw_level = {"v_iyaw_level", "0.3", 0, V_OnIdleChange};
+cvar_t	v_iroll_level = {"v_iroll_level", "0.1", 0, V_OnIdleChange};
+cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", 0, V_OnIdleChange};
 
-cvar_t	v_idlescale = {"v_idlescale", "0", false};
+cvar_t	v_idlescale = {"v_idlescale", "0", 0, V_OnIdleChange};
 
-cvar_t	crosshair = {"crosshair", "0", true};
-cvar_t	crosshaircolor = {"crosshaircolor", "79", true};
+cvar_t	crosshair = {"crosshair","2",CVAR_ARCHIVE};
+cvar_t	crosshaircolor = {"crosshaircolor","79",CVAR_ARCHIVE};
 
-cvar_t  cl_crossx = {"cl_crossx", "0", true};
-cvar_t  cl_crossy = {"cl_crossy", "0", true};
+cvar_t  cl_crossx = {"cl_crossx", "0", CVAR_ARCHIVE};
+cvar_t  cl_crossy = {"cl_crossy", "0", CVAR_ARCHIVE};
 
-#ifdef GLQUAKE
-cvar_t	gl_cshiftpercent = {"gl_cshiftpercent", "100", false};
-#endif
+cvar_t  v_contentblend = {"v_contentblend", "1"};
 
-cvar_t  v_contentblend = {"v_contentblend", "1", false};
+cvar_t	v_damagecshift = {"v_damagecshift", "1"};
+cvar_t	v_quadcshift = {"v_quadcshift", "1"};
+cvar_t	v_suitcshift = {"v_suitcshift", "1"};
+cvar_t	v_ringcshift = {"v_ringcshift", "1"};
+cvar_t	v_pentcshift = {"v_pentcshift", "1"};
+
+cvar_t	v_bonusflash = {"cl_bonusflash", "1"};
 
 float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
@@ -71,6 +75,16 @@ extern	int			in_forward, in_forward2, in_back;
 
 frame_t		*view_frame;
 player_state_t		*view_message;
+
+
+qboolean V_OnIdleChange (cvar_t *var, char *value)
+{
+	// Don't allow cheating in TF
+	if (cl.teamfortress && cls.state >= ca_connected &&
+		cbuf_current != &cbuf_svc)
+		return true;
+	return false;
+}
 
 /*
 ===============
@@ -145,7 +159,7 @@ float V_CalcBob (void)
 //=============================================================================
 
 
-cvar_t	v_centermove = {"v_centermove", "0.15", false};
+cvar_t	v_centermove = {"v_centermove", "0.15"};
 cvar_t	v_centerspeed = {"v_centerspeed","500"};
 
 
@@ -189,7 +203,7 @@ void V_DriftPitch (void)
 {
 	float		delta, move;
 
-	if (view_message->onground == -1 || cls.demoplayback )
+	if (view_message->onground == -1 || cls.demoplayback)
 	{
 		cl.driftmove = 0;
 		cl.pitchvel = 0;
@@ -262,21 +276,36 @@ cshift_t	cshift_water = { {130,80,50}, 128 };
 cshift_t	cshift_slime = { {0,25,5}, 150 };
 cshift_t	cshift_lava = { {255,80,0}, 150 };
 
-cvar_t		v_gamma = {"gamma", "1", true};
+cvar_t		v_gamma = {"gamma","0.7",CVAR_ARCHIVE};
+cvar_t		v_contrast = {"contrast","1",CVAR_ARCHIVE};
 
 byte		gammatable[256];	// palette is sent through this
 
+byte		current_pal[768];	// Tonik: used for screenshots
+
 
 #ifdef	GLQUAKE
-byte		ramps[3][256];
+
+cvar_t		gl_cshiftpercent = {"gl_cshiftpercent", "100"};
+cvar_t		gl_gamma = {"gl_gamma","1",CVAR_ARCHIVE};
+cvar_t		gl_contrast = {"gl_contrast","1",CVAR_ARCHIVE};
 float		v_blend[4];		// rgba 0.0 - 1.0
+unsigned short	ramps[3][256];
+
 #endif	// GLQUAKE
 
-void BuildGammaTable (float g)
+
+#ifndef GLQUAKE
+void BuildGammaTable (float g, float c)
 {
 	int		i, inf;
 	
-	if (g == 1.0)
+	if (g < 0.3) g = 0.3;
+	if (g > 3) g = 3;
+	if (c < 1) c = 1;
+	if (c > 3) c = 3;
+
+	if (g == 1 && c == 1)
 	{
 		for (i=0 ; i<256 ; i++)
 			gammatable[i] = i;
@@ -285,7 +314,7 @@ void BuildGammaTable (float g)
 	
 	for (i=0 ; i<256 ; i++)
 	{
-		inf = 255 * pow ( (i+0.5)/255.5 , g ) + 0.5;
+		inf = 255 * pow ((i+0.5)/255.5*c, g) + 0.5;
 		if (inf < 0)
 			inf = 0;
 		if (inf > 255)
@@ -301,18 +330,20 @@ V_CheckGamma
 */
 qboolean V_CheckGamma (void)
 {
-	static float oldgammavalue;
+	static float old_gamma;
+	static float old_contrast;
 	
-	if (v_gamma.value == oldgammavalue)
+	if (v_gamma.value == old_gamma && v_contrast.value == old_contrast)
 		return false;
-	oldgammavalue = v_gamma.value;
+	old_gamma = v_gamma.value;
+	old_contrast = v_contrast.value;
 	
-	BuildGammaTable (v_gamma.value);
+	BuildGammaTable (v_gamma.value, v_contrast.value);
 	vid.recalc_refdef = 1;				// force a surface cache flush
 	
 	return true;
 }
-
+#endif	// !GLQUAKE
 
 
 /*
@@ -328,6 +359,7 @@ void V_ParseDamage (void)
 	vec3_t	forward, right, up;
 	float	side;
 	float	count;
+	float	fraction;
 	
 	armor = MSG_ReadByte ();
 	blood = MSG_ReadByte ();
@@ -345,6 +377,11 @@ void V_ParseDamage (void)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 	if (cl.cshifts[CSHIFT_DAMAGE].percent > 150)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 150;
+
+	fraction = v_damagecshift.value;
+	if (fraction < 0) fraction = 0;
+	if (fraction > 1) fraction = 1;
+	cl.cshifts[CSHIFT_DAMAGE].percent *= fraction;
 
 	if (armor > blood)		
 	{
@@ -390,6 +427,11 @@ V_cshift_f
 */
 void V_cshift_f (void)
 {
+	// don't allow cheating in TF
+	if (cls.state >= ca_connected && cl.teamfortress
+	&& cbuf_current != &cbuf_svc)
+		return;
+
 	cshift_empty.destcolor[0] = atoi(Cmd_Argv(1));
 	cshift_empty.destcolor[1] = atoi(Cmd_Argv(2));
 	cshift_empty.destcolor[2] = atoi(Cmd_Argv(3));
@@ -406,6 +448,9 @@ When you run over an item, the server sends this command
 */
 void V_BonusFlash_f (void)
 {
+	if (!v_bonusflash.value && cbuf_current == &cbuf_svc)
+		return;
+
 	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 215;
 	cl.cshifts[CSHIFT_BONUS].destcolor[1] = 186;
 	cl.cshifts[CSHIFT_BONUS].destcolor[2] = 69;
@@ -441,6 +486,28 @@ void V_SetContentsColor (int contents)
 	default:
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_water;
 	}
+
+	if (v_contentblend.value > 0 && v_contentblend.value < 1
+		&& contents != CONTENTS_EMPTY)
+		cl.cshifts[CSHIFT_CONTENTS].percent *= v_contentblend.value;
+
+#ifdef GLQUAKE
+	if (!gl_polyblend.value && !cl.teamfortress)
+		cl.cshifts[CSHIFT_CONTENTS].percent = 0;
+	else {
+		// ignore gl_cshiftpercent on custom cshifts (set with v_cshift
+		// command) to avoid cheating in TF
+		if (contents != CONTENTS_EMPTY) {
+			if (!gl_polyblend.value)
+				cl.cshifts[CSHIFT_CONTENTS].percent = 0;
+			else
+				cl.cshifts[CSHIFT_CONTENTS].percent *= gl_cshiftpercent.value;
+		}
+		else
+			cl.cshifts[CSHIFT_CONTENTS].percent *= 100;
+	}
+
+#endif
 }
 
 /*
@@ -450,33 +517,47 @@ V_CalcPowerupCshift
 */
 void V_CalcPowerupCshift (void)
 {
+	float fraction;
+
 	if (cl.stats[STAT_ITEMS] & IT_QUAD)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
-		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+		fraction = v_quadcshift.value;
+		if (fraction < 0) fraction = 0;
+		if (fraction > 1) fraction = 1;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30 * fraction;
 	}
 	else if (cl.stats[STAT_ITEMS] & IT_SUIT)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-		cl.cshifts[CSHIFT_POWERUP].percent = 20;
+		fraction = v_suitcshift.value;
+		if (fraction < 0) fraction = 0;
+		if (fraction > 1) fraction = 1;
+		cl.cshifts[CSHIFT_POWERUP].percent = 20 * fraction;
 	}
 	else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
-		cl.cshifts[CSHIFT_POWERUP].percent = 100;
+		fraction = v_ringcshift.value;
+		if (fraction < 0) fraction = 0;
+		if (fraction > 1) fraction = 1;
+		cl.cshifts[CSHIFT_POWERUP].percent = 100 * fraction;
 	}
 	else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
-		cl.cshifts[CSHIFT_POWERUP].percent = 30;
+		fraction = v_pentcshift.value;
+		if (fraction < 0) fraction = 0;
+		if (fraction > 1) fraction = 1;
+		cl.cshifts[CSHIFT_POWERUP].percent = 30 * fraction;
 	}
 	else
 		cl.cshifts[CSHIFT_POWERUP].percent = 0;
@@ -499,14 +580,29 @@ void V_CalcBlend (void)
 	b = 0;
 	a = 0;
 
+	V_CalcPowerupCshift ();
+
+// drop the damage value
+	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime*150;
+	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
+		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
+
+// drop the bonus value
+	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime*100;
+	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
+		cl.cshifts[CSHIFT_BONUS].percent = 0;
+
 	for (j=0 ; j<NUM_CSHIFTS ; j++)	
 	{
-		if (!gl_cshiftpercent.value)
+		if ((!gl_cshiftpercent.value || !gl_polyblend.value)
+			&& j != CSHIFT_CONTENTS)
 			continue;
 
-		a2 = ((cl.cshifts[j].percent * gl_cshiftpercent.value) / 100.0) / 255.0;
+		if (j == CSHIFT_CONTENTS)
+			a2 = cl.cshifts[j].percent / 100.0 / 255.0;
+		else
+			a2 = ((cl.cshifts[j].percent * gl_cshiftpercent.value) / 100.0) / 255.0;
 
-//		a2 = (cl.cshifts[j].percent/2)/255.0;
 		if (!a2)
 			continue;
 		a = a + a2*(1-a);
@@ -526,7 +622,26 @@ void V_CalcBlend (void)
 	if (v_blend[3] < 0)
 		v_blend[3] = 0;
 }
+
+void V_AddLightBlend (float r, float g, float b, float a2)
+{
+	float	a;
+
+	if (!gl_polyblend.value || !gl_cshiftpercent.value)
+		return;
+
+	a2 = a2 * gl_cshiftpercent.value / 100.0;
+
+	v_blend[3] = a = v_blend[3] + a2*(1-v_blend[3]);
+
+	a2 = a2/a;
+
+	v_blend[0] = v_blend[1]*(1-a2) + r*a2;
+	v_blend[1] = v_blend[1]*(1-a2) + g*a2;
+	v_blend[2] = v_blend[2]*(1-a2) + b*a2;
+}
 #endif
+
 
 /*
 =============
@@ -538,89 +653,86 @@ void V_UpdatePalette (void)
 {
 	int		i, j;
 	qboolean	new;
-	byte	*basepal, *newpal;
-	byte	pal[768];
-	float	r,g,b,a;
-	int		ir, ig, ib;
-	qboolean force;
+	static float	prev_blend[4];
+	float	a, rgb[3];
+	int		c;
+	float	gamma, contrast;
+	static float	old_gamma, old_contrast;
+	extern float	vid_gamma;
 
-	V_CalcPowerupCshift ();
-	
+	if (cls.state != ca_active) {
+		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
+		cl.cshifts[CSHIFT_POWERUP].percent = 0;
+	}
+	else
+		V_CalcPowerupCshift ();
+
 	new = false;
-	
-	for (i=0 ; i<NUM_CSHIFTS ; i++)
-	{
-		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent)
-		{
+
+	for (i=0 ; i<4 ; i++) {
+		if (v_blend[i] != prev_blend[i]) {
 			new = true;
-			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
+			prev_blend[i] = v_blend[i];
 		}
-		for (j=0 ; j<3 ; j++)
-			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
-			{
-				new = true;
-				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
-			}
 	}
 
-// drop the damage value
-	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime*150;
-	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
-		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
+	gamma = gl_gamma.value;
+	if (gamma < 0.3)
+		gamma = 0.3;
+	if (gamma > 3)
+		gamma = 3;
+	if (gamma != old_gamma) {
+		old_gamma = gamma;
+		new = true;
+	}
 
-// drop the bonus value
-	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime*100;
-	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
-		cl.cshifts[CSHIFT_BONUS].percent = 0;
+	contrast = gl_contrast.value;
+	if (contrast > 3)
+		contrast = 3;
+	if (contrast < 1)
+		contrast = 1;
+	if (contrast != old_contrast) {
+		old_contrast = contrast;
+		new = true;
+	}
 
-	force = V_CheckGamma ();
-	if (!new && !force)
+	if (!new)
 		return;
 
-	V_CalcBlend ();
-
-//Con_Printf("b: %4.2f %4.2f %4.2f %4.6f\n", v_blend[0],	v_blend[1],	v_blend[2],	v_blend[3]);
-
 	a = v_blend[3];
-	r = 255*v_blend[0]*a;
-	g = 255*v_blend[1]*a;
-	b = 255*v_blend[2]*a;
+
+	if (!vid_hwgamma_enabled)
+		a = 0;
+
+	rgb[0] = 255*v_blend[0]*a;
+	rgb[1] = 255*v_blend[1]*a;
+	rgb[2] = 255*v_blend[2]*a;
 
 	a = 1-a;
-	for (i=0 ; i<256 ; i++)
-	{
-		ir = i*a + r;
-		ig = i*a + g;
-		ib = i*a + b;
-		if (ir > 255)
-			ir = 255;
-		if (ig > 255)
-			ig = 255;
-		if (ib > 255)
-			ib = 255;
 
-		ramps[0][i] = gammatable[ir];
-		ramps[1][i] = gammatable[ig];
-		ramps[2][i] = gammatable[ib];
+	if (vid_gamma != 1.0) {
+		contrast = pow (contrast, vid_gamma);
+		gamma = gamma/vid_gamma;
 	}
 
-	basepal = host_basepal;
-	newpal = pal;
-	
 	for (i=0 ; i<256 ; i++)
 	{
-		ir = basepal[0];
-		ig = basepal[1];
-		ib = basepal[2];
-		basepal += 3;
-		
-		newpal[0] = ramps[0][ir];
-		newpal[1] = ramps[1][ig];
-		newpal[2] = ramps[2][ib];
-		newpal += 3;
+		for (j=0 ; j<3 ; j++) {
+			// apply blend and contrast
+			c = (i*a + rgb[j]) * contrast;
+			if (c > 255)
+				c = 255;
+			// apply gamma
+			c = 255 * pow((c + 0.5)/255.5, gamma) + 0.5;
+			if (c < 0)
+				c = 0;
+			if (c > 255)
+				c = 255;
+			ramps[j][i] = c << 8;
+		}
 	}
 
-	VID_ShiftPalette (pal);	
+	VID_SetDeviceGammaRamp ((unsigned short *) ramps);
 }
 #else	// !GLQUAKE
 /*
@@ -633,26 +745,32 @@ void V_UpdatePalette (void)
 	int		i, j;
 	qboolean	new;
 	byte	*basepal, *newpal;
-	byte	pal[768];
+//	byte	pal[768];
 	int		r,g,b;
 	qboolean force;
+	static cshift_t	prev_cshifts[NUM_CSHIFTS];
 
-	V_CalcPowerupCshift ();
+	if (cls.state != ca_active) {
+		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
+		cl.cshifts[CSHIFT_POWERUP].percent = 0;
+	}
+	else
+		V_CalcPowerupCshift ();
 	
 	new = false;
 	
 	for (i=0 ; i<NUM_CSHIFTS ; i++)
 	{
-		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent)
+		if (cl.cshifts[i].percent != prev_cshifts[i].percent)
 		{
 			new = true;
-			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
+			prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
 		for (j=0 ; j<3 ; j++)
-			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
+			if (cl.cshifts[i].destcolor[j] != prev_cshifts[i].destcolor[j])
 			{
 				new = true;
-				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
+				prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
 	}
 	
@@ -671,7 +789,9 @@ void V_UpdatePalette (void)
 		return;
 			
 	basepal = host_basepal;
-	newpal = pal;
+//	newpal = pal;
+	newpal = current_pal;	// Tonik: so we can use current_pal
+							// for screenshots
 	
 	for (i=0 ; i<256 ; i++)
 	{
@@ -693,7 +813,7 @@ void V_UpdatePalette (void)
 		newpal += 3;
 	}
 
-	VID_ShiftPalette (pal);	
+	VID_ShiftPalette (current_pal);	
 }
 
 #endif	// !GLQUAKE
@@ -775,7 +895,7 @@ V_BoundOffsets
 */
 void V_BoundOffsets (void)
 {
-// absolutely bound refresh reletive to entity clipping hull
+// absolutely bound refresh relative to entity clipping hull
 // so the view can never be inside a solid wall
 
 	if (r_refdef.vieworg[0] < cl.simorg[0] - 14)
@@ -853,7 +973,7 @@ void V_CalcIntermissionRefdef (void)
 	VectorCopy (cl.simangles, r_refdef.viewangles);
 	view->model = NULL;
 
-// allways idle in intermission
+// always idle in intermission
 	old = v_idlescale.value;
 	v_idlescale.value = 1;
 	V_AddIdle ();
@@ -872,7 +992,6 @@ void V_CalcRefdef (void)
 	int			i;
 	vec3_t		forward, right, up;
 	float		bob;
-	static float oldz = 0;
 
 	V_DriftPitch ();
 
@@ -949,22 +1068,8 @@ void V_CalcRefdef (void)
 	r_refdef.viewangles[PITCH] += cl.punchangle;
 
 // smooth out stair step ups
-	if ( (view_message->onground != -1) && (cl.simorg[2] - oldz > 0) )
-	{
-		float steptime;
-		
-		steptime = host_frametime;
-	
-		oldz += steptime * 80;
-		if (oldz > cl.simorg[2])
-			oldz = cl.simorg[2];
-		if (cl.simorg[2] - oldz > 12)
-			oldz = cl.simorg[2] - 12;
-		r_refdef.vieworg[2] += oldz - cl.simorg[2];
-		view->origin[2] += oldz - cl.simorg[2];
-	}
-	else
-		oldz = cl.simorg[2];
+	r_refdef.vieworg[2] += cl.crouch;
+	view->origin[2] += cl.crouch;
 }
 
 /*
@@ -978,6 +1083,7 @@ void DropPunchAngle (void)
 	if (cl.punchangle < 0)
 		cl.punchangle = 0;
 }
+
 
 /*
 ==================
@@ -995,8 +1101,12 @@ void V_RenderView (void)
 //		Sys_Error ("cl.simangles[ROLL]");	// DEBUG
 cl.simangles[ROLL] = 0;	// FIXME @@@ 
 
-	if (cls.state != ca_active)
+	if (cls.state != ca_active) {
+#ifdef GLQUAKE
+		V_CalcBlend ();
+#endif
 		return;
+	}
 
 	view_frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
 	view_message = &view_frame->playerstate[cl.playernum];
@@ -1013,7 +1123,7 @@ cl.simangles[ROLL] = 0;	// FIXME @@@
 
 	R_PushDlights ();
 	R_RenderView ();
-	
+
 #ifndef GLQUAKE
 	if (crosshair.value)
 		Draw_Crosshair();
@@ -1045,6 +1155,13 @@ void V_Init (void)
 	Cvar_RegisterVariable (&v_ipitch_level);
 
 	Cvar_RegisterVariable (&v_contentblend);
+	Cvar_RegisterVariable (&v_damagecshift);
+	Cvar_RegisterVariable (&v_quadcshift);
+	Cvar_RegisterVariable (&v_suitcshift);
+	Cvar_RegisterVariable (&v_ringcshift);
+	Cvar_RegisterVariable (&v_pentcshift);
+
+	Cvar_RegisterVariable (&v_bonusflash);
 
 	Cvar_RegisterVariable (&v_idlescale);
 	Cvar_RegisterVariable (&crosshaircolor);
@@ -1065,8 +1182,17 @@ void V_Init (void)
 	Cvar_RegisterVariable (&v_kickroll);
 	Cvar_RegisterVariable (&v_kickpitch);	
 
-	BuildGammaTable (1.0);	// no gamma yet
 	Cvar_RegisterVariable (&v_gamma);
+	Cvar_RegisterVariable (&v_contrast);
+#ifdef GLQUAKE
+	Cvar_RegisterVariable (&gl_gamma);
+	Cvar_RegisterVariable (&gl_contrast);
+#endif
+
+#ifndef GLQUAKE
+	BuildGammaTable (v_gamma.value, v_contrast.value);
+#endif
+
 }
 
 

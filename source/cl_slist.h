@@ -27,7 +27,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: cl_slist.h,v 1.1.1.2 2004/09/28 18:57:41 vvd0 Exp $
+	$Id: cl_slist.h,v 1.1.1.3 2004/10/13 18:54:25 vvd0 Exp $
 */
 
 // #include <quakeio.h>

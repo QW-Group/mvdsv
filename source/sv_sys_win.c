@@ -17,14 +17,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#include <sys/types.h>
-#include <sys/timeb.h>
+//#include <sys/types.h>
+//#include <sys/timeb.h>
 #include "qwsvdef.h"
 #include <winsock.h>
 #include <conio.h>
+#include <limits.h>
+#include <direct.h>		// _mkdir
 
-
+cvar_t	sys_sleep = {"sys_sleep", "8"};
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
+
+qboolean WinNT;
 
 /*
 ================
@@ -55,6 +59,76 @@ void Sys_mkdir (char *path)
 	_mkdir(path);
 }
 
+/*
+================
+Sys_remove
+================
+*/
+int Sys_remove (char *path)
+{
+	return remove(path);
+}
+
+/*
+================
+Sys_listdir
+================
+*/
+
+dir_t *Sys_listdir (char *path, char *ext)
+{
+	static dir_t list[MAX_DIRFILES];
+	HANDLE	h;
+	WIN32_FIND_DATA fd;
+	int		i, pos, size;
+	int		numfiles;
+	char	name[MAX_DEMO_NAME];
+
+	numfiles = 0;
+	memset(list, 0, sizeof(list));
+
+	h = FindFirstFile (va("%s/*%s", path, ext), &fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		return list;
+	}
+	
+	do {
+		if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+		{
+			i = strlen(fd.cFileName);
+			if (i < 5 || (Q_strcasecmp(fd.cFileName+i-4, ext)))
+				continue;
+		}
+
+		size = fd.nFileSizeLow;
+		Q_strncpyz (name, fd.cFileName, MAX_DEMO_NAME);
+
+		// inclusion sort
+		/*
+		for (i=0 ; i<numfiles ; i++)
+		{
+			if (strcmp (name, list[i].name) < 0)
+				break;
+		}
+		*/
+
+		i = numfiles;
+		
+
+		pos = i;
+		numfiles++;
+		for (i=numfiles-1 ; i>pos ; i--)
+			list[i] = list[i-1];
+
+		strcpy (list[i].name, name);
+		list[i].size = size;
+		if (numfiles == MAX_DIRFILES)
+			break;
+	} while ( FindNextFile(h, &fd) );
+	FindClose (h);
+
+	return list;
+}
 
 /*
 ================
@@ -77,6 +151,32 @@ void Sys_Error (char *error, ...)
 }
 
 
+#if 1
+double Sys_DoubleTime (void)
+{
+	static DWORD starttime;
+	static qboolean first = true;
+	DWORD now;
+
+	now = timeGetTime();
+
+	if (first) {
+		first = false;
+		starttime = now;
+		return 0.0;
+	}
+	
+	if (now < starttime) // wrapped?
+		return (now / 1000.0) + (LONG_MAX - starttime / 1000.0);
+
+	if (now - starttime == 0)
+		return 0.0;
+
+	return (now - starttime) / 1000.0;
+}
+
+#else
+
 /*
 ================
 Sys_DoubleTime
@@ -96,6 +196,7 @@ double Sys_DoubleTime (void)
 	
 	return t;
 }
+#endif
 
 
 /*
@@ -113,6 +214,19 @@ char *Sys_ConsoleInput (void)
 	while (_kbhit())
 	{
 		c = _getch();
+
+		if (c == 224) {
+			if (_kbhit()) {
+				// assume escape sequence (arrows etc), skip
+				_getch();
+				continue;
+			}
+			// assume character
+		}
+
+		if (c < 32 && c != '\r' && c != 8)
+			continue;
+
 		putch (c);
 		if (c == '\r')
 		{
@@ -132,6 +246,7 @@ char *Sys_ConsoleInput (void)
 			}
 			continue;
 		}
+
 		text[len] = c;
 		len++;
 		text[len] = 0;
@@ -181,7 +296,46 @@ is marked
 */
 void Sys_Init (void)
 {
+	OSVERSIONINFO	vinfo;
+
+	// make sure the timer is high precision, otherwise
+	// NT gets 18ms resolution
+	timeBeginPeriod( 1 );
+
+	vinfo.dwOSVersionInfoSize = sizeof(vinfo);
+
+	if (!GetVersionEx (&vinfo))
+		Sys_Error ("Couldn't get OS info");
+
+	if ((vinfo.dwMajorVersion < 4) ||
+		(vinfo.dwPlatformId == VER_PLATFORM_WIN32s))
+	{
+		Sys_Error ("QuakeWorld requires at least Win95 or NT 4.0");
+	}
+
+	if (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
+		WinNT = true;
+	else
+		WinNT = false;
+
+	Cvar_RegisterVariable (&sys_sleep);
 	Cvar_RegisterVariable (&sys_nostdout);
+
+	if (COM_CheckParm ("-nopriority"))
+	{
+		Cvar_Set (&sys_sleep, "0");
+	}
+	else
+	{
+		if ( ! SetPriorityClass (GetCurrentProcess(), HIGH_PRIORITY_CLASS))
+			Con_Printf ("SetPriorityClass() failed\n");
+		else
+			Con_Printf ("Process priority class set to HIGH\n");
+
+		// sys_sleep > 0 seems to cause packet loss on WinNT (why?)
+		if (WinNT)
+			Cvar_Set (&sys_sleep, "0");
+	}
 }
 
 /*
@@ -200,6 +354,7 @@ int main (int argc, char **argv)
 	struct timeval	timeout;
 	fd_set			fdset;
 	int				t;
+	int				sleep_msec;
 
 	COM_InitArgv (argc, argv);
 	
@@ -216,13 +371,9 @@ int main (int argc, char **argv)
 		t + 1 < com_argc)
 		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024 * 1024;
 
-	parms.membase = malloc (parms.memsize);
-
-	if (!parms.membase)
-		Sys_Error("Insufficient memory.\n");
+	parms.membase = Q_Malloc (parms.memsize);
 
 	parms.basedir = ".";
-	parms.cachedir = NULL;
 
 	SV_Init (&parms);
 
@@ -235,15 +386,23 @@ int main (int argc, char **argv)
 	oldtime = Sys_DoubleTime () - 0.1;
 	while (1)
 	{
+		sleep_msec = sys_sleep.value;
+		if (sleep_msec > 0)
+		{
+			if (sleep_msec > 13)
+				sleep_msec = 13;
+			Sleep (sleep_msec);
+		}
+
 	// select on the net socket and stdin
 	// the only reason we have a timeout at all is so that if the last
 	// connected client times out, the message would not otherwise
 	// be printed until the next event.
 		FD_ZERO(&fdset);
-		FD_SET(net_socket, &fdset);
+		FD_SET(net_serversocket, &fdset);
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100;
-		if (select (net_socket+1, &fdset, NULL, NULL, &timeout) == -1)
+		if (select (net_serversocket+1, &fdset, NULL, NULL, &timeout) == -1)
 			continue;
 
 	// find time passed since last cycle

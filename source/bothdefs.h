@@ -20,20 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // defs common to client and server
 
-#define GLQUAKE_VERSION 1.00
-#define	VERSION		2.40
-#define LINUX_VERSION 0.98
-
-
-#if (defined(_M_IX86) || defined(__i386__)) && !defined(id386)
-#define id386	1
-#else
-#define id386	0
-#endif
-
-#ifdef SERVERONLY		// no asm in dedicated server
-#undef id386
-#endif
 
 #if id386
 #define UNALIGNED_OK	1	// set to 0 if unaligned accesses are not supported
@@ -47,20 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define UNUSED(x)	(x = x)	// for pesky compiler / lint warnings
 
 #define	MINIMUM_MEMORY	0x550000
-
-// up / down
-#define	PITCH	0
-
-// left / right
-#define	YAW		1
-
-// fall over
-#define	ROLL	2
-
-
-#define	MAX_SCOREBOARD		16		// max numbers of players
-
-#define	SOUND_CHANNELS		8
 
 
 #define	MAX_QPATH		64			// max length of a quake game pathname
@@ -78,8 +50,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_LIGHTSTYLES	64
 #define	MAX_MODELS		256			// these are sent over the net as bytes
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
-
-#define	SAVEGAME_COMMENT_LENGTH	39
 
 #define	MAX_STYLESTRING	64
 
@@ -151,7 +121,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // print flags
 //
 #define	PRINT_LOW			0		// pickup messages
-#define	PRINT_MEDIUM		1		// death messages
+#define	PRINT_MEDIUM			1		// death messages
 #define	PRINT_HIGH			2		// critical messages
 #define	PRINT_CHAT			3		// chat messages
 
+
+// game types sent by serverinfo
+// these determine which intermission screen plays
+#define	GAME_COOP			0
+#define	GAME_DEATHMATCH		1
