@@ -107,6 +107,12 @@ void R_Envmap_f (void)
 {
 	byte	buffer[256*256*4];
 
+#ifdef _WIN32
+	extern qboolean vid_grabbackbuffer;
+	// make sure GL_BeginRendering doesn't reset draw buffer to GL_BACK
+	vid_grabbackbuffer = 0;
+#endif
+
 	glDrawBuffer  (GL_FRONT);
 	glReadBuffer  (GL_FRONT);
 	envmap = true;
@@ -177,10 +183,12 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_lightmap);
 	Cvar_RegisterVariable (&r_fullbright);
 	Cvar_RegisterVariable (&r_drawentities);
+	Cvar_RegisterVariable (&r_drawviewmodel2);
 	Cvar_RegisterVariable (&r_drawviewmodel);
 	Cvar_RegisterVariable (&r_shadows);
 	Cvar_RegisterVariable (&r_mirroralpha);
 	Cvar_RegisterVariable (&r_wateralpha);
+	Cvar_RegisterVariable (&r_waterwarp);
 	Cvar_RegisterVariable (&r_dynamic);
 	Cvar_RegisterVariable (&r_novis);
 	Cvar_RegisterVariable (&r_speeds);
@@ -200,6 +208,8 @@ void R_Init (void)
 	Cvar_RegisterVariable (&gl_playermip);
 	Cvar_RegisterVariable (&gl_nocolors);
 	Cvar_RegisterVariable (&gl_finish);
+	Cvar_RegisterVariable (&gl_fb_depthhack);
+	Cvar_RegisterVariable (&gl_fb_bmodels);
 
 	Cvar_RegisterVariable (&gl_keeptjunctions);
 	Cvar_RegisterVariable (&gl_reporttjunctions);
@@ -322,7 +332,7 @@ void R_TranslatePlayerSkin (int playernum)
 
 		// don't mipmap these, because it takes too long
 		GL_Upload8 (translated, paliashdr->skinwidth, paliashdr->skinheight, 
-			false, false, true);
+			false, false, true, false);
 	#endif
 
 		scaled_width = gl_max_size.value < 512 ? gl_max_size.value : 512;

@@ -91,8 +91,9 @@ void R_ReadPointFile_f (void)
 	int		c;
 	particle_t	*p;
 	char	name[MAX_OSPATH];
+	extern cvar_t	cl_mapname;
 	
-// FIXME	sprintf (name,"maps/%s.pts", sv.name);
+	sprintf (name, "maps/%s.pts", cl_mapname.string);
 
 	COM_FOpenFile (name, &f);
 	if (!f)

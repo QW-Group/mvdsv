@@ -55,9 +55,9 @@ interface from being ambiguous.
 
 // cvar flags
 #define CVAR_ARCHIVE		1
-#define CVAR_USERINFO		2       // sent to server on connect or change
-#define CVAR_SERVERINFO		4
-#define CVAR_READONLY		64		// TODO
+#define CVAR_USERINFO		2       // mirrored to userinfo
+#define CVAR_SERVERINFO		4		// mirrored to serverinfo
+#define CVAR_ROM			64		// read only
 #define	CVAR_USER_CREATED	128		// created by a set command
 
 typedef struct cvar_s
@@ -102,6 +102,7 @@ void 	Cvar_WriteVariables (FILE *f);
 // with the archive flag set to true.
 
 cvar_t *Cvar_FindVar (char *var_name);
+qboolean Cvar_Delete (char *name);
 
 cvar_t *Cvar_Create (char *name, char *string, int cvarflags);
 

@@ -83,8 +83,7 @@ float           scr_conlines;           // lines of console to display
 
 float           oldscreensize, oldfov;
 cvar_t          scr_viewsize = {"viewsize","100",CVAR_ARCHIVE};
-qboolean CL_OnFovChange (cvar_t *var, char *value);
-cvar_t          scr_fov = {"fov","90",0,CL_OnFovChange}; // 10 - 170
+cvar_t          scr_fov = {"fov","90",CVAR_ARCHIVE}; // 10 - 170
 cvar_t          scr_conspeed = {"scr_conspeed","300"};
 cvar_t          scr_centertime = {"scr_centertime","2"};
 cvar_t          scr_showram = {"showram","1"};
@@ -402,7 +401,6 @@ void SCR_Init (void)
 // register our commands
 //
 	Cmd_AddCommand ("screenshot",SCR_ScreenShot_f);
-	Cmd_AddCommand ("snap",SCR_RSShot_f);
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
 
@@ -1142,6 +1140,8 @@ void SCR_TileClear (void)
 		Draw_TileClear (r_refdef.vrect.x, 0, 
 			r_refdef.vrect.x + r_refdef.vrect.width, 
 			r_refdef.vrect.y);
+	}
+	if (r_refdef.vrect.y + r_refdef.vrect.height < vid.height - sb_lines) {
 		// bottom
 		Draw_TileClear (r_refdef.vrect.x,
 			r_refdef.vrect.y + r_refdef.vrect.height, 
@@ -1202,6 +1202,12 @@ void SCR_UpdateScreen (void)
 	if (oldfov != scr_fov.value)
 	{
 		oldfov = scr_fov.value;
+		vid.recalc_refdef = true;
+	}
+
+	if (oldscreensize != scr_viewsize.value)
+	{
+		oldscreensize = scr_viewsize.value;
 		vid.recalc_refdef = true;
 	}
 

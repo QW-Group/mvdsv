@@ -26,12 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "winquake.h"
 #endif
 
-void S_Play(void);
-void S_PlayVol(void);
-void S_SoundList(void);
-void S_Update_();
-void S_StopAllSounds(qboolean clear);
-void S_StopAllSoundsC(void);
+void S_Play_f (void);
+void S_PlayVol_f (void);
+void S_SoundList_f (void);
+void S_Update_ ();
+void S_StopAllSounds (qboolean clear);
+void S_StopAllSounds_f (void);
 
 // QuakeWorld hack...
 #define	viewentity	playernum+1
@@ -113,7 +113,7 @@ void S_AmbientOn (void)
 }
 
 
-void S_SoundInfo_f(void)
+void S_SoundInfo_f (void)
 {
 	if (!sound_started || !shm)
 	{
@@ -190,10 +190,10 @@ void S_Init (void)
 	if (COM_CheckParm("-simsound"))
 		fakedma = true;
 
-	Cmd_AddCommand("play", S_Play);
-	Cmd_AddCommand("playvol", S_PlayVol);
-	Cmd_AddCommand("stopsound", S_StopAllSoundsC);
-	Cmd_AddCommand("soundlist", S_SoundList);
+	Cmd_AddCommand("play", S_Play_f);
+	Cmd_AddCommand("playvol", S_PlayVol_f);
+	Cmd_AddCommand("stopsound", S_StopAllSounds_f);
+	Cmd_AddCommand("soundlist", S_SoundList_f);
 	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
 
 	if (host_parms.memsize < 0x800000)
@@ -248,7 +248,7 @@ void S_Init (void)
 // Shutdown sound engine
 // =======================================================================
 
-void S_Shutdown(void)
+void S_Shutdown (void)
 {
 
 	if (!sound_started)
@@ -354,7 +354,7 @@ sfx_t *S_PrecacheSound (char *name)
 SND_PickChannel
 =================
 */
-channel_t *SND_PickChannel(int entnum, int entchannel)
+channel_t *SND_PickChannel (int entnum, int entchannel)
 {
     int ch_idx;
     int first_to_die;
@@ -398,7 +398,7 @@ channel_t *SND_PickChannel(int entnum, int entchannel)
 SND_Spatialize
 =================
 */
-void SND_Spatialize(channel_t *ch)
+void SND_Spatialize (channel_t *ch)
 {
     vec_t dot;
     vec_t dist;
@@ -451,7 +451,7 @@ void SND_Spatialize(channel_t *ch)
 // Start a sound effect
 // =======================================================================
 
-void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation)
+void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation)
 {
 	channel_t *target_chan, *check;
 	sfxcache_t	*sc;
@@ -519,7 +519,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float f
 	}
 }
 
-void S_StopSound(int entnum, int entchannel)
+void S_StopSound (int entnum, int entchannel)
 {
 	int i;
 
@@ -535,7 +535,7 @@ void S_StopSound(int entnum, int entchannel)
 	}
 }
 
-void S_StopAllSounds(qboolean clear)
+void S_StopAllSounds (qboolean clear)
 {
 	int		i;
 
@@ -554,7 +554,7 @@ void S_StopAllSounds(qboolean clear)
 		S_ClearBuffer ();
 }
 
-void S_StopAllSoundsC (void)
+void S_StopAllSounds_f (void)
 {
 	S_StopAllSounds (true);
 }
@@ -721,7 +721,7 @@ S_Update
 Called once each time through the main loop
 ============
 */
-void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
+void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 {
 	int			i, j;
 	int			total;
@@ -810,7 +810,7 @@ void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
 	S_Update_();
 }
 
-void GetSoundtime(void)
+void GetSoundtime (void)
 {
 	int		samplepos;
 	static	int		buffers;
@@ -855,7 +855,7 @@ void S_ExtraUpdate (void)
 
 
 
-void S_Update_(void)
+void S_Update_ (void)
 {
 	unsigned        endtime;
 	int				samps;
@@ -911,30 +911,23 @@ console functions
 ===============================================================================
 */
 
-void S_Play(void)
+void S_Play_f (void)
 {
 	static int hash=345;
 	int 	i;
 	char name[256];
 	sfx_t	*sfx;
 	
-	i = 1;
-	while (i<Cmd_Argc())
+	for (i=1; i < Cmd_Argc(); i++)
 	{
-		if (!strrchr(Cmd_Argv(i), '.'))
-		{
-			strcpy(name, Cmd_Argv(i));
-			strcat(name, ".wav");
-		}
-		else
-			strcpy(name, Cmd_Argv(i));
+		strcpy(name, Cmd_Argv(i));
+		COM_DefaultExtension (name, ".wav");
 		sfx = S_PrecacheSound(name);
-		S_StartSound(hash++, 0, sfx, listener_origin, 1.0, 1.0);
-		i++;
+		S_StartSound(hash++, 0, sfx, listener_origin, 1.0, 0.0);
 	}
 }
 
-void S_PlayVol(void)
+void S_PlayVol_f (void)
 {
 	static int hash=543;
 	int i;
@@ -942,24 +935,17 @@ void S_PlayVol(void)
 	char name[256];
 	sfx_t	*sfx;
 	
-	i = 1;
-	while (i<Cmd_Argc())
+	for (i=1; i < Cmd_Argc(); i+=2)
 	{
-		if (!strrchr(Cmd_Argv(i), '.'))
-		{
-			strcpy(name, Cmd_Argv(i));
-			strcat(name, ".wav");
-		}
-		else
-			strcpy(name, Cmd_Argv(i));
+		strcpy(name, Cmd_Argv(i));
+		COM_DefaultExtension (name, ".wav");
 		sfx = S_PrecacheSound(name);
 		vol = Q_atof(Cmd_Argv(i+1));
-		S_StartSound(hash++, 0, sfx, listener_origin, vol, 1.0);
-		i+=2;
+		S_StartSound(hash++, 0, sfx, listener_origin, vol, 0.0);
 	}
 }
 
-void S_SoundList(void)
+void S_SoundList_f (void)
 {
 	int		i;
 	sfx_t	*sfx;
@@ -999,7 +985,7 @@ void S_LocalSound (char *sound)
 		Con_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}
-	S_StartSound (cl.viewentity, -1, sfx, vec3_origin, 1, 1);
+	S_StartSound (cl.viewentity, -1, sfx, vec3_origin, 1, 0);
 }
 
 

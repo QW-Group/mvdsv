@@ -34,7 +34,7 @@ void (*vid_menukeyfn)(int key);
 enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer,
 	m_setup, m_net, m_options, m_video, m_keys, m_help, m_quit,
 	m_serialconfig, m_modemconfig, m_lanconfig, m_gameoptions, 
-	m_search, m_slist, m_sedit} m_state;
+	m_search, m_slist, m_sedit, m_fps} m_state;
 
 void M_Menu_Main_f (void);
 	void M_Menu_SinglePlayer_f (void);
@@ -46,6 +46,7 @@ void M_Menu_Main_f (void);
 //		void M_Menu_Net_f (void);
 	void M_Menu_Options_f (void);
 		void M_Menu_Keys_f (void);
+		void M_Menu_Fps_f (void);
 		void M_Menu_Video_f (void);
 	void M_Menu_Help_f (void);
 	void M_Menu_Quit_f (void);
@@ -328,16 +329,16 @@ void M_Main_Key (int key)
 			CL_NextDemo ();
 		break;
 		
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		if (++m_main_cursor >= MAIN_ITEMS)
-			m_main_cursor = 0;
-		break;
-
 	case K_UPARROW:
 		S_LocalSound ("misc/menu1.wav");
 		if (--m_main_cursor < 0)
 			m_main_cursor = MAIN_ITEMS - 1;
+		break;
+
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (++m_main_cursor >= MAIN_ITEMS)
+			m_main_cursor = 0;
 		break;
 
 	case K_HOME:
@@ -384,7 +385,7 @@ void M_Main_Key (int key)
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	16
+#define	OPTIONS_ITEMS	17
 
 #define	SLIDER_RANGE	10
 
@@ -482,7 +483,7 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue (&cl_hudswap, !cl_hudswap.value);
 		break;
 
-	case 15:	// _windowed_mouse
+	case 16:	// _windowed_mouse
 		Cvar_SetValue (&_windowed_mouse, !_windowed_mouse.value);
 		break;
 	}
@@ -569,15 +570,17 @@ void M_Options_Draw (void)
 	M_Print (16, 136, "      HUD on left side");
 	M_DrawCheckbox (220, 136, cl_hudswap.value);
 
+	M_Print (16, 144, "          FPS settings");
+
 	if (vid_menudrawfn)
-		M_Print (16, 144, "         Video Options");
+		M_Print (16, 152, "         Video Options");
 
 #ifdef _WIN32
 	if (modestate == MS_WINDOWED)
 	{
 #endif
-		M_Print (16, 152, "             Use Mouse");
-		M_DrawCheckbox (220, 152, _windowed_mouse.value);
+		M_Print (16, 160, "             Use Mouse");
+		M_DrawCheckbox (220, 160, _windowed_mouse.value);
 #ifdef _WIN32
 	}
 #endif
@@ -611,6 +614,9 @@ void M_Options_Key (int k)
 			Cbuf_AddText ("exec default.cfg\n");
 			break;
 		case 14:
+			M_Menu_Fps_f ();
+			break;
+		case 15:
 			M_Menu_Video_f ();
 			break;
 		default:
@@ -654,22 +660,22 @@ void M_Options_Key (int k)
 		break;
 	}
 
-	if (options_cursor == 14 && vid_menudrawfn == NULL)
+	if (options_cursor == 15 && vid_menudrawfn == NULL)
 	{
 		if (k == K_UPARROW || k == K_END || k == K_PGDN)
-			options_cursor = 13;
+			options_cursor = 14;
 		else
 			options_cursor = 0;
 	}
 
-	if ((options_cursor == 15) 
+	if ((options_cursor == 16) 
 #ifdef _WIN32
 	&& (modestate != MS_WINDOWED)
 #endif
 	)
 	{
 		if (k == K_UPARROW || k == K_END || k == K_PGDN)
-			options_cursor = 14;
+			options_cursor = 15;
 		else
 			options_cursor = 0;
 	}
@@ -772,7 +778,7 @@ void M_Keys_Draw (void)
 	if (bind_grab)
 		M_Print (12, 32, "Press a key or button for this action");
 	else
-		M_Print (18, 32, "Enter to change, backspace to clear");
+		M_Print (18, 32, "Enter to change, del to clear");
 		
 // search for known bindings
 	for (i=0 ; i<NUMCOMMANDS ; i++)
@@ -873,13 +879,186 @@ void M_Keys_Key (int k)
 		bind_grab = true;
 		break;
 
-	case K_BACKSPACE:		// delete bindings
 	case K_DEL:				// delete bindings
 		S_LocalSound ("misc/menu2.wav");
 		M_UnbindCommand (bindnames[keys_cursor][0]);
 		break;
 	}
 }
+
+
+//=============================================================================
+/* FPS SETTINGS MENU */
+
+#ifdef GLQUAKE
+#define	FPS_ITEMS	10
+#else
+#define	FPS_ITEMS	11
+#endif
+int		fps_cursor = 0;
+
+extern cvar_t v_bonusflash;
+extern cvar_t cl_rocket2grenade;
+extern cvar_t v_damagecshift;
+extern cvar_t r_fastsky;
+
+void M_Menu_Fps_f (void)
+{
+	key_dest = key_menu;
+	m_state = m_fps;
+	m_entersound = true;
+}
+
+void M_Fps_Draw (void)
+{
+	float		r;
+	qpic_t	*p;
+	
+	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
+	p = Draw_CachePic ("gfx/p_option.lmp");
+	M_DrawPic ( (320-p->width)/2, 4, p);
+	
+	M_Print (16, 32, "            Explosions");
+	M_Print (220, 32, cl_explosion.value==0 ? "normal" :
+		cl_explosion.value==1 ? "type 1" : cl_explosion.value==2 ? "type 2" :
+		cl_explosion.value==3 ? "type 3" : "");
+
+	M_Print (16, 40, "         Muzzleflashes");
+	M_Print (220, 40, cl_muzzleflash.value==2 ? "own off" :
+		cl_muzzleflash.value ? "on" : "off");
+
+	M_Print (16, 48, "            Gib filter");
+	M_DrawCheckbox (220, 48, cl_gibfilter.value);
+
+	M_Print (16, 56, "    Dead bodies filter");
+	M_DrawCheckbox (220, 56, cl_deadbodyfilter.value);
+
+	M_Print (16, 64, "          Rocket model");
+	M_Print (220, 64, cl_rocket2grenade.value ? "grenade" : "normal");
+
+	M_Print (16, 72, "          Rocket trail");
+	M_Print (220, 72, r_rockettrail.value==2 ? "grenade" :
+		r_rockettrail.value ? "normal" : "off");
+
+	M_Print (16, 80, "          Rocket light");
+	M_DrawCheckbox (220, 80, r_rocketlight.value);
+
+	M_Print (16, 88, "         Damage filter");
+	M_DrawCheckbox (220, 88, v_damagecshift.value == 0);
+
+	M_Print (16, 96, "        Pickup flashes");
+	M_DrawCheckbox (220, 96, v_bonusflash.value);
+
+	M_Print (16, 104, "         Powerup glow");
+	M_Print (220, 104, r_powerupglow.value==2 ? "own off" :
+		r_powerupglow.value ? "on" : "off");
+
+#ifndef GLQUAKE
+	M_Print (16, 112, "             Fast sky");
+	M_DrawCheckbox (220, 112, r_fastsky.value);
+#endif
+
+//	M_Print (16, 120, "     Draw flame models");
+//	M_DrawCheckbox (220, 120, r_drawflame.value);
+
+// cursor
+	M_DrawCharacter (200, 32 + fps_cursor*8, 12+((int)(realtime*4)&1));
+}
+
+void M_Fps_Key (int k)
+{
+	int i;
+
+	switch (k)
+	{
+	case K_ESCAPE:
+		M_Menu_Options_f ();
+		break;
+
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		fps_cursor--;
+		if (fps_cursor < 0)
+			fps_cursor = FPS_ITEMS - 1;
+		break;
+
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		fps_cursor++;
+		if (fps_cursor >= FPS_ITEMS)
+			fps_cursor = 0;
+		break;
+
+	case K_HOME:
+	case K_PGUP:
+		S_LocalSound ("misc/menu1.wav");
+		fps_cursor = 0;
+		break;
+
+	case K_END:
+	case K_PGDN:
+		S_LocalSound ("misc/menu1.wav");
+		fps_cursor = FPS_ITEMS - 1;
+		break;
+
+	case K_ENTER:
+		S_LocalSound ("misc/menu2.wav");
+		switch (fps_cursor) {
+		case 0:
+			i = cl_explosion.value + 1;
+			if (i > 3 || i < 0)
+				i = 0;
+			Cvar_SetValue (&cl_explosion, i);
+			break;
+		case 1:
+			Cvar_SetValue (&cl_muzzleflash, cl_muzzleflash.value==2 ? 1 :
+				cl_muzzleflash.value ? 0 : 2);
+			break;
+		case 2:
+			Cvar_SetValue (&cl_gibfilter, !cl_gibfilter.value);
+			break;
+		case 3:
+			Cvar_SetValue (&cl_deadbodyfilter, !cl_deadbodyfilter.value);
+			break;
+		case 4:
+			Cvar_SetValue (&cl_rocket2grenade, !cl_rocket2grenade.value);
+			break;
+		case 5:
+			i = r_rockettrail.value + 1;
+			if (i < 0 || i > 2)
+				i = 0;
+			Cvar_SetValue (&r_rockettrail, i);
+			break;
+		case 6:
+			Cvar_SetValue (&r_rocketlight, !r_rocketlight.value);
+			break;
+		case 7:
+			Cvar_SetValue (&v_damagecshift, !v_damagecshift.value);
+			break;
+		case 8:
+			Cvar_SetValue (&v_bonusflash, !v_bonusflash.value);
+			break;
+		case 9:
+			i = r_powerupglow.value + 1;
+				if (i < 0 || i > 2)
+					i = 0;
+			Cvar_SetValue (&r_powerupglow, i);
+			break;
+#ifndef GLQUAKE
+		case 10:
+			Cvar_SetValue (&r_fastsky, !r_fastsky.value);
+			break;
+#endif
+//		case 11:
+//			Cvar_SetValue (&r_drawflame, !r_drawflame.value);
+//			break;
+			
+		}
+		break;
+
+	}
+}
+
 
 //=============================================================================
 /* VIDEO MENU */
@@ -1120,7 +1299,7 @@ void M_SinglePlayer_Draw (void)
 //	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/sp_menu.lmp") );
 
 	M_DrawTextBox (60, 10*8, 23, 4);	
-	M_PrintWhite (92, 12*8, "QuakeWorld is for");
+	M_PrintWhite (88, 12*8, "This client is for");
 	M_PrintWhite (88, 13*8, "Internet play only");
 }
 
@@ -1129,7 +1308,7 @@ void M_SinglePlayer_Key (key)
 	if (key == K_ESCAPE || key == K_ENTER)
 		m_state = m_main;
 }
-#endif	// QW_BOTH
+#endif	// !QW_BOTH
 
 
 //=============================================================================
@@ -1653,6 +1832,16 @@ void M_GameOptions_Key (int key)
 			gameoptions_cursor = 0;
 		break;
 
+	case K_HOME:
+		S_LocalSound ("misc/menu1.wav");
+		gameoptions_cursor = 0;
+		break;
+
+	case K_END:
+		S_LocalSound ("misc/menu1.wav");
+		gameoptions_cursor = NUM_GAMEOPTIONS-1;
+		break;
+
 	case K_LEFTARROW:
 		if (gameoptions_cursor == 0)
 			break;
@@ -1812,6 +2001,16 @@ void M_Setup_Key (int k)
 		setup_cursor++;
 		if (setup_cursor >= NUM_SETUP_CMDS)
 			setup_cursor = 0;
+		break;
+
+	case K_HOME:
+		S_LocalSound ("misc/menu1.wav");
+		setup_cursor = 0;
+		break;
+
+	case K_END:
+		S_LocalSound ("misc/menu1.wav");
+		setup_cursor = NUM_SETUP_CMDS-1;
 		break;
 
 	case K_LEFTARROW:
@@ -1974,7 +2173,7 @@ void M_ServerList_Key (key)
 		{
 			if (keydown[K_CTRL])
 			{
-				Server_List_Switch(m_multip_cursor,m_multip_cursor-1);
+				SList_Switch(m_multip_cursor,m_multip_cursor-1);
 				m_multip_cursor--;
 			}
 			else
@@ -1986,8 +2185,8 @@ void M_ServerList_Key (key)
 		S_LocalSound("misc/menu1.wav");
 		if (keydown[K_CTRL])
 		{
-			if (m_multip_cursor != Server_List_Len() - 1) {
-				Server_List_Switch(m_multip_cursor,m_multip_cursor+1);
+			if (m_multip_cursor != SList_Len() - 1) {
+				SList_Switch(m_multip_cursor,m_multip_cursor+1);
 				m_multip_cursor++;
 			}
 		}
@@ -2003,7 +2202,7 @@ void M_ServerList_Key (key)
 
 	case K_END:
 		S_LocalSound("misc/menu1.wav");
-		m_multip_cursor = Server_List_Len() - 1;
+		m_multip_cursor = SList_Len() - 1;
 		break;
 		
 	case K_PGUP:
@@ -2054,30 +2253,30 @@ void M_ServerList_Key (key)
 
 	case K_INS:
 		S_LocalSound("misc/menu2.wav");
-		if (Server_List_Len() < (MAX_SERVER_LIST-1)) {
+		if (SList_Len() < (MAX_SERVER_LIST-1)) {
 			memmove(&slist[m_multip_cursor+1],
 				&slist[m_multip_cursor],
-				(Server_List_Len() - m_multip_cursor)*sizeof(slist[0]));
-			Server_List_Reset_NoFree(m_multip_cursor);
-			Server_List_Set(m_multip_cursor,"127.0.0.1","<BLANK>");
+				(SList_Len() - m_multip_cursor)*sizeof(slist[0]));
+			SList_Reset_NoFree(m_multip_cursor);
+			SList_Set(m_multip_cursor,"127.0.0.1","<BLANK>");
 		}
 		break;
 
 	case K_DEL:
 		S_LocalSound("misc/menu2.wav");
-		if (Server_List_Len() > 0) {
+		if (SList_Len() > 0) {
 			free(slist[m_multip_cursor].server);
 			free(slist[m_multip_cursor].description);
-			if (Server_List_Len()-1 == m_multip_cursor) {
-				Server_List_Reset_NoFree(m_multip_cursor);
+			if (SList_Len()-1 == m_multip_cursor) {
+				SList_Reset_NoFree(m_multip_cursor);
 				m_multip_cursor = !m_multip_cursor ? 0 : m_multip_cursor-1;
 
 			}
 			else {
 				memmove(&slist[m_multip_cursor],
 				&slist[m_multip_cursor+1],
-				(Server_List_Len()-m_multip_cursor-1) * sizeof(slist[0]));
-				Server_List_Reset_NoFree(Server_List_Len()-1);
+				(SList_Len()-m_multip_cursor-1) * sizeof(slist[0]));
+				SList_Reset_NoFree(SList_Len()-1);
 			}
 		}
 		break;
@@ -2151,7 +2350,7 @@ void M_SEdit_Key (int key) {
 			M_Menu_ServerList_f ();
 			break;
 		case K_ENTER:
-			Server_List_Set(m_multip_cursor,serv,desc);
+			SList_Set(m_multip_cursor,serv,desc);
 			M_Menu_ServerList_f ();
 			break;
 		case K_UPARROW:
@@ -2287,6 +2486,7 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
 	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
+	Cmd_AddCommand ("menu_fps", M_Menu_Fps_f);
 	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
 	Cmd_AddCommand ("help", M_Menu_Help_f);
 	Cmd_AddCommand ("menu_help", M_Menu_Help_f);
@@ -2359,6 +2559,10 @@ void M_Draw (void)
 
 	case m_keys:
 		M_Keys_Draw ();
+		break;
+
+	case m_fps:
+		M_Fps_Draw ();
 		break;
 
 	case m_video:
@@ -2457,6 +2661,10 @@ void M_Keydown (int key)
 
 	case m_keys:
 		M_Keys_Key (key);
+		return;
+
+	case m_fps:
+		M_Fps_Key (key);
 		return;
 
 	case m_video:

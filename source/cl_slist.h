@@ -27,7 +27,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: cl_slist.h,v 1.1.1.1 2004/09/28 18:56:38 vvd0 Exp $
+	$Id: cl_slist.h,v 1.1.1.2 2004/09/28 18:57:41 vvd0 Exp $
 */
 
 // #include <quakeio.h>
@@ -42,14 +42,12 @@ typedef struct {
 
 extern server_entry_t	slist[MAX_SERVER_LIST];
 
-void Server_List_Init(void);
-void Server_List_Shutdown(void);
-int Server_List_Set(int i,char *addr,char *desc);
-int Server_List_Reset_NoFree(int i);
-int Server_List_Reset(int i);
-void Server_List_Switch(int a,int b);
-int Server_List_Len(void);
-int Server_List_Load(FILE *f);
-int Server_List_Save(FILE *f);
-char *gettokstart (char *str, int req, char delim);
-int gettoklen(char *str, int req, char delim);
+void SList_Init(void);
+void SList_Shutdown(void);
+void SList_Set(int i,char *addr,char *desc);
+void SList_Reset_NoFree(int i);
+void SList_Reset(int i);
+void SList_Switch(int a,int b);
+int SList_Len(void);
+void SList_Load();
+void SList_Save();

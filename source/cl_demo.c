@@ -48,8 +48,6 @@ Called when a demo file runs out, or the user starts a game
 */
 void CL_StopPlayback (void)
 {
-	extern qboolean	v_updatepalette;
-
 	if (!cls.demoplayback)
 		return;
 
@@ -61,8 +59,9 @@ void CL_StopPlayback (void)
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
 
+	cl.teamfortress = false;
 	memset (cl.cshifts, 0, sizeof(cl.cshifts));
-	v_updatepalette = true;
+	cl.stats[STAT_ITEMS] = 0;
 }
 
 #define dem_cmd		0
@@ -157,10 +156,9 @@ qboolean CL_GetDemoMessage (void)
 	byte	c;
 	usercmd_t *pcmd;
 
-// Tonik -->
-	if (cl.paused & 1)
+// Tonik:
+	if (cl.paused & 2)
 		return 0;
-// <-- Tonik
 
 	// read the time from the packet
 	fread(&demotime, sizeof(demotime), 1, cls.demofile);
@@ -182,7 +180,7 @@ qboolean CL_GetDemoMessage (void)
 			cls.td_startframe = host_framecount;
 		}
 		realtime = demotime; // warp
-	} else if (!(cl.paused & 2) && cls.state >= ca_onserver) {	// always grab until fully connected
+	} else if (!(cl.paused & 1) && cls.state >= ca_onserver) {	// always grab until fully connected
 		if (realtime + 1.0 < demotime) {
 			// too far back
 			realtime = demotime - 1.0;
@@ -238,8 +236,7 @@ qboolean CL_GetDemoMessage (void)
 		net_message.cursize = LittleLong (net_message.cursize);
 	//Con_Printf("read: %ld bytes\n", net_message.cursize);
 		if (net_message.cursize > MAX_MSGLEN)
-//Tonik			Sys_Error ("Demo message > MAX_MSGLEN");
-			Host_EndGame ("Demo message > MAX_MSGLEN");	// Tonik!!!
+			Host_EndGame ("Demo message > MAX_MSGLEN");
 		r = fread (net_message.data, net_message.cursize, 1, cls.demofile);
 		if (r != 1)
 		{
@@ -702,7 +699,7 @@ void CL_EasyRecord_f (void)
 	c = Cmd_Argc();
 	if (c > 2)
 	{
-		Con_Printf ("record <demoname>\n");
+		Con_Printf ("easyrecord <demoname>\n");
 		return;
 	}
 
@@ -718,37 +715,42 @@ void CL_EasyRecord_f (void)
 
 	if (c == 2)
 		sprintf (name, "%s", Cmd_Argv(1));
-	else {
+	else if (cl.spectator) {
+		// FIXME: if tracking a player, use his name
+		sprintf (name, "spec_%s_%s",
+			TP_PlayerName(),
+			TP_MapName());
+	} else {
 		// guess game type and write demo name
-		i = CL_CountPlayers();
+		i = TP_CountPlayers();
 		if (atoi(Info_ValueForKey(cl.serverinfo, "teamplay"))
 			&& i >= 3)
 		{
 			// Teamplay
 			sprintf (name, "%s_%s_vs_%s_%s",
-				CL_PlayerName(),
-				CL_PlayerTeam(),
-				CL_EnemyTeam(),
-				CL_MapName());
+				TP_PlayerName(),
+				TP_PlayerTeam(),
+				TP_EnemyTeam(),
+				TP_MapName);
 		} else {
 			if (i == 2) {
 				// Duel
 				sprintf (name, "%s_vs_%s_%s",
-					CL_PlayerName(),
-					CL_EnemyName(),
-					CL_MapName());
+					TP_PlayerName(),
+					TP_EnemyName(),
+					TP_MapName());
 			}
 			else if (i > 2) {
 				// FFA
 				sprintf (name, "%s_ffa_%s",
-					CL_PlayerName, 
-					CL_MapName());
+					TP_PlayerName, 
+					TP_MapName());
 			}
 			else {
 				// one player
 				sprintf (name, "%s_%s",
-					CL_PlayerName(),
-					CL_MapName());
+					TP_PlayerName(),
+					TP_MapName());
 			}
 		}
 	}

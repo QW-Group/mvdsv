@@ -57,6 +57,7 @@ void CL_NudgePosition (void)
 	Con_DPrintf ("CL_NudgePosition: stuck\n");
 }
 
+
 /*
 ==============
 CL_PredictUsercmd
@@ -64,7 +65,7 @@ CL_PredictUsercmd
 */
 void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, qboolean spectator)
 {
-	extern cvar_t	cl_speedjumpfix;	// Tonik
+	extern cvar_t	cl_speedjumpfix;
 
 	// split up very long moves
 	if (u->msec > 50)
@@ -85,6 +86,8 @@ void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, 
 	VectorCopy (u->angles, pmove.angles);
 	VectorCopy (from->velocity, pmove.velocity);
 
+	if (cl_speedjumpfix.value)
+		pmove.jump_msec = from->jump_msec;
 	pmove.oldbuttons = from->oldbuttons;
 	pmove.waterjumptime = from->waterjumptime;
 	pmove.dead = cl.stats[STAT_HEALTH] <= 0;
@@ -96,9 +99,11 @@ void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, 
 //for (i=0 ; i<3 ; i++)
 //pmove.origin[i] = ((int)(pmove.origin[i]*8))*0.125;
 	to->waterjumptime = pmove.waterjumptime;
-// Tonik: optional speed jumping fix
-	if (cl_speedjumpfix.value)
+	if (cl_speedjumpfix.value) {
 		to->oldbuttons = pmove.oldbuttons;
+		to->jump_msec = pmove.jump_msec;
+		pmove.jump_msec = 0;
+	}
 	else
 		to->oldbuttons = pmove.cmd.buttons;
 	VectorCopy (pmove.origin, to->origin);

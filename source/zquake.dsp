@@ -45,7 +45,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /G5 /GX /O2 /I "..\dxsdk\sdk\inc" /I "..\scitech\include" /I "..\client" /I "..\server" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "id386" /D "QW_BOTH" /FR /YX /FD /c
+# ADD CPP /nologo /G5 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "id386" /D "QW_BOTH" /YX /FD /c
+# SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -72,7 +73,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /G5 /ML /Gm /GX /ZI /Od /I "..\dxsdk\sdk\inc" /I "..\scitech\include" /I "..\client" /I "..\server" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "id386" /D "QW_BOTH" /FR /YX /FD /c
+# ADD CPP /nologo /G5 /ML /Gm /GX /ZI /Od /I ".\ZDebug/" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "id386" /D "QW_BOTH" /FR"" /YX /Fo"" /FD ".\ZDebug/" /c
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -99,7 +100,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /ML /Gm /GX /Zi /Od /I "e:\msdev\projects\dxsdk\sdk\inc" /I "e:\msdev\projects\scitech\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /c
-# ADD CPP /nologo /G5 /ML /GX /ZI /Od /I "..\dxsdk\sdk\inc" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "QW_BOTH" /FR /YX /FD /c
+# ADD CPP /nologo /G5 /ML /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "QW_BOTH" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -127,7 +128,8 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G5 /ML /GX /Zi /Od /I "e:\msdev\projects\dxsdk\sdk\inc" /I "e:\msdev\projects\scitech\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "GLQUAKE" /FR /YX /c
-# ADD CPP /nologo /G5 /ML /GX /Ot /Ow /I "..\dxsdk\sdk\inc" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "QW_BOTH" /YX /FD /c
+# ADD CPP /nologo /G5 /ML /GX /Ot /Ow /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "QW_BOTH" /YX /FD /c
+# SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -138,8 +140,8 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 e:\msdev\projects\winquake\dxsdk\sdk\lib\dxguid.lib winmm.lib wsock32.lib opengl32.lib glu32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"GLDebug/glzquake.exe"
 # SUBTRACT BASE LINK32 /nodefaultlib
-# ADD LINK32 comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /out:".\ZGLRelease\zquake-gl.exe"
-# SUBTRACT LINK32 /nodefaultlib
+# ADD LINK32 comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /incremental:no /machine:I386 /out:".\ZGLRelease\zquake-gl.exe"
+# SUBTRACT LINK32 /debug /nodefaultlib
 
 !ENDIF 
 
@@ -159,6 +161,10 @@ SOURCE=.\cd_win.c
 # Begin Source File
 
 SOURCE=.\cl_cam.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\cl_cmd.c
 # End Source File
 # Begin Source File
 
@@ -1397,6 +1403,10 @@ SOURCE=.\sys.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\teamplay.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\version.h
 # End Source File
 # Begin Source File
@@ -1451,9 +1461,9 @@ InputPath=.\cl_math.S
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1466,9 +1476,9 @@ InputPath=.\cl_math.S
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1481,9 +1491,9 @@ InputPath=.\cl_math.S
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D "id386" /D "GLQUAKE" > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1496,9 +1506,9 @@ InputPath=.\cl_math.S
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D id386 /D GLQUAKE > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1518,24 +1528,24 @@ InputPath=.\d_draw.s
 InputName=d_draw
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\d_draw.s
 InputName=d_draw
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1564,24 +1574,24 @@ InputPath=.\d_draw16.s
 InputName=d_draw16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\d_draw16.s
 InputName=d_draw16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1610,24 +1620,24 @@ InputPath=.\d_parta.s
 InputName=d_parta
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\d_parta.s
 InputName=d_parta
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1656,24 +1666,24 @@ InputPath=.\d_polysa.s
 InputName=d_polysa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\d_polysa.s
 InputName=d_polysa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1702,24 +1712,24 @@ InputPath=.\d_scana.s
 InputName=d_scana
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\d_scana.s
 InputName=d_scana
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1748,24 +1758,24 @@ InputPath=.\d_spr8.s
 InputName=d_spr8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\d_spr8.s
 InputName=d_spr8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1794,24 +1804,24 @@ InputPath=.\d_varsa.s
 InputName=d_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\d_varsa.s
 InputName=d_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1840,24 +1850,24 @@ InputPath=.\math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1870,9 +1880,9 @@ InputPath=.\math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D "id386" /D "GLQUAKE" > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1885,9 +1895,9 @@ InputPath=.\math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D id386 /D GLQUAKE > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1907,24 +1917,24 @@ InputPath=.\r_aclipa.s
 InputName=r_aclipa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\r_aclipa.s
 InputName=r_aclipa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1953,24 +1963,24 @@ InputPath=.\r_aliasa.s
 InputName=r_aliasa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\r_aliasa.s
 InputName=r_aliasa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1999,24 +2009,24 @@ InputPath=.\r_drawa.s
 InputName=r_drawa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\r_drawa.s
 InputName=r_drawa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2045,24 +2055,24 @@ InputPath=.\r_edgea.s
 InputName=r_edgea
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\r_edgea.s
 InputName=r_edgea
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2091,24 +2101,24 @@ InputPath=.\r_varsa.s
 InputName=r_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\r_varsa.s
 InputName=r_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2137,24 +2147,24 @@ InputPath=.\snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2167,9 +2177,9 @@ InputPath=.\snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D "id386" /D "GLQUAKE" > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2182,9 +2192,9 @@ InputPath=.\snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D id386 /D GLQUAKE > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2204,24 +2214,24 @@ InputPath=.\surf16.s
 InputName=surf16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\surf16.s
 InputName=surf16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2250,24 +2260,24 @@ InputPath=.\surf8.s
 InputName=surf8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "zquake - Win32 Debug"
 
-# Begin Custom Build - GAS2MASM Conversion
+# Begin Custom Build
 OutDir=.\ZDebug
 InputPath=.\surf8.s
 InputName=surf8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2296,9 +2306,9 @@ InputPath=.\sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2311,9 +2321,9 @@ InputPath=.\sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2326,9 +2336,9 @@ InputPath=.\sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D "id386" /D "GLQUAKE" > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2341,9 +2351,9 @@ InputPath=.\sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D id386 /D GLQUAKE > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2363,9 +2373,9 @@ InputPath=.\worlda.S
 InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2378,9 +2388,9 @@ InputPath=.\worlda.S
 InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /D "id386" /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm.exe < $(OUTDIR)\$(InputName).spp          >$(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2393,9 +2403,9 @@ InputPath=.\worlda.S
 InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D "id386" /D "GLQUAKE" > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2408,9 +2418,9 @@ InputPath=.\worlda.S
 InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /EP /D id386 /D GLQUAKE > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	..\gas2masm\debug\gas2masm < $(OUTDIR)\$(InputName).spp >          $(OUTDIR)\$(InputName).asm 
-	ml /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                                                                                                                                                                                                                           $(OUTDIR)\$(InputName).asm 
+	cl /D "id386" /D "GLQUAKE" /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build

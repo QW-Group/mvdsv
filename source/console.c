@@ -135,8 +135,13 @@ Con_MessageMode_f
 */
 void Con_MessageMode_f (void)
 {
+	if (cls.state != ca_active)
+		return;
+
 	chat_team = false;
 	key_dest = key_message;
+	chat_buffer[0] = 0;
+	chat_linepos = 0;
 }
 
 /*
@@ -146,8 +151,13 @@ Con_MessageMode2_f
 */
 void Con_MessageMode2_f (void)
 {
+	if (cls.state != ca_active)
+		return;
+
 	chat_team = true;
 	key_dest = key_message;
+	chat_buffer[0] = 0;
+	chat_linepos = 0;
 }
 
 /*
@@ -527,30 +537,40 @@ void Con_DrawNotify (void)
 
 	if (key_dest == key_message)
 	{
+		char	temp[MAXCMDLINE+1];
+
 		clearnotify = 0;
 		scr_copytop = 1;
 	
-		if (chat_team)
-		{
+		if (chat_team) {
 			Draw_String (8, v, "say_team:");
 			skip = 11;
-		}
-		else
-		{
+		} else {
 			Draw_String (8, v, "say:");
 			skip = 5;
 		}
 
-		s = chat_buffer;
-		if (chat_bufferlen > (vid.width>>3)-(skip+1))
-			s += chat_bufferlen - ((vid.width>>3)-(skip+1));
+		// FIXME: clean this up
+
+		s = strcpy (temp, chat_buffer);
+
+		// add the cursor frame
+		if ( (int)(realtime*con_cursorspeed) & 1 ) {
+			if (chat_linepos == strlen(s))
+				s[chat_linepos+1] = '\0';
+			s[chat_linepos] = 11;
+		}
+
+		// prestep if horizontally scrolling
+		if (chat_linepos + skip >= (vid.width>>3))
+			s += 1 + chat_linepos + skip - (vid.width>>3);
+
 		x = 0;
-		while(s[x])
+		while (s[x] && x+skip < (vid.width>>3))
 		{
 			Draw_Character ( (x+skip)<<3, v, s[x]);
 			x++;
 		}
-		Draw_Character ( (x+skip)<<3, v, 10+((int)(realtime*con_cursorspeed)&1));
 		v += 8;
 	}
 	
@@ -587,6 +607,8 @@ void Con_DrawConsole (int lines)
 
 	y = lines - 30;
 
+	row = con->display;
+
 // draw from the bottom up
 	if (con->display != con->current)
 	{
@@ -596,9 +618,9 @@ void Con_DrawConsole (int lines)
 	
 		y -= 8;
 		rows--;
+		row--;
 	}
 	
-	row = con->display;
 	for (i=0 ; i<rows ; i++, y-=8, row--)
 	{
 		if (row < 0)

@@ -83,7 +83,7 @@ void SV_New_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0, clearing", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -131,7 +131,7 @@ SV_Soundlist_f
 void SV_Soundlist_f (void)
 {
 	char		**s;
-	int			n;
+	unsigned	n;
 
 	if (host_client->state != cs_connected)
 	{
@@ -148,11 +148,17 @@ void SV_Soundlist_f (void)
 	}
 
 	n = atoi(Cmd_Argv(2));
+	if (n >= MAX_SOUNDS) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, 
+			"SV_Soundlist_f: Invalid soundlist index\n");
+		SV_DropClient (host_client);
+		return;
+	}
 	
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -181,7 +187,7 @@ SV_Modellist_f
 void SV_Modellist_f (void)
 {
 	char		**s;
-	int			n;
+	unsigned	n;
 
 	if (host_client->state != cs_connected)
 	{
@@ -198,11 +204,17 @@ void SV_Modellist_f (void)
 	}
 
 	n = atoi(Cmd_Argv(2));
+	if (n >= MAX_MODELS) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, 
+			"SV_Modellist_f: Invalid modellist index\n");
+		SV_DropClient (host_client);
+		return;
+	}
 
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -271,7 +283,7 @@ void SV_PreSpawn_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_PreSpawn] Back buffered (%d0, clearing", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_PreSpawn] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -305,7 +317,7 @@ void SV_Spawn_f (void)
 	client_t	*client;
 	edict_t	*ent;
 	eval_t *val;
-	int n;
+	unsigned n;
 
 	if (host_client->state != cs_connected)
 	{
@@ -322,16 +334,12 @@ void SV_Spawn_f (void)
 	}
 
 	n = atoi(Cmd_Argv(2));
-
-	// make sure n is valid
-	if ( n < 0 || n > MAX_CLIENTS )
-	{
-		Con_Printf ("SV_Spawn_f invalid client start\n");
-		SV_New_f ();
+	if (n >= MAX_CLIENTS) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, 
+				"SV_Spawn_f: Invalid client start\n");
+		SV_DropClient (host_client); 
 		return;
 	}
-
-
 	
 // send all current names, colors, and frag counts
 	// FIXME: is this a good thing?

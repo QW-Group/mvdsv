@@ -330,6 +330,17 @@ model_t *Mod_ForName (char *name, qboolean crash)
 
 byte	*mod_base;
 
+static qboolean HasFullbrights (byte *pixels, int size)
+{
+    int i;
+
+    for (i = 0; i < size; i++)
+        if (pixels[i] >= 224)
+            return true;
+
+    return false;
+}
+
 
 /*
 =================
@@ -371,7 +382,7 @@ void Mod_LoadTextures (lump_t *l)
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
 		pixels = mt->width*mt->height/64*85;
-		tx = Hunk_AllocName (sizeof(texture_t) +pixels, loadname );
+		tx = Hunk_AllocName (sizeof(texture_t) + pixels, loadname);
 		loadmodel->textures[i] = tx;
 
 		memcpy (tx->name, mt->name, sizeof(tx->name));
@@ -388,7 +399,15 @@ void Mod_LoadTextures (lump_t *l)
 		else
 		{
 			texture_mode = GL_LINEAR_MIPMAP_NEAREST; //_LINEAR;
-			tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), true, false);
+			if (mt->name[0] == '*')	// we don't brighten turb textures
+				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), true, false, false);
+			else {
+				tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(tx+1), true, false, true);
+				if (HasFullbrights((byte *)(tx+1), tx->width*tx->height)) {
+					tx->fb_texturenum = GL_LoadTexture (va("@fb_%s", mt->name), tx->width, tx->height, (byte *)(tx+1),
+						true, 2 /* Fullbright mask */, false);
+				}
+			}
 			texture_mode = GL_LINEAR;
 		}
 	}
@@ -1469,7 +1488,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][2] =
 			pheader->gl_texturenum[i][3] =
 				GL_LoadTexture (name, pheader->skinwidth, 
-				pheader->skinheight, (byte *)(pskintype + 1), true, false);
+				pheader->skinheight, (byte *)(pskintype + 1), true, false, false);
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		} else {
 			// animating skin group.  yuck.
@@ -1486,7 +1505,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					sprintf (name, "%s_%i_%i", loadmodel->name, i,j);
 					pheader->gl_texturenum[i][j&3] = 
 						GL_LoadTexture (name, pheader->skinwidth, 
-						pheader->skinheight, (byte *)(pskintype), true, false);
+						pheader->skinheight, (byte *)(pskintype), true, false, false);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
 			k = j;
@@ -1728,7 +1747,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	pspriteframe->right = width + origin[0];
 
 	sprintf (name, "%s_%i", loadmodel->name, framenum);
-	pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, true);
+	pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, true, false);
 
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
 }

@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -59,10 +57,7 @@ static qboolean	force_minimized, in_mode_set, is_mode0x13, force_mode_set;
 static int		vid_stretched, windowed_mouse;
 static qboolean	palette_changed, syscolchg, vid_mode_set, hide_window, pal_is_nostatic;
 static HICON	hIcon;
-
-qboolean mouseactive; // from in_win.c
-
-//viddef_t	vid;				// global video state
+extern qboolean mouseactive; // from in_win.c
 
 #define MODE_WINDOWED			0
 #define MODE_SETTABLE_WINDOW	2
@@ -87,6 +82,7 @@ cvar_t		vid_windowed_mode = {"vid_windowed_mode","0",CVAR_ARCHIVE};
 cvar_t		block_switch = {"block_switch","0",CVAR_ARCHIVE};
 cvar_t		vid_window_x = {"vid_window_x","0",CVAR_ARCHIVE};
 cvar_t		vid_window_y = {"vid_window_y","0",CVAR_ARCHIVE};
+cvar_t		vid_resetonswitch = {"vid_resetonswitch","0",CVAR_ARCHIVE};
 
 typedef struct {
 	int		width;
@@ -1325,7 +1321,7 @@ qboolean VID_SetWindowedMode (int modenum)
 		mainwindow = CreateWindowEx (
 			 ExWindowStyle,
 			 "WinQuake",
-			 "QuakeWorld",		// Tonik: was "WinQuake"
+			 "QuakeWorld",
 			 WindowStyle,
 			 0, 0,
 			 WindowRect.right - WindowRect.left,
@@ -1410,6 +1406,11 @@ qboolean VID_SetWindowedMode (int modenum)
 
 	SendMessage (mainwindow, WM_SETICON, (WPARAM)TRUE, (LPARAM)hIcon);
 	SendMessage (mainwindow, WM_SETICON, (WPARAM)FALSE, (LPARAM)hIcon);
+
+	// Tonik: this is a workaroung for the bug with garbaged
+	// screen on Riva TNT
+	if (lastmodestate == MS_FULLSCREEN && vid_resetonswitch.value)
+		ChangeDisplaySettings (NULL, CDS_RESET);
 
 	return true;
 }
@@ -2122,6 +2123,7 @@ void	VID_Init (unsigned char *palette)
 	Cvar_RegisterVariable (&block_switch);
 	Cvar_RegisterVariable (&vid_window_x);
 	Cvar_RegisterVariable (&vid_window_y);
+	Cvar_RegisterVariable (&vid_resetonswitch);
 
 	Cmd_AddCommand ("vid_testmode", VID_TestMode_f);
 	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f);
@@ -2252,6 +2254,11 @@ void	VID_Shutdown (void)
 
 		vid_testingmode = 0;
 		vid_initialized = 0;
+
+		// Tonik: this is a workaroung for the bug with garbaged
+		// screen on Riva TNT
+		if (modestate == MS_FULLSCREEN && vid_resetonswitch.value)
+			ChangeDisplaySettings (NULL, CDS_RESET);
 	}
 }
 
@@ -2922,6 +2929,12 @@ LONG WINAPI MainWndProc (
 			fActive = LOWORD(wParam);
 			fMinimized = (BOOL) HIWORD(wParam);
 			AppActivate(!(fActive == WA_INACTIVE), fMinimized);
+
+		// Tonik: this is a workaroung for the bug with garbaged
+		// screen on Riva TNT
+			if (fActive == WA_INACTIVE && modestate == MS_FULLSCREEN
+				&& vid_resetonswitch.value)
+				ChangeDisplaySettings (NULL, CDS_RESET);
 
 		// fix the leftover Alt from any Alt-Tab or the like that switched us away
 			ClearAllStates ();

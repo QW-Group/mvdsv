@@ -53,6 +53,7 @@ static void	(*surfmiptable[4])(void) = {
 
 unsigned		blocklights[18*18];
 
+#if 0
 /*
 ===============
 R_AddDynamicLights
@@ -121,6 +122,143 @@ void R_AddDynamicLights (void)
 		}
 	}
 }
+#endif
+
+
+typedef struct dlightinfo_s {
+	int	local[2];
+	int rad;
+	int	minlight;	// rad - minlight
+} dlightinfo_t;
+
+static dlightinfo_t dlightlist[MAX_DLIGHTS];
+static int	numdlights;
+
+void R_BuildDLightList (void)
+{
+	msurface_t *surf;
+	int			lnum;
+	int			sd, td;
+	float		dist;
+	vec3_t		impact;
+	int			i;
+	int			smax, tmax;
+	mtexinfo_t	*tex;
+	int			irad, idist, iminlight;
+	int			local[2];
+	int			tdmin, sdmin, distmin;
+	dlightinfo_t	*light;
+
+	numdlights = 0;
+
+	surf = r_drawsurf.surf;
+	smax = (surf->extents[0]>>4)+1;
+	tmax = (surf->extents[1]>>4)+1;
+	tex = surf->texinfo;
+
+	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+	{
+		if ( !(surf->dlightbits & (1<<lnum) ) )
+			continue;		// not lit by this light
+
+		dist = DotProduct (cl_dlights[lnum].origin, surf->plane->normal) -
+				surf->plane->dist;
+		irad = (cl_dlights[lnum].radius - fabs(dist)) * 256;
+		iminlight = cl_dlights[lnum].minlight * 256;
+		if (irad < iminlight)
+			continue;
+
+		iminlight = irad - iminlight;
+		
+		for (i=0 ; i<3 ; i++) {
+			impact[i] = cl_dlights[lnum].origin[i] -
+				surf->plane->normal[i]*dist;
+		}
+		
+		local[0] = DotProduct (impact, tex->vecs[0]) +
+			tex->vecs[0][3] - surf->texturemins[0];
+		local[1] = DotProduct (impact, tex->vecs[1]) +
+			tex->vecs[1][3] - surf->texturemins[1];
+		
+		// check if this dlight will touch the surface
+		if (local[1] > 0) {
+			tdmin = local[1] - (tmax<<4);
+			if (tdmin < 0)
+				tdmin = 0;
+		} else
+			tdmin = -local[1];
+
+		if (local[0] > 0) {
+			sdmin = local[0] - (smax<<4);
+			if (sdmin < 0)
+				sdmin = 0;
+		} else
+			sdmin = -local[0];
+
+		if (sdmin > tdmin)
+			distmin = (sdmin<<8) + (tdmin<<7);
+		else
+			distmin = (tdmin<<8) + (sdmin<<7);
+
+		if (distmin < iminlight)
+		{
+			// save dlight info
+			light = &dlightlist[numdlights];
+			light->minlight = iminlight;
+			light->rad = irad;
+			light->local[0] = local[0];
+			light->local[1] = local[1];
+			numdlights++;
+		}
+	}
+}
+
+void R_AddDynamicLights (void)
+{
+	int			i;
+	int			smax, tmax;
+	int			s, t;
+	int			sd, td;
+	int			_sd, _td;
+	int			local[2];
+	int			irad, idist, iminlight;
+	dlightinfo_t	*light;
+	unsigned	*dest;
+
+	smax = (r_drawsurf.surf->extents[0]>>4)+1;
+	tmax = (r_drawsurf.surf->extents[1]>>4)+1;
+
+	for (i=0,light=dlightlist ; i<numdlights ; i++,light++)
+	{
+		irad = light->rad;
+		iminlight = light->minlight;
+		local[0] = light->local[0];
+//		local[1] = light->local[1];
+
+		_td = light->local[1];
+		dest = blocklights;
+		for (t = 0 ; t<tmax ; t++)
+		{
+			td = _td;
+			if (td < 0)	td = -td;
+			_td -= 16;
+			_sd = local[0];
+			for (s=0 ; s<smax ; s++)
+			{
+				sd = _sd;
+				if (sd < 0)	sd = -sd;
+				_sd -= 16;
+				if (sd > td)
+					idist = (sd<<8) + (td<<7);
+				else
+					idist = (td<<8) + (sd<<7);
+				if (idist < iminlight)
+					*dest += irad - idist;
+				dest++;
+			}
+		}
+	}
+}
 
 /*
 ===============
@@ -170,7 +308,7 @@ void R_BuildLightMap (void)
 		}
 
 // add all the dynamic lights
-	if (surf->dlightframe == r_framecount)
+	if (numdlights)
 		R_AddDynamicLights ();
 
 // bound, invert, and shift
@@ -195,7 +333,7 @@ Returns the proper texture for a given time and base texture
 */
 texture_t *R_TextureAnimation (texture_t *base)
 {
-	int		reletive;
+	int		relative;
 	int		count;
 
 	if (currententity->frame)
@@ -207,10 +345,10 @@ texture_t *R_TextureAnimation (texture_t *base)
 	if (!base->anim_total)
 		return base;
 
-	reletive = (int)(cl.time*10) % base->anim_total;
+	relative = (int)(cl.time*10) % base->anim_total;
 
 	count = 0;	
-	while (base->anim_min > reletive || base->anim_max <= reletive)
+	while (base->anim_min > relative || base->anim_max <= relative)
 	{
 		base = base->anim_next;
 		if (!base)
@@ -227,8 +365,9 @@ texture_t *R_TextureAnimation (texture_t *base)
 ===============
 R_DrawSurface
 ===============
+Returns false if it wasn't hit by a dynamic light
 */
-void R_DrawSurface (void)
+qboolean R_DrawSurface (void)
 {
 	unsigned char	*basetptr;
 	int				smax, tmax, twidth;
@@ -238,6 +377,17 @@ void R_DrawSurface (void)
 	unsigned char	*pcolumndest;
 	void			(*pblockdrawer)(void);
 	texture_t		*mt;
+
+// build a list of dlights that touch this surface
+	if (r_drawsurf.surf->dlightframe == r_framecount)
+		R_BuildDLightList ();
+	else
+		numdlights = 0;
+
+	if (!numdlights) {
+		if (r_drawsurf.dlightonly)
+			return false; // not hit by a dlight, so no need to redraw it
+	}
 
 // calculate the lightings
 	R_BuildLightMap ();
@@ -311,6 +461,7 @@ void R_DrawSurface (void)
 
 		pcolumndest += horzblockstep;
 	}
+	return (numdlights != 0);
 }
 
 

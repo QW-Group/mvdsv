@@ -93,19 +93,28 @@ keyname_t keynames[] =
 	{"KP_MINUS", KP_MINUS},
 
 	{"KP_HOME", KP_HOME},
+	{"KP_7", KP_HOME},
 	{"KP_UPARROW", KP_UPARROW},
+	{"KP_8", KP_UPARROW},
 	{"KP_PGUP", KP_PGUP},
+	{"KP_9", KP_PGUP},
 	{"KP_PLUS", KP_PLUS},
 
 	{"KP_LEFTARROW", KP_LEFTARROW},
+	{"KP_4", KP_LEFTARROW},
 	{"KP_5", KP_5},
 	{"KP_RIGHTARROW", KP_RIGHTARROW},
+	{"KP_6", KP_RIGHTARROW},
 
 	{"KP_END", KP_END},
+	{"KP_1", KP_END},
 	{"KP_DOWNARROW", KP_DOWNARROW},
+	{"KP_2", KP_DOWNARROW},
 	{"KP_PGDN", KP_PGDN},
+	{"KP_3", KP_PGDN},
 
 	{"KP_INS", KP_INS},
+	{"KP_0", KP_INS},
 	{"KP_DEL", KP_DEL},
 	{"KP_ENTER", KP_ENTER},
 
@@ -299,11 +308,28 @@ no_lf:
 			return;
 
 		case K_RIGHTARROW:
+			if (keydown[K_CTRL]) {
+				// word right
+				i = strlen(key_lines[edit_line]);
+				while (key_linepos < i && key_lines[edit_line][key_linepos] != ' ')
+					key_linepos++;
+				while (key_linepos < i && key_lines[edit_line][key_linepos] == ' ')
+					key_linepos++;
+				return;
+			}
 			if (key_linepos < strlen(key_lines[edit_line]))
 				key_linepos++;
 			return;
 
 	    case K_LEFTARROW:
+			if (keydown[K_CTRL]) {
+				// word left
+				while (key_linepos > 1 && key_lines[edit_line][key_linepos-1] == ' ')
+					key_linepos--;
+				while (key_linepos > 1 && key_lines[edit_line][key_linepos-1] != ' ')
+					key_linepos--;
+				return;
+			}
 			if (key_linepos > 1)
 				key_linepos--;
 			return;
@@ -336,25 +362,29 @@ no_lf:
 			}
 			return;
 
-	    case K_MWHEELUP:
 	    case K_PGUP:
-			if (con->display - con->current + con->numlines > 2)
+	    case K_MWHEELUP:
+			if (keydown[K_CTRL] && key == K_PGUP)
+				con->display -= ((int)scr_conlines-22)>>3;
+			else
 				con->display -= 2;
+			if (con->display - con->current + con->numlines < 0)
+				con->display = con->current - con->numlines;
 			return;
 
 	    case K_MWHEELDOWN:
 	    case K_PGDN:
-			con->display += 2;
-			if (con->display > con->current)
+			if (keydown[K_CTRL] && key == K_PGDN)
+				con->display += ((int)scr_conlines-22)>>3;
+			else
+				con->display += 2;
+			if (con->display - con->current > 0)
 				con->display = con->current;
 			return;
 
 	    case K_HOME:
 			if (keydown[K_CTRL])
-			{
-				if (con->numlines > 10)
-					con->display = con->current - con->numlines + 10;
-			}
+				con->display = con->current - con->numlines;
 			else
 				key_linepos = 1;
 			return;
@@ -367,43 +397,60 @@ no_lf:
 			return;
 	}
 #ifdef _WIN32
-	if ((key=='V' || key=='v') && GetKeyState(VK_CONTROL)<0)
+	if ((key=='V' || key=='v') && keydown[K_CTRL])
 	{
 		HANDLE	th;
-		char	*clipText, *textCopied;
+		char	*clipText;
 	
 		if (OpenClipboard(NULL)) {
 			th = GetClipboardData(CF_TEXT);
 			if (th) {
 				clipText = GlobalLock(th);
 				if (clipText) {
-					textCopied = malloc(GlobalSize(th)+1);
-					strcpy(textCopied, clipText);
-	/* Substitutes a NULL for every token */strtok(textCopied, "\n\r\b");
-					i = strlen(textCopied);
+					for (i=0; clipText[i]; i++)
+						if (clipText[i]=='\n' || clipText[i]=='\r' || clipText[i]=='\b')
+							break;
 					if (i + strlen(key_lines[edit_line]) > MAXCMDLINE-1)
 						i = MAXCMDLINE-1 - strlen(key_lines[edit_line]);
 					if (i > 0)
 					{	// insert the string
-//						eol = key_lines[edit_line][key_linepos];
 						memmove (key_lines[edit_line] + key_linepos + i,
 							key_lines[edit_line] + key_linepos, strlen(key_lines[edit_line]) - key_linepos + 1);
-						memcpy (key_lines[edit_line] + key_linepos, textCopied, i);
+						memcpy (key_lines[edit_line] + key_linepos, clipText, i);
 						key_linepos += i;
 					}
-					free(textCopied);
 				}
 				GlobalUnlock(th);
 			}
 			CloseClipboard();
-		return;
 		}
+		return;
 	}
 #endif
 
 	if (key < 32 || key > 127)
 		return;	// non printable
-	
+
+	if (keydown[K_CTRL]) {
+		if (key >= '0' && key <= '9')
+			key = key - '0' + 0x12;	// yellow number
+		else if (key == '[')
+			key = 0x10;
+		else if (key == ']')
+			key = 0x11;
+		else if (key == 'g')
+			key = 0x86;
+		else if (key == 'r')
+			key = 0x87;
+		else if (key == 'y')
+			key = 0x88;
+		else if (key == 'b')
+			key = 0x89;
+	}
+
+	if (keydown[K_ALT])
+		key |= 128;		// red char
+
 	i = strlen(key_lines[edit_line]);
 	if (i >= MAXCMDLINE-1)
 		return;
@@ -418,13 +465,15 @@ no_lf:
 
 qboolean	chat_team;
 char		chat_buffer[MAXCMDLINE];
-int			chat_bufferlen = 0;
+int			chat_linepos = 0;
 
 void Key_Message (int key)
 {
+	int len;
 
-	if (key == K_ENTER)
+	switch (key)
 	{
+	case K_ENTER:
 		if (chat_team)
 			Cbuf_AddText ("say_team \"");
 		else
@@ -433,37 +482,93 @@ void Key_Message (int key)
 		Cbuf_AddText("\"\n");
 
 		key_dest = key_game;
-		chat_bufferlen = 0;
+		chat_linepos = 0;
 		chat_buffer[0] = 0;
+		return;
+
+	case K_ESCAPE:
+		key_dest = key_game;
+		chat_buffer[0] = 0;
+		chat_linepos = 0;
+		return;
+
+	case K_HOME:
+		chat_linepos = 0;
+		return;
+
+	case K_END:
+		chat_linepos = strlen(chat_buffer);
+		return;
+
+	case K_LEFTARROW:
+		if (chat_linepos > 0)
+			chat_linepos--;
+		return;
+
+	case K_RIGHTARROW:
+		if (chat_linepos < strlen(chat_buffer))
+			chat_linepos++;
+		return;
+
+	case K_BACKSPACE:
+		if (chat_linepos > 0) {
+			strcpy(chat_buffer + chat_linepos - 1, chat_buffer + chat_linepos);
+			chat_linepos--;
+		}
+		return;
+
+	case K_DEL:
+		if (chat_buffer[chat_linepos])
+			strcpy(chat_buffer + chat_linepos, chat_buffer + chat_linepos + 1);
 		return;
 	}
 
-	if (key == K_ESCAPE)
+#ifdef _WIN32
+	// FIXME: make a separate function to use it here and in Key_Console
+	if ((key=='V' || key=='v') && keydown[K_CTRL])
 	{
-		key_dest = key_game;
-		chat_bufferlen = 0;
-		chat_buffer[0] = 0;
+		HANDLE	th;
+		char	*clipText;
+		int		i;
+	
+		if (OpenClipboard(NULL)) {
+			th = GetClipboardData(CF_TEXT);
+			if (th) {
+				clipText = GlobalLock(th);
+				if (clipText) {
+					for (i=0; clipText[i]; i++)
+						if (clipText[i]=='\n' || clipText[i]=='\r' || clipText[i]=='\b')
+							break;
+					if (i + strlen(chat_buffer) > sizeof(chat_buffer)-1)
+						i = sizeof(chat_buffer)-1 - strlen(chat_buffer);
+					if (i > 0)
+					{	// insert the string
+						memmove (chat_buffer + chat_linepos + i,
+							chat_buffer + chat_linepos, strlen(chat_buffer) - chat_linepos + 1);
+						memcpy (chat_buffer + chat_linepos, clipText, i);
+						chat_linepos += i;
+					}
+				}
+				GlobalUnlock(th);
+			}
+			CloseClipboard();
+		}
 		return;
 	}
+#endif
 
 	if (key < 32 || key > 127)
 		return;	// non printable
 
-	if (key == K_BACKSPACE)
-	{
-		if (chat_bufferlen)
-		{
-			chat_bufferlen--;
-			chat_buffer[chat_bufferlen] = 0;
-		}
-		return;
-	}
+	len = strlen(chat_buffer);
 
-	if (chat_bufferlen == sizeof(chat_buffer)-1)
+	if (len >= sizeof(chat_buffer)-1)
 		return; // all full
 
-	chat_buffer[chat_bufferlen++] = key;
-	chat_buffer[chat_bufferlen] = 0;
+	// This also moves the ending \0
+	memmove (chat_buffer+chat_linepos+1, chat_buffer+chat_linepos,
+		len-chat_linepos+1);
+	chat_buffer[chat_linepos++] = key;
 }
 
 //============================================================================
@@ -679,11 +784,14 @@ void Key_Init (void)
 	consolekeys[K_UPARROW] = true;
 	consolekeys[K_DOWNARROW] = true;
 	consolekeys[K_BACKSPACE] = true;
+	consolekeys[K_INS] = true;
+	consolekeys[K_DEL] = true;
 	consolekeys[K_HOME] = true;
 	consolekeys[K_END] = true;
 	consolekeys[K_PGUP] = true;
 	consolekeys[K_PGDN] = true;
-	consolekeys[K_DEL] = true;
+	consolekeys[K_ALT] = true;
+	consolekeys[K_CTRL] = true;
 	consolekeys[K_SHIFT] = true;
 	consolekeys[K_MWHEELUP] = true;
 	consolekeys[K_MWHEELDOWN] = true;
@@ -766,7 +874,7 @@ void Key_Event (int key, qboolean down)
 			if ((key != K_BACKSPACE && key != K_DEL
 				&& key != K_LEFTARROW && key != K_RIGHTARROW
 				&& key != K_UPARROW && key != K_DOWNARROW
-				&& key != K_PGUP && key != K_PGDN)
+				&& key != K_PGUP && key != K_PGDN && (key < 32 || key > 126 || key == '`'))
 				|| (key_dest == key_game && cls.state == ca_active))
 				return;	// ignore most autorepeats
 		}
@@ -831,7 +939,9 @@ void Key_Event (int key, qboolean down)
 // during demo playback, most keys bring up the main menu
 //
 	if (cls.demoplayback && down && consolekeys[key] && key_dest == key_game
-	  && key != K_CTRL && key != K_DEL && key != K_HOME && key != K_END && key != K_TAB)
+		&& key != K_ALT && key != K_CTRL && key != K_SHIFT
+		&& key != K_INS && key != K_DEL && key != K_HOME
+		&& key != K_END && key != K_TAB)
 	{
 		M_ToggleMenu_f ();
 		return;
@@ -841,7 +951,8 @@ void Key_Event (int key, qboolean down)
 // if not a consolekey, send to the interpreter no matter what mode is
 //
 	if ( (key_dest == key_menu && menubound[key])
-	|| (key_dest == key_console && !consolekeys[key])
+	|| ((key_dest == key_console || key_dest == key_message)
+		&& !consolekeys[key])
 	|| (key_dest == key_game && ( cls.state == ca_active || !consolekeys[key] ) ) )
 	{
 		kb = keybindings[key];

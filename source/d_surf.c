@@ -282,13 +282,20 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 //
 	cache = surface->cachespots[miplevel];
 
-	if (cache && !cache->dlight && surface->dlightframe != r_framecount
+	if (cache && !cache->dlight /*&& surface->dlightframe != r_framecount*/
 			&& cache->texture == r_drawsurf.texture
 			&& cache->lightadj[0] == r_drawsurf.lightadj[0]
 			&& cache->lightadj[1] == r_drawsurf.lightadj[1]
 			&& cache->lightadj[2] == r_drawsurf.lightadj[2]
 			&& cache->lightadj[3] == r_drawsurf.lightadj[3] )
-		return cache;
+	{
+		if (surface->dlightframe == r_framecount)
+			// surface was not lit but is (possibly) going to
+			r_drawsurf.dlightonly = true;
+		else
+			return cache;
+	} else
+		r_drawsurf.dlightonly = false;
 
 //
 // determine shape of surface
@@ -330,7 +337,9 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 	r_drawsurf.surf = surface;
 
 	c_surf++;
-	R_DrawSurface ();
+
+	if (!R_DrawSurface ())
+		cache->dlight = 0;
 
 	return surface->cachespots[miplevel];
 }

@@ -112,6 +112,7 @@ HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 
 unsigned short	d_8to16table[256];
 unsigned	d_8to24table[256];
+unsigned	d_8to24table2[256];
 unsigned char d_15to8table[65536];
 
 float		gldepthmin, gldepthmax;
@@ -442,7 +443,7 @@ int VID_SetMode (int modenum, unsigned char *palette)
 // ourselves at the top of the z order, then grab the foreground again,
 // Who knows if it helps, but it probably doesn't hurt
 	SetForegroundWindow (mainwindow);
-	VID_SetPalette (palette);
+//	VID_SetPalette (palette);
 	vid_modenum = modenum;
 	Cvar_SetValue (&vid_mode, (float)vid_modenum);
 
@@ -466,7 +467,7 @@ int VID_SetMode (int modenum, unsigned char *palette)
 	if (!msg_suppress_1)
 		Con_SafePrintf ("Video mode %s initialized.\n", VID_GetModeDescription (vid_modenum));
 
-	VID_SetPalette (palette);
+//	VID_SetPalette (palette);
 
 	vid.recalc_refdef = 1;
 
@@ -657,6 +658,7 @@ GL_BeginRendering
 
 =================
 */
+qboolean vid_grabbackbuffer;
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
 	extern cvar_t gl_clear;
@@ -669,6 +671,11 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 //		Sys_Error ("wglMakeCurrent failed");
 
 //	glViewport (*x, *y, *width, *height);
+
+	if (vid_grabbackbuffer) {
+		glDrawBuffer (GL_BACK);
+		vid_grabbackbuffer--;
+	}
 }
 
 
@@ -732,7 +739,20 @@ void	VID_SetPalette (unsigned char *palette)
 		v = (255<<24) + (r<<0) + (g<<8) + (b<<16);
 		*table++ = v;
 	}
-	d_8to24table[255] &= 0xffffff;	// 255 is transparent
+	d_8to24table[255] &= 0;	// 255 is transparent
+
+// Tonik: create a brighter palette for bmodel textures
+	pal = palette;
+	table = d_8to24table2;
+	for (i=0 ; i<256 ; i++)
+	{
+		r = pal[0] * (2.0/1.5);	if (r > 255) r = 255;
+		g = pal[1] * (2.0/1.5); if (g > 255) g = 255;
+		b = pal[2] * (2.0/1.5); if (b > 255) b = 255;
+		pal += 3;
+		*table++ = (255<<24) + (r<<0) + (g<<8) + (b<<16);
+	}
+	d_8to24table2[255] &= 0;	// 255 is transparent
 
 	// JACK: 3D distance calcs - k is last closest, l is the distance.
 	// FIXME: Precalculate this and cache to disk.
@@ -922,9 +942,17 @@ void AppActivate(BOOL fActive, BOOL minimize)
 			if (vid_canalttab && vid_wassuspended) {
 				vid_wassuspended = false;
 				ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN);
-				ShowWindow(mainwindow, SW_SHOWNORMAL);
+				ShowWindow (mainwindow, SW_SHOWNORMAL);
+				// Tonik: It seems Windows sometimes sets draw buffer to
+				// to GL_FRONT after switching to fullscreen, causing
+				// screen flickering. Grabbing GL_BACK once doesn't help,
+				// 2 is probably ok, but we use 5 just to be sure
+				vid_grabbackbuffer = 5;
+				Sbar_Changed ();
 			}
 		}
+		else if (modestate == MS_WINDOWED && Minimized)
+			ShowWindow (mainwindow, SW_RESTORE);
 		else if ((modestate == MS_WINDOWED) && _windowed_mouse.value && key_dest == key_game)
 		{
 			IN_ActivateMouse ();
@@ -939,6 +967,7 @@ void AppActivate(BOOL fActive, BOOL minimize)
 			IN_DeactivateMouse ();
 			IN_ShowMouse ();
 			if (vid_canalttab) { 
+				ShowWindow (mainwindow, SW_MINIMIZE);
 				ChangeDisplaySettings (NULL, 0);
 				vid_wassuspended = true;
 			}

@@ -227,7 +227,7 @@ void Sbar_Init (void)
 
 //=============================================================================
 
-// drawing routines are reletive to the status bar location
+// drawing routines are relative to the status bar location
 
 /*
 =============
@@ -1347,6 +1347,7 @@ void Sbar_IntermissionOverlay (void)
 	qpic_t	*pic;
 	int		dig;
 	int		num;
+	int		xofs;
 
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
@@ -1360,27 +1361,29 @@ void Sbar_IntermissionOverlay (void)
 		return;
 	}
 
+	xofs = (vid.width - 320)>>1;
+
 	pic = Draw_CachePic ("gfx/complete.lmp");
-	Draw_Pic (64, 24, pic);
+	Draw_Pic (xofs + 64, 24, pic);
 
 	pic = Draw_CachePic ("gfx/inter.lmp");
-	Draw_TransPic (0, 56, pic);
+	Draw_TransPic (xofs, 56, pic);
 
 	// time
 	dig = (cl.completed_time - cl.players[cl.playernum].entertime) / 60;
-	Sbar_IntermissionNumber (160, 64, dig, 3, 0);
+	Sbar_IntermissionNumber (xofs + 160, 64, dig, 3, 0);
 	num = (cl.completed_time - cl.players[cl.playernum].entertime) - dig*60;
-	Draw_TransPic (234,64,sb_colon);
-	Draw_TransPic (246,64,sb_nums[0][num/10]);
-	Draw_TransPic (266,64,sb_nums[0][num%10]);
+	Draw_TransPic (xofs + 234, 64, sb_colon);
+	Draw_TransPic (xofs + 246, 64, sb_nums[0][num/10]);
+	Draw_TransPic (xofs + 266, 64, sb_nums[0][num%10]);
 
-	Sbar_IntermissionNumber (160, 104, cl.stats[STAT_SECRETS], 3, 0);
-	Draw_TransPic (232,104,sb_slash);
-	Sbar_IntermissionNumber (240, 104, cl.stats[STAT_TOTALSECRETS], 3, 0);
+	Sbar_IntermissionNumber (xofs + 160, 104, cl.stats[STAT_SECRETS], 3, 0);
+	Draw_TransPic (xofs + 232, 104, sb_slash);
+	Sbar_IntermissionNumber (xofs + 240, 104, cl.stats[STAT_TOTALSECRETS], 3, 0);
 
-	Sbar_IntermissionNumber (160, 144, cl.stats[STAT_MONSTERS], 3, 0);
-	Draw_TransPic (232,144,sb_slash);
-	Sbar_IntermissionNumber (240, 144, cl.stats[STAT_TOTALMONSTERS], 3, 0);
+	Sbar_IntermissionNumber (xofs + 160, 144, cl.stats[STAT_MONSTERS], 3, 0);
+	Draw_TransPic (xofs + 232, 144, sb_slash);
+	Sbar_IntermissionNumber (xofs + 240, 144, cl.stats[STAT_TOTALMONSTERS], 3, 0);
 }
 
 

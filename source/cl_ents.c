@@ -285,22 +285,24 @@ void CL_ParsePacketEntities (qboolean delta)
 
 		oldpacket = cl.frames[newpacket].delta_sequence;
 
+		if (cls.netchan.outgoing_sequence - cls.netchan.incoming_sequence >= UPDATE_BACKUP-1)
+		{	// there are no valid frames left, so drop it
+			FlushEntityPacket ();
+			return;
+		}
+
 		if ( (from&UPDATE_MASK) != (oldpacket&UPDATE_MASK) )
 			Con_DPrintf ("WARNING: from mismatch\n");
-	}
-	else
-		oldpacket = -1;
 
-	full = false;
-	if (oldpacket != -1)
-	{
 		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP-1)
 		{	// we can't use this, it is too old
 			FlushEntityPacket ();
 			return;
 		}
+
 		cl.validsequence = cls.netchan.incoming_sequence;
 		oldp = &cl.frames[oldpacket&UPDATE_MASK].packet_entities;
+		full = false;
 	}
 	else
 	{	// this is a full update that we can start delta compressing from now
@@ -437,17 +439,21 @@ void CL_LinkPacketEntities (void)
 		s1 = &pack->entities[pnum];
 		s2 = s1;	// FIXME: no interpolation right now
 
-		// spawn light flashes, even ones coming from invisible objects
-		if ((s1->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED))
-			CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 3);
-		else if (s1->effects & EF_BLUE)
-			CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 1);
-		else if (s1->effects & EF_RED)
-			CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 2);
-		else if (s1->effects & EF_BRIGHTLIGHT)
-			CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2] + 16, 400 + (rand()&31), 0.1, 0);
-		else if (s1->effects & EF_DIMLIGHT)
-			CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 0);
+		// control powerup glow for bots
+		if (s1->modelindex != cl_playerindex || r_powerupglow.value)
+		{
+			// spawn light flashes, even ones coming from invisible objects
+			if ((s1->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED))
+				CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 3);
+			else if (s1->effects & EF_BLUE)
+				CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 1);
+			else if (s1->effects & EF_RED)
+				CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 2);
+			else if (s1->effects & EF_BRIGHTLIGHT)
+				CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2] + 16, 400 + (rand()&31), 0.1, 0);
+			else if (s1->effects & EF_DIMLIGHT)
+				CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 0);
+		}
 
 		if (cl_deadbodyfilter.value && s1->modelindex == cl_playerindex
 			&& ( (i=s1->frame)==49 || i==60 || i==69 || i==84 || i==93 || i==102) )
@@ -547,23 +553,21 @@ void CL_LinkPacketEntities (void)
 			}
 		if (model->flags & EF_ROCKET)
 		{
-			if (r_rockettrail.value)
-			{
-				int	trailnum = r_rockettrail.value - 1;
-				if (trailnum < 0 || trailnum > 6)
-					trailnum = 0;
-				R_RocketTrail (old_origin, ent->origin, trailnum);
+			if (r_rockettrail.value) {
+				if (r_rockettrail.value == 2)
+					R_RocketTrail (old_origin, ent->origin, 1);
+				else
+					R_RocketTrail (old_origin, ent->origin, 0);
 			}
 
-			if (r_rocketlight.value)	// Tonik
-			{
+			if (r_rocketlight.value) {
 				dl = CL_AllocDlight (s1->number);
 				VectorCopy (ent->origin, dl->origin);
 				dl->radius = 200;
 				dl->die = cl.time + 0.1;
 			}
 		}
-		else if (model->flags & EF_GRENADE)
+		else if (model->flags & EF_GRENADE && r_grenadetrail.value)
 			R_RocketTrail (old_origin, ent->origin, 1);
 		else if (model->flags & EF_GIB)
 			R_RocketTrail (old_origin, ent->origin, 2);
@@ -849,21 +853,24 @@ void CL_LinkPlayers (void)
 #ifdef GLQUAKE
 		if (!gl_flashblend.value || j != cl.playernum) {
 #endif
-			if (j == cl.playernum) {
-				VectorCopy (cl.simorg, org);
-			} else
-				VectorCopy (state->origin, org);
+			if (r_powerupglow.value && !(r_powerupglow.value == 2 && j == cl.playernum))
+			{
+				if (j == cl.playernum) {
+					VectorCopy (cl.simorg, org);
+				} else
+					VectorCopy (state->origin, org);
 
-			if ((state->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED))
-				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 3);
-			else if (state->effects & EF_BLUE)
-				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 1);
-			else if (state->effects & EF_RED)
-				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 2);
-			else if (state->effects & EF_BRIGHTLIGHT)
-				CL_NewDlight (j, org[0], org[1], org[2] + 16, 400 + (rand()&31), 0.1, 0);
-			else if (state->effects & EF_DIMLIGHT)
-				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 0);
+				if ((state->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED))
+					CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 3);
+				else if (state->effects & EF_BLUE)
+					CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 1);
+				else if (state->effects & EF_RED)
+					CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 2);
+				else if (state->effects & EF_BRIGHTLIGHT)
+					CL_NewDlight (j, org[0], org[1], org[2] + 16, 400 + (rand()&31), 0.1, 0);
+				else if (state->effects & EF_DIMLIGHT)
+					CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 0);
+			}
 #ifdef GLQUAKE
 		}
 #endif
@@ -1106,14 +1113,18 @@ Made up of: clients, packet_entities, nails, and tents
 */
 void CL_EmitEntities (void)
 {
+	static list_index = 0;
+
 	if (cls.state != ca_active)
 		return;
 	if (!cl.validsequence)
 		return;
 
+	// swap visedict lists
 	cl_oldnumvisedicts = cl_numvisedicts;
-	cl_oldvisedicts = cl_visedicts_list[(cls.netchan.incoming_sequence-1)&1];
-	cl_visedicts = cl_visedicts_list[cls.netchan.incoming_sequence&1];
+	cl_oldvisedicts = cl_visedicts_list[list_index];
+	list_index = 1 - list_index;
+	cl_visedicts = cl_visedicts_list[list_index];
 
 	cl_numvisedicts = 0;
 

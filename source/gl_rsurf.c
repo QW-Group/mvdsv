@@ -60,11 +60,72 @@ msurface_t  *waterchain = NULL;
 
 void R_RenderDynamicLightmaps (msurface_t *fa);
 
+glpoly_t	*fullbright_polys[MAX_GLTEXTURES];
+qboolean	drawfullbrights = false;
+
+void DrawGLPoly (glpoly_t *p);
+
+void R_RenderFullbrights (void)
+{
+	int         i, j;
+	glpoly_t   *p;
+	float      *v;
+
+	if (!drawfullbrights || !gl_fb_bmodels.value)
+		return;
+
+	GL_DisableMultitexture ();
+
+	glDepthMask (0);	// don't bother writing Z
+	if (gl_fb_depthhack.value)
+	{
+		float			depthdelta;
+		extern cvar_t	gl_ztrick;
+		extern int		gl_ztrickframe;
+
+		if (gl_ztrick.value)
+			depthdelta = gl_ztrickframe ? - 1.0/16384 : 1.0/16384;
+		else
+			depthdelta = -1.0/8192;
+
+		// hack depth range to prevent flickering of fullbrights
+		glDepthRange (gldepthmin + depthdelta, gldepthmax + depthdelta);
+	}
+
+	glEnable (GL_BLEND);
+//	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+//	glColor4f (1, 1, 1, 1);
+
+	for (i = 1; i < MAX_GLTEXTURES; i++) {
+		if (!fullbright_polys[i])
+			continue;
+		GL_Bind (i);
+		for (p = fullbright_polys[i]; p; p = p->fb_chain) {
+			DrawGLPoly (p);
+		}
+		fullbright_polys[i] = NULL;
+	}
+
+
+	glDisable (GL_BLEND);
+	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	
+	glDepthMask (1);
+	if (gl_fb_depthhack.value)
+		glDepthRange (gldepthmin, gldepthmax);
+
+	drawfullbrights = false;
+}
+
+
+
 /*
 ===============
 R_AddDynamicLights
 ===============
 */
+#if 0
 void R_AddDynamicLights (msurface_t *surf)
 {
 	int			lnum;
@@ -126,6 +187,79 @@ void R_AddDynamicLights (msurface_t *surf)
 		}
 	}
 }
+#else
+//Tonik: a noticeable speedup here
+void R_AddDynamicLights (msurface_t *surf)
+{
+	int			lnum;
+	float		dist;
+	vec3_t		impact;
+	int			local[2];
+	int			s, t;
+	int			i;
+	int			smax, tmax;
+	mtexinfo_t	*tex;
+	int			sd, td;
+	int			_sd, _td;
+	int			irad, idist, iminlight;
+	unsigned	*dest;
+
+	smax = (surf->extents[0]>>4)+1;
+	tmax = (surf->extents[1]>>4)+1;
+	tex = surf->texinfo;
+
+	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+	{
+		if ( !(surf->dlightbits & (1<<lnum) ) )
+			continue;		// not lit by this light
+
+		dist = DotProduct (cl_dlights[lnum].origin, surf->plane->normal) -
+				surf->plane->dist;
+		irad = (cl_dlights[lnum].radius - fabs(dist)) * 256;
+		iminlight = cl_dlights[lnum].minlight * 256;
+		if (irad < iminlight)
+			continue;
+		iminlight = irad - iminlight;
+
+		for (i=0 ; i<3 ; i++)
+		{
+			impact[i] = cl_dlights[lnum].origin[i] -
+					surf->plane->normal[i]*dist;
+		}
+
+		local[0] = (DotProduct (impact, tex->vecs[0]) +
+			tex->vecs[0][3] - surf->texturemins[0]) * 256;
+		local[1] = (DotProduct (impact, tex->vecs[1]) +
+			tex->vecs[1][3] - surf->texturemins[1]) * 256;
+		
+		_td = local[1];
+		dest = blocklights;
+		for (t = 0 ; t<tmax ; t++)
+		{
+			td = _td;
+			_td -= 16*256;
+			if (td < 0)
+				td = -td;
+			_sd = local[0];
+			for (s=0 ; s<smax ; s++)
+			{
+				sd = _sd;
+				_sd -= 16*256;
+				if (sd < 0)	sd = -sd;
+				if (sd > td)
+					idist = sd + (td>>1);
+				else
+					idist = td + (sd>>1);
+				if (idist < iminlight)
+					*dest += irad - idist;
+				dest++;
+
+			}
+		}
+
+	}
+}
+#endif
 
 
 /*
@@ -192,7 +326,8 @@ store:
 			for (j=0 ; j<smax ; j++)
 			{
 				t = *bl++;
-				t >>= 7;
+//				t >>= 7;
+				t = (t >> 8) + (t >> 9);
 				if (t > 255)
 					t = 255;
 				dest[3] = 255-t;
@@ -209,7 +344,8 @@ store:
 			for (j=0 ; j<smax ; j++)
 			{
 				t = *bl++;
-				t >>= 7;
+				//t >>= 7;
+				t = (t >> 8) + (t >> 9);
 				if (t > 255)
 					t = 255;
 				dest[j] = 255-t;
@@ -231,7 +367,7 @@ Returns the proper texture for a given time and base texture
 */
 texture_t *R_TextureAnimation (texture_t *base)
 {
-	int		reletive;
+	int		relative;
 	int		count;
 
 	if (currententity->frame)
@@ -243,10 +379,10 @@ texture_t *R_TextureAnimation (texture_t *base)
 	if (!base->anim_total)
 		return base;
 
-	reletive = (int)(cl.time*10) % base->anim_total;
+	relative = (int)(cl.time*10) % base->anim_total;
 
 	count = 0;	
-	while (base->anim_min > reletive || base->anim_max <= reletive)
+	while (base->anim_min > relative || base->anim_max <= relative)
 	{
 		base = base->anim_next;
 		if (!base)
@@ -426,7 +562,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 	// normal lightmaped poly
 	//
 
-	if (! (s->flags & (SURF_DRAWSKY|SURF_DRAWTURB|SURF_UNDERWATER) ) )
+	if (! (s->flags & (SURF_DRAWSKY|SURF_DRAWTURB|(r_dowarp ? SURF_UNDERWATER : 0)) ) )
 	{
 		R_RenderDynamicLightmaps (s);
 		if (gl_mtexable) {
@@ -463,7 +599,6 @@ void R_DrawSequentialPoly (msurface_t *s)
 				glVertex3fv (v);
 			}
 			glEnd ();
-			return;
 		} else {
 			p = s->polys;
 
@@ -492,6 +627,12 @@ void R_DrawSequentialPoly (msurface_t *s)
 			glDisable (GL_BLEND);
 		}
 
+		if (t->fb_texturenum) {
+			s->polys->fb_chain = fullbright_polys[t->fb_texturenum];
+			fullbright_polys[t->fb_texturenum] = s->polys;
+			drawfullbrights = true;
+		}
+		
 		return;
 	}
 
@@ -583,6 +724,13 @@ void R_DrawSequentialPoly (msurface_t *s)
 		DrawGLWaterPolyLightmap (p);
 		glDisable (GL_BLEND);
 	}
+
+/*	// No warping fullbrights yet
+	if (t->fb_texturenum) {
+		s->polys->fb_chain = fullbright_polys[t->fb_texturenum];
+		fullbright_polys[t->fb_texturenum] = s->polys;
+		drawfullbrights = true;
+	}	*/
 }
 #endif
 
@@ -796,9 +944,14 @@ void R_RenderBrushPoly (msurface_t *fa)
 		DrawGLPoly (fa->polys);
 
 	// add the poly to the proper lightmap chain
-
 	fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
 	lightmap_polys[fa->lightmaptexturenum] = fa->polys;
+
+	if (t->fb_texturenum) {
+		fa->polys->fb_chain = fullbright_polys[t->fb_texturenum];
+		fullbright_polys[t->fb_texturenum] = fa->polys;
+		drawfullbrights = true;
+	}
 
 	// check for lightmap modification
 	for (maps = 0 ; maps < MAXLIGHTMAPS && fa->styles[maps] != 255 ;
@@ -1122,6 +1275,8 @@ void R_DrawBrushModel (entity_t *e)
 
 	glColor3f (1,1,1);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
+//	if (gl_fb_bmodels.value)
+//		memset (fullbright_polys, 0, sizeof(fullbright_polys));
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
 	if (rotated)
@@ -1180,6 +1335,8 @@ e->angles[0] = -e->angles[0];	// stupid quake bug
 	}
 
 	R_BlendLightmaps ();
+
+	R_RenderFullbrights ();
 
 	glPopMatrix ();
 }
@@ -1339,15 +1496,20 @@ void R_DrawWorld (void)
 
 	glColor3f (1,1,1);
 	memset (lightmap_polys, 0, sizeof(lightmap_polys));
+	if (gl_fb_bmodels.value)
+		memset (fullbright_polys, 0, sizeof(fullbright_polys));
+
 #ifdef QUAKE2
 	R_ClearSkyBox ();
 #endif
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
 
-		DrawTextureChains ();
+	DrawTextureChains ();
 
 	R_BlendLightmaps ();
+
+	R_RenderFullbrights ();
 
 #ifdef QUAKE2
 	R_DrawSkyBox ();

@@ -54,6 +54,7 @@ typedef struct
 	float		waterjumptime;
 	int			onground;		// -1 = in air, else pmove entity number
 	int			oldbuttons;
+	int			jump_msec;		// fix bunny-hop flickering
 } player_state_t;
 
 
@@ -76,6 +77,11 @@ typedef struct player_info_s
 
 	int		_topcolor;
 	int		_bottomcolor;
+
+	int		real_topcolor;
+	int		real_bottomcolor;
+	char	team[MAX_INFO_STRING];
+	char	_team[MAX_INFO_STRING];
 
 	int		spectator;
 	byte	translations[VID_GRADES*256];
@@ -212,8 +218,10 @@ typedef struct
 	int			servercount;	// server identification for prespawns
 
 	char		serverinfo[MAX_SERVERINFO_STRING];
-	int			gametype;
-	qboolean	teamfortress;
+// some important serverinfo keys are mirrored here:
+	int			gametype;		// GAME_COOP or GAME_DEATHMATCH
+	qboolean	teamfortress;	// true if gamedir is "fortress"
+	int			fpd;			// FAQ proxy flags
 
 	int			parsecount;		// server message counter
 	int			validsequence;	// this is the sequence number of the last good
@@ -339,11 +347,8 @@ extern	cvar_t	cl_gibfilter;
 extern	cvar_t	cl_muzzleflash;
 extern	cvar_t	r_rocketlight;
 extern	cvar_t	r_rockettrail;
-
-extern int cl_teamtopcolor;
-extern int cl_teambottomcolor;
-extern int cl_enemytopcolor;
-extern int cl_enemybottomcolor;
+extern	cvar_t	r_grenadetrail;
+extern	cvar_t	r_powerupglow;
 // <-- Tonik
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc

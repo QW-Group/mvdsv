@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qboolean		insubmodel;
 entity_t		*currententity;
 vec3_t			modelorg, base_modelorg;
-								// modelorg is the viewpoint reletive to
+								// modelorg is the viewpoint relative to
 								// the currently rendering entity
 vec3_t			r_entorigin;	// the currently rendering entity in world
 								// coordinates
