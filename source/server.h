@@ -215,7 +215,7 @@ typedef struct client_s
  	int			whensaidhead;       // Head value for floodprots
  	double			lockedtill;
 
-	qboolean		upgradewarn;		// did we warn him?
+	//qboolean		upgradewarn;		// did we warn him? //bliP: this isn't used anywhere
 
 	FILE			*upload;
 	char			uploadfn[MAX_QPATH];
@@ -227,6 +227,20 @@ typedef struct client_s
 
 	int				spawncount;			// for tracking map changes during downloading
 
+  //bliP: additional ->
+  int       file_percent;
+  qboolean  special;
+  int       logincount;
+
+  float			lasttoptime;		// time of last topcolor change
+	int				lasttopcount;		// count of last topcolor change
+ 
+  int				lastconnect;
+
+  int       spec_print;
+
+  double    cuff_time;
+  //<-
  
 //===== NETWORK ============
 	int				chokecount;
@@ -464,6 +478,8 @@ extern	cvar_t	timelimit;
 extern	cvar_t	skill;
 extern	cvar_t	coop;
 
+extern	cvar_t	sv_specprint; //bliP: spectator print
+
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
 extern	demo_t			demo;				// server demo struct
@@ -495,6 +511,20 @@ typedef struct
 	int			level;
 } ipfilter_t;
 
+//bliP: penalty filters ->
+typedef enum {
+	ft_mute,
+	ft_cuff
+} filtertype_t;
+
+typedef struct
+{
+	byte ip[4];
+	double			time;
+	filtertype_t	type;
+} penfilter_t;
+//<-
+
 void SV_Shutdown (void);
 void SV_ShutdownServer (void);
 void SV_Frame (double time);
@@ -524,6 +554,23 @@ int SV_BoundRate (qboolean dl, int rate);
 
 void Master_Heartbeat (void);
 void Master_Packet (void);
+
+//bliP: init ->
+void SV_ListFiles_f (void);
+void SV_RemoveFile_f (void);
+void SV_RemoveDirectory_f (void);
+
+#define	MAX_PENFILTERS 512
+void SV_RemoveIPFilter (int i);
+//static qboolean SV_IPCompare (byte *a, byte *b);
+//static void SV_IPCopy (byte *dest, byte *src);
+void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
+double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type);
+void SV_CleanIPList (void);
+
+qboolean SV_FilterPacket (void);
+void SV_SendBan (void);
+//<-
 
 
 //

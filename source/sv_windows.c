@@ -1,3 +1,5 @@
+#ifndef _CONSOLE //bliP: console compile
+
 #include "qwsvdef.h"
 #include <windows.h>
 
@@ -78,7 +80,7 @@ BOOL CreateMainWindow(HINSTANCE hInstance, int nCmdShow)
 		return 0;
 	}
 
-	EditBoxBgColor = RGB(0, 128, 128);
+	EditBoxBgColor = RGB(0, 64, 64);
 	EditBoxColor = RGB(255, 255, 255);
 	g_hbrBackground = CreateSolidBrush(EditBoxBgColor);
 
@@ -352,3 +354,4 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
+#endif // _CONSOLE //bliP: console compile

@@ -117,6 +117,7 @@ int			driver = grDETECT,mode;
 qboolean	useWinDirect = true, useDirectDraw = true;
 MGLDC		*mgldc = NULL,*memdc = NULL,*dibdc = NULL,*windc = NULL;
 
+#define	VMODE_MODEDESC_LEN	13
 typedef struct {
 	modestate_t	type;
 	int			width;
@@ -128,7 +129,7 @@ typedef struct {
 	int			fullscreen;
 	int			bpp;
 	int			halfscreen;
-	char		modedesc[13];
+	char		modedesc[VMODE_MODEDESC_LEN];
 } vmode_t;
 
 static vmode_t	modelist[MAX_MODE_LIST];
@@ -3052,7 +3053,7 @@ LONG WINAPI MainWndProc (
 				if (MessageBox (mainwindow, "Are you sure you want to quit?", "Confirm Exit",
 							MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES)
 				{
-					Sys_Quit ();
+					Sys_Quit (false);
 				}
 			}
 			break;

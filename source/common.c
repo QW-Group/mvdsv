@@ -1247,10 +1247,10 @@ searchpath_t	*com_base_searchpaths;	// without gamedirs
 
 /*
 ================
-COM_filelength
+COM_FileLength
 ================
 */
-int COM_filelength (FILE *f)
+int COM_FileLength (FILE *f)
 {
 	int		pos;
 	int		end;
@@ -1275,7 +1275,7 @@ int COM_FileOpenRead (char *path, FILE **hndl)
 	}
 	*hndl = f;
 	
-	return COM_filelength(f);
+	return COM_FileLength(f);
 }
 
 /*
@@ -1405,6 +1405,20 @@ int COM_FOpenFile (char *filename, FILE **file)
 	int			findtime;
 
 	file_from_pak = 0;
+//bliP: special download - fixme check this works.... ->
+#ifdef SERVERONLY 
+	if (host_client && host_client->special)
+	{
+		*file = fopen (filename, "rb");
+		if (*file)
+		{
+			if (developer.value)
+				Sys_Printf ("FindFile: %s\n", filename);
+			return COM_FileLength (*file);
+		}
+	}
+#endif
+//<-
 		
 //
 // search through the path, one element at a time
@@ -1443,7 +1457,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 				Sys_Printf ("FindFile: %s\n",netpath);
 
 			*file = fopen (netpath, "rb");
-			return COM_filelength (*file);
+			return COM_FileLength (*file);
 		}
 		
 	}
@@ -2250,4 +2264,3 @@ byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 
 	return crc;
 }
-

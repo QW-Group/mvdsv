@@ -20,9 +20,17 @@
 #define QW_PLATFORM_SHORT "(s)"
 #endif
 
+#define LINUX_VERSION	0.98
+#define GLQUAKE_VERSION	1.00
+#ifdef GLQUAKE
+#define QW_RENDERER	"GL"
+#else
+#define QW_RENDERER "Soft"
+#endif
+
 #define	QW_VERSION		2.40
-#define QWE_VERSION	"0.1726"
-#define QWE_VERNUM 0.1726
+#define QWE_VERSION	"0.1727 Beta DEVELOP"
+#define QWE_VERNUM 0.1727
 #define LINUX_VERSION 0.98
 #define PROJECT_NAME	"QWExtended"
 #define SERVER_NAME	"MVDSV"

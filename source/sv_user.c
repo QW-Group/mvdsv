@@ -29,7 +29,6 @@ cvar_t	sv_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	sv_rollangle = {"cl_rollangle", "2.0"};
 
 cvar_t	sv_spectalk = {"sv_spectalk", "1"};
-
 cvar_t	sv_mapcheck	= {"sv_mapcheck", "1"};
 
 extern	vec3_t	player_mins;
@@ -37,6 +36,12 @@ extern	vec3_t	player_mins;
 extern int fp_messages, fp_persecond, fp_secondsdead;
 extern char fp_msg[];
 extern cvar_t pausable;
+//extern cvar_t	sv_bunnyspeedcap;
+
+//bliP: init ->
+extern cvar_t	sv_kickfake;
+extern cvar_t	sv_kicktop;
+//<-
 
 /*
 ============================================================
@@ -81,7 +86,7 @@ void SV_New_f (void)
 		if (realtime - host_client->connection_started > 5)
 		{
 			if (sv_getrealip.value == 2) {
-				Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nfaild to validate client's IP\n\n", A2C_PRINT);
+				Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
 				SV_DropClient (host_client);
 				return;
 			}
@@ -99,7 +104,7 @@ void SV_New_f (void)
 		{
 			Con_Printf ("%s:full connect\n", NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nserver is full\n\n", A2C_PRINT);
-			SV_DropClient (host_client);;
+			SV_DropClient (host_client);
 			return;
 		}
 
@@ -131,6 +136,11 @@ void SV_New_f (void)
 
 	if (!host_client->logged && sv_login.value)
 		return; // not so fast;
+
+  //bliP: cuff, mute ->
+  host_client->lockedtill = SV_RestorePenaltyFilter(host_client, ft_mute);
+  host_client->cuff_time = SV_RestorePenaltyFilter(host_client, ft_cuff);
+  //<-
 
 // send the info about the new client to all connected clients
 //	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
@@ -181,6 +191,9 @@ void SV_New_f (void)
 	// send server info string
 	MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
 	MSG_WriteString (&host_client->netchan.message, va("fullserverinfo \"%s\"\n", svs.info) );
+
+  //bliP: player logging
+  SV_LogPlayer(host_client, "connect", 1);
 }
 
 /*
@@ -566,18 +579,15 @@ void SV_Begin_f (void)
 	host_client->netchan.good_count = 0;
 
 	//check he's not cheating
-
 	if (!host_client->spectator) {
-		if ( !*Info_ValueForKey (host_client->userinfo, "pmodel") ||
-			 !*Info_ValueForKey (host_client->userinfo, "pmodel"))
-		{
+    if (!*Info_ValueForKey (host_client->userinfo, "pmodel") || !*Info_ValueForKey (host_client->userinfo, "emodel")) { //bliP: typo? 2nd pmodel to emodel
 			SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: missing player/eyes model checksum\n", host_client->name);
-		} else {
+		}
+    else {
 			pmodel = atoi(Info_ValueForKey (host_client->userinfo, "pmodel"));
 			emodel = atoi(Info_ValueForKey (host_client->userinfo, "emodel"));
 
-			if (pmodel != sv.model_player_checksum ||
-				emodel != sv.eyes_player_checksum)
+			if (pmodel != sv.model_player_checksum || emodel != sv.eyes_player_checksum)
 				SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: non standard player/eyes model detected\n", host_client->name);
 		}
 	}
@@ -656,12 +666,14 @@ void SV_NextDownload_f (void)
 	percent = host_client->downloadcount*100/size;
 	ClientReliableWrite_Byte (host_client, percent);
 	ClientReliableWrite_SZ (host_client, buffer, r);
+  host_client->file_percent = percent; //bliP: file percent
 
 	if (host_client->downloadcount != host_client->downloadsize)
 		return;
 
 	fclose (host_client->download);
 	host_client->download = NULL;
+  host_client->file_percent = 0; //bliP: file percent
 
 	// if map changed tell the client to reconnect
 	if (host_client->spawncount != svs.spawncount)
@@ -703,8 +715,9 @@ void SV_NextUpload (void)
 //	byte	buffer[1024];
 //	int		r;
 //	client_t *client;
+  Sys_Printf("-- %s\n", host_client->uploadfn);
 
-	if (!*host_client->uploadfn) {
+  if (!*host_client->uploadfn || strstr(host_client->uploadfn, "..")) { //bliP: can't upload back a directory
 		SV_ClientPrintf(host_client, PRINT_HIGH, "Upload denied\n");
 		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 		ClientReliableWrite_String (host_client, "stopul");
@@ -717,6 +730,7 @@ void SV_NextUpload (void)
 
 	size = MSG_ReadShort ();
 	percent = MSG_ReadByte ();
+  host_client->file_percent = percent;
 
 	if (!host_client->upload)
 	{
@@ -736,7 +750,7 @@ void SV_NextUpload (void)
 	fwrite (net_message.data + msg_readcount, 1, size, host_client->upload);
 	msg_readcount += size;
 
-Con_DPrintf ("UPLOAD: %d received\n", size);
+  Con_DPrintf ("UPLOAD: %d received\n", size);
 
 	if (percent != 100) {
 		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
@@ -744,6 +758,7 @@ Con_DPrintf ("UPLOAD: %d received\n", size);
 	} else {
 		fclose (host_client->upload);
 		host_client->upload = NULL;
+    host_client->file_percent = 0; //bliP: file percent
 
 		Sys_Printf("%s upload completed.\n", host_client->uploadfn);
 
@@ -775,36 +790,57 @@ void SV_BeginDownload_f(void)
 	extern	cvar_t	allow_download_sounds;
 	extern	cvar_t	allow_download_maps;
 	extern	cvar_t	allow_download_demos;
+  extern  cvar_t	allow_download_pakmaps; //bliP: pakmaps
+  extern  cvar_t  download_map_url; //bliP: download url
 	extern	cvar_t	sv_demoDir;
 	extern	int		file_from_pak; // ZOID did file come from pak?
 
 	name = Cmd_Argv(1);
-// hacked by zoid to allow more conrol over download
-		// first off, no ../ or global allow check
-	if (strstr (name, "../") || !allow_download.value
-		// leading dot is no good
-		|| *name == '.' 
-		// leading slash bad as well, must be in subdir
-		|| *name == '/'
-		// next up, skin check
-		|| (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
-		// now models
-		|| (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
-		// now sounds
-		|| (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
-		// now maps (note special case for maps, must not be in pak)
-		|| (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
-		// now demos
-		|| (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
-		|| (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
-		// MUST be in a subdirectory	
-		|| (!strstr (name, "/") ) )
-	{	// don't allow anything with .. path
-		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		ClientReliableWrite_Short (host_client, -1);
-		ClientReliableWrite_Byte (host_client, 0);
-		return;
-	}
+// hacked by zoid to allow more conrol over download		
+  //bliP: download ->
+  if
+  (
+    (
+      // no ..
+      strstr (name, "..")
+      // leading dot is no good
+      || *name == '.' 
+      // leading slash bad as well, must be in subdir
+      || *name == '/'
+    )
+    ||
+    (
+      !host_client->special &&
+      (
+        // global allow check
+        !allow_download.value
+	      // next up, skin check
+  	    || (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
+	      // now models
+	      || (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
+  	    // now sounds
+	      || (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
+  	    // now maps (note special case for maps, must not be in pak)
+	      || (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
+	      // now demos
+	      || (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
+  	    || (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
+        // MUST be in a subdirectory	
+		    || !strstr (name, "/")
+      )
+    )
+    ||
+    (
+      strstr (name, "pwd.cfg")
+    )
+  )
+  //<-
+  {
+ 		ClientReliableWrite_Begin (host_client, svc_download, 4);
+	  ClientReliableWrite_Short (host_client, -1);
+	  ClientReliableWrite_Byte (host_client, 0);
+	  return;
+  }
 
 	if (host_client->download) {
 		fclose (host_client->download);
@@ -855,15 +891,16 @@ void SV_BeginDownload_f(void)
 	}
 
 
-	host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
+  host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
 	host_client->downloadcount = 0;
 
 	if (!host_client->download
 		// special check for maps, if it came from a pak file, don't allow
 		// download  ZOID
-		|| (strncmp(name, "maps/", 5) == 0 && file_from_pak))
-	{
-		if (host_client->download) {
+		//|| (strncmp(name, "maps/", 5) == 0 && file_from_pak))
+      || (strncmp(name, "maps/", 5) == 0 && file_from_pak && !allow_download_pakmaps.value)) //bliP: pakmaps
+  {
+	  if (host_client->download) {
 			fclose(host_client->download);
 			host_client->download = NULL;
 		}
@@ -881,6 +918,24 @@ void SV_BeginDownload_f(void)
 
 	SV_NextDownload_f ();
 	Sys_Printf ("Downloading %s to %s\n", name, host_client->name);
+
+  //bliP: download info/download url ->
+  if (!strncmp(name, "maps/", 5)) {
+    if (download_map_url.string[0]) {
+      name = name + 5;
+      COM_StripExtension(name, name);
+      SV_ClientPrintf (host_client, PRINT_HIGH,	"Map %s/maps/%s.bsp is %.0fKB (%.2fMB)\n\n", com_gamedir, name, (float)host_client->downloadsize/1024, (float)host_client->downloadsize/1024/1024);
+      SV_ClientPrintf (host_client, PRINT_HIGH,	"Download this map faster:\n");
+      SV_ClientPrintf (host_client, PRINT_HIGH,	"%s%s\n\n", download_map_url.string, name);
+    }
+    else {
+      SV_ClientPrintf (host_client, PRINT_HIGH,	"Map %s/maps/%s is %.0fKB (%.2fMB)\n\n", com_gamedir, name, (float)host_client->downloadsize/1024, (float)host_client->downloadsize/1024/1024);
+    }
+  }
+  else {
+    SV_ClientPrintf (host_client, PRINT_HIGH,	"File %s is %.0fKB (%.2fMB)\n", name, (float)host_client->downloadsize/1024, (float)host_client->downloadsize/1024/1024);
+  }
+  //<-
 }
 
 /*
@@ -910,8 +965,10 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_Say (qboolean team)
 {
 	client_t *client;
+  int   saved_state;
 	int		j, tmp, cls = 0;
 	char	*p;
+  char  *i;
 	char	text[2048];
 
 	if (Cmd_Argc () < 2)
@@ -987,13 +1044,37 @@ void SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
+  //bliP: kick fake ->
+  if (!team) {
+    for (i = p; *i; i++) {
+      if (*i == 13) { // ^M
+        if (sv_kickfake.value == 1) {
+          saved_state = host_client->state;
+          host_client->state = cs_free;
+	  	    SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for attempting to fake messages\n", host_client->name);
+          host_client->state = saved_state;
+ 			    SV_ClientPrintf (host_client, PRINT_HIGH, "You were kicked from the game for attempting to fake messages\n");
+          SV_LogPlayer (host_client, "fake message", 1);
+    	    SV_DropClient (host_client);
+ 			    return;
+        }
+        else if (sv_kickfake.value == 2) {
+  		    *i = '#';
+        }
+      }
+    }
+  }
+  //<-
+
 	Sys_Printf ("%s", text);
 	SV_Write_Log(CONSOLE_LOG, 1, text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
-		if (client->state != cs_spawned)
-			continue;
+    //bliP: everyone sees all ->
+		//if (client->state != cs_spawned)
+		//	continue;
+    //<-
 		if (host_client->spectator && !sv_spectalk.value)
 			if (!client->spectator)
 				continue;
@@ -1258,6 +1339,77 @@ void SV_Msg_f (void)
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Msg level set to %i\n", host_client->messagelevel);
 }
 
+//bliP: upload files ->
+/*
+=================
+SV_TechLogin_f
+Login to upload
+=================
+*/
+int Master_Rcon_Validate_ (void);
+void SV_TechLogin_f (void)
+{	
+  if (host_client->logincount > 4) { //denied
+    return;
+  }
+
+  if (Cmd_Argc() < 2) {
+    host_client->special = false;
+    host_client->logincount = 0;
+    return;
+  }
+
+  if (!Master_Rcon_Validate_()) { //don't even let them know they're wrong
+    host_client->logincount++;
+    return;
+  }
+
+  host_client->special = true;
+  SV_ClientPrintf (host_client, PRINT_HIGH, "Logged in.\n");
+}
+
+/*
+================
+SV_ClientUpload_f
+================
+*/
+void SV_ClientUpload_f (void)
+{
+  char str[MAX_OSPATH];
+
+	if (host_client->state != cs_spawned)
+	  return;
+
+  if (!host_client->special) {
+    Con_Printf ("Client not tagged to upload.\n");
+    return;
+  }
+
+  if (Cmd_Argc() != 3) {
+		Con_Printf ("upload [path] [filename]\n");
+		return;
+	}
+
+  snprintf(host_client->uploadfn, sizeof(host_client->uploadfn), "%s/%s", Cmd_Argv(1), Cmd_Argv(2));
+
+  if (!host_client->uploadfn[0]) { //just in case..
+    Con_Printf ("Bad file name.\n");
+    return;
+  }
+
+  if (Sys_FileTime(host_client->uploadfn) != -1) {
+    Con_Printf ("File already exists.\n");
+    return;
+  }
+  
+	host_client->remote_snap = false;
+  COM_CreatePath(host_client->uploadfn); //fixed, need to create path
+  snprintf(str, sizeof(str), "cmd fileul \"%s\" \"%s\"\n", Cmd_Argv(1), Cmd_Argv(2));
+  ClientReliableWrite_Begin (host_client, svc_stufftext, strlen(str) + 2);
+	ClientReliableWrite_String (host_client, str);
+}
+//<-
+
 /*
 ==================
 SV_SetInfo_f
@@ -1283,7 +1435,7 @@ char *shortinfotbl[] =
 
 void SV_SetInfo_f (void)
 {
-	int i;
+	int i, saved_state;
 	char oldval[MAX_INFO_STRING];
 
 	if (Cmd_Argc() == 1)
@@ -1317,6 +1469,33 @@ void SV_SetInfo_f (void)
 	//Info_ValueForKey(host_client->userinfo, Cmd_Argv(1));
 	if (!strcmp(Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)), oldval))
 		return; // key hasn't changed
+
+  //bliP: mute ->
+  if (!strcmp(Cmd_Argv(1), "name") && (realtime < host_client->lockedtill)) {
+    SV_ClientPrintf(host_client, PRINT_CHAT, "You can't change your name while you're muted\n");
+    return;
+  }
+  //<-
+
+  //bliP: kick top ->
+  if (sv_kicktop.value && !strcmp(Cmd_Argv(1), "topcolor")) {
+    if (!host_client->lasttoptime || realtime - host_client->lasttoptime > 8) {
+      host_client->lasttopcount = 0;
+      host_client->lasttoptime = realtime;
+    } else if (host_client->lasttopcount++ > 5) {
+      if (!host_client->drop) {
+        saved_state = host_client->state;
+        host_client->state = cs_free;
+        SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for topcolor spam\n", host_client->name);
+        host_client->state = saved_state;
+        SV_ClientPrintf (host_client, PRINT_HIGH, "You were kicked from the game for topcolor spamming\n");
+        SV_LogPlayer (host_client, "topcolor spam", 1);
+        host_client->drop = true;
+      }
+      return;
+    }
+  }
+  //<-
 
 	// process any changed values
 	SV_ExtractFromUserinfo (host_client, !strcmp(Cmd_Argv(1), "name"));
@@ -1416,6 +1595,11 @@ ucmd_t ucmds[] =
 	{"nextdl", SV_NextDownload_f},
 
 	{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
+
+//bliP: file upload ->
+	{"techlogin", SV_TechLogin_f},
+	{"upload", SV_ClientUpload_f},
+//<-
 
 	{"snap", SV_NoSnap_f},
 	{"stopdownload", SV_StopDownload_f},
@@ -1665,6 +1849,10 @@ void SV_RunCmd (usercmd_t *ucmd)
 	sv_player->v.button2 = (ucmd->buttons & 2)>>1;
 	if (ucmd->impulse)
 		sv_player->v.impulse = ucmd->impulse;
+  //bliP: cuff
+  if (host_client->cuff_time > realtime)
+    sv_player->v.button0 = sv_player->v.impulse = 0;
+  //<-
 
 //
 // angles
@@ -1710,6 +1898,7 @@ void SV_RunCmd (usercmd_t *ucmd)
 
 	movevars.entgravity = host_client->entgravity;
 	movevars.maxspeed = host_client->maxspeed;
+//  movevars.bunnyspeedcap = sv_bunnyspeedcap.value;
 
 	for (i=0 ; i<3 ; i++)
 	{
@@ -1898,14 +2087,19 @@ void SV_ExecuteClientMessage (client_t *cl)
 			checksum = (byte)MSG_ReadByte ();
 
 			// read loss percentage
+      //bliP: file percent ->
 			cl->lossage = MSG_ReadByte();
+      if (cl->file_percent) {
+        cl->lossage = cl->file_percent;
+      }
 
-			if (cl->state < cs_spawned && cl->download != NULL) {
+			/*if (cl->state < cs_spawned && cl->download != NULL) {
 				if (cl->downloadsize)
 					cl->lossage = cl->downloadcount*100/cl->downloadsize;
 				else
 					cl->lossage = 100;
-			}
+			}*/
+      //<-
 
 			MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
 			MSG_ReadDeltaUsercmd (&oldest, &oldcmd);

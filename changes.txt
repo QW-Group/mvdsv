@@ -1,9 +1,161 @@
 ----
-QWEX v0.1726
+QWEX v0.1727 Beta DEVELOP
 [server]
-- bugfix in unix version with -mem command line option
+- new cvar master_rcon_password
+  Similar to rcon_password but can use these extra commands:
+
+  - new command ls
+  Lists directories inside quake directory.
+  - new command rm
+  Removes file(s) from inside the quake directory.
+  - new command rmdir
+  Removes an empty directory from inside the quake directory.
+  - new command chmod
+  For making .qws scripts executable. (*nix only)
+  - new cvar sv_admininfo
+  sv_admininfo "Name (email@address)", will set "*admin" "Name (email@address)" in serverinfo.
+  - new cmd techlogin
+  Login to upload files and also download any file from inside the quake directory. (password encrypted)
+  - Ability to upload files from client to server.
+  /cmd techlogin <master_rcon_password>
+  /cmd upload somedir somefile.ext
+  You must use the qwplayer client to upload.
+  - rcon_password cannot use any of these commands or change master_rcon_password.
+
+  IMPORTANT: master_rcon_password commands are very powerful, be careful who has the password.
+
+- new cvar sv_specprint
+  "while spectating you will see all of the messages (not mm1/mm2) and the effects (screen flashes
+  for example) of the player you are spectating, from reloading..., flaginfo, inv, to your flag has
+  been taken and enemys are using your dispenser."
+  Players can setinfo sp 0 to turn it off for themselves.
+- new command cuff
+  Players cuffed cannot shoot or use impulses.
+- new command mute
+  Players muted cannot talk.
+- new command penaltylist
+  View active and saved cuffed/muted players.
+- new command penaltyremove
+  Remove a saved penalty.
+- new cvar sv_reconnectlimit
+  Throttle reconnecting players
+- new cvar download_map_url
+  If a player doesn't have the map they get displayed this eg "http://some.url/?map=mapname"
+- pwd.cfg
+  This file cannot be downloaded by anyone, anywhere, put all passwords in this file for extra saftey.
+- new cvar allow_download_pakmaps
+  Allows downloading of maps in pak files.
+- new cvar sv_kickfake
+  Players who try to fake ($\) in mm1 get kicked.
+- new cvar sv_kicktop
+  Player who topcolour spam get kicked.
+- new command logplayers
+  Logs the following to players_PORT_NUM.log, connect, disconnect, name change and various kicks.
+- new cvar sv_maxlogsize
+  Maximum size in bytes which logs can get before they roll over to next file.
+- new cvar pm_bunnyspeedcap
+  From ZQuake by Tonik
+  "This is experimental code intended to restore class balance in TF.
+  If you set this cvar to something like 1.5 or 2, a solider will not be able to bunnyhop as fast as
+  a scout does :) Note that this cvar is optional and disabled by default, so it will in NO WAY affect
+  gameplay unless you set it explicitly to anything but 0. And once again, note that this code is
+  experimental and subject to change so please don't use pm_bunnyspeedcap in official games yet."
+- changed reconnecting players to reuse instead of drop.
+- changed connecting players to have ping of 999
+- added isin and !isin to if
+- new icon :]
+
+- QC new:
+  
+  General:
+    float(float f) sin = #60;
+    float(float f) cos = #61;
+    float(float f) sqrt = #62;
+    float(float val1, float val2) min = #63;
+    float(float val1, float val2) max = #64;
+  
+  TeamFortress map voting:
+    float(string s) findmap = #104;
+    float(entity client, float level, float range, float start, float footer) listmaps = #105;
+
+  Example:
+    local float fl;
+
+    if (findmap("2fort5r") == 1)
+      sprint(self, PRINT_HIGH, "Exists\n");
+    else
+      sprint(self, PRINT_HIGH, "File not found\n");
+
+    // print 50 maps at a time to client
+    // recommended there's a wait as not to flood the client off the server
+    fl = 1;
+    while (fl) {
+      fl = listmaps(self, PRINT_HIGH, 50, fl, 1);
+      //add wait here
+    }
+
+[client]
+- Ability to upload files from client to server.
+
+- Credits: bliP and the authors of QuakeForge and EverythingQuake.
+
+[server]
+- new command localcommand (use only with master_rcon_password)
+- new command line option:
+  -enablelocalcommand - enable "localcommand" command for executing commands on server
+-new cvar sv_timestamplen
+  Time in seconds during which rcon command with encryption is valid (change only with master_rcon_password).
+  0 - no time limit validation for rcon command
+  default: 60
+
+
+----
+QWEX v0.1726 (no release)
+[server]
 - bugfix: console logging (qconsole_PORT.log) only with qconsole_log_say 1
-- bugfix: can't download file with name contain 2 or more dots (".") in a row ("Disconnect"'s bug)
+- bugfix: can't download files where the name contains 2 or more dots (".") in a row ("Disconnect"'s bug)
+- bugfix: low entity speed if bad connection (high ping and packet loss)
+  ("luny"'s bug, thanks for testing)
+- some spelling fixes
+- new command:
+    restart - restart the server
+- sv_mintic set to 0.013 by default
+- sv_crypt_rcon 0/1 - use SHA1 for encryption of rcon_password and using timestamps
+    0 - don't use encryption
+    1 - use encryption
+    default: 0
+[client]
+- added qwdplayer's source back into qwex
+- cl_crypt_rcon 0/1 - use SHA1 for encryption of rcon_password and using timestamps
+    (change only with master_rcon_password)
+    0 - don't use encryption
+    1 - use encryption
+    default: 0
+[unix]
+- bugfix: -mem command line option resulted in server crash
+- new command line options:
+  -d
+    run server as daemon
+  -u user_name
+    Specifies the user the server should run as after it initializes. The value specified
+    may be either a username or a numeric user id. If the "-g" flag is not specified, then
+    the group id used will be the primary group of the user specified (initgroups() is called,
+    so all of the user's groups will be available to the server).
+  -g group_name
+    Specifies the group the server should run as after it initializes.
+    The value specified may be either a groupname or a numeric group id.
+  -t directory
+    Specifies the directory the server should chroot() into as
+    soon as it is finished processing command line arguments.
+[win32]
+- TODO:
+  -d - run as service
+  -di service_name - install service
+  -dr service_name - remove service
+  -dstart - start service
+  -dstop - stop service
+  -drestart - restart service
+  -u user_name - specifies the user the server should run as after it initializes
 
 
 ----
@@ -31,10 +183,10 @@ QWEX v0.1724 Beta DEVELOP
   (reduce the overflow of the demo.datagram_data buffer to prevent potential demo corruption too)
 (Thanks to BorisU)
 - now telnet is off by default (same as -telnetport 0)
-- the blank character created with "$_" (with mqwcl for example) is now a normal space character, so the
-  name "$_" will be the same as name " " and result in the player's name being "unnamed" ("Uno"'s bug)
-- bugfix from 0.1722b: when the same teams/players played on same map a 2nd time (thus the demo name 
-  being the same) the demo name sometimes wasn't printed correctly on the client screen ("Glad"'s bug)
+- the blank character created with "$_" (with mqwcl for example) is now a normal space character,
+  so the name "$_" will be the same as name " " and result in the player's name being "unnamed"
+- bugfix from 0.1722b: when the same teams/players played on same map a 2nd time (thus the demo
+  name being the same) the demo name sometimes wasn't printed correctly on the client screen
 - new cvar: 
     qconsole_log_say 0/1
       0 - "say" and "say_team" messages are not logged

@@ -369,7 +369,7 @@ void CL_ParseDownload (void)
 	int		size, percent;
 	byte	name[1024];
 	int		r;
-	static float time = 0;
+	static double time = 0;
 	static int s = 0;
 
 
@@ -378,7 +378,7 @@ void CL_ParseDownload (void)
 	percent = MSG_ReadByte ();
 
 	s += size;
-	if (realtime - time > 1)
+	if (realtime - time > 1.0)
 	{
 		cls.downloadrate = s/(1024*(realtime - time));
 		time = realtime;
@@ -407,9 +407,9 @@ void CL_ParseDownload (void)
 	if (!cls.download)
 	{
 		if (strncmp(cls.downloadtempname,"skins/",6))
-			spnrintf (name, sizeof(name), "%s/%s", com_gamedir, cls.downloadtempname);
+			snprintf (name, sizeof(name), "%s/%s", com_gamedir, cls.downloadtempname);
 		else
-			spnrintf (name, sizeof(name), "qw/%s", cls.downloadtempname);
+			snprintf (name, sizeof(name), "qw/%s", cls.downloadtempname);
 
 		COM_CreatePath (name);
 
@@ -477,45 +477,76 @@ void CL_ParseDownload (void)
 	}
 }
 
-static byte *upload_data;
+/*static byte *upload_data;
 static int upload_pos;
-static int upload_size;
+static int upload_size;*/
 
 void CL_NextUpload(void)
 {
-	byte	buffer[1024];
+	static byte	buffer[1024];
 	int		r;
 	int		percent;
 	int		size;
+	static int s = 0;
+	static double	time;
 
-	if (!upload_data)
+//	if (!upload_data)
+	if ((!cls.is_file && !cls.mem_upload) || (cls.is_file && !cls.upload))
 		return;
 
-	r = upload_size - upload_pos;
-	if (r > 768)
-		r = 768;
-	memcpy(buffer, upload_data + upload_pos, r);
+//	r = upload_size - upload_pos;
+//	if (r > 768)
+//		r = 768;
+//	memcpy(buffer, upload_data + upload_pos, r);
+	r = min(cls.upload_size - cls.upload_pos, sizeof(buffer));
 	MSG_WriteByte (&cls.netchan.message, clc_upload);
 	MSG_WriteShort (&cls.netchan.message, r);
 
-	upload_pos += r;
-	size = upload_size;
-	if (!size)
-		size = 1;
-	percent = upload_pos*100/size;
+//	upload_pos += r;
+//	size = upload_size;
+//	if (!size)
+//		size = 1;
+//	percent = upload_pos*100/size;
+	if (cls.is_file) {
+		//fseek(upload, upload_pos, SEEK_CUR); // er don't seek
+		fread(buffer, 1, r, cls.upload);
+	} else {
+		memcpy(buffer, cls.mem_upload + cls.upload_pos, r);
+	}
+	cls.upload_pos += r;
+	size = cls.upload_size ? cls.upload_size : 1;
+	percent = cls.upload_pos * 100 / size;
+	cls.uploadpercent = percent;
 	MSG_WriteByte (&cls.netchan.message, percent);
 	SZ_Write (&cls.netchan.message, buffer, r);
 
-Con_DPrintf ("UPLOAD: %6d: %d written\n", upload_pos - r, r);
+//Con_DPrintf ("UPLOAD: %6d: %d written\n", upload_pos - r, r);
+	Con_DPrintf ("UPLOAD: %6d: %d written\n", cls.upload_pos - r, r);
 
-	if (upload_pos != upload_size)
+	s += r;
+	if (realtime - time > 1) {
+		cls.uploadrate = s/(1024*(realtime - time));
+		time = realtime;
+		s = 0;
+	}
+//	if (upload_pos != upload_size)
+	if (cls.upload_pos != cls.upload_size)
 		return;
 
 	Con_Printf ("Upload completed\n");
 
-	free(upload_data);
-	upload_data = 0;
-	upload_pos = upload_size = 0;
+//	free(upload_data);
+//	upload_data = 0;
+//	upload_pos = upload_size = 0;
+	if (cls.is_file) {
+		fclose (cls.upload);
+		cls.upload = NULL;
+	} else {
+		Q_Free(cls.mem_upload);
+		cls.mem_upload = 0;
+	}
+	cls.upload_pos = 0;
+	cls.upload_size = 0;
 }
 
 void CL_StartUpload (byte *data, int size)
@@ -523,32 +554,77 @@ void CL_StartUpload (byte *data, int size)
 	if (cls.state < ca_onserver)
 		return; // gotta be connected
 
+	cls.is_file = false;
+
 	// override
-	if (upload_data)
-		free(upload_data);
+//	if (upload_data)
+//		free(upload_data);
+	if (cls.mem_upload)
+		Q_Free(cls.mem_upload);
+	cls.mem_upload = Q_Malloc (size);
+	memcpy(cls.mem_upload, data, size);
+	cls.upload_size = size;
+	cls.upload_pos = 0;
+//Con_DPrintf("Upload starting of %d...\n", size);
+	Con_Printf ("Upload starting of %d...\n", cls.upload_size);
 
-Con_DPrintf("Upload starting of %d...\n", size);
-
-	upload_data = Q_Malloc (size);
-	memcpy(upload_data, data, size);
-	upload_size = size;
-	upload_pos = 0;
+//	upload_data = Q_Malloc (size);
+//	memcpy(upload_data, data, size);
+//	upload_size = size;
+//	upload_pos = 0;
 
 	CL_NextUpload();
 } 
 
+void CL_StartFileUpload (void)
+{
+	char path[MAX_OSPATH];
+	if (cls.state < ca_onserver)
+		return; // gotta be connected
+	cls.is_file = true;
+	// override
+	if (cls.upload) {
+		fclose(cls.upload);
+		cls.upload = NULL;
+	}
+	snprintf(path, sizeof(path), "%s/%s", Cmd_Argv(2), Cmd_Argv(3));
+	cls.upload = fopen(path, "rb"); // BINARY
+	if (!cls.upload) {
+		Con_Printf ("Bad file \"%s\"\n", path);
+		return;
+	}
+	cls.upload_size = COM_FileLength(cls.upload);
+	cls.upload_pos = 0;
+	strlcpy(cls.uploadname, Cmd_Argv(3), sizeof(cls.uploadname));
+	Con_Printf ("Upload starting: %s (%d bytes)...\n", cls.uploadname, cls.upload_size);
+	CL_NextUpload();
+}
+
 qboolean CL_IsUploading(void)
 {
-	if (upload_data)
+//	if (upload_data)
+	if ((!cls.is_file && cls.mem_upload) || (cls.is_file && cls.upload))
 		return true;
 	return false;
 }
 
 void CL_StopUpload(void)
 {
-	if (upload_data)
-		free(upload_data);
-	upload_data = NULL;
+//	if (upload_data)
+//		free(upload_data);
+//	upload_data = NULL;
+
+	if (cls.is_file) {
+		if (cls.upload) {
+			fclose(cls.upload);
+			cls.upload = NULL;
+		}
+	} else {
+		if (cls.mem_upload) {
+			Q_Free(cls.mem_upload);
+			cls.mem_upload = NULL;
+		}
+	}
 }
 
 /*
@@ -1326,7 +1402,8 @@ void CL_ParseStufftext (void)
 	Cbuf_AddTextEx (&cbuf_svc, s);
 
 	// QW servers send this without the ending \n
-	if ( !strcmp (s, "cmd snap") ||
+//	if ( !strcmp (s, "cmd snap") ||
+	if ( !strcmp (s, "cmd snap") || !strcmp (s, "stopul") || //bliP: make stopul work
 		// QuakeForge servers up to Beta 6 send this without the \n
 		(!strncmp (s, "r_skyname ", 10) && !strchr (s, '\n')) )
 	{

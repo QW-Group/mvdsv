@@ -66,7 +66,8 @@ SV_OBJS = \
 		pmovetst.o \
 		version.o \
 		world.o \
-		zone.o
+		zone.o \
+		sha1.o
 
 .if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
 SV_AS_OBJS = \

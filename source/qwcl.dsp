@@ -45,7 +45,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /G5 /W3 /GX /Od /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "id386" /Fr /Fp".\Release/qwplayer.pch" /YX /FD /c
+# ADD CPP /nologo /G5 /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "id386" /D "LITTLE_ENDIAN" /Fr /Fp".\Release/qwplayer.pch" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -55,7 +55,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o".\Release/qwplayer.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 mgllt.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /nodefaultlib:"libcmt" /out:"D:\quake\qwplayer.exe"
+# ADD LINK32 mglfx.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /nodefaultlib:"libcmt" /out:"..\qwplayer.exe"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
@@ -127,7 +127,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G5 /ML /GX /Zi /Od /I "e:\msdev\projects\dxsdk\sdk\inc" /I "e:\msdev\projects\scitech\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "GLQUAKE" /FR /YX /c
-# ADD CPP /nologo /G5 /ML /W3 /GX /Ot /Ow /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /Fr /Fp".\GLRelease/qwplayer.pch" /YX /FD /c
+# ADD CPP /nologo /G5 /ML /W3 /GX /Ot /Ow /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "LITTLE_ENDIAN" /Fr /Fp".\GLRelease/qwplayer.pch" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -138,7 +138,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 e:\msdev\projects\winquake\dxsdk\sdk\lib\dxguid.lib winmm.lib wsock32.lib opengl32.lib glu32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"GLDebug/glqwcl.exe"
 # SUBTRACT BASE LINK32 /nodefaultlib
-# ADD LINK32 comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /incremental:no /machine:I386 /out:"D:\quake\qwplayer-gl.exe"
+# ADD LINK32 comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /incremental:no /machine:I386 /out:"..\qwplayer-gl.exe"
 # SUBTRACT LINK32 /debug /nodefaultlib
 
 !ENDIF 
@@ -1054,6 +1054,10 @@ SOURCE=.\screen.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\sha1.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\skin.c
 # End Source File
 # Begin Source File
@@ -1169,6 +1173,10 @@ SOURCE=.\cdaudio.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\cl_slist.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\client.h
 # End Source File
 # Begin Source File
@@ -1253,6 +1261,10 @@ SOURCE=.\d_local.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\debug.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\draw.h
 # End Source File
 # Begin Source File
@@ -1282,6 +1294,10 @@ SOURCE=..\..\..\quake\v2\master\masterpr.h
 # Begin Source File
 
 SOURCE=.\mathlib.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mdfour.h
 # End Source File
 # Begin Source File
 
@@ -1330,6 +1346,10 @@ SOURCE=.\sbar.h
 # Begin Source File
 
 SOURCE=.\screen.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\sha1.h
 # End Source File
 # Begin Source File
 

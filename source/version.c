@@ -75,6 +75,11 @@ Version_f
 void Version_f (void)
 {
 	Con_Printf ("QW version %4.2f\n", QW_VERSION);
+#ifdef SERVERONLY
 	Con_Printf ("%s\n", full_version);
-	Con_Printf (PROJECT_NAME " Project home page: http://ktpro.does.it/\n\n");
+	Con_Printf (PROJECT_NAME " Project home page: http:// ??? \n\n");
+#else
+	Con_Printf ("QWExtended version %s (Build %04d)\n", QWE_VERSION, build_number());
+	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
+#endif
 }

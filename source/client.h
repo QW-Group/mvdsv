@@ -189,6 +189,17 @@ typedef struct
 	int			downloadpercent;
 	int			downloadrate;
 
+//bliP ->
+	FILE		*upload;
+	char		uploadname[MAX_OSPATH];
+	int		uploadpercent;
+	int		uploadrate;
+	qboolean	is_file;
+	byte		*mem_upload;
+	int		upload_pos;
+	int		upload_size;
+//<-
+
 // demo loop control
 	int			demonum;		// -1 = don't play demos
 	char		demos[MAX_DEMOS][MAX_DEMONAME];		// when not playing
@@ -480,6 +491,7 @@ qboolean CL_IsUploading(void);
 void CL_NextUpload(void);
 void CL_StartUpload (byte *data, int size);
 void CL_StopUpload(void);
+void CL_StartFileUpload(void); //bliP
 
 //
 // view.c

@@ -42,20 +42,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
+#include <paths.h>
 #include "version.h"
 // Added by VVD }
 
-cvar_t	sys_nostdout = {"sys_nostdout","0"};
-cvar_t	sys_extrasleep = {"sys_extrasleep","0"};
+cvar_t	sys_nostdout = {"sys_nostdout", "0"};
+cvar_t	sys_extrasleep = {"sys_extrasleep", "0"};
 
-qboolean isdaemon;
-	
 static qboolean	stdin_ready = false;
 // Added by VVD {
 static qboolean	iosock_ready = false;
 static int	authenticated = 0;
 static double	cur_time_auth;
-
+static qboolean	isdaemon = 0;
 // Added by VVD }
 
 /*
@@ -119,10 +118,18 @@ int Sys_remove (char *path)
 	return system(va("rm \"%s\"", path));
 }
 
-int Sys_compare(const void *a, const void *b)
+//bliP: rmdir ->
+/*
+================
+Sys_rmdir
+================
+*/
+int Sys_rmdir (char *path)
 {
-	return (int)(((file_t *)a)->time - ((file_t *)b)->time);
+	return system(va("rmdir \"%s\"", path));
 }
+//<-
+
 /*
 ================
 Sys_listdir
@@ -133,9 +140,10 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
 	static file_t list[MAX_DIRFILES];
 	dir_t	d;
-	int	i;
+//	int	i;
 //	int	extsize;
 	DIR	*dir;
+  DIR *testdir; //bliP: list dir
 	struct dirent *oneentry;
 	char	pathname[MAX_OSPATH];
 	qboolean all;
@@ -156,7 +164,26 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		oneentry=readdir(dir);
 		if(!oneentry) 
 			break;
-#if 1
+
+    //bliP: list dir ->
+    snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
+    testdir = opendir(pathname);
+    if(testdir) {
+			d.numdirs++;
+			list[d.numfiles].isdir = true;
+      list[d.numfiles].size = 0;
+      list[d.numfiles].time = 0;
+      closedir(testdir);
+      if (!strcmp(oneentry->d_name, ".") || !strcmp(oneentry->d_name, ".."))
+        continue;
+		}
+    else {
+      list[d.numfiles].isdir = false;
+      list[d.numfiles].size = Sys_FileSize(pathname);
+      list[d.numfiles].time = Sys_FileTime(pathname);
+      d.size += list[d.numfiles].size;
+    } 
+/*#if 0
 		if (oneentry->d_type == DT_DIR || oneentry->d_type == DT_LNK)
 		{
 			d.numdirs++;
@@ -167,9 +194,10 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		snprintf(pathname, MAX_OSPATH, "%s/%s", path, oneentry->d_name);
 		list[d.numfiles].size = Sys_FileSize(pathname);
 		list[d.numfiles].time = Sys_FileTime(pathname);
-		d.size += list[d.numfiles].size;
+		d.size += list[d.numfiles].size;*/
+    //<-
 
-		i = strlen(oneentry->d_name);
+		//i = strlen(oneentry->d_name);
 		//if (!all && (i < extsize || (strcasecmp(oneentry->d_name+i-extsize, ext))))
 		//	continue;
 		if (!all && !strstr(oneentry->d_name, ext))
@@ -231,7 +259,7 @@ void Sys_Error (char *error, ...)
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
-	if (sys_nostdout.value)
+	if (!sys_nostdout.value)
 		printf ("Fatal error: %s\n", string);
 	SV_Write_Log(ERROR_LOG, 1, va("Fatal error: %s\n", string));
 	exit (1);
@@ -290,8 +318,12 @@ void Sys_Printf (char *fmt, ...)
 Sys_Quit
 ================
 */
-void Sys_Quit (void)
+char	**_argv;
+void Sys_Quit (qboolean restart)
 {
+	if (restart)
+		if (execv(_argv[0], _argv) == -1)
+			Sys_Printf("Restart failed: %s\n", strerror(errno));
 	exit (0);		// appkit isn't running
 }
 
@@ -421,7 +453,7 @@ char *Sys_ConsoleInput (void)
 		len = 0;
 		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
 	}
-	if (do_stdin && stdin_ready && !isdaemon)
+	if (do_stdin && stdin_ready)
 	{
 		stdin_ready = false;
 		len = read (0, text, sizeof(text));
@@ -531,22 +563,62 @@ int main (int argc, char *argv[])
 	struct	sockaddr_in remoteaddr, remoteaddr_temp;
 	int	sockaddr_len = sizeof(struct sockaddr_in);
 	double	cur_time_not_auth = 0, not_auth_timeout_value, auth_timeout_value;
-	uid_t	user_id;
-	gid_t	group_id;
+	uid_t   user_id;
+	gid_t   group_id;
 	struct passwd	*pw;
 	struct group	*gr;
-	char	*user_name, *group_name, *chroot_dir;
+	char	*user_name, *group_name = NULL, *chroot_dir;
 //Added by VVD }
 #ifndef NEWWAY
 	struct timeval timeout;
 	fd_set	fdset;
 #endif
+	_argv = argv;
 	telnet_connected = 0;
+
 	memset (&parms, 0, sizeof(parms));
 
 	COM_InitArgv (argc, argv);	
 	parms.argc = com_argc;
 	parms.argv = com_argv;
+
+// daemon
+	j = COM_CheckParm ("-d");
+	if (j && j < com_argc)
+	{
+		switch (fork()) {
+		case -1:
+			return (-1);
+		case 0:
+			break;
+		default:
+			_exit(0);
+		}
+
+		if (setsid() == -1)
+			Sys_Printf("setsid: %s\n", strerror(errno));
+
+		if ((j = open(_PATH_DEVNULL, O_RDWR)) != -1) {
+			(void)dup2(j, STDIN_FILENO);
+			(void)dup2(j, STDOUT_FILENO);
+			(void)dup2(j, STDERR_FILENO);
+			if (j > 2)
+				(void)close(j);
+			isdaemon = 1;
+		}
+	}
+
+// chroot
+	j = COM_CheckParm ("-t");
+	if (j && j + 1 < com_argc)
+	{
+		chroot_dir = com_argv[j + 1];
+		if (chroot(chroot_dir) < 0)
+			Sys_Printf("chroot %s failed: %s\n", chroot_dir, strerror(errno));
+		else
+			if (chdir("/") < 0)
+				Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(errno));
+	}
 
 	parms.memsize = 16*1024*1024;
 
@@ -558,86 +630,68 @@ int main (int argc, char *argv[])
 	if (j && j + 1 < com_argc)
 		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
-	j = COM_CheckParm ("-d");
-	if (j && j < com_argc)
-	{
-		if (daemon(0, 1))
-		{
-			Sys_Printf("daemon: %s\n", strerror(errno));
-			isdaemon = 0;
-		}
-		else
-			isdaemon = 1;
-	}
-	else 
-		isdaemon = 0;
-
 	parms.membase = Q_Malloc (parms.memsize);
 
 	parms.basedir = ".";
 
-// chroot
-	j = COM_CheckParm ("-c");
-	if (j && j + 1 < com_argc)
-	{
-		chroot_dir = com_argv[j + 1];
-		if (chroot(chroot_dir) < 0) {
-			Sys_Printf("chroot %s failed: %s\n", chroot_dir, strerror(errno));
-			//exit(1);
-		}
-		if (chdir("/") < 0) {
-			Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(errno));
-			//exit(1);
-		}
-	}
-
 	SV_Init (&parms);
 
-// set[e]uid, set[e]gid
-	j = COM_CheckParm ("-u");
-	if (j && j + 1 < com_argc)
-	{
-		user_name = com_argv[j + 1];
-		if (only_digits(user_name))
-			user_id = Q_atoi(user_name);
-		else {
-			pw = getpwnam(user_name);
-			if (pw == NULL) {
-				Sys_Printf("user \"%s\" unknown\n", user_name);
-				//exit(1);
-			}
-			user_id = pw->pw_uid;
-		}
-		if (setuid(user_id) < 0)
-			Sys_Printf("Can't setuid to user \"%s\": %s\n", user_name, strerror(errno));
-	}
+// run one frame immediately for first heartbeat
+	SV_Frame (0.1);		
 
+// setgid
 	j = COM_CheckParm ("-g");
 	if (j && j + 1 < com_argc)
 	{
 		group_name = com_argv[j + 1];
 		if (only_digits(group_name))
 			group_id = Q_atoi(group_name);
-		else {
+		else
+		{
 			gr = getgrnam(group_name);
-			if (gr == NULL) {
+			if (gr == NULL)
 				Sys_Printf("group \"%s\" unknown\n", group_name);
-				//exit(1);
-			}
 			group_id = gr->gr_gid;
 		}
 		if (setgid(group_id) < 0)
 			Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(errno));
 	}
-
-// run one frame immediately for first heartbeat
-	SV_Frame (0.1);		
+// setuid
+	j = COM_CheckParm ("-u");
+	if (j && j + 1 < com_argc)
+	{
+		user_name = com_argv[j + 1];
+		if (only_digits(user_name))
+			user_id = Q_atoi(user_name);
+		else
+		{
+			pw = getpwnam(user_name);
+			if (pw == NULL)
+				Sys_Printf("user \"%s\" unknown\n", user_name);
+			else
+			{
+				user_id = pw->pw_uid;
+				if (!group_name)
+				{
+					group_id = pw->pw_gid;
+					if (setgid(group_id) < 0)
+						Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(errno));
+				}
+				if (!getuid() && initgroups(user_name, group_id) < 0)
+					Sys_Printf("Can't initgroups(%s, %d): %s", user_name, (int)group_id, strerror(errno));
+				if (setuid(user_id) < 0)
+					Sys_Printf("Can't setuid to user \"%s\": %s\n", user_name, strerror(errno));
+			}
+		}
+	}
 
 //
 // main loop
 //
 	oldtime = Sys_DoubleTime () - 0.1;
 #ifndef NEWWAY 
+	timeout.tv_sec = 0;
+	timeout.tv_usec = max(sv_mintic.value, sv_maxtic.value / 2) * 1000000.0;
 	while (1)
 	{
 	// select on the net socket and stdin
@@ -702,8 +756,8 @@ int main (int argc, char *argv[])
 			}
 		}
 // Added by VVD }
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 10000;
+//		timeout.tv_sec = 0;
+//		timeout.tv_usec = 10000;
 
 		if (do_stdin)
 			FD_SET(0, &fdset);
@@ -718,6 +772,7 @@ int main (int argc, char *argv[])
 				if (telnetport && telnet_connected)
 					iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 		}
+
 	// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;

@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 
 cvar_t	sys_sleep = {"sys_sleep", "8"};
-cvar_t	sys_nostdout = {"sys_nostdout","0"};
+cvar_t	sys_nostdout = {"sys_nostdout", "0"};
 
 qboolean WinNT;
 
@@ -41,6 +41,7 @@ static char title[16];
 static qboolean	iosock_ready = false; 
 static int		authenticated = 0;
 static double	cur_time_auth;
+static qboolean isdaemon = 0;
 
 /*
 ================
@@ -55,17 +56,6 @@ int	Sys_FileTime (char *path)
 		return -1;
 	
 	return buf.st_mtime;
-/*	FILE	*f;
-	
-	f = fopen(path, "rb");
-	if (f)
-	{
-		fclose(f);
-		return 1;
-	}
-	
-	return -1;
-*/
 }
 
 /*
@@ -88,6 +78,18 @@ int Sys_remove (char *path)
 	return remove(path);
 }
 
+//bliP: rmdir ->
+/*
+================
+Sys_rmdir
+================
+*/
+int Sys_rmdir (char *path)
+{
+  return _rmdir(path);
+}
+//<-
+
 /*
 ================
 Sys_listdir
@@ -100,7 +102,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	dir_t	dir;
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
-	int		i, pos, size;
+	int		i, pos;//, size;
 	char	name[MAX_DEMO_NAME];
 	qboolean all;
 
@@ -115,18 +117,20 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		return dir;
 	}
 	do {
-		if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-		{
-			dir.numdirs++;
-			continue;
-		}
+    /*if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+      dir.numdirs++;
+      continue;
+    }*/
 
-		size = fd.nFileSizeLow;
-		strlcpy (name, fd.cFileName, MAX_DEMO_NAME);
-		dir.size += size;
+    /*size = fd.nFileSizeLow;
+	  strlcpy(name, fd.cFileName, MAX_DEMO_NAME);
+		dir.size += size;*/
 
 		if (!all && !strstr(fd.cFileName, ext))
 			continue;
+
+    if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
+      continue;
 
 		/*for (s = fd.cFileName + strlen(fd.cFileName); s > fd.cFileName; s--) {
 			if (*s == '.')
@@ -146,15 +150,24 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		}
 		*/
 
+		dir.numfiles++;
+    dir.size += fd.nFileSizeLow;
+
 		i = dir.numfiles;
 		pos = i;
-		dir.numfiles++;
 		for (i=dir.numfiles-1 ; i>pos ; i--)
 			list[i] = list[i-1];
 
-		strlcpy (list[i].name, name, MAX_DEMO_NAME);
-		list[i].size = size;
-		list[i].time = Sys_FileTime(name);
+		strlcpy (list[i].name, fd.cFileName, sizeof(list[i].name));
+    if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { //bliP: list dir
+      dir.numdirs++;
+      list[i].isdir = true;
+    }
+    else {
+      list[i].isdir = false;
+		  list[i].size = fd.nFileSizeLow;
+		  list[i].time = Sys_FileTime(name);
+    }
 		if (dir.numfiles == MAX_DIRFILES - 1)
 			break;
 	} while ( FindNextFile(h, &fd) );
@@ -178,14 +191,29 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 Sys_Exit
 ================
 */
-void Sys_Exit(int code)
-{
 #ifdef _CONSOLE
-	exit(code);
+char	**_argv;
 #else
-	RemoveNotifyIcon();
-	exit(code);
+char	*_argv[MAX_NUM_ARGVS];
 #endif
+
+void Sys_Exit(int code, qboolean restart)
+{
+#ifndef _CONSOLE
+	RemoveNotifyIcon();
+#endif
+	if (restart)
+		if (execv(_argv[0], _argv) == -1)
+		{
+#ifdef _CONSOLE
+			if (!(sys_nostdout.value || isdaemon))
+				printf("Restart failed: %s\n", strerror(errno));
+#else
+			if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
+				MessageBox(NULL, strerror(errno), "Restart failed", 0 /* MB_OK */ );
+#endif
+		}
+	exit(code);
 }
 
 /*
@@ -202,10 +230,10 @@ void Sys_Error (char *error, ...)
 	vsnprintf (text, sizeof(text), error,argptr);
 	va_end (argptr);
 #ifdef _CONSOLE
-//    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
-	printf ("ERROR: %s\n", text);
+	if (!(sys_nostdout.value || isdaemon))
+		printf ("ERROR: %s\n", text);
 #else
-	if (!COM_CheckParm("-noerrormsgbox"))
+	if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
 		MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
 	else
 		Sys_Printf("ERROR: %s\n", text);
@@ -216,7 +244,7 @@ void Sys_Error (char *error, ...)
 		SV_Write_Log(ERROR_LOG, 1, va("ERROR: %s\n", text));
 		fclose(logs[ERROR_LOG].sv_logfile);
 	}
-	Sys_Exit (1);
+	Sys_Exit (1, false);
 }
 
 
@@ -281,6 +309,7 @@ char *Sys_ConsoleInput (void)
 	int		c;
 
 	// read a line out
+	if (!isdaemon)
 	while (_kbhit())
 	{
 		c = _getch();
@@ -421,38 +450,62 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
-	va_list		argptr;
-	char			tmp[MAXCMDBUF];
-	unsigned char	*p;
-#ifdef _CONSOLE
+/*#ifdef _CONSOLE
 	if (sys_nostdout.value && !(telnetport && telnet_connected && authenticated))
 		return;
+#endif*/
+	va_list		argptr;
+	char			text[MAXCMDBUF];
+	unsigned char	*p;
+
+	if (
+#ifndef _CONSOLE
+		(
+#else
+		(sys_nostdout.value ||
 #endif
-	va_start (argptr,fmt);
-	vsnprintf(tmp, MAXCMDBUF, fmt, argptr);
+		isdaemon) && !(telnetport && telnet_connected && authenticated))
+		return;
+
+	va_start (argptr, fmt);
+	vsnprintf (text, MAXCMDBUF, fmt, argptr);
 	va_end (argptr);
 
 #ifndef _CONSOLE
-	ConsoleAddText(tmp);
+	if (!isdaemon) ConsoleAddText(text);
 #endif
 
-	if (telnetport && telnet_connected && authenticated)
-	{
-		for (p = (unsigned char *)tmp; *p; p++)
+	for (p = (unsigned char *)text; *p; p++) {
+		if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
 		{
-			if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
+			if (telnetport && telnet_connected && authenticated)
 				send (telnet_iosock, va("[%02x]", *p), strlen (va("[%02x]", *p)), 0);
-			else
+#ifdef _CONSOLE
+			if (!(sys_nostdout.value || isdaemon))
+				printf("[%02x]", *p);
+#endif //_CONSOLE
+		}
+		else
+		{
+			if (telnetport && telnet_connected && authenticated)
 			{
 				send (telnet_iosock, p, 1, 0);
 				if (*p == '\n')
 					send (telnet_iosock, "\r", 1, 0);
 					// demand for M$ WIN 2K telnet support
 			}
+#ifdef _CONSOLE
+			if (!(sys_nostdout.value || isdaemon))
+				putc(*p, stdout);
+#endif //_CONSOLE
 		}
-		SV_Write_Log(TELNET_LOG, 3, tmp);
 	}
-
+	if (telnetport && telnet_connected && authenticated)
+		SV_Write_Log(TELNET_LOG, 3, text);
+#ifdef _CONSOLE
+	if (!(sys_nostdout.value || isdaemon))
+		fflush(stdout);
+#endif //_CONSOLE
 }
 
 /*
@@ -460,11 +513,10 @@ void Sys_Printf (char *fmt, ...)
 Sys_Quit
 ================
 */
-void Sys_Quit (void)
+void Sys_Quit (qboolean restart)
 {
-	Sys_Exit(0);
+	Sys_Exit(0, restart);
 }
-
 
 /*
 =============
@@ -578,6 +630,7 @@ int main (int argc, char **argv)
 #endif
 	int				t;
 	int				sleep_msec;
+	_argv = argv;
 
 	GetConsoleTitle(title, sizeof(title));
 	COM_InitArgv (argc, argv);
@@ -663,8 +716,6 @@ int main (int argc, char **argv)
 
 #else  // _CONSOLE
 
-char		*argv[MAX_NUM_ARGVS];
-
 int APIENTRY WinMain(   HINSTANCE   hInstance,
                         HINSTANCE   hPrevInstance,
                         LPSTR       lpCmdLine,
@@ -688,7 +739,13 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 //Added by VVD }
 
 	// get the command line parameters
-	argv[0] = "";
+	LPWSTR *argv2;
+	int argc2;
+	argv2 = CommandLineToArgvW(GetCommandLineW(), &argc2);
+	for (j = 0; argv2[0][j]; j++);
+	_argv[0] = (char *)Q_Malloc (j + 1);
+	for (j = 0; _argv[0][j] = *(char *)(&argv2[0][j]); j++);
+	_argv[0][j + 1] = 0;
 	parms.argc = 1;
 
 	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS))
@@ -698,7 +755,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 
 		if (*lpCmdLine)
 		{
-			argv[parms.argc] = lpCmdLine;
+			_argv[parms.argc] = lpCmdLine;
 			parms.argc++;
 
 			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
@@ -713,7 +770,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		}
 	}
 
-	parms.argv = argv;
+	parms.argv = _argv;
 
 	COM_InitArgv (parms.argc, parms.argv);
 	PR_CleanLogText_Init();
@@ -732,6 +789,13 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	if (j && j + 1 < com_argc)
 		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
+	j = COM_CheckParm ("-d");
+	if (j && j + 1 < com_argc)
+	{
+		isdaemon = 1;
+//close(0); close(1); close(2);
+	}
+
 	parms.membase = Q_Malloc (parms.memsize);
 
 	parms.basedir = ".";
@@ -749,6 +813,8 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 // main loop
 //
 	oldtime = Sys_DoubleTime () - 0.1;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = max(sv_mintic.value, sv_maxtic.value / 2) * 1000000.0;
 	while(1)
 	{
 		// get messeges sent to windows
@@ -840,13 +906,16 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 			}
 		}
 // Added by VVD }
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 10000;
+//		timeout.tv_sec = 0;
+//		timeout.tv_usec = 100;
 
-		if (select (j + 1, &fdset, NULL, NULL, &timeout) != -1)
+		switch (select (j + 1, &fdset, NULL, NULL, &timeout))
 		{
-			if (telnetport && telnet_connected)
-				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
+			case -1: continue;
+			case 0: break;
+			default:
+				if (telnetport && telnet_connected)
+					iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 		}
 
 	// find time passed since last cycle
@@ -858,7 +927,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	}
 
 
-	Sys_Exit(msg.wParam);
+	Sys_Exit(msg.wParam, false);
 
 	return msg.wParam;
 }

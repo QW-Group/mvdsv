@@ -86,15 +86,35 @@ void SV_SetMaster_f (void)
 
 /*
 ==================
+SV_Quit
+==================
+*/
+void SV_Quit (qboolean restart)
+{
+	SV_FinalMessage ("server shutdown\n");
+	Con_Printf ("Shutting down.\n");
+	SV_Shutdown ();
+	Sys_Quit (restart);
+}
+
+/*
+==================
 SV_Quit_f
 ==================
 */
 void SV_Quit_f (void)
 {
-	SV_FinalMessage ("server shutdown\n");
-	Con_Printf ("Shutting down.\n");
-	SV_Shutdown ();
-	Sys_Quit ();
+	SV_Quit(false);
+}
+
+/*
+==================
+SV_Restart_f
+==================
+*/
+void SV_Restart_f (void)
+{
+	SV_Quit(true);
 }
 
 /*
@@ -102,18 +122,23 @@ void SV_Quit_f (void)
 SV_Logfile
 ============
 */
-void SV_Logfile (int sv_log)
+void SV_Logfile (int sv_log, qboolean newlog)
 {
 	extern int	sv_port;
 	char	name[MAX_OSPATH];
 	int		i;
+
 	if (logs[sv_log].sv_logfile)
 	{
-		Con_Printf (logs[sv_log].message_off);
+    //bliP: logging ->
 		fclose (logs[sv_log].sv_logfile);
 		logs[sv_log].sv_logfile = NULL;
-		logs[sv_log].log_level = 0;
-		return;
+		if (!newlog) {
+			Con_Printf (logs[sv_log].message_off);
+	  		logs[sv_log].log_level = 0;
+		  	return;
+		}
+    //<-
 	}
 	if (sv_log == FRAG_LOG)
 	{
@@ -121,7 +146,8 @@ void SV_Logfile (int sv_log)
 		{
 			snprintf (name, MAX_OSPATH, "%s/%s%i.log", com_gamedir, logs[sv_log].file_name, i);
 			name[MAX_OSPATH - 1] = 0;
-			if (!(logs[sv_log].sv_logfile = fopen (name, "r")))
+			//if (!(logs[sv_log].sv_logfile = fopen (name, "r")))
+			if (Sys_FileTime(name) == -1)
 			{	// can't read it, so create this one
 				if (!(logs[sv_log].sv_logfile = fopen (name, "w")))
 					i = 1000;	// give error
@@ -135,30 +161,43 @@ void SV_Logfile (int sv_log)
 			logs[sv_log].sv_logfile = NULL;
 			return;
 		}
-		Con_Printf ("Loging %s to %s.\n", logs[sv_log].message_on, name);
+		Con_Printf ("Logging %s to %s\n", logs[sv_log].message_on, name); //bliP: loging to logging
 		logs[sv_log].log_level = 1;
 	}
 	else
 	{
-		snprintf (name, MAX_OSPATH, /*"%s/ */"%s%i.log",
-					/* com_gamedir,*/ logs[sv_log].file_name, sv_port);
-		Con_Printf ("Loging %s to %s.\n", logs[sv_log].message_on, name);
+    //bliP: logging ->
+		for (i = 0; i < 1000; i++)
+		{
+			snprintf (name, MAX_OSPATH, "%s%d_%04d.log", logs[sv_log].file_name, sv_port, i);
+			if (Sys_FileTime(name) == -1)
+			break; // file doesn't exist
+		}
+    
+		if (!newlog) //use last log if possible
+			snprintf (name, MAX_OSPATH, "%s%d_%04d.log", logs[sv_log].file_name, sv_port, (i - 1 > 0) ? i - 1 : 0);
+
+		name[MAX_OSPATH - 1] = 0;
+		Con_Printf ("Logging %s to %s\n", logs[sv_log].message_on, name); //bliP: loging to logging
 		if (!(logs[sv_log].sv_logfile = fopen (name, "a")))
-			Con_Printf ("failed.\n");
-		else
-			switch (sv_log)
-			{
+		{
+			Con_Printf ("Failed.\n");
+			logs[sv_log].sv_logfile = NULL;
+			return;
+		}
+
+		switch (sv_log) {
 			case TELNET_LOG:
 				logs[TELNET_LOG].log_level = Cvar_VariableValue("telnet_log_level");
 				break;
 			case CONSOLE_LOG:
-				logs[CONSOLE_LOG].log_level = Cvar_VariableValue("qconsole_log_say");
+  				logs[CONSOLE_LOG].log_level = Cvar_VariableValue("qconsole_log_say");
 				break;
 			default:
-				logs[sv_log].log_level = 1;
-			}
+  				logs[sv_log].log_level = 1;
+		}
+    //<-
 	}
-
 }
 
 /*
@@ -168,7 +207,7 @@ SV_Logfile_f
 */
 void SV_Logfile_f (void)
 {
-	SV_Logfile(CONSOLE_LOG);
+	SV_Logfile(CONSOLE_LOG, false);
 }
 
 /*
@@ -178,7 +217,7 @@ SV_ErrorLogfile_f
 */
 void SV_ErrorLogfile_f (void)
 {
-	SV_Logfile(ERROR_LOG);
+	SV_Logfile(ERROR_LOG, false);
 }
 
 /*
@@ -188,7 +227,7 @@ SV_RconLogfile_f
 */
 void SV_RconLogfile_f (void)
 {
-	SV_Logfile(RCON_LOG);
+	SV_Logfile(RCON_LOG, false);
 }
 
 /*
@@ -198,7 +237,7 @@ SV_RconLogfile_f
 */
 void SV_TelnetLogfile_f (void)
 {
-	SV_Logfile(TELNET_LOG);
+	SV_Logfile(TELNET_LOG, false);
 }
 
 /*
@@ -208,8 +247,20 @@ SV_FragLogfile_f
 */
 void SV_FragLogfile_f (void)
 {
-	SV_Logfile(FRAG_LOG);
+	SV_Logfile(FRAG_LOG, false);
 }
+
+//bliP: player log
+/*
+============
+SV_PlayerLogfile_f
+============
+*/
+void SV_PlayerLogfile_f (void)
+{
+	SV_Logfile(PLAYER_LOG, false);
+}
+//<-
 
 
 /*
@@ -360,6 +411,8 @@ map <mapname>
 command from the console or progs.
 ======================
 */
+void SV_TimeOfDay(date_t *date);
+
 void SV_Map (qboolean now)
 {
 	static char	level[MAX_QPATH];
@@ -368,9 +421,11 @@ void SV_Map (qboolean now)
 	// -> scream
 	FILE	*f;
 	char	*s;
-	time_t	t;
-	struct tm	*tblock;
-	// <-
+//bliP: date check
+	/*time_t	t;
+	struct tm	*tblock;*/
+	date_t date;
+// <-
 
 	// if now, change it
 	if (now) {
@@ -397,10 +452,20 @@ void SV_Map (qboolean now)
 		// -> scream
 		if (Cvar_VariableValue("frag_log_type"))
 		{
-			t = time (NULL);
-			tblock = localtime (&t);
-			s = va("\\newmap\\%s\\\\\\\\%d-%d-%d %d:%d:%d\\\n",level, tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
-			if (logs[FRAG_LOG].sv_logfile) SZ_Print (&svs.log[svs.logsequence&1], s);
+//bliP: date check ->
+			SV_TimeOfDay(&date);
+			s = va("\\newmap\\%s\\\\\\\\%d-%d-%d %d:%d:%d\\\n",
+				level,
+				date.year,
+				date.mon+1,
+		//bliP: check me - date.mon or date.mon+1? existing code was date.mon+1
+				date.day,
+				date.hour,
+				date.min,
+				date.sec);
+//<-
+			if (logs[FRAG_LOG].sv_logfile)
+			SZ_Print (&svs.log[svs.logsequence&1], s);
 			SV_Write_Log(FRAG_LOG, 0, s);
 		}
 		// <-
@@ -442,6 +507,179 @@ void SV_Map_f (void)
 	SV_Map(false);
 }
 
+//bliP: ls, rm, rmdir, chmod ->
+/*==================
+SV_ListFiles_f
+Lists files
+==================*/
+void SV_ListFiles_f (void)
+{
+	dir_t	dir;
+	file_t	*list;
+	int		i;
+	char	*key;
+  char *dirname;
+
+  if (Cmd_Argc() < 2) {
+    Con_Printf ("ls [directory] [match]\n");
+    return;
+  }
+
+  dirname = Cmd_Argv(1);
+
+  if (strstr (dirname, "..") || (*dirname == '/')/* || (*dirname == '.')*/) {
+    Con_Printf("Unable to list\n");
+    return;
+  }
+
+	Con_Printf("Content of %s/*.*\n", dirname);
+	dir = Sys_listdir(va("%s", dirname), ".*", SORT_BY_NAME);
+	list = dir.files;
+	if (!list->name[0])	{
+		Con_Printf("No files\n");
+    return;
+	}
+
+  key = (Cmd_Argc() == 3) ? Cmd_Argv(2) : "";
+
+  //directories...
+	for (i = 0; list->name[0]; i++, list++) {
+		if (!strstr(list->name, key) || !list->isdir)
+      continue;
+	  Con_Printf("- %s\n", list->name);
+	}
+
+  list = dir.files;
+
+  //files...
+	for (i = 0; list->name[0]; i++, list++) {
+		if (!strstr(list->name, key) || list->isdir)
+      continue;
+    if ((int)list->size/1024 > 0)
+      Con_Printf("%s %.0fKB (%.2fMB)\n", list->name, (float)list->size/1024, (float)list->size/1024/1024);
+    else
+      Con_Printf("%s %dB\n", list->name, list->size);
+	}
+  Con_Printf ("Total: %d files, %.0fKB (%.2fMB)\n", dir.numfiles, (float)dir.size/1024, (float)dir.size/1024/1024);
+}
+
+/*==================
+SV_RemoveDirectory_f
+Removes an empty directory
+==================*/
+void SV_RemoveDirectory_f (void)
+{
+  char *path;
+
+	if (Cmd_Argc() != 2)	{
+		Con_Printf("rmdir [directory]\n");
+		return;
+	}
+
+  path = Cmd_Argv(1);
+
+  if (strstr (path, "..") || (*path == '/') || (*path == '.')) {
+    Con_Printf("Unable to remove\n");
+    return;
+  }
+
+  if (!Sys_rmdir(path))
+    Con_Printf("Directory %s succesfully removed\n", path);
+  else 
+	  Con_Printf("Unable to remove directory %s\n", path);
+}
+
+/*==================
+SV_RemoveFile_f
+Remove a file
+==================*/
+void SV_RemoveFile_f (void)
+{
+	char *dirname;
+	char *filename;
+  char path[MAX_OSPATH];
+	int i;
+
+	if (Cmd_Argc() < 3)	{
+		Con_Printf("rm [directory] [[filename] | *<token> | *] - removes a file | with token | all\n");
+		return;
+	}
+
+	dirname = Cmd_Argv(1);
+  filename = Cmd_Argv(2);
+
+  if (strstr (dirname, "..") || (*dirname == '/') || (*dirname == '.')) {
+    Con_Printf("Unable to remove\n");
+    return;
+  }
+
+	if (*filename == '*') //token, many files
+	{
+		dir_t dir;
+		file_t *list;
+
+		// remove all files with specified token
+		filename++;
+
+		dir = Sys_listdir(va("%s", dirname), ".*", SORT_BY_NAME);
+		list = dir.files;
+		for (i = 0;list->name[0]; list++) {
+  		if (!list->isdir && strstr(list->name, filename)) {
+			  snprintf(path, sizeof(path), "%s/%s", dirname, list->name);
+			  if (!Sys_remove(path)) {
+ 					Con_Printf("Removing %s...\n", list->name);
+				  i++;
+        }
+			}
+		}
+		if (i)
+			Con_Printf("%d files removed\n", i);
+		else
+			Con_Printf("No matching found\n");
+	}
+  else // 1 file
+  {
+	  snprintf(path, sizeof(path), "%s/%s", dirname, filename);
+    if (!Sys_remove(path))
+   	  Con_Printf("File %s succesfully removed\n", filename);
+    else 
+	    Con_Printf("Unable to remove file %s\n", filename);
+  }
+}
+
+/*==================
+SV_ChmodFile_f
+Chmod a script
+==================*/
+#ifndef WIN32
+void SV_ChmodFile_f (void)
+{
+  char path[MAX_OSPATH];
+  char *arg;
+  char *filename;
+
+	if (Cmd_Argc() != 3)	{
+		Con_Printf("chmod [mode] [script file]\n");
+		return;
+	}
+
+  arg = Cmd_Argv(1);
+  filename = Cmd_Argv(2);
+
+  if (strstr(filename, "..") || (*filename == '/') || (*filename == '.') || !strstr(filename, ".qws")) {
+    Con_Printf("Unable to chmod\n");
+    return;
+  }
+
+  snprintf(path, sizeof(path), "chmod %s %s\n", arg, filename);
+
+  if (system(path) == -1)
+    Con_Printf("Unable to chmod %s\n", filename);
+  else 
+    Con_Printf("Chmod %s succesful\n", filename);
+}
+#endif
+//<-
 
 /*
 ==================
@@ -491,6 +729,7 @@ void SV_Kick_f (void)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked%s\n", cl->name, reason);
 			cl->state = saved_state;
 			SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game%s\n", reason);
+      SV_LogPlayer(cl, va("kick%s\n", reason), 1); //bliP: logging
 			SV_DropClient (cl); 
 			return;
 		}
@@ -498,6 +737,228 @@ void SV_Kick_f (void)
 
 	Con_Printf ("Couldn't find user number %i\n", uid);
 }
+
+//bliP: mute, cuff ->
+int SV_MatchUser (char *s)
+{
+	int         i;
+	client_t   *cl;
+
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+    if (!strcmp (cl->name, s))
+      return cl->userid;
+  }
+  i = Q_atoi(s);
+  return i;
+}
+
+/*
+================
+SV_Cuff_f
+================
+*/
+#define MAXPENALTY 1200.0
+void SV_Cuff_f (void)
+{
+	int         c, i, uid;
+	double      mins = 0.5;
+  qboolean    done = false;
+  qboolean    print = true;
+	client_t    *cl;
+	char        reason[80];
+  char        text[100];
+  
+	if ((c = Cmd_Argc()) < 2) {
+		Con_Printf ("usage: cuff <userid/name> <minutes> [reason]\n(default = 0.5, 0 = cancel cuff).\n");
+		return;
+	}
+
+	uid = SV_MatchUser(Cmd_Argv(1));
+  if (!uid) {
+    Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+    return;
+  }
+
+  if (c >= 3) {
+		mins = Q_atof(Cmd_Argv(2));
+    if (mins < 0.0 || mins > MAXPENALTY) {
+			mins = MAXPENALTY;
+    }
+	}
+
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+		if (cl->userid == uid) {
+			cl->cuff_time = realtime + (mins * 60.0);
+			done = true;
+      break;
+		}
+	}
+	if (done) {
+    reason[0] = 0;
+    if (c > 2) {
+			for (i = 3; i < c; i++) {
+				strncat (reason, Cmd_Argv(i), sizeof(reason) - 2 - strlen(reason));
+				if (i < c - 1)
+					strncat (reason, " ", sizeof(reason) - 1 - strlen(reason));
+			}
+			reason[sizeof(reason) - 1] = 0;
+    }
+
+    if (mins) {
+      SV_BroadcastPrintf (PRINT_CHAT, "%s cuffed for %.1f minutes%s%s\n", cl->name, mins, reason[0] ? ": " : "", reason[0] ? reason : "");
+
+      snprintf(text, sizeof(text), "You are cuffed for %.1f minutes%s%s\n", mins, reason[0] ? "\n\n" : "", reason[0] ? reason : "");
+  	  ClientReliableWrite_Begin(cl,svc_centerprint, 2+strlen(text));
+			ClientReliableWrite_String (cl, text);
+    }
+    else {
+      if (print) {
+  	    SV_BroadcastPrintf (PRINT_CHAT, "%s un-cuffed.\n", cl->name);
+      }
+    }
+  } else {
+    Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+	}
+}
+
+/*
+================
+SV_Mute_f
+================
+*/
+void SV_Mute_f (void)
+{
+	int         c, i, uid;
+	double      mins = 0.5;
+  qboolean    done = false;
+  qboolean    print = true;
+	client_t    *cl;
+	char        reason[1024];
+  char        text[1024];
+  char        *ptr;
+  
+	if ((c = Cmd_Argc()) < 2) {
+		Con_Printf ("usage: mute <userid/name> <minutes> [reason]\n(default = 0.5, 0 = cancel mute).\n");
+		return;
+	}
+
+	uid = SV_MatchUser(Cmd_Argv(1));
+  if (!uid) {
+    Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+    return;
+  }
+
+  if (c >= 3) {
+	  ptr = Cmd_Argv(2);
+    if (*ptr == '*') {
+      ptr++;
+      print = false;
+    }
+    mins = Q_atof(ptr);
+		if (mins < 0.0 || mins > MAXPENALTY)
+			mins = MAXPENALTY;
+	}
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+			continue;
+		if (cl->userid == uid) {
+			cl->lockedtill = realtime + (mins * 60.0);
+			done = true;
+      break;
+		}
+	}
+	if (done) {
+    reason[0] = 0;
+    if (c > 2) {
+			for (i = 3; i < c; i++) {
+				strncat (reason, Cmd_Argv(i), sizeof(reason) - 2 - strlen(reason));
+				if (i < c - 1)
+					strncat (reason, " ", sizeof(reason) - 1 - strlen(reason));
+			}
+			reason[sizeof(reason) - 1] = 0;
+    }
+
+    if (mins) {
+      if (print)
+  	    SV_BroadcastPrintf (PRINT_CHAT, "%s muted for %.1f minutes%s%s\n", cl->name, mins, reason[0] ? ": " : "", reason[0] ? reason : "");
+      snprintf(text, sizeof(text), "You are muted for %.1f minutes%s%s\n", mins, reason[0] ? "\n\n" : "", reason[0] ? reason : "");
+  		ClientReliableWrite_Begin(cl, svc_centerprint, 2+strlen(text));
+			ClientReliableWrite_String (cl, text);
+    }
+    else {
+      if (print) {
+			  SV_BroadcastPrintf (PRINT_CHAT, "%s un-muted.\n", cl->name);
+      }
+    }
+	} else {
+		Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+	}
+}
+
+void SV_RemovePenalty_f (void)
+{
+	int     i;
+  int     num;
+  extern int numpenfilters;
+
+	if (Cmd_Argc() != 2) {
+		Con_Printf ("penaltyremove [num]\n");
+		return;
+	}
+
+  num = atoi(Cmd_Argv(1));
+
+	for (i = 0; i < numpenfilters; i++) {
+		if (i == num) {
+      SV_RemoveIPFilter (i);
+			Con_Printf ("Removed.\n");
+      return;
+		}
+	}
+	Con_Printf ("Didn't find penalty filter %i.\n", num);
+}
+
+void SV_ListPenalty_f (void)
+{
+  client_t *cl;
+	int     i;
+	char		s[8];
+  extern int numpenfilters;
+  extern penfilter_t penfilters[MAX_PENFILTERS];
+
+  Con_Printf ("Active Penalty List:\n");
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		if (!cl->state)
+      continue;
+
+    if (cl->lockedtill >= realtime) {
+        Con_Printf ("%i %s mute (remaining: %d)\n", cl->userid, cl->name, (cl->lockedtill) ? (int)(cl->lockedtill - realtime) : 0);
+    }
+    if (cl->cuff_time >= realtime) {
+        Con_Printf ("%i %s cuff (remaining: %d)\n", cl->userid, cl->name, (cl->cuff_time) ? (int)(cl->cuff_time - realtime) : 0);
+    }
+  }
+
+  Con_Printf ("Saved Penalty List:\n");
+	for (i = 0; i < numpenfilters; i++) {
+    switch (penfilters[i].type) {
+  		case ft_mute: strlcpy(s, "Mute", sizeof(s)); break;
+	 		case ft_cuff: strlcpy(s, "Cuff", sizeof(s)); break;
+      default: strlcpy(s, "Unknown", sizeof(s)); break;
+    }
+    Con_Printf ("%i: %s for %i.%i.%i.%i (remaining: %d)\n", i, s,
+        penfilters[i].ip[0],
+        penfilters[i].ip[1],
+        penfilters[i].ip[2],
+        penfilters[i].ip[3],
+        (penfilters[i].time) ? (int)(penfilters[i].time - realtime) : 0);
+	}
+}
+//<-
 
 /*
 ================
@@ -834,6 +1295,7 @@ char *CopyString(char *s);
 void SV_Serverinfo_f (void)
 {
 	cvar_t	*var;
+  char *s;
 
 	if (Cmd_Argc() == 1)
 	{
@@ -842,9 +1304,21 @@ void SV_Serverinfo_f (void)
 		return;
 	}
 
+  //bliP: sane serverinfo usage (mercury) -> 
+  if (Cmd_Argc() == 2)
+  {
+    s = Info_ValueForKey(svs.info, Cmd_Argv(1));
+    if (*s)
+      Con_Printf ("Serverinfo %s: \"%s\"\n", Cmd_Argv(1), s);
+    else
+      Con_Printf ("No such key %s\n", Cmd_Argv(1));
+    return;
+  }
+  //<-
+
 	if (Cmd_Argc() != 3)
 	{
-		Con_Printf ("usage: serverinfo [ <key> <value> ]\n");
+		Con_Printf ("usage: serverinfo [ <key> [ <value> ] ]\n");
 		return;
 	}
 
@@ -886,6 +1360,19 @@ void SV_Localinfo_f (void)
 		Info_Print (localinfo);
 		return;
 	}
+
+  //bliP: sane localinfo usage (mercury) -> 
+  if (Cmd_Argc() == 2)
+  {
+    s = Info_ValueForKey(localinfo, Cmd_Argv(1));
+    if (*s)
+      Con_Printf ("Localinfo %s: \"%s\"\n", Cmd_Argv(1), s);
+    else
+      Con_Printf ("No such key %s\n", Cmd_Argv(1));
+    return;
+  }
+  //<-
+
 
 	if (Cmd_Argc() != 3)
 	{
@@ -1160,6 +1647,33 @@ void SV_SnapAll_f (void)
 	}
 }
 
+//bliP: REMOVE ME REMOVE ME REMOVE ME REMOVE ME REMOVE ME ->
+void SV_LocalCommand_f (void)
+{
+  int i, c;
+  char str[1024];
+
+  if ((c = Cmd_Argc()) < 2) {	
+		Con_Printf("localcommand [command]\n");
+		return;
+	}
+
+  str[0] = 0;
+  for (i = 1; i < c; i++) {
+	  strlcat (str, Cmd_Argv(i), sizeof(str));
+	  if (i < c - 1)
+		  strlcat (str, " ", sizeof(str));
+  }
+  strlcat (str, "\n", sizeof(str));
+  str[sizeof(str) - 1] = 0;
+
+  if (system(str)) {
+    Con_Printf("command failed\n");
+  }
+}
+//REMOVE ME REMOVE ME REMOVE ME REMOVE ME REMOVE ME 
+//<-
+
 /*
 ==================
 SV_InitOperatorCommands
@@ -1179,32 +1693,37 @@ void SV_InitOperatorCommands (void)
 	logs[RCON_LOG].command			= "logrcon";
 	logs[TELNET_LOG].command		= "logtelnet";
 	logs[FRAG_LOG].command			= "fraglogfile";
+	logs[PLAYER_LOG].command		= "logplayers"; //bliP: player logging
 	
-	logs[CONSOLE_LOG].file_name		= "qconsole_";
+	logs[CONSOLE_LOG].file_name	= "qconsole_";
 	logs[ERROR_LOG].file_name		= "qerror_";
 	logs[RCON_LOG].file_name		= "rcon_";
-	logs[TELNET_LOG].file_name		= "qtelnet_";
+	logs[TELNET_LOG].file_name	= "qtelnet_";
 	logs[FRAG_LOG].file_name		= "frag_";
+	logs[PLAYER_LOG].file_name  = "player_"; //bliP: player logging
 
 	logs[CONSOLE_LOG].message_off	= "File logging off.\n";
 	logs[ERROR_LOG].message_off		= "Error logging off.\n";
 	logs[RCON_LOG].message_off		= "Rcon logging off.\n";
 	logs[TELNET_LOG].message_off	= "Telnet logging off.\n";
 	logs[FRAG_LOG].message_off		= "Frag file logging off.\n";
+	logs[PLAYER_LOG].message_off	= "Player logging off.\n"; //bliP: player logging
 	
 	logs[CONSOLE_LOG].message_on	= "console";
 	logs[ERROR_LOG].message_on		= "errors";
-	logs[RCON_LOG].message_on		= "rcon";
+	logs[RCON_LOG].message_on		  = "rcon";
 	logs[TELNET_LOG].message_on		= "telnet";
-	logs[FRAG_LOG].message_on		= "frags";
+	logs[FRAG_LOG].message_on	  	= "frags";
+	logs[PLAYER_LOG].message_on		= "players"; //bliP: player logging
 
-	logs[CONSOLE_LOG].function		= SV_Logfile_f;
+	logs[CONSOLE_LOG].function	= SV_Logfile_f;
 	logs[ERROR_LOG].function		= SV_ErrorLogfile_f;
 	logs[RCON_LOG].function			= SV_RconLogfile_f;
 	logs[TELNET_LOG].function		= SV_TelnetLogfile_f;
 	logs[FRAG_LOG].function			= SV_FragLogfile_f;
+	logs[PLAYER_LOG].function		= SV_PlayerLogfile_f; //bliP: player logging
 	
-	for (i = CONSOLE_LOG; i < MAX_LOG; ++i)
+	for (i = 0; i < MAX_LOG; ++i)
 	{
 		logs[i].sv_logfile = NULL;
 		logs[i].log_level = 0;
@@ -1225,6 +1744,25 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("kick", SV_Kick_f);
 	Cmd_AddCommand ("status", SV_Status_f);
 
+//bliP: init ->
+	Cmd_AddCommand ("rmdir", SV_RemoveDirectory_f);
+	Cmd_AddCommand ("rm", SV_RemoveFile_f);
+	Cmd_AddCommand ("ls", SV_ListFiles_f);
+
+	Cmd_AddCommand ("mute", SV_Mute_f);
+	Cmd_AddCommand ("cuff", SV_Cuff_f);
+
+	Cmd_AddCommand ("penaltylist", SV_ListPenalty_f);
+	Cmd_AddCommand ("penaltyremove", SV_RemovePenalty_f);
+
+#ifndef WIN32
+	Cmd_AddCommand ("chmod", SV_ChmodFile_f);
+#endif
+//<-
+	i = COM_CheckParm ("-enablelocalcommand");
+	if (i && i < com_argc)
+		Cmd_AddCommand ("localcommand", SV_LocalCommand_f);
+
 	Cmd_AddCommand ("map", SV_Map_f);
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
 
@@ -1232,6 +1770,7 @@ void SV_InitOperatorCommands (void)
 
 	Cmd_AddCommand ("say", SV_ConSay_f);
 	Cmd_AddCommand ("quit", SV_Quit_f);
+	Cmd_AddCommand ("restart", SV_Restart_f);
 
 	Cmd_AddCommand ("god", SV_God_f);
 	Cmd_AddCommand ("give", SV_Give_f);

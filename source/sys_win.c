@@ -214,7 +214,7 @@ void Sys_Printf (char *fmt, ...)
 	va_end (argptr);
 }
 
-void Sys_Quit (void)
+void Sys_Quit (qboolean restart) // not need restart feature in client
 {
 	VID_ForceUnlockedAndReturnState ();
 
@@ -353,10 +353,10 @@ char *Sys_ConsoleInput (void)
 }
 
 void SleepUntilInput(int);
-void Sys_Sleep (void)
+/*void Sys_Sleep (void)
 {
 	SleepUntilInput(1);
-}
+}*/
 
 
 void Sys_SendKeyEvents (void)
@@ -369,7 +369,7 @@ void Sys_SendKeyEvents (void)
 		scr_skipupdate = 0;
 
 		if (!GetMessage (&msg, NULL, 0, 0))
-			Sys_Quit ();
+			Sys_Quit (false);
       	TranslateMessage (&msg);
       	DispatchMessage (&msg);
 	}

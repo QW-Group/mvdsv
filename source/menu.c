@@ -1186,7 +1186,7 @@ void M_Quit_Key (int key)
 	case 'y':
 		key_dest = key_console;
 		CL_Disconnect ();
-		Sys_Quit ();
+		Sys_Quit (false);
 		break;
 
 	default:
