@@ -914,7 +914,7 @@ void SV_SendClientMessages (void)
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 #endif
-
+void DemoSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
 void SV_SendDemoMessage(void)
 {
 	int			i, j, cls = 0;

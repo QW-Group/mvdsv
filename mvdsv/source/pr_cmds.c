@@ -867,11 +867,10 @@ void PF_substr (void)
 	s += start;
 	l -= start;
 
-	if ( len > l + 1)
-		len = l+1;
+	if (len > l + 1)
+		len = l + 1;
 
-	strlcpy(pr_string_temp, s, len);
-	pr_string_temp[len] = 0;
+	strlcpy(pr_string_temp, s, len + 1);
 
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 
@@ -888,8 +887,8 @@ string strcat(string str1, string str2)
 
 void PF_strcat (void)
 {
-	
-	strlcpy(pr_string_temp, PF_VarString(0), MAX_PR_STRING_SIZE);
+	/* FIXME */
+	strcpy(pr_string_temp, PF_VarString(0)/*, MAX_PR_STRING_SIZE*/);
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 
 	PF_SetTempString();
@@ -1135,7 +1134,7 @@ FIXME: check for null pointers first?
 
 void PF_strncpy (void)
 {
-	strlcpy(G_STRING(OFS_PARM0), G_STRING(OFS_PARM1), (int) G_FLOAT(OFS_PARM2));
+	strncpy(G_STRING(OFS_PARM0), G_STRING(OFS_PARM1), (int) G_FLOAT(OFS_PARM2));
 }
 
 
@@ -1223,8 +1222,8 @@ void PR_CleanLogText_Init ()
 
 void PR_CleanText(unsigned char *text)
 {
-	while (*text)
-		*text = chartbl2[*text++];
+	for ( ; *text; text++)
+		*text = chartbl2[*text];
 }
 
 /*

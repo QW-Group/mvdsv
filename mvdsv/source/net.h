@@ -37,6 +37,12 @@ extern	cvar_t	hostname;
 extern	int		net_clientsocket;
 extern	int		net_serversocket;
 extern	int		net_telnetsocket;
+extern	int		telnetport;
+extern	int		sv_port;
+extern	int		telnet_iosock;
+extern	int		telnet_connected;
+extern	cvar_t	not_auth_timeout;
+extern	cvar_t	auth_timeout;
 
 int		NET_Init (int clientport, int serverport, int telnetport);
 void		NET_Shutdown (void);

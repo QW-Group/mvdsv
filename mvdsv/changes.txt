@@ -1,4 +1,23 @@
 ----
+QWEX v0.1723b Beta DEVELOP
+[server]
+- new cvar:
+    sv_use_dns n
+      0 - don't use DNS lookup in status command
+      1 - use DNS lookup in status command
+      default: 0
+- new command:
+    nslookup <IP address> - resolve IP via DNS lookup
+- bugfixes from 0.1722b:
+    in PF_substr - for example: ktpro weapon aliases didn't work
+    demo recording - bug in the generation of demo names
+- now show all name changes: didn't show when player change name from NAME to NAME_AND_SOMETHING_ELSE_AT_END
+- some spell cheking fixes
+[client]
+- the most part of source codes of the client is removed 
+ 
+
+----
 QWEX v0.1722b Beta DEVELOP
 [client] and [server]
 - replace all:
@@ -27,7 +46,7 @@ QWEX v0.1722b Beta DEVELOP
       default: use the same value as in -port PORT
   new cvars:
     telnet_password password - password for authentication on connect
-      default: default: no password is set by default, so no telnet-connection will be allowed
+      default: no password is set by default, so no telnet-connection will be allowed
     not_auth_timeout n - if no password is sent (telnet_password) in "n" seconds the server refuses connection
       If set to 0, no timeout will occur
       default: 20

@@ -2029,12 +2029,12 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 		c = (unsigned char)*v++;
 #ifndef SERVERONLY
 		// client only allows highbits on name
-		if (stricmp(key, "name") != 0) {
+		if (strcasecmp(key, "name") != 0) {
 			c &= 127;
 			if (c < 32 || c > 127)
 				continue;
 			// auto lowercase team
-			if (stricmp(key, "team") == 0)
+			if (strcasecmp(key, "team") == 0)
 				c = tolower(c);
 		}
 #else

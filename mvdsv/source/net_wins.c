@@ -29,6 +29,10 @@ sizebuf_t	net_message;
 int			net_clientsocket;
 int			net_serversocket;
 int			net_telnetsocket;
+int			sv_port;
+int			telnetport;
+int			telnet_iosock;
+int			telnet_connected;
 
 #define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
 byte		net_message_buffer[MAX_UDP_PACKET];
@@ -439,16 +443,14 @@ NET_Shutdown
 */
 void	NET_Shutdown (void)
 {
-	extern int	iosock;
-	extern int	telnetport;
 	if (net_clientsocket)
 		closesocket (net_clientsocket);
 	if (net_serversocket)
 		closesocket (net_serversocket);
 	if (telnetport)
 	{
-		if (iosock)
-			closesocket(iosock);
+		if (telnet_connected)
+			closesocket(telnet_iosock);
 		closesocket (net_telnetsocket);
 	}
 	WSACleanup ();

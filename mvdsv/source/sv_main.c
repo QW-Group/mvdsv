@@ -55,17 +55,23 @@ cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 
 cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
-cvar_t	telnet_password = {"telnet_password", ""}; // password for telnet login
+cvar_t	telnet_password = {"telnet_password", ""}; // password for login via telnet
 cvar_t	telnet_log_level = {"telnet_log_level", "0"}; // loging level telnet console
+
 cvar_t	frag_log_type = {"frag_log_type", "0"};
 //	frag log type:
 //		0 - old style (  qwsv - v0.165)
 //		1 - new style (v0.168 - v0.171)
-cvar_t	not_auth_timeout = {"not_auth_timeout", "10"};
-// if password not inputed (telnet_password) in "n" seconds, then server refuse connection
+
+cvar_t	not_auth_timeout = {"not_auth_timeout", "20"};
+// if no password is sent (telnet_password) in "n" seconds the server refuses connection
+// If set to 0, no timeout will occur
+
 cvar_t	auth_timeout = {"auth_timeout", "3600"};
-// server refuse connection in "n" seconds after authentication comleted
-// If set to 0, then no this timeout
+// the server will close the connection "n" seconds after the authentication is completed
+// If set to 0, no timeout will occur
+
+cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status output, 0 - don't
 
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
@@ -132,7 +138,6 @@ qboolean sv_error = 0;
 void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 void Master_Shutdown (void);
 
-int sv_port, telnetport;
 //============================================================================
 
 qboolean ServerPaused(void)
@@ -596,7 +601,7 @@ void SVC_DirectConnect (void)
 	int			qport;
 	int			version;
 	int			challenge;
-	qboolean	spass, vip;
+	qboolean	spass = false, vip;
 	extern char *shortinfotbl[];
 
 	version = atoi(Cmd_Argv(1));
@@ -638,7 +643,7 @@ void SVC_DirectConnect (void)
 	// check for password or spectator_password
 	s = Info_ValueForKey (userinfo, "spectator");
 
-	vip = 0;
+	vip = false;
 	if (s[0] && strcmp(s, "0"))
 	{
 		spass = true;
@@ -648,7 +653,7 @@ void SVC_DirectConnect (void)
 			vip = SV_VIPbyIP(net_from);
 		
 		if (spectator_password.string[0] && 
-			stricmp(spectator_password.string, "none") &&
+			strcasecmp(spectator_password.string, "none") &&
 			strcmp(spectator_password.string, s) )
 		{	// failed
 			spass = false;
@@ -673,7 +678,7 @@ void SVC_DirectConnect (void)
 			vip = SV_VIPbyIP(net_from);
 
 		if (!vip && password.string[0] && 
-			stricmp(password.string, "none") &&
+			strcasecmp(password.string, "none") &&
 			strcmp(password.string, s) )
 		{
 			Con_Printf ("%s:password failed\n", NET_AdrToString (net_from));
@@ -1421,13 +1426,13 @@ int SV_VIPbyPass (char *pass)
 {
 	int i;
 
-	if (!vip_password.string[0] || !stricmp(vip_password.string, "none"))
+	if (!vip_password.string[0] || !strcasecmp(vip_password.string, "none"))
 		return 0;
 
 	Cmd_TokenizeString(vip_password.string);
 
 	for (i = 0; i < Cmd_Argc(); i++)
-		if (!strcmp(Cmd_Argv(i), pass) && stricmp(Cmd_Argv(i), "none"))
+		if (!strcmp(Cmd_Argv(i), pass) && strcasecmp(Cmd_Argv(i), "none"))
 			return i+1;
 
 	return 0;
@@ -1993,6 +1998,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&frag_log_type);
 	Cvar_RegisterVariable (&not_auth_timeout);
 	Cvar_RegisterVariable (&auth_timeout);
+	Cvar_RegisterVariable (&sv_use_dns);
 //	logs[TELNET_LOG].log_level = Cvar_VariableValue("telnet_log_level");
 //Added by VVD }
 	Cvar_RegisterVariable (&spectator_password);
@@ -2228,7 +2234,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 			val = Info_ValueForKey (cl->userinfo, "name");
 		}
 
-		if (!val[0] || !stricmp(val, "console")) {
+		if (!val[0] || !strcasecmp(val, "console")) {
 			Info_SetValueForKey (cl->userinfo, "name", "unnamed", MAX_INFO_STRING);
 			val = Info_ValueForKey (cl->userinfo, "name");
 		}
@@ -2238,7 +2244,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 			for (i=0, client = svs.clients ; i<MAX_CLIENTS ; i++, client++) {
 				if (client->state != cs_spawned || client == cl)
 					continue;
-				if (!stricmp(client->name, val))
+				if (!strcasecmp(client->name, val))
 					break;
 			}
 			if (i != MAX_CLIENTS) { // dup name
@@ -2260,7 +2266,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 				break;
 		}
 	
-		if (strncmp(val, cl->name, strlen(cl->name))) {
+		if (strncmp(val, cl->name, strlen(cl->name) + 1)) {
 			if (!sv.paused) {
 				if (!cl->lastnametime || realtime - cl->lastnametime > 5) {
 					cl->lastnamecount = 0;
@@ -2325,13 +2331,13 @@ void SV_InitNet (void)
 	p = COM_CheckParm ("-telnetport");
 	if (p && p + 1 < com_argc)
 	{
-		telnetport = atoi(com_argv[p + 1]);
-		Con_Printf ("Telnet port: %i\n", telnetport);
+		p = atoi(com_argv[p + 1]);
+		Con_Printf ("Telnet port: %i\n", p);
 	}
 	else
-		telnetport = sv_port;
-	if (telnetport)
-		telnetport = NET_Init (0, 0, telnetport);
+		p = sv_port;
+	if (p)
+		telnetport = NET_Init (0, 0, p);
 
 	Netchan_Init ();
 	// heartbeats will always be sent to the id master

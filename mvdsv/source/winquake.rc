@@ -30,7 +30,7 @@ IDD_DIALOG2 DIALOGEX 50, 20, 279, 233
 STYLE WS_MINIMIZEBOX | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Mvdsv - QW server"
 CLASS "mvdsv"
-FONT 9, "Arial"
+FONT 9, "Arial", 0, 0, 0x1
 BEGIN
     EDITTEXT        IDC_EDIT2,6,193,268,13,ES_AUTOHSCROLL | WS_GROUP
     DEFPUSHBUTTON   "OK",IDC_OK,265,215,9,10,NOT WS_VISIBLE
@@ -39,16 +39,6 @@ BEGIN
                     ES_READONLY | ES_WANTRETURN | NOT WS_BORDER | WS_VSCROLL | 
                     NOT WS_TABSTOP,WS_EX_CLIENTEDGE
     PUSHBUTTON      "CLEAR",IDC_CLEAR,6,211,50,14
-END
-
-IDD_DIALOG1 DIALOGEX 0, 0, 167, 27
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_CENTER | WS_POPUP | 
-    WS_VISIBLE
-EXSTYLE WS_EX_TOOLWINDOW | WS_EX_CLIENTEDGE
-FONT 16, "Times New Roman", 0, 0, 0x1
-BEGIN
-    CONTROL         117,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,0,0,
-                    167,28
 END
 
 
@@ -105,24 +95,6 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON2               ICON    DISCARDABLE     "qwcl2.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_BITMAP1             BITMAP  DISCARDABLE     "quakeworld.bmp"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_STRING1             "WinQuake"
-END
-
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

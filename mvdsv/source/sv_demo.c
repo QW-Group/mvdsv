@@ -395,7 +395,7 @@ float adjustangle(float current, float ideal, float fraction)
 void SV_DemoWritePackets (int num)
 {
 	demo_frame_t	*frame, *nextframe;
-	demo_client_t	*cl, *nextcl;
+	demo_client_t	*cl, *nextcl = NULL;
 	int				i, j, flags;
 	qboolean		valid;
 	double			time, playertime, nexttime;
@@ -610,12 +610,12 @@ qboolean SV_InitRecord(void)
 {
 	if (!USACACHE)
 	{
-		dwrite = &fwrite;
+		dwrite = (void *)&fwrite;
 		demo.dest = demo.file;
 		demo.disk = true;
 	} else 
 	{
-		dwrite = &memwrite;
+		dwrite = (void *)&memwrite;
 		demo.mfile = svs.demomem;
 		demo.dest = &demo.mfile;
 	}
@@ -1418,7 +1418,7 @@ void SV_EasyRecord_f (void)
 
 	*/
 	if (c == 2)
-		snprintf (name, sizeof(name), "%s", Cmd_Argv(1));
+		strlcpy (name, Cmd_Argv(1), sizeof(name));
 	else
 	{
 		i = Dem_CountPlayers();
@@ -1428,11 +1428,12 @@ void SV_EasyRecord_f (void)
 			snprintf (name, sizeof(name), "%don%d_", Dem_CountTeamPlayers(Dem_Team(1)), Dem_CountTeamPlayers(Dem_Team(2)));
 			if (sv_demoExtraNames.value > 0)
 			{
-				snprintf (name, sizeof(name), "%s[%s]_%s_", name, Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)));
-				snprintf (name, sizeof(name), "%svs_[%s]_%s_", name, Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)));
-				snprintf (name, sizeof(name), "%s%s", name, sv.name);
+				strlcat (name, va("[%s]_%s_vs_[%s]_%s_%s", 
+									Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)), 
+									Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)),
+									sv.name), sizeof(name));
 			} else
-				snprintf (name, sizeof(name), "%s%s_vs_%s_%s", name, Dem_Team(1), Dem_Team(2), sv.name);
+				strlcat (name, va("%s_vs_%s_%s", Dem_Team(1), Dem_Team(2), sv.name), sizeof(name));
 		} else {
 			if (i == 2) {
 				// Duel
@@ -1442,9 +1443,7 @@ void SV_EasyRecord_f (void)
 					sv.name);
 			} else {
 				// FFA
-				snprintf (name, sizeof(name), "ffa_%s(%d)",
-					sv.name,
-					i);
+				snprintf (name, sizeof(name), "ffa_%s(%d)", sv.name, i);
 			}
 		}
 	}
@@ -1454,11 +1453,10 @@ void SV_EasyRecord_f (void)
 // Make sure the filename doesn't contain illegal characters
 	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)), MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
 	strlcat(name, sv_demoSuffix.string, sizeof(name));
-	snprintf (name, sizeof(name), "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
-	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 
 // find a filename that doesn't exist yet
-	strlcpy (name2, name, sizeof(name2));
+	snprintf (name2, sizeof(name2), "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 	COM_ForceExtension (name2, ".mvd");
 	if ((f = fopen (name2, "rb")) == 0)
 		f = fopen(va("%s.gz", name2), "rb");
@@ -1474,7 +1472,6 @@ void SV_EasyRecord_f (void)
 			i++;
 		} while (f);
 	}
-
 
 	SV_Record (name2);
 }
@@ -1623,7 +1620,7 @@ void SV_DemoRemove_f (void)
 		SV_Stop_f();
 
 	if (!Sys_remove(path)) {
-		Con_Printf("demo %s succesfully removed\n", name);
+		Con_Printf("demo %s successfully removed\n", name);
 
 		if (*sv_ondemoremove.string)
 		{

@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libc.h>
 #endif
 
-#if defined(__linux__) || defined(sun) || defined(__GNUC__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__)
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -45,23 +45,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
 cvar_t	sys_extrasleep = {"sys_extrasleep","0"};
 
-qboolean	stdin_ready;
+static qboolean	stdin_ready = false;
 // Added by VVD {
-qboolean	iosock_ready; 
-static int	connected = 0;
+static qboolean	iosock_ready = false;
 static int	authenticated = 0;
-extern int	telnetport;
-extern int	sv_port;
-int		iosock;
-extern int	net_telnetsocket;
 static double	cur_time_auth;
-extern cvar_t	not_auth_timeout;
-extern cvar_t	auth_timeout;
 
-#ifndef min
-#define min(a,b)    (((a) < (b)) ? (a) : (b))
-#define max(a,b)    (((a) > (b)) ? (a) : (b))
-#endif
 // Added by VVD }
 
 /*
@@ -170,7 +159,7 @@ dir_t Sys_listdir (char *path, char *ext)
 		d.size += list[d.numfiles].size;
 
 		i = strlen(oneentry->d_name);
-		//if (!all && (i < extsize || (Q_strcasecmp(oneentry->d_name+i-extsize, ext))))
+		//if (!all && (i < extsize || (strcasecmp(oneentry->d_name+i-extsize, ext))))
 		//	continue;
 		if (!all && !strstr(oneentry->d_name, ext))
 			continue;
@@ -235,9 +224,9 @@ Sys_Printf
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-	static char		text[4096];
-	unsigned char		*p;
-	static char		msg[8];
+	char		text[4096];
+	char		msg[8];
+	unsigned char	*p;
 
 	va_start (argptr,fmt);
 	vsnprintf(text, sizeof(text), fmt, argptr);
@@ -245,16 +234,8 @@ void Sys_Printf (char *fmt, ...)
 //        	Sys_Error("memory overwrite in Sys_Printf.\n");
 	va_end (argptr);
 	
-	if (telnetport)
-	{
-		if (!(connected && authenticated))
-			return;
-	}
-	else
-	{
-		if (sys_nostdout.value)
-			return;
-	}
+	if (!(telnetport && telnet_connected && authenticated) && sys_nostdout.value)
+		return;
 
 	for (p = (unsigned char *)text; *p; p++) {
 //Commented by VVD
@@ -265,29 +246,27 @@ void Sys_Printf (char *fmt, ...)
 		if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
 		{
 			snprintf (msg, sizeof (msg), "[%02x]", *p);
-			if (telnetport)
-				write (iosock, msg, strlen (msg));
-			else
+			if (telnetport && telnet_connected && authenticated)
+				write (telnet_iosock, msg, strlen (msg));
+			if (!sys_nostdout.value)
 				putc(*msg, stdout);
 		}
 		else
 		{
-			if (telnetport)
+			if (telnetport && telnet_connected && authenticated)
 			{
-				write (iosock, p, 1);
+				write (telnet_iosock, p, 1);
 				if (*p == '\n')
-					write (iosock, "\r", 1);
+					write (telnet_iosock, "\r", 1);
 					// demand for M$ WIN 2K telnet support
 			}
-			else
-			{
+			if (!sys_nostdout.value)
 				putc(*p, stdout);
-			}
 		}
 	}
-	if (telnetport)
+	if (telnetport && telnet_connected && authenticated)
 		SV_Write_Log(TELNET_LOG, 3, text);
-	else
+	if (!sys_nostdout.value)
 		fflush(stdout);
 }
 
@@ -318,56 +297,46 @@ char *Sys_ConsoleInput (void)
 	static int	len = 0;
 
 #ifdef NEWWAY
-	fd_set	fdset;
-    struct timeval timeout;
+	fd_set		fdset;
+	struct timeval	timeout;
+	int		max = 1;
+	if (!(telnetport && telnet_connected) && !do_stdin)
+		return NULL;
 
-	if (telnetport)
+	FD_ZERO(&fdset);
+	if (telnetport && telnet_connected)
 	{
-		if (!connected)
-			return NULL;
-		FD_ZERO(&fdset);
-		FD_SET(iosock, &fdset);
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 0;
-		if (select (iosock + 1, &fdset, NULL, NULL, &timeout) == -1 || !FD_ISSET(iosock, &fdset))
-			return NULL;
+		FD_SET(telnet_iosock, &fdset);
+		max += telnet_iosock;
 	}
-	else
-	{
-		if (!do_stdin)
-			return NULL;
-		FD_ZERO(&fdset);
+	if (do_stdin)
 		FD_SET(0, &fdset); // stdin
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 0;
-		if (select (1, &fdset, NULL, NULL, &timeout) == -1 || !FD_ISSET(0, &fdset))
-			return NULL;
-	}
-#else
-	if (telnetport)
-	{
-		if (!iosock_ready || !connected)
-			return NULL;		// the select didn't say it was ready
-		iosock_ready = false;
-	}
-	else
-	{
-		if (!stdin_ready || !do_stdin)
-			return NULL;		// the select didn't say it was ready
-		stdin_ready = false;
-	}
+
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+
+	if (select (max + 1, &fdset, NULL, NULL, &timeout) == -1)
+		return NULL;
+
+	if (do_stdin)
+		stdin_ready = FD_ISSET(0, &fdset);
+	if (telnetport && telnet_connected)
+		iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 #endif
 
-	if (telnetport)
+	if (!(telnetport && iosock_ready && telnet_connected) && !(do_stdin && stdin_ready))
+		return NULL;		// the select didn't say it was ready
+
+	if (telnetport && iosock_ready && telnet_connected)
 	{
+		iosock_ready = false;
 		do
 		{
-			switch (read (iosock, text + len, 1))
+			switch (read (telnet_iosock, text + len, 1))
 			{
 				case 0:
-					len = connected = authenticated = 0;
-					close (iosock);
-					iosock = 0;
+					len = telnet_connected = authenticated = 0;
+					close (telnet_iosock);
 					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 					return NULL;
 				case 1: 
@@ -381,9 +350,8 @@ char *Sys_ConsoleInput (void)
 				default:
 					if (errno != EAGAIN) // demand for M$ WIN 2K telnet support
 					{
-						len = connected = authenticated = 0;
-						close (iosock);
-						iosock = 0;
+						len = telnet_connected = authenticated = 0;
+						close (telnet_iosock);
 						SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(errno)));
 					}
 					return NULL;
@@ -418,9 +386,8 @@ char *Sys_ConsoleInput (void)
 			else
 				if (strlen(text) == 1 && text[0] == 4)
 				{
-					len = connected = authenticated = 0;
-					close (iosock);
-					iosock = 0;
+					len = telnet_connected = authenticated = 0;
+					close (telnet_iosock);
 					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 				}
 				else
@@ -431,9 +398,8 @@ char *Sys_ConsoleInput (void)
 
 		if (strlen(text) == 1  && text[0] == 4)
 		{
-			len = connected = authenticated = 0;
-			close (iosock);
-			iosock = 0;
+			len = telnet_connected = authenticated = 0;
+			close (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 			len = 0;
 			return NULL;
@@ -441,8 +407,9 @@ char *Sys_ConsoleInput (void)
 		len = 0;
 		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
 	}
-	else
+	if (do_stdin && stdin_ready)
 	{
+		stdin_ready = false;
 		len = read (0, text, sizeof(text));
 		if (len == 0) {	// end of file
 			do_stdin = 0;
@@ -471,31 +438,38 @@ void Sys_Init (void)
 
 int NET_Sleep(double sec)
 {
-    struct timeval timeout;
-	fd_set	fdset;
-	extern	int		net_socket;
-	int m = max(net_socket, iosock);
+	struct timeval	timeout;
+	fd_set		fdset;
+	int		ret;
+	int		m;
 
 	FD_ZERO(&fdset);
+	FD_SET(m = net_serversocket, &fdset); // network socket
 	if (telnetport)
 	{
-		if (connected)
-			FD_SET(iosock, &fdset);
 	        FD_SET(net_telnetsocket, &fdset);
+		m = max(m, net_telnetsocket);
+		if (telnet_connected)
+		{
+			FD_SET(telnet_iosock, &fdset);
+			m = max(m, telnet_iosock);
+		}
 	}
-	else
-	{
-		if (do_stdin)
-			FD_SET(0, &fdset); // stdin is processed too
-	}
-	FD_SET(net_socket, &fdset); // network socket
+	if (do_stdin)
+		FD_SET(0, &fdset); // stdin is processed too
+	
 	timeout.tv_sec = (long) sec;
 	timeout.tv_usec = (sec - floor(sec))*1000000L;
 
-	if (telnetport)
-		return select(max(m, net_telnetsocket) + 1, &fdset, NULL, NULL, &timeout);
-	else
-		return select(net_socket+1, &fdset, NULL, NULL, &timeout);
+	ret = select (m + 1, &fdset, NULL, NULL, &timeout);
+
+	if (telnetport && telnet_connected)
+		iosock_ready = FD_ISSET(telnet_iosock, &fdset);
+
+	if (do_stdin)
+		stdin_ready = FD_ISSET(0, &fdset);
+
+	return ret;
 }
 
 void Sys_Sleep(unsigned long ms)
@@ -525,20 +499,20 @@ main
 
 int main (int argc, char *argv[])
 {
-	double			time, oldtime, newtime;
+	double		time, oldtime, newtime;
 	quakeparms_t	parms;
-	extern	int		net_socket;
 
 //Added by VVD {
 	int	j, tempsock;
 	struct	sockaddr_in remoteaddr, remoteaddr_temp;
 	int	sockaddr_len = sizeof(struct sockaddr_in);
-	double	cur_time_not_auth, not_auth_timeout_value, auth_timeout_value;
+	double	cur_time_not_auth = 0, not_auth_timeout_value, auth_timeout_value;
 //Added by VVD }
 #ifndef NEWWAY
-    struct timeval timeout;
+	struct timeval timeout;
 	fd_set	fdset;
 #endif
+	telnet_connected = 0;
 	memset (&parms, 0, sizeof(parms));
 
 	COM_InitArgv (argc, argv);	
@@ -557,12 +531,6 @@ int main (int argc, char *argv[])
 
 	SV_Init (&parms);
 
-	if (telnetport)
-	{
-		iosock = 0;
-		j = max(net_socket, net_telnetsocket);
-	}
-
 // run one frame immediately for first heartbeat
 	SV_Frame (0.1);		
 
@@ -578,10 +546,11 @@ int main (int argc, char *argv[])
 	// connected client times out, the message would not otherwise
 	// be printed until the next event.
 		FD_ZERO(&fdset);
+		FD_SET(j = net_serversocket, &fdset);
 // Added by VVD {
 		if (telnetport)
 		{
-			if (connected)
+			if (telnet_connected)
 			{
 				if ((tempsock =
 				accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
@@ -599,62 +568,54 @@ int main (int argc, char *argv[])
 					(authenticated && auth_timeout_value &&
 					Sys_DoubleTime () - cur_time_auth > auth_timeout_value))
 				{
-					connected = 0;
-					write (iosock, "Time for authentication finished.\n", 34);
-					close(iosock);
-					iosock = 0;
+					telnet_connected = 0;
+					write (telnet_iosock, "Time for authentication finished.\n", 34);
+					close(telnet_iosock);
 					SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 				}
-				else
-					FD_SET(iosock, &fdset);
 			}
 			else
 			{
-				if ((iosock =
+				if ((telnet_iosock =
 				accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
 				{
 //					if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 //					{
-						connected = 1;
-						FD_SET(iosock, &fdset);
+						telnet_connected = 1;
 						cur_time_not_auth = Sys_DoubleTime ();
 						SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-						write (iosock, "# ", 2);
+						write (telnet_iosock, "# ", 2);
 /*					}
 					else
 					{
-						close (iosock);
-						iosock = 0;
+						close (telnet_iosock);
 						SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 					}
 */
 				}
 			}
 			FD_SET(net_telnetsocket, &fdset);
+			j = max(j, net_telnetsocket);
+			if (telnet_connected)
+			{
+				FD_SET(telnet_iosock, &fdset);
+				j = max(j, telnet_iosock);
+			}
 		}
 // Added by VVD }
-		else
-		{
-			if (do_stdin)
-				FD_SET(0, &fdset);
-		}
-		FD_SET(net_socket, &fdset);
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 
-		if (telnetport) //Added by VVD
-		{
-			if (select (max(iosock, j) + 1, &fdset, NULL, NULL, &timeout) == -1)
-				continue;
-			if (connected)
-				iosock_ready = FD_ISSET(iosock, &fdset);
-		}
-		else
-		{
-			if (select (net_socket+1, &fdset, NULL, NULL, &timeout) == -1)
-				continue;
+		if (do_stdin)
+			FD_SET(0, &fdset);
+
+		if (select (j + 1, &fdset, NULL, NULL, &timeout) == -1)
+			continue;
+
+		if (do_stdin)
 			stdin_ready = FD_ISSET(0, &fdset);
-		}
+		if (telnetport && telnet_connected)
+			iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 
 	// find time passed since last cycle
 		newtime = Sys_DoubleTime ();

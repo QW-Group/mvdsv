@@ -62,7 +62,7 @@ cvar_t *Cvar_FindVar (char *var_name)
 	key = Key (var_name);
 	
 	for (var=cvar_hash[key] ; var ; var=var->hash_next)
-		if (!Q_strcasecmp (var_name, var->name))
+		if (!strcasecmp (var_name, var->name))
 			return var;
 
 	return NULL;
@@ -117,12 +117,12 @@ char *Cvar_CompleteVariable (char *partial)
 		
 	// check exact match
 	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
-		if (!Q_strcasecmp (partial,cvar->name))
+		if (!strcasecmp (partial,cvar->name))
 			return cvar->name;
 
 	// check partial match
 	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
-		if (!Q_strncasecmp (partial,cvar->name, len))
+		if (!strncasecmp (partial,cvar->name, len))
 			return cvar->name;
 
 	return NULL;
@@ -424,7 +424,7 @@ qboolean Cvar_Delete (char *name)
 	prev = NULL;
 	for (var = cvar_hash[key] ; var ; var=var->hash_next)
 	{
-		if (!Q_strcasecmp(var->name, name)) {
+		if (!strcasecmp(var->name, name)) {
 			// unlink from hash
 			if (prev)
 				prev->hash_next = var->next;
@@ -441,7 +441,7 @@ qboolean Cvar_Delete (char *name)
 	prev = NULL;
 	for (var = cvar_vars ; var ; var=var->next)
 	{
-		if (!Q_strcasecmp(var->name, name)) {
+		if (!strcasecmp(var->name, name)) {
 			// unlink from cvar list
 			if (prev)
 				prev->next = var->next;
