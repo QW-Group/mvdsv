@@ -1013,26 +1013,27 @@ SV_Status_f
 */
 void SV_Status_f (void)
 {
-	int			i, j, l;
+	int			i;
 	client_t	*cl;
 	float		cpu, avg, pak, demo = 0;
 	char		*s;
+	extern cvar_t	sv_use_dns;
 
-	cpu = (svs.stats.latched_active+svs.stats.latched_idle);
+	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
 
 	if (cpu)
 	{
-		demo = 100*svs.stats.latched_demo/cpu;
-		cpu = 100*svs.stats.latched_active/cpu;
+		demo = 100 * svs.stats.latched_demo   / cpu;
+		cpu  = 100 * svs.stats.latched_active / cpu;
 	}
 
-	avg = 1000*svs.stats.latched_active / STATFRAMES;
-	pak = (float)svs.stats.latched_packets/ STATFRAMES;
+	avg = 1000 * svs.stats.latched_active  / STATFRAMES;
+	pak = (float)svs.stats.latched_packets / STATFRAMES;
 
-	Con_Printf ("net address                 : %s\n",NET_AdrToString (net_local_adr));
-	Con_Printf ("cpu utilization (overall)   : %3i%%\n",(int)cpu);
+	Con_Printf ("net address                 : %s\n", NET_AdrToString (net_local_adr));
+	Con_Printf ("cpu utilization (overall)   : %3i%%\n", (int)cpu);
 	Con_Printf ("cpu utilization (recording) : %3i%%\n", (int)demo);
-	Con_Printf ("avg response time           : %i ms\n",(int)avg);
+	Con_Printf ("avg response time           : %i ms\n", (int)avg);
 	Con_Printf ("packets/frame               : %5.2f (%d)\n", pak, num_prstr);
 	
 // min fps lat drp
@@ -1043,94 +1044,62 @@ void SV_Status_f (void)
 		Con_Printf ("  address          rate ping drop\n");
 		Con_Printf ("  real ip\n");
 		Con_Printf ("  ---------------- ---- ---- -----\n");
-		for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		{
 			if (!cl->state)
 				continue;
 
-			Con_Printf ("%-16.16s  ", cl->name);
-
-			Con_Printf ("%6i %5i", cl->userid, (int)cl->edict->v.frags);
-			if (cl->spectator)
-				Con_Printf(" (s)\n");
-			else			
-				Con_Printf("\n");
+			Con_Printf ("%-18s %6i %5i%s\n", cl->name, cl->userid,
+				(int)cl->edict->v.frags, cl->spectator ? " (s)" : "");
 
 			s = NET_BaseAdrToString(cl->netchan.remote_address);
-			if (Cvar_VariableValue("sv_use_dns"))
-				s = SV_Resolve(s);
-			Con_Printf ("  %-16.16s", s);
+			Con_Printf ("  %-16s ", sv_use_dns.value ? SV_Resolve(s) : s);
 
-			if (cl->state == cs_connected || cl->state == cs_preconnected)
+			switch (cl->state)
 			{
-				Con_Printf ("CONNECTING\n");
-				continue;
+				case cs_connected:
+				case cs_preconnected:
+					Con_Printf ("CONNECTING\n");
+					continue;
+				case cs_zombie:
+					Con_Printf ("ZOMBIE\n");
+					continue;
 			}
-			if (cl->state == cs_zombie)
-			{
-				Con_Printf ("ZOMBIE\n");
-				continue;
-			}
-			Con_Printf ("%4i %4i %5.2f\n"
-				, (int)(1000*cl->netchan.frame_rate)
-				, (int)SV_CalcPing (cl)
-				, 100.0*cl->netchan.drop_count / cl->netchan.incoming_sequence);
+			Con_Printf ("%4i %4i %5.1f\n",
+				(int)(1000 * cl->netchan.frame_rate),
+				(int)SV_CalcPing (cl),
+				100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence);
 
 			if (cl->realip.ip[0])
-			{
-				s = NET_BaseAdrToString ( cl->realip);
-				Con_Printf ("  %-16.16s\n", s);
-			}
+				Con_Printf ("  %-16s\n", NET_BaseAdrToString (cl->realip));
 		}
 	} else {
 		Con_Printf ("frags id  address         name            rate ping drop  real ip\n");
 		Con_Printf ("----- --- --------------- --------------- ---- ---- ----- ---------------\n");
-		for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		{
 			if (!cl->state)
 				continue;
 			Con_Printf ("%5i %3i ", (int)cl->edict->v.frags,  cl->userid);
 
 			s = NET_BaseAdrToString(cl->netchan.remote_address);
-			if (Cvar_VariableValue("sv_use_dns"))
-				s = SV_Resolve(s);
-			Con_Printf ("%s", s);
-
-			l = 16 - strlen(s);
-			for (j=0 ; j<l ; j++)
-				Con_Printf (" ");
-			
-			Con_Printf ("%s", cl->name);
-			l = 16 - strlen(cl->name);
-			for (j=0 ; j<l ; j++)
-				Con_Printf (" ");
-			if (cl->state == cs_connected || cl->state == cs_preconnected)
+			Con_Printf ("%-15s %-15s ", sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
+			switch (cl->state)
 			{
-				Con_Printf ("CONNECTING\n");
-				continue;
+				case cs_connected:
+				case cs_preconnected:
+					Con_Printf ("CONNECTING\n");
+					continue;
+				case cs_zombie:
+					Con_Printf ("ZOMBIE\n");
+					continue;
 			}
-			if (cl->state == cs_zombie)
-			{
-				Con_Printf ("ZOMBIE\n");
-				continue;
-			}
-			Con_Printf ("%4i %4i %3.1f"
-				, (int)(1000*cl->netchan.frame_rate)
-				, (int)SV_CalcPing (cl)
-				, 100.0*cl->netchan.drop_count / cl->netchan.incoming_sequence);
-
-			if (cl->realip.ip[0])
-			{
-				s = NET_BaseAdrToString ( cl->realip);
-				Con_Printf ("   %-16.16s", s);
-			}
-
-			if (cl->spectator)
-				Con_Printf(" (s)");
-
-			Con_Printf("\n");
-
-				
+			Con_Printf ("%4i %4i %5.1f %s %s\n",
+				(int)(1000 * cl->netchan.frame_rate),
+				(int)SV_CalcPing (cl),
+				100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence,
+				cl->realip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
+				cl->spectator ? "(s)" : "");
 		}
 	}
 	Con_Printf ("\n");
@@ -1222,13 +1191,12 @@ void SV_Check_maps_f(void)
 SV_ConSay_f
 ==================
 */
-#define	CONSOLE_SAY	"console: "
 void SV_ConSay_f(void)
 {
 	client_t *client;
 	int		j;
 	char	*p;
-	char	text[1024] = CONSOLE_SAY;
+	char	text[1024] = "console: ";
 
 	if (Cmd_Argc () < 2)
 		return;

@@ -29,8 +29,8 @@
 #endif
 
 #define	QW_VERSION		2.40
-#define QWE_VERSION	"0.1727 Beta DEVELOP"
-#define QWE_VERNUM 0.1727
+#define QWE_VERSION	"0.1728"
+#define QWE_VERNUM 0.1728
 #define LINUX_VERSION 0.98
 #define PROJECT_NAME	"QWExtended"
 #define SERVER_NAME	"MVDSV"

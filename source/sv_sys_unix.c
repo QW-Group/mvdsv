@@ -143,7 +143,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 //	int	i;
 //	int	extsize;
 	DIR	*dir;
-  DIR *testdir; //bliP: list dir
+	DIR	*testdir; //bliP: list dir
 	struct dirent *oneentry;
 	char	pathname[MAX_OSPATH];
 	qboolean all;
@@ -194,7 +194,8 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		snprintf(pathname, MAX_OSPATH, "%s/%s", path, oneentry->d_name);
 		list[d.numfiles].size = Sys_FileSize(pathname);
 		list[d.numfiles].time = Sys_FileTime(pathname);
-		d.size += list[d.numfiles].size;*/
+		d.size += list[d.numfiles].size;
+*/
     //<-
 
 		//i = strlen(oneentry->d_name);
@@ -202,7 +203,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		//	continue;
 		if (!all && !strstr(oneentry->d_name, ext))
 			continue;
-
+		
 		strlcpy (list[d.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
 		if (++d.numfiles == MAX_DIRFILES - 1)
