@@ -623,7 +623,7 @@ void SV_UpdateClientStats (client_t *client)
 	stats[STAT_NAILS] = ent->v.ammo_nails;
 	stats[STAT_ROCKETS] = ent->v.ammo_rockets;
 	stats[STAT_CELLS] = ent->v.ammo_cells;
-	if (!client->spectator)
+	if (!client->spectator || client->spec_track > 0)
 		stats[STAT_ACTIVEWEAPON] = ent->v.weapon;
 	// stuff the sigil bits into the high bits of items for sbar
 	stats[STAT_ITEMS] = (int)ent->v.items | ((int)pr_global_struct->serverflags << 28);

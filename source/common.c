@@ -1772,6 +1772,50 @@ char *Info_ValueForKey (char *s, char *key)
 	}
 }
 
+
+char *Info_KeyNameForKeyNum (char *s, int key)
+{
+	static	char pkey[4][512];	// use two buffers so compares
+								// work without stomping on each other
+	static	int	keyindex;
+	char	*o;
+	
+	keyindex = (keyindex + 1) % 4;
+	if (*s == '\\')
+		s++;
+
+	// ?
+	if (key < 1)
+		return NULL;
+
+	while (1)
+	{
+		key--;
+
+		// get key name
+		o = pkey[keyindex];
+		while (*s != '\\')
+		{
+			if (!*s)
+				return "";
+			*o++ = *s++;
+		}
+		*o = 0;
+		s++;
+
+		// skip key value
+		while (*s != '\\' && *s) s++;
+		
+		if (!key)
+			return pkey[keyindex];
+
+		if (!*s)
+			return NULL;
+		s++;
+	}
+}
+
+
 void Info_RemoveKey (char *s, char *key)
 {
 	char	*start;

@@ -1274,9 +1274,9 @@ char *shortinfotbl[] =
 	"skin",
 	"topcolor",
 	"bottomcolor",
-	"*client",
-	"*spectator",
-	"*VIP",
+	//"*client",
+	//"*spectator",
+	//"*VIP",
 	NULL
 };
 
@@ -1343,6 +1343,18 @@ void SV_SetInfo_f (void)
 			MSG_WriteString (&sv.reliable_datagram, new);
 			break;
 		}
+
+	// if start key send to others
+	if (Cmd_Argv(1)[0] == '*') {
+		char *new = Info_ValueForKey(host_client->userinfo, Cmd_Argv(1));
+		Info_SetValueForKey (host_client->userinfoshort, Cmd_Argv(1), new, MAX_INFO_STRING);
+
+		i = host_client - svs.clients;
+		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
+		MSG_WriteByte (&sv.reliable_datagram, i);
+		MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));
+		MSG_WriteString (&sv.reliable_datagram, new);
+	}
 }
 
 /*

@@ -352,8 +352,10 @@ char *Sys_ConsoleInput (void)
 	return NULL;
 }
 
+void SleepUntilInput(int);
 void Sys_Sleep (void)
 {
+	SleepUntilInput(1);
 }
 
 

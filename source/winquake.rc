@@ -21,6 +21,56 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 #endif //_WIN32
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG2 DIALOGEX 50, 20, 279, 233
+STYLE WS_MINIMIZEBOX | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Mvdsv - QW server"
+CLASS "mvdsv"
+FONT 9, "Arial"
+BEGIN
+    EDITTEXT        IDC_EDIT2,6,193,268,13,ES_AUTOHSCROLL | WS_GROUP
+    DEFPUSHBUTTON   "OK",IDC_OK,265,215,9,10,NOT WS_VISIBLE
+    PUSHBUTTON      "QUIT",IDC_QUIT,224,211,50,14,WS_GROUP
+    EDITTEXT        IDC_EDIT1,6,5,268,181,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_READONLY | ES_WANTRETURN | NOT WS_BORDER | WS_VSCROLL | 
+                    NOT WS_TABSTOP,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "CLEAR",IDC_CLEAR,6,211,50,14
+END
+
+IDD_DIALOG1 DIALOGEX 0, 0, 167, 27
+STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_CENTER | WS_POPUP | 
+    WS_VISIBLE
+EXSTYLE WS_EX_TOOLWINDOW | WS_EX_CLIENTEDGE
+FONT 16, "Times New Roman", 0, 0, 0x1
+BEGIN
+    CONTROL         117,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,0,0,
+                    167,28
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_DIALOG2, DIALOG
+    BEGIN
+        LEFTMARGIN, 6
+        RIGHTMARGIN, 274
+        TOPMARGIN, 5
+        BOTTOMMARGIN, 225
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -55,22 +105,6 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON2               ICON    DISCARDABLE     "qwcl2.ico"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_DIALOG1 DIALOGEX 0, 0, 167, 27
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_CENTER | WS_POPUP | 
-    WS_VISIBLE
-EXSTYLE WS_EX_TOOLWINDOW | WS_EX_CLIENTEDGE
-FONT 16, "Times New Roman"
-BEGIN
-    CONTROL         117,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,0,0,
-                    167,28
-END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
