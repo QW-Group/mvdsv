@@ -1026,7 +1026,7 @@ void FreeFileList(flist_t *flist)
 			free(*p);
 
 		free(flist->list);
-		flist->list == NULL;
+		flist->list = NULL;
 	}
 }
 

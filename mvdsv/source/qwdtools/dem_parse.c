@@ -493,6 +493,7 @@ qboolean findPlayer(char *name)
 	for (i=0; i < MAX_CLIENTS; i++)
 		if (!strcmp(name, world.players[i].name))
 			return true;
+	return false;
 }
 
 /*

@@ -51,6 +51,7 @@ cvar_t	sv_airaccelerate	 = { "sv_airaccelerate", "10"};
 cvar_t	sv_wateraccelerate	 = { "sv_wateraccelerate", "10"};     
 cvar_t	sv_friction			 = { "sv_friction", "4"};      
 cvar_t	sv_waterfriction	 = { "sv_waterfriction", "4"};      
+cvar_t	sv_bunnyspeedcap	 = {"sv_bunnyspeedcap", "", CVAR_SERVERINFO};
 
 cvar_t	sv_max_addspeed = {"pm_max_addspeed","0",CVAR_SERVERINFO};
 cvar_t	sv_max_addspeed_type = {"pm_max_addspeed_type","0",CVAR_SERVERINFO};

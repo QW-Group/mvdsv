@@ -618,12 +618,23 @@ void Con_DrawConsole (int lines)
 
 	// draw the download bar
 	// figure out width
-	if (cls.download) {
-		if ((text = strrchr(cls.downloadname, '/')) != NULL)
-			text++;
+	if (cls.download || cls.upload) { //bliP
+		if (cls.download) {
+			if ((text = strrchr(cls.downloadname, '/')) != NULL)
+				text++;
+			else
+				text = cls.downloadname;
+		}
+//bliP ->
+		else if (cls.upload) {
+			if ((text = strrchr(cls.uploadname, '/')) != NULL)
+				text++;
+			else
+				text = cls.uploadname;
+		}
 		else
-			text = cls.downloadname;
-
+			return; //lol? - no ;-)
+//<-
 		x = con_linewidth - ((con_linewidth * 7) / 40);
 		y = x - strlen(text) - 10;
 		i = con_linewidth/3;
@@ -650,8 +661,12 @@ void Con_DrawConsole (int lines)
 		dlbar[i++] = '\x82';
 		dlbar[i] = 0;
 		i = strlen(dlbar);
-		snprintf(dlbar + i, sizeof(dlbar) - i,
-			" %02d%%(%dkb/s)", cls.downloadpercent, cls.downloadrate);
+		if (cls.download)
+			sprintf(dlbar + i, " %02d%%(%dkb/s)", cls.downloadpercent, cls.downloadrate);
+		else if (cls.upload)
+			sprintf(dlbar + i, " %02d%%(%dkb/s)", cls.uploadpercent, cls.uploadrate);
+		else
+			return;
 
 		// draw it
 		y = con_vislines-22 + 8;

@@ -42,7 +42,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /G6 /GX /O2 /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "id386" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /GX /O2 /D "SERVERONLY" /D "WIN32" /D "id386" /D "LITTLE_ENDIAN" /Fp".\SRelease/mvdsv.pch" /YX /FD /c
+# SUBTRACT CPP /Fr
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -50,7 +51,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o".\SRelease/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"d:/quake/mvdsv_vvd.exe"
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"..\mvdsv-current.exe"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
@@ -67,7 +68,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /W3 /GX /ZI /Od /D "_DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /D "id386" /FR /Fp".\SDebug/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /W3 /GX /ZI /Od /D "_DEBUG" /D "SERVERONLY" /D "WIN32" /D "id386" /D "_CONSOLE" /FR /Fp".\SDebug/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -75,7 +76,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o".\SDebug/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386
-# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /map /debug /machine:I386 /out:".\SDebug/mvdsv.exe"
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /map /debug /machine:I386 /out:".\SDebug\mvdsv-blip.exe"
 # SUBTRACT LINK32 /profile
 
 !ENDIF 
@@ -138,6 +139,10 @@ SOURCE=.\pr_edict.c
 # Begin Source File
 
 SOURCE=.\pr_exec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\sha1.c
 # End Source File
 # Begin Source File
 
@@ -351,6 +356,10 @@ SOURCE=.\screen.h
 # Begin Source File
 
 SOURCE=.\server.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\sha1.h
 # End Source File
 # Begin Source File
 

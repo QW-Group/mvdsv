@@ -227,9 +227,10 @@ sprint(clientent, value)
 void PF_sprint (void)
 {
 	char		*s;
-	client_t	*client;
+	client_t	*client, *cl;
 	int			entnum;
 	int			level;
+  int i;
 	
 	entnum = G_EDICTNUM(OFS_PARM0);
 	level = G_FLOAT(OFS_PARM1);
@@ -241,11 +242,26 @@ void PF_sprint (void)
 		Con_Printf ("tried to sprint to a non-client\n");
 		return;
 	}
-		
+	
 	client = &svs.clients[entnum-1];
 	
 	SV_ClientPrintf (client, level, "%s", s);
+
+  //bliP: spectator print ->
+	if (sv_specprint.value)
+	{
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		{
+			if (!cl->state || !cl->spectator)
+				continue;
+
+			if ((cl->spec_track == entnum) && cl->spec_print)
+				SV_ClientPrintf (cl, level, "%s", s);
+		}
+	}
+  //<-
 }
+
 
 
 /*
@@ -261,7 +277,8 @@ void PF_centerprint (void)
 {
 	char		*s;
 	int			entnum;
-	client_t	*cl;
+	client_t	*cl, *spec;
+  int i;
 	
 	entnum = G_EDICTNUM(OFS_PARM0);
 	s = PF_VarString(1);
@@ -282,6 +299,23 @@ void PF_centerprint (void)
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_centerprint);
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, s);
 	}
+
+  //bliP: spectator print ->
+	if (sv_specprint.value)
+	{
+		for (i = 0, spec = svs.clients; i < MAX_CLIENTS; i++, spec++)
+		{
+			if (!cl->state || !spec->spectator)
+				continue;
+		
+			if ((spec->spec_track == entnum) && cl->spec_print)
+			{
+				ClientReliableWrite_Begin (spec, svc_centerprint, 2 + strlen(s));
+				ClientReliableWrite_String (spec, s);
+			}
+		}
+	}
+  //<-
 }
 
 
@@ -690,9 +724,9 @@ void PF_stuffcmd (void)
 {
 	int		entnum;
 	char	*str;
-	client_t	*cl;
+	client_t	*cl, *spec;
 	char	*buf;
-	int		i;
+	int		i, j;
 	
 	entnum = G_EDICTNUM(OFS_PARM0);
 	if (entnum < 1 || entnum > MAX_CLIENTS)
@@ -724,7 +758,25 @@ void PF_stuffcmd (void)
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
 				MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
 			}
-			buf[0] = 0;
+
+      //bliP: spectator print ->
+			if (sv_specprint.value)
+			{
+				for (j = 0, spec = svs.clients; j < MAX_CLIENTS; j++, spec++)
+				{
+					if (!cl->state || !spec->spectator)
+						continue;
+					
+					if ((spec->spec_track == entnum) && cl->spec_print)
+					{
+						ClientReliableWrite_Begin (spec, svc_stufftext, 2+strlen(buf));
+						ClientReliableWrite_String (spec, buf);
+					}
+				}
+			}
+      //<-
+
+  		buf[0] = 0;
 		}
 	}
 }
@@ -2048,6 +2100,10 @@ void PF_makestatic (void)
 	int		i;
 	
 	ent = G_EDICT(OFS_PARM0);
+  //bliP: for maps with null models which crash clients (nmtrees.bsp) ->
+  if (!SV_ModelIndex(PR_GetString(ent->v.model)))
+    return;
+  //<-
 
 	MSG_WriteByte (&sv.signon,svc_spawnstatic);
 
@@ -2128,7 +2184,6 @@ void PF_logfrag (void)
 	struct tm	*tblock;
 	// <-
 
-
 	ent1 = G_EDICT(OFS_PARM0);
 	ent2 = G_EDICT(OFS_PARM1);
 
@@ -2142,17 +2197,163 @@ void PF_logfrag (void)
 	t = time (NULL);
 	tblock = localtime (&t);
 
-	if (Cvar_VariableValue ("frag_log_type")) // need for old-style frag log file
-		s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
-				tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
-				tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
-	else
-		s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
+  //bliP: date check ->
+  if (!tblock)
+    s = va("%s\n", "#bad date#");
+  else {
+  	if (Cvar_VariableValue ("frag_log_type")) // need for old-style frag log file
+	  	s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
+		  		tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
+			  	tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+	  else
+  		s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
+  }
+  //<-
 	// <-
 	SZ_Print (&svs.log[svs.logsequence&1], s);
 	SV_Write_Log(FRAG_LOG, 1, s);
 }
 
+//bliP: find map ->
+/*==================
+PF_findmap
+finds maps in sv_gamedir for proper map voting
+either by id number or name, 1 for exist, 0 for not
+findmap(mapname/id)
+==================*/
+void PF_findmap (void)
+{
+  dir_t	dir;
+	file_t *list;
+  char map[MAX_DEMO_NAME];
+  char *s;
+  int id;
+  int i;
+
+	strlcpy(map, G_STRING(OFS_PARM0), sizeof(map));
+  if ((s = strchr(map, '.')) == NULL)
+    strlcat(map, ".bsp", sizeof(map));
+  id = Q_atoi(map);  
+
+	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")), ".bsp", SORT_BY_NAME);
+	list = dir.files;
+
+  i = 1;
+	while (list->name[0]) {
+    if ((id && i == id) || !strcmp(list->name, map)) {
+			G_FLOAT(OFS_RETURN) = 1;
+      return;
+    }
+    i++;
+    list++;
+	}
+
+ 	G_FLOAT(OFS_RETURN) = 0;
+}
+
+/*==================
+PF_listmaps
+prints a range of map names from sv_gamedir (for thundervote)
+returns position if more maps, 0 if displayed them all
+listmaps(client, level, number_to_display, start_position, footer)
+==================*/
+void PF_listmaps (void)
+{
+  int entnum, level, start, range, foot;
+  client_t	*client;
+  char line[256];
+  char tmp[64];
+  char num[16];
+  dir_t	dir;
+	file_t *list;
+  char *s;
+  int id, pad;
+  int ti, i, j;
+  
+  entnum = G_EDICTNUM(OFS_PARM0);
+  level = G_FLOAT(OFS_PARM1);
+  range = G_FLOAT(OFS_PARM2);
+  start = G_FLOAT(OFS_PARM3);
+  foot = G_FLOAT(OFS_PARM4);
+
+	if (entnum < 1 || entnum > MAX_CLIENTS)	{
+		Con_Printf ("tried to listmap to a non-client\n");
+    G_FLOAT(OFS_RETURN) = 0;
+		return;
+	}
+
+	client = &svs.clients[entnum-1];  
+  dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")), ".bsp", SORT_BY_NAME);
+	list = dir.files;
+  snprintf(tmp, sizeof(tmp), "%d", dir.numfiles);
+  pad = strlen(tmp);
+
+  if (!list->name[0]) {
+    SV_ClientPrintf(client, level, "No maps.\n");
+    G_FLOAT(OFS_RETURN) = 0;
+    return;
+  }
+
+  //don't go off the end of the world
+  if ((range < 0) || (range > dir.numfiles)) {
+    range = dir.numfiles;
+  }
+  start--;
+  if ((start < 0) || (start > dir.numfiles-1)) {
+    start = 0;
+  }
+  ti = (range <= 10) ? range : 10;
+
+  //header - progs can do this
+  /*if (!start) {
+    SV_ClientPrintf(client, level, "Available maps:\n");
+  }*/
+
+  list = dir.files + start;
+  line[0] = '\0';
+  j = 1;
+  for (i = 0, id = start + 1; list->name[0] && i < range && id < dir.numfiles + 1; id++) {
+    if ((s = strchr(list->name, '.'))) //strip .bsp
+      *s = '\0';
+    
+    if (i % ti == 0) { //print header     
+      snprintf(tmp, sizeof(tmp), "%d-%d", id, id + ti - 1);
+      num[0] = '\0';
+      for (j = strlen(tmp); j < ((pad * 2) + 1); j++) //padding to align
+        strlcat(num, " ", sizeof(num));
+      SV_ClientPrintf(client, level, "%s%s %c ", num, tmp, 133);
+      j = 1;
+    }
+    i++;
+
+    //print id and name
+    snprintf(tmp, sizeof(tmp), "%d:%s ", j++, list->name);
+    if (i % 2 != 0) //red every second
+      Q_redtext(tmp);
+    strlcat(line, tmp, sizeof(line));
+
+    if (i % 10 == 0) { //print entire line
+      SV_ClientPrintf(client, level, "%s\n", line);
+      line[0] = '\0';
+    }
+    list++;
+  }
+  if (line[0]) { //still things to print
+    SV_ClientPrintf(client, level, "%s\n", line);
+  }
+
+  if (id < dir.numfiles + 1) { //more to come
+    G_FLOAT(OFS_RETURN) = id;
+    return;
+  } 
+
+  if (foot) { //footer
+    SV_ClientPrintf (client, level,	"Total: %d maps %.0fKB (%.2fMB)\n", dir.numfiles, (float)dir.size/1024, (float)dir.size/1024/1024);
+  }
+
+  G_FLOAT(OFS_RETURN) = 0;
+}
+//<-
 
 /*
 ==============
@@ -2185,7 +2386,8 @@ void PF_infokey (void)
 		else if (!strncmp(key, "realip", 7))
 			strlcpy(ov, NET_BaseAdrToString (cl->realip), sizeof(ov));
 		else if (!strncmp(key, "download", 9))
-			snprintf(ov, sizeof(ov), "%d", cl->download != NULL ? (int)(100*cl->downloadcount/cl->downloadsize) : -1);
+			//snprintf(ov, sizeof(ov), "%d", cl->download != NULL ? (int)(100*cl->downloadcount/cl->downloadsize) : -1);
+			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
 		else if (!strncmp(key, "ping", 5))
 			snprintf(ov, sizeof(ov), "%d", SV_CalcPing (cl));
 		else if (!strncmp(key, "login", 6))
@@ -2235,6 +2437,58 @@ void PF_multicast (void)
 	SV_Multicast (o, to);
 }
 
+//bliP: added as requested (mercury) ->
+void PF_sin (void)
+{
+	G_FLOAT(OFS_RETURN) = sin(G_FLOAT(OFS_PARM0));
+}
+
+void PF_cos (void)
+{
+	G_FLOAT(OFS_RETURN) = cos(G_FLOAT(OFS_PARM0));
+}
+
+void PF_sqrt (void)
+{
+	G_FLOAT(OFS_RETURN) = sqrt(G_FLOAT(OFS_PARM0));
+}
+
+void PF_min (void)
+{
+	// LordHavoc: 3+ argument enhancement suggested by FrikaC
+	if (pr_argc == 2)
+		G_FLOAT(OFS_RETURN) = min(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1));
+	else if (pr_argc >= 3)
+	{
+		int i;
+		float f = G_FLOAT(OFS_PARM0);
+		for (i = 1;i < pr_argc;i++)
+			if (G_FLOAT((OFS_PARM0+i*3)) < f)
+				f = G_FLOAT((OFS_PARM0+i*3));
+		G_FLOAT(OFS_RETURN) = f;
+	}
+	else
+		Sys_Error("min: must supply at least 2 floats\n");
+}
+
+void PF_max (void)
+{
+	// LordHavoc: 3+ argument enhancement suggested by FrikaC
+	if (pr_argc == 2)
+		G_FLOAT(OFS_RETURN) = max(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1));
+	else if (pr_argc >= 3)
+	{
+		int i;
+		float f = G_FLOAT(OFS_PARM0);
+		for (i = 1;i < pr_argc;i++)
+			if (G_FLOAT((OFS_PARM0+i*3)) > f)
+				f = G_FLOAT((OFS_PARM0+i*3));
+		G_FLOAT(OFS_RETURN) = f;
+	}
+	else
+		Sys_Error("max: must supply at least 2 floats\n");
+}
+//<-
 
 void PF_Fixme (void)
 {
@@ -2285,7 +2539,7 @@ PF_rint,
 PF_floor,
 PF_ceil,
 PF_Fixme,
-PF_checkbottom,
+PF_checkbottom, //40
 PF_pointcontents,
 PF_Fixme,
 PF_fabs,
@@ -2295,7 +2549,7 @@ PF_localcmd,
 PF_nextent,
 PF_Fixme,
 PF_changeyaw,
-PF_Fixme,
+PF_Fixme, //50
 PF_vectoangles,
 
 PF_WriteByte,
@@ -2305,13 +2559,16 @@ PF_WriteLong,
 PF_WriteCoord,
 PF_WriteAngle,
 PF_WriteString,
-PF_WriteEntity,
+PF_WriteEntity, //59
 
-PF_Fixme,
-PF_Fixme,
-PF_Fixme,
-PF_Fixme,
-PF_Fixme,
+//bliP: added pr as requested ->
+PF_sin, //float(float f) sin = #60;
+PF_cos, //float(float f) cos = #61;
+PF_sqrt, //float(float f) sqrt = #62;
+PF_min, //float(float val1, float val2) min = #63;
+PF_max, //float(float val1, float val2) max = #64;
+//<-
+
 PF_Fixme,
 PF_Fixme,
 
@@ -2358,7 +2615,11 @@ PF_strncpy,
 PF_log,
 PF_redirectcmd,
 PF_calltimeofday,
-PF_forcedemoframe	//103
+PF_forcedemoframe,	//103
+//bliP: find map ->
+PF_findmap, //104
+PF_listmaps //105
+//<-
 };
 
 builtin_t *pr_builtins = pr_builtin;

@@ -34,7 +34,8 @@ typedef struct
 {
 	char	name[MAX_DEMO_NAME];
 	int		size;
-	int		time;	
+	int		time;
+  qboolean isdir; //bliP: list dir
 } file_t;
 
 typedef struct
@@ -54,6 +55,7 @@ int Sys_FileRead (int handle, void *dest, int count);
 int Sys_FileWrite (int handle, void *data, int count);
 int	Sys_FileTime (char *path);
 void Sys_mkdir (char *path);
+int Sys_rmdir (char *path);
 int Sys_remove (char *path);
 dir_t Sys_listdir (char *path, char *ext, int sort_type);
 int Sys_compare_by_date(const void *a, const void *b);
@@ -78,7 +80,7 @@ void Sys_Error (char *error, ...);
 void Sys_Printf (char *fmt, ...);
 // send text to the console
 
-void Sys_Quit (void);
+void Sys_Quit (qboolean restart);
 
 double Sys_DoubleTime (void);
 

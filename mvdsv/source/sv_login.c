@@ -201,7 +201,7 @@ void SV_CreateAccount_f(void)
 
 	if (Cmd_Argc() < 2)
 	{
-		Con_Printf("usage: acc_create <login> [<password>]\n       acc_create <adress> <username>\nmaximum %d characters for login/pass\n", MAX_LOGINNAME - 1);
+		Con_Printf("usage: acc_create <login> [<password>]\n       acc_create <address> <username>\nmaximum %d characters for login/pass\n", MAX_LOGINNAME - 1); //bliP: adress typo
 		return;
 	}
 
@@ -215,7 +215,7 @@ void SV_CreateAccount_f(void)
 		use = use_ip;
 		if (Cmd_Argc() < 3)
 		{
-			Con_Printf("usage: acc_create <adress> <username>\nmaximum %d characters for username\n", MAX_LOGINNAME - 1);
+			Con_Printf("usage: acc_create <address> <username>\nmaximum %d characters for username\n", MAX_LOGINNAME - 1); //bliP; adress typo
 			return;
 		}
 	} else {

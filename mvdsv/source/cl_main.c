@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 cvar_t	rcon_password = {"rcon_password", ""};
 cvar_t	rcon_address = {"rcon_address", ""};
+cvar_t	cl_crypt_rcon = {"cl_crypt_rcon", "0"};
 
 cvar_t	cl_timeout = {"cl_timeout", "60"};
 
@@ -267,7 +268,7 @@ void CL_Connect_f (void)
 
 	CL_Disconnect ();
 
-	strlcpy (cls.servername, server, sizeof(cls.servername), MAX_OSPATH);
+	strlcpy (cls.servername, server, sizeof(cls.servername)/*, MAX_OSPATH*/);
 	CL_BeginServerConnect();
 }
 
@@ -698,6 +699,7 @@ void CL_Init (void)
 
 	Cvar_RegisterVariable (&rcon_password);
 	Cvar_RegisterVariable (&rcon_address);
+	Cvar_RegisterVariable (&cl_crypt_rcon);
 
 	Cvar_RegisterVariable (&entlatency);
 	Cvar_RegisterVariable (&cl_predict_players2);
@@ -1055,7 +1057,7 @@ void Host_Init (quakeparms_t *parms)
 
 	Host_FixupModelNames();
 	
-	NET_Init (PORT_CLIENT, 0);
+	NET_Init (PORT_CLIENT, 0, 0);
 
 	Netchan_Init ();
 

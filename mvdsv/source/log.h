@@ -2,12 +2,8 @@
 #ifndef _LOG
 #define _LOG
 #include <time.h>
-#define	CONSOLE_LOG		0
-#define	ERROR_LOG		1
-#define	RCON_LOG		2
-#define	TELNET_LOG		3
-#define	FRAG_LOG		4
-#define	MAX_LOG			5
+enum {	MIN_LOG = 0, CONSOLE_LOG = 0, ERROR_LOG,  RCON_LOG,
+	TELNET_LOG,  FRAG_LOG,        PLAYER_LOG, MAX_LOG};
 
 typedef struct log_s {
 	FILE		*sv_logfile;
@@ -18,8 +14,14 @@ typedef struct log_s {
 	xcommand_t	function;
 	int			log_level;
 } log_t;
+
 extern	log_t	logs[];
 extern	cvar_t	frag_log_type;
 extern	cvar_t	telnet_log_level;
+
+//bliP: logging
+void SV_Logfile (int sv_log, qboolean newlog);
+void SV_LogPlayer(client_t *cl, char *msg, int level);
+//<-
 void	SV_Write_Log(int sv_log, int level, char *msg);
 #endif

@@ -265,7 +265,7 @@ void Marge (sizebuf_t *dest, int start, int end)
 	zn_t zn1, zn2, znd;
 	header_t *d, *t;
 	source_t *who;
-	sizebuf_t tmp, *m1, *m2, *m3;
+	sizebuf_t tmp, *m1, *m2;
 	byte	buffer[45*MAX_MSGLEN];
 	int num, n2, n3, num2;
 

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "keys.h"
 #include "sound.h"
+#include "sbar.h" //bliP
 #include <commctrl.h>
 
 #define MAX_MODE_LIST	30
@@ -39,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define NO_MODE					(MODE_WINDOWED - 1)
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 1)
 
-#define VMODE_MODEDESC_LEN
+#define	VMODE_MODEDESC_LEN	17
 typedef struct {
 	modestate_t	type;
 	int			width;
@@ -1119,7 +1120,7 @@ LONG WINAPI MainWndProc (
 			if (MessageBox (mainwindow, "Are you sure you want to quit?", "Confirm Exit",
 						MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES)
 			{
-				Sys_Quit ();
+				Sys_Quit (false);
 			}
 
 	        break;
