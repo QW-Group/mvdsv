@@ -592,7 +592,7 @@ void SVC_DirectConnect (void)
 	client_t	temp;
 	edict_t		*ent;
 	int			edictnum;
-	char		*s;
+	char		*s, *key;
 	int			clients, spectators, vips;
 	qboolean	spectator;
 	int			qport;
@@ -829,6 +829,16 @@ void SVC_DirectConnect (void)
 	{
 		s = Info_ValueForKey(newcl->userinfo, shortinfotbl[i]);
 		Info_SetValueForStarKey (newcl->userinfoshort, shortinfotbl[i], s, MAX_INFO_STRING);
+	}
+
+	// move star keys to infoshort
+	for (i= 1; (key = Info_KeyNameForKeyNum(newcl->userinfo, i)) != NULL; i++)
+	{
+		if (key[0] != '*')
+			continue;
+
+		s = Info_ValueForKey(newcl->userinfo, key);
+		Info_SetValueForStarKey (newcl->userinfoshort, key, s, MAX_INFO_STRING);
 	}
 
 	// JACK: Init the floodprot stuff.

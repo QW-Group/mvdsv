@@ -147,6 +147,7 @@ qboolean NET_GetPacket (int net_socket)
 	int 	ret;
 	struct sockaddr_in	from;
 	int		fromlen;
+	unsigned long _true = 1;
 
 // Tonik -->
 	if (net_socket == net_clientsocket && loop_s2c_messageLength > 0)
@@ -174,6 +175,7 @@ qboolean NET_GetPacket (int net_socket)
 // <-- Tonik
 
 	fromlen = sizeof(from);
+	//ioctlsocket (net_socket, FIONBIO, &_true);
 	ret = recvfrom (net_socket, (char *)net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
 	SockadrToNetadr (&from, &net_from);
 
@@ -236,9 +238,9 @@ void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 		return;
 	}
 // <-- Tonik
-
 	NetadrToSockadr (&to, &addr);
 
+//#ifdef SERVERONLY
 	ret = sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr) );
 	if (ret == -1)
 	{
@@ -339,12 +341,13 @@ int NET_Init (int clientport, int serverport)
 
 	wVersionRequested = MAKEWORD(1, 1); 
 
-	r = WSAStartup (MAKEWORD(1, 1), &winsockdata);
+	r = WSAStartup (MAKEWORD(2, 0), &winsockdata);
+	//r = WSAStartup (MAKEWORD(1, 1), &winsockdata);
 
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 
-	//
+	// 
 	// open the single socket to be used for all communications
 	//
 //	net_socket = UDP_OpenSocket (port);
@@ -353,6 +356,13 @@ int NET_Init (int clientport, int serverport)
 
 	if (serverport)
 		net_serversocket = UDP_OpenSocket (&serverport, false);
+
+#if 0//ndef SERVERONLY
+	{
+		static DWORD id;
+		CreateThread( NULL, 0, NET_SendTo_, NULL, 0, &id);
+	}
+#endif
 	//
 	// init the message buffer
 	//

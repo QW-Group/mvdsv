@@ -1,4 +1,11 @@
 ----
+QWEX v0.170b Beta DEVELOP
+[server]
+- just minor changes:
+  all star keys from userinfo are visible to clients
+  active weapon of the chased player is visible on the spectators HUD
+
+----
 QWEX v0.169 Beta DEVELOP
 [server]
 - commands admin and judge unbanned (be sure to use fixed ktpro!)

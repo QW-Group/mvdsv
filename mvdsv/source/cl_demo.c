@@ -703,7 +703,7 @@ static void CL_Record (void)
 		MSG_WriteByte (&buf, svc_updateuserinfo);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteLong (&buf, player->userid);
-		MSG_WriteString (&buf, player->userinfoshort);
+		MSG_WriteString (&buf, player->userinfo);
 
 		if (buf.cursize > MAX_MSGLEN/2) {
 			CL_WriteRecordDemoMessage (&buf, seq++);

@@ -196,6 +196,7 @@ void COM_CreatePath (char *path);
 void COM_Gamedir (char *dir);
 
 char *Info_ValueForKey (char *s, char *key);
+char *Info_KeyNameForKeyNum (char *s, int key);
 void Info_RemoveKey (char *s, char *key);
 void Info_RemovePrefixedKeys (char *start, char prefix);
 void Info_SetValueForKey (char *s, char *key, char *value, int maxsize);
