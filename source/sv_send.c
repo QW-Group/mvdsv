@@ -1021,8 +1021,6 @@ void SV_SendDemoMessage(void)
 
 	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
 
-	DemoWrite_Begin(dem_all, 0, msg.cursize);
-
 	if (msg.overflowed)
 	{
 		Con_Printf("WARNING: msg overflowed in SV_SendDemoMessage\n");

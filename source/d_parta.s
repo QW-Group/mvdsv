@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: d_parta.s,v 1.1.1.5 2004/11/11 16:34:59 vvd0 Exp $
+	$Id: d_parta.s,v 1.1.1.6 2004/11/18 19:09:18 vvd0 Exp $
 */
 // d_parta.s
 // x86 assembly-language 8-bpp particle-drawing code.

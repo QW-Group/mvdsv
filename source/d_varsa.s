@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: d_varsa.s,v 1.1.1.5 2004/11/11 16:35:01 vvd0 Exp $
+	$Id: d_varsa.s,v 1.1.1.6 2004/11/18 19:09:20 vvd0 Exp $
 */
 
 #include "asm_i386.h"

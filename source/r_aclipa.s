@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: r_aclipa.s,v 1.1.1.5 2004/11/11 16:35:19 vvd0 Exp $
+	$Id: r_aclipa.s,v 1.1.1.6 2004/11/18 19:09:39 vvd0 Exp $
 */
 // r_aliasa.s
 // x86 assembly-language Alias model transform and project code.
