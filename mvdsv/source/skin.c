@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -68,13 +66,13 @@ void Skin_Find (player_info_t *sc)
 		if (cl_teamskin.string[0] && teamplay && 
 			!strcmp(sc->team, cl.players[cl.playernum].team))
 		{
-			strncpy (name, cl_teamskin.string, 127);
+			Q_strncpyz (name, cl_teamskin.string, sizeof(name));
 		}
 		
 		if (cl_enemyskin.string[0] && (!teamplay || 
 			strcmp(sc->team, cl.players[cl.playernum].team)))
 		{
-			strncpy (name, cl_enemyskin.string, 127);
+			Q_strncpyz (name, cl_enemyskin.string, sizeof(name));
 		}
 	}
 
@@ -104,7 +102,7 @@ void Skin_Find (player_info_t *sc)
 	numskins++;
 
 	memset (skin, 0, sizeof(*skin));
-	strncpy(skin->name, name, sizeof(skin->name) - 1);
+	Q_strncpyz (skin->name, name, sizeof(skin->name));
 }
 
 

@@ -197,22 +197,22 @@ R_StoreEfrags
 void R_StoreEfrags (efrag_t **ppefrag)
 {
 	entity_t	*pent;
-	model_t		*clmodel;
+	model_t		*model;
 	efrag_t		*pefrag;
 
-
-	while ((pefrag = *ppefrag) != NULL)
+	for (pefrag = *ppefrag ; pefrag ; pefrag = pefrag->leafnext)
 	{
 		pent = pefrag->entity;
-		clmodel = pent->model;
+		model = pent->model;
 
-		switch (clmodel->type)
+		if (model->modhint == MOD_FLAME && !r_drawflame.value)
+			continue;
+
+		switch (model->type)
 		{
 		case mod_alias:
 		case mod_brush:
 		case mod_sprite:
-			pent = pefrag->entity;
-
 			if ((pent->visframe != r_framecount) &&
 				(cl_numvisedicts < MAX_VISEDICTS))
 			{
@@ -221,14 +221,10 @@ void R_StoreEfrags (efrag_t **ppefrag)
 			// mark that we've recorded this entity for this frame
 				pent->visframe = r_framecount;
 			}
-
-			ppefrag = &pefrag->leafnext;
 			break;
 
 		default:	
-			Sys_Error ("R_StoreEfrags: Bad entity type %d\n", clmodel->type);
+			Sys_Error ("R_StoreEfrags: Bad entity type %d\n", model->type);
 		}
 	}
 }
-
-

@@ -256,7 +256,7 @@ void ResetFrameBuffer(void)
 		x_visinfo->depth,
 		ZPixmap,
 		0,
-		malloc(mem),
+		Q_Malloc (mem),
 		vid.width, vid.height,
 		32,
 		0);
@@ -361,7 +361,7 @@ void ResetSharedFrameBuffers(void)
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 
-void	VID_Init (unsigned char *palette)
+void VID_Init (unsigned char *palette)
 {
 
    int pnum, i;
@@ -634,7 +634,7 @@ void VID_SetPalette(unsigned char *palette)
 
 // Called at shutdown
 
-void	VID_Shutdown (void)
+void VID_Shutdown (void)
 {
 	Con_Printf("VID_Shutdown\n");
 	XAutoRepeatOn(x_disp);

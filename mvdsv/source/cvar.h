@@ -79,6 +79,9 @@ void 	Cvar_RegisterVariable (cvar_t *variable);
 void 	Cvar_Set (cvar_t *var, char *value);
 // equivalent to "<name> <variable>" typed at the console
 
+void Cvar_SetROM (cvar_t *var, char *value);
+// force a set even if the cvar is read only
+
 void	Cvar_SetValue (cvar_t *var, float value);
 // expands value to a string and calls Cvar_Set
 

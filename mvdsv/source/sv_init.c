@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
-server_static_t	svs;				// persistant server info
+server_static_t	svs;				// persistent server info
 server_t		sv;					// local server
 
 char	localmodels[MAX_MODELS][5];	// inline model names for precache
@@ -285,6 +285,8 @@ clients along with it.
 This is only called from the SV_Map_f() function.
 ================
 */
+void D_FlushCaches ();
+
 void SV_SpawnServer (char *server)
 {
 	edict_t		*ent;
@@ -305,11 +307,6 @@ void SV_SpawnServer (char *server)
 #endif
 	Mod_ClearAll ();
 	Hunk_FreeToLowMark (host_hunklevel);
-
-#ifdef QW_BOTH
-	Host_ClearMemory();	// Just wipes the cl structure (FIXME)
-#endif
-
 
 	if (coop.value)
 		Cvar_Set (&deathmatch, "0");

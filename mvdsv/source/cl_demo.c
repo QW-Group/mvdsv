@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -21,10 +19,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
+#include "winquake.h"
 #include "pmove.h"
 #include "teamplay.h"
 
 void CL_FinishTimeDemo (void);
+
+// .qwz playback
+static qboolean	qwz_playback = false;
+static qboolean	qwz_unpacking = false;
+#ifdef _WIN32
+static HANDLE	hQizmoProcess = NULL;
+static char tempqwd_name[256] = ""; // this file must be deleted
+									// after playback is finished
+void CheckQizmoCompletion ();
+void StopQWZPlayback ();
+#endif
 
 /*
 ==============================================================================
@@ -51,17 +61,20 @@ void CL_StopPlayback (void)
 	if (!cls.demoplayback)
 		return;
 
-	fclose (cls.demofile);
+	if (cls.demofile)
+		fclose (cls.demofile);
 	cls.demofile = NULL;
 	cls.state = ca_disconnected;
 	cls.demoplayback = 0;
+#ifdef _WIN32
+	if (qwz_playback)
+		StopQWZPlayback ();
+#endif
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
 
 	cl.teamfortress = false;
-	memset (cl.cshifts, 0, sizeof(cl.cshifts));
-	cl.stats[STAT_ITEMS] = 0;
 }
 
 #define dem_cmd		0
@@ -156,7 +169,9 @@ qboolean CL_GetDemoMessage (void)
 	byte	c;
 	usercmd_t *pcmd;
 
-// Tonik:
+	if (qwz_unpacking)
+		return 0;
+
 	if (cl.paused & 2)
 		return 0;
 
@@ -270,7 +285,11 @@ Handles recording and playback of demos, on top of NET_ code
 */
 qboolean CL_GetMessage (void)
 {
-	if	(cls.demoplayback)
+#ifdef _WIN32
+	CheckQizmoCompletion ();
+#endif
+
+	if (cls.demoplayback)
 		return CL_GetDemoMessage ();
 
 	if (!NET_GetPacket(net_clientsocket))
@@ -666,7 +685,7 @@ void CL_Record_f (void)
 //
 // open the demo file
 //
-	COM_DefaultExtension (name, ".qwd");
+	COM_ForceExtension (name, ".qwd");
 
 	cls.demofile = fopen (name, "wb");
 	if (!cls.demofile)
@@ -765,19 +784,18 @@ void CL_EasyRecord_f (void)
 			*p = '_';
 	}
 
-	strncpy (name, va("%s/%s", com_gamedir, name), MAX_OSPATH-1);
-	name[MAX_OSPATH-1] = 0;
+	Q_strncpyz (name, va("%s/%s", com_gamedir, name), MAX_OSPATH);
 
 // find a filename that doesn't exist yet
 	strcpy (name2, name);
-	COM_DefaultExtension (name2, ".qwd");
+	COM_ForceExtension (name2, ".qwd");
 	f = fopen (name2, "rb");
 	if (f) {
 		i = 0;
 		do {
 			fclose (f);
 			strcpy (name2, va("%s_%02i", name, i));
-			COM_DefaultExtension (name2, ".qwd");
+			COM_ForceExtension (name2, ".qwd");
 			f = fopen (name2, "rb");
 			i++;
 		} while (f);
@@ -830,7 +848,7 @@ void CL_ReRecord_f (void)
 //
 // open the demo file
 //
-	COM_DefaultExtension (name, ".qwd");
+	COM_ForceExtension (name, ".qwd");
 
 	cls.demofile = fopen (name, "wb");
 	if (!cls.demofile)
@@ -846,6 +864,159 @@ void CL_ReRecord_f (void)
 	CL_BeginServerConnect();
 }
 
+
+//==================================================================
+// .QWZ demos playback (via Qizmo)
+//
+
+#ifdef _WIN32
+static void CheckQizmoCompletion ()
+{
+	DWORD ExitCode;
+
+	if (!hQizmoProcess)
+		return;
+
+	if (!GetExitCodeProcess (hQizmoProcess, &ExitCode)) {
+		Con_Printf ("WARINING: GetExitCodeProcess failed\n");
+		hQizmoProcess = NULL;
+		qwz_unpacking = false;
+		qwz_playback = false;
+		cls.demoplayback = false;
+		StopQWZPlayback ();
+		return;
+	}
+	
+	if (ExitCode == STILL_ACTIVE)
+		return;
+
+	hQizmoProcess = NULL;
+
+	if (!qwz_unpacking || !cls.demoplayback) {
+		StopQWZPlayback ();
+		return;
+	}
+	
+	qwz_unpacking = false;
+	
+	cls.demofile = fopen (tempqwd_name, "rb");
+	if (!cls.demofile) {
+		Con_Printf ("Couldn't open %s\n", tempqwd_name);
+		qwz_playback = false;
+		cls.demoplayback = false;
+		return;
+	}
+
+	// start playback
+	cls.demoplayback = true;
+	cls.state = ca_demostart;
+	Netchan_Setup (&cls.netchan, net_from, 0, net_clientsocket);
+	realtime = 0;
+}
+
+static void StopQWZPlayback ()
+{
+	if (!hQizmoProcess && tempqwd_name[0]) {
+		if (remove (tempqwd_name) != 0)
+			Con_Printf ("Couldn't delete %s\n", tempqwd_name);
+		tempqwd_name[0] = '\0';
+	}
+	qwz_playback = false;
+}
+
+
+void PlayQWZDemo (void)
+{
+	extern cvar_t	qizmo_dir;
+	STARTUPINFO			si;
+	PROCESS_INFORMATION	pi;
+	char	*name;
+	char	qwz_name[256];
+	char	cmdline[512];
+	char	*p;
+
+	if (hQizmoProcess) {
+		Con_Printf ("Cannot unpack -- Qizmo still running!\n");
+		return;
+	}
+	
+	name = Cmd_Argv(1);
+
+	if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3))
+		Q_strncpyz (qwz_name, va("%s/%s", com_basedir, name+3), sizeof(qwz_name));
+	else
+		if (name[0] == '/' || name[0] == '\\')
+			Q_strncpyz (qwz_name, va("%s/%s", com_gamedir, name+1), sizeof(qwz_name));
+		else
+			Q_strncpyz (qwz_name, va("%s/%s", com_gamedir, name), sizeof(qwz_name));
+
+	// check if the file exists
+	cls.demofile = fopen (qwz_name, "rb");
+	if (!cls.demofile)
+	{
+		Con_Printf ("Couldn't open %s\n", name);
+		return;
+	}
+	fclose (cls.demofile);
+	
+	Q_strncpyz (tempqwd_name, qwz_name, sizeof(tempqwd_name)-4);
+#if 0
+	// the right way
+	strcpy (tempqwd_name + strlen(tempqwd_name) - 4, ".qwd");
+#else
+	// the way Qizmo does it, sigh
+	p = strstr (tempqwd_name, ".qwz");
+	if (!p)
+		p = strstr (tempqwd_name, ".QWZ");
+	if (!p)
+		p = tempqwd_name + strlen(tempqwd_name);
+	strcpy (p, ".qwd");
+#endif
+
+	cls.demofile = fopen (tempqwd_name, "rb");
+	if (cls.demofile) {
+		// .qwd already exists, so just play it
+		cls.demoplayback = true;
+		cls.state = ca_demostart;
+		Netchan_Setup (&cls.netchan, net_from, 0, net_clientsocket);
+		realtime = 0;
+		return;
+	}
+	
+	Con_Printf ("unpacking %s...\n", name);
+	
+	// start Qizmo to unpack the demo
+	memset (&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+	si.wShowWindow = SW_HIDE;
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	
+	Q_strncpyz (cmdline, va("%s/%s/qizmo.exe -D %s", com_basedir,
+		qizmo_dir.string, qwz_name), sizeof(cmdline));
+	
+	if (!CreateProcess (NULL, cmdline, NULL, NULL,
+		FALSE, 0/* | HIGH_PRIORITY_CLASS*/,
+		NULL, va("%s/%s", com_basedir, qizmo_dir.string), &si, &pi))
+	{
+		Con_Printf ("Couldn't execute %s/%s/qizmo.exe\n",
+			com_basedir, qizmo_dir.string);
+		return;
+	}
+	
+	hQizmoProcess = pi.hProcess;
+	qwz_unpacking = true;
+	qwz_playback = true;
+
+	// demo playback doesn't actually start yet, we just set
+	// cls.demoplayback so that CL_StopPlayback() will be called
+	// if CL_Disconnect() is issued
+	cls.demoplayback = true;
+	cls.demofile = NULL;
+	cls.state = ca_demostart;
+	Netchan_Setup (&cls.netchan, net_from, 0, net_clientsocket);
+	realtime = 0;
+}
+#endif
 
 /*
 ====================
@@ -872,11 +1043,24 @@ void CL_PlayDemo_f (void)
 //
 // open the demo file
 //
-	strcpy (name, Cmd_Argv(1));
+	Q_strncpyz (name, Cmd_Argv(1), sizeof(name)-4);
+
+#ifdef _WIN32
+	if (strlen(name) > 4 && !Q_strcasecmp(name + strlen(name) - 4, ".qwz")) {
+		PlayQWZDemo ();
+		return;
+	}
+#endif
+
 	COM_DefaultExtension (name, ".qwd");
 
 	Con_Printf ("Playing demo from %s.\n", name);
-	COM_FOpenFile (name, &cls.demofile);
+
+	if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3))
+		cls.demofile = fopen (va("%s/%s", com_basedir, name+3), "rb");
+	else
+		COM_FOpenFile (name, &cls.demofile);
+
 	if (!cls.demofile)
 	{
 		Con_Printf ("ERROR: couldn't open.\n");

@@ -47,7 +47,6 @@ qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);
 char		*NET_AdrToString (netadr_t a);
 char		*NET_BaseAdrToString (netadr_t a);
 qboolean	NET_StringToAdr (char *s, netadr_t *a);
-qboolean NET_IsClientLegal(netadr_t *adr);
 
 //============================================================================
 

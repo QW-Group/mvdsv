@@ -23,15 +23,21 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id: mdfour.h,v 1.1.1.1 2004/09/28 18:56:47 vvd0 Exp $
 */
 
 #ifndef _MDFOUR_H
 #define _MDFOUR_H
 
-#ifndef _UINT32_H
-#include	<uint32.h>
+#ifndef int32
+#define int32 int
+#endif
+
+#if SIZEOF_INT > 4
+#define LARGE_INT32
+#endif
+
+#ifndef uint32
+#define uint32 unsigned int32
 #endif
 
 struct mdfour {

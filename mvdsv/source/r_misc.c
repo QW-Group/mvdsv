@@ -74,6 +74,9 @@ void R_TimeRefresh_f (void)
 	int			startangle;
 	vrect_t		vr;
 
+	if (cls.state != ca_active)
+		return;
+
 	startangle = r_refdef.viewangles[1];
 	
 	start = Sys_DoubleTime ();
@@ -219,7 +222,7 @@ void R_NetGraph (void)
 	else
 		w = NET_TIMINGS;
 
-	x =	-((vid.width - 320)>>1);
+	x =	-(int)((vid.width - 320)>>1);
 	y = vid.height - sb_lines - 24 - (int)r_graphheight.value*2 - 2;
 
 	M_DrawTextBox (x, y, (w+7)/8, ((int)r_graphheight.value*2+7)/8 + 1);

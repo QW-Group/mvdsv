@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sound.h"
 #include "version.h"
 #ifdef QW_BOTH
-#include "progs.h"	// FIXME
 #include "server.h"
 #endif
 
@@ -34,66 +33,59 @@ void (*vid_menukeyfn)(int key);
 enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer,
 	m_setup, m_net, m_options, m_video, m_keys, m_help, m_quit,
 	m_serialconfig, m_modemconfig, m_lanconfig, m_gameoptions, 
-	m_search, m_slist, m_sedit, m_fps} m_state;
+	m_search, m_slist, m_sedit, m_fps, m_demos} m_state;
 
 void M_Menu_Main_f (void);
 	void M_Menu_SinglePlayer_f (void);
 		void M_Menu_Load_f (void);
 		void M_Menu_Save_f (void);
 	void M_Menu_MultiPlayer_f (void);
-		void M_Menu_SEdit_f (void);
+		void M_Menu_ServerList_f (void);
+			void M_Menu_SEdit_f (void);
 		void M_Menu_Setup_f (void);
-//		void M_Menu_Net_f (void);
+		void M_Menu_Demos_f (void);
+		void M_Menu_GameOptions_f (void);
 	void M_Menu_Options_f (void);
 		void M_Menu_Keys_f (void);
 		void M_Menu_Fps_f (void);
 		void M_Menu_Video_f (void);
 	void M_Menu_Help_f (void);
 	void M_Menu_Quit_f (void);
-void M_Menu_SerialConfig_f (void);
-	void M_Menu_ModemConfig_f (void);
-void M_Menu_LanConfig_f (void);
-void M_Menu_GameOptions_f (void);
-void M_Menu_Search_f (void);
-void M_Menu_ServerList_f (void);
 
 void M_Main_Draw (void);
 	void M_SinglePlayer_Draw (void);
 		void M_Load_Draw (void);
 		void M_Save_Draw (void);
 	void M_MultiPlayer_Draw (void);
+		void M_ServerList_Draw (void);
+			void M_SEdit_Draw (void);
 		void M_Setup_Draw (void);
-		void M_Net_Draw (void);
+		void M_Demos_Draw (void);
+		void M_GameOptions_Draw (void);
 	void M_Options_Draw (void);
 		void M_Keys_Draw (void);
+		void M_Fps_Draw (void);
 		void M_Video_Draw (void);
 	void M_Help_Draw (void);
 	void M_Quit_Draw (void);
-void M_SerialConfig_Draw (void);
-	void M_ModemConfig_Draw (void);
-void M_LanConfig_Draw (void);
-void M_GameOptions_Draw (void);
-void M_Search_Draw (void);
-void M_ServerList_Draw (void);
 
 void M_Main_Key (int key);
 	void M_SinglePlayer_Key (int key);
 		void M_Load_Key (int key);
 		void M_Save_Key (int key);
 	void M_MultiPlayer_Key (int key);
+		void M_ServerList_Key (int key);
+			void M_SEdit_Key (int key);
 		void M_Setup_Key (int key);
-		void M_Net_Key (int key);
+		void M_Demos_Key (int key);
+		void M_GameOptions_Key (int key);
 	void M_Options_Key (int key);
 		void M_Keys_Key (int key);
+		void M_Fps_Key (int key);
 		void M_Video_Key (int key);
 	void M_Help_Key (int key);
 	void M_Quit_Key (int key);
-void M_SerialConfig_Key (int key);
-	void M_ModemConfig_Key (int key);
-void M_LanConfig_Key (int key);
-void M_GameOptions_Key (int key);
-void M_Search_Key (int key);
-void M_ServerList_Key (int key);
+
 
 qboolean	m_entersound;		// play after drawing a frame, so caching
 								// won't disrupt the sound
@@ -103,17 +95,12 @@ int			m_return_state;
 qboolean	m_return_onerror;
 char		m_return_reason [32];
 
-#define StartingGame	(m_multiplayer_cursor == 1)
-#define JoiningGame		(m_multiplayer_cursor == 0)
-#define SerialConfig	(m_net_cursor == 0)
-#define DirectConfig	(m_net_cursor == 1)
-#define	IPXConfig		(m_net_cursor == 2)
-#define	TCPIPConfig		(m_net_cursor == 3)
-
-void M_ConfigureNetSubsystem(void);
 
 //=============================================================================
 /* Support Routines */
+
+cvar_t	scr_centerMenu = {"scr_centerMenu","1"};
+int		m_yofs = 0;
 
 /*
 ================
@@ -124,14 +111,14 @@ Draws one solid graphics character
 */
 void M_DrawCharacter (int cx, int line, int num)
 {
-	Draw_Character ( cx + ((vid.width - 320)>>1), line, num);
+	Draw_Character (cx + ((vid.width - 320)>>1), line + m_yofs, num);
 }
 
 void M_Print (int cx, int cy, char *str)
 {
 	while (*str)
 	{
-		M_DrawCharacter (cx, cy, (*str)+128);
+		M_DrawCharacter (cx, cy, (*str) | 128);
 		str++;
 		cx += 8;
 	}
@@ -149,12 +136,12 @@ void M_PrintWhite (int cx, int cy, char *str)
 
 void M_DrawTransPic (int x, int y, qpic_t *pic)
 {
-	Draw_TransPic (x + ((vid.width - 320)>>1), y, pic);
+	Draw_TransPic (x + ((vid.width - 320)>>1), y + m_yofs, pic);
 }
 
 void M_DrawPic (int x, int y, qpic_t *pic)
 {
-	Draw_Pic (x + ((vid.width - 320)>>1), y, pic);
+	Draw_Pic (x + ((vid.width - 320)>>1), y + m_yofs, pic);
 }
 
 byte identityTable[256];
@@ -187,7 +174,7 @@ void M_BuildTranslationTable(int top, int bottom)
 
 void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
 {
-	Draw_TransPicTranslate (x + ((vid.width - 320)>>1), y, pic, translationTable);
+	Draw_TransPicTranslate (x + ((vid.width - 320)>>1), y + m_yofs, pic, translationTable);
 }
 
 
@@ -276,6 +263,9 @@ void M_ToggleMenu_f (void)
 	}*/
 	else
 	{
+		// hide console
+		scr_conlines = 0;
+		scr_con_current = 0;
 		M_Menu_Main_f ();
 	}
 }
@@ -385,11 +375,19 @@ void M_Main_Key (int key)
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	17
+#define	OPTIONS_ITEMS	18
 
 #define	SLIDER_RANGE	10
 
 int		options_cursor;
+
+#ifdef GLQUAKE
+#define gamma		gl_gamma
+#define contrast	gl_contrast
+#else
+#define gamma		v_gamma
+#define contrast	v_contrast
+#endif
 
 void M_Menu_Options_f (void)
 {
@@ -414,14 +412,22 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue (&scr_viewsize, scr_viewsize.value);
 		break;
 	case 4:	// gamma
-		v_gamma.value -= dir * 0.05;
-		if (v_gamma.value < 0.5)
-			v_gamma.value = 0.5;
-		if (v_gamma.value > 1)
-			v_gamma.value = 1;
-		Cvar_SetValue (&v_gamma, v_gamma.value);
+		gamma.value -= dir * 0.05;
+		if (gamma.value < 0.5)
+			gamma.value = 0.5;
+		if (gamma.value > 1)
+			gamma.value = 1;
+		Cvar_SetValue (&gamma, gamma.value);
 		break;
-	case 5:	// mouse speed
+	case 5:	// contrast
+		contrast.value += dir * 0.1;
+		if (contrast.value < 1)
+			contrast.value = 1;
+		if (contrast.value > 2)
+			contrast.value = 2;
+		Cvar_SetValue (&contrast, contrast.value);
+		break;
+	case 6:	// mouse speed
 		sensitivity.value += dir * 0.5;
 		if (sensitivity.value < 1)
 			sensitivity.value = 1;
@@ -429,7 +435,7 @@ void M_AdjustSliders (int dir)
 			sensitivity.value = 11;
 		Cvar_SetValue (&sensitivity, sensitivity.value);
 		break;
-	case 6:	// music volume
+	case 7:	// music volume
 #ifdef _WIN32
 		bgmvolume.value += dir * 1.0;
 #else
@@ -441,7 +447,7 @@ void M_AdjustSliders (int dir)
 			bgmvolume.value = 1;
 		Cvar_SetValue (&bgmvolume, bgmvolume.value);
 		break;
-	case 7:	// sfx volume
+	case 8:	// sfx volume
 		volume.value += dir * 0.1;
 		if (volume.value < 0)
 			volume.value = 0;
@@ -450,7 +456,7 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue (&volume, volume.value);
 		break;
 		
-	case 8:	// always run
+	case 9:	// always run
 		if (cl_forwardspeed.value > 200)
 		{
 			Cvar_SetValue (&cl_forwardspeed, 200);
@@ -463,27 +469,27 @@ void M_AdjustSliders (int dir)
 		}
 		break;
 	
-	case 9:	// invert mouse
+	case 10:	// invert mouse
 		Cvar_SetValue (&m_pitch, -m_pitch.value);
 		break;
 	
-	case 10:	// lookspring
+	case 11:	// lookspring
 		Cvar_SetValue (&lookspring, !lookspring.value);
 		break;
 	
-	case 11:	// lookstrafe
+	case 12:	// lookstrafe
 		Cvar_SetValue (&lookstrafe, !lookstrafe.value);
 		break;
 
-	case 12:
+	case 13:
 		Cvar_SetValue (&cl_sbar, !cl_sbar.value);
 		break;
 
-	case 13:
+	case 14:
 		Cvar_SetValue (&cl_hudswap, !cl_hudswap.value);
 		break;
 
-	case 16:	// _windowed_mouse
+	case 17:	// _windowed_mouse
 		Cvar_SetValue (&_windowed_mouse, !_windowed_mouse.value);
 		break;
 	}
@@ -536,51 +542,55 @@ void M_Options_Draw (void)
 	r = (scr_viewsize.value - 30) / (120 - 30);
 	M_DrawSlider (220, 56, r);
 
-	M_Print (16, 64, "            Brightness");
-	r = (1.0 - v_gamma.value) / 0.5;
+	M_Print (16, 64, "                 Gamma");
+	r = (1.0 - gamma.value) / 0.5;
 	M_DrawSlider (220, 64, r);
 
-	M_Print (16, 72, "           Mouse Speed");
-	r = (sensitivity.value - 1)/10;
+	M_Print (16, 72, "              Contrast");
+	r = contrast.value - 1.0;
 	M_DrawSlider (220, 72, r);
 
-	M_Print (16, 80, "       CD Music Volume");
-	r = bgmvolume.value;
+	M_Print (16, 80, "           Mouse Speed");
+	r = (sensitivity.value - 1)/10;
 	M_DrawSlider (220, 80, r);
 
-	M_Print (16, 88, "          Sound Volume");
-	r = volume.value;
+	M_Print (16, 88, "       CD Music Volume");
+	r = bgmvolume.value;
 	M_DrawSlider (220, 88, r);
 
-	M_Print (16, 96,  "            Always Run");
-	M_DrawCheckbox (220, 96, cl_forwardspeed.value > 200);
+	M_Print (16, 96, "          Sound Volume");
+	r = volume.value;
+	M_DrawSlider (220, 96, r);
 
-	M_Print (16, 104, "          Invert Mouse");
-	M_DrawCheckbox (220, 104, m_pitch.value < 0);
+	M_Print (16, 104,  "            Always Run");
+	M_DrawCheckbox (220, 104, cl_forwardspeed.value > 200);
 
-	M_Print (16, 112, "            Lookspring");
-	M_DrawCheckbox (220, 112, lookspring.value);
+	M_Print (16, 112, "          Invert Mouse");
+	M_DrawCheckbox (220, 112, m_pitch.value < 0);
 
-	M_Print (16, 120, "            Lookstrafe");
-	M_DrawCheckbox (220, 120, lookstrafe.value);
+	M_Print (16, 120, "            Lookspring");
+	M_DrawCheckbox (220, 120, lookspring.value);
 
-	M_Print (16, 128, "    Use old status bar");
-	M_DrawCheckbox (220, 128, cl_sbar.value);
+	M_Print (16, 128, "            Lookstrafe");
+	M_DrawCheckbox (220, 128, lookstrafe.value);
 
-	M_Print (16, 136, "      HUD on left side");
-	M_DrawCheckbox (220, 136, cl_hudswap.value);
+	M_Print (16, 136, "    Use old status bar");
+	M_DrawCheckbox (220, 136, cl_sbar.value);
 
-	M_Print (16, 144, "          FPS settings");
+	M_Print (16, 144, "      HUD on left side");
+	M_DrawCheckbox (220, 144, cl_hudswap.value);
+
+	M_Print (16, 152, "          FPS settings");
 
 	if (vid_menudrawfn)
-		M_Print (16, 152, "         Video Options");
+		M_Print (16, 160, "           Video Modes");
 
 #ifdef _WIN32
 	if (modestate == MS_WINDOWED)
 	{
 #endif
-		M_Print (16, 160, "             Use Mouse");
-		M_DrawCheckbox (220, 160, _windowed_mouse.value);
+		M_Print (16, 168, "             Use Mouse");
+		M_DrawCheckbox (220, 168, _windowed_mouse.value);
 #ifdef _WIN32
 	}
 #endif
@@ -613,11 +623,12 @@ void M_Options_Key (int k)
 		case 2:
 			Cbuf_AddText ("exec default.cfg\n");
 			break;
-		case 14:
+		case 15:
 			M_Menu_Fps_f ();
 			break;
-		case 15:
-			M_Menu_Video_f ();
+		case 16:
+			if (vid_menudrawfn)
+				M_Menu_Video_f ();
 			break;
 		default:
 			M_AdjustSliders (1);
@@ -660,22 +671,22 @@ void M_Options_Key (int k)
 		break;
 	}
 
-	if (options_cursor == 15 && vid_menudrawfn == NULL)
+	if (options_cursor == 16 && vid_menudrawfn == NULL)
 	{
 		if (k == K_UPARROW || k == K_END || k == K_PGDN)
-			options_cursor = 14;
+			options_cursor = 15;
 		else
 			options_cursor = 0;
 	}
 
-	if ((options_cursor == 16) 
+	if ((options_cursor == 17)
 #ifdef _WIN32
 	&& (modestate != MS_WINDOWED)
 #endif
 	)
 	{
 		if (k == K_UPARROW || k == K_END || k == K_PGDN)
-			options_cursor = 15;
+			options_cursor = 16;
 		else
 			options_cursor = 0;
 	}
@@ -891,9 +902,9 @@ void M_Keys_Key (int k)
 /* FPS SETTINGS MENU */
 
 #ifdef GLQUAKE
-#define	FPS_ITEMS	10
-#else
 #define	FPS_ITEMS	11
+#else
+#define	FPS_ITEMS	12
 #endif
 int		fps_cursor = 0;
 
@@ -901,6 +912,7 @@ extern cvar_t v_bonusflash;
 extern cvar_t cl_rocket2grenade;
 extern cvar_t v_damagecshift;
 extern cvar_t r_fastsky;
+extern cvar_t r_drawflame;
 
 void M_Menu_Fps_f (void)
 {
@@ -911,11 +923,10 @@ void M_Menu_Fps_f (void)
 
 void M_Fps_Draw (void)
 {
-	float		r;
 	qpic_t	*p;
 	
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_option.lmp");
+	p = Draw_CachePic ("gfx/ttl_cstm.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
 	
 	M_Print (16, 32, "            Explosions");
@@ -953,13 +964,13 @@ void M_Fps_Draw (void)
 	M_Print (220, 104, r_powerupglow.value==2 ? "own off" :
 		r_powerupglow.value ? "on" : "off");
 
-#ifndef GLQUAKE
-	M_Print (16, 112, "             Fast sky");
-	M_DrawCheckbox (220, 112, r_fastsky.value);
-#endif
+	M_Print (16, 112, "         Draw torches");
+	M_DrawCheckbox (220, 112, r_drawflame.value);
 
-//	M_Print (16, 120, "     Draw flame models");
-//	M_DrawCheckbox (220, 120, r_drawflame.value);
+#ifndef GLQUAKE
+	M_Print (16, 120, "             Fast sky");
+	M_DrawCheckbox (220, 120, r_fastsky.value);
+#endif
 
 // cursor
 	M_DrawCharacter (200, 32 + fps_cursor*8, 12+((int)(realtime*4)&1));
@@ -1001,6 +1012,7 @@ void M_Fps_Key (int k)
 		fps_cursor = FPS_ITEMS - 1;
 		break;
 
+	case K_RIGHTARROW:
 	case K_ENTER:
 		S_LocalSound ("misc/menu2.wav");
 		switch (fps_cursor) {
@@ -1044,15 +1056,14 @@ void M_Fps_Key (int k)
 					i = 0;
 			Cvar_SetValue (&r_powerupglow, i);
 			break;
-#ifndef GLQUAKE
 		case 10:
+			Cvar_SetValue (&r_drawflame, !r_drawflame.value);
+			break;
+#ifndef GLQUAKE
+		case 11:
 			Cvar_SetValue (&r_fastsky, !r_fastsky.value);
 			break;
 #endif
-//		case 11:
-//			Cvar_SetValue (&r_drawflame, !r_drawflame.value);
-//			break;
-			
 		}
 		break;
 
@@ -1338,7 +1349,7 @@ void M_ScanSaves (void)
 			continue;
 		fscanf (f, "%i\n", &version);
 		fscanf (f, "%79s\n", name);
-		strncpy (m_filenames[i], name, sizeof(m_filenames[i])-1);
+		Q_strncpyz (m_filenames[i], name, sizeof(m_filenames[i]));
 
 	// change _ back to space
 		for (j=0 ; j<SAVEGAME_COMMENT_LENGTH ; j++)
@@ -1446,8 +1457,11 @@ void M_Save_Key (int k)
 /* MULTIPLAYER MENU */
 
 int	m_multiplayer_cursor;
+#ifdef QW_BOTH
+#define	MULTIPLAYER_ITEMS	4
+#else
 #define	MULTIPLAYER_ITEMS	3
-
+#endif
 
 void M_Menu_MultiPlayer_f (void)
 {
@@ -1459,22 +1473,20 @@ void M_Menu_MultiPlayer_f (void)
 
 void M_MultiPlayer_Draw (void)
 {
-	int		f;
 	qpic_t	*p;
 
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
 	p = Draw_CachePic ("gfx/p_multi.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/mp_menu.lmp") );
+	M_Print (80, 40, "favorite servers");
+	M_Print (80, 48, "player setup");
+	M_Print (80, 56, "demos");
+#ifdef QW_BOTH
+	M_Print (80, 64, "new game");
+#endif
 
-	f = (int)(realtime * 10)%6;
-
-	M_DrawTransPic (54, 32 + m_multiplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
-
-/*	if (serialAvailable || ipxAvailable || tcpipAvailable)
-		return;
-	M_PrintWhite ((320/2) - ((27*8)/2), 148, "No Communications Available");
-*/
+// cursor
+	M_DrawCharacter (64, 40 + m_multiplayer_cursor*8, 12+((int)(realtime*4)&1));
 }
 
 
@@ -1515,23 +1527,289 @@ void M_MultiPlayer_Key (int key)
 		switch (m_multiplayer_cursor)
 		{
 		case 0:
-//			if (serialAvailable || ipxAvailable || tcpipAvailable)
-//				M_Menu_Net_f ();
 			M_Menu_ServerList_f ();
 			break;
 
 		case 1:
-//			if (serialAvailable || ipxAvailable || tcpipAvailable)
-//				M_Menu_ServerList_f ();
-#ifdef QW_BOTH
-			M_Menu_GameOptions_f ();
-#endif
+			M_Menu_Setup_f ();
 			break;
 
 		case 2:
-			M_Menu_Setup_f ();
+			M_Menu_Demos_f ();
 			break;
+
+#ifdef QW_BOTH
+		case 3:
+			M_Menu_GameOptions_f ();
+			break;
+#endif
 		}
+	}
+}
+
+
+//=============================================================================
+/* DEMOS MENU */
+
+#define MAX_DEMO_NAME 64
+#define MAX_DEMO_FILES 64
+#define MAXLINES 19	  // maximum number of files visible on screen
+
+typedef struct direntry_s {
+	int		type;	// 0=file, 1=dir, 2="..", 3=message
+	char	name[MAX_DEMO_NAME];
+	int		size;
+} direntry_t;
+
+direntry_t	dir[MAX_DEMO_FILES] = {0};
+int			numfiles;
+char		demodir[MAX_QPATH] = "/qw";
+char		prevdir[MAX_QPATH] = "";
+
+int	demo_cursor = 0;
+int	demo_base = 0;
+
+static void ReadDir (void)
+{
+#ifdef _WIN32		// FIXME
+	HANDLE	h;
+	WIN32_FIND_DATA fd;
+	int		i;
+
+	numfiles = 0;
+	demo_base = 0;
+	demo_cursor = 0;
+
+	if (demodir[0]) {
+		strcpy (dir[0].name, "..");
+		dir[0].type = 2;
+		numfiles = 1;
+	}
+
+	h = FindFirstFile (va("%s%s/*.*", com_basedir, demodir), &fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		strcpy (dir[numfiles].name, "Error reading directory\n");
+		dir[numfiles].type = 3;
+		numfiles++;
+		return;
+	}
+	
+	do {
+		int type, size;
+		int pos;
+		char name[MAX_DEMO_NAME];
+
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+			if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
+				continue;
+			type = 1;
+			size = 0;
+		}
+		else
+		{
+			i = strlen(fd.cFileName);
+			if (i < 5 || (Q_strcasecmp(fd.cFileName+i-4, ".qwd")
+				&& Q_strcasecmp(fd.cFileName+i-4, ".qwz")))
+				continue;
+			type = 0;
+			size = fd.nFileSizeLow;
+		}
+
+		Q_strncpyz (name, fd.cFileName, MAX_DEMO_NAME);
+
+		// inclusion sort
+		for (i=0 ; i<numfiles ; i++)
+		{
+			if (type < dir[i].type)
+				continue;
+			if (type > dir[i].type)
+				break;
+			if (strcmp (name, dir[i].name) < 0)
+				break;
+		}
+		pos = i;
+		numfiles++;
+		for (i=numfiles-1 ; i>pos ; i--)
+			dir[i] = dir[i-1];
+		strcpy (dir[i].name, name);
+		dir[i].type = type;
+		dir[i].size = size;
+		if (numfiles == MAX_DEMO_FILES)
+			break;
+	} while ( FindNextFile(h, &fd) );
+	FindClose (h);
+
+	// TODO: position demo cursor
+	if (prevdir) {
+		for (i=0 ; i<numfiles ; i++) {
+			if (!strcmp (dir[i].name, prevdir)) {
+				demo_cursor = i;
+				if (demo_cursor >= MAXLINES) {
+					demo_base += demo_cursor - (MAXLINES-1);
+					demo_cursor = MAXLINES-1;
+				}
+				*prevdir = '\0';
+			}
+		}
+	}
+
+	if (!numfiles) {
+		strcpy (dir[0].name, "[ no files ]");
+		dir[0].type = 3;
+		numfiles = 1;
+	}
+#endif	// _WIN32
+}
+
+void M_Menu_Demos_f (void)
+{
+#ifdef _WIN32
+	m_entersound = true;
+	m_state = m_demos;
+	key_dest = key_menu;
+	ReadDir ();
+#endif
+}
+
+static char *toyellow (char *s)
+{
+	static char buf[20];
+
+	Q_strncpyz (buf, s, sizeof(buf));
+	for (s=buf ; *s ; s++)
+		if (*s >= '0' && *s <= '9')
+			*s = *s - '0' + 18;
+	return buf;
+}
+
+void M_Demos_Draw (void)
+{
+	int		i;
+	int		y;
+	direntry_t	*d;
+	char	str[29];
+
+	M_Print (140, 8, "DEMOS");
+	M_Print (16, 16, demodir);
+	M_Print (8, 24, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+
+	d = dir + demo_base;
+	for (i=0, y=32 ; i<numfiles-demo_base && i<MAXLINES ; i++, y+=8, d++)
+	{
+		Q_strncpyz (str, d->name, sizeof(str));
+		if (d->type)
+			M_PrintWhite (24, y, str);
+		else
+			M_Print (24, y, str);
+
+		if (d->type == 1)
+			M_PrintWhite (240, y, "  folder");
+		else if (d->type == 2)
+			M_PrintWhite (240, y, "    up  ");
+		else if (d->type == 0)
+			M_Print (240, y, toyellow(va("%7ik", d->size>>10)));
+	}
+	
+	M_DrawCharacter (8, 32 + demo_cursor*8, 12+((int)(realtime*4)&1));
+}
+
+void M_Demos_Key (int k)
+{
+	switch (k)
+	{
+	case K_ESCAPE:
+		M_Menu_MultiPlayer_f ();
+		break;
+
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (demo_cursor > 0)
+			demo_cursor--;
+		else if (demo_base > 0)
+			demo_base--;
+		break;
+
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (demo_cursor+demo_base < numfiles-1)
+		{
+			if (demo_cursor < MAXLINES-1)
+				demo_cursor++;
+			else
+				demo_base++;
+		}
+		break;
+
+	case K_HOME:
+		S_LocalSound ("misc/menu1.wav");
+		demo_cursor = 0;
+		demo_base = 0;
+		break;
+
+	case K_END:
+		S_LocalSound ("misc/menu1.wav");
+		if (numfiles > MAXLINES) {
+			demo_cursor = MAXLINES-1;
+			demo_base = numfiles - demo_cursor - 1;
+		} else {
+			demo_base = 0;
+			demo_cursor = numfiles-1;
+		}
+		break;
+
+	case K_PGUP:
+		S_LocalSound ("misc/menu1.wav");
+		demo_cursor -= MAXLINES-1;
+		if (demo_cursor < 0) {
+			demo_base += demo_cursor;
+			if (demo_base < 0)
+				demo_base = 0;
+			demo_cursor = 0;
+		}
+		break;
+
+	case K_PGDN:
+		S_LocalSound ("misc/menu1.wav");
+		demo_cursor += MAXLINES-1;
+		if (demo_base + demo_cursor >= numfiles)
+			demo_cursor = numfiles - demo_base - 1;
+		if (demo_cursor >= MAXLINES) {
+			demo_base += demo_cursor - (MAXLINES-1);
+			demo_cursor = MAXLINES-1;
+			if (demo_base + demo_cursor >= numfiles)
+				demo_base = numfiles - demo_cursor - 1;
+		}
+		break;
+
+	case K_ENTER:
+		if (!numfiles || dir[demo_base + demo_cursor].type == 3)
+			break;
+
+		if (dir[demo_base + demo_cursor].type) {
+			if (dir[demo_base + demo_cursor].type == 2)
+			{
+				char *p;
+				if ( (p = strrchr(demodir, '/')) != NULL)
+				{
+					strcpy (prevdir, p+1);
+					*p = '\0';
+				}
+			}
+			else
+			{
+				strncat (demodir, "/", sizeof(demodir)-1);
+				strncat (demodir, dir[demo_base + demo_cursor].name, sizeof(demodir)-1);
+			}
+			demo_cursor = 0;
+			ReadDir ();
+		}
+		else
+		{
+			key_dest = key_game;
+			m_state = m_none;
+			Cbuf_AddText (va("playdemo \"..%s/%s\"\n", demodir, dir[demo_cursor+demo_base].name));
+		}
+		break;
 	}
 }
 
@@ -1648,7 +1926,6 @@ int		gameoptions_cursor;
 void M_GameOptions_Draw (void)
 {
 	qpic_t	*p;
-	int		x;
 
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
 	p = Draw_CachePic ("gfx/p_multi.lmp");
@@ -1722,6 +1999,7 @@ void M_GameOptions_Draw (void)
 void M_NetStart_Change (int dir)
 {
 	int count;
+	extern cvar_t	registered;
 
 	switch (gameoptions_cursor)
 	{
@@ -1932,10 +2210,8 @@ void M_Menu_Setup_f (void)
 	key_dest = key_menu;
 	m_state = m_setup;
 	m_entersound = true;
-	strncpy(setup_name, name.string, sizeof(setup_name));
-	setup_name[15] = 0;
-	strncpy(setup_team, team.string, sizeof(setup_team));
-	setup_team[15] = 0;
+	Q_strncpyz (setup_name, name.string, sizeof(setup_name));
+	Q_strncpyz (setup_team, team.string, sizeof(setup_team));
 	setup_top = setup_oldtop = (int)topcolor.value;
 	setup_bottom = setup_oldbottom = (int)bottomcolor.value;
 }
@@ -2242,7 +2518,7 @@ void M_ServerList_Key (key)
 		m_state = m_main;
 		M_ToggleMenu_f();
 		CL_Disconnect();
-		strncpy(cls.servername,slist[m_multip_cursor].server,sizeof(cls.servername)-1);
+		Q_strncpyz (cls.servername, slist[m_multip_cursor].server, sizeof(cls.servername));
 		CL_BeginServerConnect();
 		break;
 
@@ -2312,10 +2588,8 @@ void M_Menu_SEdit_f (void) {
 	m_entersound = true;
 	m_state = m_sedit;
 	sedit_state = 0;
-	strncpy(serv,slist[m_multip_cursor].server,255);
-	serv[strlen(slist[m_multip_cursor].server) + 1] = 0;
-	strncpy(desc,slist[m_multip_cursor].description,255);
-	desc[strlen(slist[m_multip_cursor].description) + 1] = 0;
+	Q_strncpyz (serv, slist[m_multip_cursor].server, sizeof(serv));
+	Q_strncpyz (desc, slist[m_multip_cursor].description, sizeof(desc));
 	serv_max = strlen(serv) > SERV_L ? strlen(serv) : SERV_L;
 	serv_min = serv_max - (SERV_L);
 	desc_max = strlen(desc) > DESC_L ? strlen(desc) : DESC_L;
@@ -2423,7 +2697,7 @@ void M_Quit_Draw (void)
 	char *cmsg[] = {
 //    0123456789012345678901234567890123456789
 	"0            QuakeWorld",
-	"1    version " VSTR2(VERSION) " by id Software",
+	"1    version " VSTR2(QW_VERSION) " by id Software",
 	"0Programming",
 	"1 John Carmack    Michael Abrash",
 	"1 John Cash       Christian Antkow",
@@ -2448,13 +2722,13 @@ void M_Quit_Draw (void)
 	char **p;
 	int y;
 
-	if (wasInMenus)
+/*	if (wasInMenus)
 	{
 		m_state = m_quit_prevstate;
 		m_recursiveDraw = true;
 		M_Draw ();
 		m_state = m_quit;
-	}
+	}*/
 
 	M_DrawTextBox (0, 0, 38, 23);
 	y = 12;
@@ -2474,6 +2748,8 @@ void M_Quit_Draw (void)
 
 void M_Init (void)
 {
+	Cvar_RegisterVariable (&scr_centerMenu);
+
 	Cmd_AddCommand ("togglemenu", M_ToggleMenu_f);
 
 	Cmd_AddCommand ("menu_main", M_Menu_Main_f);
@@ -2484,6 +2760,7 @@ void M_Init (void)
 #endif
 	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
 	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
+	Cmd_AddCommand ("menu_demos", M_Menu_Demos_f);
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
 	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
 	Cmd_AddCommand ("menu_fps", M_Menu_Fps_f);
@@ -2505,7 +2782,7 @@ void M_Draw (void)
 
 		if (scr_con_current)
 		{
-			Draw_ConsoleBackground (vid.height);
+			Draw_ConsoleBackground (scr_con_current);
 			VID_UnlockBuffer ();
 			S_ExtraUpdate ();
 			VID_LockBuffer ();
@@ -2519,6 +2796,9 @@ void M_Draw (void)
 	{
 		m_recursiveDraw = false;
 	}
+
+	if (scr_centerMenu.value)
+		m_yofs = (vid.height - 200) / 2;
 
 	switch (m_state)
 	{
@@ -2606,7 +2886,12 @@ void M_Draw (void)
 	case m_sedit:
 		M_SEdit_Draw ();
 		break;
+
+	case m_demos:
+		M_Demos_Draw ();
 	}
+
+	m_yofs = 0;
 
 	if (m_entersound)
 	{
@@ -2707,6 +2992,10 @@ void M_Keydown (int key)
 
 	case m_sedit:
 		M_SEdit_Key (key);
+		break;
+
+	case m_demos:
+		M_Demos_Key (key);
 		break;
 	}
 }

@@ -3,7 +3,7 @@
 
 	Teamplay enhancements ("proxy features")
 
-	Copyright (C) 2000       Anton Gavrilov (tonik@quake.ru)
+	Copyright (C) 2000-2001       Anton Gavrilov
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -22,8 +22,6 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id: teamplay.h,v 1.1.1.2 2004/09/28 18:58:02 vvd0 Exp $
 */
 
 extern cvar_t cl_parsesay;
@@ -35,8 +33,9 @@ extern cvar_t cl_teamskin;
 extern cvar_t cl_enemyskin;
 
 // triggers
-void TP_StatChanged (int stat, int value);
 void TP_ExecTrigger (char *s);
+void TP_StatChanged (int stat, int value);
+void TP_CheckPickupSound (char *s);
 
 // message triggers
 void TP_SearchForMsgTriggers (char *s, int level);
@@ -54,13 +53,13 @@ extern int cl_teamtopcolor;
 extern int cl_teambottomcolor;
 extern int cl_enemytopcolor;
 extern int cl_enemybottomcolor;
-void TP_TeamColor_f (void);
-void TP_EnemyColor_f (void);
 
 void TP_LoadLocFile (char *path, qboolean quiet);
 char *TP_ParseMacroString(char *string);
 void TP_NewMap ();
 void TP_CheckVersionRequest(char *s);
+int TP_CategorizeMessage (char *s);
+
 void TP_Init ();
 
 

@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "sbar.h"
 #ifdef QW_BOTH
-#include "progs.h"
 #include "server.h"
 #endif
 
@@ -59,6 +58,11 @@ void Sbar_TeamOverlay (void);
 void Sbar_MiniDeathmatchOverlay (void);
 
 static qboolean largegame = false;
+
+int	sbar_xofs;
+
+cvar_t	scr_centerSbar = {"scr_centerSbar","0"};
+cvar_t	scr_centerScores = {"scr_centerScores","1"};
 
 /*
 ===============
@@ -213,6 +217,9 @@ void Sbar_Init (void)
 	sb_face_invis_invuln = Draw_PicFromWad ("face_inv2");
 	sb_face_quad = Draw_PicFromWad ("face_quad");
 
+	Cvar_RegisterVariable (&scr_centerScores);
+	Cvar_RegisterVariable (&scr_centerSbar);
+
 	Cmd_AddCommand ("+showscores", Sbar_ShowScores);
 	Cmd_AddCommand ("-showscores", Sbar_DontShowScores);
 		
@@ -236,7 +243,7 @@ Sbar_DrawPic
 */
 void Sbar_DrawPic (int x, int y, qpic_t *pic)
 {
-	Draw_Pic (x /* + ((vid.width - 320)>>1) */, y + (vid.height-SBAR_HEIGHT), pic);
+	Draw_Pic (x + sbar_xofs, y + (vid.height-SBAR_HEIGHT), pic);
 }
 
 /*
@@ -259,7 +266,7 @@ Sbar_DrawTransPic
 */
 void Sbar_DrawTransPic (int x, int y, qpic_t *pic)
 {
-	Draw_TransPic (x /*+ ((vid.width - 320)>>1) */, y + (vid.height-SBAR_HEIGHT), pic);
+	Draw_TransPic (x + sbar_xofs, y + (vid.height-SBAR_HEIGHT), pic);
 }
 
 /*
@@ -271,7 +278,7 @@ Draws one solid graphics character
 */
 void Sbar_DrawCharacter (int x, int y, int num)
 {
-	Draw_Character ( x /*+ ((vid.width - 320)>>1) */ + 4, y + vid.height-SBAR_HEIGHT, num);
+	Draw_Character (x + 4 + sbar_xofs, y + vid.height-SBAR_HEIGHT, num);
 }
 
 /*
@@ -281,7 +288,7 @@ Sbar_DrawString
 */
 void Sbar_DrawString (int x, int y, char *str)
 {
-	Draw_String (x /*+ ((vid.width - 320)>>1) */, y+ vid.height-SBAR_HEIGHT, str);
+	Draw_String (x + sbar_xofs, y+ vid.height-SBAR_HEIGHT, str);
 }
 
 /*
@@ -425,9 +432,8 @@ void Sbar_SortTeams (void)
 			continue;
 
 		// find his team in the list
-		t[16] = 0;
-		strncpy(t, Info_ValueForKey(s->userinfo, "team"), 16);
-		if (!t || !t[0])
+		Q_strncpyz (t, Info_ValueForKey(s->userinfo, "team"), sizeof(t));
+		if (!t[0])
 			continue; // not on team
 		for (j = 0; j < scoreboardteams; j++)
 			if (!strcmp(teams[j].team, t)) {
@@ -559,7 +565,7 @@ void Sbar_DrawInventory (void)
 					Sbar_DrawSubPic ((hudswap) ? 0 : (vid.width-24),-68-(7-i)*16 , sb_weapons[flashon][i],0,0,24,16);
 			
 			} else 
-			Sbar_DrawPic (i*24, -16, sb_weapons[flashon][i]);
+				Sbar_DrawPic (i*24, -16, sb_weapons[flashon][i]);
 //			Sbar_DrawSubPic (0,0,20,20,i*24, -16, sb_weapons[flashon][i]);
 
 			if (flashon > 1)
@@ -575,19 +581,19 @@ void Sbar_DrawInventory (void)
 //			Sbar_DrawSubPic(3, -24, sb_ibar, 3, 0, 42,11);
 			Sbar_DrawSubPic((hudswap) ? 0 : (vid.width-42), -24 - (4-i)*11, sb_ibar, 3+(i*48), 0, 42, 11);
 			if (num[0] != ' ')
-				Sbar_DrawCharacter ( (hudswap) ? 3 : (vid.width-39), -24 - (4-i)*11, 18 + num[0] - '0');
+				Draw_Character ( (hudswap) ? 7: (vid.width - 35), vid.height-SBAR_HEIGHT-24 - (4-i)*11, 18 + num[0] - '0');
 			if (num[1] != ' ')
-				Sbar_DrawCharacter ( (hudswap) ? 11 : (vid.width-31), -24 - (4-i)*11, 18 + num[1] - '0');
+				Draw_Character ( (hudswap) ? 15: (vid.width - 27), vid.height-SBAR_HEIGHT-24 - (4-i)*11, 18 + num[1] - '0');
 			if (num[2] != ' ')
-				Sbar_DrawCharacter ( (hudswap) ? 19 : (vid.width-23), -24 - (4-i)*11, 18 + num[2] - '0');
+				Draw_Character ( (hudswap) ? 23: (vid.width - 19), vid.height-SBAR_HEIGHT-24 - (4-i)*11, 18 + num[2] - '0');
 		} else {
-		if (num[0] != ' ')
-			Sbar_DrawCharacter ( (6*i+1)*8 - 2, -24, 18 + num[0] - '0');
-		if (num[1] != ' ')
-			Sbar_DrawCharacter ( (6*i+2)*8 - 2, -24, 18 + num[1] - '0');
-		if (num[2] != ' ')
-			Sbar_DrawCharacter ( (6*i+3)*8 - 2, -24, 18 + num[2] - '0');
-	}
+			if (num[0] != ' ')
+				Sbar_DrawCharacter ( (6*i+1)*8 - 2, -24, 18 + num[0] - '0');
+			if (num[1] != ' ')
+				Sbar_DrawCharacter ( (6*i+2)*8 - 2, -24, 18 + num[1] - '0');
+			if (num[2] != ' ')
+				Sbar_DrawCharacter ( (6*i+3)*8 - 2, -24, 18 + num[2] - '0');
+		}
 	}
 	
 	flashon = 0;
@@ -667,23 +673,21 @@ void Sbar_DrawFrags (void)
 		top = Sbar_ColorForMap (top);
 		bottom = Sbar_ColorForMap (bottom);
 	
-//		Draw_Fill (xofs + x*8 + 10, y, 28, 4, top);
-//		Draw_Fill (xofs + x*8 + 10, y+4, 28, 3, bottom);
-		Draw_Fill (x*8 + 10, y, 28, 4, top);
-		Draw_Fill (x*8 + 10, y+4, 28, 3, bottom);
+		Draw_Fill (sbar_xofs + x*8 + 10, y, 28, 4, top);
+		Draw_Fill (sbar_xofs + x*8 + 10, y+4, 28, 3, bottom);
 
 	// draw number
 		f = s->frags;
 		sprintf (num, "%3i",f);
 		
-		Sbar_DrawCharacter ( (x+1)*8 , -24, num[0]);
-		Sbar_DrawCharacter ( (x+2)*8 , -24, num[1]);
-		Sbar_DrawCharacter ( (x+3)*8 , -24, num[2]);
+		Sbar_DrawCharacter ((x+1)*8 , -24, num[0]);
+		Sbar_DrawCharacter ((x+2)*8 , -24, num[1]);
+		Sbar_DrawCharacter ((x+3)*8 , -24, num[2]);
 
 		if (k == cl.playernum)
 		{
 			Sbar_DrawCharacter (x*8+2, -24, 16);
-			Sbar_DrawCharacter ( (x+4)*8-4, -24, 17);
+			Sbar_DrawCharacter ((x+4)*8-4, -24, 17);
 		}
 		x+=4;
 	}
@@ -808,7 +812,12 @@ void Sbar_Draw (void)
 //	scr_fullupdate = 0;
 
 	sb_updates++;
-		
+
+	if (scr_centerSbar.value)
+		sbar_xofs = (vid.width - 320)>>1;
+	else
+		sbar_xofs = 0;
+
 // top line
 	if (sb_lines > 24)
 	{
@@ -857,26 +866,24 @@ void Sbar_Draw (void)
 		Sbar_TeamOverlay();
 
 #ifdef GLQUAKE
-	if (sb_showscores || sb_showteamscores || 
+	if (sb_showscores || sb_showteamscores ||
 		cl.stats[STAT_HEALTH] <= 0)
 		sb_updates = 0;
-	// clear unused areas in gl
-#if 0
-	{
-		int x = (vid.width - 320)>>1;
 
+	// clear unused areas in GL
+	if (vid.width > 320 && !headsup) {
 		// left
-		if (x > 0) {
-			Draw_TileClear (0, vid.height - sb_lines, x, sb_lines);
-			Draw_TileClear (x+320, vid.height - sb_lines, vid.width - x+320, sb_lines);
-		}
+		if (scr_centerSbar.value)
+			Draw_TileClear (0, vid.height - sb_lines, sbar_xofs, sb_lines);
+		// right
+		Draw_TileClear (320 + sbar_xofs, vid.height - sb_lines, vid.width - (320 + sbar_xofs), sb_lines);
 	}
-#endif
-	if (vid.width > 320 && !headsup)
-		Draw_TileClear (320, vid.height - sb_lines, vid.width - 320, sb_lines);
+	if (!headsup && cl.spectator && (autocam != CAM_TRACK) && (sb_lines > SBAR_HEIGHT))
+		Draw_TileClear (sbar_xofs, vid.height - sb_lines, 320, sb_lines - SBAR_HEIGHT);
 #endif
 
-	if (sb_lines > 0)
+	if (sb_lines > 0 && cl.gametype == GAME_DEATHMATCH
+		&& !scr_centerSbar.value)
 		Sbar_MiniDeathmatchOverlay ();
 }
 
@@ -927,9 +934,10 @@ void Sbar_TeamOverlay (void)
 	qpic_t			*pic;
 	int				i, k, l;
 	int				x, y;
+	int				xofs;
 	char			num[12];
 	int				teamplay;
-	char			team[5];
+	char			team[4+1];
 	team_t *tm;
 	int plow, phigh, pavg;
 
@@ -952,11 +960,16 @@ void Sbar_TeamOverlay (void)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
+	if (scr_centerScores.value)
+		xofs = (vid.width - 320)>>1;
+	else
+		xofs = 0;
+
 	pic = Draw_CachePic ("gfx/ranking.lmp");
-	Draw_Pic (160-pic->width/2, 0, pic);
+	Draw_Pic (xofs + 160 - pic->width/2, 0, pic);
 
 	y = 24;
-	x = 36;
+	x = xofs + 36;
 	Draw_String(x, y, "low/avg/high team total players");
 	y += 8;
 //	Draw_String(x, y, "------------ ---- ----- -------");
@@ -992,8 +1005,7 @@ void Sbar_TeamOverlay (void)
 		Draw_String ( x, y, num);
 
 	// draw team
-		team[4] = 0;
-		strncpy (team, tm->team, 4);
+		Q_strncpyz (team, tm->team, sizeof(team));
 		Draw_String (x + 104, y, team);
 
 	// draw total
@@ -1029,6 +1041,7 @@ void Sbar_DeathmatchOverlay (int start)
 	int				i, k, l;
 	int				top, bottom;
 	int				x, y, f;
+	int				xofs;
 	char			num[12];
 	player_info_t	*s;
 	int				total;
@@ -1062,9 +1075,14 @@ void Sbar_DeathmatchOverlay (int start)
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
+	if (scr_centerScores.value)
+		xofs = (vid.width - 320)>>1;
+	else
+		xofs = 0;
+
 	if (!start) {
 		pic = Draw_CachePic ("gfx/ranking.lmp");
-		Draw_Pic (160-pic->width/2, 0, pic);
+		Draw_Pic (xofs + 160 - pic->width/2, 0, pic);
 	}
 
 // scores	
@@ -1079,7 +1097,7 @@ void Sbar_DeathmatchOverlay (int start)
 		y = 24;
 	if (teamplay)
 	{
-		x = 4;
+		x = xofs + 4;
 //                            0    40 64   104   152  192 
 		Draw_String ( x , y, "ping pl time frags team name");
 		y += 8;
@@ -1089,7 +1107,7 @@ void Sbar_DeathmatchOverlay (int start)
 	}
 	else
 	{
-		x = 16;
+		x = xofs + 16;
 //                            0    40 64   104   152
 		Draw_String ( x , y, "ping pl time frags name");
 		y += 8;
@@ -1171,8 +1189,7 @@ void Sbar_DeathmatchOverlay (int start)
 		// team
 		if (teamplay)
 		{
-			team[4] = 0;
-			strncpy (team, Info_ValueForKey(s->userinfo, "team"), 4);
+			Q_strncpyz (team, Info_ValueForKey(s->userinfo, "team"), sizeof(team));
 			Draw_String (x+152, y, team);
 		}
 
@@ -1206,7 +1223,7 @@ void Sbar_MiniDeathmatchOverlay (void)
 	char			num[12];
 	player_info_t	*s;
 	int				teamplay;
-	char			team[5];
+	char			team[4+1];
 	int				numlines;
 	char			name[16+1];
 	team_t			*tm;
@@ -1283,14 +1300,12 @@ void Sbar_MiniDeathmatchOverlay (void)
 	// team
 		if (teamplay)
 		{
-			team[4] = 0;
-			strncpy (team, Info_ValueForKey(s->userinfo, "team"), 4);
+			Q_strncpyz (team, Info_ValueForKey(s->userinfo, "team"), sizeof(team));
 			Draw_String (x+48, y, team);
 		}
 
 	// draw name
-		name[16] = 0;
-		strncpy(name, s->name, 16);
+		Q_strncpyz (name, s->name, sizeof(name));
 		if (teamplay)
 			Draw_String (x+48+40, y, name);
 		else
@@ -1316,8 +1331,7 @@ void Sbar_MiniDeathmatchOverlay (void)
 		tm = teams + k;
 
 	// draw pings
-		team[4] = 0;
-		strncpy (team, tm->team, 4);
+		Q_strncpyz (team, tm->team, sizeof(team));
 		Draw_String (x, y, team);
 
 	// draw total

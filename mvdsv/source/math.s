@@ -1,7 +1,7 @@
 /*
-	math.S
+	math.s
 
-	(description)
+	x86 assembly language math routines
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -23,13 +23,11 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: math.s,v 1.1.1.2 2004/09/28 18:56:47 vvd0 Exp $
+	$Id: math.s,v 1.1.1.3 2004/09/28 19:04:30 vvd0 Exp $
 */
-// math.s
-// x86 assembly-language math routines.
 
 #include "asm_i386.h"
-// #include "quakeasm.h"
+#include "quakeasm.h"
 
 
 #ifdef id386

@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "winquake.h"
 #include "pmove.h"
+#include "teamplay.h"
 
 cvar_t	cl_nopred = {"cl_nopred","0"};
 cvar_t	cl_pushlatency = {"pushlatency","-999"};
@@ -115,6 +116,65 @@ void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, 
 }
 
 
+/*
+==============
+CL_CalcCrouch
+
+Smooth out stair step ups.
+Called before CL_EmitEntities so that the player's lightning model
+origin is updated properly
+==============
+*/
+void CL_CalcCrouch (void)
+{
+	static float oldz = 0;
+	static float extracrouch = 0;
+	static float crouchspeed = 100;
+
+	if (cl.simorg[2] - oldz > 0			// only smooth when moving up
+		&& cl.simorg[2] - oldz < 40)	// teleported?
+	{
+		if (cl.onground != -1)
+		{
+			// if on steep stairs, increase speed
+			if (cl.simorg[2] - oldz > 20) {
+				if (crouchspeed < 160) {
+					extracrouch = cl.simorg[2] - oldz - host_frametime*200 - 15;
+					if (extracrouch > 5)
+						extracrouch = 5;
+				}
+				crouchspeed = 160;
+			}
+
+			oldz += host_frametime * crouchspeed;
+			if (oldz > cl.simorg[2])
+				oldz = cl.simorg[2];
+
+			if (cl.simorg[2] - oldz > 15 + extracrouch)
+				oldz = cl.simorg[2] - 15 - extracrouch;
+			extracrouch -= host_frametime*200;
+			if (extracrouch < 0)
+				extracrouch = 0;
+
+			cl.crouch = oldz - cl.simorg[2];
+		} else {
+			// in air
+			oldz = cl.simorg[2];
+			cl.crouch += host_frametime * 150;
+			if (cl.crouch > 0)
+				cl.crouch = 0;
+			crouchspeed = 100;
+			extracrouch = 0;
+		}
+	}
+	else
+	{
+		oldz = cl.simorg[2];
+		cl.crouch = extracrouch = 0;
+		crouchspeed = 100;
+	}
+}
+
 
 /*
 ==============
@@ -138,8 +198,10 @@ void CL_PredictMove (void)
 	if (cl.time > realtime)
 		cl.time = realtime;
 
-	if (cl.intermission)
+	if (cl.intermission) {
+		cl.crouch = 0;
 		return;
+	}
 
 	if (!cl.validsequence)
 		return;
@@ -155,21 +217,19 @@ void CL_PredictMove (void)
 	// we can now render a frame
 	if (cls.state == ca_onserver)
 	{	// first update is the final signon stage
-		char		text[1024];
-
 		cls.state = ca_active;
-		sprintf (text, "QuakeWorld: %s", cls.servername);
 #ifdef _WIN32
-		SetWindowText (mainwindow, text);
+		SetWindowText (mainwindow, va("QuakeWorld: %s", cls.servername));
 #endif
+		TP_ExecTrigger ("f_spawn");
 	}
 
 	if (cl_nopred.value)
 	{
 		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
-		cl.onground = 0;	// :(
-		return;
+		cl.onground = 0;	// FIXME
+		goto out;
 	}
 
 	// predict forward until cl.time <= to->senttime
@@ -213,7 +273,7 @@ void CL_PredictMove (void)
 		{	// teleported, so don't lerp
 			VectorCopy (to->playerstate[cl.playernum].velocity, cl.simvel);
 			VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);
-			return;
+			goto out;
 		}
 		
 	for (i=0 ; i<3 ; i++)
@@ -223,6 +283,9 @@ void CL_PredictMove (void)
 		cl.simvel[i] = from->playerstate[cl.playernum].velocity[i] 
 			+ f*(to->playerstate[cl.playernum].velocity[i] - from->playerstate[cl.playernum].velocity[i]);
 	}
+
+out:
+	CL_CalcCrouch ();
 }
 
 

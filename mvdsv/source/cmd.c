@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -196,8 +194,10 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 // don't execute lines without ending \n; this fixes problems with
 // partially stuffed aliases not being executed properly
-		if (i == cursize)
+#ifndef SERVERONLY
+		if (cbuf_current == &cbuf_svc && i == cursize)
 			break;
+#endif
 
 		memcpy (line, text, i);
 		line[i] = 0;
@@ -397,19 +397,8 @@ static int Key (char *name)
 =============================================================================
 */
 
-#define	MAX_ALIAS_NAME	32
-
-typedef struct cmd_alias_s
-{
-	struct cmd_alias_s	*hash_next;
-	struct cmd_alias_s	*next;
-	char	name[MAX_ALIAS_NAME];
-	char	*value;
-} cmd_alias_t;
-
 static cmd_alias_t	*cmd_alias_hash[32];
 static cmd_alias_t	*cmd_alias;
-
 
 cmd_alias_t *Cmd_FindAlias (char *name)
 {
@@ -425,8 +414,6 @@ cmd_alias_t *Cmd_FindAlias (char *name)
 	return NULL;
 }
 
-
-// Tonik 31.08.00 --- for message triggers:
 char *Cmd_AliasString (char *name)
 {
 	int			key;
@@ -468,11 +455,12 @@ void Cmd_Alias_f (void)
 	char		*s;
 //	cvar_t		*var;
 
-	if (Cmd_Argc() == 1)
+	c = Cmd_Argc();
+	if (c == 1)
 	{
 		Con_Printf ("Current alias commands:\n");
 		for (a = cmd_alias ; a ; a=a->next)
-			Con_Printf ("%s : %s\n", a->name, a->value);
+			Con_Printf ("%s : %s\n\n", a->name, a->value);
 		return;
 	}
 
@@ -518,14 +506,12 @@ void Cmd_Alias_f (void)
 
 // copy the rest of the command line
 	cmd[0] = 0;		// start out with a null string
-	c = Cmd_Argc();
-	for (i=2 ; i < c ; i++)
+	for (i=2 ; i<c ; i++)
 	{
-		strcat (cmd, Cmd_Argv(i));
-		if (i != c)
+		if (i > 2)
 			strcat (cmd, " ");
+		strcat (cmd, Cmd_Argv(i));
 	}
-	strcat (cmd, "\n");
 	
 	a->value = CopyString (cmd);
 }
@@ -769,6 +755,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 	cmd_hash_array[key] = cmd;
 }
 
+
 /*
 ============
 Cmd_Exists
@@ -874,7 +861,16 @@ void Cmd_Z_Cmd_f (void)
 }
 
 
-// dest must point to a 1024-byte buffer
+/*
+================
+Cmd_ExpandString
+
+Expands all $cvar expressions to cvar values
+If not SERVERONLY, also expands $macro expressions
+Note: dest must point to a 1024 byte buffer
+================
+*/
+char *TP_MacroString (char *s);
 void Cmd_ExpandString (char *data, char *dest)
 {
 	unsigned int	c;
@@ -882,14 +878,19 @@ void Cmd_ExpandString (char *data, char *dest)
 	int		i, len;
 	cvar_t	*var, *bestvar;
 	int		quotes = 0;
+	char	*str;
+	int		name_length;
+#ifndef SERVERONLY
+	extern int	macro_length;
+#endif
 
 	len = 0;
 
-// parse a regular word
 	while ( (c = *data) != 0)
 	{
 		if (c == '"')
 			quotes++;
+
 		if (c == '$' && !(quotes&1))
 		{
 			data++;
@@ -909,21 +910,36 @@ void Cmd_ExpandString (char *data, char *dest)
 					bestvar = var;
 			}
 
-			if (bestvar)
+#ifndef SERVERONLY
+			str = TP_MacroString (buf);
+			name_length = macro_length;
+			if (bestvar && (!str || (strlen(bestvar->name) > macro_length))) {
+				str = bestvar->string;
+				name_length = strlen(bestvar->name);
+			}
+#else
+			if (bestvar) {
+				str = bestvar->string;
+				name_length = strlen(bestvar->name);
+			} else
+				str = NULL;
+#endif
+
+			if (str)
 			{
 				// check buffer size
-				if (len + strlen(bestvar->string) >= 1024-1)
+				if (len + strlen(str) >= 1024-1)
 					break;
 
-				strcpy(&dest[len], bestvar->string);
-				len += strlen(bestvar->string);
-				i = strlen(bestvar->name);
+				strcpy(&dest[len], str);
+				len += strlen(str);
+				i = name_length;
 				while (buf[i])
 					dest[len++] = buf[i++];
 			}
 			else
 			{
-				// no matching cvar name was found
+				// no matching cvar or macro
 				dest[len++] = '$';
 				if (len + strlen(buf) >= 1024-1)
 					break;
@@ -943,6 +959,7 @@ void Cmd_ExpandString (char *data, char *dest)
 
 	dest[len] = 0;
 }
+
 
 /*
 ============
@@ -1000,11 +1017,16 @@ void Cmd_ExecuteString (char *text)
 		if (!Q_strcasecmp (cmd_argv[0], a->name))
 		{
 #ifndef SERVERONLY
-			if (cbuf_current == &cbuf_svc)
+			if (cbuf_current == &cbuf_svc) {
 				Cbuf_AddText (a->value);
+				Cbuf_AddText ("\n");
+			}
 			else
 #endif
+			{
+				Cbuf_InsertText ("\n");
 				Cbuf_InsertText (a->value);
+			}
 			return;
 		}
 	}
@@ -1012,6 +1034,91 @@ void Cmd_ExecuteString (char *text)
 	if (cl_warncmd.value || developer.value)
 		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
 }
+
+
+static qboolean is_numeric (char *c)
+{	
+	return (*c >= '0' && *c <= '9') ||
+		((*c == '-' || *c == '+') && (c[1] == '.' || (c[1]>='0' && c[1]<='9'))) ||
+		(*c == '.' && (c[1]>='0' && c[1]<='9'));
+}
+/*
+================
+Cmd_If_f
+================
+*/
+void Cmd_If_f (void)
+{
+	int		i, c;
+	char	*op;
+	qboolean	result;
+	char	buf[256];
+
+	c = Cmd_Argc ();
+	if (c < 5) {
+		Con_Printf ("usage: if <expr1> <op> <expr2> <command> [else <command>]\n");
+		return;
+	}
+
+	op = Cmd_Argv (2);
+	if (!strcmp(op, "==") || !strcmp(op, "=") || !strcmp(op, "!=")
+		|| !strcmp(op, "<>"))
+	{
+		if (is_numeric(Cmd_Argv(1)) && is_numeric(Cmd_Argv(3)))
+			result = Q_atof(Cmd_Argv(1)) == Q_atof(Cmd_Argv(3));
+		else
+			result = !strcmp(Cmd_Argv(1), Cmd_Argv(3));
+
+		if (op[0] != '=')
+			result = !result;
+	}
+	else if (!strcmp(op, ">"))
+		result = Q_atof(Cmd_Argv(1)) > Q_atof(Cmd_Argv(3));
+	else if (!strcmp(op, "<"))
+		result = Q_atof(Cmd_Argv(1)) < Q_atof(Cmd_Argv(3));
+	else if (!strcmp(op, ">="))
+		result = Q_atof(Cmd_Argv(1)) >= Q_atof(Cmd_Argv(3));
+	else if (!strcmp(op, "<="))
+		result = Q_atof(Cmd_Argv(1)) <= Q_atof(Cmd_Argv(3));
+	else {
+		Con_Printf ("unknown operator: %s\n", op);
+		Con_Printf ("valid operators are ==, =, !=, <>, >, <, >=, <=\n");
+		return;
+	}
+
+	buf[0] = '\0';
+	if (result)
+	{
+		for (i=4; i < c ; i++) {
+			if ((i == 4) && !Q_strcasecmp(Cmd_Argv(i), "then"))
+				continue;
+			if (!Q_strcasecmp(Cmd_Argv(i), "else"))
+				break;
+			if (buf[0])
+				strcat (buf, " ");
+			strcat (buf, Cmd_Argv(i));
+		}
+	}
+	else
+	{
+		for (i=4; i < c ; i++) {
+			if (!Q_strcasecmp(Cmd_Argv(i), "else"))
+				break;
+		}
+
+		if (i == c)
+			return;
+		
+		for (i++ ; i < c ; i++) {
+			if (buf[0])
+				strcat (buf, " ");
+			strcat (buf, Cmd_Argv(i));
+		}
+	}
+
+	Cbuf_InsertText (buf);
+}
+
 
 /*
 ================
@@ -1054,5 +1161,6 @@ void Cmd_Init (void)
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f);
 	Cmd_AddCommand ("unaliasall", Cmd_UnAliasAll_f);
 	Cmd_AddCommand ("unalias", Cmd_UnAlias_f);
+	Cmd_AddCommand ("if", Cmd_If_f);
 	Cmd_AddCommand ("_z_cmd", Cmd_Z_Cmd_f);	// ZQuake
 }

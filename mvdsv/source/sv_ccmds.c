@@ -18,7 +18,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#ifdef QW_BOTH
+#include "quakedef.h"
+#include "server.h"
+#include "sound.h"
+#else
 #include "qwsvdef.h"
+#endif
 
 qboolean	sv_allow_cheats;
 
@@ -290,6 +296,10 @@ void SV_Give_f (void)
 }
 
 
+void CL_Disconnect ();
+int UDP_OpenSocket (int, qboolean);
+void Host_ConnectLocal ();
+
 /*
 ======================
 SV_Map_f
@@ -304,6 +314,23 @@ void SV_Map_f (void)
 	char	level[MAX_QPATH];
 	char	expanded[MAX_QPATH];
 	FILE	*f;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf ("map <levelname> : continue game on a new level\n");
+		return;
+	}
+	strcpy (level, Cmd_Argv(1));
+
+	// check to make sure the level exists
+	sprintf (expanded, "maps/%s.bsp", level);
+	COM_FOpenFile (expanded, &f);
+	if (!f)
+	{
+		Con_Printf ("Can't find %s\n", expanded);
+		return;
+	}
+	fclose (f);
 
 #ifdef QW_BOTH
 	// An ugly hack to let you run zquake and qwsv or proxy without
@@ -324,39 +351,23 @@ void SV_Map_f (void)
 		if (i)
 			Con_Printf ("Server socket opened on port %i\n", __serverport + i);
 	}
+
+	// make sure we're not connected to an external server,
+	// and demo playback is stopped
+	if (sv.state == ss_dead)
+		CL_Disconnect();
+
+	S_StopAllSounds (true);
+	cl.worldmodel = NULL;
+	Host_ConnectLocal ();
 #endif
 
-	if (Cmd_Argc() != 2)
-	{
-		Con_Printf ("map <levelname> : continue game on a new level\n");
-		return;
-	}
-	strcpy (level, Cmd_Argv(1));
-
-	// check to make sure the level exists
-	sprintf (expanded, "maps/%s.bsp", level);
-	COM_FOpenFile (expanded, &f);
-	if (!f)
-	{
-		Con_Printf ("Can't find %s\n", expanded);
-		return;
-	}
-	fclose (f);
-
-#ifdef QW_BOTH
-//	cls.state = ca_connected;
-	Host_ForceReconnect();	// !!! FIXME...
-#endif
 	SV_BroadcastCommand ("changing\n");
 	SV_SendMessagesToAll ();
 
 	SV_SpawnServer (level);
 
 	SV_BroadcastCommand ("reconnect\n");
-
-#ifdef QW_BOTH
-	Host_ConnectLocal();	// FIXME
-#endif
 }
 
 
@@ -369,9 +380,25 @@ Kick a user off of the server
 */
 void SV_Kick_f (void)
 {
-	int			i;
+	int			i, j;
 	client_t	*cl;
 	int			uid;
+	int			c;
+	int			saved_state;
+	char		reason[80] = "";
+
+	c = Cmd_Argc ();
+	if (c < 2) {
+#ifdef QW_BOTH
+		// some mods use a "kick" alias for their own needs, sigh
+		if (cls.state >= ca_onserver && Cmd_FindAlias("kick")) {
+			Cmd_ExecuteString (Cmd_AliasString("kick"));
+			return;
+		}
+#endif
+		Con_Printf ("kick <userid> [reason]\n");
+		return;
+	}
 
 	uid = atoi(Cmd_Argv(1));
 	
@@ -381,10 +408,24 @@ void SV_Kick_f (void)
 			continue;
 		if (cl->userid == uid)
 		{
-			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked\n", cl->name);
-			// print directly, because the dropped client won't get the
-			// SV_BroadcastPrintf message
-			SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game\n");
+			if (c > 2) {
+				strcpy (reason, " (");
+				for (j=2 ; j<c; j++) {
+					strncat (reason, Cmd_Argv(j), sizeof(reason)-4);
+					if (j < c-1)
+						strncat (reason, " ", sizeof(reason)-4);
+				}
+				if (strlen(reason) < 3)
+					reason[0] = '\0';
+				else
+					strncat (reason, ")", sizeof(reason));
+			}
+
+			saved_state = cl->state;
+			cl->state = cs_free; // HACK: don't broadcast to this client
+			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked%s\n", cl->name, reason);
+			cl->state = saved_state;
+			SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game%s\n", reason);
 			SV_DropClient (cl); 
 			return;
 		}
@@ -406,6 +447,14 @@ void SV_Status_f (void)
 	float		cpu, avg, pak;
 	char		*s;
 
+#ifdef QW_BOTH
+	// some mods use a "status" alias for their own needs, sigh
+	if (!sv_redirected && !Q_strcasecmp(Cmd_Argv(0), "status")
+		&& cls.state >= ca_onserver && Cmd_FindAlias("status")) {
+		Cmd_ExecuteString (Cmd_AliasString("status"));
+		return;
+	}
+#endif
 
 	cpu = (svs.stats.latched_active+svs.stats.latched_idle);
 	if (cpu)
@@ -898,10 +947,9 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("snap", SV_Snap_f);
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
 	Cmd_AddCommand ("kick", SV_Kick_f);
+	Cmd_AddCommand ("status", SV_Status_f);
 #ifdef QW_BOTH
 	Cmd_AddCommand ("serverstatus", SV_Status_f);
-#else
-	Cmd_AddCommand ("status", SV_Status_f);
 #endif
 
 	Cmd_AddCommand ("map", SV_Map_f);

@@ -107,12 +107,6 @@ void R_Envmap_f (void)
 {
 	byte	buffer[256*256*4];
 
-#ifdef _WIN32
-	extern qboolean vid_grabbackbuffer;
-	// make sure GL_BeginRendering doesn't reset draw buffer to GL_BACK
-	vid_grabbackbuffer = 0;
-#endif
-
 	glDrawBuffer  (GL_FRONT);
 	glReadBuffer  (GL_FRONT);
 	envmap = true;
@@ -175,24 +169,30 @@ R_Init
 */
 void R_Init (void)
 {	
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);	
-	Cmd_AddCommand ("envmap", R_Envmap_f);	
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);
+	Cmd_AddCommand ("envmap", R_Envmap_f);
+#ifdef QW_BOTH
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);	
+#endif
+
+	Cvar_RegisterVariable (&r_watervishack);
+	if (gl_vendor && strstr(gl_vendor, "3Dfx"))
+		Cvar_SetValue (&r_watervishack, 0);
 
 	Cvar_RegisterVariable (&r_norefresh);
 	Cvar_RegisterVariable (&r_lightmap);
 	Cvar_RegisterVariable (&r_fullbright);
 	Cvar_RegisterVariable (&r_drawentities);
-	Cvar_RegisterVariable (&r_drawviewmodel2);
 	Cvar_RegisterVariable (&r_drawviewmodel);
+	Cvar_RegisterVariable (&r_drawflame);
 	Cvar_RegisterVariable (&r_shadows);
 	Cvar_RegisterVariable (&r_mirroralpha);
 	Cvar_RegisterVariable (&r_wateralpha);
-	Cvar_RegisterVariable (&r_waterwarp);
 	Cvar_RegisterVariable (&r_dynamic);
 	Cvar_RegisterVariable (&r_novis);
 	Cvar_RegisterVariable (&r_speeds);
 	Cvar_RegisterVariable (&r_netgraph);
+	Cvar_RegisterVariable (&r_fullbrightSkins);
 
 	Cvar_RegisterVariable (&gl_clear);
 	Cvar_RegisterVariable (&gl_texsort);
@@ -210,6 +210,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&gl_finish);
 	Cvar_RegisterVariable (&gl_fb_depthhack);
 	Cvar_RegisterVariable (&gl_fb_bmodels);
+	Cvar_RegisterVariable (&gl_fb_models);
 
 	Cvar_RegisterVariable (&gl_keeptjunctions);
 	Cvar_RegisterVariable (&gl_reporttjunctions);
@@ -245,7 +246,7 @@ void R_TranslatePlayerSkin (int playernum)
 	int		i, j;
 	byte	*original;
 	unsigned	pixels[512*256], *out;
-	unsigned	scaled_width, scaled_height;
+	int			scaled_width, scaled_height;
 	int			inwidth, inheight;
 	int			tinwidth, tinheight;
 	byte		*inrow;
@@ -340,6 +341,10 @@ void R_TranslatePlayerSkin (int playernum)
 		// allow users to crunch sizes down even more if they want
 		scaled_width >>= (int)gl_playermip.value;
 		scaled_height >>= (int)gl_playermip.value;
+		if (scaled_width < 1)
+			scaled_width = 1;
+		if (scaled_height < 1)
+			scaled_height = 1;
 
 		if (VID_Is8bit()) { // 8bit texture upload
 			byte *out2;
@@ -456,6 +461,9 @@ void R_TimeRefresh_f (void)
 {
 	int			i;
 	float		start, stop, time;
+
+	if (cls.state != ca_active)
+		return;
 
 	glDrawBuffer  (GL_FRONT);
 	glFinish ();

@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // r_main.c
 
 #include "quakedef.h"
+#include "sound.h"
 
 entity_t	r_worldentity;
 
@@ -30,7 +31,6 @@ entity_t	*currententity;
 
 int			r_visframecount;	// bumped when going to a new PVS
 int			r_framecount;		// used for dlight push checking
-qboolean	r_dowarp;
 
 mplane_t	frustum[4];
 
@@ -66,6 +66,7 @@ float	r_base_world_matrix[16];
 refdef_t	r_refdef;
 
 mleaf_t		*r_viewleaf, *r_oldviewleaf;
+mleaf_t		*r_viewleaf2, *r_oldviewleaf2;	// for watervis hack
 
 texture_t	*r_notexture_mip;
 
@@ -77,17 +78,18 @@ void R_MarkLeaves (void);
 cvar_t	r_norefresh = {"r_norefresh","0"};
 cvar_t	r_drawentities = {"r_drawentities","1"};
 cvar_t	r_drawviewmodel = {"r_drawviewmodel","1"};
-cvar_t	r_drawviewmodel2 = {"r_drawviewmodel2","1"}; // show weapon at fov > 90
+cvar_t	r_drawflame = {"r_drawflame","1"};
 cvar_t	r_speeds = {"r_speeds","0"};
 cvar_t	r_fullbright = {"r_fullbright","0"};
 cvar_t	r_lightmap = {"r_lightmap","0"};
 cvar_t	r_shadows = {"r_shadows","0"};
 cvar_t	r_mirroralpha = {"r_mirroralpha","1"};
 cvar_t	r_wateralpha = {"r_wateralpha","1"};
-cvar_t	r_waterwarp = {"r_waterwarp","1"};
 cvar_t	r_dynamic = {"r_dynamic","1"};
 cvar_t	r_novis = {"r_novis","0"};
 cvar_t	r_netgraph = {"r_netgraph","0"};
+cvar_t	r_watervishack = {"r_watervishack", "1"};
+cvar_t	r_fullbrightSkins = {"r_fullbrightSkins", "0"};
 
 cvar_t	gl_clear = {"gl_clear","0"};
 cvar_t	gl_cull = {"gl_cull","1"};
@@ -101,11 +103,17 @@ cvar_t	gl_nocolors = {"gl_nocolors","0"};
 cvar_t	gl_keeptjunctions = {"gl_keeptjunctions","1"};
 cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_finish = {"gl_finish","0"};
-cvar_t	gl_fb_bmodels = {"gl_fb_bmodels","1"};
 cvar_t	gl_fb_depthhack = {"gl_fb_depthhack","1"};
+cvar_t	gl_fb_bmodels = {"gl_fb_bmodels","1"};
+cvar_t	gl_fb_models = {"gl_fb_models","1"};
 
 extern	cvar_t	gl_ztrick;
 extern	cvar_t	scr_fov;
+
+#ifndef _WIN32
+qboolean vid_hwgamma_enabled = false;	// dummy
+#endif
+
 /*
 =================
 R_CullBox
@@ -126,12 +134,12 @@ qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 
 void R_RotateForEntity (entity_t *e)
 {
-    glTranslatef (e->origin[0],  e->origin[1],  e->origin[2]);
+	glTranslatef (e->origin[0],  e->origin[1],  e->origin[2]);
 
-    glRotatef (e->angles[1],  0, 0, 1);
-    glRotatef (-e->angles[0],  0, 1, 0);
+	glRotatef (e->angles[1],  0, 0, 1);
+	glRotatef (-e->angles[0],  0, 1, 0);
 	//ZOID: fixed z angle
-    glRotatef (e->angles[2],  1, 0, 0);
+	glRotatef (e->angles[2],  1, 0, 0);
 }
 
 /*
@@ -453,7 +461,9 @@ void R_DrawAliasModel (entity_t *ent)
 	vec3_t		mins, maxs;
 	aliashdr_t	*paliashdr;
 	float		an;
-	int			anim;
+	int			anim, skinnum;
+	int			texture;
+	qboolean	full_light;
 
 	clmodel = ent->model;
 
@@ -470,29 +480,27 @@ void R_DrawAliasModel (entity_t *ent)
 	// get lighting information
 	//
 
-// Tonik: make thunderbolt model look nice
-// FIXME: we don't want to make strcmp's for every model!
-	if (!strcmp (clmodel->name, "progs/bolt.mdl")
-		|| !strcmp (clmodel->name, "progs/bolt2.mdl")
-		|| !strcmp (clmodel->name, "progs/bolt3.mdl") ) {
+// make thunderbolt and torches full light
+	if (clmodel->modhint == MOD_THUNDERBOLT) {
+		ambientlight = 210;
+		shadelight = 0;
+		full_light = true;
+	} else if (clmodel->modhint == MOD_FLAME) {
 		ambientlight = 255;
 		shadelight = 0;
-
-	} else if (!strcmp (clmodel->name, "progs/flame2.mdl")
-		|| !strcmp (clmodel->name, "progs/flame.mdl") ) {
-		// HACK HACK HACK -- no fullbright colors, so make torches full light
-		ambientlight = 255;
-		shadelight = 0;
+		full_light = true;
 	}
-	else {
-
+	else if (clmodel->modhint == MOD_PLAYER && r_fullbrightSkins.value
+		&& !cl.teamfortress) {
+		ambientlight = shadelight = 128;
+		full_light = true;
+	}
+	else
+	{
 		// normal lighting 
 
+		full_light = false;
 		ambientlight = shadelight = R_LightPoint (ent->origin);
-		
-		// always give the gun some light
-		if (ent == &cl.viewent && ambientlight < 24)
-			ambientlight = shadelight = 24;
 		
 		for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 		{
@@ -514,8 +522,12 @@ void R_DrawAliasModel (entity_t *ent)
 		if (ambientlight + shadelight > 192)
 			shadelight = 192 - ambientlight;
 		
-		// ZOID: never allow players to go totally black
-		if (!strcmp(clmodel->name, "progs/player.mdl")) {
+		// always give the gun some light
+		if (ent == &cl.viewent && ambientlight < 24)
+			ambientlight = shadelight = 24;
+		
+		// never allow players to go totally black
+		if (clmodel->modhint == MOD_PLAYER) {
 			if (ambientlight < 8)
 				ambientlight = shadelight = 8;
 		}
@@ -542,10 +554,10 @@ void R_DrawAliasModel (entity_t *ent)
 
 	GL_DisableMultitexture();
 
-    glPushMatrix ();
+	glPushMatrix ();
 	R_RotateForEntity (ent);
 
-	if (!strcmp (clmodel->name, "progs/eyes.mdl") ) {
+	if (clmodel->modhint == MOD_EYES) {
 		glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));
 	// double size of eyes, since they are really hard to see in gl
 		glScalef (paliashdr->scale[0]*2, paliashdr->scale[1]*2, paliashdr->scale[2]*2);
@@ -555,7 +567,13 @@ void R_DrawAliasModel (entity_t *ent)
 	}
 
 	anim = (int)(cl.time*10) & 3;
-    GL_Bind(paliashdr->gl_texturenum[ent->skinnum][anim]);
+	skinnum = ent->skinnum;
+	if ((skinnum >= paliashdr->numskins) || (skinnum < 0)) {
+		Con_DPrintf ("R_DrawAliasModel: no such skin # %d\n", skinnum);
+		skinnum = 0;
+	}
+
+	texture = paliashdr->gl_texturenum[skinnum][anim];
 
 	// we can't dynamically colormap textures, so they are cached
 	// separately for the players.  Heads are just uncolored.
@@ -567,8 +585,10 @@ void R_DrawAliasModel (entity_t *ent)
 			R_TranslatePlayerSkin(i);
 		}
 		if (i >= 0 && i<MAX_CLIENTS)
-		    GL_Bind(playertextures + i);
+		    texture = playertextures + i;
 	}
+
+	GL_Bind (texture);
 
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
@@ -581,16 +601,31 @@ void R_DrawAliasModel (entity_t *ent)
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
+	if (!full_light && gl_fb_models.value) {
+		int	fb_texture = paliashdr->fb_texturenum[skinnum][anim];
+		if (fb_texture) {
+			glEnable (GL_BLEND);
+			GL_Bind (fb_texture);
+			R_SetupAliasFrame (ent->frame, paliashdr);
+			glDisable (GL_BLEND);
+		}
+	}
+
 	glShadeModel (GL_FLAT);
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	glPopMatrix ();
 
-	if (r_shadows.value)
+	if (r_shadows.value && !full_light && ent != &cl.viewent)
 	{
 		glPushMatrix ();
-		R_RotateForEntity (ent);
+
+		glTranslatef (ent->origin[0],  ent->origin[1],  ent->origin[2]);
+		glRotatef (ent->angles[1],  0, 0, 1);
+		//FIXME glRotatef (-ent->angles[0],  0, 1, 0);
+		//FIXME glRotatef (ent->angles[2],  1, 0, 0);
+
 		glDisable (GL_TEXTURE_2D);
 		glEnable (GL_BLEND);
 		glColor4f (0,0,0,0.5);
@@ -661,7 +696,7 @@ R_DrawViewModel
 void R_DrawViewModel (void)
 {
 	if (!r_drawviewmodel.value || 
-		(!r_drawviewmodel2.value && scr_fov.value > 90) ||
+		(r_drawviewmodel.value == 2 && scr_fov.value > 90) ||
 		!Cam_DrawViewModel())
 		return;
 
@@ -695,33 +730,22 @@ R_PolyBlend
 */
 void R_PolyBlend (void)
 {
-	if (!gl_polyblend.value)
+	if (vid_hwgamma_enabled)
 		return;
 	if (!v_blend[3])
 		return;
 
-//Con_Printf("R_PolyBlend(): %4.2f %4.2f %4.2f %4.2f\n",v_blend[0], v_blend[1],	v_blend[2],	v_blend[3]);
-
- 	GL_DisableMultitexture();
-
 	glDisable (GL_ALPHA_TEST);
 	glEnable (GL_BLEND);
-	glDisable (GL_DEPTH_TEST);
 	glDisable (GL_TEXTURE_2D);
-
-    glLoadIdentity ();
-
-    glRotatef (-90,  1, 0, 0);	    // put Z going up
-    glRotatef (90,  0, 0, 1);	    // put Z going up
 
 	glColor4fv (v_blend);
 
 	glBegin (GL_QUADS);
-
-	glVertex3f (10, 100, 100);
-	glVertex3f (10, -100, 100);
-	glVertex3f (10, -100, -100);
-	glVertex3f (10, 100, -100);
+	glVertex2f (r_refdef.vrect.x, r_refdef.vrect.y);
+	glVertex2f (r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y);
+	glVertex2f (r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y + r_refdef.vrect.height);
+	glVertex2f (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height);
 	glEnd ();
 
 	glDisable (GL_BLEND);
@@ -729,6 +753,48 @@ void R_PolyBlend (void)
 	glEnable (GL_ALPHA_TEST);
 }
 
+/*
+================
+R_BrightenScreen
+================
+*/
+void R_BrightenScreen (void)
+{
+	extern float	vid_gamma;
+	float	f;
+
+	if (vid_hwgamma_enabled)
+		return;
+	if (gl_contrast.value <= 1.0)
+		return;
+
+	f = gl_contrast.value;
+	if (f > 3)
+		f = 3;
+
+	f = pow (f, vid_gamma);
+	
+	glDisable (GL_TEXTURE_2D);
+	glEnable (GL_BLEND);
+	glBlendFunc (GL_DST_COLOR, GL_ONE);
+	glBegin (GL_QUADS);
+	while (f > 1)
+	{
+		if (f >= 2)
+			glColor3f (1, 1, 1);
+		else
+			glColor3f (f - 1, f - 1, f - 1);
+		glVertex2f (0, 0);
+		glVertex2f (vid.width, 0);
+		glVertex2f (vid.width, vid.height);
+		glVertex2f (0, vid.height);
+		f *= 0.5;
+	}
+	glEnd ();
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable (GL_TEXTURE_2D);
+	glDisable (GL_BLEND);
+}
 
 int SignbitsForPlane (mplane_t *out)
 {
@@ -790,13 +856,15 @@ R_SetupFrame
 */
 void R_SetupFrame (void)
 {
+	extern float	wateralpha;
+
 // don't allow cheats in multiplayer
 	r_fullbright.value = 0;
 	r_lightmap.value = 0;
 	if (!atoi(Info_ValueForKey(cl.serverinfo, "watervis")))
-		r_wateralpha.value = 1;
-
-	r_dowarp = (r_waterwarp.value != 0);
+		wateralpha = 1;
+	else
+		wateralpha = r_wateralpha.value;
 
 	R_AnimateLight ();
 
@@ -810,6 +878,32 @@ void R_SetupFrame (void)
 // current viewleaf
 	r_oldviewleaf = r_viewleaf;
 	r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
+
+	if (r_watervishack.value) {
+		vec3_t	testorigin;
+		mleaf_t	*testleaf;
+
+		r_oldviewleaf2 = r_viewleaf2;
+		r_viewleaf2 = NULL;
+		VectorCopy (r_origin, testorigin);
+		if (r_viewleaf->contents <= CONTENTS_WATER  &&
+			r_viewleaf->contents >= CONTENTS_LAVA) {
+			// Test the point 10 units above. 10 seems to be enough
+			// for fov values up to 140
+			testorigin[2] += 10;
+			testleaf = Mod_PointInLeaf (testorigin, cl.worldmodel);
+			if (testleaf->contents == CONTENTS_EMPTY)
+				r_viewleaf2 = testleaf;
+		}
+		else if (r_viewleaf->contents == CONTENTS_EMPTY) {
+			testorigin[2] -= 10;
+			testleaf = Mod_PointInLeaf (testorigin, cl.worldmodel);
+			if (testleaf->contents <= CONTENTS_WATER &&
+				testleaf->contents >= CONTENTS_LAVA)
+				r_viewleaf2 = testleaf;
+		}
+	} else
+		r_viewleaf2 = r_oldviewleaf2 = NULL;
 
 	V_SetContentsColor (r_viewleaf->contents);
 	V_CalcBlend ();
@@ -965,9 +1059,27 @@ R_Clear
 int gl_ztrickframe = 0;
 void R_Clear (void)
 {
+	static qboolean cleartogray;
+	qboolean	clear = false;
+
+	if (gl_clear.value) {
+		clear = true;
+		if (cleartogray) {
+			glClearColor (1, 0, 0, 0);
+			cleartogray = false;
+		}
+	}
+	else if (!vid_hwgamma_enabled && gl_contrast.value > 1) {
+		clear = true;
+		if (!cleartogray) {
+			glClearColor (0.1, 0.1, 0.1, 0);
+			cleartogray = true;
+		}
+	}
+
 	if (r_mirroralpha.value != 1.0)
 	{
-		if (gl_clear.value)
+		if (clear)
 			glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		else
 			glClear (GL_DEPTH_BUFFER_BIT);
@@ -977,7 +1089,7 @@ void R_Clear (void)
 	}
 	else if (gl_ztrick.value)
 	{
-		if (gl_clear.value)
+		if (clear)
 			glClear (GL_COLOR_BUFFER_BIT);
 
 		gl_ztrickframe = !gl_ztrickframe;
@@ -996,7 +1108,7 @@ void R_Clear (void)
 	}
 	else
 	{
-		if (gl_clear.value)
+		if (clear)
 			glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		else
 			glClear (GL_DEPTH_BUFFER_BIT);
@@ -1117,8 +1229,6 @@ void R_RenderView (void)
 
 	// render mirror view
 //	R_Mirror ();
-
-	R_PolyBlend ();
 
 	if (r_speeds.value)
 	{

@@ -1,7 +1,7 @@
 /*
-	snd_mixa.S
+	snd_mixa.s
 
-	(description)
+	x86 assembly language sound code
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -23,13 +23,11 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: snd_mixa.s,v 1.1.1.2 2004/09/28 18:56:56 vvd0 Exp $
+	$Id: snd_mixa.s,v 1.1.1.3 2004/09/28 19:04:38 vvd0 Exp $
 */
-// snd_mixa.s
-// x86 assembly-language sound code
 
 #include "asm_i386.h"
-// #include "quakeasm.h"
+#include "quakeasm.h"
 
 #ifdef id386
 

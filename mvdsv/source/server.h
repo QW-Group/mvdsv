@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // server.h
 
+#include "progs.h"
+
 #define	MAX_MASTERS	8				// max recipients for heartbeat packets
 
 #define	MAX_SIGNON_BUFFERS	8
@@ -355,14 +357,15 @@ extern	FILE		*sv_fraglogfile;
 // sv_main.c
 //
 void SV_Shutdown (void);
+void SV_ShutdownServer (void);
 void SV_Frame (double time);
 void SV_FinalMessage (char *message);
 void SV_DropClient (client_t *drop);
+void SV_InitLocal (void);
 
 int SV_CalcPing (client_t *cl);
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
-
-int SV_ModelIndex (char *name);
+void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 
 qboolean SV_CheckBottom (edict_t *ent);
 qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
@@ -371,8 +374,6 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
 void SV_MoveToGoal (void);
 
-void SV_SaveSpawnparms (void);
-
 void SV_Physics_Client (edict_t	*ent);
 
 void SV_ExecuteUserCommand (char *s);
@@ -380,16 +381,19 @@ void SV_InitOperatorCommands (void);
 
 void SV_SendServerinfo (client_t *client);
 void SV_ExtractFromUserinfo (client_t *cl);
-
+int SV_BoundRate (int rate);
 
 void Master_Heartbeat (void);
 void Master_Packet (void);
 
+
 //
 // sv_init.c
 //
-void SV_SpawnServer (char *server);
+int SV_ModelIndex (char *name);
 void SV_FlushSignon (void);
+void SV_SaveSpawnparms (void);
+void SV_SpawnServer (char *server);
 
 
 //
@@ -408,7 +412,9 @@ void SV_SetMoveVars(void);
 //
 // sv_send.c
 //
-void SV_SendClientMessages (void);
+typedef enum {RD_NONE, RD_CLIENT, RD_PACKET} redirect_t;
+void SV_BeginRedirect (redirect_t rd);
+void SV_EndRedirect (void);
 
 void SV_Multicast (vec3_t origin, int to);
 void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
@@ -416,8 +422,10 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...);
 void SV_BroadcastPrintf (int level, char *fmt, ...);
 void SV_BroadcastCommand (char *fmt, ...);
+void SV_SendClientMessages (void);
 void SV_SendMessagesToAll (void);
 void SV_FindModelNumbers (void);
+
 
 //
 // sv_user.c
@@ -428,16 +436,10 @@ void SV_TogglePause (const char *msg);
 
 
 //
-// svonly.c
-//
-typedef enum {RD_NONE, RD_CLIENT, RD_PACKET} redirect_t;
-void SV_BeginRedirect (redirect_t rd);
-void SV_EndRedirect (void);
-
-//
 // sv_ccmds.c
 //
 void SV_Status_f (void);
+void SV_SendServerInfoChange (char *key, char *value);
 
 //
 // sv_ents.c
@@ -447,7 +449,6 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg);
 //
 // sv_nchan.c
 //
-
 void ClientReliableCheckBlock(client_t *cl, int maxsize);
 void ClientReliable_FinishWrite(client_t *cl);
 void ClientReliableWrite_Begin(client_t *cl, int c, int maxsize);

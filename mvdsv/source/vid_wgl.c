@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "winquake.h"
 #include "resource.h"
 #include "keys.h"
+#include "sound.h"
 #include <commctrl.h>
 
 #define MAX_MODE_LIST	30
@@ -97,7 +98,7 @@ static int	windowed_default;
 unsigned char	vid_curpal[256*3];
 static qboolean fullsbardraw = false;
 
-static float vid_gamma = 1.0;
+float vid_gamma = 1.0;
 
 HGLRC	baseRC;
 HDC		maindc;
@@ -106,9 +107,14 @@ glvert_t glv;
 
 cvar_t	gl_ztrick = {"gl_ztrick","1"};
 
+cvar_t	vid_hwgammacontrol = {"vid_hwgammacontrol","1"};
+qboolean	vid_gammaworks = false;
+qboolean	vid_hwgamma_enabled;
+unsigned short *currentgammaramp = NULL;
+void RestoreHWGamma (void);
+
 HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 
-//viddef_t	vid;				// global video state
 
 unsigned short	d_8to16table[256];
 unsigned	d_8to24table[256];
@@ -192,8 +198,8 @@ void D_EndDirectRect (int x, int y, int width, int height)
 
 void CenterWindow(HWND hWndCenter, int width, int height, BOOL lefttopjustify)
 {
-    RECT    rect;
-    int     CenterX, CenterY;
+//	RECT    rect;
+	int     CenterX, CenterY;
 
 	CenterX = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
 	CenterY = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
@@ -377,7 +383,7 @@ int VID_SetMode (int modenum, unsigned char *palette)
 	int				original_mode, temp;
 	qboolean		stat;
     MSG				msg;
-	HDC				hdc;
+//	HDC				hdc;
 
 	if ((windowed && (modenum != 0)) ||
 		(!windowed && (modenum < 1)) ||
@@ -576,22 +582,17 @@ int		texture_mode = GL_LINEAR;
 
 int		texture_extension_number = 1;
 
-#ifdef _WIN32
-void CheckMultiTextureExtensions(void) 
+void CheckMultiTextureExtensions (void) 
 {
-	if (strstr(gl_extensions, "GL_SGIS_multitexture ") && !COM_CheckParm("-nomtex")) {
+	if (strstr(gl_extensions, "GL_ARB_multitexture ") && !COM_CheckParm("-nomtex")) {
+		qglMultiTexCoord2f = (void *) wglGetProcAddress("glMultiTexCoord2fARB");
+		qglActiveTexture = (void *) wglGetProcAddress("glActiveTextureARB");
+		if (!qglMultiTexCoord2f || !qglActiveTexture)
+			return;
 		Con_Printf("Multitexture extensions found.\n");
-		qglMTexCoord2fSGIS = (void *) wglGetProcAddress("glMTexCoord2fSGIS");
-		qglSelectTextureSGIS = (void *) wglGetProcAddress("glSelectTextureSGIS");
 		gl_mtexable = true;
 	}
 }
-#else
-void CheckMultiTextureExtensions(void) 
-{
-		gl_mtexable = true;
-}
-#endif
 
 /*
 ===============
@@ -658,29 +659,28 @@ GL_BeginRendering
 
 =================
 */
-qboolean vid_grabbackbuffer;
 void GL_BeginRendering (int *x, int *y, int *width, int *height)
 {
-	extern cvar_t gl_clear;
-
 	*x = *y = 0;
 	*width = WindowRect.right - WindowRect.left;
 	*height = WindowRect.bottom - WindowRect.top;
-
-//    if (!wglMakeCurrent( maindc, baseRC ))
-//		Sys_Error ("wglMakeCurrent failed");
-
-//	glViewport (*x, *y, *width, *height);
-
-	if (vid_grabbackbuffer) {
-		glDrawBuffer (GL_BACK);
-		vid_grabbackbuffer--;
-	}
 }
 
 
 void GL_EndRendering (void)
 {
+	static qboolean old_hwgamma_enabled;
+
+	vid_hwgamma_enabled = vid_hwgammacontrol.value && vid_gammaworks
+		&& ActiveApp && !Minimized && modestate == MS_FULLDIB;
+	if (vid_hwgamma_enabled != old_hwgamma_enabled) {
+		old_hwgamma_enabled = vid_hwgamma_enabled;
+		if (vid_hwgamma_enabled && currentgammaramp)
+			VID_SetDeviceGammaRamp (currentgammaramp);
+		else
+			RestoreHWGamma ();
+	}
+
 	if (!scr_skipupdate || block_drawing)
 		SwapBuffers(maindc);
 
@@ -714,13 +714,12 @@ void	VID_SetPalette (unsigned char *palette)
 	unsigned r,g,b;
 	unsigned v;
 	int     r1,g1,b1;
-	int		j,k,l,m;
+	int		j,k,l;
 	unsigned short i;
 	unsigned	*table;
-	FILE *f;
-	char s[255];
-	HWND hDlg, hProgress;
-	float gamma;
+//	FILE *f;
+//	char s[255];
+//	HWND hDlg, hProgress;
 
 //
 // 8 8 8 encoding
@@ -739,7 +738,7 @@ void	VID_SetPalette (unsigned char *palette)
 		v = (255<<24) + (r<<0) + (g<<8) + (b<<16);
 		*table++ = v;
 	}
-	d_8to24table[255] &= 0;	// 255 is transparent
+	d_8to24table[255] = 0;	// 255 is transparent
 
 // Tonik: create a brighter palette for bmodel textures
 	pal = palette;
@@ -752,7 +751,7 @@ void	VID_SetPalette (unsigned char *palette)
 		pal += 3;
 		*table++ = (255<<24) + (r<<0) + (g<<8) + (b<<16);
 	}
-	d_8to24table2[255] &= 0;	// 255 is transparent
+	d_8to24table2[255] = 0;	// 255 is transparent
 
 	// JACK: 3D distance calcs - k is last closest, l is the distance.
 	// FIXME: Precalculate this and cache to disk.
@@ -781,16 +780,48 @@ void	VID_SetPalette (unsigned char *palette)
 	}
 }
 
-BOOL	gammaworks;
-
-void	VID_ShiftPalette (unsigned char *palette)
+void VID_ShiftPalette (unsigned char *palette)
 {
-	extern	byte ramps[3][256];
-	
-//	VID_SetPalette (palette);
-
-//	gammaworks = SetDeviceGammaRamp (maindc, ramps);
 }
+
+static byte	systemgammaramp[3][256][2];
+static qboolean customgamma = false;
+
+/*
+======================
+VID_SetDeviceGammaRamp
+
+Note: ramps must point to a static array
+======================
+*/
+void VID_SetDeviceGammaRamp (unsigned short *ramps)
+{
+	if (vid_gammaworks) {
+		currentgammaramp = ramps;
+		if (vid_hwgamma_enabled) {
+			SetDeviceGammaRamp (maindc, ramps);
+			customgamma = true;
+		}
+	}
+}
+
+void InitHWGamma (void)
+{
+	vid_gammaworks = GetDeviceGammaRamp (maindc, systemgammaramp);
+	vid_hwgamma_enabled = vid_hwgammacontrol.value && vid_gammaworks
+		&& ActiveApp && !Minimized && modestate == MS_FULLDIB;
+}
+
+void RestoreHWGamma (void)
+{
+	if (vid_gammaworks && customgamma) {
+		customgamma = false;
+		SetDeviceGammaRamp (maindc, systemgammaramp);
+	}
+}
+
+
+//=================================================================
 
 
 void VID_SetDefaultMode (void)
@@ -799,21 +830,23 @@ void VID_SetDefaultMode (void)
 }
 
 
-void	VID_Shutdown (void)
+void VID_Shutdown (void)
 {
    	HGLRC hRC;
    	HDC	  hDC;
 
 	if (vid_initialized)
 	{
+		RestoreHWGamma ();
+
 		vid_canalttab = false;
 		hRC = wglGetCurrentContext();
     	hDC = wglGetCurrentDC();
 
     	wglMakeCurrent(NULL, NULL);
 
-    	if (hRC)
-    	    wglDeleteContext(hRC);
+		if (hRC)
+			wglDeleteContext(hRC);
 
 		if (hDC && dibwindow)
 			ReleaseDC(dibwindow, hDC);
@@ -887,6 +920,7 @@ ClearAllStates
 */
 void ClearAllStates (void)
 {
+	extern void IN_ClearStates (void);
 	extern qboolean keydown[256];
 	int		i;
 	
@@ -913,9 +947,6 @@ void AppActivate(BOOL fActive, BOOL minimize)
 *
 ****************************************************************************/
 {
-	MSG msg;
-    HDC			hdc;
-    int			i, t;
 	static BOOL	sound_active;
 
 	ActiveApp = fActive;
@@ -939,15 +970,19 @@ void AppActivate(BOOL fActive, BOOL minimize)
 		{
 			IN_ActivateMouse ();
 			IN_HideMouse ();
+
+			if (vid_canalttab && !Minimized && currentgammaramp)
+				VID_SetDeviceGammaRamp (currentgammaramp);
+
 			if (vid_canalttab && vid_wassuspended) {
 				vid_wassuspended = false;
 				ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN);
 				ShowWindow (mainwindow, SW_SHOWNORMAL);
-				// Tonik: It seems Windows sometimes sets draw buffer to
-				// to GL_FRONT after switching to fullscreen, causing
-				// screen flickering. Grabbing GL_BACK once doesn't help,
-				// 2 is probably ok, but we use 5 just to be sure
-				vid_grabbackbuffer = 5;
+
+				// Fix for alt-tab bug in NVidia drivers
+				MoveWindow (mainwindow, 0, 0, gdevmode.dmPelsWidth, gdevmode.dmPelsHeight, false);
+				
+				// scr_fullupdate = 0;
 				Sbar_Changed ();
 			}
 		}
@@ -966,8 +1001,8 @@ void AppActivate(BOOL fActive, BOOL minimize)
 		{
 			IN_DeactivateMouse ();
 			IN_ShowMouse ();
+			RestoreHWGamma ();
 			if (vid_canalttab) { 
-				ShowWindow (mainwindow, SW_MINIMIZE);
 				ChangeDisplaySettings (NULL, 0);
 				vid_wassuspended = true;
 			}
@@ -980,6 +1015,17 @@ void AppActivate(BOOL fActive, BOOL minimize)
 	}
 }
 
+
+/*
+===================================================================
+
+MAIN WINDOW
+
+===================================================================
+*/
+
+LONG CDAudio_MessageHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 int IN_MapKey (int key);
 
 /* main window procedure */
@@ -990,11 +1036,13 @@ LONG WINAPI MainWndProc (
     LPARAM  lParam)
 {
     LONG    lRet = 1;
-	int		fwKeys, xPos, yPos, fActive, fMinimized, temp;
+	int		fActive, fMinimized, temp;
 	extern unsigned int uiWheelMessage;
 
-	if ( uMsg == uiWheelMessage )
+	if ( uMsg == uiWheelMessage ) {
 		uMsg = WM_MOUSEWHEEL;
+		wParam <<= 16;
+	}
 
     switch (uMsg)
     {
@@ -1278,8 +1326,7 @@ void VID_DescribeModes_f (void)
 void VID_InitDIB (HINSTANCE hInstance)
 {
 	WNDCLASS		wc;
-	HDC				hdc;
-	int				i;
+//	HDC				hdc;
 
 	/* Register the frame class */
     wc.style         = 0;
@@ -1335,7 +1382,7 @@ VID_InitFullDIB
 void VID_InitFullDIB (HINSTANCE hInstance)
 {
 	DEVMODE	devmode;
-	int		i, modenum, cmodes, originalnummodes, existingmode, numlowresmodes;
+	int		i, modenum, originalnummodes, existingmode, numlowresmodes;
 	int		j, bpp, done;
 	BOOL	stat;
 
@@ -1521,6 +1568,13 @@ static void Check_Gamma (unsigned char *pal)
 	} else
 		vid_gamma = Q_atof(com_argv[i+1]);
 
+	if (vid_gamma < 0.3)
+		vid_gamma = 0.3;
+	if (vid_gamma > 3)
+		vid_gamma = 3;
+
+	Cvar_SetValue (&gl_gamma, vid_gamma);
+
 	for (i=0 ; i<768 ; i++)
 	{
 		f = pow ( (pal[i]+1)/256.0 , vid_gamma );
@@ -1544,7 +1598,6 @@ void	VID_Init (unsigned char *palette)
 {
 	int		i, existingmode;
 	int		basenummodes, width, height, bpp, findbpp, done;
-	byte	*ptmp;
 	char	gldir[MAX_OSPATH];
 	HDC		hdc;
 	DEVMODE	devmode;
@@ -1562,6 +1615,7 @@ void	VID_Init (unsigned char *palette)
 	Cvar_RegisterVariable (&vid_stretch_by_2);
 	Cvar_RegisterVariable (&_windowed_mouse);
 	Cvar_RegisterVariable (&gl_ztrick);
+	Cvar_RegisterVariable (&vid_hwgammacontrol);
 
 	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f);
 	Cmd_AddCommand ("vid_describecurrentmode", VID_DescribeCurrentMode_f);
@@ -1771,13 +1825,15 @@ void	VID_Init (unsigned char *palette)
 
 	VID_SetMode (vid_default, palette);
 
-    maindc = GetDC(mainwindow);
+	maindc = GetDC(mainwindow);
 	bSetupPixelFormat(maindc);
 
-    baseRC = wglCreateContext( maindc );
+	InitHWGamma ();
+
+	baseRC = wglCreateContext( maindc );
 	if (!baseRC)
 		Sys_Error ("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window.");
-    if (!wglMakeCurrent( maindc, baseRC ))
+	if (!wglMakeCurrent( maindc, baseRC ))
 		Sys_Error ("wglMakeCurrent failed");
 
 	GL_Init ();
@@ -1836,8 +1892,7 @@ void VID_MenuDraw (void)
 {
 	qpic_t		*p;
 	char		*ptr;
-	int			lnummodes, i, j, k, column, row, dup, dupmode;
-	char		temp[100];
+	int			lnummodes, i, k, column, row;
 	vmode_t		*pv;
 
 	p = Draw_CachePic ("gfx/vidmodes.lmp");

@@ -24,13 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "version.h"
 
 #ifdef QW_BOTH
-#include "progs.h"	//FIXME
 #include "server.h"
 #endif
 
 void SCR_RSShot_f (void);
 void CL_ProcessServerInfo (void);
-
+void SV_Serverinfo_f (void);
+void Key_WriteBindings (FILE *f);
+void S_StopAllSounds (qboolean clear);
 
 /*
 ===================
@@ -535,6 +536,42 @@ void CL_Serverinfo_f (void)
 		Cmd_ForwardToServer();	
 }
 
+
+/*
+===============
+CL_WriteConfig_f
+
+Writes key bindings and archived cvars to a custom config file
+===============
+*/
+void CL_WriteConfig_f (void)
+{
+	FILE	*f;
+	char	name[MAX_QPATH];
+
+	if (Cmd_Argc() != 2) {
+		Con_Printf ("usage: writeconfig <filename>\n");
+		return;
+	}
+
+	Q_strncpyz (name, Cmd_Argv(1), sizeof(name));
+	COM_ForceExtension (name, ".cfg");
+
+	Con_Printf ("Writing %s\n", name);
+
+	f = fopen (va("%s/%s", com_gamedir, name), "w");
+	if (!f) {
+		Con_Printf ("Couldn't write %s.\n", name);
+		return;
+	}
+	
+	Key_WriteBindings (f);
+	Cvar_WriteVariables (f);
+
+	fclose (f);
+}
+
+
 void Host_Savegame_f(void);
 void Host_Loadgame_f(void);
 
@@ -555,6 +592,7 @@ void CL_InitCommands (void)
 	Cmd_AddCommand ("user", CL_User_f);
 	Cmd_AddCommand ("users", CL_Users_f);
 	Cmd_AddCommand ("version", CL_Version_f);
+	Cmd_AddCommand ("writeconfig", CL_WriteConfig_f);
 
 // client info setting
 	Cmd_AddCommand ("color", CL_Color_f);
@@ -599,7 +637,7 @@ reasons for that:
 1. So that partially stuffed commands are always executed properly
 2. Not to let players cheat in TF (v_cshift etc don't work in console)
 3. To hide some commands the user doesn't need to know about, like
-changin, fullserverinfo, nextul, stopul
+changing, fullserverinfo, nextul, stopul
 ==============================================================================
 */
 
@@ -649,7 +687,11 @@ void CL_FullServerinfo_f (void)
 	if ((p = Info_ValueForKey(cl.serverinfo, "*z_version")) && *p) {
 		v = Q_atof(p);
 		if (v) {
-			Con_Printf("ZQuake Version %s Server\n", p);
+#ifdef QW_BOTH
+			// only print version if connecting to a remote server
+			if (sv.state == ss_dead)
+#endif
+				Con_Printf("ZQuake Version %s Server\n", p);
 			server_version = 2.40;
 		}
 	}
@@ -682,6 +724,17 @@ void CL_Fov_f (void)
 		Cvar_Set (&scr_fov, Cmd_Argv(1));
 }
 
+
+void CL_R_DrawViewModel_f (void)
+{
+	extern cvar_t cl_filterdrawviewmodel;
+
+	if (cl_filterdrawviewmodel.value)
+		return;
+	Cvar_Command ();
+}
+
+
 typedef struct {
 	char	*name;
 	void	(*func) (void);
@@ -694,6 +747,7 @@ svcmd_t svcmds[] =
 	{"nextul", CL_NextUpload},
 	{"stopul", CL_StopUpload},
 	{"fov", CL_Fov_f},
+	{"r_drawviewmodel", CL_R_DrawViewModel_f},
 	{NULL, NULL}
 };
 

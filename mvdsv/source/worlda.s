@@ -1,7 +1,7 @@
 /*
-	worlda.S
+	worlda.s
 
-	(description)
+	x86 assembly-language server testing stuff
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -22,18 +22,10 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id: worlda.s,v 1.1.1.2 2004/09/28 18:57:04 vvd0 Exp $
 */
-// worlda.s
-// x86 assembly-language server testing stuff
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include "asm_i386.h"
-//#include "quakeasm.h"
-//include "d_ifacea.h"
+#include "quakeasm.h"
 
 #ifdef id386
 

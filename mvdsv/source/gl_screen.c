@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
 #include "quakedef.h"
+#include "sound.h"
+#include "sbar.h"
 #include "keys.h"
 #include <time.h>
 
@@ -84,7 +86,8 @@ float           scr_conlines;           // lines of console to display
 float           oldscreensize, oldfov;
 cvar_t          scr_viewsize = {"viewsize","100",CVAR_ARCHIVE};
 cvar_t          scr_fov = {"fov","90",CVAR_ARCHIVE}; // 10 - 170
-cvar_t          scr_conspeed = {"scr_conspeed","300"};
+cvar_t          scr_consize = {"scr_consize","0.5"};
+cvar_t          scr_conspeed = {"scr_conspeed","1000"};
 cvar_t          scr_centertime = {"scr_centertime","2"};
 cvar_t          scr_showram = {"showram","1"};
 cvar_t          scr_showturtle = {"showturtle","0"};
@@ -151,7 +154,7 @@ for a few moments
 */
 void SCR_CenterPrint (char *str)
 {
-	strncpy (scr_centerstring, str, sizeof(scr_centerstring)-1);
+	Q_strncpyz (scr_centerstring, str, sizeof(scr_centerstring));
 	scr_centertime_off = scr_centertime.value;
 	scr_centertime_start = cl.time;
 
@@ -383,6 +386,7 @@ void SCR_Init (void)
 {
 	Cvar_RegisterVariable (&scr_fov);
 	Cvar_RegisterVariable (&scr_viewsize);
+	Cvar_RegisterVariable (&scr_consize);
 	Cvar_RegisterVariable (&scr_conspeed);
 	Cvar_RegisterVariable (&scr_showram);
 	Cvar_RegisterVariable (&scr_showturtle);
@@ -644,24 +648,29 @@ void SCR_SetUpToDrawConsole (void)
 // decide on the height of the console
 	if (cls.state != ca_active)
 	{
-		scr_conlines = vid.height;              // full screen
+		scr_conlines = vid.height;		// full screen
 		scr_con_current = scr_conlines;
 	}
-	else if (key_dest == key_console)
-		scr_conlines = vid.height/2;    // half screen
+	else if (key_dest == key_console) {
+		scr_conlines = vid.height * scr_consize.value;
+		if (scr_conlines < 30)
+			scr_conlines = 30;
+		if (scr_conlines > vid.height - 10)
+			scr_conlines = vid.height - 10;
+	}
 	else
-		scr_conlines = 0;                               // none visible
+		scr_conlines = 0;				// none visible
 	
 	if (scr_conlines < scr_con_current)
 	{
-		scr_con_current -= scr_conspeed.value*host_frametime;
+		scr_con_current -= scr_conspeed.value*host_frametime*vid.height/320;
 		if (scr_conlines > scr_con_current)
 			scr_con_current = scr_conlines;
 
 	}
 	else if (scr_conlines > scr_con_current)
 	{
-		scr_con_current += scr_conspeed.value*host_frametime;
+		scr_con_current += scr_conspeed.value*host_frametime*vid.height/320;
 		if (scr_conlines < scr_con_current)
 			scr_con_current = scr_conlines;
 	}
@@ -723,30 +732,37 @@ SCR_ScreenShot_f
 void SCR_ScreenShot_f (void) 
 {
 	byte            *buffer;
-	char            pcxname[80]; 
+	char            pcxname[MAX_OSPATH]; 
 	char            checkname[MAX_OSPATH];
-	int                     i, c, temp;
-// 
-// find a file name to save it to 
-// 
-	strcpy(pcxname,"quake00.tga");
-		
-	for (i=0 ; i<=99 ; i++) 
-	{ 
-		pcxname[5] = i/10 + '0'; 
-		pcxname[6] = i%10 + '0'; 
-		sprintf (checkname, "%s/%s", com_gamedir, pcxname);
-		if (Sys_FileTime(checkname) == -1)
-			break;  // file doesn't exist
-	} 
-	if (i==100) 
-	{
-		Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX file\n"); 
-		return;
+	int				i, c, temp;
+
+	if (Cmd_Argc() == 2) {
+		Q_strncpyz (pcxname, Cmd_Argv(1), sizeof(pcxname));
+		COM_ForceExtension (pcxname, ".tga");
 	}
+	else
+	{
+		// 
+		// find a file name to save it to 
+		// 
+		strcpy(pcxname,"quake00.tga");
+		
+		for (i=0 ; i<=99 ; i++) 
+		{ 
+			pcxname[5] = i/10 + '0'; 
+			pcxname[6] = i%10 + '0'; 
+			sprintf (checkname, "%s/%s", com_gamedir, pcxname);
+			if (Sys_FileTime(checkname) == -1)
+				break;  // file doesn't exist
+		} 
+		if (i==100) 
+		{
+			Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX file\n"); 
+			return;
+		}
+	}		
 
-
-	buffer = malloc(glwidth*glheight*3 + 18);
+	buffer = Q_Malloc (glwidth*glheight*3 + 18);
 	memset (buffer, 0, 18);
 	buffer[2] = 2;          // uncompressed type
 	buffer[12] = glwidth&255;
@@ -928,12 +944,10 @@ SCR_RSShot_f
 */  
 void SCR_RSShot_f (void) 
 { 
-	int     i, x, y;
+	int     x, y;
 	unsigned char		*src, *dest;
 	char		pcxname[80]; 
-	char		checkname[MAX_OSPATH];
-	unsigned char		*newbuf, *srcbuf;
-	int srcrowbytes;
+	unsigned char		*newbuf;
 	int w, h;
 	int dx, dy, dex, dey, nx;
 	int r, b, g;
@@ -948,35 +962,14 @@ void SCR_RSShot_f (void)
 	if (cls.state < ca_onserver)
 		return; // gotta be connected
 
-	Con_Printf("Remote screen shot requested.\n");
+	Con_Printf ("Remote screen shot requested.\n");
 
-#if 0
-// 
-// find a file name to save it to 
-// 
-	strcpy(pcxname,"mquake00.pcx");
-		
-	for (i=0 ; i<=99 ; i++) 
-	{ 
-		pcxname[6] = i/10 + '0'; 
-		pcxname[7] = i%10 + '0'; 
-		sprintf (checkname, "%s/%s", com_gamedir, pcxname);
-		if (Sys_FileTime(checkname) == -1)
-			break;	// file doesn't exist
-	} 
-	if (i==100) 
-	{
-		Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX"); 
-		return;
-	}
-#endif
- 
 // 
 // save the pcx file 
 // 
-	newbuf = malloc(glheight * glwidth * 3);
+	newbuf = Q_Malloc (glheight * glwidth * 3);
 
-	glReadPixels (glx, gly, glwidth, glheight, GL_RGB, GL_UNSIGNED_BYTE, newbuf ); 
+	glReadPixels (glx, gly, glwidth, glheight, GL_RGB, GL_UNSIGNED_BYTE, newbuf);
 
 	w = (vid.width < RSSHOT_WIDTH) ? glwidth : RSSHOT_WIDTH;
 	h = (vid.height < RSSHOT_HEIGHT) ? glheight : RSSHOT_HEIGHT;
@@ -1032,12 +1025,10 @@ void SCR_RSShot_f (void)
 	st[strlen(st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, h - 1, w);
 
-	strncpy(st, cls.servername, sizeof(st));
-	st[sizeof(st) - 1] = 0;
+	Q_strncpyz (st, cls.servername, sizeof(st));
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, h - 11, w);
 
-	strncpy(st, name.string, sizeof(st));
-	st[sizeof(st) - 1] = 0;
+	Q_strncpyz (st, name.string, sizeof(st));
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, h - 21, w);
 
 	WritePCXfile (pcxname, newbuf, w, h, w, host_basepal, true);
@@ -1194,8 +1185,6 @@ void SCR_UpdateScreen (void)
 		vid.recalc_refdef = true;
 	}
 
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
-	
 	//
 	// determine size of refresh window
 	//
@@ -1214,14 +1203,23 @@ void SCR_UpdateScreen (void)
 	if (vid.recalc_refdef)
 		SCR_CalcRefdef ();
 
+	if (gl_contrast.value > 1 && !vid_hwgamma_enabled) {
+		// scr_fullupdate = true;
+		Sbar_Changed ();
+	}
+
 //
 // do 3D refresh drawing, and then update the screen
 //
+	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
+
 	SCR_SetUpToDrawConsole ();
 	
 	V_RenderView ();
 
 	GL_Set2D ();
+
+	R_PolyBlend ();
 
 	//
 	// draw any areas not covered by the refresh
@@ -1263,12 +1261,14 @@ void SCR_UpdateScreen (void)
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
 		SCR_CheckDrawCenterString ();
-		SCR_DrawSpeed ();	// Tonik
-		SCR_DrawClock ();	// Tonik
+		SCR_DrawSpeed ();
+		SCR_DrawClock ();
 		Sbar_Draw ();
 		SCR_DrawConsole ();     
 		M_Draw ();
 	}
+
+	R_BrightenScreen ();
 
 	V_UpdatePalette ();
 

@@ -317,6 +317,7 @@ typedef struct {
 	int					posedata;	// numposes*poseverts trivert_t
 	int					commands;	// gl command list with embedded s/t
 	int					gl_texturenum[MAX_SKINS][4];
+	int					fb_texturenum[MAX_SKINS][4];
 	maliasframedesc_t	frames[1];	// variable sized
 } aliashdr_t;
 
@@ -336,6 +337,9 @@ extern	trivertx_t	*poseverts[MAXALIASFRAMES];
 
 typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 
+// some models are special
+typedef enum {MOD_NORMAL, MOD_PLAYER, MOD_EYES, MOD_FLAME, MOD_THUNDERBOLT} modhint_t;
+
 #define	EF_ROCKET	1			// leave a trail
 #define	EF_GRENADE	2			// leave a trail
 #define	EF_GIB		4			// leave a trail
@@ -349,6 +353,8 @@ typedef struct model_s
 {
 	char		name[MAX_QPATH];
 	qboolean	needload;		// bmodels and sprites don't cache normally
+
+	modhint_t	modhint;
 
 	modtype_t	type;
 	int			numframes;

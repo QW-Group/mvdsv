@@ -18,9 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-// draw.c -- this is the only file outside the refresh that touches the
-// vid buffer
-
 #include "quakedef.h"
 #include "version.h"
 
@@ -31,6 +28,7 @@ extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor;
 cvar_t		gl_nobind = {"gl_nobind", "0"};
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
 cvar_t		gl_picmip = {"gl_picmip", "0"};
+cvar_t		gl_conalpha = {"gl_conalpha", "0.8"};
 
 byte		*draw_chars;				// 8*8 graphic characters
 qpic_t		*draw_disc;
@@ -69,6 +67,8 @@ typedef struct
 	int		texnum;
 	float	sl, tl, sh, th;
 } glpic_t;
+
+int GL_LoadPicTexture (qpic_t *pic, byte *data);
 
 byte		conback_buffer[sizeof(qpic_t) + sizeof(glpic_t)];
 qpic_t		*conback = (qpic_t *)&conback_buffer;
@@ -114,71 +114,75 @@ void GL_Bind (int texnum)
 
   scrap allocation
 
-  Allocate all the little status bar obejcts into a single texture
+  Allocate all the little status bar objects into a single texture
   to crutch up stupid hardware / drivers
 
 =============================================================================
 */
 
-#define	MAX_SCRAPS		1
+// some cards have low quality of alpha pics, so load the pics
+// without transparent pixels into a different scrap block.
+// scrap 0 is solid pics, 1 is transparent
+#define	MAX_SCRAPS		2
 #define	BLOCK_WIDTH		256
 #define	BLOCK_HEIGHT	256
 
 int			scrap_allocated[MAX_SCRAPS][BLOCK_WIDTH];
 byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT*4];
-qboolean	scrap_dirty;
+int			scrap_dirty = 0;	// bit mask
 int			scrap_texnum;
 
-// returns a texture number and the position inside it
-int Scrap_AllocBlock (int w, int h, int *x, int *y)
+// returns false if allocation failed
+qboolean Scrap_AllocBlock (int scrapnum, int w, int h, int *x, int *y)
 {
 	int		i, j;
 	int		best, best2;
-	int		texnum;
 
-	for (texnum=0 ; texnum<MAX_SCRAPS ; texnum++)
+	best = BLOCK_HEIGHT;
+	
+	for (i=0 ; i<BLOCK_WIDTH-w ; i++)
 	{
-		best = BLOCK_HEIGHT;
-
-		for (i=0 ; i<BLOCK_WIDTH-w ; i++)
+		best2 = 0;
+		
+		for (j=0 ; j<w ; j++)
 		{
-			best2 = 0;
-
-			for (j=0 ; j<w ; j++)
-			{
-				if (scrap_allocated[texnum][i+j] >= best)
-					break;
-				if (scrap_allocated[texnum][i+j] > best2)
-					best2 = scrap_allocated[texnum][i+j];
-			}
-			if (j == w)
-			{	// this is a valid spot
-				*x = i;
-				*y = best = best2;
-			}
+			if (scrap_allocated[scrapnum][i+j] >= best)
+				break;
+			if (scrap_allocated[scrapnum][i+j] > best2)
+				best2 = scrap_allocated[scrapnum][i+j];
 		}
-
-		if (best + h > BLOCK_HEIGHT)
-			continue;
-
-		for (i=0 ; i<w ; i++)
-			scrap_allocated[texnum][*x + i] = best + h;
-
-		return texnum;
+		if (j == w)
+		{	// this is a valid spot
+			*x = i;
+			*y = best = best2;
+		}
 	}
+	
+	if (best + h > BLOCK_HEIGHT)
+		return false;
+	
+	for (i=0 ; i<w ; i++)
+		scrap_allocated[scrapnum][*x + i] = best + h;
 
-	Sys_Error ("Scrap_AllocBlock: full");
-	return 0;
+	scrap_dirty |= (1 << scrapnum);
+
+	return true;
 }
 
 int	scrap_uploads;
 
 void Scrap_Upload (void)
 {
+	int i;
+
 	scrap_uploads++;
-	GL_Bind(scrap_texnum);
-	GL_Upload8 (scrap_texels[0], BLOCK_WIDTH, BLOCK_HEIGHT, false, true, false);
-	scrap_dirty = false;
+	for (i=0 ; i<2 ; i++) {
+		if ( !(scrap_dirty & (1 << i)) )
+			continue;
+		scrap_dirty &= ~(1 << i);
+		GL_Bind(scrap_texnum + i);
+		GL_Upload8 (scrap_texels[i], BLOCK_WIDTH, BLOCK_HEIGHT, false, i, false);
+	}
 }
 
 //=============================================================================
@@ -215,8 +219,11 @@ qpic_t *Draw_PicFromWad (char *name)
 		int		i, j, k;
 		int		texnum;
 
-		texnum = Scrap_AllocBlock (p->width, p->height, &x, &y);
-		scrap_dirty = true;
+		texnum = memchr(p->data, 255, p->width*p->height) != NULL;
+		if (!Scrap_AllocBlock (texnum, p->width, p->height, &x, &y)) {
+			GL_LoadPicTexture (p, p->data);
+			return p;
+		}
 		k = 0;
 		for (i=0 ; i<p->height ; i++)
 			for (j=0 ; j<p->width ; j++, k++)
@@ -232,13 +239,8 @@ qpic_t *Draw_PicFromWad (char *name)
 		pic_texels += p->width*p->height;
 	}
 	else
-	{
-		gl->texnum = GL_LoadPicTexture (p);
-		gl->sl = 0;
-		gl->sh = 1;
-		gl->tl = 0;
-		gl->th = 1;
-	}
+		GL_LoadPicTexture (p, p->data);
+
 	return p;
 }
 
@@ -253,7 +255,6 @@ qpic_t	*Draw_CachePic (char *path)
 	cachepic_t	*pic;
 	int			i;
 	qpic_t		*dat;
-	glpic_t		*gl;
 
 	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
 		if (!strcmp (path, pic->name))
@@ -281,12 +282,7 @@ qpic_t	*Draw_CachePic (char *path)
 	pic->pic.width = dat->width;
 	pic->pic.height = dat->height;
 
-	gl = (glpic_t *)pic->pic.data;
-	gl->texnum = GL_LoadPicTexture (dat);
-	gl->sl = 0;
-	gl->sh = 1;
-	gl->tl = 0;
-	gl->th = 1;
+	GL_LoadPicTexture (&pic->pic, dat->data);
 
 	return &pic->pic;
 }
@@ -379,6 +375,35 @@ void Draw_TextureMode_f (void)
 	}
 }
 
+
+void Draw_LoadCharset (void)
+{
+	int i;
+	char	buf[128*256];
+	char	*src, *dest;
+
+	draw_chars = W_GetLumpName ("conchars");
+	for (i=0 ; i<256*64 ; i++)
+		if (draw_chars[i] == 0)
+			draw_chars[i] = 255;	// proper transparent color
+
+	// Convert the 128*128 conchars texture to 128*256 leaving
+	// empty space between rows so that chars don't stumble on
+	// each other because of texture smoothing.
+	// This hack costs us 64K of GL texture memory
+	memset (buf, 255, sizeof(buf));
+	src = draw_chars;
+	dest = buf;
+	for (i=0 ; i<16 ; i++) {
+		memcpy (dest, src, 128*8);
+		src += 128*8;
+		dest += 128*8*2;
+	}
+
+	char_texture = GL_LoadTexture ("charset", 128, 256, buf, false, true, false);
+}
+
+
 /*
 ===============
 Draw_Init
@@ -386,7 +411,6 @@ Draw_Init
 */
 void Draw_Init (void)
 {
-	int		i;
 	qpic_t	*cb;
 	byte	*dest;
 	int		x;
@@ -398,6 +422,7 @@ void Draw_Init (void)
 	Cvar_RegisterVariable (&gl_nobind);
 	Cvar_RegisterVariable (&gl_max_size);
 	Cvar_RegisterVariable (&gl_picmip);
+	Cvar_RegisterVariable (&gl_conalpha);
 
 	// 3dfx can only handle 256 wide textures
 	if (!Q_strncasecmp ((char *)gl_renderer, "3dfx",4) ||
@@ -410,22 +435,16 @@ void Draw_Init (void)
 	// by hand, because we need to write the version
 	// string into the background before turning
 	// it into a texture
-	draw_chars = W_GetLumpName ("conchars");
-	for (i=0 ; i<256*64 ; i++)
-		if (draw_chars[i] == 0)
-			draw_chars[i] = 255;	// proper transparent color
 
-	// now turn them into textures
-	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true, false);
-//	Draw_CrosshairAdjust();
+	Draw_LoadCharset ();
 
 	cs2_texture = GL_LoadTexture ("", 8, 8, cs2_data, false, true, false);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	cs3_texture = GL_LoadTexture ("", 8, 8, cs3_data, false, true, false);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	start = Hunk_LowMark ();
 
@@ -434,7 +453,7 @@ void Draw_Init (void)
 		Sys_Error ("Couldn't load gfx/conback.lmp");
 	SwapPic (cb);
 
-//	sprintf (ver, "%4.2f", VERSION);
+//	sprintf (ver, "%4.2f", QW_VERSION);
 	strcpy (ver, Z_VERSION);
 	dest = cb->data + 320 + 320*186 - 11 - 8*strlen(ver);
 	for (x=0 ; x<strlen(ver) ; x++)
@@ -515,7 +534,7 @@ smoothly scrolled off.
 void Draw_Character (int x, int y, int num)
 {
 	int				row, col;
-	float			frow, fcol, size;
+	float			frow, fcol;
 
 	if (num == 32)
 		return;		// space
@@ -530,18 +549,17 @@ void Draw_Character (int x, int y, int num)
 
 	frow = row*0.0625;
 	fcol = col*0.0625;
-	size = 0.0625;
 
 	GL_Bind (char_texture);
 
 	glBegin (GL_QUADS);
 	glTexCoord2f (fcol, frow);
 	glVertex2f (x, y);
-	glTexCoord2f (fcol + size, frow);
+	glTexCoord2f (fcol + (1.0/16), frow);
 	glVertex2f (x+8, y);
-	glTexCoord2f (fcol + size, frow + size);
+	glTexCoord2f (fcol + (1.0/16), frow + (1.0/32));
 	glVertex2f (x+8, y+8);
-	glTexCoord2f (fcol, frow + size);
+	glTexCoord2f (fcol, frow + (1.0/32));
 	glVertex2f (x, y+8);
 	glEnd ();
 }
@@ -576,17 +594,18 @@ void Draw_Alt_String (int x, int y, char *str)
 	}
 }
 
-void Draw_Crosshair(void)
+void Draw_Crosshair (void)
 {
 	int x, y;
+	int ofs1, ofs2;
 	extern vrect_t		scr_vrect;
 	unsigned char *pColor;
 
 	if (crosshair.value == 2 || crosshair.value == 3) {
-		x = scr_vrect.x + scr_vrect.width/2 - 3 + cl_crossx.value; 
-		y = scr_vrect.y + scr_vrect.height/2 - 3 + cl_crossy.value;
+		x = scr_vrect.x + scr_vrect.width/2 + cl_crossx.value; 
+		y = scr_vrect.y + scr_vrect.height/2 + cl_crossy.value;
 
-		glTexEnvf ( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		pColor = (unsigned char *) &d_8to24table[(byte) crosshaircolor.value];
 		glColor4ubv ( pColor );
 		if (crosshair.value == 2)
@@ -594,24 +613,30 @@ void Draw_Crosshair(void)
 		else
 			GL_Bind (cs3_texture);
 
+		if (vid.width == 320) {
+			ofs1 = 3;//3.5;
+			ofs2 = 5;//4.5;
+		} else {
+			ofs1 = 7;
+			ofs2 = 9;
+		}
 		glBegin (GL_QUADS);
 		glTexCoord2f (0, 0);
-		glVertex2f (x - 4, y - 4);
+		glVertex2f (x - ofs1, y - ofs1);
 		glTexCoord2f (1, 0);
-		glVertex2f (x+12, y-4);
+		glVertex2f (x + ofs2, y - ofs1);
 		glTexCoord2f (1, 1);
-		glVertex2f (x+12, y+12);
+		glVertex2f (x + ofs2, y + ofs2);
 		glTexCoord2f (0, 1);
-		glVertex2f (x - 4, y+12);
+		glVertex2f (x - ofs1, y + ofs2);
 		glEnd ();
 		
-		glTexEnvf ( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
+		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	} else if (crosshair.value)
 		Draw_Character (scr_vrect.x + scr_vrect.width/2-4 + cl_crossx.value, 
 			scr_vrect.y + scr_vrect.height/2-4 + cl_crossy.value, 
 			'+');
 }
-
 
 /*
 ================
@@ -796,17 +821,13 @@ Draw_ConsoleBackground
 void Draw_ConsoleBackground (int lines)
 {
 	char ver[80];
-	int x, i;
-	int y;
+	int x, y, i;
 
-	y = (vid.height * 3) >> 2;
-	if (lines > y)
-		Draw_Pic(0, lines-vid.height, conback);
+	if (lines == vid.height)
+		Draw_Pic(0, lines - vid.height, conback);
 	else
-		Draw_AlphaPic (0, lines - vid.height, conback, (float)(1.2 * lines)/y);
+		Draw_AlphaPic (0, lines - vid.height, conback, gl_conalpha.value);
 
-	// hack the version number directly into the pic
-//	y = lines-186;
 	y = lines-14;
 	if (!cls.download) {
 #ifdef __linux__
@@ -888,7 +909,7 @@ void Draw_FadeScreen (void)
 {
 	glEnable (GL_BLEND);
 	glDisable (GL_TEXTURE_2D);
-	glColor4f (0, 0, 0, 0.8);
+	glColor4f (0, 0, 0, 0.7);
 	glBegin (GL_QUADS);
 
 	glVertex2f (0,0);
@@ -1119,13 +1140,19 @@ static	unsigned	scaled[1024*512];	// [512*256];
 	for (scaled_height = 1 ; scaled_height < height ; scaled_height<<=1)
 		;
 
-	scaled_width >>= (int)gl_picmip.value;
-	scaled_height >>= (int)gl_picmip.value;
+	if (mipmap) {
+		scaled_width >>= (int)gl_picmip.value;
+		scaled_height >>= (int)gl_picmip.value;
+	}
 
 	if (scaled_width > gl_max_size.value)
 		scaled_width = gl_max_size.value;
 	if (scaled_height > gl_max_size.value)
 		scaled_height = gl_max_size.value;
+	if (scaled_width < 1)
+		scaled_width = 1;
+	if (scaled_height < 1)
+		scaled_height = 1;
 
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
 		Sys_Error ("GL_LoadTexture: too big");
@@ -1221,13 +1248,19 @@ void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboole
 	for (scaled_height = 1 ; scaled_height < height ; scaled_height<<=1)
 		;
 
-	scaled_width >>= (int)gl_picmip.value;
-	scaled_height >>= (int)gl_picmip.value;
+	if (mipmap) {
+		scaled_width >>= (int)gl_picmip.value;
+		scaled_height >>= (int)gl_picmip.value;
+	}
 
 	if (scaled_width > gl_max_size.value)
 		scaled_width = gl_max_size.value;
 	if (scaled_height > gl_max_size.value)
 		scaled_height = gl_max_size.value;
+	if (scaled_width < 1)
+		scaled_width = 1;
+	if (scaled_height < 1)
+		scaled_height = 1;
 
 	if (scaled_width * scaled_height > sizeof(scaled))
 		Sys_Error ("GL_LoadTexture: too big");
@@ -1375,6 +1408,9 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	}
 	else
 		glt = &gltextures[numgltextures];
+
+	if (numgltextures == MAX_GLTEXTURES)
+		Sys_Error ("GL_LoadTexture: numgltextures == MAX_GLTEXTURES");
 	numgltextures++;
 
 	strcpy (glt->identifier, identifier);
@@ -1383,7 +1419,7 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	glt->height = height;
 	glt->mipmap = mipmap;
 
-	GL_Bind(texture_extension_number );
+	GL_Bind (texture_extension_number);
 
 	GL_Upload8 (data, width, height, mipmap, alpha, brighten);
 
@@ -1395,27 +1431,79 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 /*
 ================
 GL_LoadPicTexture
+
+NOTE: qpic_t must point to a buffer that will fit both
+qpic_t and appended glpic_t
+
+FIXME: this is messy
+Merge qpic_t and glpic_t into one struct (dpic_t)?
 ================
 */
-int GL_LoadPicTexture (qpic_t *pic)
+int GL_LoadPicTexture (qpic_t *pic, byte *data)
 {
-	return GL_LoadTexture ("", pic->width, pic->height, pic->data, false, true, false);
+	glpic_t	*gl;
+	int		glwidth, glheight;
+	int		i;
+
+	gl = (glpic_t *)pic->data;
+
+	for (glwidth = 1 ; glwidth < pic->width ; glwidth<<=1)
+		;
+	for (glheight = 1 ; glheight < pic->height ; glheight<<=1)
+		;
+
+	if (glwidth == pic->width && glheight == pic->height)
+	{
+		gl->texnum = GL_LoadTexture ("", glwidth, glheight, data,
+						false, true, false);
+		gl->sl = 0;
+		gl->sh = 1;
+		gl->tl = 0;
+		gl->th = 1;
+	}
+	else
+	{
+		byte *src, *dest;
+		byte *buf;
+
+		buf = Q_Malloc (glwidth*glheight);
+
+		memset (buf, 0, glwidth*glheight);
+		src = data;
+		dest = buf;
+		for (i=0 ; i<pic->height ; i++) {
+			memcpy (dest, src, pic->width);
+			src += pic->width;
+			dest += glwidth;
+		}
+
+		gl->texnum = GL_LoadTexture ("", glwidth, glheight, buf,
+						false, true, false);
+		gl->sl = 0;
+		gl->sh = (float)pic->width / glwidth;
+		gl->tl = 0;
+		gl->th = (float)pic->height / glheight;
+
+		free (buf);
+	}
+
+	return gl->texnum;
 }
 
 /****************************************/
 
-static GLenum oldtarget = TEXTURE0_SGIS;
+static GLenum oldtarget = TEXTURE0_ARB;
 
 void GL_SelectTexture (GLenum target) 
 {
 	if (!gl_mtexable)
 		return;
 #ifndef __linux__ // no multitexture under Linux yet
-	qglSelectTextureSGIS(target);
+	qglActiveTexture (target);
 #endif
 	if (target == oldtarget) 
 		return;
-	cnttextures[oldtarget-TEXTURE0_SGIS] = currenttexture;
-	currenttexture = cnttextures[target-TEXTURE0_SGIS];
+	cnttextures[oldtarget-TEXTURE0_ARB] = currenttexture;
+	currenttexture = cnttextures[target-TEXTURE0_ARB];
 	oldtarget = target;
 }

@@ -147,7 +147,7 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 int	Q_atoi (char *str);
 float Q_atof (char *str);
 
-
+void Q_strncpyz (char *dest, char *src, size_t size);
 
 //============================================================================
 
@@ -170,6 +170,7 @@ char *COM_SkipPath (char *pathname);
 void COM_StripExtension (char *in, char *out);
 void COM_FileBase (char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
+void COM_ForceExtension (char *path, char *extension);
 
 char	*va(char *format, ...);
 // does a varargs printf into a temp buffer
@@ -180,7 +181,8 @@ char	*va(char *format, ...);
 extern int com_filesize;
 struct cache_user_s;
 
-extern	char	com_gamedir[MAX_OSPATH];
+extern char	com_gamedir[MAX_OSPATH];
+extern char	com_basedir[MAX_OSPATH];
 
 void COM_WriteFile (char *filename, void *data, int len);
 int COM_FOpenFile (char *filename, FILE **file);
@@ -192,8 +194,6 @@ byte *COM_LoadHunkFile (char *path);
 void COM_LoadCacheFile (char *path, struct cache_user_s *cu);
 void COM_CreatePath (char *path);
 void COM_Gamedir (char *dir);
-
-extern	struct cvar_s	registered;
 
 char *Info_ValueForKey (char *s, char *key);
 void Info_RemoveKey (char *s, char *key);

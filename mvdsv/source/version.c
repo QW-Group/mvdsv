@@ -22,8 +22,6 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id: version.c,v 1.1.1.1 2004/09/28 18:57:00 vvd0 Exp $
 */
 
 #include "quakedef.h"
@@ -74,7 +72,7 @@ CL_Version_f
 */
 void CL_Version_f (void)
 {
-	Con_Printf ("QW version %4.2f\n", VERSION);
+	Con_Printf ("QW version %4.2f\n", QW_VERSION);
 	Con_Printf ("ZQuake version %s (Build %04d)\n", Z_VERSION, build_number());
 	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 }

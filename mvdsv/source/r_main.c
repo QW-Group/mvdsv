@@ -126,8 +126,8 @@ cvar_t	r_fastsky = {"r_fastsky","0"};
 cvar_t	r_waterwarp = {"r_waterwarp","1"};
 cvar_t	r_fullbright = {"r_fullbright","0"};
 cvar_t	r_drawentities = {"r_drawentities","1"};
-cvar_t	r_drawviewmodel2 = {"r_drawviewmodel2","0"}; // show weapon at fov > 90
-cvar_t	r_drawviewmodel = {"r_drawviewmodel","1"};
+cvar_t	r_drawviewmodel = {"r_drawviewmodel","2"};
+cvar_t	r_drawflame = {"r_drawflame","1"};
 cvar_t	r_aliasstats = {"r_polymodelstats","0"};
 cvar_t	r_dspeeds = {"r_dspeeds","0"};
 cvar_t	r_drawflat = {"r_drawflat", "0"};
@@ -140,6 +140,7 @@ cvar_t	r_maxedges = {"r_maxedges", "0"};
 cvar_t	r_numedges = {"r_numedges", "0"};
 cvar_t	r_aliastransbase = {"r_aliastransbase", "200"};
 cvar_t	r_aliastransadj = {"r_aliastransadj", "100"};
+cvar_t	r_fullbrightSkins = {"r_fullbrightSkins","0"};
 
 extern cvar_t	scr_fov;
 
@@ -196,8 +197,10 @@ void R_Init (void)
 	
 	R_InitTurb ();
 	
-	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);	
+	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);
+#ifdef QW_BOTH
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);	
+#endif
 
 	Cvar_RegisterVariable (&r_draworder);
 	Cvar_RegisterVariable (&r_speeds);
@@ -214,7 +217,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_fullbright);
 	Cvar_RegisterVariable (&r_drawentities);
 	Cvar_RegisterVariable (&r_drawviewmodel);
-	Cvar_RegisterVariable (&r_drawviewmodel2);
+	Cvar_RegisterVariable (&r_drawflame);
 	Cvar_RegisterVariable (&r_aliasstats);
 	Cvar_RegisterVariable (&r_dspeeds);
 	Cvar_RegisterVariable (&r_reportsurfout);
@@ -225,6 +228,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_numedges);
 	Cvar_RegisterVariable (&r_aliastransbase);
 	Cvar_RegisterVariable (&r_aliastransadj);
+	Cvar_RegisterVariable (&r_fullbrightSkins);
 
 	Cvar_SetValue (&r_maxedges, (float)NUMSTACKEDGES);
 	Cvar_SetValue (&r_maxsurfs, (float)NUMSTACKSURFACES);
@@ -611,6 +615,10 @@ void R_DrawEntitiesOnList (void)
 				if (lighting.ambientlight + lighting.shadelight > 192)
 					lighting.shadelight = 192 - lighting.ambientlight;
 
+				if (r_fullbrightSkins.value && currententity->model->modhint == MOD_PLAYER
+					&& !cl.teamfortress)
+					lighting.ambientlight = lighting.shadelight = 128;
+
 				R_AliasDrawModel (&lighting);
 			}
 
@@ -637,7 +645,7 @@ void R_DrawViewModel (void)
 	float		add;
 	dlight_t	*dl;
 	
-	if (!r_drawviewmodel.value || (r_fov_greater_than_90 && !r_drawviewmodel2.value)
+	if (!r_drawviewmodel.value || (r_fov_greater_than_90 && r_drawviewmodel.value == 2)
 		|| !Cam_DrawViewModel())
 		return;
 

@@ -8,7 +8,9 @@
 #include <sys/wait.h>
 #include <linux/soundcard.h>
 #include <stdio.h>
+
 #include "quakedef.h"
+#include "sound.h"
 
 int audio_fd;
 int snd_inited;

@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -37,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #ifdef QW_BOTH
-#include "progs.h"	// FIXME
 #include "server.h"
 #endif
 
@@ -75,25 +72,22 @@ cvar_t  localid = {"localid", ""};
 
 static qboolean allowremotecmd = true;
 
-// Tonik -->
-cvar_t	cl_speedjumpfix = {"cl_speedjumpfix", "1"};
-
-cvar_t	cl_demotimescale = {"demotimescale", "1"};
-
-cvar_t	cl_deadbodyfilter = {"cl_deadbodyfilter", "0"};
-cvar_t	cl_explosion = {"cl_explosion", "0"};
-cvar_t	r_drawflame = {"r_drawflame", "1"};
-cvar_t	cl_gibfilter = {"cl_gibfilter", "0"};
+// ZQuake cvars
 cvar_t	r_rocketlight = {"r_rocketlight", "1"};
 cvar_t	r_rockettrail = {"r_rockettrail", "1"};
 cvar_t	r_grenadetrail = {"r_grenadetrail", "1"};
 cvar_t	r_powerupglow = {"r_powerupglow", "1"};
+cvar_t	cl_deadbodyfilter = {"cl_deadbodyfilter", "0"};
+cvar_t	cl_explosion = {"cl_explosion", "0"};
+cvar_t	cl_gibfilter = {"cl_gibfilter", "0"};
 cvar_t	cl_muzzleflash = {"cl_muzzleflash", "1"};
-
+cvar_t	cl_speedjumpfix = {"cl_speedjumpfix", "1"};
+cvar_t	cl_demotimescale = {"demotimescale", "1"};
 cvar_t	cl_staticsounds = {"cl_staticsounds", "1"};
-
+cvar_t	cl_trueLightning = {"cl_trueLightning", "0"};
 cvar_t	default_fov = {"default_fov", "0"};
-// <-- Tonik
+cvar_t	cl_filterdrawviewmodel = {"cl_filterdrawviewmodel", "0"};
+cvar_t	qizmo_dir = {"qizmo_dir", "qizmo"};
 
 //
 // info mirrors
@@ -196,13 +190,6 @@ void CL_SendConnectPacket (void)
 		return;
 	}
 
-	if (!NET_IsClientLegal(&adr))
-	{
-		Con_Printf ("Illegal server address\n");
-		connect_time = -1;
-		return;
-	}
-
 	if (adr.port == 0)
 		adr.port = BigShort (27500);
 	t2 = Sys_DoubleTime ();
@@ -244,16 +231,10 @@ void CL_CheckForResend (void)
 		connect_time = -1;
 		return;
 	}
-	if (!NET_IsClientLegal(&adr))
-	{
-		Con_Printf ("Illegal server address\n");
-		connect_time = -1;
-		return;
-	}
+	t2 = Sys_DoubleTime ();
 
 	if (adr.port == 0)
 		adr.port = BigShort (27500);
-	t2 = Sys_DoubleTime ();
 
 	connect_time = realtime+t2-t1;	// for retransmit requests
 
@@ -288,7 +269,7 @@ void CL_Connect_f (void)
 
 	CL_Disconnect ();
 
-	strncpy (cls.servername, server, sizeof(cls.servername)-1);
+	Q_strncpyz (cls.servername, server, sizeof(cls.servername));
 	CL_BeginServerConnect();
 }
 
@@ -306,20 +287,19 @@ void CL_ClearState (void)
 	S_StopAllSounds (true);
 
 	Con_DPrintf ("Clearing memory\n");
-//	D_FlushCaches ();
 #ifdef QW_BOTH
 	if (sv.state == ss_dead) // connecting to a remote server
 	{
 #endif
 	D_FlushCaches ();
 	Mod_ClearAll ();
-	if (host_hunklevel)	// FIXME: check this...
-		Hunk_FreeToLowMark (host_hunklevel);
+	Hunk_FreeToLowMark (host_hunklevel);
 #ifdef QW_BOTH
 	}
 #endif
 
 	CL_ClearTEnts ();
+	memset (cl_baselines, 0, sizeof(cl_baselines));
 
 // wipe the entire cl structure
 	memset (&cl, 0, sizeof(cl));
@@ -361,7 +341,6 @@ void CL_Disconnect (void)
 // stop sounds (especially looping!)
 	S_StopAllSounds (true);
 	
-// if running a local server, shut it down
 	if (cls.demoplayback)
 		CL_StopPlayback ();
 	else if (cls.state != ca_disconnected)
@@ -378,8 +357,9 @@ void CL_Disconnect (void)
 		cls.state = ca_disconnected;
 
 #ifdef QW_BOTH
+		// if running a local server, shut it down
 		if (sv.state != ss_dead)
-			SV_ShutdownServer(false);
+			SV_ShutdownServer();
 #endif
 
 		cls.demoplayback = cls.demorecording = cls.timedemo = false;
@@ -394,8 +374,6 @@ void CL_Disconnect (void)
 	CL_StopUpload();
 
 	cl.teamfortress = false;
-	memset (cl.cshifts, 0, sizeof(cl.cshifts));
-	cl.stats[STAT_ITEMS] = 0;
 }
 
 void CL_Disconnect_f (void)
@@ -520,8 +498,7 @@ void CL_ConnectionlessPacket (void)
 #endif
 		s = MSG_ReadString ();
 
-		strncpy(cmdtext, s, sizeof(cmdtext) - 1);
-		cmdtext[sizeof(cmdtext) - 1] = 0;
+		Q_strncpyz (cmdtext, s, sizeof(cmdtext));
 
 		s = MSG_ReadString ();
 
@@ -672,7 +649,6 @@ void CL_Init (void)
 {
 	extern	cvar_t		baseskin;
 	extern	cvar_t		noskins;
-	char st[80];
 
 	cls.state = ca_disconnected;
 
@@ -683,8 +659,7 @@ void CL_Init (void)
 	Info_SetValueForKey (cls.userinfo, "msg", "1", MAX_INFO_STRING);
 
 #ifndef RELEASE_VERSION
-	sprintf (st, "%s", Z_VERSION);
-	Info_SetValueForStarKey (cls.userinfo, "*z_ver", st, MAX_INFO_STRING);
+	Info_SetValueForStarKey (cls.userinfo, "*z_ver", Z_VERSION, MAX_INFO_STRING);
 #endif
 
 	CL_InitInput ();
@@ -737,19 +712,21 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&noskins);
 
 	// ZQuake cvars
+	Cvar_RegisterVariable (&r_rockettrail);
+	Cvar_RegisterVariable (&r_grenadetrail);
+	Cvar_RegisterVariable (&r_powerupglow);
+	Cvar_RegisterVariable (&r_rocketlight);
 	Cvar_RegisterVariable (&cl_speedjumpfix);
 	Cvar_RegisterVariable (&cl_demotimescale);
 	Cvar_RegisterVariable (&cl_deadbodyfilter);
 	Cvar_RegisterVariable (&cl_explosion);
 	Cvar_RegisterVariable (&cl_gibfilter);
 	Cvar_RegisterVariable (&cl_muzzleflash);
-	Cvar_RegisterVariable (&r_drawflame);
-	Cvar_RegisterVariable (&r_rockettrail);
-	Cvar_RegisterVariable (&r_grenadetrail);
-	Cvar_RegisterVariable (&r_powerupglow);
-	Cvar_RegisterVariable (&r_rocketlight);
-	Cvar_RegisterVariable (&default_fov);
 	Cvar_RegisterVariable (&cl_staticsounds);
+	Cvar_RegisterVariable (&cl_trueLightning);
+	Cvar_RegisterVariable (&default_fov);
+	Cvar_RegisterVariable (&cl_filterdrawviewmodel);
+	Cvar_RegisterVariable (&qizmo_dir);
 
 	//
 	// info mirrors
@@ -863,36 +840,12 @@ void Host_WriteConfiguration (void)
 
 //============================================================================
 
-
-void Host_ClearMemory()
+void Host_ConnectLocal ()
 {
-/*  // WinQuake:
-	Con_DPrintf ("Clearing memory\n");
-	D_FlushCaches ();
-	Mod_ClearAll ();
-	if (host_hunklevel)
-		Hunk_FreeToLowMark (host_hunklevel);
-
-	cls.signon = 0;
-	memset (&sv, 0, sizeof(sv));
-	memset (&cl, 0, sizeof(cl));*/
-
-//	cls.state = ca_disconnected;	// !!!
-	memset (&cl, 0, sizeof(cl));
-};
-
-// FIXME
-void Host_ForceReconnect()
-{
-	if (cls.state > ca_connected)
+	if (cls.state < ca_connected)
+		Cmd_ExecuteString ("connect local");
+	else
 		cls.state = ca_connected;
-}
-
-// FIXME
-void Host_ConnectLocal()
-{
-	if (cls.state == ca_disconnected)
-		Cbuf_AddText ("connect local\n");
 }
 
 
@@ -934,6 +887,11 @@ void Host_Frame (double time)
 	if (cl_maxfps.value)
 		fps = max(30.0, min(cl_maxfps.value, 72.0));
 	else
+#ifdef QW_BOTH
+		if (sv.state != ss_dead)
+			fps = 72.0;
+		else
+#endif
 		fps = max(30.0, min(rate.value/80.0, 72.0));
 
 	if (!cls.demoplayback && realtime - oldrealtime < 1.0/fps)
@@ -1048,8 +1006,6 @@ Host_Init
 */
 void Host_Init (quakeparms_t *parms)
 {
-	extern char	com_basedir[MAX_OSPATH];
-
 	COM_InitArgv (parms->argc, parms->argv);
 
 	if (COM_CheckParm ("-minmemory"))
@@ -1068,8 +1024,6 @@ void Host_Init (quakeparms_t *parms)
 	TP_Init ();
 
 	COM_Init ();
-
-	//Sys_mkdir(va("%s/%s", com_basedir, "qw"));
 
 #ifdef QW_BOTH
 	PR_Init ();
@@ -1097,11 +1051,14 @@ void Host_Init (quakeparms_t *parms)
 	Netchan_Init ();
 
 	W_LoadWadFile ("gfx.wad");
+
 	Key_Init ();
 	Con_Init ();	
 	M_Init ();	
 	Mod_Init ();
 	
+	Sys_mkdir(va("%s/%s", com_basedir, "qw"));
+
 //	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megs RAM used.\n",parms->memsize/ (1024*1024.0));
 	
@@ -1144,12 +1101,7 @@ void Host_Init (quakeparms_t *parms)
 #endif
 
 	Cbuf_InsertText ("exec quake.rc\n");
-#ifdef TEST_VERSION
-	Cbuf_AddText ("echo This is a test release! Please do not distribute.\n");
-	Cbuf_AddText ("echo Report bugs to tonik@quake.ru\necho\n");
-#else
 //	Cbuf_AddText ("echo Type connect <internet address> or use GameSpy to connect to a game.\n");
-#endif
 	Cbuf_AddText ("cl_warncmd 1\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");

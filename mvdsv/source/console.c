@@ -647,8 +647,7 @@ void Con_DrawConsole (int lines)
 		i = con_linewidth/3;
 		if (strlen(text) > i) {
 			y = x - i - 11;
-			strncpy(dlbar, text, i);
-			dlbar[i] = 0;
+			Q_strncpyz (dlbar, text, i+1);
 			strcat(dlbar, "...");
 		} else
 			strcpy(dlbar, text);
