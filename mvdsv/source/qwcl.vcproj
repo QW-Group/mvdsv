@@ -1,0 +1,1689 @@
+<?xml version="1.0" encoding = "windows-1250"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.00"
+	Name="qwcl"
+	SccProjectName=""
+	SccLocalPath="">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="GLDebug|Win32"
+			OutputDirectory=".\GLDebug"
+			IntermediateDirectory=".\GLDebug"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				OptimizeForProcessor="1"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,GLQUAKE,id386"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\GLDebug/qwplayer.pch"
+				AssemblerListingLocation=".\GLDebug/"
+				ObjectFile=".\GLDebug/"
+				ProgramDataBaseFileName=".\GLDebug/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib odbc32.lib odbccp32.lib winmm.lib"
+				OutputFile=".\GLDebug\qwplayer-gl.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\GLDebug/qwplayer-gl.pdb"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\GLDebug/qwcl.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory=".\Debug"
+			IntermediateDirectory=".\Debug"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				OptimizeForProcessor="1"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,id386"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\Debug/qwplayerl.pch"
+				AssemblerListingLocation=".\Debug/"
+				ObjectFile=".\Debug/"
+				ProgramDataBaseFileName=".\Debug/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="4"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="mglfx.lib dxguid.lib opengl32.lib wsock32.lib odbc32.lib odbccp32.lib winmm.lib"
+				OutputFile=".\Debug/qwplayer.exe"
+				LinkIncremental="2"
+				SuppressStartupBanner="TRUE"
+				IgnoreDefaultLibraryNames="libcmt"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\Debug/qwplayer.pdb"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/qwcl.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory=".\Release"
+			IntermediateDirectory=".\Release"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				OptimizeForProcessor="1"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,id386"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\Release/qwplayer.pch"
+				AssemblerListingLocation=".\Release/"
+				ObjectFile=".\Release/"
+				ProgramDataBaseFileName=".\Release/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="mgllt.lib dxguid.lib opengl32.lib wsock32.lib odbc32.lib odbccp32.lib winmm.lib"
+				OutputFile="D:\quake\qwplayer.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				IgnoreDefaultLibraryNames="libcmt"
+				ProgramDatabaseFile=".\Release/qwplayer.pdb"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/qwcl.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
+			Name="GLRelease|Win32"
+			OutputDirectory=".\GLRelease"
+			IntermediateDirectory=".\GLRelease"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="4"
+				FavorSizeOrSpeed="1"
+				OptimizeForProcessor="1"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,GLQUAKE,id386"
+				RuntimeLibrary="4"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\GLRelease/qwplayer.pch"
+				AssemblerListingLocation=".\GLRelease/"
+				ObjectFile=".\GLRelease/"
+				ProgramDataBaseFileName=".\GLRelease/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/MACHINE:I386"
+				AdditionalDependencies="comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib odbc32.lib odbccp32.lib winmm.lib"
+				OutputFile="D:\quake\qwplayer-gl.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				ProgramDatabaseFile=".\GLRelease/qwplayer-gl.pdb"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\GLRelease/qwcl.tlb"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+	</Configurations>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90">
+			<File
+				RelativePath=".\cd_win.c">
+			</File>
+			<File
+				RelativePath=".\cl_cam.c">
+			</File>
+			<File
+				RelativePath=".\cl_cmd.c">
+			</File>
+			<File
+				RelativePath=".\cl_demo.c">
+			</File>
+			<File
+				RelativePath=".\cl_ents.c">
+			</File>
+			<File
+				RelativePath=".\cl_input.c">
+			</File>
+			<File
+				RelativePath=".\cl_main.c">
+			</File>
+			<File
+				RelativePath=".\cl_parse.c">
+			</File>
+			<File
+				RelativePath=".\cl_pred.c">
+			</File>
+			<File
+				RelativePath=".\cl_slist.c">
+			</File>
+			<File
+				RelativePath=".\cl_tent.c">
+			</File>
+			<File
+				RelativePath=".\cmd.c">
+			</File>
+			<File
+				RelativePath=".\common.c">
+			</File>
+			<File
+				RelativePath=".\console.c">
+			</File>
+			<File
+				RelativePath=".\crc.c">
+			</File>
+			<File
+				RelativePath=".\cvar.c">
+			</File>
+			<File
+				RelativePath=".\d_edge.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_fill.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_init.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_modech.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_part.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_polyse.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_scan.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_sky.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_sprite.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_surf.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_vars.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_zpoint.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\draw.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_draw.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_mesh.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_model.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_ngraph.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_refrag.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_rlight.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_rmain.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_rmisc.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_rsurf.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_screen.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_test.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\gl_warp.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\in_win.c">
+			</File>
+			<File
+				RelativePath=".\keys.c">
+			</File>
+			<File
+				RelativePath=".\mathlib.c">
+			</File>
+			<File
+				RelativePath=".\mdfour.c">
+			</File>
+			<File
+				RelativePath=".\menu.c">
+			</File>
+			<File
+				RelativePath=".\model.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\net_chan.c">
+			</File>
+			<File
+				RelativePath=".\net_wins.c">
+			</File>
+			<File
+				RelativePath=".\nonintel.c">
+			</File>
+			<File
+				RelativePath=".\pmove.c">
+			</File>
+			<File
+				RelativePath=".\pmovetst.c">
+			</File>
+			<File
+				RelativePath=".\r_aclip.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_alias.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_bsp.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_draw.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_edge.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_efrag.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_light.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_main.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_misc.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_part.c">
+			</File>
+			<File
+				RelativePath=".\r_sky.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_sprite.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_surf.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_vars.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\sbar.c">
+			</File>
+			<File
+				RelativePath=".\screen.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\skin.c">
+			</File>
+			<File
+				RelativePath=".\snd_dma.c">
+			</File>
+			<File
+				RelativePath=".\snd_mem.c">
+			</File>
+			<File
+				RelativePath=".\snd_mix.c">
+			</File>
+			<File
+				RelativePath=".\snd_win.c">
+			</File>
+			<File
+				RelativePath=".\sys_win.c">
+			</File>
+			<File
+				RelativePath=".\teamplay.c">
+			</File>
+			<File
+				RelativePath=".\version.c">
+			</File>
+			<File
+				RelativePath=".\vid_wgl.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\vid_win.c">
+				<FileConfiguration
+					Name="GLDebug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\view.c">
+			</File>
+			<File
+				RelativePath=".\wad.c">
+			</File>
+			<File
+				RelativePath=".\winquake.rc">
+			</File>
+			<File
+				RelativePath=".\zone.c">
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl;fi;fd">
+			<File
+				RelativePath=".\adivtab.h">
+			</File>
+			<File
+				RelativePath=".\anorm_dots.h">
+			</File>
+			<File
+				RelativePath=".\anorms.h">
+			</File>
+			<File
+				RelativePath=".\bothdefs.h">
+			</File>
+			<File
+				RelativePath=".\bspfile.h">
+			</File>
+			<File
+				RelativePath=".\cdaudio.h">
+			</File>
+			<File
+				RelativePath=".\client.h">
+			</File>
+			<File
+				RelativePath=".\cmd.h">
+			</File>
+			<File
+				RelativePath=".\common.h">
+			</File>
+			<File
+				RelativePath=".\console.h">
+			</File>
+			<File
+				RelativePath=".\crc.h">
+			</File>
+			<File
+				RelativePath=".\cvar.h">
+			</File>
+			<File
+				RelativePath=".\d_iface.h">
+			</File>
+			<File
+				RelativePath=".\d_ifacea.h">
+			</File>
+			<File
+				RelativePath=".\d_local.h">
+			</File>
+			<File
+				RelativePath=".\draw.h">
+			</File>
+			<File
+				RelativePath=".\gl_model.h">
+			</File>
+			<File
+				RelativePath=".\gl_warp_sin.h">
+			</File>
+			<File
+				RelativePath=".\glquake.h">
+			</File>
+			<File
+				RelativePath=".\input.h">
+			</File>
+			<File
+				RelativePath=".\keys.h">
+			</File>
+			<File
+				RelativePath="..\..\..\quake\v2\master\masterpr.h">
+			</File>
+			<File
+				RelativePath=".\mathlib.h">
+			</File>
+			<File
+				RelativePath=".\menu.h">
+			</File>
+			<File
+				RelativePath=".\model.h">
+			</File>
+			<File
+				RelativePath=".\modelgen.h">
+			</File>
+			<File
+				RelativePath=".\net.h">
+			</File>
+			<File
+				RelativePath=".\pmove.h">
+			</File>
+			<File
+				RelativePath=".\protocol.h">
+			</File>
+			<File
+				RelativePath=".\quakedef.h">
+			</File>
+			<File
+				RelativePath=".\r_local.h">
+			</File>
+			<File
+				RelativePath=".\r_shared.h">
+			</File>
+			<File
+				RelativePath=".\render.h">
+			</File>
+			<File
+				RelativePath=".\sbar.h">
+			</File>
+			<File
+				RelativePath=".\screen.h">
+			</File>
+			<File
+				RelativePath=".\sound.h">
+			</File>
+			<File
+				RelativePath=".\spritegn.h">
+			</File>
+			<File
+				RelativePath=".\sys.h">
+			</File>
+			<File
+				RelativePath=".\teamplay.h">
+			</File>
+			<File
+				RelativePath=".\version.h">
+			</File>
+			<File
+				RelativePath=".\vid.h">
+			</File>
+			<File
+				RelativePath=".\view.h">
+			</File>
+			<File
+				RelativePath=".\wad.h">
+			</File>
+			<File
+				RelativePath=".\winquake.h">
+			</File>
+			<File
+				RelativePath=".\zone.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath=".\qe3.ico">
+			</File>
+			<File
+				RelativePath=".\quakeworld.bmp">
+			</File>
+			<File
+				RelativePath=".\qwcl2.ico">
+			</File>
+		</Filter>
+		<Filter
+			Name="Asm Files"
+			Filter="">
+			<File
+				RelativePath=".\cl_math.s">
+				<FileConfiguration
+					Name="GLDebug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_draw.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_draw16.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_parta.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_polysa.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_scana.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_spr8.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\d_varsa.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\math.s">
+				<FileConfiguration
+					Name="GLDebug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_aclipa.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_aliasa.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_drawa.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_edgea.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\r_varsa.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\snd_mixa.s">
+				<FileConfiguration
+					Name="GLDebug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\surf16.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\surf8.s">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\sys_x86.s">
+				<FileConfiguration
+					Name="GLDebug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="GLRelease|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; $(OUTDIR)\$(InputName).spp $(InputPath)
+gas2masm &lt; $(OUTDIR)\$(InputName).spp &gt;$(OUTDIR)\$(InputName).asm
+ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm
+del $(OUTDIR)\$(InputName).spp
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

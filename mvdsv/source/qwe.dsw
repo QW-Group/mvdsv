@@ -3,30 +3,6 @@ Microsoft Developer Studio Workspace File, Format Version 5.00
 
 ###############################################################################
 
-Project: "demomanager_sv"=.\demomanager\demomanager_sv.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "demomanager_cl"=.\demomanager\demomanager_cl.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
 Project: "qwcl"=.\qwcl.dsp - Package Owner=<4>
 
 Package=<5>
