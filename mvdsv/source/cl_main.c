@@ -126,6 +126,8 @@ qboolean	host_initialized;		// true if into command execution
 
 double		host_frametime;
 double		realtime;				// without any filtering or bounding
+double		real_frametime;
+double		noscale_realtime;				// without any filtering or bounding
 double		oldrealtime;			// last frame run
 int			host_framecount;
 
@@ -858,6 +860,7 @@ void Host_Frame (double time)
 	float scale;
 	static float		old;
 	static int			oldparse;
+	static double		oldrealtime2;
 	extern	float nextdemotime, olddemotime;
 
 	if (setjmp (host_abort) )
@@ -865,19 +868,24 @@ void Host_Frame (double time)
 
 	// decide the simulation time
 
+	noscale_realtime += time;
 	if (!cls.demoplayback)
 		realtime += time;
 	else
 	{
 		scale = cl_demotimescale.value;
-		if (scale <= 0) scale = 1;
-		if (scale < 0.1) scale = 0.1;
-		if (scale > 10) scale = 1;
+		if (scale <= 0) scale = 0;
+		//if (scale < 0.01) scale = 0.01;
+		if (scale > 10) scale = 10;
 		realtime += time*scale;
+
 	}
 
 	if (oldrealtime > realtime)
 		oldrealtime = 0;
+
+	if (oldrealtime2 > noscale_realtime)
+		oldrealtime2 = 0;
 
 	if (cl_maxfps.value)
 		fps = max(30.0, min(cl_maxfps.value, 72.0));
@@ -888,13 +896,20 @@ void Host_Frame (double time)
 		return;			// framerate is too high
 
 	host_frametime = realtime - oldrealtime;
+	real_frametime = noscale_realtime - oldrealtime2;
 
-	if (cls.demoplayback && (cl.paused & 2))
+	if (cls.demoplayback && (cl.paused & 2)) {
 		realtime = oldrealtime;
+		noscale_realtime = oldrealtime2;
+	}
 
 	oldrealtime = realtime;
 	if (host_frametime > 0.2)
 		host_frametime = 0.2;
+
+	oldrealtime2 = noscale_realtime;
+	if (real_frametime > 0.2)
+		real_frametime = 0.2;
 		
 	// get new key events
 	Sys_SendKeyEvents ();

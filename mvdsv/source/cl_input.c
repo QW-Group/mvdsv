@@ -419,7 +419,7 @@ void CL_FinishMove (usercmd_t *cmd)
 #if 0
 	ms = host_frametime * 1000;
 #else
-	msec_balance += host_frametime * 990;
+	msec_balance += real_frametime * 990;
 	ms = msec_balance;
 	msec_balance -= ms;
 #endif

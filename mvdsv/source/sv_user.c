@@ -755,44 +755,45 @@ void SV_Say (qboolean team)
 	int		j, tmp, cls = 0;
 	char	*p;
 	char	text[2048];
-	char	t1[32] = "";
-	char	*t2;
 
 	if (Cmd_Argc () < 2)
 		return;
 
-#if 0
-	char *st;
 	p = Cmd_Args();
 
 	if (*p == '"')
 	{
 		p++;
 		p[strlen(p)-1] = 0;
+
 	}
 
-	if (team) st = "1";
-	else st = "0";
+	strcpy(text, p);
+	strcat(text, "\n");
 
-	Info_SetValueForKey (localinfo, "chat", p, MAX_LOCALINFO_STRING);
-	Info_SetValueForKey (localinfo, "chatteam", st, MAX_LOCALINFO_STRING);
-	pr_global_struct->time = sv.time;
-	pr_global_struct->self = EDICT_TO_PROG(sv_player);
-	PR_ExecuteProgram (ChatMessage);
-	Info_SetValueForKey (localinfo, "chat", "", MAX_LOCALINFO_STRING);
-	Info_SetValueForKey (localinfo, "chatteam", "", MAX_LOCALINFO_STRING);
-	return;
+#if 1
+	if (ChatMessage)
+	{
+		SV_EndRedirect ();
+
+		G_INT(OFS_PARM0) = PR_SetString(p);
+		G_FLOAT(OFS_PARM1) = (float)team;
+
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		PR_ExecuteProgram (ChatMessage);
+		SV_BeginRedirect (RD_CLIENT);
+		if (G_FLOAT(OFS_RETURN))
+			return;
+	}
 #endif
 
-	if (team)
-		Q_strncpyz (t1, Info_ValueForKey (host_client->userinfo, "team"), sizeof(t1));
-
 	if (host_client->spectator && (!sv_spectalk.value || team))
-		sprintf (text, "[SPEC] %s: ", host_client->name);
+		strcpy(text, va("[SPEC] %s: %s", host_client->name, text));
 	else if (team)
-		sprintf (text, "(%s): ", host_client->name);
+		strcpy(text, va("(%s): %s", host_client->name, text));
 	else {
-		sprintf (text, "%s: ", host_client->name);
+		strcpy(text, va("%s: %s", host_client->name, text));
 	}
 
 	if (fp_messages) {
@@ -822,17 +823,6 @@ void SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-	p = Cmd_Args();
-
-	if (*p == '"')
-	{
-		p++;
-		p[strlen(p)-1] = 0;
-	}
-
-	strcat(text, p);
-	strcat(text, "\n");
-
 	Sys_Printf ("%s", text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
@@ -850,8 +840,7 @@ void SV_Say (qboolean team)
 				if (!client->spectator)
 					continue;
 			} else {
-				t2 = Info_ValueForKey (client->userinfo, "team");
-				if (strcmp(t1, t2) || client->spectator)
+				if (strcmp(host_client->team, client->team) || client->spectator)
 					continue;	// on different teams
 			}
 		}
@@ -870,9 +859,9 @@ void SV_Say (qboolean team)
 	} else 
 		DemoReliableWrite_Begin (dem_multiple, cls, strlen(text)+3);
 
-	MSG_WriteByte (&demo.buf, svc_print);
-	MSG_WriteByte (&demo.buf, PRINT_CHAT);
-	MSG_WriteString (&demo.buf, text);
+	MSG_WriteByte (demo.buf, svc_print);
+	MSG_WriteByte (demo.buf, PRINT_CHAT);
+	MSG_WriteString (demo.buf, text);
 }
 
 

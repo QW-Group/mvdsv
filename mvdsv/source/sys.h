@@ -34,6 +34,14 @@ typedef struct
 {
 	char	name[MAX_DEMO_NAME];
 	int		size;
+} file_t;
+
+typedef struct
+{
+	file_t *files;
+	int		size;
+	int		numfiles;
+	int		numdirs;
 } dir_t;
 
 int Sys_FileOpenRead (char *path, int *hndl);
@@ -46,7 +54,7 @@ int Sys_FileWrite (int handle, void *data, int count);
 int	Sys_FileTime (char *path);
 void Sys_mkdir (char *path);
 int Sys_remove (char *path);
-dir_t *Sys_listdir (char *path, char *ext);
+dir_t Sys_listdir (char *path, char *ext);
 
 //
 // memory protection

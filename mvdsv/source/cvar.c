@@ -175,9 +175,7 @@ void Cvar_Set (cvar_t *var, char *value)
 			SV_SendServerInfoChange(var->name, var->string);
 		}
 	}
-#endif
-
-#ifndef SERVERONLY
+#else
 	if (var->flags & CVAR_USERINFO)
 	{
 		Info_SetValueForKey (cls.userinfo, var->name, var->string, MAX_INFO_STRING);
@@ -268,7 +266,7 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	variable->string = Z_Malloc (1);	
 	
 // set it through the function to be consistent
-	Cvar_Set (variable, value);
+	Cvar_SetROM (variable, value);
 }
 
 

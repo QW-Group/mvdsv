@@ -461,7 +461,7 @@ void Con_DrawInput (void)
 		text[i] = ' ';
 
 // add the cursor frame
-	if ( (int)(realtime*con_cursorspeed) & 1 )
+	if ( (int)(noscale_realtime*con_cursorspeed) & 1 )
 		text[key_linepos] = 11;
 
 //	prestep if horizontally scrolling
@@ -535,7 +535,7 @@ void Con_DrawNotify (void)
 		s = strcpy (temp, chat_buffer);
 
 		// add the cursor frame
-		if ( (int)(realtime*con_cursorspeed) & 1 ) {
+		if ( (int)(noscale_realtime*con_cursorspeed) & 1 ) {
 			if (chat_linepos == strlen(s))
 				s[chat_linepos+1] = '\0';
 			s[chat_linepos] = 11;
@@ -689,6 +689,7 @@ void Con_NotifyBox (char *text)
 		Sys_SendKeyEvents ();
 		t2 = Sys_DoubleTime ();
 		realtime += t2-t1;		// make the cursor blink
+		noscale_realtime += t2-t1;
 	} while (key_count < 0);
 
 	Con_Printf ("\n");

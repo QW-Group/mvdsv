@@ -1438,7 +1438,6 @@ void CL_ParseServerMessage (void)
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
-	CL_ClearProjectiles ();
 
 //
 // if recording demos, copy the message out
@@ -1450,6 +1449,7 @@ void CL_ParseServerMessage (void)
 
 
 	CL_ParseClientdata ();
+	CL_ClearProjectiles();
 
 //
 // parse the message
@@ -1675,7 +1675,10 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_nails:
-			CL_ParseProjectiles ();
+			CL_ParseProjectiles (false);
+			break;
+		case svc_nails2:
+			CL_ParseProjectiles (true);
 			break;
 
 		case svc_chokecount:		// some preceding packets were choked

@@ -1,10 +1,8 @@
 #include "defs.h"
-#define DEFAULT_FPS 20
 
 int memsize, membase;
 int	fps;
 
-#define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
 sizebuf_t	net_message;
 byte		net_message_buffer[MAX_UDP_PACKET];
 
@@ -12,21 +10,67 @@ demo_t		demo;
 source_t	from;
 
 world_state_t	world;
+static_world_state_t	sworld;
 lightstyle_t	lightstyle[MAX_LIGHTSTYLES];
 entity_state_t	baselines[MAX_EDICTS];
 float			realtime;
 sizebuf_t		stats_msg;
 byte			stats_buf[MAX_MSGLEN];
+char			currentDir[MAX_OSPATH];
+char			qizmoDir[MAX_OSPATH];
+char			outputDir[MAX_OSPATH];
+char			sourceName[MAX_SOURCES][MAX_OSPATH];
+HANDLE			ConsoleInHndl, ConsoleOutHndl;
 
-qboolean		debug;
-qboolean		filter_spectalk;
-qboolean		filter_qizmotalk;
+void QWDToolsMsg(void);
 
 /*
 ================
 Sys_Error
 ================
 */
+
+void Sys_fclose(FILE *hndl)
+{
+	if (hndl == NULL)
+		return;
+	if (hndl == stdin)
+		return;
+	if (hndl == stdout)
+		return;
+	fclose(hndl);
+}
+
+void Sys_Exit (int i)
+{
+	DWORD r;
+	struct _INPUT_RECORD in;
+
+	Dem_Stop();
+
+	if ( sworld.options & O_WAITFORKBHIT)
+	{
+		if (i != 2)
+			SetConsoleTitle("qwdtools  Done");
+
+		Sys_Printf("\nPress any key to continue\n");
+		do ReadConsoleInput( ConsoleInHndl, &in, 1, &r); while(in.EventType != KEY_EVENT);
+	}
+
+	Sys_fclose(sworld.demo.file);
+	Sys_fclose(sworld.from.file);
+	Sys_fclose(sworld.debug.file);
+	Sys_fclose(sworld.log.file);
+	Sys_fclose(sworld.analyse.file);
+
+	exit(i);
+}
+
+void Sys_mkdir (char *path)
+{
+	_mkdir (path);
+}
+
 
 void Sys_Error (char *error, ...)
 {
@@ -37,18 +81,14 @@ void Sys_Error (char *error, ...)
 	vsprintf (text, error,argptr);
 	va_end (argptr);
 
-	if (from.file != NULL) {
-		printf ("ERROR: %s, at:%d\n", text, ftell(from.file));
+	
+	if (sworld.from.file != NULL && sworld.from.file != stdin) {
+		Sys_Printf ("ERROR: %s, at:%d\n", text, ftell(sworld.from.file));
 	} else {
-		printf ("ERROR: %s\n", text);
+		Sys_Printf ("ERROR: %s\n", text);
 	}
 
-	if (demo.file != NULL)
-		fclose(demo.file);
-	if (from.file != NULL)
-		fclose(from.file);
-
-	exit (1);
+	Sys_Exit (1);
 }
 
 /*
@@ -59,7 +99,18 @@ Sys_Printf
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-		
+	char		buf[1024];
+	DWORD		count;
+
+	// stdout can be redirected to a file or other process
+	if (ConsoleOutHndl != NULL && sworld.options & O_STDOUT) {
+		va_start (argptr,fmt);
+		vsprintf(buf, fmt, argptr);
+		va_end (argptr);
+		WriteFile(ConsoleOutHndl, buf, strlen(buf), &count, NULL);
+		return;
+	}
+
 	va_start (argptr,fmt);
 	vprintf (fmt,argptr);
 	va_end (argptr);
@@ -139,8 +190,8 @@ void ConnectionlessPacket (void)
 	c = MSG_ReadByte ();
 	if (c == S2C_CONNECTION)
 	{
-		if (debug)
-			Sys_Printf("connected\n");
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "connected\n");
 
 		from.netchan.incoming_sequence = 0;
 		from.netchan.incoming_acknowledged= 0;
@@ -152,8 +203,8 @@ void ConnectionlessPacket (void)
 	// remote command from gui front end
 	if (c == A2C_CLIENT_COMMAND)
 	{
-		if (debug)
-			Sys_Printf("A2C\n");
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "A2C\n");
 		MSG_ReadString ();
 		MSG_ReadString ();
 
@@ -163,8 +214,8 @@ void ConnectionlessPacket (void)
 	// print command from somewhere
 	if (c == A2C_PRINT)
 	{
-		if (debug)
-			Sys_Printf("print\n");
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "print\n");
 		MSG_ReadString ();
 		return;
 	}
@@ -172,21 +223,21 @@ void ConnectionlessPacket (void)
 	// ping from somewhere
 	if (c == A2A_PING)
 	{
-		if (debug)
-			Sys_Printf("ping\n");
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "ping\n");
 		return;
 	}
 
 	if (c == S2C_CHALLENGE) {
-		if (debug)
-			Sys_Printf("challenge\n");
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "challenge\n");
 		MSG_ReadString ();
 		return;
 	}
 
 	if (c == svc_disconnect) {
-		if (debug)
-			Sys_Printf("disconnect\n");
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "disconnect\n");
 		Dem_Stop();
 		return;
 	}
@@ -194,7 +245,21 @@ void ConnectionlessPacket (void)
 
 void Dem_Stop(void)
 {
+	StopQWZ();
+
+	if (!from.running)
+		return;
+
 	from.running = false;
+	msgbuf->cursize = 0;
+	msgbuf->bufsize = 0;
+	msgbuf->curtype = 0;
+
+	QWDToolsMsg();
+
+	DemoWrite_Begin(dem_all, 0, 2+strlen("EndOfDemo"));
+	MSG_WriteByte(msgbuf, svc_disconnect);
+	MSG_WriteString (msgbuf, "EndOfDemo");
 }
 
 /*
@@ -212,28 +277,35 @@ qboolean GetDemoMessage (void)
 	byte	newtime;
 	byte	c;
 	usercmd_t *pcmd;
-	static float prevtime = 0.0;
+	static int oldnewtime = 0;
 
-	if (prevtime < realtime)
-		prevtime = realtime;
+	if (from.prevtime < realtime)
+		from.prevtime = realtime;
 
 nextdemomessage:
 
 	// read the time from the packet
 	newtime = 0;
-	if (from.format == mvd)
+	if (!from.lasttime) 
 	{
-		r = fread(&newtime, sizeof(newtime), 1, from.file);
-		demotime =  prevtime + newtime*0.001;
-	} else {
-		r = fread(&demotime, sizeof(demotime), 1, from.file);
-		demotime = LittleFloat(demotime);
-	}
+		if (from.format == mvd)
+		{
+			r = fread(&newtime, sizeof(newtime), 1, sworld.from.file);
+			demotime =  from.prevtime + newtime*0.001;
+		} else {
+			r = fread(&demotime, sizeof(demotime), 1, sworld.from.file);
+			demotime = LittleFloat(demotime);
+		}
 
-	if (r != 1)
-	{
-		Dem_Stop();
-		return 0;
+		if (r != 1)
+		{
+			Dem_Stop();
+			return 0;
+		}
+	} else {
+		demotime = from.lasttime;
+		newtime = oldnewtime;
+		from.lasttime = 0;
 	}
 
 // decide if it is time to grab the next message
@@ -241,15 +313,9 @@ nextdemomessage:
 		from.lastframe = demotime;
 	else if (demotime > from.lastframe) {
 		from.lastframe = demotime;
-		// rewind back to time
-		if (from.format == mvd)
-		{
-			fseek(from.file, ftell(from.file) - sizeof(newtime),
-				SEEK_SET);
-		} else 
-			fseek(from.file, ftell(from.file) - sizeof(demotime),
-				SEEK_SET);
-		return 0;		// already read this frame's message
+		from.lasttime = demotime;
+		oldnewtime = newtime;
+		return 0; // already read this frame's message
 	}
 
 	if (demotime - realtime > 0.0001 && from.format == mvd)
@@ -258,25 +324,25 @@ nextdemomessage:
 
 		from.netchan.incoming_sequence++;
 		from.netchan.incoming_acknowledged++;
-		if (debug)
-			Sys_Printf("sequence:%d\n", from.netchan.incoming_sequence);
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "sequence:%d\n", from.netchan.incoming_sequence);
 	}
 
 	from.time = realtime = demotime; // warp
-	prevtime = demotime;
+	from.prevtime = demotime;
 
-	if (debug)
-		Sys_Printf("msec:%d\n", newtime);
+	if (sworld.options & O_DEBUG)
+		fprintf(sworld.debug.file, "msec:%d\n", newtime);
 
 	// get the msg type
-	fread (&c, sizeof(c), 1, from.file);
+	fread (&c, sizeof(c), 1, sworld.from.file);
 
 	switch (c&7) {
 	case dem_cmd :
 		// user sent input
 		i = from.netchan.outgoing_sequence & UPDATE_MASK;
 		pcmd = &from.frames[i].cmd;
-		r = fread (pcmd, sizeof(*pcmd), 1, from.file);
+		r = fread (pcmd, sizeof(*pcmd), 1, sworld.from.file);
 		if (r != 1)
 		{
 			Dem_Stop();
@@ -299,7 +365,7 @@ nextdemomessage:
 		from.frames[i].playerstate[from.playernum].command = *pcmd;
 		for (j=0 ; j<3 ; j++)
 		{
-			r = fread (&f, 4, 1, from.file);
+			r = fread (&f, 4, 1, sworld.from.file);
 			from.frames[from.netchan.incoming_sequence&UPDATE_MASK].playerstate[from.playernum].command.angles[j] = LittleFloat (f);
 		}
 
@@ -308,15 +374,15 @@ nextdemomessage:
 	case dem_read:
 readit:
 		// get the next message
-		fread (&net_message.cursize, 4, 1, from.file);
+		fread (&net_message.cursize, 4, 1, sworld.from.file);
 		net_message.cursize = LittleLong (net_message.cursize);
 		
-		if (net_message.cursize > MAX_MSGLEN) {
-			Sys_Printf ("ERROR: Demo message > MAX_MSGLEN (%d)", net_message.cursize);
+		if (net_message.cursize > MAX_UDP_PACKET) {
+			Sys_Printf ("ERROR: Demo message > MAX_UDP_PACKET (%d)\n", net_message.cursize);
 			Dem_Stop();
 			return 0;
 		}
-		r = fread (net_message.data, net_message.cursize, 1, from.file);
+		r = fread (net_message.data, net_message.cursize, 1, sworld.from.file);
 		if (r != 1)
 		{
 			Dem_Stop();
@@ -326,11 +392,11 @@ readit:
 		break;
 
 	case dem_set :
-		if (debug)
-			Sys_Printf("dem_set\n");
-		fread (&i, 4, 1, from.file);
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "dem_set\n");
+		fread (&i, 4, 1, sworld.from.file);
 		from.netchan.outgoing_sequence = LittleLong(i);
-		fread (&i, 4, 1, from.file);
+		fread (&i, 4, 1, sworld.from.file);
 		from.netchan.incoming_sequence = LittleLong(i);
 		if (from.format == mvd) {
 			from.netchan.incoming_acknowledged = from.netchan.incoming_sequence;
@@ -340,7 +406,7 @@ readit:
 		break;
 
 	case dem_multiple:
-		r = fread (&i, 4, 1, from.file);
+		r = fread (&i, 4, 1, sworld.from.file);
 		if (r != 1)
 		{
 			Dem_Stop();
@@ -424,9 +490,7 @@ void ReadPackets (void)
 		if (*(int *)net_message.data == -1)
 		{
 			ConnectionlessPacket ();
-			//FIXME: write connectionless msg to demo ?
-			//DemoReliableWrite_Begin(from.type, from.to, msg_readcount);
-			//MSG_Forward(&demo.buf, 0, msg_readcount);
+
 			if (!from.running) {
 				return;
 			}
@@ -450,202 +514,68 @@ void ReadPackets (void)
 	}
 
 	CheckSpectator();
-}
 
-extern int com_argc;
-extern char *com_argv[MAX_NUM_ARGVS];
+	if (sworld.from.file != stdin && ftell(sworld.from.file) - world.oldftell > 256000) {
+		int p;
 
-void ParseArgv(void)
-{
-	int	i;
-	char *ext;
-
-	// parse demoname
-	for (i = 1; i < com_argc; i++)
-	{
-		if (*com_argv[i] == '-') {
-			if (!strcmp(com_argv[i], "-debug"))
-				continue;
-			if (!strcmp(com_argv[i], "-filter_spectalk"))
-				continue;
-			if (!strcmp(com_argv[i], "-filter_qizmotalk"))
-				continue;
-			if (!strcmp(com_argv[i], "-fq"))
-				continue;
-			if (!strcmp(com_argv[i], "-fs"))
-				continue;
-
-			i++;
-			continue;
-		}
-
-		strcpy(from.name, com_argv[i]);
-		break;
-	}
-
-	if (i >= com_argc)
-	{
-		Sys_Printf("usage: qwdtools.exe <demoname> [-o <outputname> -fps # -filter_spectalk -filter_qizmotalk]\n");
-		exit(1);
-	}
-
-	DefaultExtension(from.name, ".qwd");
-
-	// parse output name
-	if ((i = CheckParm("-o")) != 0 && i + 1 < com_argc)
-	{
-		StripExtension(com_argv[i+1], demo.name);
-	} else {
-		// use the same name
-		StripExtension(from.name, demo.name);
-	}
-
-	ForceExtension(demo.name, ".mvd");
-
-	// check demo format
-	ext = from.name + strlen(from.name);
-	while (*ext != '.')
-		ext--;
-
-	if (!strcmp(ext, ".qwd"))
-		from.format = qwd;
-	else if (!strcmp(ext, ".mvd"))
-		from.format = mvd;
-	else 
-		Sys_Error("Unknown demo format: %s\n", ext);
-
-	// parse converter settings setting
-	if ((i = CheckParm("-fps")) != 0 && i + 1 < com_argc)
-	{
-		fps = atoi(com_argv[i+1]);
-		if (fps < 4) // 1000/4 -> 250ms
-			fps = 4;
-		if (fps > 100)
-			fps = 100;
-	} else
-		fps = DEFAULT_FPS;
-
-	debug = CheckParm("-debug");
-	filter_spectalk = CheckParm("-filter_spectalk") || CheckParm("-fs") ;
-	filter_qizmotalk = CheckParm("-filter_qizmotalk") || CheckParm("-fq");
-}
-
-void QWDToolsMsg(void)
-{
-	char str[1024];
-
-	strcpy(str, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n\n"
-		        " This demo was converted\n"
-				" from QWD by QWDTools\n\n"
-				"\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n");
-
-	DemoWrite_Begin(dem_all, 0, strlen(str) + 3);
-	MSG_WriteByte(msgbuf, svc_print);
-	MSG_WriteByte(msgbuf, PRINT_CHAT);
-	MSG_WriteString(msgbuf, str);
-}
-
-/*
-==================
-main
-==================
-*/
-
-int main (int argc, char **argv)
-{
-	int			oldvalid, i;
-	extern int	msgmax;
-	frame_t	*frame, *fframe, *tframe;
-	static oldparse = 0;
-
-	Tools_Init();
-
-	InitArgv (argc, argv);
-	ParseArgv ();
-	
-	// file stuff
-	if (!strcmp(demo.name, from.name))
-	{
-		Sys_Error("Can't convert from %s to %s!\n", from.name, demo.name);
+		if ((p = (int)100.0*ftell(sworld.from.file)/sworld.from.filesize) != world.percentage)
+			SetConsoleTitle(va("qwdtools  %d%% Done...", p));
+		world.percentage = p;
+		world.oldftell = ftell(sworld.from.file);
 	}
 	
-	if (FileOpenRead(from.name, &from.file) == -1)
-	{
-		Sys_Error("couldn't open for reading: %s\n", from.name);
-	}
+}
 
-	demo.file = fopen (demo.name, "wb");
-	if (demo.file == NULL)
-	{
-		Sys_Error ("couldn't open for writing: %s.\n", demo.name);
-	}
+void MainLoop(void)
+{
+	frame_t	*fframe, *tframe;
+	int		oldvalid = 0;
+	int		oldparse = 0;
+	float	acc_time = 0;
+	int		acc_count = 0;
+	int		acc_count_o = 0;
+	
+	if (!(sworld.options & O_STDIN))
+		SetConsoleTitle("qwdtools  0% Done...");
 
-	if (fps != DEFAULT_FPS)
-		Sys_Printf("converting at %d fps\n", fps);
+	if (sworld.options & O_CONVERT) // say hi
+		QWDToolsMsg();
 
-	// init values
-
-	memset(&world, 0, sizeof(world));
-
-	realtime = 0;
-	from.running = true;
-	from.lastframe = -1;
-	olddemotime = 0;
-
-	net_message.maxsize = sizeof(net_message_buffer);
-	net_message.data = net_message_buffer;
-
-	demo.buf.maxsize = sizeof(demo.buf_data);
-	demo.buf.data = demo.buf_data;
-	demo.datagram.maxsize = sizeof(demo.datagram_data);
-	demo.datagram.data = demo.datagram_data;
-
-	// for converting spectator demos
-	stats_msg.maxsize = sizeof(stats_buf);
-	stats_msg.data = stats_buf;
-
-
-	for (i=0, frame = world.frames; i < UPDATE_BACKUP; i++, frame++)
-	{
-		frame->buf.data = frame->buf_data;
-		frame->buf.maxsize = sizeof(frame->buf_data);
-		frame->buf.cursize = 0;
-		frame->buf.bufsize = 0;
-		frame->buf.size = (int*)frame->buf_data;
-	}
-
-	oldvalid = 0;
-	msgmax = MAX_MSGLEN/2;
-	msgbuf = &world.frames[0].buf;
-
-	QWDToolsMsg();
-
-	// ok, we can start converting demo
-	Sys_Printf("%s -> %s\n", from.name, demo.name);
 	while (from.running)
 	{
+		if  (sworld.options & O_SHUTDOWN)
+			Sys_Exit(2);
+
 		// read packet from demo
 		ReadPackets();
 
+		acc_count_o++;
+
+		// if not converting, stop here
+		if (!(sworld.options & O_CONVERT)) {
+			SZ_Clear(msgbuf);
+			continue;
+		}
+
 		// check if singon data is loaded
-		//Sys_Printf("%f\n", realtime - world.time);
 		if (world.validsequence != oldvalid)
 		{
 			oldvalid = world.validsequence;
 			DemoWriteToDisk(0,0, demo.time);
 			world.signonloaded = true;
+			acc_time = world.time;
 			msgmax = MAX_MSGLEN;
-			if (debug)
-				Sys_Printf("first packet, real:%f, demo:%f\n", realtime, demo.time);
+			if (sworld.options & O_DEBUG)
+				fprintf(sworld.debug.file, "first packet, real:%f, demo:%f\n", realtime, demo.time);
 		}
 
 		// check if it's time for next frame
-		if (world.time - demo.time >= 1.0/fps || !from.running)
+		if (world.time - demo.time >= 1.0/sworld.fps || !from.running)
 		{
 			if (!world.validsequence)
 				continue;
 
-			// Add packet entities, nails, and player
+			// Add packet entities, nails, and players
 			tframe = &world.frames[world.parsecount&UPDATE_MASK];
 			if (from.running) {
 				if (oldparse == from.parsecount) {
@@ -663,23 +593,218 @@ int main (int argc, char **argv)
 				tframe->senttime = fframe->senttime;
 			} else tframe->invalid = true;
 
-			tframe->time = demo.time = world.time;
+			acc_count++;
+
+			// decide next frame time
+			if (world.time - demo.time > 3.0 / sworld.fps) {
+				demo.time = world.time;
+			} else
+				demo.time += 1.0 / sworld.fps;
+
+			tframe->time = world.time;
 			world.parsecount++;
-			
-			if (!from.running)
-				WritePackets(world.parsecount - world.lastwritten);
-			else if (world.parsecount - world.lastwritten > 60)
+
+			if (world.parsecount - world.lastwritten > 60)
 				WritePackets(50);
 
 			msgbuf = &world.frames[world.parsecount&UPDATE_MASK].buf;
+			msgbuf->data = demo.buffer + demo.bufsize;
+			msgbuf->maxsize = sizeof(demo.buffer) - demo.bufsize;
+
+			msgbuf->size = 0;
+			msgbuf->bufsize = 0;
+			msgbuf->curto = 0;
+			msgbuf->curtype = 0;
+			msgbuf->cursize = 0;
+
+			if (!from.running)
+				WritePackets(world.parsecount - world.lastwritten);
 		}
 	}
 
-	if (demo.file != NULL)
-		fclose(demo.file);
-	if (from.file != NULL)
-		fclose(from.file);
+	if (sworld.options & O_CONVERT)
+	{
+		if (acc_count)
+			Sys_Printf(" average demo fps:%.1f (originally %.1f)\n", acc_count/(world.time - acc_time), acc_count_o/(world.time - acc_time));
+	}
+}
 
-	Sys_Printf("succesfully converted\n");
+void QWDToolsMsg(void)
+{
+	char str[1024];
+
+	strcpy(str, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n"
+		        " This demo was converted\n"
+				" from QWD by QWDTools\n"
+				"\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n");
+
+	DemoWrite_Begin(dem_all, 0, strlen(str) + 3);
+	MSG_WriteByte(msgbuf, svc_print);
+	MSG_WriteByte(msgbuf, PRINT_CHAT);
+	MSG_WriteString(msgbuf, str);
+}
+
+qboolean ClearWorld(void)
+{
+	char *ext;
+	extern char stdintype[32];
+
+	memset(&from, 0, sizeof(from));
+	memset(&world, 0, sizeof(world));
+	memset(&demo, 0, sizeof(demo));
+
+	demo.datagram.maxsize = sizeof(demo.datagram_data);
+	demo.datagram.data = demo.datagram_data;
+
+	// for converting spectator demos
+	stats_msg.maxsize = sizeof(stats_buf);
+	stats_msg.data = stats_buf;
+
+	msgmax = MAX_MSGLEN/2; // signon has shortened msg length
+	msgbuf = &world.frames[0].buf;
+	msgbuf->data = demo.buffer;
+	msgbuf->maxsize = sizeof(demo.buffer);
+
+	realtime = 0;
+	from.running = true;
+	from.lastframe = -1;
+
+	if (sworld.options & O_STDIN) {
+		strcpy(sworld.from.name, "stdin");
+		ext = va(".%s", stdintype);
+	} else
+		ext = FileExtension(sworld.from.name);
+
+	// qwz -> qwd
+	if (!_stricmp(ext, ".qwz")) {
+		*(sworld.from.name + strlen(sworld.from.name) - 1) = 'd';
+		ext[3] = 'd';
+		from.qwz = true;
+	}
+
+	if (!_stricmp(ext, ".qwd"))
+		from.format = qwd;
+	else if (!_stricmp(ext, ".mvd"))
+		from.format = mvd;
+	else
+	{
+		Sys_Printf("Ignoring %s\n", sworld.from.name);
+		return false;
+	}
+
 	return true;
+}
+
+char *getPath(char *path)
+{
+	static char dir[MAX_OSPATH];
+	char *p;
+
+	strcpy(dir, path);
+	p = dir + strlen(dir);
+	while (p > dir) {
+		if (*p == '\\' || *p == '/') {
+			p++;
+			break;
+		}
+		p--;
+	}
+	*p = 0;
+
+	return dir;
+}
+
+/*
+==================
+main
+==================
+*/
+
+char *sourcePath;
+
+int main (int argc, char **argv)
+{
+	int			i, options;
+	struct		_finddata_t c_file;
+    long		hFile;
+
+	InitArgv(argc, argv);
+
+	CtrlH_Init();
+
+	World_Init();
+	Load_ini();
+	Tools_Init();
+
+	ParseArgv();
+
+	options = sworld.options & JOB_TODO;
+
+	if (sworld.options & O_FC)
+		Sys_Printf("   -filter_chats\n");
+	else {
+		if (sworld.options & O_FS)
+			Sys_Printf("   -filter_spectalk\n");
+		if (sworld.options & O_FS)
+			Sys_Printf("   -filter_qizmotalk\n");
+		if (sworld.options & O_FT)
+			Sys_Printf("   -filter_teamchats\n");
+	}
+
+	Sys_Printf("   -fps %d\n", sworld.fps);
+	Sys_Printf("   -msglevel %d\n", sworld.msglevel);
+	
+	i = 0;
+	// serve all source files in loop
+	for (i = 0; sourceName[i][0]; i++) {
+
+		sourcePath = getPath(sourceName[i]);
+		if (!(sworld.options & O_STDIN)) {
+			if ((hFile = _findfirst( sourceName[i], &c_file )) == -1L)
+			{
+				Sys_Printf("Couldn't find file(s) %s\n", sourceName[i]);
+				continue;
+			}
+		}
+
+		do {
+			if  (sworld.options & O_SHUTDOWN)
+				Sys_Exit(2);
+
+			if (c_file.attrib & _A_SUBDIR || c_file.attrib & _A_SYSTEM)
+				continue;
+
+			strcpy(sworld.from.name, c_file.name);
+
+			if (!ClearWorld())
+				continue;
+
+			sworld.options &= ~(JOB_TODO);
+			sworld.options |=  Files_Init(options);
+
+			if (!(sworld.options & JOB_TODO))
+				continue;
+
+			// run program
+			MainLoop();
+
+			Sys_fclose(sworld.demo.file);
+			Sys_fclose(sworld.from.file);
+			Sys_fclose(sworld.debug.file);
+			Sys_fclose(sworld.log.file);
+			Sys_fclose(sworld.analyse.file);
+
+			if (sworld.options & O_STDIN)
+				Sys_Exit(1);
+
+		} while(_findnext( hFile, &c_file ) == 0 );
+
+		_findclose( hFile );
+
+	}
+
+	Sys_Printf("\nDone...\n\n");
+
+	Sys_Exit(0);
+	return false; // to happy compiler
 }

@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#include <sys/types.h>
 #include <dirent.h>
 #include "qwsvdef.h"
 
@@ -64,6 +63,16 @@ int	Sys_FileTime (char *path)
 	return buf.st_mtime;
 }
 
+int	Sys_FileSize (char *path)
+{
+	struct	stat	buf;
+	
+	if (stat (path,&buf) == -1)
+		return 0;
+	
+	return buf.st_size;
+}
+
 
 /*
 ============
@@ -95,20 +104,25 @@ Sys_listdir
 ================
 */
 
-dir_t *Sys_listdir (char *path, char *ext)
+dir_t Sys_listdir (char *path, char *ext)
 {
-	static dir_t list[MAX_DIRFILES];
-	int		i;
-	int		numfiles;
+	static file_t list[MAX_DIRFILES];
+	dir_t	d;
+	int		i, extsize;
 	DIR		*dir;
     struct dirent *oneentry;
+	char	pathname[MAX_OSPATH];
+	qboolean all;
 
-	numfiles = 0;
 	memset(list, 0, sizeof(list));
+	memset(&d, 0, sizeof(d));
+	d.files = list;
+	extsize = strlen(ext);
+	all = !strcmp(ext, ".*");
 
 	dir=opendir(path);
 	if (!dir) {
-		return list;
+		return d;
 	}
 
 	for(;;)
@@ -118,21 +132,29 @@ dir_t *Sys_listdir (char *path, char *ext)
 			break;
 
 		if (oneentry->d_type == DT_DIR || oneentry->d_type == DT_LNK)
+		{
+			d.numdirs++;
 			continue;
+		}
+
+		sprintf(pathname, "%s/%s", path, oneentry->d_name);
+		list[d.numfiles].size = Sys_FileSize(pathname);
+		d.size += list[d.numfiles].size;
 
 		i = strlen(oneentry->d_name);
-		if (i < 5 || (Q_strcasecmp(oneentry->d_name+i-4, ext)))
+		if (!all && (i < extsize || (Q_strcasecmp(oneentry->d_name+i-extsize, ext))))
 			continue;
 
-		Q_strncpyz (list[numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
+		Q_strncpyz (list[d.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
-		if (++numfiles == MAX_DIRFILES)
+
+		if (++d.numfiles == MAX_DIRFILES)
 			break;
 	}
 
 	closedir(dir);
 
-	return list;
+	return d;
 }
 
 

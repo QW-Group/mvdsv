@@ -95,7 +95,19 @@ SOURCE=.\dem_send.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\ini.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\init.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\main.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\qwz.c
 # End Source File
 # Begin Source File
 
@@ -112,6 +124,10 @@ SOURCE=.\defs.h
 # Begin Source File
 
 SOURCE=.\tools.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\version.h
 # End Source File
 # Begin Source File
 

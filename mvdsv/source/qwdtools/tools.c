@@ -436,7 +436,6 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 void SZ_Clear (sizebuf_t *buf)
 {
 	buf->cursize = 0;
-	buf->overflowed = false;
 }
 
 void *SZ_GetSpace (sizebuf_t *buf, int length)
@@ -444,16 +443,10 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	void	*data;
 	
 	if (buf->cursize + length > buf->maxsize)
-	{
-		if (!buf->allowoverflow)
-			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%d)\n", buf->maxsize);
-		
-		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i is > full buffer size\n", length);
-			
-		Sys_Printf ("SZ_GetSpace: overflow\n");	// because Con_Printf may be redirected
+	{	
+		Sys_Printf ("SZ_GetSpace: overflow\n");
 		SZ_Clear (buf); 
-		buf->overflowed = true;
+		Dem_Stop();
 	}
 
 	data = buf->data + buf->cursize;
@@ -494,10 +487,10 @@ Message is cleared from demobuf after that
 #define POS_SIZE 5
 #define POS_DATA 9
 
+#define BUF_FULL (1<<31)
+
 int			msgmax;
 sizebuf_t	*msgbuf;
-
-void WriteDemoMessage (sizebuf_t *msg, qboolean change, float time);
 
 void DemoWriteToDisk(int type, int to, float time)
 {
@@ -505,7 +498,6 @@ void DemoWriteToDisk(int type, int to, float time)
 	byte *p;
 	int	btype, bto, bsize;
 	sizebuf_t msg;
-	qboolean change;
 
 	p = msgbuf->data;
 	while (pos < msgbuf->bufsize)
@@ -513,26 +505,17 @@ void DemoWriteToDisk(int type, int to, float time)
 
 		btype = *p;
 		bto = *(int*)(p+POS_TO);
-		bsize = *(int*)(p+POS_SIZE);
+		bsize = *(int*)(p+POS_SIZE) & (~BUF_FULL);
 		pos += POS_DATA + bsize; //pos now points to next message
 
 		// no type means we are writing to disk everything
 		if (!type || (btype == type && bto == to))
 		{
 			if (bsize) {
-				change = false;
-				if (!demo.lasttype || demo.lasttype != btype || demo.lastto != bto)
-				{
-					// changed message direction
-					demo.lasttype = btype;
-					demo.lastto = bto;
-					change = true;
-				}
-
 				msg.data = p+POS_DATA;
 				msg.cursize = bsize;
 
-				WriteDemoMessage(&msg, change, time);
+				WriteDemoMessage(&msg, btype, bto, time);
 			}
 
 			// data is written so it need to be cleard from demobuf
@@ -567,7 +550,7 @@ Sets position in the buf for writing to specific client
 ==============
 */
 
-static void DemoSetBuf(byte type, int to, int size)
+static void DemoSetBuf(byte type, int to)
 {
 	byte *p;
 	int pos = 0;
@@ -580,27 +563,25 @@ static void DemoSetBuf(byte type, int to, int size)
 		btype = *p;
 		bto = *(int*)(p+POS_TO);
 		bsize = *(int*)(p+POS_SIZE);
-		pos += POS_DATA + bsize;
+		pos += POS_DATA + (bsize &(~BUF_FULL));
 
-		if (type == btype && to == bto)// && bsize + size < msgmax)
+		if (type == btype && to == bto && !(bsize &(~BUF_FULL)))
 		{
 			msgbuf->cursize = pos;
 			msgbuf->size = (int*)(p + POS_SIZE);
 			msgbuf->curtype = type;
 			msgbuf->curto = to;
-			//return;
+			return;
 		}
-		p += POS_DATA + bsize;
+		p += POS_DATA + (bsize &(~BUF_FULL));
 	}
-
-	if (msgbuf->curtype == type && msgbuf->curto == to)
-		return;
 	// type&&to not exist in the buf, so add it
 
 	*p = type;
 	*(int*)(p + POS_TO) = to;
 	*(int*)(p + POS_SIZE) = 0;
 	msgbuf->bufsize += POS_DATA;
+	demo.bufsize += POS_DATA;
 	msgbuf->size = (int*)(p + POS_SIZE);
 	msgbuf->curtype = type;
 	msgbuf->curto = to;
@@ -611,39 +592,35 @@ void DemoWrite_Begin(byte type, int to, int size)
 {
 	byte *p;
 
+	if (!(sworld.options & O_CONVERT))
+		return;
+
 	// signon message order cannot be changed
 	if (!world.signonloaded) {
 		if (msgbuf->curtype && (msgbuf->curtype != type || msgbuf->curto != to))
 		{
-			if (debug)
-				Sys_Printf("to disk (cur:%d, new:%d)\n", msgbuf->curtype, type);
+			if (sworld.options & O_DEBUG)
+				fprintf(sworld.debug.file, "to disk (cur:%d, new:%d)\n", msgbuf->curtype, type);
 			DemoWriteToDisk(0,0, demo.time);
 		}
 	}
 
 	// will it fit? 
-	if (msgbuf->bufsize + size + POS_DATA > msgbuf->maxsize) {
+	while (msgbuf->bufsize + size + POS_DATA > msgbuf->maxsize) {
 		if (!world.signonloaded)
 			DemoWriteToDisk(0,0, demo.time); // dump everything on disk
-		else
-			Sys_Error("msgbuf exceeded");
+		else WritePackets(1);
 	}
 
-	if (msgbuf->curtype != type || msgbuf->curto != to) {// || *msgbuf->size + size > msgmax) {
-		//if (!(msgbuf->curtype != type || msgbuf->curto != to))
-		//	Sys_Printf("%d, %d, %d, %d\n", msgbuf->curtype, msgbuf->curto, *msgbuf->size, size);
-
-		DemoSetBuf(type, to, size);
+	if (msgbuf->curtype != type || msgbuf->curto != to) {
+		DemoSetBuf(type, to);
 	}
 
 	
 	if (*msgbuf->size + size > msgmax)
 	{
-		if (!world.signonloaded) {
-			DemoWriteToDisk(type,to, demo.time);
-			DemoSetBuf(type, to, size);
-		} else
-			Sys_Error("msgbuf exceeded");
+		*msgbuf->size |= BUF_FULL;
+		DemoSetBuf(type, to);
 	}
 	
 
@@ -655,6 +632,7 @@ void DemoWrite_Begin(byte type, int to, int size)
 
 	msgbuf->bufsize += size;
 	*msgbuf->size += size;
+	demo.bufsize += size;
 }
 
 /*
@@ -664,14 +642,13 @@ WriteDemoMessage
 Dumps the current net message, prefixed by the length and time
 ====================
 */
-
-static void WriteDemoMessage (sizebuf_t *msg, qboolean change, float time)
+void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 {
-	int		len, to, msec;
-	byte	c, type;
+	int		len, i, msec;
+	byte	c;
 	static float prevtime;
 
-	if (demo.file == NULL)
+	if (sworld.demo.file == NULL)
 		return;
 
 	msec = (time - prevtime)*1000;
@@ -683,42 +660,46 @@ static void WriteDemoMessage (sizebuf_t *msg, qboolean change, float time)
 		msec = 0;
 
 	c = msec;
-	fwrite(&c, sizeof(c), 1, demo.file);
+	fwrite(&c, sizeof(c), 1, sworld.demo.file);
 
-	if (change)
+	if (type != demo.lasttype || to != demo.lastto)
 	{
+		demo.lastto = to;
+		demo.lasttype = type;
+
 		switch (demo.lasttype)
 		{
 		case dem_all:
 			c = dem_all;
-			fwrite (&c, sizeof(c), 1, demo.file);
+			fwrite (&c, sizeof(c), 1, sworld.demo.file);
 			break;
 		case dem_multiple:
 			c = dem_multiple;
-			fwrite (&c, sizeof(c), 1, demo.file);
+			fwrite (&c, sizeof(c), 1, sworld.demo.file);
 
-			to = LittleLong(demo.lastto);
-			fwrite (&to, sizeof(to), 1, demo.file);
+			i = LittleLong(demo.lastto);
+			fwrite (&i, sizeof(i), 1, sworld.demo.file);
 			break;
 		case dem_single:
 		case dem_stats:
 			c = demo.lasttype + (demo.lastto << 3);
-			fwrite (&c, sizeof(c), 1, demo.file);
+			fwrite (&c, sizeof(c), 1, sworld.demo.file);
 			break;
 		default:
-			Sys_Error("bad demo message type:%d\n", type);
+			Sys_Printf("ERROR:bad demo message type:%d\n", type);
+			Dem_Stop();
 			return;
 		}
 	} else {
 		c = dem_read;
-		fwrite (&c, sizeof(c), 1, demo.file);
+		fwrite (&c, sizeof(c), 1, sworld.demo.file);
 	}
 
 	len = LittleLong (msg->cursize);
-	fwrite (&len, 4, 1, demo.file);
-	fwrite (msg->data, msg->cursize, 1, demo.file);
+	fwrite (&len, 4, 1, sworld.demo.file);
+	fwrite (msg->data, msg->cursize, 1, sworld.demo.file);
 
-	fflush (demo.file);
+	fflush (sworld.demo.file);
 }
 
 //============================================================================
@@ -758,13 +739,16 @@ StripExtension
 */
 void StripExtension (char *in, char *out)
 {
-	strcpy(out, in);
-	out += strlen(out);
-	while (out - in > 0 && *out != '.')
-		out--;
+	char *p;
 
-	if (*out == '.')
-		*out = 0;
+	strcpy(out, in);
+	p = out + strlen(out);
+	while (p > out && *p != '.') {
+		p--;
+	}
+
+	if (*p == '.')
+		*p = 0;
 }
 
 /*
@@ -777,15 +761,20 @@ char *FileExtension (char *in)
 {
 	static char exten[8];
 	int		i;
+	char	*p;
 
-	while (*in && *in != '.')
-		in++;
-	if (!*in)
+	p = in + strlen(in);
+
+	while (p > in && *p != '.')
+		p--;
+
+	if (p == in)
 		return "";
-	in++;
-	for (i=0 ; i<7 && *in ; i++,in++)
-		exten[i] = *in;
+
+	for (i=0 ; i<7 && *p; i++,p++)
+		exten[i] = *p;
 	exten[i] = 0;
+
 	return exten;
 }
 
@@ -834,11 +823,25 @@ void ForceExtension (char *path, char *extension)
 	strncat (path, extension, MAX_OSPATH);
 }
 
+char *TemplateName (char *from, char *to)
+{
+	static char name[MAX_OSPATH];
+	char tmp[MAX_OSPATH];
+	char *p;
+
+	memset(name, 0, sizeof(name));
+
+	if ( !(p = strstr(to, "*")) )
+		return to;
+
+	StripExtension(from, tmp);
+	strncpy(name, to, p - to);
+	strcat(name,va("%s%s",tmp, p+1));
+
+	return name;
+}
+
 //============================================================================
-
-#define MAX_COM_TOKEN 1024
-
-char	com_token[MAX_COM_TOKEN];
 
 /*
 ===============
@@ -914,6 +917,34 @@ int CheckParm (char *parm)
 	return 0;
 }
 
+/*
+================
+AddParm
+
+Adds the given string at the end of the current argument list
+================
+*/
+void AddParm (char *parm)
+{
+	static char parmbuf[2048];
+	static char *p = parmbuf;
+
+	strcpy(p ,parm);
+	com_argv[com_argc++] = p;
+	p += strlen(parm) + 1;
+}
+
+void RemoveParm (int num)
+{
+	if (num < 1 || num > com_argc)
+		return;
+
+	while(num < com_argc)
+		com_argv[num++] = com_argv[num + 1];
+
+	com_argc--;
+}
+
 
 void InitArgv (int argc, char **argv)
 {
@@ -947,13 +978,15 @@ FIXME: make this buffer size safe someday
 char	*va(char *format, ...)
 {
 	va_list		argptr;
-	static char		string[1024];
+	static char		string[4][1024];
+	static int		index = 0;
 	
+	index = (index+1)&3;
 	va_start (argptr, format);
-	vsprintf (string, format,argptr);
+	vsprintf (string[index], format,argptr);
 	va_end (argptr);
 
-	return string;	
+	return string[index];	
 }
 
 /*
@@ -966,11 +999,11 @@ char	*va(char *format, ...)
 
 /*
 ================
-filelength
+fileLength
 ================
 */
 
-int filelength (FILE *f)
+int fileLength (FILE *f)
 {
 	int		pos;
 	int		end;
@@ -995,7 +1028,24 @@ int FileOpenRead (char *path, FILE **hndl)
 	}
 	*hndl = f;
 	
-	return filelength(f);
+	return fileLength(f);
+}
+
+byte *LoadFile(char *path)
+{
+	FILE *f;
+	byte *buf;
+	int	len;
+
+	if ((len = FileOpenRead(path, &f)) == -1)
+		return NULL;
+
+	buf = Q_Malloc(len+1);
+
+	fread(buf, 1, len, f);
+	Sys_fclose(f);
+
+	return buf;
 }
 
 vec_t Length(vec3_t v)

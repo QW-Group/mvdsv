@@ -343,12 +343,6 @@ void CL_ParsePacketEntities (qboolean delta)
 		full = true;
 	}
 
-	/*if (cls.netchan.incoming_sequence == 1342) {
-		FlushEntityPacket ();
-		return;
-	}*/
-
-
 	oldindex = 0;
 	newindex = 0;
 	newp->num_entities = 0;
@@ -442,15 +436,6 @@ void CL_ParsePacketEntities (qboolean delta)
 	}
 
 	newp->num_entities = newindex;
-	//Con_Printf("%d\n", cls.netchan.incoming_sequence);
-	/*if (cls.netchan.incoming_sequence == 1342) {
-		Con_Printf("debug\n");
-		cl.validsequence = 0;
-		newp->num_entities = 0;
-		cl.frames[cls.netchan.incoming_sequence&UPDATE_MASK].invalid = true;
-
-	}
-	*/
 }
 
 
@@ -645,16 +630,27 @@ typedef struct
 	int		modelindex;
 	vec3_t	origin;
 	vec3_t	angles;
+	int		num;
 } projectile_t;
 
-#define	MAX_PROJECTILES	32
-projectile_t	cl_projectiles[MAX_PROJECTILES];
-int				cl_num_projectiles;
+projectile_t	cl_projectiles[MAX_PROJECTILES], cl_oldprojectiles[MAX_PROJECTILES];
+int				cl_num_projectiles, cl_num_oldprojectiles;
 
 extern int cl_spikeindex;
 
 void CL_ClearProjectiles (void)
 {
+	static int parsecount = 0;
+
+	if (parsecount == cl.parsecount)
+		return;
+
+	parsecount = cl.parsecount;
+
+	memset(cl.int_projectiles, 0, sizeof(cl.int_projectiles));
+
+	cl_num_oldprojectiles = cl_num_projectiles;
+	memcpy(cl_oldprojectiles, cl_projectiles, sizeof(cl_projectiles));
 	cl_num_projectiles = 0;
 }
 
@@ -665,15 +661,21 @@ CL_ParseProjectiles
 Nails are passed as efficient temporary entities
 =====================
 */
-void CL_ParseProjectiles (void)
+void CL_ParseProjectiles (qboolean nail2)
 {
-	int		i, c, j;
+	int		i, c, j, num;
 	byte	bits[6];
 	projectile_t	*pr;
+	interpolate_t	*inter;
 
 	c = MSG_ReadByte ();
 	for (i=0 ; i<c ; i++)
 	{
+		if (nail2)
+			num = MSG_ReadByte();
+		else
+			num = 0;
+
 		for (j=0 ; j<6 ; j++)
 			bits[j] = MSG_ReadByte ();
 
@@ -681,6 +683,7 @@ void CL_ParseProjectiles (void)
 			continue;
 
 		pr = &cl_projectiles[cl_num_projectiles];
+		inter = &cl.int_projectiles[cl_num_projectiles];
 		cl_num_projectiles++;
 
 		pr->modelindex = cl_spikeindex;
@@ -689,6 +692,20 @@ void CL_ParseProjectiles (void)
 		pr->origin[2] = ( ( bits[3] + ((bits[4]&15)<<8) ) <<1) - 4096;
 		pr->angles[0] = 360*(bits[4]>>4)/16;
 		pr->angles[1] = 360*bits[5]/256;
+		pr->num = num;
+		if (!num) 
+			continue;
+
+		for (j = 0; j < cl_num_oldprojectiles; j++)
+			if (cl_oldprojectiles[j].num == num)
+			{
+				inter->interpolate = true;
+				inter->oldindex = j;
+				VectorCopy(pr->origin, inter->origin);
+				if (!cl_oldprojectiles[j].origin[0])
+					Con_Printf("parse:%d, %d, %d\n", j, num, cl_oldprojectiles[j].num);
+				break;
+			}
 	}
 }
 
@@ -738,9 +755,6 @@ CL_ParsePlayerinfo
 */
 extern int parsecountmod;
 extern double parsecounttime;
-extern int stat_packets;
-extern int	stat_headers;
-extern int	stat_size;
 
 #define DF_ORIGIN	1
 #define DF_ANGLES	(1<<3)
@@ -1183,6 +1197,7 @@ void CL_Interpolate(void)
 	if (f < -1.0)
 		f = -1.0;
 
+	// interpolate entities
 	for (i=0; i < frame->packet_entities.num_entities; i++)
 	{
 		if (!cl.int_entities[i].interpolate)
@@ -1194,6 +1209,20 @@ void CL_Interpolate(void)
 		}
 	}
 
+	// interpolate nails
+	for (i=0; i < cl_num_projectiles; i++)
+	{
+		if (!cl.int_projectiles[i].interpolate)
+			continue;
+
+		if (!cl_oldprojectiles[cl.int_projectiles[i].oldindex].origin[0]) 
+			Con_Printf("%d %d, %d, %d\n", i, cl.int_projectiles[i].oldindex, cl_projectiles[i].num, i >= cl_num_oldprojectiles);
+		for (j=0;j<3;j++) {
+			cl_projectiles[i].origin[j] = cl.int_projectiles[i].origin[j] + f*(cl.int_projectiles[i].origin[j] - cl_oldprojectiles[cl.int_projectiles[i].oldindex].origin[j]);
+		}
+	}
+
+	// interpolate clients
 	for (i=0, pplayer = predicted_players, state=frame->playerstate, oldstate=oldframe->playerstate; 
 		i < MAX_CLIENTS;
 		i++, pplayer++, state++, oldstate++)
@@ -1215,7 +1244,7 @@ int	fixangle;
 void CL_InitInterpolation(float next, float old)
 {
 	float	f;
-	int		i, j;
+	int		i;
 	struct predicted_player *pplayer;
 	frame_t	*frame, *oldframe;
 	player_state_t	*state, *oldstate;
@@ -1239,6 +1268,7 @@ void CL_InitInterpolation(float next, float old)
 	if (f < -1.0)
 		f = -1.0;
 
+	// clients
 	for (i=0, pplayer = predicted_players, state=frame->playerstate, oldstate=oldframe->playerstate; 
 		i < MAX_CLIENTS;
 		i++, pplayer++, state++, oldstate++) {
@@ -1257,9 +1287,12 @@ void CL_InitInterpolation(float next, float old)
 				VectorCopy(cl.viewangles, state->command.angles);
 				VectorCopy(cl.viewangles, state->viewangles);
 			}
+
+			// no angle interpolation
+			VectorCopy(state->command.angles, oldstate->command.angles);
 			
 			fixangle &= ~(1 << i);
-			continue;
+			//continue;
 		}
 
 		if (state->messagenum != cl.parsecount) {
@@ -1290,6 +1323,7 @@ void CL_InitInterpolation(float next, float old)
 		pplayer->predict = true;
 	}
 
+	// entities
 	for (i=0; i < frame->packet_entities.num_entities; i++)
 	{
 		if (!cl.int_entities[i].interpolate)
@@ -1297,11 +1331,14 @@ void CL_InitInterpolation(float next, float old)
 
 		VectorCopy(frame->packet_entities.entities[i].origin, cl.int_entities[i].origin);
 		VectorCopy(frame->packet_entities.entities[i].angles, cl.int_entities[i].angles);
-		
-		for (j=0;j<3;j++) {
-			frame->packet_entities.entities[i].origin[j] = cl.int_entities[i].origin[j] + f*(cl.int_entities[i].origin[j] - oldframe->packet_entities.entities[cl.int_entities[i].oldindex].origin[j]);
-			frame->packet_entities.entities[i].angles[j] = adjustangle(oldframe->packet_entities.entities[cl.int_entities[i].oldindex].angles[j], cl.int_entities[i].angles[j],1.0+f);
-		}
+	}
+	
+	// nails
+	for (i=0; i < cl_num_projectiles; i++) {
+		if (!cl.int_projectiles[i].interpolate)
+			continue;
+
+		VectorCopy(cl.int_projectiles[i].origin, cl_projectiles[i].origin);
 	}
 }
 

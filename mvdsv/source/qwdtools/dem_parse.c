@@ -86,7 +86,7 @@ char *svc_strings[] =
 	"svc_setinfo",
 	"svc_serverinfo",
 	"svc_updatepl",
-	"NEW PROTOCOL",
+	"svc_nails2",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
@@ -320,9 +320,8 @@ void Dem_ParseStartSoundPacket(void)
 			if (Length(dist) < 30.0 && world.frames[k&UPDATE_MASK].fixangle[i] == false) {
 				found = true;
 				world.frames[k&UPDATE_MASK].fixangle[i] = true;
-				if (debug)
-				//if (i != from.to && sound_num == cl_telemax)
-					Sys_Printf("fixangle:%d, %d\n", i, k);
+				if (sworld.options & O_DEBUG)
+					fprintf(sworld.debug.file, "fixangle:%d, %d\n", i, k);
 			}
 		}
 		j--;
@@ -387,6 +386,18 @@ void Dem_ParseClientdata (void)
 }
 
 
+qboolean findPlayer(char *name)
+{
+	int i;
+
+	if (!*name)
+		return false;
+	
+	for (i=0; i < MAX_CLIENTS; i++)
+		if (!strcmp(name, world.players[i].name))
+			return true;
+}
+
 
 /*
 ==============
@@ -396,17 +407,34 @@ Dem_ParsePrint
 
 void Dem_ParsePrint (void)
 {
-	char *s;
+	char *s, str[128];
 	byte level;
 	msg_startcount = msg_readcount;
 
 	level = MSG_ReadByte ();
 	s = MSG_ReadString ();
 
-	if (filter_spectalk && level == PRINT_CHAT && !strncmp(s, "[SPEC] ", 7))
+	// filters
+
+	if (level < sworld.msglevel)
 		return;
-	if (filter_qizmotalk && level == PRINT_CHAT && s[0] == '[' && strstr(s, "]: ") != NULL)
+
+	if (sworld.options & O_FC && level == PRINT_CHAT)
 		return;
+	if (sworld.options & O_FS && level == PRINT_CHAT && !strncmp(s, "[SPEC] ", 7))
+		return;
+	if (sworld.options & O_FQ && level == PRINT_CHAT && s[0] == '[' && strstr(s, "]: ") != NULL)
+		return;
+	if (sworld.options & O_FT && level == PRINT_CHAT && s[0] == '(' && strstr(s, "): ") != NULL)
+	{
+		strncpy(str, s + 1, sizeof(str));
+		*(str + ((strstr(s, "): ") - str))) = 0;
+		if (findPlayer(str))
+			return;
+	}
+
+	if (sworld.options & O_LOG)
+		fprintf(sworld.log.file, "%s", s);
 
 	DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf, svc_print);
@@ -427,8 +455,11 @@ void Dem_UpdateUserinfo (void)
 	msg_startcount = msg_readcount;
 
 	slot = MSG_ReadByte ();
-	if (slot >= MAX_CLIENTS)
-		Sys_Error ("Dem_ParseDemoMessage: svc_updateuserinfo > MAX_CLIENTS");
+	if (slot >= MAX_CLIENTS) {
+		Sys_Printf ("ERROR: Dem_ParseDemoMessage: svc_updateuserinfo > MAX_CLIENTS\n");
+		Dem_Stop();
+		return;
+	}
 
 	player = &from.players[slot];
 	/*player->userid = */MSG_ReadLong ();
@@ -538,7 +569,8 @@ void FlushEntityPacket (void)
 		word = (unsigned short)MSG_ReadShort ();
 		if (msg_badread)
 		{	// something didn't parse right...
-			Sys_Error ("msg_badread in packetentities\n");
+			Sys_Printf ("ERROR:msg_badread in packetentities\n");
+			Dem_Stop();
 			return;
 		}
 
@@ -596,7 +628,6 @@ void Dem_ParsePacketEntities (qboolean delta)
 		from.validsequence = from.netchan.incoming_sequence;
 		oldp = &from.frames[oldpacket&UPDATE_MASK].packet_entities;
 		full = false;
-		//from.int_packet = newpacket;
 	}
 	else
 	{	// this is a full update that we can start delta compressing from now
@@ -617,7 +648,8 @@ void Dem_ParsePacketEntities (qboolean delta)
 		word = (unsigned short)MSG_ReadShort ();
 		if (msg_badread)
 		{	// something didn't parse right...
-			Sys_Error ("msg_badread in packetentities\n");
+			Sys_Printf ("ERROR:msg_badread in packetentities\n");
+			Dem_Stop();
 			return;
 		}
 
@@ -626,7 +658,11 @@ void Dem_ParsePacketEntities (qboolean delta)
 			while (oldindex < oldp->num_entities)
 			{	// copy all the rest of the entities from the old packet
 				if (newindex >= MAX_PACKET_ENTITIES)
-					Sys_Error ("Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+				{
+					Sys_Printf ("Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+					Dem_Stop();
+					return;
+				}
 				newp->entities[newindex] = oldp->entities[oldindex];
 				newindex++;
 				oldindex++;
@@ -646,8 +682,11 @@ void Dem_ParsePacketEntities (qboolean delta)
 			}
 
 			// copy one of the old entities over to the new packet unchanged
-			if (newindex >= MAX_PACKET_ENTITIES)
-				Sys_Error ("Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+			if (newindex >= MAX_PACKET_ENTITIES) {
+				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+				Dem_Stop();
+				return;
+			}
 			newp->entities[newindex] = oldp->entities[oldindex];
 			newindex++;
 			oldindex++;
@@ -667,8 +706,11 @@ void Dem_ParsePacketEntities (qboolean delta)
 				}
 				continue;
 			}
-			if (newindex >= MAX_PACKET_ENTITIES)
-				Sys_Error ("Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+			if (newindex >= MAX_PACKET_ENTITIES) {
+				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+				Dem_Stop();
+				return;
+			}
 			Dem_ParseDelta (&baselines[newnum], &newp->entities[newindex], word);
 			newindex++;
 			continue;
@@ -695,8 +737,8 @@ void Dem_ParsePacketEntities (qboolean delta)
 	}
 
 	newp->num_entities = newindex;
-	if (debug)
-		Sys_Printf("num_entities:%d\n", newp->num_entities);
+	if (sworld.options & O_DEBUG)
+		fprintf(sworld.debug.file, "num_entities:%d\n", newp->num_entities);
 }
 
 int TranslateFlags(int src, int to)
@@ -749,8 +791,11 @@ void Dem_ParsePlayerinfo (void)
 
 	num = MSG_ReadByte ();
 	//Sys_Printf("%d:parse:%d\n",from.parsecount, num);
-	if (num >= MAX_CLIENTS)
-		Sys_Error ("Dem_ParsePlayerinfo: bad num\n");
+	if (num >= MAX_CLIENTS) {
+		Sys_Printf ("ERROR:Dem_ParsePlayerinfo: bad num\n");
+		Dem_Stop();
+		return;
+	}
 
 	info = &from.players[num];
 
@@ -876,9 +921,9 @@ Dem_ParseProjectiles
 Nails are passed as efficient temporary entities
 =====================
 */
-void Dem_ParseProjectiles (void)
+void Dem_ParseProjectiles (qboolean nails2)
 {
-	int		i, c, j;
+	int		i, c, j, num;
 	byte	bits[6];
 	projectile_t	*pr;
 	frame_t	*frame;
@@ -888,6 +933,11 @@ void Dem_ParseProjectiles (void)
 	c = MSG_ReadByte ();
 	for (i=0 ; i<c ; i++)
 	{
+		if (nails2)
+			num = MSG_ReadByte();
+		else
+			num = 0;
+
 		for (j=0 ; j<6 ; j++)
 			bits[j] = MSG_ReadByte ();
 
@@ -903,6 +953,7 @@ void Dem_ParseProjectiles (void)
 		pr->origin[2] = ( ( bits[3] + ((bits[4]&15)<<8) ) <<1) - 4096;
 		pr->angles[0] = 360*(bits[4]>>4)/16;
 		pr->angles[1] = 360*bits[5]/256;
+		pr->num = num;
 	}
 }
 
@@ -964,7 +1015,7 @@ void Dem_ParseBaseline (entity_state_t *es)
 	}
 }
 
-#define SHOWNET(x) if (debug && cmd < 60) Sys_Printf ("%3i:%s\n", msg_readcount-1, x);
+#define SHOWNET(x) if (sworld.options & O_DEBUG && cmd < 60) fprintf(sworld.debug.file, "%3i:%s\n", msg_readcount-1, x);
 /*
 =====================
 Dem_ParseServerMessage
@@ -976,7 +1027,6 @@ void Dem_ParseDemoMessage (void)
 	int			cmd, oldcmd;
 	int			i;
 	char		*s;
-	static qboolean	show = false;
 	extern sizebuf_t stats_msg;
 
 //
@@ -991,9 +1041,12 @@ void Dem_ParseDemoMessage (void)
 //
 	while (1)
 	{
+		if (!from.running)
+			return;
+
 		if (msg_badread)
 		{
-			Sys_Error ("Dem_ParseDemoMessage: Bad demo message");
+			Sys_Printf ("ERROR:Dem_ParseDemoMessage: Bad demo message\n");
 			Dem_Stop();
 			return;
 		}
@@ -1001,9 +1054,6 @@ void Dem_ParseDemoMessage (void)
 		oldcmd = cmd;
 
 		cmd = MSG_ReadByte ();
-
-		//if (cmd == svc_intermission)
-		//	show = true;
 
 		if (cmd == -1)
 		{
@@ -1018,7 +1068,7 @@ void Dem_ParseDemoMessage (void)
 		switch (cmd)
 		{
 		default:
-			Sys_Error ("Dem_ParseDemoMessage: Illegible demo message %d(prev=%d)", cmd, oldcmd);
+			Sys_Printf ("ERROR:Dem_ParseDemoMessage: Illegible demo message %d(prev=%d)\n", cmd, oldcmd);
 			Dem_Stop();
 			return;
 			
@@ -1028,8 +1078,6 @@ void Dem_ParseDemoMessage (void)
 			break;
 			
 		case svc_disconnect:
-			DemoWrite_Begin(dem_all, 0, 1);
-			MSG_WriteByte(msgbuf, cmd);
 			Dem_Stop();
 			return;
 
@@ -1050,12 +1098,16 @@ void Dem_ParseDemoMessage (void)
 
 			s = MSG_ReadString ();
 
-			if (debug)
-				Sys_Printf("text:%s\n", s);
+			if (sworld.options & O_DEBUG)
+				fprintf(sworld.debug.file, "text:%s\n", s);
 
 			if (!strncmp(s, "reconnect", 9)) {
 				Dem_Stop();
 				return;
+			}
+
+			if (!strncmp(s, "changing", 8)) {
+				break;
 			}
 
 			if (msgmax != MAX_MSGLEN)
@@ -1096,15 +1148,18 @@ void Dem_ParseDemoMessage (void)
 			world.frames[world.parsecount&UPDATE_MASK].fixangle[from.to] = -1;
 
 			//world.players[from.to].fixangle = false;
-			if (debug)
-				Sys_Printf("setangle:%d\n", from.to);
+			if (sworld.options & O_DEBUG)
+				fprintf(sworld.debug.file, "setangle:%d\n", from.to);
 			break;
 			
 		case svc_lightstyle:
 			msg_startcount = msg_readcount;
 			i = MSG_ReadByte ();
-			if (i >= MAX_LIGHTSTYLES)
-				Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES\n");
+			if (i >= MAX_LIGHTSTYLES) {
+				Sys_Printf ("svc_lightstyle > MAX_LIGHTSTYLES\n");
+				Dem_Stop();
+				return;
+			}
 			strcpy (lightstyle[i].map,  MSG_ReadString());
 			lightstyle[i].length = strlen(lightstyle[i].map);
 
@@ -1279,7 +1334,10 @@ void Dem_ParseDemoMessage (void)
 			break;
 
 		case svc_nails:
-			Dem_ParseProjectiles ();
+			Dem_ParseProjectiles (false);
+			break;
+		case svc_nails2:
+			Dem_ParseProjectiles (true);
 			break;
 
 		case svc_chokecount:		// some preceding packets were choked
@@ -1326,6 +1384,4 @@ void Dem_ParseDemoMessage (void)
 			return;
 		}
 	}
-
-	//CL_SetSolidEntities ();
 }

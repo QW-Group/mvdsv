@@ -92,6 +92,7 @@ byte *SV_FatPVS (vec3_t org)
 #define	MAX_NAILS	32
 edict_t	*nails[MAX_NAILS];
 int		numnails;
+int		nailcount = 0;
 
 extern	int	sv_nailmodel, sv_supernailmodel, sv_playermodel;
 
@@ -113,7 +114,7 @@ qboolean SV_AddNailUpdate (edict_t *ent)
 	return true;
 }
 
-void SV_EmitNailUpdate (sizebuf_t *msg)
+void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
 	byte	bits[6];	// [48 bits] xyzpy 12 12 12 4 8 
 	int		n, i;
@@ -123,12 +124,25 @@ void SV_EmitNailUpdate (sizebuf_t *msg)
 	if (!numnails)
 		return;
 
-	MSG_WriteByte (msg, svc_nails);
+	if (recorder)
+		MSG_WriteByte (msg, svc_nails2);
+	else
+		MSG_WriteByte (msg, svc_nails);
+
 	MSG_WriteByte (msg, numnails);
 
 	for (n=0 ; n<numnails ; n++)
 	{
 		ent = nails[n];
+		if (recorder) {
+			if (!ent->v.colormap) {
+				if (!((++nailcount)&255)) nailcount++;
+				ent->v.colormap = nailcount&255;
+			}
+
+			MSG_WriteByte (msg, (byte)ent->v.colormap);
+		}
+
 		x = (int)(ent->v.origin[0]+4096)>>1;
 		y = (int)(ent->v.origin[1]+4096)>>1;
 		z = (int)(ent->v.origin[2]+4096)>>1;
@@ -319,68 +333,6 @@ void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *
 	MSG_WriteShort (msg, 0);	// end of packetentities
 }
 
-void SV_PredictUsercmd (client_t *from, demoinfo_t *to, usercmd_t *cmd, int msec)
-{
-	usercmd_t	u;
-	static int oldbuttons, waterjumptime, dead;
-	static vec3_t velocity, origin;
-
-	if (from != NULL)
-	{
-		VectorCopy(from->edict->v.velocity, velocity);
-		VectorCopy(from->edict->v.origin, origin);
-		oldbuttons = from->oldbuttons;
-		waterjumptime = from->edict->v.teleport_time;
-		dead = from->edict->v.health <= 0;
-		pmove.numphysent = 1;
-		pmove.physents[0].model = sv.worldmodel;
-		movevars.entgravity = from->entgravity;
-		movevars.maxspeed = from->maxspeed;
-	}
-
-	u = *cmd;
-	u.msec = msec;
-
-	if (u.msec < 0)
-	{
-		// timeout message (lag?)
-		VectorCopy (origin, to->origin);
-		VectorCopy (u.angles, to->angles);
-		return;
-	}
-
-	// split up very long moves
-	if (u.msec > 50)
-	{
-		SV_PredictUsercmd (NULL, to, cmd, msec/2);
-		SV_PredictUsercmd (NULL, to, cmd, msec/2);
-		return;
-	}
-
-	VectorCopy (origin, pmove.origin);
-	VectorCopy (u.angles, pmove.angles);
-	VectorCopy (velocity, pmove.velocity);
-
-
-	pmove.oldbuttons = oldbuttons;
-	pmove.waterjumptime = waterjumptime;
-	pmove.dead = dead;
-	pmove.spectator = 0;
-
-	pmove.cmd = u;
-
-	PlayerMove ();
-
-	waterjumptime = pmove.waterjumptime;
-	oldbuttons = pmove.cmd.buttons;
-
-	VectorCopy (pmove.origin, to->origin);
-	VectorCopy (pmove.origin, origin);
-	VectorCopy (pmove.angles, to->angles);
-	VectorCopy (pmove.velocity, velocity);
-}
-
-
 /*
 =============
 SV_WritePlayersToClient
@@ -406,8 +358,12 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 	int			pflags;
 	int			dflags;
 	demoinfo_t	demoinfo;
+	demo_frame_t *demo_frame;
+	demo_client_t *dcl;
 	
-	for (j=0,cl=svs.clients ; j<MAX_CLIENTS ; j++,cl++)
+	demo_frame = &demo.frames[demo.parsecount&DEMO_FRAMES_MASK];
+
+	for (j=0,cl=svs.clients, dcl = demo_frame->clients; j<MAX_CLIENTS ; j++,cl++, dcl++)
 	{
 		if (cl->state != cs_spawned)
 			continue;
@@ -419,81 +375,35 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 			if (cl->spectator)
 				continue;
 
-			dflags = 0;
+			dcl->parsecount = demo.parsecount;
 
-			msec = 1000*(sv.time - cl->localtime);
-			if (msec > 255)
-				msec = 255;
-
-			SV_PredictUsercmd(cl, &demoinfo, &cl->lastcmd, msec);
-			//VectorCopy(ent->v.origin, demoinfo.origin);
-			//VectorCopy(ent->v.v_angle, demoinfo.angles);
-			VectorCopy(ent->v.angles, demoinfo.angles);
-			demoinfo.angles[0] *= -3;
-			demoinfo.angles[2] = 0; // no roll angle
+			VectorCopy(ent->v.origin, dcl->info.origin);
+			VectorCopy(ent->v.angles, dcl->info.angles);
+			dcl->info.angles[0] *= -3;
+			dcl->info.angles[2] = 0; // no roll angle
 
 			if (ent->v.health <= 0)
 			{	// don't show the corpse looking around...
-				demoinfo.angles[0] = 0;
-				demoinfo.angles[1] = ent->v.angles[1];
-				demoinfo.angles[2] = 0;
+				dcl->info.angles[0] = 0;
+				dcl->info.angles[1] = ent->v.angles[1];
+				dcl->info.angles[2] = 0;
 			}
 
-			for (i=0; i < 3; i++)
-				if (cl->demoinfo.origin[i] != demoinfo.origin[i])
-					dflags |= DF_ORIGIN << i;
+			dcl->info.skinnum = ent->v.skin;
+			dcl->info.effects = ent->v.effects;
+			dcl->info.weaponframe = ent->v.weaponframe;
+			dcl->info.model = ent->v.modelindex;
+			dcl->sec = sv.time - cl->localtime;
+			dcl->frame = ent->v.frame;
+			dcl->flags = 0;
+			dcl->cmdtime = cl->localtime;
+			dcl->fixangle = demo.fixangle[j];
+			demo.fixangle[j] = 0;
 
-			for (i=0; i < 3; i++)
-				if (cl->demoinfo.angles[i] != demoinfo.angles[i])
-					dflags |= DF_ANGLES << i;
-
-			if (ent->v.modelindex != cl->demoinfo.model)
-				dflags |= DF_MODEL;
-			if (ent->v.effects != cl->demoinfo.effects)
-				dflags |= DF_EFFECTS;
-			if (ent->v.skin != cl->demoinfo.skinnum)
-				dflags |= DF_SKINNUM;
 			if (ent->v.health <= 0)
-				dflags |= DF_DEAD;
+				dcl->flags |= DF_DEAD;
 			if (ent->v.mins[2] != -24)
-				dflags |= DF_GIB;
-			if (ent->v.weaponframe != cl->demoinfo.weaponframe)
-				dflags |= DF_WEAPONFRAME;
-
-			MSG_WriteByte (msg, svc_playerinfo);
-			MSG_WriteByte (msg, j);
-			MSG_WriteShort (msg, dflags);
-
-			MSG_WriteByte (msg, ent->v.frame);
-			//MSG_WriteByte (msg, msec);
-
-			for (i=0 ; i<3 ; i++)
-				if (dflags & (DF_ORIGIN << i))
-					MSG_WriteCoord (msg, demoinfo.origin[i]);
-		
-			for (i=0 ; i<3 ; i++)
-				if (dflags & (DF_ANGLES << i))
-					MSG_WriteAngle16 (msg, demoinfo.angles[i]);
-
-
-			if (dflags & DF_MODEL)
-				MSG_WriteByte (msg, ent->v.modelindex);
-
-			if (dflags & DF_SKINNUM)
-				MSG_WriteByte (msg, ent->v.skin);
-
-			if (dflags & DF_EFFECTS)
-				MSG_WriteByte (msg, ent->v.effects);
-
-			if (dflags & DF_WEAPONFRAME)
-				MSG_WriteByte (msg, ent->v.weaponframe);
-
-			VectorCopy(demoinfo.origin, cl->demoinfo.origin);
-			VectorCopy(demoinfo.angles, cl->demoinfo.angles);
-			cl->demoinfo.skinnum = ent->v.skin;
-			cl->demoinfo.effects = ent->v.effects;
-			cl->demoinfo.weaponframe = ent->v.weaponframe;
-			cl->demoinfo.model = ent->v.modelindex;
+				dcl->flags |= DF_GIB;
 			continue;
 		}
 
@@ -610,7 +520,7 @@ svc_playerinfo messages
 
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 {
-	int		e, i;
+	int		e, i, max_packet_entities = OLD_MAX_PACKET_ENTITIES;
 	byte	*pvs;
 	vec3_t	org;
 	edict_t	*ent;
@@ -630,7 +540,9 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 	if (!recorder) {
 		VectorAdd (clent->v.origin, clent->v.view_ofs, org);
 		pvs = SV_FatPVS (org);
-	}
+	} else 
+		max_packet_entities = MAX_PACKET_ENTITIES;
+
 
 	for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
@@ -684,7 +596,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 			continue;	// added to the special update list
 
 		// add to the packetentities
-		if (pack->num_entities == MAX_PACKET_ENTITIES)
+		if (pack->num_entities == max_packet_entities)
 			continue;	// all full
 
 		state = &pack->entities[pack->num_entities];
@@ -707,5 +619,5 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 	SV_EmitPacketEntities (client, pack, msg);
 
 	// now add the specialized nail update
-	SV_EmitNailUpdate (msg);
+	SV_EmitNailUpdate (msg, recorder);
 }

@@ -107,8 +107,8 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 		dflags = 0;
 
 		if (world.lastwritten - world.demoinfo[i].parsecount >= UPDATE_BACKUP - 1) {
-			if (debug)
-				Sys_Printf("wipe out:%d, %d\n", i, world.lastwritten - world.demoinfo[i].parsecount);
+			if (sworld.options & O_DEBUG)
+				fprintf(sworld.debug.file, "wipe out:%d, %d\n", i, world.lastwritten - world.demoinfo[i].parsecount);
 			memset(&world.demoinfo[i], 0, sizeof(demoinfo_t));
 		}
 
@@ -126,8 +126,8 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 			for (j=0 ; j < 3 ; j++)
 				MSG_WriteAngle (msg, nextframe->playerstate[i].command.angles[j]);
 
-			if (debug)
-				Sys_Printf("send fixangle:%d\n", i);
+			if (sworld.options & O_DEBUG)
+				fprintf(sworld.debug.file, "send fixangle:%d\n", i);
 		}
 
 		if (state->flags & PF_DEAD)
@@ -162,13 +162,7 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 		MSG_WriteByte (msg, i);
 		MSG_WriteShort (msg, dflags);
 
-		//if (dflags & DF_MODEL)
-		//	Sys_Printf("%dsend:%d, model:%d\n", world.lastwritten, i, state->modelindex);
-
-		//Sys_Printf("%d:dflags:%d\n", i, dflags);
-
 		MSG_WriteByte (msg, state->frame);
-		//MSG_WriteByte (msg, msec);
 
 		for (j=0 ; j<3 ; j++)
 			if (dflags & (DF_ORIGIN << j))
@@ -259,16 +253,26 @@ void WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool
 	//
 	// write the message
 	//
-	if (!to->number)
-		Sys_Error ("Unset entity number");
-	if (to->number >= 512)
-		Sys_Error ("Entity number >= 512");
+	if (!to->number) {
+		Sys_Printf ("ERROR:Unset entity number\n");
+		Dem_Stop();
+		return;
+	}
+
+	if (to->number >= 512) {
+		Sys_Printf ("ERROR:Entity number >= 512\n");
+		Dem_Stop();
+		return;
+	}
 
 	if (!bits && !force)
 		return;		// nothing to send!
 	i = to->number | (bits&~511);
-	if (i & U_REMOVE)
-		Sys_Error ("U_REMOVE");
+	if (i & U_REMOVE) {
+		Sys_Printf ("U_REMOVE");
+		Dem_Stop();
+		return;
+	}
 	MSG_WriteShort (msg, i);
 	
 	if (bits & U_MOREBITS)
@@ -381,7 +385,11 @@ void EmitNailUpdate (sizebuf_t *msg, frame_t *frame)
 	if (!frame->num_projectiles)
 		return;
 
-	MSG_WriteByte (msg, svc_nails);
+	if (frame->projectiles[0].num)
+		MSG_WriteByte (msg, svc_nails2);
+	else
+		MSG_WriteByte (msg, svc_nails);
+
 	MSG_WriteByte (msg, frame->num_projectiles);
 
 	for (n=0 ; n<frame->num_projectiles ; n++)
@@ -400,41 +408,23 @@ void EmitNailUpdate (sizebuf_t *msg, frame_t *frame)
 		bits[4] = (z>>8) | (p<<4);
 		bits[5] = yaw;
 
+		if (pr->num)
+			MSG_WriteByte(msg, pr->num);
+
 		for (i=0 ; i<6 ; i++)
 			MSG_WriteByte (msg, bits[i]);
 	}
 }
-
-/*
-void WriteEntitiesToClient (sizebuf_t *msg, frame_t *frame)
-{
-	packet_entities_t *efrom, *eto;
-
-	eto = &world.frames[world.parsecount&UPDATE_MASK].packet_entities;
-	efrom = &from.frames[from.validsequence&UPDATE_MASK].packet_entities;
-
-	memcpy(eto, efrom, sizeof(packet_entities_t));
-
-	//Sys_Printf("valid:%d, num:%d\n", from.validsequence, efrom->num_entities);
-
-	WritePlayers (msg);
-	EmitPacketEntities (eto, msg);
-	EmitNailUpdate(msg);
-
-	//Sys_Printf("this:%d(%d), last:%d(%d)\n", world.parsecount, eto->num_entities, world.delta_sequence, world.frames[world.delta_sequence & UPDATE_MASK].packet_entities.num_entities);
-}
-*/
 
 void WritePackets(int num)
 {
 	frame_t *frame;
 	sizebuf_t	msg;
 	byte		buf[MAX_DATAGRAM];
+	int		i,j;
 
 	msg.data = buf;
 	msg.maxsize = sizeof(buf);
-	msg.allowoverflow = true;
-	msg.overflowed = false;
 
 	while (num)
 	{
@@ -442,8 +432,8 @@ void WritePackets(int num)
 		frame = &world.frames[world.lastwritten&UPDATE_MASK];
 		msgbuf =  &frame->buf;
 
-		if (debug)
-			Sys_Printf("real:%f, demo:%f\n", realtime, demo.time);
+		if (sworld.options & O_DEBUG)
+			fprintf(sworld.debug.file, "real:%f, demo:%f\n", realtime, demo.time);
 		// Add packet entities, nails, and player
 		if (!frame->invalid) 
 		{
@@ -453,15 +443,31 @@ void WritePackets(int num)
 			WritePlayers (&msg, frame);
 			EmitPacketEntities (&msg, &frame->packet_entities);
 			EmitNailUpdate(&msg, frame);
-
-			DemoWrite_Begin(dem_all, 0, msg.cursize);
-			SZ_Write (msgbuf, msg.data, msg.cursize);
 		}
 		
 		DemoWriteToDisk(demo.lasttype,demo.lastto, frame->time); // this goes first to reduce demo size a bit
 		DemoWriteToDisk(0,0, frame->time); // now goes the rest
+		if (msg.cursize)
+			WriteDemoMessage(&msg, dem_all, 0, frame->time);
+
 		num--;
 		world.delta_sequence = world.lastwritten&255;
 		world.lastwritten++;
 	}
+
+	// now move the buffer back to make place for new data
+
+	// size of mem that has been written to disk
+	j = world.frames[world.lastwritten&UPDATE_MASK].buf.data - demo.buffer;
+	demo.bufsize -= j;
+
+	memmove(demo.buffer, demo.buffer + j, demo.bufsize);
+	for (i = world.lastwritten; i < world.parsecount; i++)
+	{
+		world.frames[i&UPDATE_MASK].buf.data -= j;
+		world.frames[i&UPDATE_MASK].buf.maxsize += j; // is it necesery?
+		(byte*) world.frames[i&UPDATE_MASK].buf.size -= j;
+	}
+
+	msgbuf = &world.frames[world.parsecount&UPDATE_MASK].buf;
 }
