@@ -130,7 +130,7 @@ void SV_Logfile (int sv_log, qboolean newlog)
 
 	if (logs[sv_log].sv_logfile)
 	{
-    //bliP: logging ->
+//bliP: logging ->
 		fclose (logs[sv_log].sv_logfile);
 		logs[sv_log].sv_logfile = NULL;
 		if (!newlog) {
@@ -138,7 +138,7 @@ void SV_Logfile (int sv_log, qboolean newlog)
 	  		logs[sv_log].log_level = 0;
 		  	return;
 		}
-    //<-
+//<-
 	}
 	if (sv_log == FRAG_LOG)
 	{
@@ -153,7 +153,6 @@ void SV_Logfile (int sv_log, qboolean newlog)
 					i = 1000;	// give error
 				break;
 			}
-			fclose (logs[sv_log].sv_logfile);
 		}
 		if (i == 1000)
 		{

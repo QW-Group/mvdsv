@@ -1,5 +1,14 @@
 ----
-QWEX v0.1727 Beta DEVELOP
+QWEX v0.1727 Beta DEVELOP build 1667
+[server]
+- bugfix: linux server cpu usage bug
+- bugfix: sg hit effects, blood, etc disappearing in certain situations
+(Thanks to Tonik)
+- bugfix: fraglogfile sometimes resulted in server crash
+
+
+----
+QWEX v0.1727 Beta DEVELOP build 1666
 [server]
 - new cvar master_rcon_password
   Similar to rcon_password but can use these extra commands:
@@ -42,7 +51,7 @@ QWEX v0.1727 Beta DEVELOP
 - new cvar download_map_url
   If a player doesn't have the map they get displayed this eg "http://some.url/?map=mapname"
 - pwd.cfg
-  This file cannot be downloaded by anyone, anywhere, put all passwords in this file for extra saftey.
+  This file cannot be downloaded by anyone, anywhere, put all passwords in this file for extra safety.
 - new cvar allow_download_pakmaps
   Allows downloading of maps in pak files.
 - new cvar sv_kickfake
@@ -53,7 +62,7 @@ QWEX v0.1727 Beta DEVELOP
   Logs the following to players_PORT_NUM.log, connect, disconnect, name change and various kicks.
 - new cvar sv_maxlogsize
   Maximum size in bytes which logs can get before they roll over to next file.
-- new cvar pm_bunnyspeedcap
+- new cvar sv_bunnyspeedcap
   From ZQuake by Tonik
   "This is experimental code intended to restore class balance in TF.
   If you set this cvar to something like 1.5 or 2, a solider will not be able to bunnyhop as fast as
@@ -121,13 +130,13 @@ QWEX v0.1726 (no release)
     restart - restart the server
 - sv_mintic set to 0.013 by default
 - sv_crypt_rcon 0/1 - use SHA1 for encryption of rcon_password and using timestamps
+  (change only with master_rcon_password)
     0 - don't use encryption
     1 - use encryption
     default: 0
 [client]
 - added qwdplayer's source back into qwex
 - cl_crypt_rcon 0/1 - use SHA1 for encryption of rcon_password and using timestamps
-    (change only with master_rcon_password)
     0 - don't use encryption
     1 - use encryption
     default: 0
@@ -159,17 +168,17 @@ QWEX v0.1726 (no release)
 
 
 ----
-QWEX v0.1725 Beta DEVELOP
+QWEX v0.1725 Beta DEVELOP build 1501
 [server]
 - change MAX_PACKET_ENTITIES form 300 down to 64
-(Thnaks to Fuh)
+(Thanks to Fuh)
 - bugfix in reading and writing "accounts" file under *nix systems
 
 Note: Bugfix only release.
 
 
 ----
-QWEX v0.1724 Beta DEVELOP
+QWEX v0.1724 Beta DEVELOP build 1500
 [server]
 - changed the MAX_DEMO_PACKET_ENTITIES limit from 196 to 300 to fix entities not being recorded
   sometimes (especially in TF). Clients should be updated to support this new limit, because in
