@@ -76,7 +76,7 @@ static void WriteAccounts()
 	account_t *acc;
 
 	//Sys_mkdir(ACC_DIR);
-	if ( (f = fopen( va("%s\\" ACC_FILE, com_gamedir) ,"wt")) == NULL)
+	if ( (f = fopen( va("%s/" ACC_FILE, com_gamedir) ,"wt")) == NULL)
 	{
 		Con_Printf("Warning: couldn't open for writing " ACC_FILE "\n");
 		return;
@@ -113,7 +113,7 @@ void SV_LoadAccounts(void)
 	account_t *acc = accounts;
 	client_t *cl;
 
-	if ( (f = fopen( va("%s\\" ACC_FILE, com_gamedir) ,"rt")) == NULL)
+	if ( (f = fopen( va("%s/" ACC_FILE, com_gamedir) ,"rt")) == NULL)
 	{
 		Con_Printf("couldn't open " ACC_FILE "\n");
 		// logout

@@ -1,39 +1,51 @@
 ----
+QWEX v0.1725 Beta DEVELOP
+[server]
+- change MAX_PACKET_ENTITIES form 300 down to 64
+(Thnaks to Fuh)
+- bugfix in reading and writing "accounts" file
+
+Note: Bugfix only release.
+
+
+----
 QWEX v0.1724 Beta DEVELOP
 [server]
-- changed the MAX_DEMO_PACKET_ENTITIES limit from 196 to 300 to fix entities not being recorded sometimes (especially in TF).
-  Clients should be updated to support this new limit, because In cases where the previous limit wouldn't 
-  have been sufficient, unchanged clients that don't support the new limit may have problems in demo playing.
-  (Thanks to BorisU)
+- changed the MAX_DEMO_PACKET_ENTITIES limit from 196 to 300 to fix entities not being recorded
+  sometimes (especially in TF). Clients should be updated to support this new limit, because in
+  cases where the previous limit wouldn't have been sufficient, unchanged clients that don't
+  support the new limit may have problems in demo playing.
+(Thanks to BorisU)
 - in SV_SendDemoMessage increase msg buffer size to MSG_BUF_SIZE
   (reduce the overflow of the msg buffer to prevent potential demo corruption)
-  (Thanks to BorisU)
+(Thanks to BorisU)
 - increase demo.datagram_data buffer to MSG_BUF_SIZE overflows fixed
-  (reduce the overflow of the msg buffer to prevent potential demo corruption too)
-  (Thanks to BorisU)
+  (reduce the overflow of the demo.datagram_data buffer to prevent potential demo corruption too)
+(Thanks to BorisU)
 - now telnet is off by default (same as -telnetport 0)
-- character "$_" in name (mqwcl) now is a white space character
 - the blank character created with "$_" (with mqwcl for example) is now a normal space character,
   so the name "$_" will be the same as name " " and result in the player's name being "unnamed"
-- bugfix from 0.1722b: when the same teams/players played on same map a 2nd time
-  (thus the demo name being the same) the demo name wasn't printed correctly on the client screen
+- bugfix from 0.1722b: when the same teams/players played on same map a 2nd time (thus the demo
+  name being the same) the demo name sometimes wasn't printed correctly on the client screen
 - new cvar: 
     qconsole_log_say 0/1
       0 - "say" and "say_team" messages are not logged
       1 - "say" and "say_team" messages are now logged to the qconsole_PORT.log file
-- fixed a download bug if demo was written with "^" in name - "^" excluded from list of allowed characters in demo name
+      default: 0
+- fixed a download bug if demo was written with "^" in name -
+  "^" excluded from list of allowed characters in demo name
 - cmd dlist output sorted chronologically now: top demo = oldest, bottom demo = most recent
 - new command:
-    check_maps - checks available maps in id1/maps and qw/maps and writes localinfo 1000-2000 accordingly:
-    first maps from id/maps are added (maps are sorted by name), then maps from qw/maps are added
-    (sorted by name as well and only added if they weren't already added from id1/maps)
+  check_maps - checks available maps in id1/maps and qw/maps and writes localinfo 1000-2000
+  accordingly: first maps from id/maps are added (maps are sorted by name), then maps from qw/maps
+  are added (sorted by name as well and only added if they weren't already added from id1/maps)
 
 
 ----
 QWEX v0.1723b Beta DEVELOP
 [server]
 - new cvar:
-    sv_use_dns 0/1
+    sv_use_dns n
       0 - don't use DNS lookup in status command
       1 - use DNS lookup in status command
       default: 0
@@ -42,11 +54,13 @@ QWEX v0.1723b Beta DEVELOP
 - bugfixes from 0.1722b:
     in PF_substr - for example: ktpro weapon aliases didn't work
     demo recording - bug in the generation of demo names
-- now shows all name changes: didn't announce a name change when a player changed his name to a longer string
-- some spell checking fixes
-[client]
-- most of the client source codes are removed (they're not needed for server operation)
+- now show all name changes: didn't show when player change name from NAME to NAME_AND_SOMETHING_ELSE_AT_END
+- some spell cheking fixes
 
+[client]
+- the most part of source codes of the client is removed 
+
+ 
 ----
 QWEX v0.1722b Beta DEVELOP
 [client] and [server]
@@ -61,10 +75,11 @@ QWEX v0.1722b Beta DEVELOP
   and some overflow fixes (switching from luny)
 - now all log files (qconsole.log, qerror.log, rcon.log) are put into QUAKE_DIR/OLDFILELOGNAME_PORT.log
   instead of QUAKE_DIR/GAME_DIR/OLDFILELOGNAME.log (with the exception of frag_NNNN.log)
+
 [server]
 - change: command status now shows the client's IP and DNS name
 - new cvar:
-    frag_log_type 0/1
+    frag_log_type n
       0 - old style log (  qwsv - v0.165)
       1 - new style log (v0.168 - v0.172)
       default: 0
@@ -83,7 +98,7 @@ QWEX v0.1722b Beta DEVELOP
     auth_timeout n - the server will close the connection "n" seconds after the authentication is completed
       If set to 0, no timeout will occur
       default: 3600 (1 hour)
-    telnet_log_level 0/1/2/3, logging level of the telnet connections (in file QUAKE_DIR/qtelnet_PORT.log)
+    telnet_log_level n, logging level of the telnet connections (in file QUAKE_DIR/qtelnet_PORT.log)
       0 - no log
       1 - log connects and disconnects to telnetport
       2 - same as 1 and all commands typed in console by user
@@ -145,6 +160,7 @@ QWEX v0.1722b Beta DEVELOP
   [Wed Dec 31, 09:53:10 2003].[1] Authenticated: no
   [Wed Dec 31, 09:53:12 2003].[1] Authenticated: no
   [Wed Dec 31, 09:53:19 2003].[1] Authenticated: yes
+  [Wed Dec 31, 09:53:19 2003].[2] status
   [Wed Dec 31, 09:53:19 2003].[3] net address                 : 10.0.0.2:28000
   [Wed Dec 31, 09:53:19 2003].[3] cpu utilization (overall)   :   0%
   [Wed Dec 31, 09:53:19 2003].[3] cpu utilization (recording) :   0%
@@ -166,10 +182,12 @@ QWEX v0.1722b Beta DEVELOP
 Note: VVD patches.
 Thanks: Scorp for 1st version of telnet patch (for QuakeForge 0.2.99beta5).
 
+
 ----
 QWEX v0.172b Beta DEVELOP
 [server]
 - bugfix: A serious overflow bug in "download" function fixed
+
 
 ----
 QWEX v0.171b Beta DEVELOP
@@ -178,6 +196,7 @@ QWEX v0.171b Beta DEVELOP
   now = 1 writes demo frame exaclty at the time the function is executed
   now = 0 writes demo frame at the end of current frame
 
+
 ----
 QWEX v0.170b Beta DEVELOP
 [server]
@@ -185,12 +204,14 @@ QWEX v0.170b Beta DEVELOP
   all star keys from userinfo are visible to clients
   active weapon of the chased player is visible on the spectators HUD
 
+
 ----
 QWEX v0.169 Beta DEVELOP
 [server]
 - commands admin and judge unbanned (be sure to use fixed ktpro!)
 - bug with wrong names for tmp recording fixed
 - bug that allowed players to have null names fixed
+
 
 ----
 QWEX v0.168 Beta DEVELOP
@@ -218,11 +239,13 @@ QWEX v0.165 Beta DEVELOP
 - win32: param -minimize starts server minimized to system tray
 - few minor changes/bugfixes
 
+
 ----
 QWEX v0.163 Beta DEVELOP
 [server]
 - small change to script command
   $name works as @name though it will be cleaned out of unreadable characters
+
 
 ----
 QWEX v0.162 Beta DEVELOP
@@ -231,6 +254,7 @@ QWEX v0.162 Beta DEVELOP
   sv_maxdownloadrate determines maximum for clients that download files (if set sv_maxrate is ignored)
   if userinfo drate is found it is used for setting rate when downloading
   after download is finished rate is changed back to its previous value
+
 
 ----
 QWEX v0.161 Beta DEVELOP
@@ -268,6 +292,7 @@ QWEX v0.160 Beta DEVELOP
   maximum i could get was 93kb/s (150fps + rate 100000 :) )
 - new cvar sv_maxdownloadrate
   maximum rate that client can have, while downloading anything from server
+
 
 ----
 QWEX v0.159 Beta DEVELOP
@@ -331,11 +356,13 @@ QWEX v0.159 Beta DEVELOP
 
 - few more minor changes/bugfixes  
   
+
 ----
 QWEX v0.153 Beta DEVELOP
 [server]
 - just some changes :)
 ----
+
 
 ----
 QWEX v0.151 Beta DEVELOP
@@ -356,6 +383,7 @@ QWEX v0.151 Beta DEVELOP
   
   userinfo "password" is checked for VIP password (for spectators also "spectator" value is checked)
   
+
 ----
 QWEX v0.149 Beta DEVELOP
 ----
@@ -393,8 +421,6 @@ QWEX v0.149 Beta DEVELOP
     argument 'date' is something like "Sat Jan 05, 3:23 2002"
   - consolecmd allow MOD authors to add new commands accesable by server console
     function should return true if recognized a command, false otherwise
-
-
 
 
 changes over QWE v0.142 Beta
@@ -452,7 +478,7 @@ changes over QWE v0.13 Beta
 
 changes over QWE v0.12 Beta
 [server]
-- MAX_PACKET_ENTITIES increased again (128->196)
+- MAX_PACKE_ENTITIES increased again (128->196)
 - rebuild DemoReliableWrite_Begin, warnings/overflows etc shouldn't happen anymore
 - demo messages will never be greater than MAX_MSGLEN (there were problems with playbacking)
 - MAX_BACK_BUFFERS increased from 8 to 16 (ctf players had problems with connecting
