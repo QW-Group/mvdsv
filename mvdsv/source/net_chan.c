@@ -234,13 +234,20 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	qboolean	send_reliable;
 	unsigned	w1, w2;
 	int			i;
+	static double	last_error_time = 0;
+	double	current_time;
 
 // check for message overflow
+	current_time = Sys_DoubleTime();
 	if (chan->message.overflowed)
 	{
 		chan->fatal_error = true;
-		Con_Printf ("%s:Outgoing message overflow\n"
-			, NET_AdrToString (chan->remote_address));
+		if (last_error_time - current_time > 5 || developer.value)
+		{
+			Con_Printf ("%s:Outgoing message overflow\n"
+				, NET_AdrToString (chan->remote_address));
+			last_error_time = current_time;
+		}
 		return;
 	}
 

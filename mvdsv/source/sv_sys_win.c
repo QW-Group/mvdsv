@@ -30,8 +30,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <errno.h>
 
-cvar_t	sys_sleep = {"sys_sleep", "8"};
+extern cvar_t sys_select_timeout;
+extern cvar_t sys_restart_on_error;
+extern cvar_t not_auth_timeout;
+extern cvar_t auth_timeout;
+
 cvar_t	sys_nostdout = {"sys_nostdout", "0"};
+cvar_t	sys_sleep = {"sys_sleep", "8"};
 
 qboolean WinNT;
 
@@ -173,12 +178,22 @@ dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
 Sys_Exit
 ================
 */
-char *argv0;
-void Sys_Exit(int code, qboolean restart)
+void Sys_Exit(int code)
 {
 #ifndef _CONSOLE
 	RemoveNotifyIcon();
 #endif
+	exit(code);
+}
+
+/*
+================
+Sys_Quit
+================
+*/
+char *argv0;
+void Sys_Quit (qboolean restart)
+{
 	if (restart)
 		if (execv(argv0, com_argv) == -1)
 		{
@@ -189,8 +204,9 @@ void Sys_Exit(int code, qboolean restart)
 			if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
 				MessageBox(NULL, strerror(errno), "Restart failed", 0 /* MB_OK */ );
 #endif
+			Sys_Exit(1);
 		}
-	exit(code);
+	Sys_Exit(0);
 }
 
 /*
@@ -221,9 +237,10 @@ void Sys_Error (char *error, ...)
 		SV_Write_Log(ERROR_LOG, 1, va("ERROR: %s\n", text));
 		fclose(logs[ERROR_LOG].sv_logfile);
 	}
-	Sys_Exit (1, false);
+	if (sys_restart_on_error.value)
+		Sys_Quit(true);
+	Sys_Exit (1);
 }
-
 
 #if 1
 double Sys_DoubleTime (void)
@@ -271,7 +288,6 @@ double Sys_DoubleTime (void)
 	return t;
 }
 #endif
-
 
 /*
 ================
@@ -419,7 +435,6 @@ char *Sys_ConsoleInput (void)
 	return NULL;
 }
 
-
 /*
 ================
 Sys_Printf
@@ -471,16 +486,6 @@ void Sys_Printf (char *fmt, ...)
 }
 
 /*
-================
-Sys_Quit
-================
-*/
-void Sys_Quit (qboolean restart)
-{
-	Sys_Exit(0, restart);
-}
-
-/*
 =============
 Sys_Init
 
@@ -512,8 +517,8 @@ void Sys_Init (void)
 	else
 		WinNT = false;
 
-	Cvar_RegisterVariable (&sys_sleep);
 	Cvar_RegisterVariable (&sys_nostdout);
+	Cvar_RegisterVariable (&sys_sleep);
 
 	if (COM_CheckParm ("-nopriority"))
 	{
@@ -695,7 +700,6 @@ int main (int argc, char **argv)
 __inline void Sys_Telnet (void)
 {
 	static int			tempsock;
-	extern cvar_t		not_auth_timeout, auth_timeout;
 	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
 	static int			sockaddr_len = sizeof(struct sockaddr_in);
 	static double		cur_time_not_auth;
@@ -759,7 +763,6 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	
 //Added by VVD {
 	static int			j;
-	extern cvar_t		sys_select_timeout;
 	char				*_argv[MAX_NUM_ARGVS];
 
 	// get the command line parameters
@@ -914,10 +917,9 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	}
 
 
-	Sys_Exit(msg.wParam, false);
+	Sys_Exit(msg.wParam);
 
 	return msg.wParam;
 }
 
 #endif // _CONSOLE
-

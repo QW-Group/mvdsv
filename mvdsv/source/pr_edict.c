@@ -991,6 +991,14 @@ qboolean PR_UserCmd(void)
 		return true;
 	}
 	*/
+	/*int i;
+	if (!strcmp(Cmd_Argv(0), "mmode") || !strcmp(Cmd_Argv(0), "cmd"))
+	{
+		for (i = 0; i < Cmd_Argc(); i++)
+			Con_Printf ("PR_UserCmd: [%d] %s | %d\n", i, Cmd_Argv(i), mod_UserCmd);
+		//return true;
+	}*/
+	
 
 	if (mod_UserCmd)
 	{
@@ -1158,10 +1166,11 @@ int NUM_FOR_EDICT(edict_t *e)
 	int		b;
 	
 	b = (byte *)e - (byte *)sv.edicts;
-	b = b / pr_edict_size;
+	b /= pr_edict_size;
 	
 	if (b < 0 || b >= sv.num_edicts)
 		SV_Error ("NUM_FOR_EDICT: bad pointer");
+
 	return b;
 }
 

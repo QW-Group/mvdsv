@@ -582,8 +582,14 @@ while (1)
 #ifdef PARANOID
 		NUM_FOR_EDICT(ed);		// make sure it's in range
 #endif
-		a = (eval_t *)((int *)&ed->v + b->_int);
-		c->_int = a->_int;
+//need for checking 'cmd mmode player N', if N >= 0x10000000 =(signed)=> negative
+		if (b->_int >= 0)
+		{
+			a = (eval_t *)((int *)&ed->v + b->_int);
+			c->_int = a->_int;
+		}
+		else
+			c->_int = 0;
 		break;
 
 	case OP_LOAD_V:
