@@ -17,11 +17,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+
 #include "quakedef.h"
 #include "keys.h"
-#ifdef _WIN32
-#include <windows.h>
-#endif
+
 /*
 
 key up events are sent even if in console mode

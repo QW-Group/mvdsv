@@ -619,7 +619,13 @@ void SV_UpdateClientStats (client_t *client)
 		ent = svs.clients[client->spec_track - 1].edict;
 
 	stats[STAT_HEALTH] = ent->v.health;
-	stats[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
+	stats[STAT_WEAPON] = SV_ModelIndex(
+#ifdef USE_PR2
+		PR2_GetString(ent->v.weaponmodel)
+#else
+		PR_GetString(ent->v.weaponmodel)
+#endif
+		);
 	stats[STAT_AMMO] = ent->v.currentammo;
 	stats[STAT_ARMOR] = ent->v.armorvalue;
 	stats[STAT_SHELLS] = ent->v.ammo_shells;
@@ -761,7 +767,12 @@ void SV_UpdateToReliableMessages (void)
 		// maxspeed/entgravity changes
 		ent = host_client->edict;
 
-		val = GetEdictFieldValue(ent, "gravity");
+		val =
+#ifdef USE_PR2
+			PR2_GetEdictFieldValue(ent, "gravity");
+#else
+			GetEdictFieldValue(ent, "gravity");
+#endif
 		if (val && host_client->entgravity != val->_float) {
 			host_client->entgravity = val->_float;
 			ClientReliableWrite_Begin(host_client, svc_entgravity, 5);
@@ -773,7 +784,12 @@ void SV_UpdateToReliableMessages (void)
 				MSG_WriteFloat((sizebuf_t*)demo.dbuf, host_client->entgravity);
 			}
 		}
-		val = GetEdictFieldValue(ent, "maxspeed");
+		val =
+#ifdef USE_PR2
+			PR2_GetEdictFieldValue(ent, "maxspeed");
+#else
+			GetEdictFieldValue(ent, "maxspeed");
+#endif
 		if (val && host_client->maxspeed != val->_float) {
 			host_client->maxspeed = val->_float;
 			ClientReliableWrite_Begin(host_client, svc_maxspeed, 5);
@@ -972,7 +988,13 @@ void SV_SendDemoMessage(void)
 		memset (stats, 0, sizeof(stats));
 
 		stats[STAT_HEALTH] = ent->v.health;
-		stats[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
+		stats[STAT_WEAPON] = SV_ModelIndex(
+#ifdef USE_PR2
+			PR2_GetString(ent->v.weaponmodel)
+#else
+			PR_GetString(ent->v.weaponmodel)
+#endif
+			);
 		stats[STAT_AMMO] = ent->v.currentammo;
 		stats[STAT_ARMOR] = ent->v.armorvalue;
 		stats[STAT_SHELLS] = ent->v.ammo_shells;

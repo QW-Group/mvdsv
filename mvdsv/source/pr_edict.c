@@ -56,7 +56,7 @@ func_t mod_ConsoleCmd;
 func_t mod_UserCmd;
 func_t localinfoChanged;
 
-
+cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
 /*
 =================
 ED_ClearEdict
@@ -1016,6 +1016,7 @@ void PR_LoadProgs (void)
 {
 	int		i;
 	char	num[32];
+	char	name[MAX_OSPATH];
 	dfunction_t *f;
 
 // flush the non-C variable lookup cache
@@ -1025,7 +1026,10 @@ void PR_LoadProgs (void)
 // clear pr_newstrtbl
 	PF_clear_strtbl();
 
-	progs = (dprograms_t *)COM_LoadHunkFile ("qwprogs.dat");
+	snprintf(name, sizeof(name), "%s.dat", sv_progsname.string);
+	progs = (dprograms_t *)COM_LoadHunkFile (name);
+	if (!progs)
+		progs = (dprograms_t *)COM_LoadHunkFile ("qwprogs.dat");
 	if (!progs)
 		progs = (dprograms_t *)COM_LoadHunkFile ("progs.dat");
 	if (!progs)
@@ -1034,6 +1038,9 @@ void PR_LoadProgs (void)
 
 // add prog crc to the serverinfo
 	snprintf (num, sizeof(num), "%i", CRC_Block ((byte *)progs, com_filesize));
+#ifdef USE_PR2
+       	Info_SetValueForStarKey (svs.info, "*qvm", "DAT", MAX_SERVERINFO_STRING);
+#endif
 	Info_SetValueForStarKey (svs.info, "*progs", num, MAX_SERVERINFO_STRING);
 
 // byte swap the header
@@ -1126,6 +1133,8 @@ PR_Init
 //void PR_CleanLogText_Init(); 
 void PR_Init (void)
 {
+        Cvar_RegisterVariable(&sv_progsname);
+
 	Cmd_AddCommand ("edict", ED_PrintEdict_f);
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
 	Cmd_AddCommand ("edictcount", ED_Count);

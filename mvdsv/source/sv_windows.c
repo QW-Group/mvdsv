@@ -1,7 +1,6 @@
 #ifndef _CONSOLE //bliP: console compile
 
 #include "qwsvdef.h"
-#include <windows.h>
 
 #include "sv_windows.h"
 

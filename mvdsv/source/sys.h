@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // file IO
 //
 
+#ifndef _SYS_H_
+#define _SYS_H_
+
 // returns the file size
 // return -1 if file is not present
 // the file should be in BINARY mode for stupid OSs that care
@@ -35,7 +38,7 @@ typedef struct
 	char	name[MAX_DEMO_NAME];
 	int		size;
 	int		time;
-  qboolean isdir; //bliP: list dir
+	qboolean isdir; //bliP: list dir
 } file_t;
 
 typedef struct
@@ -99,7 +102,22 @@ void Sys_HighFPPrecision (void);
 void Sys_SetFPCW (void);
 
 void Sys_Init (void);
+
 void Sys_Sleep (unsigned long ms);
+
 int Sys_Script(char *path, char *args);
 
+#ifdef _WIN32
+#include "winsock2.h"
+typedef HMODULE DL_t;
+#define DLEXT "dll"
+#else
+typedef void *DL_t;
+#define DLEXT "so"
+#endif
 
+DL_t Sys_DLOpen(const char *path);
+qboolean Sys_DLClose(DL_t dl);
+void *Sys_DLProc(DL_t dl, const char *name);
+
+#endif // _SYS_H_

@@ -168,8 +168,12 @@ typedef struct client_s
 	float			entgravity;			// localized ent gravity
 
 	edict_t			*edict;				// EDICT_NUM(clientnum+1)
+#ifdef USE_PR2
+	char			*name;			// in PR2 points to ent->v.netname
+#else
 	char			name[CLIENT_NAME_LEN];			// for printing to other people
-	char			team[32];
+#endif
+	char			team[CLIENT_NAME_LEN];
 										// extracted from userinfo
 	int				messagelevel;		// for filtering printed messages
 
@@ -246,6 +250,7 @@ typedef struct client_s
 	int				realip_count;
 	qboolean		rip_vip;
 	double			delay;
+	double			disable_updates_stop; //Vladis
 } client_t;
 
 // a client can leave the server in one of four ways:

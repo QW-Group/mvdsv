@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /YX /c
-# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /Op /D "SERVERONLY" /D "id386" /D "NDEBUG" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /Op /D "SERVERONLY" /D "id386" /D "NDEBUG" /D "USE_PR2" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -127,6 +127,22 @@ SOURCE=.\pmove.c
 # Begin Source File
 
 SOURCE=.\pmovetst.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\pr2_cmds.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\pr2_edict.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\pr2_exec.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\pr2_vm.c
 # End Source File
 # Begin Source File
 
@@ -279,6 +295,10 @@ SOURCE=.\draw.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\g_public.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\input.h
 # End Source File
 # Begin Source File
@@ -316,6 +336,14 @@ SOURCE=.\net.h
 # Begin Source File
 
 SOURCE=.\pmove.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\pr2.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\pr2_vm.h
 # End Source File
 # Begin Source File
 

@@ -20,7 +20,7 @@ SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 CC=gcc
-BASE_CFLAGS=-Wall -pipe
+BASE_CFLAGS=-Wall -pipe -DUSE_PR2
 #DEBUG_CFLAGS=$(BASE_CFLAGS) -g
 RELEASE_CFLAGS=$(BASE_CFLAGS) -O9 -ffast-math -funroll-loops \
 	-fomit-frame-pointer -fexpensive-optimizations
@@ -49,6 +49,11 @@ SV_OBJS = \
 		$(SV_DIR)/pr_cmds.o \
 		$(SV_DIR)/pr_edict.o \
 		$(SV_DIR)/pr_exec.o \
+\
+		${SV_DIR}/pr2_cmds.o \
+		${SV_DIR}/pr2_edict.o \
+		${SV_DIR}/pr2_exec.o \
+		${SV_DIR}/pr2_vm.o \
 \
 		$(SV_DIR)/sv_ccmds.o \
 		$(SV_DIR)/sv_demo.o \

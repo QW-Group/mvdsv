@@ -1,10 +1,30 @@
 ----
+MVDSV v0.178 Beta DEVELOP build 18?? (2005.0?.??)
+[server]
+- cmd minping can set minping value only between 0 and 300
+- new cvar sv_default_name - default name for players and spectators
+  default: unnamed
+- bugfix from 0.1727 build 1666: "spectator 2" bug - allow to connect as spectator if all
+  seats for spectators is already in use
+- added support of non-qc mods from qw262:
+    command line option -progtype
+    sv_progtype
+    sv_progsname
+    command mod
+- new cvar pm_spawnjumpfix 0/1 - don't jump if used jump button for respawn
+    0 - don't fix
+    1 - fix (like in ktpro by default)
+    default: 1
+(Thanks to Tonik)
+
+
+----
 MVDSV v0.177 build 1794 (2004.11.18)
 [server]
 - bugfix from 0.176: incorrect writing .mvd demos
 - bugfix from 0.14b: incorrect writing .mvd demos if demo size is more than 3 time bigger than
 democache size and sv_demoUseCache isn't 0
-(Thanks 2 puh)
+(Thanks to (ChoseN)puh)
 
 
 ----
@@ -339,6 +359,7 @@ QWEX v0.1726 (no release)
     default: 0
 [unix]
 - bugfix: -mem command line option resulted in server crash
+(Thanks to (ChoseN)puh)
 - new command line options:
   -d
     run server as daemon

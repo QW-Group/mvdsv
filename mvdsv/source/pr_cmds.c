@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
-#include "log.h"
 #include <time.h>
 
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
@@ -1231,48 +1230,36 @@ void PR_CleanLogText_Init ()
 {
 	int i;
 
-	for (i = 0; i < 33; i++)
-		chartbl2[i] = ' ';
-	for (i = 33; i < 256; i++)
-		chartbl2[i] = i & 127;
+	for (i = 0; i < 32; i++)
+		chartbl2[i] = chartbl2[i + 128] = '#';
+	for (i = 32; i < 128; i++)
+		chartbl2[i] = chartbl2[i + 128] = i;
 
-	chartbl2[13] = 13;
-	chartbl2[10] = 10;
 	// special cases
+	chartbl2[10] = 10;
+	chartbl2[13] = 13;
+
+	// dot
+	chartbl2[5      ] = chartbl2[14      ] = chartbl2[15      ] = chartbl2[28      ] = chartbl2[46      ] = '.';
+	chartbl2[5 + 128] = chartbl2[14 + 128] = chartbl2[15 + 128] = chartbl2[28 + 128] = chartbl2[46 + 128] = '.';
 
 	// numbers
 	for (i = 18; i < 28; i++)
 		chartbl2[i] = chartbl2[i + 128] = i + 30;
 
 	// brackets
-	chartbl2[29] = chartbl2[29 + 128] = chartbl2[128] = '(';
-	chartbl2[31] = chartbl2[31 + 128] = chartbl2[130] = ')';
 	chartbl2[16] = chartbl2[16 + 128]= '[';
 	chartbl2[17] = chartbl2[17 + 128] = ']';
-
-	// hash
-	for (i = 0; i < 10; i++) // 5 redefined as '.'
-		chartbl2[i] = chartbl2[i + 128] = '#';
-
-	chartbl2[11] = chartbl2[11 + 128] = '#';
-
-	// dot
-	chartbl2[5] = chartbl2[14] = chartbl2[15] = chartbl2[28] = chartbl2[46] = '.';
-	chartbl2[5 + 128] = chartbl2[14 + 128] = chartbl2[15 + 128] = chartbl2[28 + 128] = chartbl2[46 + 128] = '.';
+	chartbl2[29] = chartbl2[29 + 128] = chartbl2[128] = '(';
+	chartbl2[31] = chartbl2[31 + 128] = chartbl2[130] = ')';
 
 	// left arrow
 	chartbl2[127] = '>';
-
 	// right arrow
 	chartbl2[141] = '<';
 
 	// '='
 	chartbl2[30] = chartbl2[129] = chartbl2[30 + 128] = '=';
-
-	// whitespaces
-	chartbl2[12] = chartbl2[12 + 128] = chartbl2[138] = ' ';
-
-	chartbl2[33] = chartbl2[33 + 128]= '!';
 }
 
 void PR_CleanText(unsigned char *text)
@@ -2195,8 +2182,7 @@ void PF_logfrag (void)
 	e1 = NUM_FOR_EDICT(ent1);
 	e2 = NUM_FOR_EDICT(ent2);
 	
-	if (e1 < 1 || e1 > MAX_CLIENTS
-	|| e2 < 1 || e2 > MAX_CLIENTS)
+	if (e1 < 1 || e1 > MAX_CLIENTS || e2 < 1 || e2 > MAX_CLIENTS)
 		return;
 	// -> scream
 	t = time (NULL);
@@ -2205,14 +2191,15 @@ void PF_logfrag (void)
 //bliP: date check ->
 	if (!tblock)
 		s = va("%s\n", "#bad date#");
-	else {
+	else
 		if (frag_log_type.value) // need for old-style frag log file
-			s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
-				tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
+			s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",
+				svs.clients[e1-1].name, svs.clients[e2-1].name,
+				svs.clients[e1-1].team, svs.clients[e2-1].team,
+				tblock->tm_year + 1900, tblock->tm_mon + 1, tblock->tm_mday,
 				tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
 		else
 			s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
-	}
 // <-
 	SZ_Print (&svs.log[svs.logsequence&1], s);
 	SV_Write_Log(FRAG_LOG, 1, s);

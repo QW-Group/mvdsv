@@ -987,7 +987,13 @@ static void SV_Record (char *name)
 	MSG_WriteFloat (&buf, sv.time);
 
 	// send full levelname
-	MSG_WriteString (&buf, PR_GetString(sv.edicts->v.message));
+	MSG_WriteString (&buf,
+#ifdef USE_PR2
+		PR2_GetString(sv.edicts->v.message)
+#else
+		PR_GetString(sv.edicts->v.message)
+#endif
+		);
 
 	// send the movevars
 	MSG_WriteFloat(&buf, movevars.gravity);

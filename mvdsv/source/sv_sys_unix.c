@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include <dirent.h>
+#include <dlfcn.h>
 #include "qwsvdef.h"
 
 #ifdef NeXT
@@ -512,6 +513,28 @@ int Sys_Script(char *path, char *args)
 	
 	return 1;
 }
+
+DL_t Sys_DLOpen(const char *path)
+{
+	return dlopen(path,
+#ifdef OS_OPENBSD
+		DL_LAZY
+#else
+		RTLD_NOW
+#endif
+		);
+}
+
+qboolean Sys_DLClose(DL_t dl)
+{
+	return !dlclose(dl);
+}
+
+void *Sys_DLProc(DL_t dl, const char *name)
+{
+	return dlsym(dl, name);
+}
+
 
 static int only_digits(const char *s) {
 	if (*s == '\0')
