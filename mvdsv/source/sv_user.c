@@ -91,8 +91,8 @@ void SV_New_f (void)
 	{
 		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr);
 
-		if (!(IsLocalIP(net_local_adr) && IsLocalIP(host_client->netchan.remote_address)  ||
-		      IsInetIP (net_local_adr) && IsInetIP (host_client->netchan.remote_address)) &&
+		if (!((IsLocalIP(net_local_adr) && IsLocalIP(host_client->netchan.remote_address))  ||
+		      (IsInetIP (net_local_adr) && IsInetIP (host_client->netchan.remote_address))) &&
 		    host_client->netchan.remote_address.ip[0] != 127)
 		{
 			Sys_Printf ("WARNING: Incorrect server ip address: %s\n"
@@ -1710,9 +1710,9 @@ void SV_MinPing_f (void)
 				minping = Q_atof(Cmd_Argv(1));
 				if (minping < 0 || minping > 300)
 					Con_Printf("Value must be >= 0 and <= 300.\n");
+				else
+					Cvar_SetValue (&sv_minping, minping);
 			}
-			else
-				Cvar_SetValue (&sv_minping, minping);
 		case 1:
 			Con_Printf("sv_minping = %s\n", sv_minping.string);
 			break;
