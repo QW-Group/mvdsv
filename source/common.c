@@ -1382,21 +1382,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 	int			findtime;
 
 	file_from_pak = 0;
-//bliP: special download - fixme check this works.... ->
-#ifdef SERVERONLY 
-	if (host_client && host_client->special)
-	{
-		*file = fopen (filename, "rb");
-		if (*file)
-		{
-			if (developer.value)
-				Sys_Printf ("FindFile: %s\n", filename);
-			return COM_FileLength (*file);
-		}
-	}
-#endif
-//<-
-		
+
 //
 // search through the path, one element at a time
 //

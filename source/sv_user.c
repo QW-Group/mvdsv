@@ -93,7 +93,7 @@ void SV_New_f (void)
 
 		if (!((IsLocalIP(net_local_adr) && IsLocalIP(host_client->netchan.remote_address))  ||
 		      (IsInetIP (net_local_adr) && IsInetIP (host_client->netchan.remote_address))) &&
-		    host_client->netchan.remote_address.ip[0] != 127)
+		    host_client->netchan.remote_address.ip[0] != 127 && !sv_serverip.string[0])
 		{
 			Sys_Printf ("WARNING: Incorrect server ip address: %s\n"
 			"Set hostname in your operation system or set correctly sv_serverip cvar.\n",
@@ -111,9 +111,9 @@ void SV_New_f (void)
 			if (realtime - host_client->connection_started > 3)
 			{
 				if (sv_getrealip.value == 2) {
-					Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
-					SV_DropClient (host_client);
-					return;
+					Netchan_OutOfBandPrint (net_serversocket, net_from,
+						"%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
+					host_client->rip_vip = 2;
 				}
 
 				host_client->state = cs_connected;
@@ -124,50 +124,52 @@ void SV_New_f (void)
 	
 	// rip_vip means that client can be connected if he has VIP for he's real ip
 	// drop him if he hasn't
-	if (host_client->rip_vip)
+	if (host_client->rip_vip == 1)
 	{
 		if ((host_client->vip = SV_VIPbyIP(host_client->realip)) == 0)
 		{
-			Con_Printf ("%s:full connect\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nserver is full\n\n", A2C_PRINT);
-			SV_DropClient (host_client);
-			return;
+			Sys_Printf ("%s:full connect\n", NET_AdrToString (net_from));
+			Netchan_OutOfBandPrint (net_serversocket, net_from,
+				"%c\nserver is full\n\n", A2C_PRINT);
 		}
-
-		host_client->rip_vip = 0;
+		else
+			host_client->rip_vip = 0;
 	}
 
 	// we can be connected now, announce it, and possibly login 
-	if (host_client->state == cs_preconnected)
+	if (!host_client->rip_vip)
 	{
-		// get highest VIP level
-		if (host_client->vip < SV_VIPbyIP(host_client->realip))
-			host_client->vip = SV_VIPbyIP(host_client->realip);
+		if (host_client->state == cs_preconnected)
+		{
+			// get highest VIP level
+			if (host_client->vip < SV_VIPbyIP(host_client->realip))
+				host_client->vip = SV_VIPbyIP(host_client->realip);
 	
-		if (host_client->vip && host_client->spectator)
-			Sys_Printf ("VIP spectator %s connected\n", host_client->name);
-		else if (host_client->spectator)
-			Sys_Printf ("Spectator %s connected\n", host_client->name);
-		else
-			Sys_Printf ("Client %s connected\n", host_client->name);
+			if (host_client->vip && host_client->spectator)
+				Sys_Printf ("VIP spectator %s connected\n", host_client->name);
+			else if (host_client->spectator)
+				Sys_Printf ("Spectator %s connected\n", host_client->name);
+			else
+				Sys_Printf ("Client %s connected\n", host_client->name);
 
-		Info_SetValueForStarKey (host_client->userinfo, "*VIP", host_client->vip ? va("%d", host_client->vip) : "", MAX_INFO_STRING);
+			Info_SetValueForStarKey (host_client->userinfo, "*VIP",
+				host_client->vip ? va("%d", host_client->vip) : "", MAX_INFO_STRING);
 
-		// now we are connected
-		host_client->state = cs_connected;
-	}
+			// now we are connected
+			host_client->state = cs_connected;
+		}
 
-	if (!SV_Login(host_client))
-		return;
+		if (!SV_Login(host_client))
+			return;
 
-	if (!host_client->logged && sv_login.value)
-		return; // not so fast;
+		if (!host_client->logged && sv_login.value)
+			return; // not so fast;
 
 //bliP: cuff, mute ->
-	host_client->lockedtill = SV_RestorePenaltyFilter(host_client, ft_mute);
-	host_client->cuff_time = SV_RestorePenaltyFilter(host_client, ft_cuff);
+		host_client->lockedtill = SV_RestorePenaltyFilter(host_client, ft_mute);
+		host_client->cuff_time = SV_RestorePenaltyFilter(host_client, ft_cuff);
 //<-
-
+	}
 // send the info about the new client to all connected clients
 //	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 //	host_client->sendinfo = true;
@@ -179,16 +181,17 @@ void SV_New_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0), clearing\n",
+			host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
 
 	// send the serverdata
-	MSG_WriteByte (&host_client->netchan.message, svc_serverdata);
-	MSG_WriteLong (&host_client->netchan.message, PROTOCOL_VERSION);
-	MSG_WriteLong (&host_client->netchan.message, svs.spawncount);
-	MSG_WriteString (&host_client->netchan.message, gamedir);
+	MSG_WriteByte  (&host_client->netchan.message, svc_serverdata);
+	MSG_WriteLong  (&host_client->netchan.message, PROTOCOL_VERSION);
+	MSG_WriteLong  (&host_client->netchan.message, svs.spawncount);
+	MSG_WriteString(&host_client->netchan.message, gamedir);
 
 	playernum = NUM_FOR_EDICT(host_client->edict)-1;
 	if (host_client->spectator)
@@ -196,13 +199,16 @@ void SV_New_f (void)
 	MSG_WriteByte (&host_client->netchan.message, playernum);
 
 	// send full levelname
-	MSG_WriteString (&host_client->netchan.message,
+	if (host_client->rip_vip)
+		MSG_WriteString (&host_client->netchan.message, "");
+	else
+		MSG_WriteString (&host_client->netchan.message,
 #ifdef USE_PR2
-		PR2_GetString(sv.edicts->v.message)
+			PR2_GetString(sv.edicts->v.message)
 #else
-		PR_GetString(sv.edicts->v.message)
+			PR_GetString(sv.edicts->v.message)
 #endif
-		);
+			);
 
 	// send the movevars
 	MSG_WriteFloat(&host_client->netchan.message, movevars.gravity);
@@ -215,6 +221,13 @@ void SV_New_f (void)
 	MSG_WriteFloat(&host_client->netchan.message, movevars.friction);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.waterfriction);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.entgravity);
+
+	if (host_client->rip_vip)
+	{
+		SV_LogPlayer(host_client, va("dropped %d", host_client->rip_vip), 1);
+		SV_DropClient (host_client);
+		return;
+	}
 
 	// send music
 	MSG_WriteByte (&host_client->netchan.message, svc_cdtrack);
@@ -730,8 +743,8 @@ void SV_NextDownload_f (void)
 	r = (int)((realtime + frametime - host_client->netchan.cleartime)/host_client->netchan.rate);
 	if (r <= 10)
 		r = 10;
-	if (r > 1000)
-		r = 1000;
+	if (r > FILE_TRANSFER_BUF_SIZE)
+		r = FILE_TRANSFER_BUF_SIZE;
 
 	// don't send too much if already buffering
 	if (host_client->num_backbuf)
@@ -999,7 +1012,20 @@ void SV_BeginDownload_f(void)
 			*p = (char)tolower(*p);
 	}
 
-	host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
+	// bliP: special download - fixme check this works.... -->
+	// techlogin download uses simple path from quake folder
+	if (host_client->special)
+	{
+		host_client->download = fopen (name, "rb");
+		if (host_client->download)
+		{
+			if (developer.value)
+				Sys_Printf ("FindFile: %s\n", name);
+			host_client->downloadsize = COM_FileLength (host_client->download);
+		}
+	} else
+	// <-- bliP
+		host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
 	host_client->downloadcount = 0;
 
 	if (!host_client->download ||
