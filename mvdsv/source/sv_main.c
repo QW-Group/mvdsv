@@ -732,7 +732,7 @@ void SVC_DirectConnect (void)
 	challenge = atoi(Cmd_Argv(3));
 
 	// note an extra byte is needed to replace spectator key
-	strlcpy (userinfo, Cmd_Argv(4), sizeof(userinfo)-1);
+	strlcpy (userinfo, Cmd_Argv(4), sizeof(userinfo));
 	if (!ValidateUserInfo(userinfo)) {
 		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nInvalid userinfo. Restart your qwcl\n", A2C_PRINT);
 		return;
@@ -853,6 +853,7 @@ void SVC_DirectConnect (void)
 			Con_Printf ("%s:reconnect\n", NET_AdrToString (adr));
 //bliP: reuse connect ->
 			//SV_DropClient (cl);
+			*cl = *newcl;
 			newcl = cl;
 			gotnewcl = true;
 			break;
@@ -903,13 +904,15 @@ void SVC_DirectConnect (void)
 	{
 		if (spectator == 2 && maxvip_spectators.value > vips && !vip)
 		{
-			newcl->rip_vip = true; // yet can be connected if realip is on vip list
+			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
+			newcl->rip_vip = 1; // yet can be connected if realip is on vip list
 			newcl->vip = 1; // :)
 		} else {
-			Con_Printf ("%s:full connect\n", NET_AdrToString (adr));
+			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
 			Netchan_OutOfBandPrint (net_serversocket, adr, "%c\nserver is full\n\n", A2C_PRINT);
 			userid--; //bliP: count users properly
-			return;
+			newcl->rip_vip = 3; // added drop client after "server is full" message
+//			return;
 		}
 	}
 
@@ -2973,18 +2976,18 @@ void SV_TimeOfDay(date_t *date)
 	time(&long_time);
 	newtime = localtime(&long_time);
 
-  //bliP: date check ->
-  if (!newtime) {
-	  date->day = 0;
-	  date->mon = 0;
-	  date->year = 0;
-	  date->hour = 0;
-	  date->min = 0;
-  	date->sec = 0;
-    strlcpy(date->str, "#bad date#", sizeof(date->str));
-    return;
-  }
-  //<-
+//bliP: date check ->
+	if (!newtime) {
+		date->day = 0;
+		date->mon = 0;
+		date->year = 0;
+		date->hour = 0;
+		date->min = 0;
+		date->sec = 0;
+		strlcpy(date->str, "#bad date#", sizeof(date->str));
+		return;
+	}
+//<-
 
 	date->day = newtime->tm_mday;
 	date->mon = newtime->tm_mon;
@@ -3003,15 +3006,17 @@ SV_LogPlayer
 */
 void SV_LogPlayer(client_t *cl, char *msg, int level)
 {
-  SV_Write_Log(PLAYER_LOG, level,
-    va("%s\\%s\\%i\\%s\\%s\\%i%s\n",
-        msg,
-        cl->name,
-        cl->userid,
-        NET_BaseAdrToString(cl->netchan.remote_address),
-        NET_BaseAdrToString(cl->realip),
-        cl->netchan.remote_address.port,
-        cl->userinfo));
+	SV_Write_Log(PLAYER_LOG, level,
+		va("%s\\%s\\%i\\%s\\%s\\%i%s\n",
+			msg,
+			cl->name,
+			cl->userid,
+			NET_BaseAdrToString(cl->netchan.remote_address),
+			NET_BaseAdrToString(cl->realip),
+			cl->netchan.remote_address.port,
+			cl->userinfo
+		)
+	);
 }
 
 /*
@@ -3024,46 +3029,50 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 	static date_t date;
 
 	if (!logs[sv_log].sv_logfile)
-    return;
+		return;
 
-  //bliP: moved telnet bit to on cvar change ->
+//bliP: moved telnet bit to on cvar change ->
 	//if (sv_log == TELNET_LOG)
 	//	logs[sv_log].log_level = Cvar_VariableValue("telnet_log_level");
-  //<-
+//<-
 
 	if (logs[sv_log].log_level < level)
-    return;
+		return;
 
 	SV_TimeOfDay(&date);
 
 	if (sv_log == FRAG_LOG)
 	{
 		if (!fprintf(logs[sv_log].sv_logfile, "%s", msg))
-      //bliP: Sys_Error to Con_DPrintf ->
+//bliP: Sys_Error to Con_DPrintf ->
 			Con_DPrintf("Can't write in %s log file: "/*%s/ */"%sN.log.\n",
-						/*com_gamedir,*/ logs[sv_log].message_on,
-						logs[sv_log].file_name);
-      //<-
-    else
-    	fflush(logs[sv_log].sv_logfile);
+					/*com_gamedir,*/ logs[sv_log].message_on,
+					logs[sv_log].file_name);
+//<-
+		else
+			fflush(logs[sv_log].sv_logfile);
 	}
 	else
 	{
-    //bliP: logging
-    if (!fprintf(logs[sv_log].sv_logfile, "[%s].[%d] %s", date.str, level, msg)) {
-      //bliP: Sys_Error to Con_DPrintf, also, these logs aren't in com_gamedir ->
+//bliP: logging
+		if (!fprintf(logs[sv_log].sv_logfile, "[%s].[%d] %s", date.str, level, msg))
+		{
+	//bliP: Sys_Error to Con_DPrintf, also, these logs aren't in com_gamedir ->
 			Con_DPrintf("Can't write in %s log file: "/*%s/ */"%s%i.log.\n",
-						/*com_gamedir,*/ logs[sv_log].message_on,
-						logs[sv_log].file_name, sv_port);
-      //<-
-    }
-    else {
-    	fflush(logs[sv_log].sv_logfile);
-      if (sv_maxlogsize.value && (COM_FileLength(logs[sv_log].sv_logfile) > sv_maxlogsize.value)) {
-        SV_Logfile(sv_log, true);
-      }
-    }
-    //<-
+					/*com_gamedir,*/ logs[sv_log].message_on,
+					logs[sv_log].file_name, sv_port);
+	//<-
+		}
+		else
+		{
+			fflush(logs[sv_log].sv_logfile);
+			if (sv_maxlogsize.value &&
+			    (COM_FileLength(logs[sv_log].sv_logfile) > sv_maxlogsize.value))
+			{
+				SV_Logfile(sv_log, true);
+			}
+		}
+//<-
 	}
 }
 

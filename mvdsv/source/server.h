@@ -248,7 +248,7 @@ typedef struct client_s
 	netadr_t		realip;				// client's ip, not latest proxy's
 	int				realip_num;			// random value
 	int				realip_count;
-	qboolean		rip_vip;
+	int				rip_vip;
 	double			delay;
 	double			disable_updates_stop; //Vladis
 } client_t;

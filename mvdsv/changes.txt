@@ -1,15 +1,20 @@
 ----
 MVDSV v0.178 Beta DEVELOP build 18?? (2005.0?.??)
 [server]
+- added drop client if no empty slots after "server is full" message (EXPERIMENTAL)
+- bugfix from 0.174b: didn't used sv_serverip if server got incorrect local ip address
+- bugfix: server can crash in start of downloading files if player was authenticated as techlogin
+(Thanks to BorisU)
 - cmd minping can set minping value only between 0 and 300
 - new cvar sv_default_name - default name for players and spectators
   default: unnamed
 - bugfix from 0.1727 build 1666: "spectator 2" bug - allow to connect as spectator if all
-  seats for spectators is already in use
+  slots for spectators is already in use
 - added support of non-qc mods from qw262:
     command line option -progtype
     sv_progtype
     sv_progsname
+    sv_enableprofile
     command mod
 - new cvar pm_spawnjumpfix 0/1 - don't jump if used jump button for respawn
     0 - don't fix
