@@ -233,7 +233,10 @@ qboolean NET_GetPacket (int net_socket)
 				NET_AdrToString (net_from));
 			return false;
 		}
-
+		if (errno == 10054) {
+			Con_DPrintf ("NET_GetPacket: Error 10054 from %s\n", NET_AdrToString (net_from));
+			return false;
+		}
 
 		Sys_Error ("NET_GetPacket: %s", strerror(errno));
 	}

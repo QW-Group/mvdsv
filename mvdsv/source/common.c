@@ -825,8 +825,7 @@ Parse a token out of a string
 */
 char *COM_Parse (char *data)
 {
-//	int		c;
-	unsigned int c;	// Tonik
+	unsigned char c;
 	int		len;
 
 	len = 0;
@@ -837,19 +836,11 @@ char *COM_Parse (char *data)
 
 // skip whitespace
 skipwhite:
-	while ( (c = *data) <= ' ')
-	{
-		if (c == 0)
-			return NULL;			// end of file;
-		data++;
-	}
-/*
-	while ( (c = *data) == ' ' || c == 9 || c == 13)
+	while ( (c = *data) == ' ' || c == '\t' || c == '\r' || c == '\n')
 		data++;
 
 	if (c == 0)
 		return NULL;			// end of file;
-*/
 
 // skip // comments
 	if (c=='/' && data[1] == '/')
@@ -886,8 +877,7 @@ skipwhite:
 		if (len >= MAX_COM_TOKEN-1)
 			break;
 		c = *data;
-//	} while (c && c != ' ' && c != 9 && c != 13);
-	} while (c > 32);
+	} while (c && c != ' ' && c != '\t' && c != '\n' && c != '\r');
 
 	com_token[len] = 0;
 	return data;
@@ -899,7 +889,7 @@ skipwhite:
 COM_CheckParm
 
 Returns the position (1 to argc-1) in the program's argument list
-where the given parameter apears, or 0 if not present
+where the given parameter appears, or 0 if not present
 ================
 */
 int COM_CheckParm (char *parm)
@@ -1333,7 +1323,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 ============
 COM_LoadFile
 
-Filename are reletive to the quake directory.
+Filename are relative to the quake directory.
 Always appends a 0 byte to the loaded data.
 ============
 */

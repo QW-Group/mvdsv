@@ -22,11 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cmd.c -- Quake script command processing module
 
 #include "quakedef.h"
-#include "teamplay.h"
 
+#ifndef SERVERONLY
 void Cmd_ForwardToServer (void);
-
-//static qboolean	cmd_wait;
+qboolean CL_CheckServerCommand (void);
+#endif
 
 cvar_t cl_warncmd = {"cl_warncmd", "0"};
 
@@ -62,10 +62,6 @@ void Cmd_Wait_f (void)
 =============================================================================
 */
 
-
-//#define MAXCMDBUF 16384
-//static byte	cmd_text_buf[MAXCMDBUF];
-//static int	cmd_text_start, cmd_text_end;
 
 void Cbuf_AddText (char *text) { Cbuf_AddTextEx (&cbuf_main, text); }
 void Cbuf_InsertText (char *text) { Cbuf_InsertTextEx (&cbuf_main, text); }
@@ -131,7 +127,6 @@ Cbuf_InsertText
 
 Adds command text immediately after the current command
 Adds a \n to the text
-FIXME: actually change the command buffer to do less copying
 ============
 */
 void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text)
@@ -189,7 +184,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 		cursize = cbuf->text_end - cbuf->text_start;
 		quotes = 0;
-		for (i=0 ; i< cursize ; i++)
+		for (i=0 ; i<cursize ; i++)
 		{
 			if (text[i] == '"')
 				quotes++;
@@ -198,9 +193,16 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 			if (text[i] == '\n')
 				break;
 		}
-			
+
+// don't execute lines without ending \n; this fixes problems with
+// partially stuffed aliases not being executed properly
+		if (i == cursize)
+			break;
+
 		memcpy (line, text, i);
 		line[i] = 0;
+		if (i > 0 && line[i-1] == '\r')
+			line[i-1] = 0;	// remove DOS ending CR
 		
 // delete the text from the command buffer and move remaining commands down
 // this is necessary because commands (exec, alias) can insert data at the
@@ -333,8 +335,13 @@ void Cmd_Exec_f (void)
 	}
 	if (!Cvar_Command () && (cl_warncmd.value || developer.value))
 		Con_Printf ("execing %s\n",Cmd_Argv(1));
-	
-	Cbuf_InsertText (f);
+
+#ifndef SERVERONLY
+	if (cbuf_current == &cbuf_svc)
+		Cbuf_AddText (f);
+	else
+#endif
+		Cbuf_InsertText (f);
 	Hunk_FreeToLowMark (mark);
 }
 
@@ -351,12 +358,7 @@ void Cmd_Echo_f (void)
 	int		i;
 	
 	for (i=1 ; i<Cmd_Argc() ; i++)
-#ifdef SERVERONLY
 		Con_Printf ("%s ",Cmd_Argv(i));
-#else
-	// if (cl_parseecho.value) ... else ....
-		Con_Printf ("%s ", CL_ParseMacroString(Cmd_Argv(i)));	// Tonik
-#endif
 	Con_Printf ("\n");
 }
 
@@ -382,7 +384,7 @@ static int Key (char *name)
 	v = 0;
 	while ( (c = *name++) != 0 )
 //		v += *name;
-		v += c &~ 32;	// very lame, but works (case insensitivity)
+		v += c &~ 32;	// make it case insensitive
 
 	return v % 32;
 }
@@ -464,7 +466,7 @@ void Cmd_Alias_f (void)
 	int			i, c;
 	int			key;
 	char		*s;
-	cvar_t		*var;
+//	cvar_t		*var;
 
 	if (Cmd_Argc() == 1)
 	{
@@ -481,6 +483,7 @@ void Cmd_Alias_f (void)
 		return;
 	}
 
+#if 0
 	if ( (var = Cvar_FindVar(s)) != NULL ) {
 		if (var->flags & CVAR_USER_CREATED)
 			Cvar_Delete (var->name);
@@ -489,6 +492,7 @@ void Cmd_Alias_f (void)
 			return;
 		}
 	}
+#endif
 
 	key = Key(s);
 
@@ -596,6 +600,25 @@ void Cmd_UnAlias_f (void)
 		Con_Printf ("Unknown alias \"%s\"\n", s);
 }
 
+// remove all aliases
+void Cmd_UnAliasAll_f (void)
+{
+	cmd_alias_t	*a, *next;
+	int i;
+
+	for (a=cmd_alias ; a ; a=next) {
+		next = a->next;
+		Z_Free (a->value);
+		Z_Free (a);
+	}
+	cmd_alias = NULL;
+
+	// clear hash
+	for (i=0 ; i<32 ; i++) {
+		cmd_alias_hash[i] = NULL;
+	}
+}
+
 
 /*
 =============================================================================
@@ -620,7 +643,7 @@ static cmd_function_t	*cmd_functions;		// possible commands to execute
 Cmd_Argc
 ============
 */
-int		Cmd_Argc (void)
+int Cmd_Argc (void)
 {
 	return cmd_argc;
 }
@@ -630,7 +653,7 @@ int		Cmd_Argc (void)
 Cmd_Argv
 ============
 */
-char	*Cmd_Argv (int arg)
+char *Cmd_Argv (int arg)
 {
 	if ( arg >= cmd_argc )
 		return cmd_null_string;
@@ -644,7 +667,7 @@ Cmd_Args
 Returns a single string containing argv(1) to argv(argc()-1)
 ============
 */
-char		*Cmd_Args (void)
+char *Cmd_Args (void)
 {
 	if (!cmd_args)
 		return "";
@@ -659,7 +682,6 @@ Cmd_TokenizeString
 Parses the given string into command line tokens.
 ============
 */
-#if 1
 void Cmd_TokenizeString (char *text)
 {
 	int			idx;
@@ -672,10 +694,8 @@ void Cmd_TokenizeString (char *text)
 	
 	while (1)
 	{
-// skip whitespace up to a /n
-//		while (*text && *text <= ' ' && *text != '\n')
-//		while (*text == ' ' || *text == 9 || *text == 13)	// Tonik
-		while (*text && *(unsigned char*)text <= ' ' && *text != '\n')	// Tonik
+		// skip whitespace
+		while (*text == ' ' || *text == '\t' || *text == '\r')
 		{
 			text++;
 		}
@@ -706,94 +726,6 @@ void Cmd_TokenizeString (char *text)
 	}
 	
 }
-
-#else
-// Tonik: new TokenizeString (not finished)
-// text must point to a buffer 1024 chars long
-void Cmd_TokenizeString (char *text)
-{
-	int			idx;
-	int			i, c, len;	// COM_Parse
-	static char	argv_buf[1024];
-	char		*p;
-	
-	p = argv_buf;
-		
-	cmd_argc = 0;
-	cmd_args = NULL;
-	
-	while (1)
-	{
-// skip whitespace up to a /n
-//skipwhite:
-		while (*text && *(unsigned char*)text <= ' ' && *text != '\n')	// Tonik
-		{
-			text++;
-		}
-		
-		if (*text == '\n')
-		{	// a newline seperates commands in the buffer
-			text++;
-			break;
-		}
-
-		if (!*text)
-			return;
-		
-		if (cmd_argc == 1)
-			cmd_args = text;
-
-		// skip // comments
-		if (c=='/' && text[1] == '/')
-		{
-//			while (*text && *text != '\n')
-//				text++;
-			break;
-		}
-		
-		*p = 0;
-
-		
-		// handle quoted strings specially
-		if (c == '\"')
-		{
-			text++;
-			while (1)
-			{
-				c = *text++;
-				if (c=='\"' || !c)
-				{
-					*p = 0;
-					//return text;
-					goto _return;
-				}
-				*p++ = c;
-				len++;
-			}
-		}
-		
-		// parse a regular word
-		do
-		{
-			*p++ = c;
-			text++;
-			c = *text;
-		} while (c > 32);
-		
-		*p = 0;
-		
-_return:
-		if (cmd_argc < MAX_ARGS)
-		{
-			cmd_argv[cmd_argc] = argv_buf + idx;
-			strcpy (cmd_argv[cmd_argc], com_token);
-			idx++;
-			cmd_argc++;
-		}
-	}
-	
-}
-#endif
 
 
 /*
@@ -914,87 +846,6 @@ char *Cmd_CompleteCommand (char *partial)
 	return NULL;
 }
 
-#ifndef SERVERONLY		// FIXME
-/*
-===================
-Cmd_ForwardToServer
-
-adds the current command line as a clc_stringcmd to the client message.
-things like godmode, noclip, etc, are commands directed to the server,
-so when they are typed in at the console, they will need to be forwarded.
-===================
-*/
-void Cmd_ForwardToServer (void)
-{
-	if (cls.state == ca_disconnected)
-	{
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
-		return;
-	}
-
-	if (cls.demoplayback)
-	{
-		// Tonik:
-		if ( ! Q_strcasecmp(Cmd_Argv(0), "pause"))
-			cl.paused ^= 1;						
-		return;
-	}
-
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-	SZ_Print (&cls.netchan.message, Cmd_Argv(0));
-	if (Cmd_Argc() > 1)
-	{
-		SZ_Print (&cls.netchan.message, " ");
-
-		if (!Q_strcasecmp(Cmd_Argv(0), "say") ||
-			!Q_strcasecmp(Cmd_Argv(0), "say_team"))
-		{
-			char		*s;
-			s = CL_ParseMacroString(Cmd_Args());
-			if (*s && *s < 32 && *s != 10)
-			{
-				SZ_Print (&cls.netchan.message, "\"");
-				SZ_Print (&cls.netchan.message, s);
-				SZ_Print (&cls.netchan.message, "\"");
-			}
-			else
-				SZ_Print (&cls.netchan.message, s);
-			return;
-		}
-
-		SZ_Print (&cls.netchan.message, Cmd_Args());
-	}
-}
-
-// don't forward the first argument
-void Cmd_ForwardToServer_f (void)
-{
-	if (cls.state == ca_disconnected)
-	{
-		Con_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
-		return;
-	}
-
-	if (Q_strcasecmp(Cmd_Argv(1), "snap") == 0) {
-		Cbuf_InsertText ("snap\n");
-		return;
-	}
-	
-	if (cls.demoplayback)
-		return;		// not really connected
-
-	if (Cmd_Argc() > 1)
-	{
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, Cmd_Args());
-	}
-}
-#else
-void Cmd_ForwardToServer (void)
-{
-}
-#endif
-
 
 void Cmd_CmdList_f (void)
 {
@@ -1101,24 +952,26 @@ A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
 */
-void	Cmd_ExecuteString (char *text)
+void Cmd_ExecuteString (char *text)
 {	
 	cmd_function_t	*cmd;
 	cmd_alias_t		*a;
 	int				key;
-	static	// FIXME
-	char			buf[1024];
+	static char		buf[1024];
 
-#if 0
-	Cmd_TokenizeString (text);
-#else
 	Cmd_ExpandString (text, buf);
 	Cmd_TokenizeString (buf);
-#endif
 			
 // execute the command line
 	if (!Cmd_Argc())
 		return;		// no tokens
+
+#ifndef SERVERONLY
+	if (cbuf_current == &cbuf_svc) {
+		if (CL_CheckServerCommand())
+			return;
+	}
+#endif
 
 	key = Key (cmd_argv[0]);
 
@@ -1127,10 +980,12 @@ void	Cmd_ExecuteString (char *text)
 	{
 		if (!Q_strcasecmp (cmd_argv[0], cmd->name))
 		{
-			if (!cmd->function)
-				Cmd_ForwardToServer ();
-			else
+			if (cmd->function)
 				cmd->function ();
+#ifndef SERVERONLY
+			else
+				Cmd_ForwardToServer ();
+#endif
 			return;
 		}
 	}
@@ -1144,7 +999,12 @@ void	Cmd_ExecuteString (char *text)
 	{
 		if (!Q_strcasecmp (cmd_argv[0], a->name))
 		{
-			Cbuf_InsertText (a->value);
+#ifndef SERVERONLY
+			if (cbuf_current == &cbuf_svc)
+				Cbuf_AddText (a->value);
+			else
+#endif
+				Cbuf_InsertText (a->value);
 			return;
 		}
 	}
@@ -1192,10 +1052,7 @@ void Cmd_Init (void)
 	Cmd_AddCommand ("alias",Cmd_Alias_f);
 	Cmd_AddCommand ("wait", Cmd_Wait_f);
 	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f);
+	Cmd_AddCommand ("unaliasall", Cmd_UnAliasAll_f);
 	Cmd_AddCommand ("unalias", Cmd_UnAlias_f);
 	Cmd_AddCommand ("_z_cmd", Cmd_Z_Cmd_f);	// ZQuake
-
-#ifndef SERVERONLY
-	Cmd_AddCommand ("cmd", Cmd_ForwardToServer_f);
-#endif
 }

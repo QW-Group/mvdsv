@@ -24,9 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "winquake.h"
 #include "resource.h"
-#include "errno.h"
-#include "fcntl.h"
+#include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
+#include <io.h>			// _open, etc
+#include <direct.h>		// _mkdir
+#include <conio.h>		// _putch
 
 #define MINIMUM_WIN_MEMORY	0x0c00000
 #define MAXIMUM_WIN_MEMORY	0x1000000
@@ -189,7 +192,6 @@ void Sys_Error (char *error, ...)
 {
 	va_list		argptr;
 	char		text[1024];
-//	DWORD		dummy;
 
 	Host_Shutdown ();
 
@@ -208,8 +210,6 @@ void Sys_Error (char *error, ...)
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-//	char		text[1024];
-//	DWORD		dummy;
 	
 	va_start (argptr,fmt);
 	vprintf (fmt, argptr);

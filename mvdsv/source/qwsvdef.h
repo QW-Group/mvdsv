@@ -47,7 +47,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "net.h"
 #include "protocol.h"
 #include "cmd.h"
+
+#ifdef GLQUAKE
+//FIXME: we don't need vid.h and render.h here
+#include "vid.h"
+#include "render.h"
+#include "gl_model.h"
+#else
 #include "model.h"
+#endif
+
 #include "crc.h"
 #include "progs.h"
 

@@ -837,7 +837,7 @@ void SV_Snap (int uid)
 		cl->remote_snap = false;
 
 	ClientReliableWrite_Begin (cl, svc_stufftext, 24);
-	ClientReliableWrite_String (cl, "cmd snap");
+	ClientReliableWrite_String (cl, "cmd snap\n");
 	Con_Printf ("Requesting snap from user %d...\n", uid);
 }
 
@@ -895,7 +895,7 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("logfile", SV_Logfile_f);
 	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f);
 
-	Cmd_AddCommand ("sv_snap", SV_Snap_f);	// FIXME: was "snap"
+	Cmd_AddCommand ("snap", SV_Snap_f);
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
 	Cmd_AddCommand ("kick", SV_Kick_f);
 #ifdef QW_BOTH

@@ -87,8 +87,7 @@ float		scr_conlines;		// lines of console to display
 float		oldscreensize, oldfov;
 float		oldsbar;
 cvar_t		scr_viewsize = {"viewsize","100",CVAR_ARCHIVE};
-qboolean CL_OnFovChange (cvar_t *var, char *value);
-cvar_t		scr_fov = {"fov","90",0,CL_OnFovChange};	// 10 - 170
+cvar_t		scr_fov = {"fov","90",CVAR_ARCHIVE};	// 10 - 170
 cvar_t		scr_conspeed = {"scr_conspeed","300"};
 cvar_t		scr_centertime = {"scr_centertime","2"};
 cvar_t		scr_showram = {"showram","1"};
@@ -401,7 +400,6 @@ void SCR_Init (void)
 // register our commands
 //
 	Cmd_AddCommand ("screenshot",SCR_ScreenShot_f);
-	Cmd_AddCommand ("snap",SCR_RSShot_f);
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
 

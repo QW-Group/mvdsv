@@ -2,7 +2,7 @@
 
 #define GLQUAKE_VERSION 1.00
 #define	VERSION		2.40
-#define Z_VERSION	"0.098"
+#define Z_VERSION	"0.10"
 #define LINUX_VERSION 0.98
 
 //#define TEST_VERSION

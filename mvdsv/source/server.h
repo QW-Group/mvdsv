@@ -113,7 +113,8 @@ typedef struct
 	packet_entities_t	entities;
 } client_frame_t;
 
-#define MAX_BACK_BUFFERS 4
+#define MAX_BACK_BUFFERS	4
+#define MAX_STUFFTEXT		256
 
 typedef struct client_s
 {
@@ -154,6 +155,8 @@ typedef struct client_s
 	int			num_backbuf;
 	int			backbuf_size[MAX_BACK_BUFFERS];
 	byte		backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
+
+	byte			stufftext_buf[MAX_STUFFTEXT];
 
 	double			connection_started;	// or time of disconnect for zombies
 	qboolean		send_message;		// set on frames a datagram arived on

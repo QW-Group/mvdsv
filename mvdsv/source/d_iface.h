@@ -199,11 +199,12 @@ typedef struct
 	int			surfmip;	// mipmapped ratio of surface texels / world pixels
 	int			surfwidth;	// in mipmapped texels
 	int			surfheight;	// in mipmapped texels
+	qboolean	dlightonly;	// only have to recalc dynamic lights
 } drawsurf_t;
 
 extern drawsurf_t	r_drawsurf;
 
-void R_DrawSurface (void);
+qboolean R_DrawSurface (void);
 void R_GenTile (msurface_t *psurf, void *pdest);
 
 

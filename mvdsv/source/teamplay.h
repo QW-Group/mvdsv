@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: teamplay.h,v 1.1.1.1 2004/09/28 18:57:00 vvd0 Exp $
+	$Id: teamplay.h,v 1.1.1.2 2004/09/28 18:58:02 vvd0 Exp $
 */
 
 extern cvar_t cl_parsesay;
@@ -31,22 +31,39 @@ extern cvar_t cl_triggers;
 extern cvar_t cl_nofake;
 extern cvar_t cl_loadlocs;
 extern cvar_t cl_rocket2grenade;
+extern cvar_t cl_teamskin;
+extern cvar_t cl_enemyskin;
 
-extern int		loc_numentries;		// Tonik
+// triggers
+void TP_StatChanged (int stat, int value);
+void TP_ExecTrigger (char *s);
 
-void CL_StatChanged (int stat, int value);
-void CL_NewMap (void);
-void CL_ExecTrigger (char *s);
+// message triggers
+void TP_SearchForMsgTriggers (char *s, int level);
 
-void Cmd_Macro_Init (void);
-void CL_LoadLocFile (char *path, qboolean quiet);
-char *CL_ParseMacroString(char *string);
+// used by easyrecord command
+int TP_CountPlayers();
+char *TP_MapName();
+char *TP_PlayerName();
+char *TP_PlayerTeam();
+char *TP_EnemyName();
+char *TP_EnemyTeam();
 
-int CL_CountPlayers();
-char *CL_MapName();
-char *CL_PlayerName();
-char *CL_PlayerTeam();
-char *CL_EnemyName();
-char *CL_EnemyTeam();
+// teamcolor&enemycolor
+extern int cl_teamtopcolor;
+extern int cl_teambottomcolor;
+extern int cl_enemytopcolor;
+extern int cl_enemybottomcolor;
+void TP_TeamColor_f (void);
+void TP_EnemyColor_f (void);
 
-void CL_InitTeamplay ();
+void TP_LoadLocFile (char *path, qboolean quiet);
+char *TP_ParseMacroString(char *string);
+void TP_NewMap ();
+void TP_CheckVersionRequest(char *s);
+void TP_Init ();
+
+
+//#define FPD_NO_TEAM_MACROS	1
+#define FPD_NO_FORCE_SKIN	256
+#define FPD_NO_FORCE_COLOR	512

@@ -218,12 +218,17 @@ void D_DrawSurfaces (void)
 
 			if (s->flags & SURF_DRAWSKY)
 			{
-				if (!r_skymade)
-				{
-					R_MakeSky ();
+				extern cvar_t r_fastsky;
+				extern cvar_t r_skycolor;
+
+				if (r_fastsky.value)
+					D_DrawSolidSurface (s, (int)r_skycolor.value & 0xFF);
+				else {
+					if (!r_skymade)
+						R_MakeSky ();
+					D_DrawSkyScans8 (s->spans);
 				}
 
-				D_DrawSkyScans8 (s->spans);
 				D_DrawZSpans (s->spans);
 			}
 			else if (s->flags & SURF_DRAWBACKGROUND)

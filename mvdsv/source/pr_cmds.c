@@ -683,6 +683,8 @@ void PF_stuffcmd (void)
 	int		entnum;
 	char	*str;
 	client_t	*cl;
+	char	*buf;
+	int		i;
 	
 	entnum = G_EDICTNUM(OFS_PARM0);
 	if (entnum < 1 || entnum > MAX_CLIENTS)
@@ -691,14 +693,27 @@ void PF_stuffcmd (void)
 	
 	cl = &svs.clients[entnum-1];
 
-	if (strcmp(str, "disconnect\n") == 0) {
-		// so long and thanks for all the fish
-		cl->drop = true;
-		return;
-	}
+	buf = cl->stufftext_buf;
+	if (strlen(buf) + strlen(str) >= MAX_STUFFTEXT)
+		PR_RunError ("stufftext buffer overflow");
+	strcat (buf, str);
 
-	ClientReliableWrite_Begin (cl, svc_stufftext, 2+strlen(str));
-	ClientReliableWrite_String (cl, str);
+	for (i = strlen(buf); i >= 0; i--)
+	{
+		if (buf[i] == '\n')
+		{
+			if (!strcmp(buf, "disconnect\n"))
+			{
+				// so long and thanks for all the fish
+				cl->drop = true;
+				buf[0] = 0;
+				return;
+			}
+			ClientReliableWrite_Begin (cl, svc_stufftext, 2+strlen(buf));
+			ClientReliableWrite_String (cl, buf);
+			buf[0] = 0;
+		}
+	}
 }
 
 /*

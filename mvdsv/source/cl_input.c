@@ -418,22 +418,6 @@ void CL_FinishMove (usercmd_t *cmd)
 		cmd->buttons |= 2;
 	in_jump.state &= ~2;
 
-// Swimup hack -->
-	if (cmd->buttons & 2 && (cl.stats[STAT_HEALTH] > 0) && CL_KeyState (&in_up))
-	{
-/*		Crashes :(
-		pmove.numtouch = 0;
-		VectorCopy (cl.simvel, pmove.velocity);
-		VectorCopy (cl.simorg, pmove.origin);
-		PM_CategorizePosition();	*/
-		if (waterlevel >= 2)
-		{
-			cmd->upmove = cl_upspeed.value;
-			cmd->buttons &= ~2;
-		}
-	}
-// <-- Swimup hack
-
 	// send milliseconds of time to apply the move
 	ms = host_frametime * 1000;
 	if (ms > 250)
@@ -471,7 +455,10 @@ void CL_SendCmd (void)
 	int			checksumIndex;
 	int			lost;
 	int			seq_hash;
-	static float	pps_balance;
+	static float	pps_balance = 0;
+	static int	dropcount = 0;
+	qboolean	dontdrop;
+
 
 	if (cls.demoplayback)
 		return; // sendcmds come from the demo
@@ -515,18 +502,23 @@ void CL_SendCmd (void)
 	lost = CL_CalcNet();
 	MSG_WriteByte (&buf, (byte)lost);
 
+	dontdrop = false;
+
 	i = (cls.netchan.outgoing_sequence-2) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
+//	dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, &nullcmd, cmd);
 	oldcmd = cmd;
 
 	i = (cls.netchan.outgoing_sequence-1) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
+	dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
 	oldcmd = cmd;
 
 	i = (cls.netchan.outgoing_sequence) & UPDATE_MASK;
 	cmd = &cl.frames[i].cmd;
+	dontdrop = dontdrop || cmd->impulse;
 	MSG_WriteDeltaUsercmd (&buf, oldcmd, cmd);
 
 	// calculate a checksum over the move commands
@@ -553,20 +545,29 @@ void CL_SendCmd (void)
 
 	if (cl_c2spps.value) {
 		pps_balance += host_frametime;
-		if (pps_balance > 0) {
+		// never drop more than 2 messages in a row -- that'll cause PL
+		// and don't drop if one of the last two movemessages have an impulse
+		if (pps_balance > 0 || dropcount >= 2 || dontdrop) {
 			float	pps;
 			pps = cl_c2spps.value;
 			if (pps < 10) pps = 10;
 			if (pps > 72) pps = 72;
 			pps_balance -= 1 / pps;
-			// hmmm
-			if (pps_balance > 0)
-				pps_balance = 0;
+			// bound pps_balance. FIXME: is there a better way?
+			if (pps_balance > 0.1) pps_balance = 0.1;
+			if (pps_balance < -0.1) pps_balance = -0.1;
+			dropcount = 0;
 		} else {
+			// don't count this message when calculating PL
+			cl.frames[i].receivedtime = -3;
 			// drop this message
 			cls.netchan.outgoing_sequence++;
+			dropcount++;
 			return;
 		}
+	} else {
+		pps_balance = 0;
+		dropcount = 0;
 	}
 
 //

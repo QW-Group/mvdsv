@@ -50,6 +50,9 @@ sizebuf_t	net_message;
 int			net_socket;			// non blocking, for receives
 int			net_send_socket;	// blocking, for sends
 
+int		net_clientsocket;	// @@@ dummy
+int		net_serversocket;	// @@@ dummy
+
 #define	MAX_UDP_PACKET	8192
 byte		net_message_buffer[MAX_UDP_PACKET];
 
@@ -188,7 +191,7 @@ qboolean NET_IsClientLegal(netadr_t *adr)
 
 //=============================================================================
 
-qboolean NET_GetPacket (void)
+qboolean NET_GetPacket (int dummy)
 {
 	int 	ret;
 	struct sockaddr_in	from;
@@ -213,7 +216,7 @@ qboolean NET_GetPacket (void)
 
 //=============================================================================
 
-void NET_SendPacket (int length, void *data, netadr_t to)
+void NET_SendPacket (int dummy, int length, void *data, netadr_t to)
 {
 	int ret;
 	struct sockaddr_in	addr;
@@ -285,8 +288,11 @@ void NET_GetLocalAddress (void)
 NET_Init
 ====================
 */
-void NET_Init (int port)
+void NET_Init (int port, int dummy)
 {
+	if (dummy)
+		port = dummy;
+
 	//
 	// open the single socket to be used for all communications
 	//
