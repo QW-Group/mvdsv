@@ -1,7 +1,7 @@
 #include "defs.h"
+
+#ifdef _WIN32
 #include <process.h>
-//#include <windows.h>
-//#include <time.h>
 
 static HANDLE	hQizmoProcess = NULL;
 static DWORD ExitCode;
@@ -27,6 +27,10 @@ static qboolean QizmoRunning ()
 
 	return false;
 }
+#define QIZMO_BIN "qizmo.exe"
+#else
+#define QIZMO_BIN "qizmo"
+#endif
 
 void StopQWZ (source_t *s)
 {
@@ -35,7 +39,7 @@ void StopQWZ (source_t *s)
 	num = s - sources;
 
 	if (s->qwz && sworld.from[num].file) {
-		Sys_fclose(sworld.from[num].file);
+		Sys_fclose(&sworld.from[num].file);
 		s->qwz = false;
 		if (remove (sworld.from[num].name) != 0)
 			Sys_Printf ("Couldn't delete %s\n", sworld.from[num].name);
@@ -46,21 +50,26 @@ void StopQWZ (source_t *s)
 
 qboolean OpenQWZ (char *files)
 {
+#ifdef _WIN32
 	STARTUPINFO			si;
 	PROCESS_INFORMATION	pi;
+#endif
 	char	cmdline[2048];
 	char	curdir[MAX_OSPATH];
 	char	*p;
 
-	if (hQizmoProcess) {
+#ifdef _WIN32
+	if (hQizmoProcess)
 		return false;
-	}
+#endif
 
 	Sys_Printf ("decompressing qwz file(s)...\n");
 	
+#ifdef _WIN32
 	// start Qizmo to unpack the demo
 	memset (&si, 0, sizeof(si));
 	si.cb = sizeof(si);
+#endif
 
 	p = qizmoDir + strlen(qizmoDir) - 1;
 	if (p >= qizmoDir && (*p == '\\' || *p == '/'))
@@ -72,20 +81,24 @@ qboolean OpenQWZ (char *files)
 		if (strstr(qizmoDir, ":") != NULL)
 			sprintf(curdir, "%s",  qizmoDir);
 		else
-			sprintf(curdir, "%s\\%s", currentDir, qizmoDir);
+			sprintf(curdir, "%s/%s", currentDir, qizmoDir);
 	}
 	
-	strncpy (cmdline, va("%s\\qizmo.exe -D %s", curdir,
+	strncpy (cmdline, va("%s/" QIZMO_BIN "-D %s", curdir,
 		files), sizeof(cmdline));
-	
+
+#ifdef _WIN32
 	if (!CreateProcess (NULL, cmdline, NULL, NULL,
 		FALSE, 0, NULL, curdir, &si, &pi))
+#else
+	if (system(cmdline))
+#endif
 	{
-		Sys_Printf ("Couldn't execute %s\\qizmo.exe\n",
+		Sys_Printf ("Couldn't execute %s/" QIZMO_BIN "\n",
 			curdir);
 		return false;
 	}
-	
+#ifdef _WIN32
 	hQizmoProcess = pi.hProcess;
 
 	SetConsoleTitle("qwdtools  decompressing...");
@@ -97,7 +110,8 @@ qboolean OpenQWZ (char *files)
 		Sys_Printf("Error running qizmo\n");
 		return false;
 	}
-
+#endif
+	
 	Sys_Printf ("\ndecompressing finished\n");
 
 	return true;

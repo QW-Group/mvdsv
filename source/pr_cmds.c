@@ -215,6 +215,9 @@ void PF_bprint (void)
 	SV_BroadcastPrintf (level, "%s", s);
 }
 
+#define SPECPRINT_CENTERPRINT	0x1
+#define SPECPRINT_SPRINT	0x2
+#define SPECPRINT_STUFFCMD	0x4
 /*
 =================
 PF_sprint
@@ -224,14 +227,13 @@ single print to a specific client
 sprint(clientent, value)
 =================
 */
-
 void PF_sprint (void)
 {
 	char		*s;
 	client_t	*client, *cl;
 	int			entnum;
 	int			level;
-  int i;
+	int			i;
 	
 	entnum = G_EDICTNUM(OFS_PARM0);
 	level = G_FLOAT(OFS_PARM1);
@@ -248,19 +250,19 @@ void PF_sprint (void)
 	
 	SV_ClientPrintf (client, level, "%s", s);
 
-  //bliP: spectator print ->
-	if (sv_specprint.value)
+//bliP: spectator print ->
+	if ((int)sv_specprint.value & SPECPRINT_SPRINT)
 	{
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		{
 			if (!cl->state || !cl->spectator)
 				continue;
 
-			if ((cl->spec_track == entnum) && cl->spec_print)
+			if ((cl->spec_track == entnum) && (cl->spec_print & SPECPRINT_SPRINT))
 				SV_ClientPrintf (cl, level, "%s", s);
 		}
 	}
-  //<-
+//<-
 }
 
 
@@ -279,7 +281,7 @@ void PF_centerprint (void)
 	char		*s;
 	int			entnum;
 	client_t	*cl, *spec;
-  int i;
+	int			i;
 	
 	entnum = G_EDICTNUM(OFS_PARM0);
 	s = PF_VarString(1);
@@ -301,22 +303,22 @@ void PF_centerprint (void)
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, s);
 	}
 
-  //bliP: spectator print ->
-	if (sv_specprint.value)
+//bliP: spectator print ->
+	if ((int)sv_specprint.value & SPECPRINT_CENTERPRINT)
 	{
 		for (i = 0, spec = svs.clients; i < MAX_CLIENTS; i++, spec++)
 		{
 			if (!cl->state || !spec->spectator)
 				continue;
 		
-			if ((spec->spec_track == entnum) && cl->spec_print)
+			if ((spec->spec_track == entnum) && (cl->spec_print & SPECPRINT_CENTERPRINT))
 			{
 				ClientReliableWrite_Begin (spec, svc_centerprint, 2 + strlen(s));
 				ClientReliableWrite_String (spec, s);
 			}
 		}
 	}
-  //<-
+//<-
 }
 
 
@@ -760,22 +762,22 @@ void PF_stuffcmd (void)
 				MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
 			}
 
-      //bliP: spectator print ->
-			if (sv_specprint.value)
+//bliP: spectator print ->
+			if ((int)sv_specprint.value & SPECPRINT_STUFFCMD)
 			{
 				for (j = 0, spec = svs.clients; j < MAX_CLIENTS; j++, spec++)
 				{
 					if (!cl->state || !spec->spectator)
 						continue;
 					
-					if ((spec->spec_track == entnum) && cl->spec_print)
+					if ((spec->spec_track == entnum) && (cl->spec_print & SPECPRINT_STUFFCMD))
 					{
 						ClientReliableWrite_Begin (spec, svc_stufftext, 2+strlen(buf));
 						ClientReliableWrite_String (spec, buf);
 					}
 				}
 			}
-      //<-
+//<-
 
   		buf[0] = 0;
 		}

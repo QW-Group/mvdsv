@@ -522,6 +522,20 @@ void SVC_Status (void)
 
 /*
 ===================
+SVC_LastScores
+
+===================
+*/
+void SV_LastScores_f (void);
+void SVC_LastScores (void)
+{
+	SV_BeginRedirect (RD_PACKET);
+	SV_LastScores_f ();
+	SV_EndRedirect ();
+}
+
+/*
+===================
 SV_CheckLog
 
 ===================
@@ -807,14 +821,14 @@ void SVC_DirectConnect (void)
 			&& ( cl->netchan.qport == qport 
 			|| adr.port == cl->netchan.remote_address.port ))
 		{
-      //bliP: reconnect limit
+//bliP: reconnect limit
   		if ((realtime - cl->lastconnect) < ((int)sv_reconnectlimit.value * 1000))
 	  	{
 		  	Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
-        userid--;
-			  return;
-		  }
-      //<-
+			userid--;
+			return;
+		}
+//<-
 
 			if (cl->state == cs_connected || cl->state == cs_preconnected) {
 				Con_Printf("%s:dup connect\n", NET_AdrToString (adr));
@@ -963,10 +977,10 @@ void SVC_DirectConnect (void)
 
 	newcl->realip_num = rand();
 
-  //bliP: init
-  newcl->spec_print = sv_specprint.value;
-  newcl->logincount = 0;
-  //<-
+//bliP: init
+	newcl->spec_print = sv_specprint.value;
+	newcl->logincount = 0;
+//<-
 
 	// call the progs to get default spawn parms for the new client
 	
@@ -1339,6 +1353,8 @@ void SV_ConnectionlessPacket (void)
 		SVC_DirectConnect ();
 	else if (!strcmp(c,"getchallenge"))
 		SVC_GetChallenge ();
+	else if (!strcmp(c,"lastscores"))
+		SVC_LastScores ();
 	else
 		Con_Printf ("bad connectionless packet from %s:\n%s\n"
 		, NET_AdrToString (net_from), s);
@@ -2621,13 +2637,6 @@ void Master_Shutdown (void)
 		}
 }
 
-
-#ifndef min
-#define max(a,b)    (((a) > (b)) ? (a) : (b))
-#define min(a,b)    (((a) < (b)) ? (a) : (b))
-#endif
-
-
 /*
 =================
 SV_ExtractFromUserinfo
@@ -2728,7 +2737,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 				} else if (cl->lastnamecount++ > 4) {
 					SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name spam\n", cl->name);
 					SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game for name spamming\n");
-          SV_LogPlayer(cl, "name spam", 1); //bliP: player logging
+			SV_LogPlayer(cl, "name spam", 1); //bliP: player logging
 					SV_DropClient (cl); 
 					return;
 				}
@@ -2740,8 +2749,8 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 
 		strlcpy (cl->name, val, sizeof(cl->name));
 
-    if (cl->state >= cs_spawned) //bliP: player logging
-      SV_LogPlayer(cl, "name change", 1);
+		if (cl->state >= cs_spawned) //bliP: player logging
+			SV_LogPlayer(cl, "name change", 1);
 	}
 
 	// team
@@ -2759,9 +2768,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 	// message level
 	val = Info_ValueForKey (cl->userinfo, "msg");
 	if (strlen(val))
-	{
 		cl->messagelevel = atoi(val);
-	}
 
 //bliP: spectator print ->
 	val = Info_ValueForKey(cl->userinfo, "sp");
@@ -2787,12 +2794,10 @@ qboolean OnChange_logdir_var (cvar_t *var, char *value)
 //bliP: admininfo ->
 qboolean OnChange_admininfo_var (cvar_t *var, char *value)
 {
-  if (value[0]) {
-    Info_SetValueForStarKey (svs.info, "*admin", value, MAX_SERVERINFO_STRING);    
-  }
-  else {
-    Info_RemoveKey (svs.info, "*admin");
-  }
+	if (value[0])
+		Info_SetValueForStarKey (svs.info, "*admin", value, MAX_SERVERINFO_STRING);
+	else
+		Info_RemoveKey (svs.info, "*admin");
 	return false;	
 }
 //<-

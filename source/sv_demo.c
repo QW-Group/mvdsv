@@ -171,7 +171,7 @@ void SV_DemoWriteToDisk(int type, int to, float time)
 			demobuffer->start += size + header;
 		}
 		// move along
-		p = (header_t *)p->data + size;
+		p = (header_t *)(p->data + size);
 	}
 
 	if (demobuffer->start == demobuffer->last) {
@@ -212,7 +212,7 @@ static void DemoSetBuf(byte type, int to)
 			return;
 		}
 
-		p = (header_t *)p->data + p->size;
+		p = (header_t *)(p->data + p->size);
 	}
 	// type&&to not exist in the buf, so add it
 
@@ -1256,29 +1256,30 @@ Deletes sv_demoClearOld files from demo dir if out of space
 int SV_DirSizeCheck (void)
 {
 	dir_t	dir;
-  file_t *list;
-  int i;
+	file_t	*list;
+	int	i;
 
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
-	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024) {
-    if (sv_demoClearOld.value <= 0) {
-		  Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
-		  return 0;
-    }
-
-	  list = dir.files;
-    i = sv_demoClearOld.value;
-    Con_Printf("clearing %d old files\n", i);
-    for (; list->name[0] && i > 0; list++) {
-      if (list->isdir)
-        continue;
-      Sys_remove(va("%s/%s/%s", com_gamedir, sv_demoDir.string, list->name));
-      //Con_Printf("remove %d - %s/%s/%s\n", i, com_gamedir, sv_demoDir.string, list->name);
-      i--;
-    }
+	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
+	{
+		if (sv_demoClearOld.value <= 0)
+		{
+			Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
+			return 0;
+		}
+		list = dir.files;
+		i = sv_demoClearOld.value;
+		Con_Printf("clearing %d old files\n", i);
+		for (; list->name[0] && i > 0; list++)
+		{
+			if (list->isdir)
+				continue;
+			Sys_remove(va("%s/%s/%s", com_gamedir, sv_demoDir.string, list->name));
+			//Con_Printf("remove %d - %s/%s/%s\n", i, com_gamedir, sv_demoDir.string, list->name);
+			i--;
+		}
 	}
-
-  return 1;
+	return 1;
 }
 //<-
 /*

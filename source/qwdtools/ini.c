@@ -43,7 +43,7 @@ skipwhite:
 	if (c == '\"')
 	{
 		data++;
-		while (1)
+		while (len < MAX_TOKEN-1)
 		{
 			c = *data++;
 			if (c=='\"' || !c)
@@ -99,11 +99,11 @@ void ReadIni(char *buf)
 			return;
 
 		if (token[0] == '[') {
-			if (!stricmp(token, "[marge]"))
+			if (!strcasecmp(token, "[marge]"))
 				dest = D_MARGE;
-			else if (!stricmp(token, "[convert]"))
+			else if (!strcasecmp(token, "[convert]"))
 				dest = D_CONVERT;
-			else if (!stricmp(token, "[common]"))
+			else if (!strcasecmp(token, "[common]"))
 				dest = D_COMMON;
 			goto finish;
 		}
@@ -114,7 +114,7 @@ void ReadIni(char *buf)
 		// settings
 		for (param = params; param->name; param++)
 		{
-			if (!_stricmp(token, param->name+1) || (param->shname && !_stricmp(param->shname+1, token)))
+			if (!strcasecmp(token, param->name+1) || (param->shname && !strcasecmp(param->shname+1, token)))
 			{
 				if (!CheckParm(param->name) && (!param->shname || !CheckParm(param->shname)))
 				{

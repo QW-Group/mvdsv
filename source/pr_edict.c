@@ -101,8 +101,8 @@ edict_t *ED_Alloc (void)
 	if (i == MAX_EDICTS)
 	{
 		Con_Printf ("WARNING: ED_Alloc: no free edicts\n");
-		i--;	// step on whatever is the last edict
-		e = EDICT_NUM(i);
+		// step on whatever is the last edict
+		e = EDICT_NUM(--i);
 		SV_UnlinkEdict(e);
 	}
 	else
@@ -1123,7 +1123,7 @@ void PR_LoadProgs (void)
 PR_Init
 ===============
 */
-void PR_CleanLogText_Init(); 
+//void PR_CleanLogText_Init(); 
 void PR_Init (void)
 {
 	Cmd_AddCommand ("edict", ED_PrintEdict_f);
@@ -1132,7 +1132,7 @@ void PR_Init (void)
 	Cmd_AddCommand ("profile", PR_Profile_f);
 
 	memset(pr_newstrtbl, 0, sizeof(pr_newstrtbl));
-	PR_CleanLogText_Init();
+//	PR_CleanLogText_Init();
 }
 
 

@@ -17,7 +17,7 @@ MAINDIR=.
 #BUILDDIR=release${MACHINE_ARCH}
 SOURCEDIR=${MAINDIR}/source
 
-DO_CFLAGS =	${CFLAGS} -funsigned-char -I${LOCALBASE}/include -DSERVERONLY
+DO_CFLAGS =	${CFLAGS} -funsigned-char -DSERVERONLY
 WITH_OPTIMIZED_CFLAGS = YES
 
 .if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
@@ -25,12 +25,25 @@ DO_CFLAGS +=	-Did386
 .endif
 
 .if defined(WITH_OPTIMIZED_CFLAGS)
+
 DO_CFLAGS +=	-O9 -pipe -s -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations
-.if defined(GCC2)
-DO_CFLAGS +=	-malign-loops=2 -malign-jumps=2 -malign-functions=2
-.elif defined(GCC3)
-DO_CFLAGS +=    -falign-loops=2 -falign-jumps=2 -falign-functions=2
+# Get __FreeBSD_version
+.if !defined(OSVERSION)
+.if exists(/sbin/sysctl)
+OSVERSION!=     /sbin/sysctl -n kern.osreldate
+.else
+OSVERSION!=     /usr/sbin/sysctl -n kern.osreldate
 .endif
+.endif
+
+.if ${OSVERSION} < 500035
+#GCC 2
+DO_CFLAGS +=	-malign-loops=2 -malign-jumps=2 -malign-functions=2
+.else
+DO_CFLAGS +=	-falign-loops=2 -falign-jumps=2 -falign-functions=2
+#GCC 3
+.endif
+
 .endif
 
 ########################################################################

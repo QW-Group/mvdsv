@@ -1,7 +1,9 @@
 #include "defs.h"
 #include "version.h"
+#ifdef _WIN32
 #include <malloc.h>
 #include <float.h>
+#endif
 
 int memsize, membase;
 int	fps;
@@ -23,7 +25,9 @@ char			currentDir[MAX_OSPATH];
 char			qizmoDir[MAX_OSPATH];
 char			outputDir[MAX_OSPATH];
 char			sourceName[MAX_SOURCES][MAX_OSPATH];
+#ifdef _WIN32
 HANDLE			ConsoleInHndl, ConsoleOutHndl;
+#endif
 
 void QWDToolsMsg(void);
 
@@ -33,37 +37,40 @@ Sys_Error
 ================
 */
 
-void Sys_fclose(FILE *hndl)
+void Sys_fclose(FILE **hndl)
 {
-	if (hndl == NULL)
+	if (*hndl == NULL)
 		return;
-	if (hndl == stdin)
+	if (*hndl == stdin)
 		return;
-	if (hndl == stdout)
+	if (*hndl == stdout)
 		return;
-	fclose(hndl);
-	hndl = NULL;
+	fclose(*hndl);
+	*hndl = NULL;
 }
 
 void Sys_Exit (int i)
 {
+#ifdef _WIN32
 	DWORD r;
 	struct _INPUT_RECORD in;
+#endif
 	int j;
 
 	Dem_Stop(NULL);
 
 	for (j = 0; j < sworld.fromcount; j++)
-		Sys_fclose(sworld.from[j].file);
+		Sys_fclose(&sworld.from[j].file);
 
-	Sys_fclose(sworld.demo.file);
-	Sys_fclose(sworld.debug.file);
-	Sys_fclose(sworld.log.file);
-	Sys_fclose(sworld.analyse.file);
+	Sys_fclose(&sworld.demo.file);
+	Sys_fclose(&sworld.debug.file);
+	Sys_fclose(&sworld.log.file);
+	Sys_fclose(&sworld.analyse.file);
 
 	FreeFileList(sworld.filelist);
 	free(sources);
 
+#ifdef _WIN32
 	if ( sworld.options & O_WAITFORKBHIT)
 	{
 		if (i != 2)
@@ -72,13 +79,18 @@ void Sys_Exit (int i)
 		Sys_Printf("\nPress any key to continue\n");
 		do ReadConsoleInput( ConsoleInHndl, &in, 1, &r); while(in.EventType != KEY_EVENT);
 	}
+#endif
 
 	exit(i);
 }
 
 void Sys_mkdir (char *path)
 {
+#ifdef _WIN32
 	_mkdir (path);
+#else
+	mkdir (path, 0777);
+#endif
 }
 
 
@@ -110,14 +122,25 @@ void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
 	char		buf[1024];
+#ifdef _WIN32
 	DWORD		count;
+#endif
 
 	// stdout can be redirected to a file or other process
-	if (ConsoleOutHndl != NULL && sworld.options & O_STDOUT) {
+	if (
+#ifdef _WIN32
+		ConsoleOutHndl != NULL &&
+#endif
+		sworld.options & O_STDOUT)
+	{
 		va_start (argptr,fmt);
 		vsprintf(buf, fmt, argptr);
 		va_end (argptr);
+#ifdef _WIN32
 		WriteFile(ConsoleOutHndl, buf, strlen(buf), &count, NULL);
+#else
+		fprintf(stderr, "%s", buf);
+#endif
 		return;
 	}
 
@@ -261,7 +284,7 @@ void Dem_Stop(source_t *s)
 	if (!sources)
 		return;
 
-	if (sworld.options & O_SYNC)
+	if (sworld.options & O_QWDSYNC)
 	{
 		if (s != NULL) 
 			s->running = 0;
@@ -525,7 +548,7 @@ void ReadPackets (void)
 	if (!from->running)
 		return;
 
-	if (sworld.options & O_SYNC)
+	if (sworld.options & O_QWDSYNC)
 		SZ_Clear(msgbuf);
 
 	while (GetDemoMessage())
@@ -558,7 +581,7 @@ void ReadPackets (void)
 			
 		Dem_ParseDemoMessage ();
 
-		if (sworld.options & O_SYNC || !(sworld.options & (O_CONVERT | O_MARGE)))
+		if (sworld.options & O_QWDSYNC || !(sworld.options & (O_CONVERT | O_MARGE)))
 			SZ_Clear(msgbuf);
 		
 
@@ -574,7 +597,7 @@ void ReadPackets (void)
 		SZ_Clear(&stats_msg);
 	}
 
-	if (sworld.options & O_SYNC)
+	if (sworld.options & O_QWDSYNC)
 		return;
 
 	/*
@@ -596,9 +619,10 @@ void ReadPackets (void)
 			else c += sworld.from[i].filesize;
 
 		if (c - world.oldftell > 256000) {
+#ifdef _WIN32
 			if ((p = (int)100.0*c/world.demossize) != world.percentage)
 				SetConsoleTitle(va("qwdtools  %d%% (%d of %d)", p, sworld.count, sworld.sources));
-
+#endif
 			world.percentage = p;
 			world.oldftell = c;
 		}
@@ -825,9 +849,10 @@ void MainLoop(void)
 	int		num = -1;
 	double	mintime, nearest;
 
+#ifdef _WIN32
 	if (!(sworld.options & O_STDIN))
 		SetConsoleTitle(va("qwdtools  0%% (%d of %d)", sworld.count, sworld.sources));
-
+#endif
 	// check if demos are from the same game, and read signon datagram
 	world.signonstats = sworld.options & O_MARGE;
 	for (from = sources; from - sources < sworld.fromcount; from++)
@@ -1025,7 +1050,7 @@ qboolean ClearWorld(void)
 	if (!sources)
 		Sys_Error ("Not enough memory free; check disk space\n");
 
-	memset(sources, 0, _msize(sources));
+	memset(sources, 0, sizeof(source_t)*sworld.fromcount);
 	memset(&world, 0, sizeof(world));
 	memset(&demo, 0, sizeof(demo));
 
@@ -1059,15 +1084,15 @@ qboolean ClearWorld(void)
 			ext = FileExtension(sworld.from[i].name);
 
 		// qwz -> qwd
-		if (!_stricmp(ext, ".qwz")) {
+		if (!strcasecmp(ext, ".qwz")) {
 			*(sworld.from[i].name + strlen(sworld.from[i].name) - 1) = 'd';
 			ext[3] = 'd';
 			from->qwz = true;
 		}
 
-		if (!_stricmp(ext, ".qwd"))
+		if (!strcasecmp(ext, ".qwd"))
 			from->format = qwd;
-		else if (!_stricmp(ext, ".mvd"))
+		else if (!strcasecmp(ext, ".mvd"))
 			from->format = mvd;
 		else
 		{
@@ -1096,7 +1121,9 @@ int main (int argc, char **argv)
 	World_Init();
 
 //	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
-	Sys_Printf( VERSION " (c) 2001-2004 Bartlomiej Rychtarski\nhttp://mvdsv.sorceforge.net\n\n");
+	Sys_Printf( VERSION " (c) 2001-2003 Bartlomiej Rychtarski\n");
+	Sys_Printf("Unix port by David (hexum) Balcom and VVD, 2004\n");
+	Sys_Printf("http://mvdsv.sorceforge.net\n\n");
 
 	Tools_Init();
 
@@ -1170,19 +1197,19 @@ int main (int argc, char **argv)
 			MainLoop();
 
 		for (j = 0; j < sworld.fromcount; j++)
-			Sys_fclose(sworld.from[j].file);
+			Sys_fclose(&sworld.from[j].file);
 
-		Sys_fclose(sworld.demo.file);
-		Sys_fclose(sworld.debug.file);
-		Sys_fclose(sworld.log.file);
-		Sys_fclose(sworld.analyse.file);
+		Sys_fclose(&sworld.demo.file);
+		Sys_fclose(&sworld.debug.file);
+		Sys_fclose(&sworld.log.file);
+		Sys_fclose(&sworld.analyse.file);
 
 		// if marging no loop
 		if (options & O_MARGE)
 			break;
 	}
 
-	Sys_Printf("\nDone...\n\n");
+	Sys_Printf("\nDone.\n");
 
 	Sys_Exit(0);
 	return false; // to happy compiler

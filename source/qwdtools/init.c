@@ -33,7 +33,9 @@ void Help (void)
 	//Sys_Printf("-analyse/-a            - analysing demo\n");
 	Sys_Printf("-log                   creates log file\n");
 	Sys_Printf("-debug                 prints way too much messages\n");
+#ifdef _WIN32
 	Sys_Printf("-wait                  \"Press any key to continue\"\n");
+#endif
 	Sys_Printf("-noini                 ini file won't be executed\n");
 	Sys_Printf("-ini path              name of ini file (default: qwdtools.ini)\n");
 	Sys_Printf("-stdin [format]        file from stdin  (default format: qwd)\n");
@@ -41,6 +43,7 @@ void Help (void)
 	//Sys_Printf("\n" VERSION " (c) 2001 Bartlomiej Rychtarski (highlander@gracz.net)\nhttp://qwex.n3.net/\n");
 }
 
+#ifdef _WIN32
 BOOL WINAPI CtrlC( DWORD dwCtrlType )
 {
 	switch (dwCtrlType)
@@ -74,6 +77,25 @@ void CtrlH_Init (void)
 {
 	SetConsoleCtrlHandler(&CtrlC, true);
 }
+#else
+void CtrlC( int sig )
+{
+	if (sworld.options & O_SHUTDOWN)
+		exit(3);
+
+	Sys_Printf("Shutting down...\n");
+
+	sworld.options |= O_SHUTDOWN;
+
+	signal(sig, CtrlC);
+}
+
+void CtrlH_Init (void)
+{
+	signal(SIGINT, CtrlC);
+	signal(SIGTERM, CtrlC);
+}
+#endif
 /*
 ===================
 World_Init
@@ -105,18 +127,27 @@ void World_Init(void)
 		i = CheckParm("-base_dir");
 
 	if (i && i + 1 < com_argc) {
+#ifdef _WIN32
 		SetCurrentDirectory(com_argv[i+1]);
+#else
+		chdir(com_argv[i+1]);
+#endif
 	}
 
+#ifdef _WIN32
 	GetCurrentDirectory(sizeof(currentDir), currentDir);
+#else
+	getcwd(currentDir, sizeof(currentDir));
+#endif
 
 	//Sys_Printf("arg:%s\ncur:%s\n", com_argv[0], currentDir);
 
+#ifdef _WIN32
 	ConsoleInHndl = CreateFile("CONIN$", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,0,NULL);
 	ConsoleOutHndl = CreateFile("CONOUT$", GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,0,NULL);
-
 	if (CheckParm("-wait") || CheckParm("-waitforkbhit"))
 		sworld.options |= O_WAITFORKBHIT;
+#endif
 
 	if (CheckParm("-stdout"))
 		sworld.options |= O_STDOUT;
@@ -136,41 +167,47 @@ char stdintype[32] = "";
 char dummy[64];
 int  whatToStdout = 0;
 
+#ifdef _WIN32
 #pragma warning( disable : 4133 4047)
+#endif
 param_t params[] =
 {
-	{"-qizmo_dir", "-qd", TYPE_S, qizmoDir},
-	{"-output_dir", "-od", TYPE_S, outputDir},
-	{"-output", "-o", TYPE_S, sworld.demo.name},
-	{"-debug_file", NULL, TYPE_S, sworld.debug.name},
-	{"-log_file", NULL, TYPE_S, sworld.log.name},
-	{"-fps", NULL, TYPE_I, &sworld.fps},
-	{"-filter_spectalk", "-fs", TYPE_O, O_FS},
-	{"-filter_qizmotalk", "-fq", TYPE_O,O_FQ},
-	{"-filter_chats", "-fc", TYPE_O, O_FC},
-	{"-filter_teamchats", "-ft", TYPE_O, O_FT},
-	{"-convert", "-c", TYPE_O, O_CONVERT},
-	{"-analyse", "-a", TYPE_O, O_ANALYSE},
-	{"-log", NULL, TYPE_O, O_LOG},
-	{"-debug", NULL, TYPE_O, O_DEBUG},
-	{"-waitforkbhit", "-wait", TYPE_O, O_WAITFORKBHIT},
-	{"-stdin",NULL, TYPE_O | TYPE_S, stdintype, O_STDIN},
-	{"-stdout", NULL, TYPE_O, O_STDOUT},
+	{"-qizmo_dir",		"-qd",	TYPE_S,	qizmoDir},
+	{"-output_dir",		"-od",	TYPE_S,	outputDir},
+	{"-output",		"-o",	TYPE_S,	sworld.demo.name},
+	{"-debug_file",		NULL,	TYPE_S,	sworld.debug.name},
+	{"-log_file",		NULL,	TYPE_S,	sworld.log.name},
+	{"-fps",		NULL,	TYPE_I,	&sworld.fps},
+	{"-filter_spectalk",	"-fs",	TYPE_O, O_FS},
+	{"-filter_qizmotalk",	"-fq",	TYPE_O,	O_FQ},
+	{"-filter_chats",	"-fc",	TYPE_O,	O_FC},
+	{"-filter_teamchats",	"-ft",	TYPE_O,	O_FT},
+	{"-convert",		"-c",	TYPE_O,	O_CONVERT},
+	{"-analyse",		"-a",	TYPE_O,	O_ANALYSE},
+	{"-log",		NULL,	TYPE_O,	O_LOG},
+	{"-debug",		NULL,	TYPE_O,	O_DEBUG},
+#ifdef _WIN32
+	{"-waitforkbhit",	"-wait",TYPE_O,	O_WAITFORKBHIT},
+#endif
+	{"-stdin",		NULL,	TYPE_O | TYPE_S, stdintype, O_STDIN},
+	{"-stdout",		NULL,	TYPE_O,	O_STDOUT},
 	{"-noini"},
-	{"-base_dir", "-bd", TYPE_S, currentDir},
-	{"-msglevel", "-msg", TYPE_I, &sworld.msglevel},
-	{"-marge", "-m", TYPE_O, O_MARGE},
-	{"-range", "-r", TYPE_I, &sworld.range},
+	{"-base_dir",		"-bd",	TYPE_S,	currentDir},
+	{"-msglevel",		"-msg",	TYPE_I,	&sworld.msglevel},
+	{"-marge",		"-m",	TYPE_O,	O_MARGE},
+	{"-range",		"-r",	TYPE_I,	&sworld.range},
 	NULL
 };
+#ifdef _WIN32
 #pragma warning( default : 4133 4047)
+#endif
 
 param_t *FindParam(char *parm)
 {
 	param_t *param;
 
 	for (param = params; param->name; param++)
-		if (!_stricmp(parm, param->name) || (param->shname && !_stricmp(parm, param->shname)))
+		if (!strcasecmp(parm, param->name) || (param->shname && !strcasecmp(parm, param->shname)))
 			return param;
 
 	return NULL;
@@ -221,14 +258,18 @@ void ParseArgv(void)
 
 			// check for qwz extension
 			ext = FileExtension (arg);
-			if (!_stricmp(ext, ".qwz")) {
-				if (!strcmp(qizmoDir, ".") || !strcmp(qizmoDir, "./") || !strcmp(qizmoDir, ".\\"))
+			if (!strcasecmp(ext, ".qwz")) {
+				if (!strcmp(qizmoDir, ".") || !strcmp(qizmoDir, "./")
+#ifdef _WIN32
+					|| !strcmp(qizmoDir, ".\\")
+#endif
+				)
 					qizmoDir[0] = 0;
 
 				if (strstr(arg, ":") || !qizmoDir[0])
 					strcat(qwz_files, va("\"%s\" ", arg));
 				else
-					strcat(qwz_files, va("\"%s\\%s\" ", currentDir, arg));
+					strcat(qwz_files, va("\"%s/%s\" ", currentDir, arg));
 			}
 
 			continue;
@@ -242,11 +283,11 @@ void ParseArgv(void)
 		if (param->type & TYPE_S) {
 			i++;
 			if (i < com_argc && com_argv[i][0] != '-') {
-				strcpy(param->str, com_argv[i]);
+				strcpy(param->opt1.str, com_argv[i]);
 			} else {
 				// if it's stdin assume qwd
 				if (param->opt2 == O_STDIN) {
-					strcpy(param->str, "qwd");
+					strcpy(param->opt1.str, "qwd");
 					i--;
 				} else {
 					Sys_Printf("init: missing argument for %s\n", arg);
@@ -255,9 +296,14 @@ void ParseArgv(void)
 				}
 			}
 
-			if (param->str = currentDir) {
+			if ((param->opt1.str = currentDir)) {
+#ifdef _WIN32
 				SetCurrentDirectory(currentDir);
 				GetCurrentDirectory(sizeof(currentDir), currentDir);
+#else
+				chdir(currentDir);
+				getcwd(currentDir, sizeof(currentDir));
+#endif
 			}
 		}
 
@@ -265,7 +311,7 @@ void ParseArgv(void)
 			i++;
 			if (i < com_argc && com_argv[i][0] != '-')
 			{
-				*param->Int = atoi(com_argv[i]);
+				*param->opt1.Int = atoi(com_argv[i]);
 			} else {
 				Sys_Printf("init: missing argument for %s\n", arg);
 				Help();
@@ -277,7 +323,7 @@ void ParseArgv(void)
 			if (param->opt2)
 				o = param->opt2;
 			else
-				o = param->opt;
+				o = param->opt1.opt;
 			if (!whatToStdout && (o & JOB_TODO))
 				whatToStdout = o;
 			sworld.options |= o;
@@ -301,9 +347,10 @@ void ParseArgv(void)
 		// free file list, files from argument list won't be used
 		FreeFileList(sworld.filelist);
 		AddToFileList(sworld.filelist, "");
-
+#ifdef _WIN32
 		if (_setmode (_fileno(sworld.from->file), _O_BINARY) == -1)
 			Sys_Error("failed to set binary mode for stdin");
+#endif
 	} else {
 		if (qwz_files[0]) {
 			// decompress qwz files
@@ -337,13 +384,19 @@ FILE *openFile (char *filename, char *name, int opt, int mode)
 	if (sworld.options & O_STDOUT && whatToStdout == opt) {
 		file = stdout;
 		filename = "stdout";
+#ifdef _WIN32
 		if (_setmode (_fileno(stdout), mode) == -1)
 		{
 			Sys_Printf("failed to set %s mode for stdout", mode == _O_TEXT ? "text" : "binary");
 			return NULL;
 		}
+#endif
 	} else
+#ifdef _WIN32
 		file = fopen (filename, mode == _O_TEXT ? "wt" : "wb");
+#else
+		file = fopen (filename, "w");
+#endif
 
 	if (file == NULL)
 		Sys_Printf ("couldn't open for writing: %s.\n", filename);
@@ -484,7 +537,7 @@ void Load_ini (void)
 	//get path to program
 	strcpy(path, getPath(com_argv[0]));
 	// if path == current dir, use short name
-	if (!_stricmp(path, va("%s\\", currentDir)))
+	if (!strcasecmp(path, va("%s/", currentDir)))
 		strcpy(name, com_argv[0] + strlen(path));
 	else
 		strcpy(name, com_argv[0]);

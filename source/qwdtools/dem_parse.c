@@ -230,7 +230,7 @@ void Dem_ParseServerData (void)
 	MSG_Forward(msgbuf, msg_readcount, 40);
 
 	// check if marging is possible
-	if (sworld.options & O_SYNC)
+	if (sworld.options & O_QWDSYNC)
 		return;
 
 	if (from == sources)

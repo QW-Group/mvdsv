@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	MAX_MSGLEN		1450		// max length of a reliable message
 #define	MAX_DATAGRAM	1450		// max length of unreliable message
-#define	FILE_TRANSFER_BUF_SIZE	MAX_MSGLEN - 100
+#define	FILE_TRANSFER_BUF_SIZE	(MAX_MSGLEN - 100)
 //
 // per-level limits
 //
@@ -132,3 +132,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // these determine which intermission screen plays
 #define	GAME_COOP			0
 #define	GAME_DEATHMATCH		1
+
+#ifndef max
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif

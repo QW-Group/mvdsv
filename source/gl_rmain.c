@@ -760,7 +760,7 @@ R_BrightenScreen
 */
 void R_BrightenScreen (void)
 {
-#ifdef WIN32
+#ifdef _WIN32
 	extern float	vid_gamma;
 #endif
 	float	f;
@@ -774,7 +774,7 @@ void R_BrightenScreen (void)
 	if (f > 3)
 		f = 3;
 
-#ifdef WIN32
+#ifdef _WIN32
 	f = pow (f, vid_gamma);
 #endif
 	

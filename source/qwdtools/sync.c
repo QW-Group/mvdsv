@@ -295,7 +295,7 @@ qboolean Synchronize (void)
 	if (sworld.fromcount == 1)
 		return true;
 
-	sworld.options |= O_SYNC;
+	sworld.options |= O_QWDSYNC;
 
 	memset(&dummy, 0, sizeof(dummy));
 	dummy.data = buf;
@@ -338,7 +338,7 @@ qboolean Synchronize (void)
 		y = info[i].time - info[0].time;
 		// rewind dem1
 		if (!SetComparisionDemo(dem1, info->time)) {
-			sworld.options -= O_SYNC;
+			sworld.options -= O_QWDSYNC;
 			return false;
 		}
 
@@ -618,7 +618,7 @@ qboolean Synchronize (void)
 	}
 
 	world.signonstats = false;
-	sworld.options -= O_SYNC;
+	sworld.options -= O_QWDSYNC;
 
 	return done;
 }

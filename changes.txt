@@ -1,11 +1,36 @@
 ----
+MVDSV v0.175 build 1773
+- changed all WIN32 and WINDOWS defines to _WIN32
+- win32 projects cleaned up
+- check define LITTLE_ENDIAN changed to check define __BIG_ENDIAN__ and dynamical determination of
+  LITTLE/BIG ENDIAN changed to staticaly (removed variable qboolean bigendien)
+[server]
+- bugfix from 0.174b: crashed when server demo record started
+- added darwin/Mac OS X targets (by Baalz)
+- extension in cvar sv_specprint <flags>, <flags> is sum of:
+    1 - single print to a specific client to the center of the screen (centerprint)
+    2 - single print to a specific client (sprint)
+    4 - sends text over to the client's execution buffer (stuffcmd)
+    default: 0
+  players can setinfo sp <flags> to turn it off for themselves:
+  if required field is not set then this type of print is off; default sp = sv_specprint
+  (for example setinfo sp 1 - turns off sprint and stuffcmd)
+- new connectionless command lastscores - work same as cmd lastscores (see changes to v0.1728)
+  (for example, can be used as: packet server:port "lastscores 5")
+[unix]
+- added determination of gcc version in FreeBSD in Makefile
+[qwdtools]
+- added *nix (FreeBSD, Linux and darwin/Mac OS X) targets (by hexum and VVD)
+
+
+----
 MVDSV v0.174 Beta DEVELOP build 1742
 - Project was reorganized: MVDSV (MultiView Demos SerVer) is now synonym to QWEX (QuakeWorld Extended).
   Consist of mvdsv (server), qwdplayer gl/soft (client - for testing purposes only) and qwdtools
   (demo convertion tool).
 - Changed link to home site to http://mvdsv.sourceforge.net
 [server]
-- bugfix: print message "Server recording stopped. Max demo size exceeded." instead of
+- bugfix: printed message "Server recording stopped. Max demo size exceeded." instead of
   "Server recording completed."
 - extensions in connectionless command status:
     use 2nd argument to return indicated information
@@ -14,16 +39,16 @@ MVDSV v0.174 Beta DEVELOP build 1742
       1 - add serverinfo in response
       2 - add information about players in response
       4 - add information about spectators in response
-      8 - change only frags in info about spectators: show frags as "S" (for ASE)
+      8 - changes spectators frags to "S" for ASE
     spectators names returned as "\s\<name>" instead "<name>(s)" (players can't use '\' in names)
     not specifying a 2nd argument returns the old style status command response (same as 0)
 - changed status output in server console and via rcon
 - some spelling fixes
-- bugfix: server crashes with message "Error: Entity number >= 512" (EXPERIMENTAL)
+- bugfix: server crashed with message "Error: Entity number >= 512" (EXPERIMENTAL)
 - removed cvar sv_showspectators
-- red "\" excluded from list of allowed characters in player's and spectator's names, 
+- red "\" excluded from list of allowed characters in a player's or spectator's name, 
   so the name with red "\" result in the player's name being "unnamed"
-- new cvar sys_command_line - show command line arguments during start of server, cannot be changed
+- new cvar sys_command_line - show command line arguments during startup of server, cannot be changed
   (use only with master_rcon_password)
 - bugfix: restart command didn't work if path or server executable name contained spaces in win32
 - added .ent files support: (by ???)
@@ -40,8 +65,8 @@ MVDSV v0.174 Beta DEVELOP build 1742
     cmd upload, cmd download, download
   server commands:
     ls, rm, rmdir, chmod
-- removeed cvars sv_bunnyspeedcap and maxvip_spectators from serverinfo
-  (become more frequent warning message: "Info string length exceeded ...")
+- removed cvars sv_bunnyspeedcap and maxvip_spectators from serverinfo
+  (warning message: "Info string length exceeded ...")
 - code cleanup for removing warning message from gcc3:
   "warning: use of cast expressions as lvalues is deprecated" (by danfe)
 - prevented extra packets being sent to invalid addresses (for example: 127.0.0.1),
@@ -60,10 +85,10 @@ MVDSV v0.174 Beta DEVELOP build 1742
 - new cvar sv_speedcheck 0/1 (by bliP)
   anti speed cheat code from AM101, slows cheaters down to normal speed
 - rename cvar sv_kickfake to sv_unfake - auto unfakes any mm1 messages (by bliP)
-- bugfix: allow one back a directory with script (by bliP)
+- bugfix: allowed to go one step back in the directory hierarchy with script (by bliP)
 - bugfix: PF_listmaps style 3 misprinted if even number of maps (by bliP)
 [client]
-- Ability to download any file in the server's quake dir from the server via cmd download.
+- Ability to download any file into the server's quake dir from the server via cmd download.
 
 
 ----
@@ -76,8 +101,8 @@ QWEX v0.173 build 1683
     0 - disable cmd minping command
     1 - enable cmd minping command
     default: 0
-- bugfix: write 0 frags in demo txt-files instead real players/teams frags
-- cmd minping change value only if serverinfo key status is "Standby" and
+- bugfix: write 0 frags in demo txt-files instead of real players/teams frags
+- cmd minping will only change if serverinfo key status is "Standby" and
   demo recording is not in progress
 
 
@@ -378,7 +403,7 @@ QWEX v0.1723 Beta
 ----
 QWEX v0.1722 Beta
 [client] and [server]
-- replace all:
+- replaced all:
       sprintf ->  snprintf
      vsprintf -> vsnprintf
       strcpy  ->  strlcpy

@@ -247,7 +247,7 @@ int TCP_OpenSocket (int port)
 		Sys_Error ("TCP_OpenSocket: socket:", strerror(errno));
 	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEADDR, &_true, sizeof(_true)))
 		Sys_Error ("TCP_OpenSocket: setsockopt SO_REUSEADDR: %s", strerror(errno));
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEPORT, &_true, sizeof(_true)))
 		Sys_Error ("TCP_OpenSocket: setsockopt: %s", strerror(errno));
 	address.sin_len = sizeof(address);

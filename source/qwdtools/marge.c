@@ -14,11 +14,11 @@ void IntegrateMsgs(sizebuf_t *dest)
 
 	msg.data = buf;
 
-	(byte*)p = dest->data;
+	p = (header_t *)dest->data;
 
 	while ((byte*)p - dest->data < dest->bufsize)
 	{
-		(byte*)t = end = p->data + p->size;
+		t = (header_t *)(end = p->data + p->size);
 		while ((byte*)t - dest->data < dest->bufsize)
 		{
 			if (t->type == p->type && t->to == p->to)
@@ -39,7 +39,7 @@ void IntegrateMsgs(sizebuf_t *dest)
 				p->size += msg.bufsize;
 				dest->bufsize -= HEADER;
 
-				(byte*)t += msg.bufsize;
+				t = (header_t *)((byte *)t + msg.bufsize);
 			} else
 				NextMsg(t);
 		}
@@ -195,7 +195,7 @@ void CpyPrev(source_t *who, header_t **d, int start, int end, int size)
 		if (who->frames[i&UPDATE_MASK].buf.bufsize)
 		{
 			buf = &who->frames[i&UPDATE_MASK].buf;
-			(byte*)s = buf->data;
+			s = (header_t *)buf->data;
 
 			for ( h = s; (byte*)h - (byte*)s < buf->bufsize; NextMsg(h), NextMsg(*d))
 				Cpy(*d,h);

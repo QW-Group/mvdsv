@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#if defined(__linux__) || defined(sun) || defined(__GNUC__)  
+#if defined(__linux__) || defined(sun) || defined(__GNUC__) || defined(__FreeBSD__) || defined(__APPLE__)
 #include <dirent.h>
 #include <sys/stat.h>
 #endif 
@@ -1489,7 +1489,7 @@ static void ReadDir (void)
 		numfiles = 1;
 	}
 
-#ifdef WIN32
+#ifdef _WIN32
 	h = FindFirstFile (va("%s%s/*.*", com_basedir, demodir), &fd);
 	if (h == INVALID_HANDLE_VALUE) {
 #else
@@ -1508,7 +1508,7 @@ static void ReadDir (void)
 		int pos;
 		char name[MAX_DEMO_NAME];
 
-#ifndef WIN32
+#ifndef _WIN32
 		oneentry=readdir(Dir);
 		if(!oneentry) 
 			break;
@@ -1564,7 +1564,7 @@ static void ReadDir (void)
 		dir[i].size = size;
 		if (numfiles == MAX_DEMO_FILES)
 			break;
-#ifdef WIN32
+#ifdef _WIN32
 	} while ( FindNextFile(h, &fd) );
 	FindClose (h);
 #else

@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libc.h>
 #endif
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -115,7 +115,7 @@ Sys_remove
 */
 int Sys_remove (char *path)
 {
-	return system(va("rm \"%s\"", path));
+	return unlink(path);
 }
 
 //bliP: rmdir ->
@@ -126,7 +126,7 @@ Sys_rmdir
 */
 int Sys_rmdir (char *path)
 {
-	return system(va("rmdir \"%s\"", path));
+	return rmdir(path);
 }
 //<-
 
@@ -516,24 +516,72 @@ static int only_digits(const char *s) {
 	return (1);
 }
 
+#define closesocket close
+inline void Sys_Telnet (void)
+{
+	static int			tempsock;
+	extern cvar_t		not_auth_timeout, auth_timeout;
+	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
+	static int			sockaddr_len = sizeof(struct sockaddr_in);
+	static double		cur_time_not_auth;
+	if (telnet_connected)
+	{
+		if ((tempsock =
+		accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
+		{
+//			if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+				send (tempsock, "Console busy by another user.\n", 31, 0);
+			closesocket (tempsock);
+			SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
+				inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
+		}
+		if (	(!authenticated && not_auth_timeout.value &&
+			realtime - cur_time_not_auth > not_auth_timeout.value) ||
+			(authenticated && auth_timeout.value &&
+			realtime - cur_time_auth > auth_timeout.value))
+		{
+			telnet_connected = 0;
+			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
+			closesocket (telnet_iosock);
+			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+		}
+	}
+	else
+	{
+		if ((telnet_iosock =
+		accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
+		{
+//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+//			{
+				telnet_connected = 1;
+				cur_time_not_auth = realtime;
+				SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+				send (telnet_iosock, "# ", 2, 0);
+/*			}
+			else
+			{
+				closesocket (telnet_iosock);
+				SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+			}
+*/
+		}
+	}
+}
 
 /*
 =============
 main
 =============
 */
-
+void PR_CleanLogText_Init(void);
 int main (int argc, char *argv[])
 {
 	double		time, oldtime, newtime;
 	quakeparms_t	parms;
 
 //Added by VVD {
-	extern cvar_t	not_auth_timeout, auth_timeout, sys_select_timeout;
-	int	j, tempsock;
-	struct	sockaddr_in remoteaddr, remoteaddr_temp;
-	int	sockaddr_len = sizeof(struct sockaddr_in);
-	double	cur_time_not_auth;
+	extern cvar_t	sys_select_timeout;
+	int	j;
 	uid_t   user_id;
 	gid_t   group_id;
 	struct passwd	*pw;
@@ -543,16 +591,33 @@ int main (int argc, char *argv[])
 #ifndef NEWWAY
 	struct timeval timeout;
 	fd_set	fdset;
-	int	timeout_tv_usec;
 #endif
 	argv0 = argv[0];
 	telnet_connected = 0;
 
 	memset (&parms, 0, sizeof(parms));
 
+        PR_CleanLogText_Init();
+
 	COM_InitArgv (argc, argv);	
 	parms.argc = com_argc;
 	parms.argv = com_argv;
+
+	parms.memsize = 16*1024*1024;
+
+	j = COM_CheckParm ("-heapsize");
+	if (j && j + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
+
+	j = COM_CheckParm("-mem");
+	if (j && j + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
+
+	parms.membase = Q_Malloc (parms.memsize);
+
+	parms.basedir = ".";
+
+	SV_Init (&parms);
 
 // daemon
 	j = COM_CheckParm ("-d");
@@ -591,25 +656,6 @@ int main (int argc, char *argv[])
 			if (chdir("/") < 0)
 				Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(errno));
 	}
-
-	parms.memsize = 16*1024*1024;
-
-	j = COM_CheckParm ("-heapsize");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
-
-	j = COM_CheckParm("-mem");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
-
-	parms.membase = Q_Malloc (parms.memsize);
-
-	parms.basedir = ".";
-
-	SV_Init (&parms);
-
-// run one frame immediately for first heartbeat
-	SV_Frame (0.1);		
 
 // setgid
 	j = COM_CheckParm ("-g");
@@ -656,6 +702,9 @@ int main (int argc, char *argv[])
 		}
 	}
 
+// run one frame immediately for first heartbeat
+	SV_Frame (0.1);		
+
 //
 // main loop
 //
@@ -672,48 +721,7 @@ int main (int argc, char *argv[])
 // Added by VVD {
 		if (telnetport)
 		{
-			if (telnet_connected)
-			{
-				if ((tempsock =
-				accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
-				{
-//					if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-						write (tempsock, "Console busy by another user.\n", 31);
-					close (tempsock);
-					SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
-						inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
-				}
-				if ((!authenticated && not_auth_timeout.value &&
-					realtime - cur_time_not_auth > not_auth_timeout.value) ||
-					(authenticated && auth_timeout.value &&
-					realtime - cur_time_auth > auth_timeout.value))
-				{
-					telnet_connected = 0;
-					write (telnet_iosock, "Time for authentication finished.\n", 34);
-					close(telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-				}
-			}
-			else
-			{
-				if ((telnet_iosock =
-				accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
-				{
-//					if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-//					{
-						telnet_connected = 1;
-						cur_time_not_auth = realtime;
-						SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-						write (telnet_iosock, "# ", 2);
-/*					}
-					else
-					{
-						close (telnet_iosock);
-						SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-					}
-*/
-				}
-			}
+			Sys_Telnet();
 			FD_SET(net_telnetsocket, &fdset);
 			j = max(j, net_telnetsocket);
 			if (telnet_connected)

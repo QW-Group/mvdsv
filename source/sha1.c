@@ -13,6 +13,7 @@ A million repetitions of "a"
 */
 
 /* #define LITTLE_ENDIAN * This should be #define'd if true. */
+/* Changed LITTLE_ENDIAN to __BIG_ENDIAN__ define checking (unification of defines) */
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
 
 #include <stdio.h>
@@ -24,14 +25,14 @@ A million repetitions of "a"
 
 void SHA1Transform(unsigned long state[5], unsigned char buffer[64])
 {
-unsigned long a, b, c, d, e;
-typedef union {
-    unsigned char c[64];
-    unsigned long l[16];
-} CHAR64LONG16;
-CHAR64LONG16* block;
+    unsigned long a, b, c, d, e;
+    typedef union {
+        unsigned char c[64];
+        unsigned long l[16];
+    } CHAR64LONG16;
+    CHAR64LONG16* block;
 #ifdef SHA1HANDSOFF
-static unsigned char workspace[64];
+    static unsigned char workspace[64];
     block = (CHAR64LONG16*)workspace;
     memcpy(block, buffer, 64);
 #else

@@ -20,6 +20,11 @@
 #define QW_PLATFORM_SHORT	"(s)"
 #endif
 
+#ifdef __APPLE__
+#define QW_PLATFORM		"Darwin"
+#define QW_PLATFORM_SHORT	"(d)"
+#endif
+
 #define LINUX_VERSION		0.98
 #define GLQUAKE_VERSION		1.00
 #ifdef GLQUAKE
@@ -29,8 +34,8 @@
 #endif
 
 #define	QW_VERSION		2.40
-#define QWE_VERSION		"0.174"
-#define QWE_VERNUM		0.174
+#define QWE_VERSION		"0.175"
+#define QWE_VERNUM		0.175
 #define SERVER_NAME		"MVDSV"
 #define PROJECT_NAME		SERVER_NAME
 /*"QWExtended"*/

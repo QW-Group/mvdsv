@@ -1,4 +1,7 @@
 #include "defs.h"
+#ifndef _WIN32
+#include <libgen.h>	// basename
+#endif
 
 int com_argc;
 char *com_argv[MAX_NUM_ARGVS];
@@ -19,15 +22,6 @@ static int			header = (int)&((header_t*)0)->data;
 ============================================================================
 */
 
-qboolean	bigendien;
-
-short	(*BigShort) (short l);
-short	(*LittleShort) (short l);
-int	(*BigLong) (int l);
-int	(*LittleLong) (int l);
-float	(*BigFloat) (float l);
-float	(*LittleFloat) (float l);
-
 short   ShortSwap (short l)
 {
 	byte    b1,b2;
@@ -36,11 +30,6 @@ short   ShortSwap (short l)
 	b2 = (l>>8)&255;
 
 	return (b1<<8) + b2;
-}
-
-short	ShortNoSwap (short l)
-{
-	return l;
 }
 
 int    LongSwap (int l)
@@ -53,11 +42,6 @@ int    LongSwap (int l)
 	b4 = (l>>24)&255;
 
 	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
-}
-
-int	LongNoSwap (int l)
-{
-	return l;
 }
 
 float FloatSwap (float f)
@@ -75,11 +59,6 @@ float FloatSwap (float f)
 	dat2.b[2] = dat1.b[1];
 	dat2.b[3] = dat1.b[0];
 	return dat2.f;
-}
-
-float FloatNoSwap (float f)
-{
-	return f;
 }
 
 /*
@@ -542,7 +521,7 @@ void DemoWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 	int	size;
 	sizebuf_t msg;
 
-	(byte*)p = buf->data;
+	p = (header_t *)buf->data;
 	buf->h = NULL;
 
 	while (pos < buf->bufsize)
@@ -571,7 +550,7 @@ void DemoWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 			//demobuffer->start += size + header;
 		}
 		// move along
-		(byte*)p = p->data + size;
+		p = (header_t *)(p->data + size);
 	}
 
 	/*
@@ -601,7 +580,7 @@ static void DemoSetBuf(byte type, int to)
 	header_t *p;
 	int pos = 0;
 
-	(byte*)p = msgbuf->data;
+	p = (header_t *)msgbuf->data;
 
 	while (pos < msgbuf->bufsize)
 	{
@@ -614,7 +593,7 @@ static void DemoSetBuf(byte type, int to)
 			return;
 		}
 
-		(byte*)p = p->data + p->size;
+		p = (header_t *)(p->data + p->size);
 	}
 	// type&&to not exist in the buf, so add it
 
@@ -679,7 +658,7 @@ void DemoWrite_Begin(byte type, int to, int size)
 	if (!(sworld.options & (O_CONVERT | O_MARGE)))
 		return;
 
-	if (sworld.options & O_SYNC)
+	if (sworld.options & O_QWDSYNC)
 		return;
 
 	// signon message order cannot be changed
@@ -808,29 +787,6 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 
 void Tools_Init (void)
 {
-	byte	swaptest[2] = {1,0};
-
-// set the byte swapping variables in a portable manner	
-	if ( *(short *)swaptest == 1)
-	{
-		bigendien = false;
-		BigShort = ShortSwap;
-		LittleShort = ShortNoSwap;
-		BigLong = LongSwap;
-		LittleLong = LongNoSwap;
-		BigFloat = FloatSwap;
-		LittleFloat = FloatNoSwap;
-	}
-	else
-	{
-		bigendien = true;
-		BigShort = ShortNoSwap;
-		LittleShort = ShortSwap;
-		BigLong = LongNoSwap;
-		LittleLong = LongSwap;
-		BigFloat = FloatNoSwap;
-		LittleFloat = FloatSwap;
-	}
 }
 
 /*
@@ -969,6 +925,7 @@ Reads wildcards to get full file list
 ==============
 */
 void *Q_Malloc (size_t size);
+#ifdef _WIN32
 int AddToFileList(flist_t *filelist, char *file)
 {
 	char	**flist = NULL, *p;
@@ -1015,6 +972,32 @@ int AddToFileList(flist_t *filelist, char *file)
 		count++;
 	return count;
 }
+#else
+int AddToFileList(flist_t *filelist, char *file)
+{
+	char *tmp, *name;
+
+	// move to the end of list
+	while (filelist->list != NULL)
+		filelist++;
+	
+	tmp = (char *)Q_Malloc(strlen(file)+1);
+	strcpy(tmp, file);
+	name = basename(tmp);
+
+	strcpy(filelist->path, getPath(file));
+
+	filelist->list = (char **) Q_Malloc(sizeof(char *));
+	filelist->list[0] = (char *) Q_Malloc(strlen(name)+1);
+	strcpy(filelist->list[0], name);
+
+	filelist->count = 1;
+
+	free(tmp);
+
+	return 1;
+}
+#endif
 
 void FreeFileList(flist_t *flist)
 {
@@ -1128,8 +1111,8 @@ void RemoveParm (int num)
 	if (num < 1 || num > com_argc)
 		return;
 
-	while(num < com_argc)
-		com_argv[num++] = com_argv[num + 1];
+	for(; num < com_argc; num++)
+		com_argv[num] = com_argv[num + 1];
 
 	com_argc--;
 }
@@ -1209,7 +1192,11 @@ int FileOpenRead (char *path, FILE **hndl)
 {
 	FILE	*f;
 
+#ifdef _WIN32
 	f = fopen(path, "rb");
+#else
+	f = fopen(path, "r");
+#endif
 	if (!f)
 	{
 		*hndl = NULL;
@@ -1232,7 +1219,7 @@ byte *LoadFile(char *path)
 	buf = Q_Malloc(len+1);
 
 	fread(buf, 1, len, f);
-	Sys_fclose(f);
+	Sys_fclose(&f);
 
 	return buf;
 }

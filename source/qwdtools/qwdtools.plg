@@ -6,21 +6,21 @@
 --------------------Configuration: qwdtools - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "E:\Temp\RSP1C.tmp" with contents
+Creating temporary file "c:\Temp\RSP47.tmp" with contents
 [
-/nologo /G3 /Zp4 /ML /W3 /GX /O1 /Ob0 /I "." /I "../" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /Fo".\Release/" /Fd".\Release/" /FD /c 
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\dem_parse.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\dem_send.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\ini.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\init.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\main.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\marge.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\qwz.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\sync.c"
-"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\qwdtools\tools.c"
+/nologo /G3 /Zp4 /ML /W3 /GX /O1 /Ob0 /I "." /I "../" /D "NDEBUG" /D "_CONSOLE" /Fo".\Release/" /Fd".\Release/" /FD /c 
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\dem_parse.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\dem_send.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\ini.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\init.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\main.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\marge.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\qwz.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\sync.c"
+"H:\q\Projects\mvdsv\mvdsv_0.175\source\qwdtools\tools.c"
 ]
-Creating command line "cl.exe @E:\Temp\RSP1C.tmp" 
-Creating temporary file "E:\Temp\RSP1D.tmp" with contents
+Creating command line "cl.exe @c:\Temp\RSP47.tmp" 
+Creating temporary file "c:\Temp\RSP48.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /pdb:".\Release/qwdtools.pdb" /machine:I386 /out:"..\..\qwdtools.exe" 
 .\Release\dem_parse.obj
@@ -33,7 +33,7 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 .\Release\sync.obj
 .\Release\tools.obj
 ]
-Creating command line "link.exe @E:\Temp\RSP1D.tmp"
+Creating command line "link.exe @c:\Temp\RSP48.tmp"
 <h3>Output Window</h3>
 Compiling...
 dem_parse.c
