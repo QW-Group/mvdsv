@@ -988,6 +988,7 @@ void SV_Say (qboolean team)
 	}
 
 	Sys_Printf ("%s", text);
+	SV_Write_Log(CONSOLE_LOG, 1, text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{

@@ -1,8 +1,39 @@
 ----
+QWEX v0.1724 Beta DEVELOP
+[server]
+- changed the MAX_DEMO_PACKET_ENTITIES limit from 196 to 300 to fix entities not being recorded sometimes (especially in TF).
+  Clients should be updated to support this new limit, because In cases where the previous limit wouldn't 
+  have been sufficient, unchanged clients that don't support the new limit may have problems in demo playing.
+  (Thanks to BorisU)
+- in SV_SendDemoMessage increase msg buffer size to MSG_BUF_SIZE
+  (reduce the overflow of the msg buffer to prevent potential demo corruption)
+  (Thanks to BorisU)
+- increase demo.datagram_data buffer to MSG_BUF_SIZE overflows fixed
+  (reduce the overflow of the msg buffer to prevent potential demo corruption too)
+  (Thanks to BorisU)
+- now telnet is off by default (same as -telnetport 0)
+- character "$_" in name (mqwcl) now is a white space character
+- the blank character created with "$_" (with mqwcl for example) is now a normal space character,
+  so the name "$_" will be the same as name " " and result in the player's name being "unnamed"
+- bugfix from 0.1722b: when the same teams/players played on same map a 2nd time
+  (thus the demo name being the same) the demo name wasn't printed correctly on the client screen
+- new cvar: 
+    qconsole_log_say 0/1
+      0 - "say" and "say_team" messages are not logged
+      1 - "say" and "say_team" messages are now logged to the qconsole_PORT.log file
+- fixed a download bug if demo was written with "^" in name - "^" excluded from list of allowed characters in demo name
+- cmd dlist output sorted chronologically now: top demo = oldest, bottom demo = most recent
+- new command:
+    check_maps - checks available maps in id1/maps and qw/maps and writes localinfo 1000-2000 accordingly:
+    first maps from id/maps are added (maps are sorted by name), then maps from qw/maps are added
+    (sorted by name as well and only added if they weren't already added from id1/maps)
+
+
+----
 QWEX v0.1723b Beta DEVELOP
 [server]
 - new cvar:
-    sv_use_dns n
+    sv_use_dns 0/1
       0 - don't use DNS lookup in status command
       1 - use DNS lookup in status command
       default: 0
@@ -11,11 +42,10 @@ QWEX v0.1723b Beta DEVELOP
 - bugfixes from 0.1722b:
     in PF_substr - for example: ktpro weapon aliases didn't work
     demo recording - bug in the generation of demo names
-- now show all name changes: didn't show when player change name from NAME to NAME_AND_SOMETHING_ELSE_AT_END
-- some spell cheking fixes
+- now shows all name changes: didn't announce a name change when a player changed his name to a longer string
+- some spell checking fixes
 [client]
-- the most part of source codes of the client is removed 
- 
+- most of the client source codes are removed (they're not needed for server operation)
 
 ----
 QWEX v0.1722b Beta DEVELOP
@@ -34,7 +64,7 @@ QWEX v0.1722b Beta DEVELOP
 [server]
 - change: command status now shows the client's IP and DNS name
 - new cvar:
-    frag_log_type n
+    frag_log_type 0/1
       0 - old style log (  qwsv - v0.165)
       1 - new style log (v0.168 - v0.172)
       default: 0
@@ -53,7 +83,7 @@ QWEX v0.1722b Beta DEVELOP
     auth_timeout n - the server will close the connection "n" seconds after the authentication is completed
       If set to 0, no timeout will occur
       default: 3600 (1 hour)
-    telnet_log_level n, logging level of the telnet connections (in file QUAKE_DIR/qtelnet_PORT.log)
+    telnet_log_level 0/1/2/3, logging level of the telnet connections (in file QUAKE_DIR/qtelnet_PORT.log)
       0 - no log
       1 - log connects and disconnects to telnetport
       2 - same as 1 and all commands typed in console by user
@@ -115,7 +145,6 @@ QWEX v0.1722b Beta DEVELOP
   [Wed Dec 31, 09:53:10 2003].[1] Authenticated: no
   [Wed Dec 31, 09:53:12 2003].[1] Authenticated: no
   [Wed Dec 31, 09:53:19 2003].[1] Authenticated: yes
-  [Wed Dec 31, 09:53:19 2003].[2] status
   [Wed Dec 31, 09:53:19 2003].[3] net address                 : 10.0.0.2:28000
   [Wed Dec 31, 09:53:19 2003].[3] cpu utilization (overall)   :   0%
   [Wed Dec 31, 09:53:19 2003].[3] cpu utilization (recording) :   0%
@@ -423,7 +452,7 @@ changes over QWE v0.13 Beta
 
 changes over QWE v0.12 Beta
 [server]
-- MAX_PACKE_ENTITIES increased again (128->196)
+- MAX_PACKET_ENTITIES increased again (128->196)
 - rebuild DemoReliableWrite_Begin, warnings/overflows etc shouldn't happen anymore
 - demo messages will never be greater than MAX_MSGLEN (there were problems with playbacking)
 - MAX_BACK_BUFFERS increased from 8 to 16 (ctf players had problems with connecting

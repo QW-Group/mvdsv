@@ -44,7 +44,7 @@ extern	int		telnet_connected;
 extern	cvar_t	not_auth_timeout;
 extern	cvar_t	auth_timeout;
 
-int		NET_Init (int clientport, int serverport, int telnetport);
+int			NET_Init (int clientport, int serverport, int telnetport);
 void		NET_Shutdown (void);
 qboolean	NET_GetPacket (int net_socket);
 void		NET_SendPacket (int net_socket, int length, void *data, netadr_t to);

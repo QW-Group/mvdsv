@@ -919,7 +919,7 @@ void SV_SendDemoMessage(void)
 {
 	int			i, j, cls = 0;
 	client_t	*c;
-	byte		buf[MAX_DATAGRAM];
+	byte		buf[MSG_BUF_SIZE];
 	sizebuf_t	msg;
 	edict_t		*ent;
 	int			stats[MAX_CL_STATS];

@@ -229,13 +229,13 @@ ED_FindFunction
 */
 dfunction_t *ED_FindFunction (char *name)
 {
-	dfunction_t		*func;
-	int				i;
+	register dfunction_t		*func;
+	register int				i;
 	
 	for (i=0 ; i<progs->numfunctions ; i++)
 	{
 		func = &pr_functions[i];
-		if (!strcmp(PR_GetString(func->s_name),name) )
+		if (!strcmp(PR_GetString(func->s_name), name))
 			return func;
 	}
 	return NULL;

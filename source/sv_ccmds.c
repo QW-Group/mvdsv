@@ -146,10 +146,17 @@ void SV_Logfile (int sv_log)
 		if (!(logs[sv_log].sv_logfile = fopen (name, "a")))
 			Con_Printf ("failed.\n");
 		else
-			if (sv_log == TELNET_LOG)
-				logs[sv_log].log_level = Cvar_VariableValue("telnet_log_level");
-			else
+			switch (sv_log)
+			{
+			case TELNET_LOG:
+				logs[TELNET_LOG].log_level = Cvar_VariableValue("telnet_log_level");
+				break;
+			case CONSOLE_LOG:
+				logs[CONSOLE_LOG].log_level = Cvar_VariableValue("qconsole_log_say");
+				break;
+			default:
 				logs[sv_log].log_level = 1;
+			}
 	}
 
 }
@@ -671,6 +678,87 @@ void SV_Status_f (void)
 
 /*
 ==================
+SV_Check_maps_f
+==================
+*/
+#define LOCALINFO_MAPS_LIST_START	1000
+#define LOCALINFO_MAPS_LIST_END		2000
+extern func_t localinfoChanged;
+void SV_Check_maps_f(void)
+{
+	dir_t d;
+	file_t *list;
+	int i, j, maps_id1;
+	char *s, *key;
+
+	d = Sys_listdir("id1/maps", ".bsp", SORT_BY_NAME);
+	list = d.files;
+	for (i = LOCALINFO_MAPS_LIST_START; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++)
+	{
+		list->name[strlen(list->name) - 4] = 0;
+		if (!list->name[0]) continue;
+
+		key = va("%d", i);
+		Info_SetValueForKey (localinfo, key, list->name, MAX_LOCALINFO_STRING);
+		
+		s = Info_ValueForKey(localinfo, key);
+		if (localinfoChanged) {
+			pr_global_struct->time = sv.time;
+			pr_global_struct->self = 0;
+			G_INT(OFS_PARM0) = PR_SetTmpString(key);
+			G_INT(OFS_PARM1) = PR_SetTmpString(s);
+			G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, key));
+			PR_ExecuteProgram (localinfoChanged);
+		}
+		i++;
+	}
+	maps_id1 = i - 1;
+
+	d = Sys_listdir("qw/maps", ".bsp", SORT_BY_NAME);
+	list = d.files;
+	for (; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++)
+	{
+		list->name[strlen(list->name) - 4] = 0;
+		if (!list->name[0]) continue;
+
+		for (j = LOCALINFO_MAPS_LIST_START; j <= maps_id1; j++)
+			if (!strncmp(Info_ValueForKey(localinfo, va("%d", j)), list->name, MAX_KEY_STRING))
+				break;
+		if (j <= maps_id1) continue;
+
+		key = va("%d", i);
+		Info_SetValueForKey (localinfo, key, list->name, MAX_LOCALINFO_STRING);
+
+		s = Info_ValueForKey(localinfo, key);
+		if (localinfoChanged) {
+			pr_global_struct->time = sv.time;
+			pr_global_struct->self = 0;
+			G_INT(OFS_PARM0) = PR_SetTmpString(key);
+			G_INT(OFS_PARM1) = PR_SetTmpString(s);
+			G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, key));
+			PR_ExecuteProgram (localinfoChanged);
+		}
+		i++;
+	}
+
+	for (; i <= LOCALINFO_MAPS_LIST_END; i++)
+	{
+		key = va("%d", i);
+		Info_SetValueForKey (localinfo, key, "", MAX_LOCALINFO_STRING);
+
+		if (localinfoChanged) {
+			pr_global_struct->time = sv.time;
+			pr_global_struct->self = 0;
+			G_INT(OFS_PARM0) = PR_SetTmpString(key);
+			G_INT(OFS_PARM1) = PR_SetTmpString(s);
+			G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, key));
+			PR_ExecuteProgram (localinfoChanged);
+		}
+	}
+}
+
+/*
+==================
 SV_ConSay_f
 ==================
 */
@@ -693,13 +781,14 @@ void SV_ConSay_f(void)
 		p[strlen(p)-1] = 0;
 	}
 
-	strlcat(text, p, sizeof(text));
+	strlcat(text,    p, sizeof(text));
+	strlcat(text, "\n", sizeof(text));
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
 		if (client->state != cs_spawned)
 			continue;
-		SV_ClientPrintf2(client, PRINT_CHAT, "%s\n", text);
+		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
 	}
 
 	if (sv.demorecording) {
@@ -709,7 +798,8 @@ void SV_ConSay_f(void)
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
 	}
 
-	Sys_Printf("%s\n", text);
+	Sys_Printf("%s", text);
+	SV_Write_Log(CONSOLE_LOG, 1, text);
 }
 
 
@@ -786,7 +876,6 @@ SV_Serverinfo_f
 ===========
 */
 char *CopyString(char *s);
-extern func_t localinfoChanged;
 void SV_Localinfo_f (void)
 {
 	char *s;
@@ -1130,6 +1219,7 @@ void SV_InitOperatorCommands (void)
 */
 
 	Cmd_AddCommand ("nslookup", SV_Nslookup_f);
+	Cmd_AddCommand ("check_maps", SV_Check_maps_f);
 	Cmd_AddCommand ("snap", SV_Snap_f);
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
 	Cmd_AddCommand ("kick", SV_Kick_f);

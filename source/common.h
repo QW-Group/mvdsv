@@ -28,9 +28,10 @@ typedef unsigned char 		byte;
 
 typedef enum {false, true}	qboolean;
 
-#define	MAX_INFO_STRING	196
+#define	MAX_INFO_STRING			196
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
+#define	MAX_KEY_STRING			64
 
 //============================================================================
 typedef struct sizebuf_s
@@ -134,8 +135,8 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 #ifdef _WIN32
 #define strcasecmp(s1, s2)	_stricmp  ((s1),   (s2))
 #define strncasecmp(s1, s2, n)	_strnicmp ((s1),   (s2),   (n))
-#define snprintf				_snprintf
-#define vsnprintf				_vsnprintf
+int snprintf(char *str, size_t n, char const *fmt, ...);
+int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 #endif
 
 #if defined(__linux__) || defined(_WIN32)

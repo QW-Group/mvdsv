@@ -114,26 +114,31 @@ int Sys_remove (char *path)
 	return system(va("rm \"%s\"", path));
 }
 
+int Sys_compare(const void *a, const void *b)
+{
+	return (int)(((file_t *)a)->time - ((file_t *)b)->time);
+}
 /*
 ================
 Sys_listdir
 ================
 */
 
-dir_t Sys_listdir (char *path, char *ext)
+dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
 	static file_t list[MAX_DIRFILES];
 	dir_t	d;
-	int		i, extsize;
-	DIR		*dir;
-    struct dirent *oneentry;
+	int	i;
+//	int	extsize;
+	DIR	*dir;
+	struct dirent *oneentry;
 	char	pathname[MAX_OSPATH];
 	qboolean all;
 
 	memset(list, 0, sizeof(list));
 	memset(&d, 0, sizeof(d));
 	d.files = list;
-	extsize = strlen(ext);
+//	extsize = strlen(ext);
 	all = !strncmp(ext, ".*", 3);
 
 	dir=opendir(path);
@@ -141,7 +146,7 @@ dir_t Sys_listdir (char *path, char *ext)
 		return d;
 	}
 
-	for(;;)
+	while (1)
 	{
 		oneentry=readdir(dir);
 		if(!oneentry) 
@@ -156,6 +161,7 @@ dir_t Sys_listdir (char *path, char *ext)
 
 		snprintf(pathname, MAX_OSPATH, "%s/%s", path, oneentry->d_name);
 		list[d.numfiles].size = Sys_FileSize(pathname);
+		list[d.numfiles].time = Sys_FileTime(pathname);
 		d.size += list[d.numfiles].size;
 
 		i = strlen(oneentry->d_name);
@@ -166,12 +172,21 @@ dir_t Sys_listdir (char *path, char *ext)
 
 		strlcpy (list[d.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
-
 		if (++d.numfiles == MAX_DIRFILES - 1)
 			break;
 	}
 
 	closedir(dir);
+	switch (sort_type)
+	{
+		case SORT_NO: break;
+		case SORT_BY_DATE:
+			qsort((void *)list, d.numfiles, sizeof(file_t), Sys_compare_by_date);
+			break;
+		case SORT_BY_NAME:
+			qsort((void *)list, d.numfiles, sizeof(file_t), Sys_compare_by_name);
+			break;
+	}
 
 	return d;
 }
@@ -225,7 +240,6 @@ void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
 	char		text[4096];
-	char		msg[8];
 	unsigned char	*p;
 
 	va_start (argptr,fmt);
@@ -245,11 +259,10 @@ void Sys_Printf (char *fmt, ...)
 //Added by VVD
 		if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
 		{
-			snprintf (msg, sizeof (msg), "[%02x]", *p);
 			if (telnetport && telnet_connected && authenticated)
-				write (telnet_iosock, msg, strlen (msg));
+				write (telnet_iosock, va("[%02x]", *p), strlen (va("[%02x]", *p)));
 			if (!sys_nostdout.value)
-				putc(*msg, stdout);
+				fprintf(stdout, "[%02x]", *p);
 		}
 		else
 		{
@@ -519,11 +532,16 @@ int main (int argc, char *argv[])
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
+	parms.memsize = 16*1024*1024;
+
+	j = COM_CheckParm ("-heapsize");
+	if (j && j + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
+
 	j = COM_CheckParm("-mem");
 	if (j && j + 1 < com_argc)
-		parms.memsize = (int) (Q_atof(com_argv[j+1]) * 1024 * 1024);
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 	else
-	parms.memsize = 16*1024*1024;
 
 	parms.membase = Q_Malloc (parms.memsize);
 

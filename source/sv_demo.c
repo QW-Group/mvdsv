@@ -1156,7 +1156,7 @@ void CleanName_Init ()
 	chartbl[64] = chartbl[64 + 128] = '@';
 
 	// ^
-	chartbl[94] = chartbl[94 + 128] = '^';
+//	chartbl[94] = chartbl[94 + 128] = '^';
 
 
 	chartbl[91] = chartbl[91 + 128] = '[';
@@ -1184,7 +1184,7 @@ char *SV_CleanName (unsigned char *name)
 
 	*out = chartbl[*name++];
 
-	while (*name)
+	while (*name && out - text < sizeof(text))
 		if (*out == '_' && chartbl[*name] == '_')
 			name++;
 		else *++out = chartbl[*name++];
@@ -1220,14 +1220,15 @@ void SV_Record_f (void)
 	}
 
 	
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*");
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_NO);
 	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
 	{
 		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
 		return;
 	}
 
-	strlcpy(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))), sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
+	strlcpy(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))),
+			sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
 	strlcat(newname, sv_demoSuffix.string, MAX_DEMO_NAME);
   
 	snprintf (name, MAX_OSPATH+MAX_DEMO_NAME, "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
@@ -1334,8 +1335,10 @@ char *Dem_PlayerNameTeam(char *t)
 		if (strcmp(t, client->team)==0) 
 		{
 			if (sep >= 1)
-				snprintf (n, sizeof(n), "%s_", n);
-			snprintf (n, sizeof(n),"%s%s", n, client->name);
+				strlcat (n, "_", sizeof(n));
+//				snprintf (n, sizeof(n), "%s_", n);
+			strlcat (n, client->name, sizeof(n));
+//			snprintf (n, sizeof(n),"%s%s", n, client->name);
 			sep++;
 		}
 	}
@@ -1379,7 +1382,7 @@ void SV_EasyRecord_f (void)
 	if (sv.demorecording)
 		SV_Stop_f();
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".*");
+	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".*", SORT_NO);
 	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
 	{
 		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
@@ -1388,7 +1391,7 @@ void SV_EasyRecord_f (void)
 
 	// -> scream
 	/*if (c == 2)
-		snprintf (name, sizeof(name), "%s", Cmd_Argv(1));
+		strlcpy (name, Cmd_Argv(1), sizeof(name));
 		
 	else { 
 		// guess game type and write demo name
@@ -1451,11 +1454,12 @@ void SV_EasyRecord_f (void)
 	// <-
 
 // Make sure the filename doesn't contain illegal characters
-	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)), MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
+	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)),
+			MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
 	strlcat(name, sv_demoSuffix.string, sizeof(name));
-
+	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
 // find a filename that doesn't exist yet
-	snprintf (name2, sizeof(name2), "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+	strlcpy(name2, name, sizeof(name2));
 	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 	COM_ForceExtension (name2, ".mvd");
 	if ((f = fopen (name2, "rb")) == 0)
@@ -1465,7 +1469,7 @@ void SV_EasyRecord_f (void)
 		i = 1;
 		do {
 			fclose (f);
-			strlcpy (name2, va("%s_%02i", name, i), sizeof(name2));
+			snprintf(name2, sizeof(name2), "%s_%02i", name, i);
 			COM_ForceExtension (name2, ".mvd");
 			if ((f = fopen (name2, "rb")) == 0)
 				f = fopen(va("%s.gz", name2), "rb");
@@ -1484,7 +1488,7 @@ void SV_DemoList_f (void)
 	int		i,j,show;
 
 	Con_Printf("content of %s/%s/*.mvd\n", com_gamedir,sv_demoDir.string);
-	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".mvd");
+	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".mvd", SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])
 	{
@@ -1523,7 +1527,7 @@ char *SV_DemoNum(int num)
 	file_t	*list;
 	dir_t	dir;
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd");
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
 	list = dir.files;
 
 	if (num <= 0)
@@ -1582,7 +1586,7 @@ void SV_DemoRemove_f (void)
 		// remove all demos with specified token
 		ptr++;
 
-		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd");
+		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
 		list = dir.files;
 		for (i = 0;list->name[0]; list++)
 		{
@@ -1611,7 +1615,7 @@ void SV_DemoRemove_f (void)
 		return;
 	}
 
-	strlcpy(name ,Cmd_Argv(1), MAX_DEMO_NAME);
+	strlcpy(name, Cmd_Argv(1), MAX_DEMO_NAME);
 	COM_DefaultExtension(name, ".mvd");
 
 	snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);

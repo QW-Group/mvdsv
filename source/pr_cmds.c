@@ -1194,9 +1194,7 @@ void PR_CleanLogText_Init ()
 	chartbl2[17] = chartbl2[17 + 128] = ']';
 
 	// hash
-	for (i = 1; i < 5; i++)
-		chartbl2[i] = chartbl2[i + 128] = '#';
-	for (i = 6; i < 10; i++)
+	for (i = 1; i < 10; i++) // 5 redefined as '.'
 		chartbl2[i] = chartbl2[i + 128] = '#';
 
 	chartbl2[11] = chartbl2[11 + 128] = '#';

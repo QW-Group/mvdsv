@@ -34,6 +34,7 @@ typedef struct
 {
 	char	name[MAX_DEMO_NAME];
 	int		size;
+	int		time;	
 } file_t;
 
 typedef struct
@@ -54,7 +55,12 @@ int Sys_FileWrite (int handle, void *data, int count);
 int	Sys_FileTime (char *path);
 void Sys_mkdir (char *path);
 int Sys_remove (char *path);
-dir_t Sys_listdir (char *path, char *ext);
+dir_t Sys_listdir (char *path, char *ext, int sort_type);
+int Sys_compare_by_date(const void *a, const void *b);
+int Sys_compare_by_name(const void *a, const void *b);
+#define SORT_NO			0
+#define SORT_BY_DATE	1
+#define SORT_BY_NAME	2
 
 //
 // memory protection

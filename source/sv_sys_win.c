@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <direct.h>		// _mkdir
 #include <time.h>
 #include <process.h>
+#include <sys/stat.h>
 
 #include "sv_windows.h"
 
@@ -37,11 +38,9 @@ qboolean WinNT;
 
 static char title[16];
 
-// Added by VVD {
 static qboolean	iosock_ready = false; 
 static int		authenticated = 0;
 static double	cur_time_auth;
-// Added by VVD }
 
 /*
 ================
@@ -50,7 +49,13 @@ Sys_FileTime
 */
 int	Sys_FileTime (char *path)
 {
-	FILE	*f;
+	struct	_stat	buf;
+	
+	if (_stat (path,&buf) == -1)
+		return -1;
+	
+	return buf.st_mtime;
+/*	FILE	*f;
 	
 	f = fopen(path, "rb");
 	if (f)
@@ -60,6 +65,7 @@ int	Sys_FileTime (char *path)
 	}
 	
 	return -1;
+*/
 }
 
 /*
@@ -88,7 +94,7 @@ Sys_listdir
 ================
 */
 
-dir_t Sys_listdir (char *path, char *ext)
+dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
 	static file_t	list[MAX_DIRFILES];
 	dir_t	dir;
@@ -108,7 +114,6 @@ dir_t Sys_listdir (char *path, char *ext)
 	if (h == INVALID_HANDLE_VALUE) {
 		return dir;
 	}
-	
 	do {
 		if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 		{
@@ -149,11 +154,22 @@ dir_t Sys_listdir (char *path, char *ext)
 
 		strlcpy (list[i].name, name, MAX_DEMO_NAME);
 		list[i].size = size;
+		list[i].time = Sys_FileTime(name);
 		if (dir.numfiles == MAX_DIRFILES - 1)
 			break;
 	} while ( FindNextFile(h, &fd) );
 	FindClose (h);
 
+	switch (sort_type)
+	{
+		case SORT_NO: break;
+		case SORT_BY_DATE:
+			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
+			break;
+		case SORT_BY_NAME:
+			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_name);
+			break;
+	}
 	return dir;
 }
 
@@ -260,7 +276,7 @@ Sys_ConsoleInput
 char *Sys_ConsoleInput (void)
 {
 	static char	text[256], *t;
-	static int		len = 0;
+	static int	len = 0;
 #ifdef _CONSOLE
 	int		c;
 
@@ -405,36 +421,27 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
-#ifdef _CONSOLE
 	va_list		argptr;
-	
-	if (sys_nostdout.value)
-		return;
-		
-	va_start (argptr,fmt);
-	vprintf (fmt,argptr);
-	va_end (argptr);
-#endif
-	va_list			argptr;
 	char			tmp[MAXCMDBUF];
-	char			msg[8];
 	unsigned char	*p;
-
+#ifdef _CONSOLE
+	if (sys_nostdout.value && !(telnetport && telnet_connected && authenticated))
+		return;
+#endif
 	va_start (argptr,fmt);
 	vsnprintf(tmp, MAXCMDBUF, fmt, argptr);
 	va_end (argptr);
 
+#ifndef _CONSOLE
 	ConsoleAddText(tmp);
+#endif
 
 	if (telnetport && telnet_connected && authenticated)
 	{
 		for (p = (unsigned char *)tmp; *p; p++)
 		{
 			if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
-			{
-				snprintf (msg, sizeof (msg), "[%02x]", *p);
-				send (telnet_iosock, msg, strlen (msg), 0);
-			}
+				send (telnet_iosock, va("[%02x]", *p), strlen (va("[%02x]", *p)), 0);
 			else
 			{
 				send (telnet_iosock, p, 1, 0);
@@ -664,19 +671,20 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
                         int         nCmdShow)
 {
 
-	MSG msg;
-	quakeparms_t	parms;
-	double			newtime, time, oldtime;
-	static	char	cwd[1024];
-	struct timeval	timeout;
-	fd_set			fdset;
-	int				sleep_msec;
+	static MSG			msg;
+	static quakeparms_t	parms;
+	static double		newtime, time, oldtime;
+	static char			cwd[1024];
+	static struct		timeval	timeout;
+	static fd_set		fdset;
+	register int		sleep_msec;
 	
 //Added by VVD {
-	int		j, tempsock;
-	struct	sockaddr_in remoteaddr, remoteaddr_temp;
-	int		sockaddr_len = sizeof(struct sockaddr_in);
-	double	cur_time_not_auth, not_auth_timeout_value, auth_timeout_value;
+	register int		j;
+	static int			tempsock;
+	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
+	static int			sockaddr_len = sizeof(struct sockaddr_in);
+	static double		cur_time_not_auth, not_auth_timeout_value, auth_timeout_value;
 //Added by VVD }
 
 	// get the command line parameters
@@ -741,10 +749,8 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 // main loop
 //
 	oldtime = Sys_DoubleTime () - 0.1;
-
 	while(1)
 	{
-		//SV_Write_Log(TELNET_LOG, 1, svs.info);
 		// get messeges sent to windows
 		if( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) )
         {
