@@ -445,7 +445,7 @@ void PM_AirAccelerate (vec3_t wishdir, float wishspeed, float accel)
 		return;
 	if (pmove.waterjumptime)
 		return;
-	if (movevars.bunnyspeedcap > 0)
+	if (movevars.bunnyspeedcap)
 	{
 		originalspeed = sqrt(pmove.velocity[0]*pmove.velocity[0] +
 							 pmove.velocity[1]*pmove.velocity[1]);
@@ -465,7 +465,7 @@ void PM_AirAccelerate (vec3_t wishdir, float wishspeed, float accel)
 	for (i=0 ; i<3 ; i++)
 		pmove.velocity[i] += accelspeed*wishdir[i];
 
-	if (movevars.bunnyspeedcap > 0)
+	if (movevars.bunnyspeedcap)
 	{
 		newspeed = sqrt(pmove.velocity[0]*pmove.velocity[0] +
 				pmove.velocity[1]*pmove.velocity[1]);

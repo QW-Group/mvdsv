@@ -600,7 +600,7 @@ void CL_Quit_f (void)
 CL_Windows_f
 ===============
 */
-#ifdef _WINDOWS
+#ifdef _WIN32
 void CL_Windows_f (void)
 {
 	SendMessage(mainwindow, WM_SYSKEYUP, VK_TAB, 1 | (0x0F << 16) | (1<<29));
@@ -760,7 +760,7 @@ void CL_InitCommands (void)
 //
 //  Windows commands
 //
-#ifdef _WINDOWS
+#ifdef _WIN32
 	Cmd_AddCommand ("windows", CL_Windows_f);
 #endif
 }

@@ -1202,7 +1202,7 @@ void SCR_UpdateScreen (void)
 
 	if (vid.recalc_refdef)
 		SCR_CalcRefdef ();
-#ifdef WIN32
+#ifdef _WIN32
 	if (gl_contrast.value > 1 && !vid_hwgamma_enabled) {
 		// scr_fullupdate = true;
 		Sbar_Changed ();

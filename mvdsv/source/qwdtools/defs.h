@@ -1,20 +1,34 @@
+#ifdef _WIN32
+#include <conio.h>
+#include <direct.h>
+#include <windows.h>
+#include <io.h>
+#pragma warning( disable : 4244)
+#else
+#include <unistd.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#define _O_TEXT 0
+#define _O_BINARY 1
+#endif
+
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <conio.h>
 #include <limits.h>
-#include <direct.h>
 #include <ctype.h>
-#include <windows.h>
-#include <io.h>
 #include <fcntl.h>
 
 #define INI_FILE	"qwdtools.ini"
 
-#pragma warning( disable : 4244)
+#ifndef min
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
 
 typedef enum {false, true} qboolean;
 
@@ -51,7 +65,7 @@ typedef vec_t vec3_t[3];
 #define O_SHUTDOWN	1024
 #define O_STDIN		2048
 #define O_STDOUT	4096
-#define O_SYNC		8192
+#define O_QWDSYNC	8192
 
 #define JOB_TODO	(O_MARGE | O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
 
@@ -154,11 +168,11 @@ typedef struct
 
 	char	*name, *shname;
 	type_t	type;
-	union {
+	union opt {
 		char	*str;
 		int		*Int;
 		int		opt;
-	};
+	} opt1;
 	int	opt2;
 } param_t;
 
@@ -166,7 +180,7 @@ typedef struct
 // main.c
 //
 
-void Sys_fclose (FILE *hndl);
+void Sys_fclose (FILE **hndl);
 void Sys_Exit (int i);
 void Sys_mkdir (char *path);
 void Sys_Error (char *error, ...);
@@ -178,7 +192,9 @@ extern byte			net_message_buffer[MAX_UDP_PACKET];
 extern sizebuf_t	stats_msg;
 extern byte			stats_buf[MAX_MSGLEN];
 extern char			currentDir[MAX_OSPATH];
+#ifdef _WIN32
 extern HANDLE		ConsoleInHndl, ConsoleOutHndl;
+#endif
 extern char			sourceName[MAX_SOURCES][MAX_OSPATH];
 
 extern demo_t	demo;
@@ -225,3 +241,7 @@ void ReadIni(char *buf);
 qboolean OpenQWZ (char *files);
 void StopQWZ (source_t *s);
 
+#ifdef _WIN32
+#define strcasecmp(s1, s2)	_stricmp  ((s1),   (s2))
+#define strncasecmp(s1, s2, n)	_strnicmp ((s1),   (s2),   (n))
+#endif

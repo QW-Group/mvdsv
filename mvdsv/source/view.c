@@ -658,7 +658,7 @@ void V_UpdatePalette (void)
 	int		c;
 	float	gamma, contrast;
 	static float	old_gamma, old_contrast;
-#ifdef WIN32
+#ifdef _WIN32
 	extern float	vid_gamma;
 #endif
 
@@ -703,7 +703,7 @@ void V_UpdatePalette (void)
 
 	a = v_blend[3];
 
-#ifdef WIN32
+#ifdef _WIN32
 	if (!vid_hwgamma_enabled)
 		a = 0;
 #endif
@@ -713,7 +713,7 @@ void V_UpdatePalette (void)
 	rgb[2] = 255*v_blend[2]*a;
 
 	a = 1-a;
-#ifdef WIN32
+#ifdef _WIN32
 	if (vid_gamma != 1.0) {
 		contrast = pow (contrast, vid_gamma);
 		gamma = gamma/vid_gamma;
@@ -737,7 +737,7 @@ void V_UpdatePalette (void)
 		}
 	}
 
-#ifdef WIN32
+#ifdef _WIN32
 	VID_SetDeviceGammaRamp ((unsigned short *) ramps);
 #endif
 }

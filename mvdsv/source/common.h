@@ -87,14 +87,25 @@ void InsertLinkAfter (link_t *l, link_t *after);
 
 //============================================================================
 
-extern	qboolean		bigendien;
+short	ShortSwap (short l);
+int		LongSwap (int l);
+float	FloatSwap (float f);
 
-extern	short	(*BigShort) (short l);
-extern	short	(*LittleShort) (short l);
-extern	int	(*BigLong) (int l);
-extern	int	(*LittleLong) (int l);
-extern	float	(*BigFloat) (float l);
-extern	float	(*LittleFloat) (float l);
+#ifdef __BIG_ENDIAN__
+#define BigShort(x) (x)
+#define BigLong(x) (x)
+#define BigFloat(x) (x)
+#define LittleShort(x) ShortSwap(x)
+#define LittleLong(x) LongSwap(x)
+#define LittleFloat(x) FloatSwap(x)
+#else
+#define BigShort(x) ShortSwap(x)
+#define BigLong(x) LongSwap(x)
+#define BigFloat(x) FloatSwap(x)
+#define LittleShort(x) (x)
+#define LittleLong(x) (x)
+#define LittleFloat(x) (x)
+#endif
 
 //============================================================================
 
