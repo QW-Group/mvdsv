@@ -75,8 +75,8 @@ static void WriteAccounts()
 	FILE *f;
 	account_t *acc;
 
-	Sys_mkdir(ACC_DIR);
-	if ( (f = fopen( ACC_DIR "/" ACC_FILE ,"wt")) == NULL)
+	//Sys_mkdir(ACC_DIR);
+	if ( (f = fopen( va("%s\\" ACC_FILE, com_gamedir) ,"wt")) == NULL)
 	{
 		Con_Printf("Warning: couldn't open for writing " ACC_FILE "\n");
 		return;
@@ -90,7 +90,7 @@ static void WriteAccounts()
 		if (acc->use == use_log)
 			fprintf(f, "%s %s %d %d\n", acc->login, acc->pass, acc->state, acc->failures);
 		else 
-			fprintf(f, "%s %d\n", acc->login, acc->state);
+			fprintf(f, "%s %s %d\n", acc->login, acc->pass, acc->state);
 
 		c++;
 	}
@@ -110,12 +110,21 @@ void SV_LoadAccounts(void)
 {
 	int i,c;
 	FILE *f;
-	char tmp[128];
+	char *ip;
 	account_t *acc = accounts;
+	client_t *cl;
 
-	if ( (f = fopen( ACC_DIR "/" ACC_FILE ,"rt")) == NULL)
+	if ( (f = fopen( va("%s\\" ACC_FILE, com_gamedir) ,"rt")) == NULL)
 	{
 		Con_Printf("couldn't open " ACC_FILE "\n");
+		// logout
+		num_accounts = 0;
+		for (cl = svs.clients; cl - svs.clients < MAX_CLIENTS; cl++)
+		{
+			if (cl->logged > 0)
+				cl->logged = 0;
+			cl->login[0] = 0;
+		}
 		return;
 	}
 
@@ -128,7 +137,7 @@ void SV_LoadAccounts(void)
 		{
 			strcpy(acc->pass, acc->login);
 			acc->use = use_ip;
-			fscanf(f, "%d\n", &acc->state);
+			fscanf(f, "%s %d\n", acc->pass, &acc->state);
 		} else
 			fscanf(f, "%s %d %d\n", acc->pass, &acc->state, &acc->failures);
 
@@ -139,6 +148,38 @@ void SV_LoadAccounts(void)
 	num_accounts = acc - accounts;
 
 	fclose(f);
+
+	// for every connected client check if their login is still valid
+	for (cl = svs.clients; cl - svs.clients < MAX_CLIENTS; cl++)
+	{
+		if (cl->state < cs_connected)
+			continue;
+
+		if (cl->logged <= 0)
+			continue;
+
+		for (i = 0, acc = accounts; i < num_accounts; i++, acc++)
+			if ( (acc->use == use_log && !strcmp(acc->login, cl->login)) 
+				|| (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]))) )
+				break;
+
+		if (i < num_accounts && acc->state == a_ok) {
+			// login again if possible
+			if (!acc->inuse || acc->use == use_ip)
+			{
+				cl->logged = i+1;
+				if (acc->use == use_ip)
+					Q_strncpyz(cl->login, acc->pass, sizeof(cl->login));
+
+				acc->inuse++;
+				continue;
+			}
+		}
+		// login is not valid anymore, logout
+		cl->logged = 0;
+		cl->login[0] = 0;
+	}
+
 }
 
 
@@ -161,7 +202,7 @@ void SV_CreateAccount_f(void)
 
 	if (Cmd_Argc() < 2)
 	{
-		Con_Printf("usage: acc_create <login> [<password>]\n       acc_create <adress>\nmaximum %d characters for login/pass\n", MAX_LOGINNAME - 1);
+		Con_Printf("usage: acc_create <login> [<password>]\n       acc_create <adress> <username>\nmaximum %d characters for login/pass\n", MAX_LOGINNAME - 1);
 		return;
 	}
 
@@ -171,9 +212,14 @@ void SV_CreateAccount_f(void)
 		return;
 	}
 
-	if (StringToFilter(Cmd_Argv(1), &adr))
+	if (StringToFilter(Cmd_Argv(1), &adr)) {
 		use = use_ip;
-	else {
+		if (Cmd_Argc() < 3)
+		{
+			Con_Printf("usage: acc_create <adress> <username>\nmaximum %d characters for username\n", MAX_LOGINNAME - 1);
+			return;
+		}
+	} else {
 		use = use_log;
 
 		// validate user login/pass
@@ -198,7 +244,7 @@ void SV_CreateAccount_f(void)
 			continue;
 		}
 
-		if (!stricmp(accounts[i].login, Cmd_Argv(1)))
+		if (!stricmp(accounts[i].login, Cmd_Argv(1)) || (use == use_ip && !stricmp(accounts[i].login, Cmd_Argv(2))))
 			break;
 
 		c++;
@@ -390,15 +436,15 @@ int checklogin(char *log, char *pass, int num, int use)
 		if (use == accounts[i].use &&
 			/*use == use_log && accounts[i].use == use_log && */!stricmp(log, accounts[i].login))
 		{
-			if (accounts[i].inuse)
+			if (accounts[i].inuse && accounts[i].use == use_log)
 				return -1;
 
 			if (accounts[i].state == a_blocked)
 				return -2;
 
-			if (!stricmp(pass, accounts[i].pass)) {
+			if (use == use_ip || !stricmp(pass, accounts[i].pass)) {
 				accounts[i].failures = 0;
-				accounts[i].inuse = num;
+				accounts[i].inuse++;
 				return i+1;
 			}
 
@@ -413,19 +459,6 @@ int checklogin(char *log, char *pass, int num, int use)
 			return 0;
 		}
 		
-		/*if (use == use_ip && accounts[i].use == use_ip && )
-		{
-			if (accounts[i].inuse)
-				return -1;
-
-			if (accounts[i].state == a_blocked)
-				return -2;
-
-			accounts[i].inuse = num;
-			return i+1;
-		}
-		*/
-
 		c++;
 	}
 
@@ -443,7 +476,7 @@ void Login_Init (void)
 	Cmd_AddCommand ("acc_block",SV_BlockAccount_f);
 
 	// load account list
-	SV_LoadAccounts();
+	//SV_LoadAccounts();
 }
 
 /*
@@ -481,7 +514,7 @@ qboolean SV_Login(client_t *cl)
 	ip = va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]);
 	if (cl->logged = checklogin(ip, ip, cl - svs.clients + 1, use_ip) > 0)
 	{
-		strcpy(cl->login, ip);
+		strcpy(cl->login, accounts[cl->logged-1].pass);
 		return true;
 	}
 
@@ -499,7 +532,7 @@ qboolean SV_Login(client_t *cl)
 void SV_Logout(client_t *cl)
 {
 	if (cl->logged > 0) {
-		accounts[cl->logged-1].inuse = false;
+		accounts[cl->logged-1].inuse--;
 		cl->login[0] = 0;
 		cl->logged = 0;
 	}

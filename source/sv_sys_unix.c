@@ -341,34 +341,21 @@ int NET_Sleep(double sec)
 
 void Sys_Sleep(unsigned long ms)
 {
-        usleep(ms * 1000);
+	usleep(ms*1000);
 }
 
 int Sys_Script(char *path, char *args)
 {
 	char str[1024];
 	
-	sprintf(str,"cd %s\n./%s.qws %s\ncd ..", com_gamedir, path, args);
+	sprintf(str,"cd %s\n./%s.qws %s &\ncd ..", com_gamedir, path, args);
 	
 	if (system(str) == -1)
 		return 0;
 	
 	return 1;
-	
-#if 0	
-	Cmd_TokenizeString(args);
-	for (i = 0; i < Cmd_Argc() && i < MAXSCRIPTARGS; i++)
-		Args[i] = Cmd_Argv(i);
-	
-	Args[i] = NULL;
-
-	
-	if (_spawnv(_P_WAITNO, va("%s\\%s",com_gamedir, path), args) == -1)
-		return 0;
-
-	return 1;
-#endif
 }
+
 
 
 /*

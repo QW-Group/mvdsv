@@ -27,6 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	MAX_SIGNON_BUFFERS	8
 
+#ifndef min
+#define min(a,b)    (((a) < (b)) ? (a) : (b))
+#define max(a,b)    (((a) > (b)) ? (a) : (b))
+#endif
+
 typedef enum {
 	ss_dead,			// no map loaded
 	ss_loading,			// spawning level edicts
@@ -34,6 +39,16 @@ typedef enum {
 } server_state_t;
 // some qc commands are only valid before the server has finished
 // initializing (precache commands, static sounds / objects, etc)
+
+typedef struct
+{
+	double		time;
+	int			num;
+	sizebuf_t	sb;
+	byte		buf[MAX_MSGLEN];
+} packet_t;
+
+#define MAX_DELAYED_PACKETS 100
 
 typedef struct
 {
@@ -208,6 +223,8 @@ typedef struct client_s
 	char			login[16];
 	int				logged;
 
+	int				spawncount;			// for tracking map changes during downloading
+
  
 //===== NETWORK ============
 	int				chokecount;
@@ -217,6 +234,7 @@ typedef struct client_s
 	int				realip_num;			// random value
 	int				realip_count;
 	qboolean		rip_vip;
+	double			delay;
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -289,7 +307,7 @@ typedef struct
 	qboolean	fixangle[MAX_CLIENTS];
 	float		fixangletime[MAX_CLIENTS];
 	vec3_t		angles[MAX_CLIENTS];
-	char		name[MAX_OSPATH], namelong[MAX_OSPATH];
+	char		name[MAX_OSPATH], path[MAX_OSPATH];
 	int			parsecount;
 	int			lastwritten;
 	demo_frame_t	frames[DEMO_FRAMES];
@@ -354,6 +372,9 @@ typedef struct
 	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
 	byte		*demomem;
 	int			demomemsize;
+
+	packet_t		packets[MAX_DELAYED_PACKETS];
+	int				num_packets;
 } server_static_t;
 
 //=============================================================================
@@ -499,7 +520,7 @@ void SV_InitOperatorCommands (void);
 
 void SV_SendServerinfo (client_t *client);
 void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged);
-int SV_BoundRate (int rate);
+int SV_BoundRate (qboolean dl, int rate);
 
 void Master_Heartbeat (void);
 void Master_Packet (void);

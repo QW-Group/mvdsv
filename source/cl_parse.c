@@ -200,6 +200,13 @@ qboolean	CL_CheckOrDownloadFile (char *filename)
 	if (cls.demoplayback)
 		return true;
 
+	if (cls.download) {
+		Con_Printf("here\n");
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "nextdl");
+		return false;
+	}
+
 	strcpy (cls.downloadname, filename);
 	Con_Printf ("Downloading %s...\n", cls.downloadname);
 
@@ -363,11 +370,21 @@ void CL_ParseDownload (void)
 	int		size, percent;
 	byte	name[1024];
 	int		r;
+	static float time = 0;
+	static int s = 0;
 
 
 	// read the data
 	size = MSG_ReadShort ();
 	percent = MSG_ReadByte ();
+
+	s += size;
+	if (realtime - time > 1)
+	{
+		cls.downloadrate = s/(1024*(realtime - time));
+		time = realtime;
+		s = 0;
+	}
 
 	if (cls.demoplayback) {
 		if (size > 0)

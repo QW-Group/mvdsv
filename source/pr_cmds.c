@@ -1152,60 +1152,60 @@ sets chararcter table to translate quake texts to more friendly texts
 ====================
 */
 
-static char chartbl[256];
+char chartbl2[256];
 
 void PR_CleanLogText_Init ()
 {
 	int i;
 
 	for (i = 0; i < 256; i++)
-		chartbl[i] = (i&127) < 32 ? ' ' : i&127;
+		chartbl2[i] = (i&127) < 32 ? ' ' : i&127;
 
-	chartbl[13] = 13;
-	chartbl[10] = 10;
+	chartbl2[13] = 13;
+	chartbl2[10] = 10;
 	// special cases
 
 	// numbers
 	for (i = 18; i < 28; i++)
-		chartbl[i] = chartbl[i + 128] = i + 30;
+		chartbl2[i] = chartbl2[i + 128] = i + 30;
 
 	// brackets
-	chartbl[29] = chartbl[29 + 128] = chartbl[128] = '(';
-	chartbl[31] = chartbl[31 + 128] = chartbl[130] = ')';
-	chartbl[16] = chartbl[16 + 128]= '[';
-	chartbl[17] = chartbl[17 + 128] = ']';
+	chartbl2[29] = chartbl2[29 + 128] = chartbl2[128] = '(';
+	chartbl2[31] = chartbl2[31 + 128] = chartbl2[130] = ')';
+	chartbl2[16] = chartbl2[16 + 128]= '[';
+	chartbl2[17] = chartbl2[17 + 128] = ']';
 
 	// hash
 	for (i = 1; i < 5; i++)
-		chartbl[i] = chartbl[i + 128] = '#';
+		chartbl2[i] = chartbl2[i + 128] = '#';
 	for (i = 6; i < 10; i++)
-		chartbl[i] = chartbl[i + 128] = '#';
+		chartbl2[i] = chartbl2[i + 128] = '#';
 
-	chartbl[11] = chartbl[11 + 128] = '#';
+	chartbl2[11] = chartbl2[11 + 128] = '#';
 
 	// dot
-	chartbl[5] = chartbl[14] = chartbl[15] = chartbl[28] = chartbl[46] = '.';
-	chartbl[5 + 128] = chartbl[14 + 128] = chartbl[15 + 128] = chartbl[28 + 128] = chartbl[46 + 128] = '.';
+	chartbl2[5] = chartbl2[14] = chartbl2[15] = chartbl2[28] = chartbl2[46] = '.';
+	chartbl2[5 + 128] = chartbl2[14 + 128] = chartbl2[15 + 128] = chartbl2[28 + 128] = chartbl2[46 + 128] = '.';
 
 	// left arrow
-	chartbl[127] = '>';
+	chartbl2[127] = '>';
 
 	// right arrow
-	chartbl[141] = '<';
+	chartbl2[141] = '<';
 
 	// '='
-	chartbl[30] = chartbl[129] = chartbl[30 + 128] = '=';
+	chartbl2[30] = chartbl2[129] = chartbl2[30 + 128] = '=';
 
 	// whitespaces
-	chartbl[12] = chartbl[12 + 128] = chartbl[138] = ' ';
+	chartbl2[12] = chartbl2[12 + 128] = chartbl2[138] = ' ';
 
-	chartbl[33] = chartbl[33 + 128]= '!';
+	chartbl2[33] = chartbl2[33 + 128]= '!';
 }
 
 void PR_CleanText(unsigned char *text)
 {
 	while (*text)
-		*text = chartbl[*text++];
+		*text = chartbl2[*text++];
 }
 
 /*
@@ -2142,10 +2142,12 @@ void PF_infokey (void)
 	char	*value;
 	char	*key;
 	static	char ov[256];
+	client_t *cl;
 
 	e = G_EDICT(OFS_PARM0);
 	e1 = NUM_FOR_EDICT(e);
 	key = G_STRING(OFS_PARM1);
+	cl = &svs.clients[e1-1];
 
 	if (e1 == 0) {
 		if ((value = Info_ValueForKey (svs.info, key)) == NULL ||
@@ -2153,17 +2155,20 @@ void PF_infokey (void)
 			value = Info_ValueForKey(localinfo, key);
 	} else if (e1 <= MAX_CLIENTS) {
 		if (!strcmp(key, "ip"))
-			value = strcpy(ov, NET_BaseAdrToString (svs.clients[e1-1].netchan.remote_address));
+			value = strcpy(ov, NET_BaseAdrToString (cl->netchan.remote_address));
 		else if (!strcmp(key, "realip"))
-			value = strcpy(ov, NET_BaseAdrToString (svs.clients[e1-1].realip));
-		else if (!strcmp(key, "ping")) {
-			int ping = SV_CalcPing (&svs.clients[e1-1]);
+			value = strcpy(ov, NET_BaseAdrToString (cl->realip));
+		else if (!strcmp(key, "download")) {
+			sprintf(ov, "%d", cl->download != NULL ? (int)(100*cl->downloadcount/cl->downloadsize) : -1);
+			value = ov;
+		} else if (!strcmp(key, "ping")) {
+			int ping = SV_CalcPing (cl);
 			sprintf(ov, "%d", ping);
 			value = ov;
 		} else if (!strcmp(key, "login"))
-			value = svs.clients[e1-1].login;
+			value = cl->login;
 		else
-			value = Info_ValueForKey (svs.clients[e1-1].userinfo, key);
+			value = Info_ValueForKey (cl->userinfo, key);
 	} else
 		value = "";
 

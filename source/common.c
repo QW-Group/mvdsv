@@ -1443,7 +1443,7 @@ byte *COM_LoadFile (char *path, int usehunk)
 		fread(buf+l, 1, 128, h);
 		l += 128;
 		if (l - count > READMAX && (sv_cpserver.value > 0) && (sv_cpserver.value < 100)) {
-			Sys_Sleep(sv_cpserver.value);
+			Sys_Sleep((unsigned long)sv_cpserver.value);
 			count = l;
 		}
 	}

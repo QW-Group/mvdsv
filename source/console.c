@@ -623,10 +623,10 @@ void Con_DrawConsole (int lines)
 			text = cls.downloadname;
 
 		x = con_linewidth - ((con_linewidth * 7) / 40);
-		y = x - strlen(text) - 8;
+		y = x - strlen(text) - 10;
 		i = con_linewidth/3;
 		if (strlen(text) > i) {
-			y = x - i - 11;
+			y = x - i - 13;
 			Q_strncpyz (dlbar, text, i+1);
 			strcat(dlbar, "...");
 		} else
@@ -648,7 +648,7 @@ void Con_DrawConsole (int lines)
 		dlbar[i++] = '\x82';
 		dlbar[i] = 0;
 
-		sprintf(dlbar + strlen(dlbar), " %02d%%", cls.downloadpercent);
+		sprintf(dlbar + strlen(dlbar), " %02d%%(%dkb/s)", cls.downloadpercent, cls.downloadrate);
 
 		// draw it
 		y = con_vislines-22 + 8;

@@ -185,7 +185,7 @@ Netchan_CanPacket
 Returns true if the bandwidth choke isn't active
 ================
 */
-#define	MAX_BACKUP	200
+#define	MAX_BACKUP	400
 qboolean Netchan_CanPacket (netchan_t *chan)
 {
 	if (chan->cleartime < realtime + MAX_BACKUP*chan->rate)

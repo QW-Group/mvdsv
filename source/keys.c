@@ -855,6 +855,7 @@ void Key_Event (int key, qboolean down)
 {
 	char	*kb;
 	char	cmd[1024];
+	qboolean allow;
 
 //	Con_Printf ("%i : %i\n", key, down); //@@@
 
@@ -920,10 +921,16 @@ void Key_Event (int key, qboolean down)
 // switch.  Button commands include the kenum as a parameter, so multiple
 // downs can be matched with ups
 //
+
+	allow = (key_dest == key_menu && menubound[key])
+			|| ((key_dest == key_console || key_dest == key_message)
+			&& !consolekeys[key])
+			|| (key_dest == key_game && ( cls.state == ca_active || !consolekeys[key] ) );
+
 	if (!down)
 	{
 		kb = keybindings[key];
-		if (kb && kb[0] == '+')
+		if (kb && kb[0] == '+' )//&& allow)
 		{
 			sprintf (cmd, "-%s %i\n", kb+1, key);
 			Cbuf_AddText (cmd);
@@ -931,7 +938,7 @@ void Key_Event (int key, qboolean down)
 		if (keyshift[key] != key)
 		{
 			kb = keybindings[keyshift[key]];
-			if (kb && kb[0] == '+')
+			if (kb && kb[0] == '+' )//&& allow)
 			{
 				sprintf (cmd, "-%s %i\n", kb+1, key);
 				Cbuf_AddText (cmd);
@@ -955,10 +962,7 @@ void Key_Event (int key, qboolean down)
 //
 // if not a consolekey, send to the interpreter no matter what mode is
 //
-	if ( (key_dest == key_menu && menubound[key])
-	|| ((key_dest == key_console || key_dest == key_message)
-		&& !consolekeys[key])
-	|| (key_dest == key_game && ( cls.state == ca_active || !consolekeys[key] ) ) )
+	if ( allow )
 	{
 		kb = keybindings[key];
 		if (kb)

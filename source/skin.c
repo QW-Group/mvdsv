@@ -295,6 +295,13 @@ void Skin_NextDownload (void)
 			va("begin %i", cl.servercount));
 		Cache_Report ();		// print remaining memory
 	}
+
+	// if we were downloading before map change, continue
+	if (cls.download)
+	{
+		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		SZ_Print (&cls.netchan.message, "nextdl");
+	}
 }
 
 
