@@ -175,6 +175,7 @@ void Cvar_Set (cvar_t *var, char *value)
 			SV_SendServerInfoChange(var->name, var->string);
 		}
 	}
+
 #else
 	if (var->flags & CVAR_USERINFO)
 	{

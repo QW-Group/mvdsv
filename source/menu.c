@@ -17,6 +17,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+#if defined(__linux__) || defined(sun) || defined(__GNUC__)  
+#include <dirent.h>
+#include <sys/stat.h>
+#endif 
+
 #include "quakedef.h"
 #include "winquake.h"
 #include "cl_slist.h"
@@ -1465,7 +1470,14 @@ static void ReadDir (void)
 #ifdef _WIN32		// FIXME
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
+#else
+	DIR		*Dir;
+    struct dirent	*oneentry;
+	struct stat		info;
+	char			path[MAX_OSPATH];
+#endif
 	int		i;
+	char	*fname;
 
 	numfiles = 0;
 	demo_base = 0;
@@ -1477,8 +1489,14 @@ static void ReadDir (void)
 		numfiles = 1;
 	}
 
+#ifdef WIN32
 	h = FindFirstFile (va("%s%s/*.*", com_basedir, demodir), &fd);
 	if (h == INVALID_HANDLE_VALUE) {
+#else
+	strcpy(path, va("%s%s", com_basedir, demodir));
+	Dir = opendir(va("%s", path));
+	if (!Dir) {
+#endif
 		strcpy (dir[numfiles].name, "Error reading directory\n");
 		dir[numfiles].type = 3;
 		numfiles++;
@@ -1490,23 +1508,42 @@ static void ReadDir (void)
 		int pos;
 		char name[MAX_DEMO_NAME];
 
+#ifndef WIN32
+		oneentry=readdir(Dir);
+		if(!oneentry) 
+			break;
+		
+		fname = oneentry->d_name;
+		if (oneentry->d_type == DT_DIR || oneentry->d_type == DT_LNK)
+		{
+			if (!strcmp(fname, ".") || !strcmp(fname, ".."))
+				continue;
+			type = 1;
+			size = 0;
+		} else {
+			if (stat (va("%s/%s", path, name) ,&info) == -1)
+				size = 0;
+			else size = info.st_size;
+
+#else
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 			if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
 				continue;
 			type = 1;
 			size = 0;
-		}
-		else
-		{
-			i = strlen(fd.cFileName);
-			if (i < 5 || (Q_strcasecmp(fd.cFileName+i-4, ".qwd")
-				&& Q_strcasecmp(fd.cFileName+i-4, ".qwz") && Q_strcasecmp(fd.cFileName+i-4, ".mvd")))
+			fname = fd.cFileName;
+		} else {
+			fname = fd.cFileName;
+			size = fd.nFileSizeLow;
+#endif
+			i = strlen(fname);
+			if (i < 5 || (Q_strcasecmp(fname+i-4, ".qwd")
+				&& Q_strcasecmp(fname+i-4, ".qwz") && Q_strcasecmp(fname+i-4, ".mvd")))
 				continue;
 			type = 0;
-			size = fd.nFileSizeLow;
 		}
 
-		Q_strncpyz (name, fd.cFileName, MAX_DEMO_NAME);
+		Q_strncpyz (name, fname, MAX_DEMO_NAME);
 
 		// inclusion sort
 		for (i=0 ; i<numfiles ; i++)
@@ -1527,8 +1564,12 @@ static void ReadDir (void)
 		dir[i].size = size;
 		if (numfiles == MAX_DEMO_FILES)
 			break;
+#ifdef WIN32
 	} while ( FindNextFile(h, &fd) );
 	FindClose (h);
+#else
+	} while (1);
+#endif
 
 	// TODO: position demo cursor
 	if (prevdir) {
@@ -1549,17 +1590,17 @@ static void ReadDir (void)
 		dir[0].type = 3;
 		numfiles = 1;
 	}
-#endif	// _WIN32
+//#endif	// _WIN32
 }
 
 void M_Menu_Demos_f (void)
 {
-#ifdef _WIN32
+//#ifdef _WIN32
 	m_entersound = true;
 	m_state = m_demos;
 	key_dest = key_menu;
 	ReadDir ();
-#endif
+//#endif
 }
 
 static char *toyellow (char *s)

@@ -111,6 +111,55 @@ void SV_Logfile_f (void)
 		Con_Printf ("failed.\n");
 }
 
+/*
+============
+SV_ErrorLogfile_f
+============
+*/
+void SV_ErrorLogfile_f (void)
+{
+	char	name[MAX_OSPATH];
+
+	if (sv_errorlogfile)
+	{
+		Con_Printf ("Error logging off.\n");
+		fclose (sv_errorlogfile);
+		sv_errorlogfile = NULL;
+		return;
+	}
+
+	sprintf (name, "%s/qerror.log", com_gamedir);
+	Con_Printf ("Logging errors to %s.\n", name);
+	sv_errorlogfile = fopen (name, "a");
+	if (!sv_errorlogfile)
+		Con_Printf ("failed.\n");
+}
+
+/*
+============
+SV_RconLogfile_f
+============
+*/
+void SV_RconLogfile_f (void)
+{
+	char	name[MAX_OSPATH];
+
+	if (sv_rconlogfile)
+	{
+		Con_Printf ("Rcon logging off.\n");
+		fclose (sv_rconlogfile);
+		sv_rconlogfile = NULL;
+		return;
+	}
+
+	sprintf (name, "%s/rcon.log", com_gamedir);
+	Con_Printf ("Logging rcon attemps to %s.\n", name);
+	sv_rconlogfile = fopen (name, "a");
+	if (!sv_rconlogfile)
+		Con_Printf ("failed.\n");
+}
+
+
 
 /*
 ============
@@ -303,21 +352,55 @@ map <mapname>
 command from the console or progs.
 ======================
 */
-void SV_Map_f (void)
+void SV_Map (qboolean now)
 {
-	char	level[MAX_QPATH];
-	char	expanded[MAX_QPATH];
+	static char	level[MAX_QPATH];
+	static char	expanded[MAX_QPATH];
+	static qboolean changed = false;
 	FILE	*f;
+
+	// if now, change it
+	if (now) {
+		if (!changed)
+			return;
+
+		changed = false;
+
+		// uh, is it possible ?
+		COM_FOpenFile (expanded, &f);
+		if (!f)
+		{
+			Sys_Printf ("Can't find %s\n", expanded);
+			return;
+		}
+		fclose (f);
+
+		if (sv.demorecording)
+			SV_Stop_f();
+
+		SV_BroadcastCommand ("changing\n");
+		SV_SendMessagesToAll ();
+
+		SV_SpawnServer (level);
+
+		SV_BroadcastCommand ("reconnect\n");
+
+		return;
+	}
+
+	// get the map name, but don't change now, could be executed from progs.dat
 
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf ("map <levelname> : continue game on a new level\n");
 		return;
 	}
+
 	strcpy (level, Cmd_Argv(1));
 
 	// check to make sure the level exists
 	sprintf (expanded, "maps/%s.bsp", level);
+
 	COM_FOpenFile (expanded, &f);
 	if (!f)
 	{
@@ -326,15 +409,13 @@ void SV_Map_f (void)
 	}
 	fclose (f);
 
-	if (sv.demorecording)
-		SV_Stop_f();
+	changed = true;
+}
 
-	SV_BroadcastCommand ("changing\n");
-	SV_SendMessagesToAll ();
+void SV_Map_f (void)
+{
 
-	SV_SpawnServer (level);
-
-	SV_BroadcastCommand ("reconnect\n");
+	SV_Map(false);
 }
 
 
@@ -425,11 +506,12 @@ void SV_Status_f (void)
 	Con_Printf ("packets/frame               : %5.2f (%d)\n", pak, num_prstr);
 	
 // min fps lat drp
-	if (sv_redirected != RD_NONE) {
+	if (sv_redirected != RD_NONE && sv_redirected != RD_MOD) {
 		// most remote clients are 40 columns
 		//           0123456789012345678901234567890123456789
 		Con_Printf ("name               userid frags\n");
         Con_Printf ("  address          rate ping drop\n");
+		Con_Printf ("  real ip\n");
 		Con_Printf ("  ---------------- ---- ---- -----\n");
 		for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 		{
@@ -446,7 +528,7 @@ void SV_Status_f (void)
 
 			s = NET_BaseAdrToString ( cl->netchan.remote_address);
 			Con_Printf ("  %-16.16s", s);
-			if (cl->state == cs_connected)
+			if (cl->state == cs_connected || cl->state == cs_preconnected)
 			{
 				Con_Printf ("CONNECTING\n");
 				continue;
@@ -460,15 +542,21 @@ void SV_Status_f (void)
 				, (int)(1000*cl->netchan.frame_rate)
 				, (int)SV_CalcPing (cl)
 				, 100.0*cl->netchan.drop_count / cl->netchan.incoming_sequence);
+
+			if (cl->realip.ip[0])
+			{
+				s = NET_BaseAdrToString ( cl->realip);
+				Con_Printf ("  %-16.16s\n", s);
+			}
 		}
 	} else {
-		Con_Printf ("frags userid address         name            rate ping drop  qport\n");
-		Con_Printf ("----- ------ --------------- --------------- ---- ---- ----- -----\n");
+		Con_Printf ("frags id  address         name            rate ping drop  real ip\n");
+		Con_Printf ("----- --- --------------- --------------- ---- ---- ----- ---------------\n");
 		for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 		{
 			if (!cl->state)
 				continue;
-			Con_Printf ("%5i %6i ", (int)cl->edict->v.frags,  cl->userid);
+			Con_Printf ("%5i %3i ", (int)cl->edict->v.frags,  cl->userid);
 
 			s = NET_BaseAdrToString ( cl->netchan.remote_address);
 			Con_Printf ("%s", s);
@@ -480,7 +568,7 @@ void SV_Status_f (void)
 			l = 16 - strlen(cl->name);
 			for (j=0 ; j<l ; j++)
 				Con_Printf (" ");
-			if (cl->state == cs_connected)
+			if (cl->state == cs_connected || cl->state == cs_preconnected)
 			{
 				Con_Printf ("CONNECTING\n");
 				continue;
@@ -490,15 +578,21 @@ void SV_Status_f (void)
 				Con_Printf ("ZOMBIE\n");
 				continue;
 			}
-			Con_Printf ("%4i %4i %3.1f %4i"
+			Con_Printf ("%4i %4i %3.1f"
 				, (int)(1000*cl->netchan.frame_rate)
 				, (int)SV_CalcPing (cl)
-				, 100.0*cl->netchan.drop_count / cl->netchan.incoming_sequence
-				, cl->netchan.qport);
+				, 100.0*cl->netchan.drop_count / cl->netchan.incoming_sequence);
+
+			if (cl->realip.ip[0])
+			{
+				s = NET_BaseAdrToString ( cl->realip);
+				Con_Printf ("   %-16.16s", s);
+			}
+
 			if (cl->spectator)
-				Con_Printf(" (s)\n");
-			else			
-				Con_Printf("\n");
+				Con_Printf(" (s)");
+
+			Con_Printf("\n");
 
 				
 		}
@@ -540,10 +634,10 @@ void SV_ConSay_f(void)
 	}
 
 	if (sv.demorecording) {
-		DemoReliableWrite_Begin (dem_all, 0, strlen(text)+3);
-		MSG_WriteByte (demo.buf, svc_print);
-		MSG_WriteByte (demo.buf, PRINT_CHAT);
-		MSG_WriteString (demo.buf, text);
+		DemoWrite_Begin (dem_all, 0, strlen(text)+3);
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
+		MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
 	}
 
 }
@@ -887,7 +981,7 @@ void SV_SnapAll_f (void)
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
-		if (cl->state < cs_connected || cl->spectator)
+		if (cl->state < cs_preconnected || cl->spectator)
 			continue;
 		SV_Snap(cl->userid);
 	}
@@ -908,6 +1002,8 @@ void SV_InitOperatorCommands (void)
 
 	Cmd_AddCommand ("logfile", SV_Logfile_f);
 	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f);
+	Cmd_AddCommand ("logerrors", SV_ErrorLogfile_f);
+	Cmd_AddCommand ("logrcon", SV_RconLogfile_f);
 
 	Cmd_AddCommand ("snap", SV_Snap_f);
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);

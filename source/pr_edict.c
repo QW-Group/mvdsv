@@ -30,6 +30,7 @@ dstatement_t	*pr_statements;
 globalvars_t	*pr_global_struct;
 float			*pr_globals;			// same as pr_global_struct
 int				pr_edict_size;	// in bytes
+int				pr_teamfield = 0;	// field for team storage
 
 int		type_size[8] = {1,sizeof(void *)/4,1,3,1,1,sizeof(void *)/4,sizeof(void *)/4};
 
@@ -50,6 +51,9 @@ func_t SpectatorConnect;
 func_t SpectatorThink;
 func_t SpectatorDisconnect;
 func_t ChatMessage;
+func_t UserInfo_Changed;
+func_t mod_ConsoleCmd;
+func_t mod_UserCmd;
 
 
 /*
@@ -127,6 +131,8 @@ void ED_Free (edict_t *ed)
 	ed->v.colormap = 0;
 	ed->v.skin = 0;
 	ed->v.frame = 0;
+	ed->v.health = 0;
+	ed->v.classname = 0;
 	VectorCopy (vec3_origin, ed->v.origin);
 	VectorCopy (vec3_origin, ed->v.angles);
 	ed->v.nextthink = -1;
@@ -960,6 +966,35 @@ void ED_LoadFromFile (char *data)
 
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
 }
+extern redirect_t	sv_redirected;
+qboolean PR_ConsoleCmd(void)
+{
+	if (mod_ConsoleCmd)
+	{
+		if (sv_redirected != RD_MOD) {
+			pr_global_struct->time = sv.time;
+			pr_global_struct->self = 0;
+		}
+		PR_ExecuteProgram (mod_ConsoleCmd);
+		return (int) G_FLOAT(OFS_RETURN);
+	}
+
+	return false;
+}
+
+qboolean PR_UserCmd(void)
+{
+	if (mod_UserCmd)
+	{
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		
+		PR_ExecuteProgram (mod_UserCmd);
+		return (int) G_FLOAT(OFS_RETURN);
+	}
+
+	return false;
+}
 
 
 /*
@@ -967,6 +1002,7 @@ void ED_LoadFromFile (char *data)
 PR_LoadProgs
 ===============
 */
+void PF_clear_strtbl(void);
 
 void PR_LoadProgs (void)
 {
@@ -977,6 +1013,9 @@ void PR_LoadProgs (void)
 // flush the non-C variable lookup cache
 	for (i=0 ; i<GEFV_CACHESIZE ; i++)
 		gefvCache[i].field[0] = 0;
+
+// clear pr_newstrtbl
+	PF_clear_strtbl();
 
 	progs = (dprograms_t *)COM_LoadHunkFile ("qwprogs.dat");
 	if (!progs)
@@ -1050,7 +1089,7 @@ void PR_LoadProgs (void)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
 
 	// Zoid, find the spectator functions
-	ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
+	mod_UserCmd = mod_ConsoleCmd = UserInfo_Changed = ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
 
 	if ((f = ED_FindFunction ("SpectatorConnect")) != NULL)
 		SpectatorConnect = (func_t)(f - pr_functions);
@@ -1060,6 +1099,12 @@ void PR_LoadProgs (void)
 		SpectatorDisconnect = (func_t)(f - pr_functions);
 	if ((f = ED_FindFunction ("ChatMessage")) != NULL)
 		ChatMessage = (func_t)(f - pr_functions);
+	if ((f = ED_FindFunction ("UserInfo_Changed")) != NULL)
+		UserInfo_Changed = (func_t)(f - pr_functions);
+	if ((f = ED_FindFunction ("ConsoleCmd")) != NULL)
+		mod_ConsoleCmd = (func_t)(f - pr_functions);
+	if ((f = ED_FindFunction ("UserCmd")) != NULL)
+		mod_UserCmd = (func_t)(f - pr_functions);
 }
 
 
@@ -1068,12 +1113,16 @@ void PR_LoadProgs (void)
 PR_Init
 ===============
 */
+void PR_CleanLogText_Init(); 
 void PR_Init (void)
 {
 	Cmd_AddCommand ("edict", ED_PrintEdict_f);
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR_Profile_f);
+
+	memset(pr_newstrtbl, 0, sizeof(pr_newstrtbl));
+	PR_CleanLogText_Init();
 }
 
 

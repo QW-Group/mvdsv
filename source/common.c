@@ -1077,13 +1077,15 @@ FIXME: make this buffer size safe someday
 char	*va(char *format, ...)
 {
 	va_list		argptr;
-	static char		string[1024];
+	static char		string[4][1024];
+	static int		index = 0;
 	
+	index = (index + 1)&3;
 	va_start (argptr, format);
-	vsprintf (string, format,argptr);
+	vsprintf (string[index], format,argptr);
 	va_end (argptr);
 
-	return string;	
+	return string[index];
 }
 
 
@@ -1379,12 +1381,18 @@ Always appends a 0 byte to the loaded data.
 cache_user_t *loadcache;
 byte	*loadbuf;
 int		loadsize;
+void *Hunk_AllocName_f (int size, char *name, qboolean clean);
 byte *COM_LoadFile (char *path, int usehunk)
 {
 	FILE	*h;
 	byte	*buf;
 	char	base[32];
 	int		len;
+#ifdef SERVERONLY
+	extern cvar_t sv_cpserver;
+	int		l, count;
+#define READMAX 50000
+#endif
 
 	buf = NULL;	// quiet compiler warning
 
@@ -1397,7 +1405,7 @@ byte *COM_LoadFile (char *path, int usehunk)
 	COM_FileBase (path, base);
 	
 	if (usehunk == 1)
-		buf = Hunk_AllocName (len+1, base);
+		buf = Hunk_AllocName_f (len+1, base, false);
 	else if (usehunk == 2)
 		buf = Hunk_TempAlloc (len+1);
 	else if (usehunk == 0)
@@ -1421,7 +1429,40 @@ byte *COM_LoadFile (char *path, int usehunk)
 #ifndef SERVERONLY
 	Draw_BeginDisc ();
 #endif
+
+#ifdef SERVERONLY
+	l = 0;
+	count = 0;
+	
+	while (!feof(h)) {
+		if (l + 128 > len) {
+			fread(buf+l, 1, len - l, h);
+			break;
+		}
+
+		fread(buf+l, 1, 128, h);
+		l += 128;
+		if (l - count > READMAX && (sv_cpserver.value > 0) && (sv_cpserver.value < 100)) {
+			Sys_Sleep(sv_cpserver.value);
+			count = l;
+		}
+	}
+	/*
+		if (len - l > READMAX)
+		{
+			fread (buf+l, 1, READMAX, h);
+			l+=READMAX;
+			Sys_Sleep(10);
+		} else {
+			fread (buf+l, 1, len - l, h);
+			break;
+		}
+	} while (1);
+	*/
+#else
 	fread (buf, 1, len, h);
+#endif
+
 	fclose (h);
 #ifndef SERVERONLY
 	Draw_EndDisc ();

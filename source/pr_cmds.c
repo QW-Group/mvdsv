@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 char *PF_VarString (int	first)
 {
 	int		i;
-	static char out[256];
+	static char out[2048];
 	
 	out[0] = 0;
 	for (i=first ; i<pr_argc ; i++)
@@ -277,9 +277,9 @@ void PF_centerprint (void)
 	ClientReliableWrite_String (cl, s);
 
 	if (sv.demorecording) {
-		DemoReliableWrite_Begin (dem_single, entnum - 1, 2 + strlen(s));
-		MSG_WriteByte (demo.buf, svc_centerprint);
-		MSG_WriteString (demo.buf, s);
+		DemoWrite_Begin (dem_single, entnum - 1, 2 + strlen(s));
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_centerprint);
+		MSG_WriteString ((sizebuf_t*)demo.dbuf, s);
 	}
 }
 
@@ -719,9 +719,9 @@ void PF_stuffcmd (void)
 			ClientReliableWrite_Begin (cl, svc_stufftext, 2+strlen(buf));
 			ClientReliableWrite_String (cl, buf);
 			if (sv.demorecording) {
-				DemoReliableWrite_Begin ( dem_single, cl - svs.clients, 2+strlen(buf));
-				MSG_WriteByte(demo.buf, svc_stufftext);
-				MSG_WriteString(demo.buf, buf);
+				DemoWrite_Begin ( dem_single, cl - svs.clients, 2+strlen(buf));
+				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
+				MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
 			}
 			buf[0] = 0;
 		}
@@ -747,10 +747,28 @@ void PF_localcmd (void)
 
 void PF_executecmd (void)
 {
+	int old_other, old_self; // mod_consolecmd will be executed, so we need to store this
+
+	old_self = pr_global_struct->self;
+	old_other = pr_global_struct->other;
+
 	Cbuf_Execute();
+
+	pr_global_struct->self = old_self;
+	pr_global_struct->other = old_other;
 }
 
-char	pr_string_temp[128];
+#define MAX_PR_STRING_SIZE 2048
+
+int		pr_string_index = 0;
+char	pr_string_buf[8][MAX_PR_STRING_SIZE];
+char	*pr_string_temp = pr_string_buf[0];
+
+void PF_SetTempString(void)
+{
+	pr_string_temp = pr_string_buf[pr_string_index++&7];
+}
+
 
 /*
 =================
@@ -806,8 +824,420 @@ void PF_argv (void)
 
 	sprintf (pr_string_temp, "%s", Cmd_Argv(num));
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
+	PF_SetTempString();
 }
 
+/*
+=================
+PF_teamfield
+
+string teamfield(.string field)
+=================
+*/
+
+void PF_teamfield (void)
+{
+	pr_teamfield = G_INT(OFS_PARM0);
+}
+
+/*
+=================
+PF_substr
+
+string substr(string str, float start, float len)
+=================
+*/
+
+void PF_substr (void)
+{
+	char *s;
+	int start, len, l;
+
+	s = G_STRING(OFS_PARM0);
+	start = (int) G_FLOAT(OFS_PARM1);
+	len = (int) G_FLOAT(OFS_PARM2);
+	l = strlen(s);
+
+	if (start >= l || !len || !*s) {
+		G_INT(OFS_RETURN) = PR_SetTmpString("");
+		return;
+	}
+
+	s += start;
+	l -= start;
+
+	if ( len > l + 1)
+		len = l+1;
+
+	strncpy(pr_string_temp, s, len);
+	pr_string_temp[len] = 0;
+
+	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
+
+	PF_SetTempString();
+}
+
+/*
+=================
+PF_strcat
+
+string strcat(string str1, string str2)
+=================
+*/
+
+void PF_strcat (void)
+{
+	
+	strcpy(pr_string_temp, PF_VarString(0));
+	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
+
+	PF_SetTempString();
+}
+
+/*
+=================
+PF_strlen
+
+float strlen(string str)
+=================
+*/
+
+void PF_strlen (void)
+{
+	G_FLOAT(OFS_RETURN) = (float) strlen(G_STRING(OFS_PARM0));
+}
+
+/*
+=================
+PF_str2byte
+
+float str2byte (string str)
+=================
+*/
+
+void PF_str2byte (void)
+{
+	G_FLOAT(OFS_RETURN) = (float) *G_STRING(OFS_PARM0);
+}
+
+/*
+=================
+PF_str2short
+
+float str2short (string str)
+=================
+*/
+
+void PF_str2short (void)
+{
+	G_FLOAT(OFS_RETURN) = (float) LittleShort(*(short*)G_STRING(OFS_PARM0));
+}
+
+/*
+=================
+PF_newstr
+
+string newstr (string str [, float size])
+=================
+*/
+
+void PF_newstr (void)
+{
+	char *s;
+	int i, size;
+
+	s = G_STRING(OFS_PARM0);
+
+	for (i = 0; i < MAX_PRSTR; i++)
+	{
+		if (pr_newstrtbl[i] == NULL)
+			break;
+	}
+
+	if (i == MAX_PRSTR)
+		PR_RunError("PF_newstr: MAX_PRSTR");
+
+	size = strlen(s) + 1;
+	if (pr_argc == 2 && (int) G_FLOAT(OFS_PARM1) > size) 
+		size = (int) G_FLOAT(OFS_PARM1);
+
+	pr_newstrtbl[i] = (char*) Z_Malloc(size);
+	strcpy(pr_newstrtbl[i], s);
+
+	G_INT(OFS_RETURN) = -(i+MAX_PRSTR);
+}
+
+/*
+=================
+PF_frestr
+
+void freestr (string str)
+=================
+*/
+
+void PF_freestr (void)
+{
+	int num;
+
+	num = G_INT(OFS_PARM0);
+	if (num > - MAX_PRSTR)
+		PR_RunError("freestr: Bad pointer");
+
+	num = - (num + MAX_PRSTR);
+	Z_Free(pr_newstrtbl[num]);
+	pr_newstrtbl[num] = NULL;
+}
+
+void PF_clear_strtbl(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_PRSTR; i++)
+	{
+		if (pr_newstrtbl[i] != NULL) {
+			Z_Free(pr_newstrtbl[i]);
+			pr_newstrtbl[i] = NULL;
+		}
+	}
+}
+
+/*
+=================
+PF_readcmd
+
+string readmcmd (string str)
+=================
+*/
+
+void PF_readcmd (void)
+{
+	char *s;
+	static char output[8000];
+	extern char outputbuf[];
+	extern redirect_t sv_redirected;
+	redirect_t old;
+
+	s = G_STRING(OFS_PARM0);
+
+	Cbuf_Execute();
+	Cbuf_AddText (s);
+
+	old = sv_redirected;
+	if (old != RD_NONE)
+		SV_EndRedirect();
+
+	SV_BeginRedirect(RD_MOD);
+	Cbuf_Execute();
+	Q_strncpyz(output, outputbuf, 8000);
+	SV_EndRedirect();
+
+	if (old != RD_NONE)
+		SV_BeginRedirect(old);
+
+
+	G_INT(OFS_RETURN) = PR_SetString(output);
+}
+
+/*
+=================
+PF_redirectcmd
+
+void redirectcmd (entity to, string str)
+=================
+*/
+
+void PF_redirectcmd (void)
+{
+	char *s;
+	int entnum;
+	extern redirect_t sv_redirected;
+
+	if (sv_redirected)
+		return;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	if (entnum < 1 || entnum > MAX_CLIENTS)
+		PR_RunError ("Parm 0 not a client");
+
+	s = G_STRING(OFS_PARM1);
+
+	Cbuf_AddText (s);
+
+	SV_BeginRedirect(RD_MOD + entnum);
+	Cbuf_Execute();
+	SV_EndRedirect();
+}
+dfunction_t *ED_FindFunction (char *name);
+void PF_calltimeofday (void)
+{
+	date_t date;
+	dfunction_t *f;
+
+	if ((f = ED_FindFunction ("timeofday")) != NULL) {
+
+		Sys_TimeOfDay(&date);
+
+		G_FLOAT(OFS_PARM0) = (float)date.sec;
+		G_FLOAT(OFS_PARM1) = (float)date.min;
+		G_FLOAT(OFS_PARM2) = (float)date.hour;
+		G_FLOAT(OFS_PARM3) = (float)date.day;
+		G_FLOAT(OFS_PARM4) = (float)date.mon;
+		G_FLOAT(OFS_PARM5) = (float)date.year;
+		G_INT(OFS_PARM6) = PR_SetTmpString(date.str);
+
+		PR_ExecuteProgram((func_t)(f - pr_functions));
+	}
+
+}
+
+
+/*
+=================
+PF_strcpy
+
+void strcpy(string dst, string src)
+FIXME: check for null pointers first?
+=================
+*/
+
+void PF_strcpy (void)
+{
+	strcpy(G_STRING(OFS_PARM0), G_STRING(OFS_PARM1));
+}
+
+/*
+=================
+PF_strncpy
+
+void strcpy(string dst, string src, float count)
+FIXME: check for null pointers first?
+=================
+*/
+
+void PF_strncpy (void)
+{
+	strncpy(G_STRING(OFS_PARM0), G_STRING(OFS_PARM1), (int) G_FLOAT(OFS_PARM2));
+}
+
+
+/*
+=================
+PF_strstr
+
+string strstr(string str, string sub)
+=================
+*/
+
+void PF_strstr (void)
+{
+	char *str, *sub, *p;
+
+	str = G_STRING(OFS_PARM0);
+	sub = G_STRING(OFS_PARM1);
+
+	if ((p = strstr(str, sub)) == NULL)
+	{
+		G_INT(OFS_RETURN) = 0;
+		return;
+	}
+	
+	RETURN_STRING(p);
+}
+
+/*
+====================
+SV_CleanName_Init
+
+sets chararcter table to translate quake texts to more friendly texts
+====================
+*/
+
+static char chartbl[256];
+
+void PR_CleanLogText_Init ()
+{
+	int i;
+
+	for (i = 0; i < 256; i++)
+		chartbl[i] = (i&127) < 32 ? ' ' : i&127;
+
+	chartbl[13] = 13;
+	chartbl[10] = 10;
+	// special cases
+
+	// numbers
+	for (i = 18; i < 28; i++)
+		chartbl[i] = chartbl[i + 128] = i + 30;
+
+	// brackets
+	chartbl[29] = chartbl[29 + 128] = chartbl[128] = '(';
+	chartbl[31] = chartbl[31 + 128] = chartbl[130] = ')';
+	chartbl[16] = chartbl[16 + 128]= '[';
+	chartbl[17] = chartbl[17 + 128] = ']';
+
+	// hash
+	for (i = 1; i < 5; i++)
+		chartbl[i] = chartbl[i + 128] = '#';
+	for (i = 6; i < 10; i++)
+		chartbl[i] = chartbl[i + 128] = '#';
+
+	chartbl[11] = chartbl[11 + 128] = '#';
+
+	// dot
+	chartbl[5] = chartbl[14] = chartbl[15] = chartbl[28] = chartbl[46] = '.';
+	chartbl[5 + 128] = chartbl[14 + 128] = chartbl[15 + 128] = chartbl[28 + 128] = chartbl[46 + 128] = '.';
+
+	// left arrow
+	chartbl[127] = '>';
+
+	// right arrow
+	chartbl[141] = '<';
+
+	// '='
+	chartbl[30] = chartbl[129] = chartbl[30 + 128] = '=';
+
+	// whitespaces
+	chartbl[12] = chartbl[12 + 128] = chartbl[138] = ' ';
+
+	chartbl[33] = chartbl[33 + 128]= '!';
+}
+
+void PR_CleanText(unsigned char *text)
+{
+	while (*text)
+		*text = chartbl[*text++];
+}
+
+/*
+================
+PF_log
+
+void log(string name, float console, string text)
+=================
+*/
+
+void PF_log(void)
+{
+	char name[MAX_OSPATH], *text;
+	FILE *file;
+
+	sprintf(name,"%s/%s.log",com_gamedir, G_STRING(OFS_PARM0));
+	text = PF_VarString(2);
+	PR_CleanText(text);
+
+	if ((file = fopen(name, "a")) == NULL)
+	{
+		Sys_Printf("coldn't open log file %s\n", name);
+	} else {
+		fprintf (file, text);
+		fflush (file);
+		fclose(file);
+	}
+
+	if (G_FLOAT(OFS_PARM1))
+		Sys_Printf("%s", text);
+	
+}
 
 /*
 =================
@@ -902,7 +1332,17 @@ void PF_dprint (void)
 	Con_Printf ("%s",PF_VarString(0));
 }
 
-char	pr_string_temp[128];
+/*
+=========
+PF_conprint
+=========
+*/
+void PF_conprint (void)
+{
+	Sys_Printf ("%s",PF_VarString(0));
+}
+
+//char	pr_string_temp[128];
 
 void PF_ftos (void)
 {
@@ -914,6 +1354,7 @@ void PF_ftos (void)
 	else
 		sprintf (pr_string_temp, "%5.1f",v);
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
+	PF_SetTempString();
 }
 
 void PF_fabs (void)
@@ -927,6 +1368,8 @@ void PF_vtos (void)
 {
 	sprintf (pr_string_temp, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
+
+	PF_SetTempString();
 }
 
 void PF_Spawn (void)
@@ -1167,10 +1610,10 @@ void PF_lightstyle (void)
 		}
 	if (sv.demorecording)
 	{
-		DemoReliableWrite_Begin( dem_all, 0, strlen(val)+3);
-		MSG_WriteByte(demo.buf, svc_lightstyle);
-		MSG_WriteChar(demo.buf, style);
-		MSG_WriteString(demo.buf, val);
+		DemoWrite_Begin( dem_all, 0, strlen(val)+3);
+		MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_lightstyle);
+		MSG_WriteChar((sizebuf_t*)demo.dbuf, style);
+		MSG_WriteString((sizebuf_t*)demo.dbuf, val);
 	}
 }
 
@@ -1466,8 +1909,8 @@ void PF_WriteByte (void)
 		ClientReliableWrite_Byte(cl, G_FLOAT(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1);
-			MSG_WriteByte(demo.buf, G_FLOAT(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 1);
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
 		}
 	} else
 		MSG_WriteByte (WriteDest(), G_FLOAT(OFS_PARM1));
@@ -1481,8 +1924,8 @@ void PF_WriteChar (void)
 		ClientReliableWrite_Char(cl, G_FLOAT(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1);
-			MSG_WriteByte(demo.buf, G_FLOAT(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 1);
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
 		}
 	} else
 		MSG_WriteChar (WriteDest(), G_FLOAT(OFS_PARM1));
@@ -1496,8 +1939,8 @@ void PF_WriteShort (void)
 		ClientReliableWrite_Short(cl, G_FLOAT(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 2);
-			MSG_WriteShort(demo.buf, G_FLOAT(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 2);
+			MSG_WriteShort((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
 		}
 	} else
 		MSG_WriteShort (WriteDest(), G_FLOAT(OFS_PARM1));
@@ -1511,8 +1954,8 @@ void PF_WriteLong (void)
 		ClientReliableWrite_Long(cl, G_FLOAT(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 4);
-			MSG_WriteLong(demo.buf, G_FLOAT(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 4);
+			MSG_WriteLong((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
 		}
 	} else
 		MSG_WriteLong (WriteDest(), G_FLOAT(OFS_PARM1));
@@ -1526,8 +1969,8 @@ void PF_WriteAngle (void)
 		ClientReliableWrite_Angle(cl, G_FLOAT(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1);
-			MSG_WriteByte(demo.buf, G_FLOAT(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 1);
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
 		}
 	} else
 		MSG_WriteAngle (WriteDest(), G_FLOAT(OFS_PARM1));
@@ -1541,8 +1984,8 @@ void PF_WriteCoord (void)
 		ClientReliableWrite_Coord(cl, G_FLOAT(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 2);
-			MSG_WriteCoord(demo.buf, G_FLOAT(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 2);
+			MSG_WriteCoord((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
 		}
 	} else
 		MSG_WriteCoord (WriteDest(), G_FLOAT(OFS_PARM1));
@@ -1556,8 +1999,8 @@ void PF_WriteString (void)
 		ClientReliableWrite_String(cl, G_STRING(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1 + strlen(G_STRING(OFS_PARM1)));
-			MSG_WriteString(demo.buf, G_STRING(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 1 + strlen(G_STRING(OFS_PARM1)));
+			MSG_WriteString((sizebuf_t*)demo.dbuf, G_STRING(OFS_PARM1));
 		}
 	} else
 		MSG_WriteString (WriteDest(), G_STRING(OFS_PARM1));
@@ -1572,8 +2015,8 @@ void PF_WriteEntity (void)
 		ClientReliableWrite_Short(cl, G_EDICTNUM(OFS_PARM1));
 		if (sv.demorecording)
 		{
-			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 2);
-			MSG_WriteShort(demo.buf, G_EDICTNUM(OFS_PARM1));
+			DemoWrite_Begin(dem_single, cl - svs.clients, 2);
+			MSG_WriteShort((sizebuf_t*)demo.dbuf, G_EDICTNUM(OFS_PARM1));
 		}
 	} else
 		MSG_WriteShort (WriteDest(), G_EDICTNUM(OFS_PARM1));
@@ -1711,16 +2154,22 @@ void PF_infokey (void)
 	} else if (e1 <= MAX_CLIENTS) {
 		if (!strcmp(key, "ip"))
 			value = strcpy(ov, NET_BaseAdrToString (svs.clients[e1-1].netchan.remote_address));
+		else if (!strcmp(key, "realip"))
+			value = strcpy(ov, NET_BaseAdrToString (svs.clients[e1-1].realip));
 		else if (!strcmp(key, "ping")) {
 			int ping = SV_CalcPing (&svs.clients[e1-1]);
 			sprintf(ov, "%d", ping);
 			value = ov;
-		} else
+		} else if (!strcmp(key, "login"))
+			value = svs.clients[e1-1].login;
+		else
 			value = Info_ValueForKey (svs.clients[e1-1].userinfo, key);
 	} else
 		value = "";
 
-	RETURN_STRING(value);
+	strcpy(pr_string_temp, value);
+	RETURN_STRING(pr_string_temp);
+	PF_SetTempString();
 }
 
 /*
@@ -1864,9 +2313,24 @@ PF_multicast,
 PF_executecmd,	// #83
 PF_tokanize,
 PF_argc,
-PF_argv			// #86
+PF_argv,
+PF_teamfield,
+PF_substr,
+PF_strcat,
+PF_strlen,
+PF_str2byte,
+PF_str2short,
+PF_newstr,
+PF_freestr,
+PF_conprint,
+PF_readcmd,
+PF_strcpy,
+PF_strstr,
+PF_strncpy,
+PF_log,
+PF_redirectcmd,
+PF_calltimeofday,		//102
 };
-// SET QWE_FUNCS IN VERSION.H IF NUMBER OF FUNCTIONS CHANGES
 
 builtin_t *pr_builtins = pr_builtin;
 int pr_numbuiltins = sizeof(pr_builtin)/sizeof(pr_builtin[0]);

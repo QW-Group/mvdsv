@@ -846,9 +846,9 @@ SV_RunEntity
 */
 void SV_RunEntity (edict_t *ent)
 {
-	if (ent->v.lastruntime == (float)realtime)
+	if ((float)sv.time == ent->v.lastruntime)
 		return;
-	ent->v.lastruntime = (float)realtime;
+	ent->v.lastruntime = (float)sv.time;
 
 	switch ( (int)ent->v.movetype)
 	{
@@ -907,12 +907,31 @@ void SV_Physics (void)
 	static double	old_time;
 
 // don't bother running a frame if sys_ticrate seconds haven't passed
-	sv_frametime = realtime - old_time;
+
+#ifdef NEWWAY
+	sv_frametime = sv_ticrate.value;
+	sv.time += sv_ticrate.value;
+	if (sv.time < sv.gametime)
+	{
+		Con_Printf ("sv highclamp\n");
+		sv.gametime = sv.time;
+	}
+#else
+	if (sv.time < old_time)
+		old_time = sv.time - 0.1;
+
+	//if (sv.time - old_time > 1.0)
+	//	old_time = sv.time - 1.0;
+
+	sv_frametime = (float) (sv.time - old_time);
+
 	if (sv_frametime < sv_mintic.value)
 		return;
 	if (sv_frametime > sv_maxtic.value)
 		sv_frametime = sv_maxtic.value;
-	old_time = realtime;
+
+	old_time = sv.time;
+#endif
 
 	pr_global_struct->frametime = sv_frametime;
 

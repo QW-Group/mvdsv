@@ -833,6 +833,7 @@ void CL_ParsePlayerinfo (void)
 		flags = MSG_ReadShort ();
 		state->flags = TranslateFlags(flags);
 
+		Con_Printf("p:%d %d\n", cl.parsecount, num);
 		state->messagenum = cl.parsecount;
 		state->command.msec = 0;
 
@@ -1361,11 +1362,11 @@ This sets up the first phase.
 void CL_SetUpPlayerPrediction(qboolean dopred)
 {
 	int				j;
-	player_state_t	*state, *oldstate;
+	player_state_t	*state;
 	player_state_t	exact;
 	double			playertime;
 	int				msec;
-	frame_t			*frame, *oldframe;
+	frame_t			*frame;
 	struct predicted_player *pplayer;
 
 	playertime = realtime - cls.latency + 0.02;
@@ -1373,11 +1374,10 @@ void CL_SetUpPlayerPrediction(qboolean dopred)
 		playertime = realtime;
 
 	frame = &cl.frames[cl.parsecount&UPDATE_MASK];
-	oldframe = &cl.frames[(cl.oldparsecount)&UPDATE_MASK];
 
-	for (j=0, pplayer = predicted_players, state=frame->playerstate, oldstate=oldframe->playerstate; 
+	for (j=0, pplayer = predicted_players, state=frame->playerstate; 
 		j < MAX_CLIENTS;
-		j++, pplayer++, state++, oldstate++) {
+		j++, pplayer++, state++) {
 
 		pplayer->active = false;
 

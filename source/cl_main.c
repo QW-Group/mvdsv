@@ -278,6 +278,7 @@ CL_ClearState
 
 =====================
 */
+
 void CL_ClearState (void)
 {
 	int			i;
@@ -572,16 +573,19 @@ CL_ReadPackets
 void CL_InitInterpolation(float cur, float old);
 void CL_ReadPackets (void)
 {
-	extern	float nextdemotime, olddemotime;
-	qboolean change = false;
-	static float old;
-
-//	while (NET_GetPacket ())
 	while (CL_GetMessage())
 	{
 		//
 		// remote command packet
 		//
+		if (net_message.cursize == 1 && net_message.data[0] == A2A_ACK)
+		{
+			extern double ping_time;
+
+			Con_Printf("ack:%d\n", (int)((realtime - ping_time)*1000));
+			return;
+		}
+
 		if (*(int *)net_message.data == -1)
 		{
 			CL_ConnectionlessPacket ();
@@ -910,7 +914,7 @@ void Host_Frame (double time)
 	oldrealtime2 = noscale_realtime;
 	if (real_frametime > 0.2)
 		real_frametime = 0.2;
-		
+
 	// get new key events
 	Sys_SendKeyEvents ();
 
@@ -927,6 +931,9 @@ void Host_Frame (double time)
 	if (cls.demoplayback2)
 	{
 		player_state_t *self, *oldself;
+
+		Con_Printf("%d, %d\n", cl.parsecount, cls.netchan.incoming_acknowledged);
+
 		self = &cl.frames[cl.parsecount & UPDATE_MASK].playerstate[cl.playernum];
 		oldself = &cl.frames[(cls.netchan.outgoing_sequence-1) & UPDATE_MASK].playerstate[cl.playernum];
 		self->messagenum = cl.parsecount;
@@ -990,6 +997,7 @@ void Host_Frame (double time)
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
 	
 	CDAudio_Update();
+
 
 	if (host_speeds.value)
 	{

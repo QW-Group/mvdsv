@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "progs.h"
 
+//#define NEWWAY
+
 #define	MAX_MASTERS	8				// max recipients for heartbeat packets
 
 #define	MAX_SIGNON_BUFFERS	8
@@ -39,6 +41,7 @@ typedef struct
 	server_state_t	state;			// precache commands are only valid during load
 
 	double		time;
+	double		gametime;
 	
 	int			lastcheck;			// used by PF_checkclient
 	double		lastchecktime;		// for monster ai 
@@ -109,6 +112,7 @@ typedef enum
 	cs_free,		// can be reused for a new connection
 	cs_zombie,		// client has been disconnected, but don't reuse
 					// connection for a couple seconds
+	cs_preconnected,// has been assigned, but login/realip not settled yet
 	cs_connected,	// has been assigned to a client_t, but not in game yet
 	cs_spawned		// client is fully in game
 } sv_client_state_t;		// FIXME
@@ -123,7 +127,7 @@ typedef struct
 	packet_entities_t	entities;
 } client_frame_t;
 
-#define MAX_BACK_BUFFERS	16
+#define MAX_BACK_BUFFERS	4
 #define MAX_STUFFTEXT		256
 
 typedef struct client_s
@@ -131,9 +135,7 @@ typedef struct client_s
 	sv_client_state_t	state;
 
 	int				spectator;			// non-interactive
-	int				multipov;			// for multipov demo recording
-	int				POVs;
-	int				teamPOVs;
+	int				vip;
 
 	qboolean		sendinfo;			// at end of frame, send info to all
 										// this prevents malicious multiple broadcasts
@@ -203,11 +205,18 @@ typedef struct client_s
 	netadr_t		snap_from;
 	qboolean		remote_snap;
 
+	char			login[16];
+	int				logged;
+
  
 //===== NETWORK ============
 	int				chokecount;
 	int				delta_sequence;		// -1 = no compression
 	netchan_t		netchan;
+	netadr_t		realip;				// client's ip, not latest proxy's
+	int				realip_num;			// random value
+	int				realip_count;
+	qboolean		rip_vip;
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -228,6 +237,14 @@ typedef struct
 	int			frame;
 } demo_client_t;
 
+typedef struct {
+	byte type;
+	byte full;
+	int to;
+	int size;
+	byte data[1]; //gcc doesn't allow [] (?)
+} header_t;
+
 typedef struct
 {
 	qboolean	allowoverflow;	// if false, do a Sys_Error
@@ -235,8 +252,8 @@ typedef struct
 	byte	*data;
 	int		maxsize;
 	int		cursize;
-	int		size, *msgsize;
-	int		curto, curtype;
+	int		bufsize;
+	header_t *h;
 } demobuf_t;
 
 typedef struct
@@ -247,6 +264,12 @@ typedef struct
 
 } demo_frame_t;
 
+typedef struct {
+	byte	*data;
+	int		start, end, last;
+	int		maxsize;
+} dbuffer_t;
+
 #define DEMO_FRAMES 64
 #define DEMO_FRAMES_MASK (DEMO_FRAMES - 1)
 
@@ -254,10 +277,8 @@ typedef struct
 {
 	FILE		*file;
 
-	union {
-		sizebuf_t *buf;
-		demobuf_t *dbuf;
-	};
+	demobuf_t	*dbuf;
+	dbuffer_t	dbuffer;
 	sizebuf_t	datagram;
 	byte		datagram_data[MAX_DATAGRAM];
 	int			lastto;
@@ -268,7 +289,7 @@ typedef struct
 	qboolean	fixangle[MAX_CLIENTS];
 	float		fixangletime[MAX_CLIENTS];
 	vec3_t		angles[MAX_CLIENTS];
-	char		name[MAX_QPATH];
+	char		name[MAX_OSPATH], namelong[MAX_OSPATH];
 	int			parsecount;
 	int			lastwritten;
 	demo_frame_t	frames[DEMO_FRAMES];
@@ -276,7 +297,8 @@ typedef struct
 	int			size;
 	qboolean	disk;
 	void		*dest;
-	byte		buffer[40*MAX_MSGLEN];
+	byte		*mfile;
+	byte		buffer[20*MAX_MSGLEN];
 	int			bufsize;
 } demo_t;
 
@@ -402,7 +424,7 @@ typedef struct
 
 //============================================================================
 
-extern	cvar_t	sv_mintic, sv_maxtic;
+extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
 extern	cvar_t	sv_maxspeed;
 
 extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
@@ -421,6 +443,7 @@ extern	cvar_t	coop;
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
 extern	demo_t			demo;				// server demo struct
+extern	entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
 
 extern	client_t	*host_client;
 
@@ -433,12 +456,24 @@ extern	char		localinfo[MAX_LOCALINFO_STRING+1];
 extern	int			host_hunklevel;
 extern	FILE		*sv_logfile;
 extern	FILE		*sv_fraglogfile;
+extern	FILE		*sv_errorlogfile;
+extern	FILE		*sv_rconlogfile;
+
+extern	qboolean	sv_error;
 
 //===========================================================
 
 //
 // sv_main.c
 //
+
+typedef struct
+{
+	unsigned	mask;
+	unsigned	compare;
+	int			level;
+} ipfilter_t;
+
 void SV_Shutdown (void);
 void SV_ShutdownServer (void);
 void SV_Frame (double time);
@@ -463,7 +498,7 @@ void SV_ExecuteUserCommand (char *s);
 void SV_InitOperatorCommands (void);
 
 void SV_SendServerinfo (client_t *client);
-void SV_ExtractFromUserinfo (client_t *cl);
+void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged);
 int SV_BoundRate (int rate);
 
 void Master_Heartbeat (void);
@@ -495,7 +530,7 @@ void SV_SetMoveVars(void);
 //
 // sv_send.c
 //
-typedef enum {RD_NONE, RD_CLIENT, RD_PACKET} redirect_t;
+typedef enum {RD_NONE, RD_CLIENT, RD_PACKET, RD_MOD} redirect_t;
 void SV_BeginRedirect (redirect_t rd);
 void SV_EndRedirect (void);
 
@@ -553,8 +588,26 @@ void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 //
 void SV_DemoPings (void);
 void SV_DemoWriteToDisk(int type, int to, float time);
-void DemoReliableWrite_Begin(int type, int to, int size);
+void DemoWrite_Begin(byte type, int to, int size);
 void SV_Stop (int reason);
 void SV_Stop_f (void);
 void SV_DemoWritePackets (int num);
 void Demo_Init (void);
+char *SV_DemoNum(int num);
+
+
+//
+// sv_login.c
+//
+
+void SV_LoadAccounts(void);
+void SV_CreateAccount_f(void);
+void SV_RemoveAccount_f(void);
+void SV_ListAccount_f (void);
+int checklogin(char *log, char *pass, int num, int use);
+void Login_Init (void);
+qboolean SV_Login(client_t *cl);
+void SV_Logout(client_t *cl);
+void SV_ParseLogin(client_t *cl);
+void SV_LoginCheckTimeOut(client_t *cl);
+

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 server_static_t	svs;				// persistent server info
 server_t		sv;					// local server
 demo_t			demo;				// server demo struct
+entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
 
 char	localmodels[MAX_MODELS][5];	// inline model names for precache
 
@@ -172,6 +173,7 @@ void SV_SaveSpawnparms (void)
 		PR_ExecuteProgram (pr_global_struct->SetChangeParms);
 		for (j=0 ; j<NUM_SPAWN_PARMS ; j++)
 			host_client->spawn_parms[j] = (&pr_global_struct->parm1)[j];
+		
 	}
 }
 
@@ -280,12 +282,15 @@ This is only called from the SV_Map_f() function.
 ================
 */
 void D_FlushCaches ();
+dfunction_t *ED_FindFunction (char *name);
 
 void SV_SpawnServer (char *server)
 {
 	edict_t		*ent;
 	int			i;
 	extern cvar_t version;
+	extern int hunk_low_used;
+	dfunction_t *f;
 
 	Con_DPrintf ("SpawnServer: %s\n",server);
 	
@@ -299,6 +304,8 @@ void SV_SpawnServer (char *server)
 
 	Mod_ClearAll ();
 	Hunk_FreeToLowMark (host_hunklevel);
+
+	//Sys_Sleep(100);
 
 	if (coop.value)
 		Cvar_Set (&deathmatch, "0");
@@ -336,9 +343,12 @@ void SV_SpawnServer (char *server)
 	// which determines how big each edict is
 	PR_LoadProgs ();
 
+	//Sys_Sleep(100);
 	// allocate edicts
 
 	sv.edicts = Hunk_AllocName (MAX_EDICTS*pr_edict_size, "edicts");
+
+	//Sys_Sleep(100);
 	
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS+1;
@@ -350,7 +360,7 @@ void SV_SpawnServer (char *server)
 		svs.clients[i].old_frags = 0;
 	}
 
-	sv.time = 1.0;
+	sv.time = sv.gametime = 1.0;
 	
 	strcpy (sv.name, server);
 	sprintf (sv.modelname,"maps/%s.bsp", server);
@@ -397,12 +407,12 @@ void SV_SpawnServer (char *server)
 	ent->v.netname = PR_SetString(version.string);
 	ent->v.targetname = PR_SetString("mvdsv");
 	ent->v.impulse = QWE_VERNUM;
-	ent->v.items = QWE_FUNCS;
+	ent->v.items = pr_numbuiltins - 1;
 
 	pr_global_struct->mapname = /*sv.name - pr_strings;//*/PR_SetString(sv.name);
 	// serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
-	
+
 	// run the frame start qc function to let progs check cvars
 	SV_ProgStartFrame ();
 
@@ -429,6 +439,26 @@ void SV_SpawnServer (char *server)
 	sv.signon_buffer_size[sv.num_signon_buffers-1] = sv.signon.cursize;
 
 	Info_SetValueForKey (svs.info, "map", sv.name, MAX_SERVERINFO_STRING);
+
+	if ((f = ED_FindFunction ("timeofday")) != NULL) {
+		date_t date;
+
+		Sys_TimeOfDay(&date);
+
+		G_FLOAT(OFS_PARM0) = (float)date.sec;
+		G_FLOAT(OFS_PARM1) = (float)date.min;
+		G_FLOAT(OFS_PARM2) = (float)date.hour;
+		G_FLOAT(OFS_PARM3) = (float)date.day;
+		G_FLOAT(OFS_PARM4) = (float)date.mon;
+		G_FLOAT(OFS_PARM5) = (float)date.year;
+		G_INT(OFS_PARM6) = PR_SetTmpString(date.str);
+
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = 0;
+
+		PR_ExecuteProgram((func_t)(f - pr_functions));
+	}
+
 	Con_DPrintf ("Server spawned.\n");
 }
 
