@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_edict.c,v 1.1 2005/02/05 16:08:54 vvd0 Exp $
+ *  $Id: pr2_edict.c,v 1.2 2005/02/21 15:19:09 vvd0 Exp $
  */
 
 #include "qwsvdef.h"
@@ -167,11 +167,11 @@ PR2_Profile_f
 
 ============
 */
-void PR2_Profile_f (void)
+/*void PR2_Profile_f (void)
 {
         if(!sv_vm)
         	PR_Profile_f();
 
-}
+}*/
 
 #endif /* USE_PR2 */

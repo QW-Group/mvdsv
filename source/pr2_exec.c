@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.1 2005/02/05 16:08:54 vvd0 Exp $
+ *  $Id: pr2_exec.c,v 1.2 2005/02/21 15:19:11 vvd0 Exp $
  */
 
 #include <stdarg.h>
@@ -32,6 +32,9 @@
 gameData_t *gamedata;
 
 cvar_t	sv_progtype = {"sv_progtype","0"};	// bound the size of the
+#ifdef QVM_PROFILE
+extern cvar_t sv_enableprofile;
+#endif
 //int usedll;
 
 void ED2_PrintEdicts (void);
@@ -45,6 +48,9 @@ void PR2_Init(void)
 	int usedll;
 	Cvar_RegisterVariable(&sv_progtype);
 	Cvar_RegisterVariable(&sv_progsname);
+#ifdef QVM_PROFILE
+	Cvar_RegisterVariable(&sv_enableprofile);
+#endif	
 	
 	p = COM_CheckParm ("-progtype");
 

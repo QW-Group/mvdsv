@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.1 2005/02/05 16:08:54 vvd0 Exp $
+ *  $Id: pr2_vm.c,v 1.2 2005/02/21 15:19:11 vvd0 Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -37,6 +37,105 @@
 
 #ifdef USE_PR2
 
+#ifdef QVM_PROFILE
+cvar_t	sv_enableprofile = {"sv_enableprofile","0"};	
+typedef struct
+{
+	int adress;
+#ifdef _WIN32
+	__int64 instruction_count;
+#else
+	int instruction_count;
+#endif
+}profile_t;
+#define MAX_PROFILE_FUNCS 0x1000
+
+profile_t profile_funcs[MAX_PROFILE_FUNCS];
+int num_profile_func;
+
+profile_t* ProfileEnterFunction(int adress)
+{
+        int i;
+	for (  i = 0 ; i < num_profile_func ; i++ )
+	{
+		if(profile_funcs[i].adress == adress)
+			return &profile_funcs[i];
+	}
+	if( num_profile_func >= MAX_PROFILE_FUNCS )
+	{
+		profile_funcs[0].adress = adress;
+		profile_funcs[0].instruction_count = 0;
+	
+	return &profile_funcs[0];
+	}
+	profile_funcs[num_profile_func].adress = adress;
+	profile_funcs[num_profile_func].instruction_count = 0;
+	
+	return &profile_funcs[num_profile_func++];
+}
+symbols_t* QVM_FindName( qvm_t * qvm, int off);
+#endif
+
+void PR2_Profile_f()
+{
+#ifdef QVM_PROFILE
+	profile_t	*f, *best;
+#endif
+#ifdef _WIN32
+	__int64			max;
+#else
+	int			max;
+#endif
+	int			num;
+	int			i;
+	symbols_t *sym;
+
+        if(!sv_vm)
+        {
+        	PR_Profile_f();
+        	return;
+        }
+#ifdef QVM_PROFILE
+        if(sv_vm->type != VM_BYTECODE)
+        	return;
+        num = 0;
+        if(!sv_enableprofile.value)
+        {
+                Con_Printf ("profiling no enabled\n");
+        	return;
+        }
+	do
+	{
+		max = 0;
+		best = NULL;
+		for (i=0 ; i<num_profile_func ; i++)
+		{
+			f = &profile_funcs[i];
+			if (f->instruction_count > max)
+			{
+				max = f->instruction_count;
+				best = f;
+			}
+		}
+		if (best)
+		{
+			if (num < 15)
+			{
+			        sym = QVM_FindName( (qvm_t*)(sv_vm->hInst), best->adress );
+#ifdef _WIN32
+				Con_Printf ("%18I64d %s\n", best->instruction_count, sym->name);
+#else
+				Con_Printf ("%9d %s\n", best->instruction_count, sym->name);
+#endif
+
+			}
+			num++;
+			best->instruction_count = 0;
+		}
+	} while (best);
+    	num_profile_func = 0;
+#endif
+}
 
 void VM_UnloadQVM( qvm_t * qvm )
 {
@@ -232,13 +331,14 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 
 	header = ( vmHeader_t * ) buff;
 
-	LittleLong( header->vmMagic );
-	LittleLong( header->instructionCount );
-	LittleLong( header->codeOffset );
-	LittleLong( header->codeLength );
-	LittleLong( header->dataLength );
-	LittleLong( header->litLength );
-	LittleLong( header->bssLength );
+	header->vmMagic = LittleLong( header->vmMagic );
+	header->instructionCount = LittleLong( header->instructionCount );
+	header->codeOffset = LittleLong( header->codeOffset );
+	header->codeLength = LittleLong( header->codeLength );
+	header->dataOffset = LittleLong( header->dataOffset );
+	header->dataLength = LittleLong( header->dataLength );
+	header->litLength = LittleLong( header->litLength );
+	header->bssLength = LittleLong( header->bssLength );
 
 // check file
 	if ( header->vmMagic != VM_MAGIC || header->instructionCount <= 0 || header->codeLength <= 0 )
@@ -364,6 +464,9 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 	memset( vm, 0, sizeof( vm_t ) );
 	strlcpy( vm->name, name, sizeof( vm->name ) );
 	vm->syscall = syscall;
+#ifdef QVM_PROFILE	
+	num_profile_func = 0;
+#endif
 
 	switch ( type )
 	{
@@ -434,7 +537,7 @@ void  QVM_StackTrace( qvm_t * qvm )
 	Con_Printf( "     data  length: %8xh\n", qvm->len_ds );
 	Con_Printf( "     stack length: %8xh\n", qvm->len_ss );
 
-	Con_DPrintf( "PC %8x LP %8x SP %8x\n", qvm->PC, qvm->LP, qvm->SP );
+	Con_Printf( "PC %8x LP %8x SP %8x\n", qvm->PC, qvm->LP, qvm->SP );
 
 //	if ( qvm->sym_info == NULL )
 //		return;
@@ -486,7 +589,13 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		     int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 )
 {
 	qvm_parm_type_t opStack[OPSTACKSIZE + 1];	//in q3 stack var of QVM_Exec size~0x400;
+#ifdef QVM_RUNAWAY_PROTECTION
 	int 	cycles[MAX_PROC_CALL],cycles_p=0;
+#endif
+#ifdef QVM_PROFILE
+	profile_t*profile_func;
+	symbols_t *sym;
+#endif
 	int     savePC, saveSP, saveLP, ivar;
 	qvm_instruction_t op;
 
@@ -495,6 +604,10 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 	saveLP = qvm->LP;
 
 
+#ifdef QVM_PROFILE
+        if(sv_enableprofile.value)
+        	profile_func = ProfileEnterFunction(0);
+#endif
 	if ( !qvm->reenter )
 	{
 		//FIXME check last exit REGISTERS
@@ -524,10 +637,13 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 	STACK_INT( 12 ) = arg9;
 	STACK_INT( 13 ) = arg10;
 	STACK_INT( 14 ) = arg11;
+#ifdef QVM_RUNAWAY_PROTECTION
 	cycles[cycles_p] = 0;
+#endif
 
 	do
 	{
+#ifdef SAFE_QVM
 		if ( qvm->PC >= qvm->len_cs || qvm->PC < 0 )
 		{
 			QVM_StackTrace( qvm );
@@ -555,11 +671,18 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			QVM_StackTrace( qvm );
 			Sys_Error( "QVM Stack underflow at %8x", qvm->PC );
 		}
+#endif
+#ifdef QVM_RUNAWAY_PROTECTION
 		if(cycles[cycles_p]++ > MAX_CYCLES)
 		{
 			QVM_StackTrace( qvm );
 			Sys_Error( "QVM runaway loop error", qvm->PC );
 		}
+#endif
+#ifdef QVM_PROFILE
+                if(sv_enableprofile.value)
+        		profile_func->instruction_count++;
+#endif
 		op = qvm->cs[qvm->PC++];
 		switch ( op.opcode )
 		{
@@ -586,12 +709,14 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
            		}
 #endif
 			STACK_INT( 1 ) = op.parm._int;
+#ifdef QVM_RUNAWAY_PROTECTION
 			if(++cycles_p >= MAX_PROC_CALL)
 			{
 		        	QVM_StackTrace( qvm );
 				Sys_Error( "MAX_PROC_CALL reached\n" );
 			}
 			cycles[cycles_p] = 0;
+#endif
 			break;
 
 		case OP_LEAVE:
@@ -604,7 +729,17 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
          		}
 #endif
 			qvm->PC = STACK_INT( 0 );
+#ifdef QVM_PROFILE
+                        if(sv_enableprofile.value)
+                        {
+                        	sym = QVM_FindName( qvm, qvm->PC );
+        			profile_func = ProfileEnterFunction(sym->off);
+                        }
+#endif
+
+#ifdef QVM_RUNAWAY_PROTECTION
 			cycles_p--;
+#endif
 			break;
 
 		case OP_CALL:
@@ -616,7 +751,13 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				 opStack[qvm->SP]._int = ivar;
 			}
 			else
+			{
 				qvm->PC = ivar;
+#ifdef QVM_PROFILE
+				if(sv_enableprofile.value)
+        				profile_func = ProfileEnterFunction(ivar);
+#endif
+			}
 			break;
 		case OP_PUSH:
 			qvm->SP++;
@@ -739,68 +880,92 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		case OP_LOAD1:
 			ivar = opStack[qvm->SP]._int;
 
+#ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 			{
 				QVM_StackTrace( qvm );
 				Sys_Error( "data load 1 out of range %8x\n", ivar );
 			}
 			opStack[qvm->SP]._int = *( char * ) ( qvm->ds + ivar );
+#else
+                        opStack[qvm->SP]._int = *( char * ) ( qvm->ds + (ivar&qvm->ds_mask) );
+#endif
 			break;
 
 		case OP_LOAD2:
 			ivar = opStack[qvm->SP]._int;
+#ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 			{
 				QVM_StackTrace( qvm );
 				Sys_Error( "data load 2 out of range %8x\n", ivar );
 			}
 			opStack[qvm->SP]._int = *( short * ) ( qvm->ds + ivar );
+#else
+			opStack[qvm->SP]._int = *( short * ) ( qvm->ds + (ivar&qvm->ds_mask) );
+#endif
 			break;
 
 		case OP_LOAD4:
 			ivar = opStack[qvm->SP]._int;
+#ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 			{
 				QVM_StackTrace( qvm );
 				Sys_Error( "data load 4 out of range %8x\n", ivar );
 			}
 			opStack[qvm->SP]._int = *( int * ) ( qvm->ds + ivar );
+#else
+			opStack[qvm->SP]._int = *( int * ) ( qvm->ds + (ivar&qvm->ds_mask) );
+#endif
 			break;
 		case OP_STORE1:
 			ivar = opStack[qvm->SP - 1]._int;
+#ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 			{
 				QVM_StackTrace( qvm );
 				Sys_Error( "data store 1 out of range %8x\n", ivar );
 			}
 			*( char * ) ( qvm->ds + ivar ) = opStack[qvm->SP]._int & 0xff;
+#else
+			*( char * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP]._int & 0xff;
+#endif
 			qvm->SP -= 2;
 			break;
 		case OP_STORE2:
 			ivar = opStack[qvm->SP - 1]._int;
+#ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 			{
 				QVM_StackTrace( qvm );
 				Sys_Error( "data store 2 out of range %8x\n", ivar );
 			}
 			*( short * ) ( qvm->ds + ivar ) = opStack[qvm->SP]._int & 0xffff;
+#else
+			*( short * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP]._int & 0xffff;
+#endif
 			qvm->SP -= 2;
 			break;
 
 		case OP_STORE4:
 			ivar = opStack[qvm->SP - 1]._int;
+#ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 			{
 				QVM_StackTrace( qvm );
 				Sys_Error( "data store 4 out of range %8x\n", ivar );
 			}
 			*( int * ) ( qvm->ds + ivar ) = opStack[qvm->SP]._int;
+#else
+			*( int * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP]._int;
+#endif
 			qvm->SP -= 2;
 			break;
 
 		case OP_ARG:
 		        ivar = qvm->LP + op.parm._int;
-
+#ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 			{
 				QVM_StackTrace( qvm );
@@ -808,6 +973,9 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			}
 		        
 			*( int * ) ( qvm->ds + ivar ) = opStack[qvm->SP--]._int;
+#else
+			*( int * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP--]._int;
+#endif		        
 			break;
 
 		case OP_BLOCK_COPY:
@@ -816,7 +984,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			  	off1 = opStack[qvm->SP - 1]._int;
 			  	off2 = opStack[qvm->SP]._int;
 			  	len = op.parm._int;
-
+#ifdef QVM_DATA_PROTECTION
 				if ( (off1 & (~qvm->ds_mask) ) || (off2 & (~qvm->ds_mask) )
 					|| ((off1 + len) & (~qvm->ds_mask) )
 					|| ((off2 + len) & (~qvm->ds_mask) ))
@@ -826,6 +994,9 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				}
 
 				memmove( qvm->ds + off1, qvm->ds + off2, len );
+#else
+				memmove( qvm->ds + (off1 & qvm->ds_mask), qvm->ds + (off2 & qvm->ds_mask), len );
+#endif
 				qvm->SP -= 2;
 			}
 			break;
