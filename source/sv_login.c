@@ -71,7 +71,7 @@ Writes account list to disk
 
 static void WriteAccounts()
 {
-	int i,c;
+	int c;
 	FILE *f;
 	account_t *acc;
 
@@ -105,12 +105,11 @@ SV_LoadAccounts
 loads account list from disk
 =================
 */
-
+qboolean StringToFilter (char *s, ipfilter_t *f);
 void SV_LoadAccounts(void)
 {
-	int i,c;
+	int i;
 	FILE *f;
-	char *ip;
 	account_t *acc = accounts;
 	client_t *cl;
 
@@ -512,7 +511,7 @@ qboolean SV_Login(client_t *cl)
 
 	// check for account for ip
 	ip = va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]);
-	if (cl->logged = checklogin(ip, ip, cl - svs.clients + 1, use_ip) > 0)
+	if ((cl->logged = checklogin(ip, ip, cl - svs.clients + 1, use_ip)) > 0)
 	{
 		strcpy(cl->login, accounts[cl->logged-1].pass);
 		return true;

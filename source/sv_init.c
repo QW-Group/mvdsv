@@ -30,6 +30,8 @@ char	localmodels[MAX_MODELS][5];	// inline model names for precache
 
 char localinfo[MAX_LOCALINFO_STRING+1]; // local game info
 
+extern spec_worldmodel_t specworld;
+
 /*
 ================
 SV_ModelIndex
@@ -205,7 +207,7 @@ void SV_CalcPHS (void)
 	vcount = 0;
 	for (i=0 ; i<num ; i++, scan+=rowbytes)
 	{
-		memcpy (scan, Mod_LeafPVS(sv.worldmodel->leafs+i, sv.worldmodel),
+		memcpy (scan, Mod_LeafPVS(sv.worldmodel->leafs+i, sv.worldmodel, true),
 			rowbytes);
 		if (i == 0)
 			continue;
@@ -273,6 +275,194 @@ unsigned SV_CheckModel(char *mdl)
 
 /*
 ================
+Load_SpecVisData
+
+Loads visibility data of the map for spectators
+================
+*/
+
+typedef struct
+{
+	char		qvis[4];
+	int			version;	
+	int			visleafs;
+	lump_t		lumps[4];
+} visheader_t;
+
+#define VIS_LUMP_VISIBILITY 0
+#define VIS_LUMP_LEAFS		1
+#define VIS_LUMP_PLANES		2
+#define VIS_LUMP_NODES		3
+
+void VIS_LoadPlanes(lump_t *l, byte *base, char *allocname)
+{
+	int			i, j;
+	mplane_t	*out;
+	dplane_t 	*in;
+	int			count;
+	int			bits;
+	
+	in = (void *)(base + l->fileofs);
+	if (l->filelen % sizeof(*in))
+		Sys_Printf("VIS_LoadPlanes: lol?\n");
+	count = l->filelen / sizeof(*in);
+	out = Hunk_AllocName ( count*2*sizeof(*out), allocname);	
+	
+	specworld.planes = out;
+	specworld.numplanes = count;
+
+	for ( i=0 ; i<count ; i++, in++, out++)
+	{
+		bits = 0;
+		for (j=0 ; j<3 ; j++)
+		{
+			out->normal[j] = LittleFloat (in->normal[j]);
+			if (out->normal[j] < 0)
+				bits |= 1<<j;
+		}
+
+		out->dist = LittleFloat (in->dist);
+		out->type = LittleLong (in->type);
+		out->signbits = bits;
+	}
+}
+
+void VIS_LoadVisibility (lump_t *l, byte *base, char *allocname)
+{
+	if (!l->filelen)
+	{
+		specworld.visdata = NULL;
+		Sys_Printf("VIS_LoadVisibility: lol?\n");
+		return;
+	}
+
+	specworld.visdata = Hunk_AllocName ( l->filelen, allocname);	
+	memcpy (specworld.visdata, base + l->fileofs, l->filelen);
+}
+
+void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
+{
+	struct vdleaf_s {
+		int contents;
+		int visofs;
+	} *in;
+	mleaf_t 	*out;
+	int			i, count, p;
+
+	in = (void *)(base + l->fileofs);
+	count = l->filelen / sizeof(*in);
+	if (l->filelen % sizeof(*in))
+		Sys_Printf("VIS_LoadLeafs: lol?\n");
+	out = Hunk_AllocName ( count*sizeof(*out), allocname);	
+
+	specworld.leafs = out;
+	specworld.numleafs = count;
+
+	for ( i=0 ; i<count ; i++, in++, out++)
+	{
+		p = LittleLong(in->contents);
+		out->contents = p;
+		p = LittleLong(in->visofs);
+		if (p == -1)
+			out->compressed_vis = NULL;
+		else
+			out->compressed_vis = specworld.visdata + p;
+	}	
+}
+
+void Mod_SetParent (mnode_t *node, mnode_t *parent);
+void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
+{
+	int			i, j, count, p;
+	dnode_t		*in;
+	mnode_t 	*out;
+
+	in = (void *)(base + l->fileofs);
+	count = l->filelen / sizeof(*in);
+	if (l->filelen % sizeof(*in))
+		Sys_Printf("VIS_LoadNodes: lol?\n");
+	out = Hunk_AllocName ( count*sizeof(*out), allocname);	
+
+	specworld.nodes = out;
+	specworld.numnodes = count;
+
+	for ( i=0 ; i<count ; i++, in++, out++)
+	{
+		for (j=0 ; j<3 ; j++)
+		{
+			out->minmaxs[j] = LittleShort (in->mins[j]);
+			out->minmaxs[3+j] = LittleShort (in->maxs[j]);
+		}
+	
+		p = LittleLong(in->planenum);
+		out->plane = specworld.planes + p;
+
+		out->firstsurface = LittleShort (in->firstface);
+		out->numsurfaces = LittleShort (in->numfaces);
+		
+		for (j=0 ; j<2 ; j++)
+		{
+			p = LittleShort (in->children[j]);
+			if (p >= 0)
+				out->children[j] = specworld.nodes + p;
+			else
+				out->children[j] = (mnode_t *)(specworld.leafs + (-1 - p));
+		}
+	}
+	
+	Mod_SetParent (specworld.nodes, NULL);	// sets nodes and leafs
+}
+
+
+void Load_SpecVisData(char *visname)
+{
+	byte *base;
+	visheader_t *header;
+	int i;
+	char loadname[32];
+
+	memset(&specworld, 0, sizeof(specworld));
+
+	if ((!atoi(Info_ValueForKey (svs.info, "watervis")) && !atoi(Info_ValueForKey (svs.info, "spec_watervis"))) || (base = COM_LoadHunkFile (visname)) == NULL) {
+		specworld.visdata = sv.worldmodel->visdata;
+		specworld.nodes = sv.worldmodel->nodes;
+		specworld.planes = sv.worldmodel->planes;
+		specworld.leafs = sv.worldmodel->leafs;
+
+		specworld.numnodes = sv.worldmodel->numnodes;
+		specworld.numplanes = sv.worldmodel->numplanes;
+		specworld.numleafs = sv.worldmodel->numleafs;
+		return;
+	}
+
+	header = (visheader_t*)base;
+	
+	if (strncmp("QVIS", header->qvis, 4)) {
+		Sys_Printf("Load_SpecVisData: %s: unknown file type\n", visname);
+		return;
+	}
+
+	i = LittleLong (header->version);
+	if (i != BSPVERSION) {
+		Sys_Printf ("Load_SpecVisData: %s has wrong version number (%i should be %i)", visname, i, BSPVERSION);
+		return;
+	}
+
+	for (i=0 ; i<sizeof(visheader_t)/4 ; i++)
+		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
+
+	COM_FileBase (visname, loadname);
+
+	VIS_LoadPlanes(&header->lumps[VIS_LUMP_PLANES], base, loadname);
+	VIS_LoadVisibility(&header->lumps[VIS_LUMP_VISIBILITY], base, loadname);
+	VIS_LoadLeafs(&header->lumps[VIS_LUMP_LEAFS], base, loadname);
+	VIS_LoadNodes(&header->lumps[VIS_LUMP_NODES], base, loadname);
+
+	specworld.numleafs = header->visleafs;
+}
+
+/*
+================
 SV_SpawnServer
 
 Change the server to a new map, taking all connected
@@ -283,13 +473,13 @@ This is only called from the SV_Map_f() function.
 */
 void D_FlushCaches ();
 dfunction_t *ED_FindFunction (char *name);
+void Sys_TimeOfDay(date_t *date);
 
 void SV_SpawnServer (char *server)
 {
 	edict_t		*ent;
 	int			i;
 	extern cvar_t version;
-	extern int hunk_low_used;
 	dfunction_t *f;
 
 	Con_DPrintf ("SpawnServer: %s\n",server);
@@ -361,6 +551,7 @@ void SV_SpawnServer (char *server)
 	strcpy (sv.name, server);
 	sprintf (sv.modelname,"maps/%s.bsp", server);
 	sv.worldmodel = Mod_ForName (sv.modelname, true);
+	Load_SpecVisData(va("maps/%s.vis", server));
 	SV_CalcPHS ();
 
 	//
@@ -405,7 +596,7 @@ void SV_SpawnServer (char *server)
 	ent->v.impulse = QWE_VERNUM;
 	ent->v.items = pr_numbuiltins - 1;
 
-	pr_global_struct->mapname = /*sv.name - pr_strings;//*/PR_SetString(sv.name);
+	pr_global_struct->mapname = /*sv.name - pr_strings;*/PR_SetString(sv.name);
 	// serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
 

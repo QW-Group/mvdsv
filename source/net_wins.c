@@ -259,7 +259,7 @@ void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 
 //=============================================================================
 
-int UDP_OpenSocket (int port, qboolean crash)
+int UDP_OpenSocket (int *port, qboolean crash)
 {
 	int newsocket;
 	struct sockaddr_in address;
@@ -281,13 +281,27 @@ int UDP_OpenSocket (int port, qboolean crash)
 	} else
 		address.sin_addr.s_addr = INADDR_ANY;
 
-	if (port == PORT_ANY)
+	if (*port == PORT_ANY)
 		address.sin_port = 0;
 	else
-		address.sin_port = htons((short)port);
-	if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
-	{
-		Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
+		address.sin_port = htons((short)*port);
+
+	if (COM_CheckParm("-port")) {
+		if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
+		{
+			Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
+		}
+	} else {
+		// try any port
+		int i;
+
+		for (i = 0; i < 100; i++, (*port)++) {
+			address.sin_port = htons((short)*port);
+			if( bind (newsocket, (void *)&address, sizeof(address)) != -1)
+				break;
+		}
+		if (i == 100)
+			Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
 	}
 
 	return newsocket;
@@ -318,7 +332,7 @@ NET_Init
 ====================
 */
 int __serverport;	// so we can open it later
-void NET_Init (int clientport, int serverport)
+int NET_Init (int clientport, int serverport)
 {
 	WORD	wVersionRequested; 
 	int		r;
@@ -335,10 +349,10 @@ void NET_Init (int clientport, int serverport)
 	//
 //	net_socket = UDP_OpenSocket (port);
 	if (clientport)
-		net_clientsocket = UDP_OpenSocket (clientport, true);
+		net_clientsocket = UDP_OpenSocket (&clientport, true);
 
 	if (serverport)
-		net_serversocket = UDP_OpenSocket (serverport, false);
+		net_serversocket = UDP_OpenSocket (&serverport, false);
 	//
 	// init the message buffer
 	//
@@ -354,6 +368,11 @@ void NET_Init (int clientport, int serverport)
 		NET_GetLocalAddress (net_serversocket);
 
 	Con_Printf("UDP Initialized\n");
+
+	if (clientport)
+		return clientport;
+
+	return serverport;
 }
 
 /*

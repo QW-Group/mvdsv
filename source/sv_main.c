@@ -81,6 +81,8 @@ cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
 cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
 cvar_t	sv_demoMaxSize  = {"sv_demoMaxSize", "20480"};
 cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
+cvar_t	sv_demoExtraNames = {"sv_demoExtraNames", "0"};
+
 
 qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value);
 cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
@@ -288,6 +290,7 @@ void SV_DropClient (client_t *drop)
 	drop->edict->v.frags = 0;
 	drop->name[0] = 0;
 	memset (drop->userinfo, 0, sizeof(drop->userinfo));
+	memset (drop->userinfoshort, 0, sizeof(drop->userinfoshort));
 
 // send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
@@ -358,7 +361,7 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	MSG_WriteByte (buf, i);
 	MSG_WriteFloat (buf, realtime - client->connection_started);
 
-	strcpy (info, client->userinfo);
+	strcpy (info, client->userinfoshort);
 	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 	MSG_WriteByte (buf, svc_updateuserinfo);
@@ -581,7 +584,7 @@ int SV_VIPbyPass (char *pass);
 
 void SVC_DirectConnect (void)
 {
-	char		userinfo[1024], str[128];
+	char		userinfo[1024];
 	static		int	userid;
 	netadr_t	adr;
 	int			i;
@@ -596,6 +599,7 @@ void SVC_DirectConnect (void)
 	int			version;
 	int			challenge;
 	qboolean	spass, vip;
+	extern char *shortinfotbl[];
 
 	version = atoi(Cmd_Argv(1));
 	if (version != PROTOCOL_VERSION)
@@ -816,9 +820,16 @@ void SVC_DirectConnect (void)
 	else s = "";
 
 	Info_SetValueForStarKey (newcl->userinfo, "*VIP", s, MAX_INFO_STRING);
-	
+	// copy the most important userinfo into userinfoshort
+
 	// parse some info from the info strings
 	SV_ExtractFromUserinfo (newcl, true);
+
+	for (i = 0; shortinfotbl[i] != NULL; i++)
+	{
+		s = Info_ValueForKey(newcl->userinfo, shortinfotbl[i]);
+		Info_SetValueForStarKey (newcl->userinfoshort, shortinfotbl[i], s, MAX_INFO_STRING);
+	}
 
 	// JACK: Init the floodprot stuff.
 	for (i=0; i<10; i++)
@@ -921,9 +932,10 @@ void SVC_RemoteCommand (void)
 	SV_EndRedirect ();
 }
 
+qboolean SV_FilterPacket (void);
 void SVC_IP(void)
 {
-	int num, vip, i;
+	int num;
 	client_t *client;
 
 	if (Cmd_Argc() < 3)
@@ -947,6 +959,11 @@ void SVC_IP(void)
 		return;
 
 	client->realip = net_from;
+
+	// if banned drop
+	if (SV_FilterPacket())
+		SV_DropClient(client);
+
 }
 
 
@@ -1468,8 +1485,6 @@ char *DecodeArgs(char *args)
 void SV_Script_f (void)
 {
 	char *path, *p;
-	char args[1024];
-	int i;
 	extern redirect_t sv_redirected;
 
 	if (Cmd_Argc() < 2) {
@@ -1516,24 +1531,23 @@ void SV_ReadPackets (void)
 	int			i;
 	unsigned	seq;
 	client_t	*cl;
-	packet_t	*pack, tmp;
-	double		time;
+	packet_t	*pack;
 	qboolean	good;
 	int			qport;
 
 	good = false;
 	while (NET_GetPacket(net_serversocket))
 	{
-		if (SV_FilterPacket ())
-		{
-			SV_SendBan ();	// tell them we aren't listening...
-			continue;
-		}
-
 		// check for connectionless packet (0xffffffff) first
 		if (*(int *)net_message.data == -1)
 		{
 			SV_ConnectionlessPacket ();
+			continue;
+		}
+
+		if (SV_FilterPacket ())
+		{
+			SV_SendBan ();	// tell them we aren't listening...
 			continue;
 		}
 		
@@ -1810,6 +1824,7 @@ SV_Frame
 
 ==================
 */
+void SV_Map (qboolean now);
 void SV_Frame (double time)
 {
 	static double	start, end;
@@ -2172,7 +2187,6 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 	client_t	*client;
 	int		dupc = 1;
 	char	newname[80];
-	extern cvar_t	sv_maxrate;
 
 	if (namechanged)
 	{
@@ -2223,11 +2237,12 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 					val[sizeof(cl->name) - 4] = 0;
 				p = val;
 
-				if (val[0] == '(')
+				if (val[0] == '(') {
 					if (val[2] == ')')
 						p = val + 3;
 					else if (val[3] == ')')
 						p = val + 4;
+				}
 
 				sprintf(newname, "(%d)%-.40s", dupc++, p);
 				Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING);
@@ -2284,25 +2299,29 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 SV_InitNet
 ====================
 */
+int sv_port;
 void SV_InitNet (void)
 {
-	int	port;
 	int	p;
 
-	port = PORT_SERVER;
+	sv_port = PORT_SERVER;
 	p = COM_CheckParm ("-port");
 	if (p && p < com_argc)
 	{
-		port = atoi(com_argv[p+1]);
-		Con_Printf ("Port: %i\n", port);
+		sv_port = atoi(com_argv[p+1]);
+		Con_Printf ("Port: %i\n", sv_port);
 	}
-	NET_Init (0, port);
+	sv_port = NET_Init (0, sv_port);
 
 	Netchan_Init ();
 
 	// heartbeats will always be sent to the id master
 	svs.last_heartbeat = -99999;		// send immediately
 //	NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
+
+#if defined (_WIN32) && !defined(_CONSOLE) && defined(SERVERONLY)
+	SetWindowText_(va("mvdsv:%d - QuakeWorld server", sv_port));
+#endif
 }
 
 

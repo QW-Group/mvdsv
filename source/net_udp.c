@@ -257,7 +257,7 @@ void NET_GetLocalAddress (void)
 NET_Init
 ====================
 */
-void NET_Init (int port, int dummy)
+int NET_Init (int port, int dummy)
 {
 	if (dummy)
 		port = dummy;
@@ -279,6 +279,8 @@ void NET_Init (int port, int dummy)
 	NET_GetLocalAddress ();
 
 	Con_Printf("UDP Initialized\n");
+
+	return port;
 }
 
 /*

@@ -37,7 +37,7 @@ extern	cvar_t	hostname;
 extern	int		net_clientsocket;
 extern	int		net_serversocket;
 
-void		NET_Init (int clientport, int serverport);
+int		NET_Init (int clientport, int serverport);
 void		NET_Shutdown (void);
 qboolean	NET_GetPacket (int net_socket);
 void		NET_SendPacket (int net_socket, int length, void *data, netadr_t to);

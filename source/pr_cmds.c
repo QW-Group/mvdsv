@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
+#include <time.h>
+
 
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
 #define	RETURN_STRING(s) (((int *)pr_globals)[OFS_RETURN] = PR_SetString(s))
@@ -611,7 +613,7 @@ int PF_newcheckclient (int check)
 // get the PVS for the entity
 	VectorAdd (ent->v.origin, ent->v.view_ofs, org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
-	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
+	pvs = Mod_LeafPVS (leaf, sv.worldmodel, false);
 	memcpy (checkpvs, pvs, (sv.worldmodel->numleafs+7)>>3 );
 
 	return i;
@@ -1068,6 +1070,7 @@ void PF_redirectcmd (void)
 	SV_EndRedirect();
 }
 dfunction_t *ED_FindFunction (char *name);
+void Sys_TimeOfDay(date_t *date);
 void PF_calltimeofday (void)
 {
 	date_t date;
@@ -2107,6 +2110,11 @@ void PF_logfrag (void)
 	edict_t	*ent1, *ent2;
 	int		e1, e2;
 	char	*s;
+	// -> scream
+	time_t		t;
+	struct tm	*tblock;
+	// <-
+
 
 	ent1 = G_EDICT(OFS_PARM0);
 	ent2 = G_EDICT(OFS_PARM1);
@@ -2117,9 +2125,17 @@ void PF_logfrag (void)
 	if (e1 < 1 || e1 > MAX_CLIENTS
 	|| e2 < 1 || e2 > MAX_CLIENTS)
 		return;
-	
-	s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
+	// -> scream
+	t = time (NULL);
+	tblock = localtime (&t);
 
+	s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
+			tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
+			tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+
+
+	//s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
+	// <-
 	SZ_Print (&svs.log[svs.logsequence&1], s);
 	if (sv_fraglogfile) {
 		fprintf (sv_fraglogfile, s);

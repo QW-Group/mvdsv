@@ -34,7 +34,7 @@ crosses a waterline.
 int		fatbytes;
 byte	fatpvs[MAX_MAP_LEAFS/8];
 
-void SV_AddToFatPVS (vec3_t org, mnode_t *node)
+void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
 {
 	int		i;
 	byte	*pvs;
@@ -48,7 +48,7 @@ void SV_AddToFatPVS (vec3_t org, mnode_t *node)
 		{
 			if (node->contents != CONTENTS_SOLID)
 			{
-				pvs = Mod_LeafPVS ( (mleaf_t *)node, sv.worldmodel);
+				pvs = Mod_LeafPVS ( (mleaf_t *)node, sv.worldmodel, spectator_vis);
 				for (i=0 ; i<fatbytes ; i++)
 					fatpvs[i] |= pvs[i];
 			}
@@ -63,7 +63,7 @@ void SV_AddToFatPVS (vec3_t org, mnode_t *node)
 			node = node->children[1];
 		else
 		{	// go down both
-			SV_AddToFatPVS (org, node->children[0]);
+			SV_AddToFatPVS (org, node->children[0], spectator_vis);
 			node = node->children[1];
 		}
 	}
@@ -77,11 +77,16 @@ Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
 given point.
 =============
 */
-byte *SV_FatPVS (vec3_t org)
+byte *SV_FatPVS (vec3_t org, qboolean spectator_vis)
 {
+	extern spec_worldmodel_t specworld;
+
 	fatbytes = (sv.worldmodel->numleafs+31)>>3;
 	memset (fatpvs, 0, fatbytes);
-	SV_AddToFatPVS (org, sv.worldmodel->nodes);
+	if (spectator_vis)
+		SV_AddToFatPVS (org, specworld.nodes, spectator_vis);
+	else
+		SV_AddToFatPVS (org, sv.worldmodel->nodes, spectator_vis);
 	return fatpvs;
 }
 
@@ -543,7 +548,10 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 	pvs = NULL;
 	if (!recorder) {
 		VectorAdd (clent->v.origin, clent->v.view_ofs, org);
-		pvs = SV_FatPVS (org);
+		if (client->spectator)
+			pvs = SV_FatPVS (org, true);
+		else
+			pvs = SV_FatPVS (org, false);
 	} else {
 		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
 
@@ -558,10 +566,10 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 			if (pvs == NULL)
 			{
 				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
-				pvs = SV_FatPVS (org);
+				pvs = SV_FatPVS (org, false);
 			} else {
 				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
-				SV_AddToFatPVS (org, sv.worldmodel->nodes);
+				SV_AddToFatPVS (org, sv.worldmodel->nodes, false);
 			}
 		}
 	}

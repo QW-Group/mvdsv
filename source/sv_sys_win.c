@@ -27,10 +27,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #include <process.h>
 
+#include "sv_windows.h"
+
 cvar_t	sys_sleep = {"sys_sleep", "8"};
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
 
 qboolean WinNT;
+
+static char title[16];
 
 /*
 ================
@@ -148,6 +152,21 @@ dir_t Sys_listdir (char *path, char *ext)
 
 /*
 ================
+Sys_Exit
+================
+*/
+void Sys_Exit(int code)
+{
+#ifdef _CONSOLE
+	exit(code);
+#else
+	RemoveNotifyIcon();
+	exit(code);
+#endif
+}
+
+/*
+================
 Sys_Error
 ================
 */
@@ -159,13 +178,22 @@ void Sys_Error (char *error, ...)
 	va_start (argptr,error);
 	vsprintf (text, error,argptr);
 	va_end (argptr);
-
+#ifdef _CONSOLE
 //    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
 	printf ("ERROR: %s\n", text);
-	if (sv_errorlogfile)
-		fprintf(sv_errorlogfile, "ERROR: %s\n", text);
+#else
+	if (!COM_CheckParm("-noerrormsgbox"))
+		MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
+	else
+		Sys_Printf("ERROR: %s\n", text);
 
-	exit (1);
+#endif
+	if (sv_errorlogfile) {
+		fprintf(sv_errorlogfile, "ERROR: %s\n", text);
+		fclose(sv_errorlogfile);
+	}
+
+	Sys_Exit (1);
 }
 
 void Sys_TimeOfDay(date_t *date)
@@ -243,6 +271,7 @@ Sys_ConsoleInput
 */
 char *Sys_ConsoleInput (void)
 {
+#ifdef _CONSOLE
 	static char	text[256];
 	static int		len;
 	int		c;
@@ -292,6 +321,9 @@ char *Sys_ConsoleInput (void)
 	}
 
 	return NULL;
+#else
+	return NULL;
+#endif
 }
 
 
@@ -302,6 +334,7 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
+#ifdef _CONSOLE
 	va_list		argptr;
 	
 	if (sys_nostdout.value)
@@ -310,6 +343,16 @@ void Sys_Printf (char *fmt, ...)
 	va_start (argptr,fmt);
 	vprintf (fmt,argptr);
 	va_end (argptr);
+#else
+	va_list argptr;
+	char tmp[MAXCMDBUF];
+
+	va_start (argptr,fmt);
+	vsprintf(tmp, fmt, argptr);
+	va_end (argptr);
+
+	ConsoleAddText(tmp);
+#endif
 }
 
 /*
@@ -319,7 +362,7 @@ Sys_Quit
 */
 void Sys_Quit (void)
 {
-	exit (0);
+	Sys_Exit(0);
 }
 
 
@@ -407,12 +450,15 @@ int Sys_Script(char *path, char *args)
 
 	GetCurrentDirectory(sizeof(curdir), curdir);
 	
+	
 	sprintf(cmdline, "%s\\sh.exe %s.qws %s", curdir, path, args);
 	strcat(curdir,va("\\%s", com_gamedir+2));
 
-	return CreateProcess (NULL, cmdline, NULL, NULL,
-		FALSE, DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
+	CreateProcess (NULL, cmdline, NULL, NULL,
+		FALSE, 0/*DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
 }
+
+#ifdef _CONSOLE
 /*
 ==================
 main
@@ -433,6 +479,7 @@ int main (int argc, char **argv)
 	int				t;
 	int				sleep_msec;
 
+	GetConsoleTitle(title, sizeof(title));
 	COM_InitArgv (argc, argv);
 	
 	parms.argc = com_argc;
@@ -514,4 +561,143 @@ int main (int argc, char **argv)
 	return true;
 }
 
+#else  // _CONSOLE
+
+char		*argv[MAX_NUM_ARGVS];
+
+int APIENTRY WinMain(   HINSTANCE   hInstance,
+                        HINSTANCE   hPrevInstance,
+                        LPSTR       lpCmdLine,
+                        int         nCmdShow)
+{
+
+	MSG msg;
+	quakeparms_t	parms;
+	double			newtime, time, oldtime;
+	static	char	cwd[1024];
+	struct timeval	timeout;
+	fd_set			fdset;
+	int				sleep_msec;
+	int t;
+	extern int sv_port;
+	
+	// get the command line parameters
+
+	argv[0] = "";
+	parms.argc = 1;
+
+	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS))
+	{
+		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
+			lpCmdLine++;
+
+		if (*lpCmdLine)
+		{
+			argv[parms.argc] = lpCmdLine;
+			parms.argc++;
+
+			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
+				lpCmdLine++;
+
+			if (*lpCmdLine)
+			{
+				*lpCmdLine = 0;
+				lpCmdLine++;
+			}
+			
+		}
+	}
+
+	parms.argv = argv;
+
+	COM_InitArgv (parms.argc, parms.argv);
+	PR_CleanLogText_Init();
+
+	// create main window
+	if (!CreateMainWindow(hInstance, nCmdShow))
+		return 1;
+
+	parms.memsize = 16*1024*1024;
+
+	if ((t = COM_CheckParm ("-heapsize")) != 0 &&
+		t + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024;
+
+	if ((t = COM_CheckParm ("-mem")) != 0 &&
+		t + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024 * 1024;
+
+	parms.membase = Q_Malloc (parms.memsize);
+
+	parms.basedir = ".";
+
+	SV_Init (&parms);
+
+	// if stared miminize update notify icon message (with correct port)
+	if (minimized)
+		UpdateNotifyIconMessage(va("mvdsv:%d", sv_port));
+
+// run one frame immediately for first heartbeat
+	SV_Frame (0.1);		
+
+//
+// main loop
+//
+	oldtime = Sys_DoubleTime () - 0.1;
+
+	while(1)
+	{
+		// get messeges sent to windows
+		if( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) )
+        {
+            if( !GetMessage( &msg, NULL, 0, 0 ) )
+            {
+                break;
+            }
+
+            if(!IsDialogMessage(DlgHwnd, &msg)) {
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+        }
+
+		CheckIdle();
+
+		// server frame
+
+		sleep_msec = sys_sleep.value;
+		if (sleep_msec > 0)
+		{
+			if (sleep_msec > 13)
+				sleep_msec = 13;
+			Sleep (sleep_msec);
+		}
+
+	// select on the net socket and stdin
+	// the only reason we have a timeout at all is so that if the last
+	// connected client times out, the message would not otherwise
+	// be printed until the next event.
+
+		FD_ZERO(&fdset);
+		FD_SET(net_serversocket, &fdset);
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100;
+		if (select (net_serversocket+1, &fdset, NULL, NULL, &timeout) == -1)
+			continue;
+
+	// find time passed since last cycle
+		newtime = Sys_DoubleTime ();
+		time = newtime - oldtime;
+		oldtime = newtime;
+		
+		SV_Frame (time);				
+	}
+
+
+	Sys_Exit(msg.wParam);
+
+	return msg.wParam;
+}
+
+#endif // _CONSOLE
 

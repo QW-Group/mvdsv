@@ -187,6 +187,7 @@ typedef struct
 	int			downloadnumber;
 	dltype_t	downloadtype;
 	int			downloadpercent;
+	int			downloadrate;
 
 // demo loop control
 	int			demonum;		// -1 = don't play demos

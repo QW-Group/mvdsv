@@ -698,8 +698,8 @@ drop to full console
 */
 void CL_Changing_f (void)
 {
-	if (cls.download)  // don't change when downloading
-		return;
+	//if (cls.download)  // don't change when downloading
+	//	return;
 
 	S_StopAllSounds (true);
 	cl.intermission = 0;
