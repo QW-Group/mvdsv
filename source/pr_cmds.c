@@ -1093,6 +1093,23 @@ void PF_calltimeofday (void)
 
 }
 
+/*
+=================
+PF_forcedemoframe
+
+void PF_forcedemoframe(float now)
+Forces demo frame
+if argument 'now' is set, frame is written instantly
+=================
+*/
+
+void PF_forcedemoframe (void)
+{
+	demo.forceFrame = 1;
+	if (G_FLOAT(OFS_PARM0) == 1)
+        SV_SendDemoMessage();
+}
+
 
 /*
 =================
@@ -2350,7 +2367,8 @@ PF_strstr,
 PF_strncpy,
 PF_log,
 PF_redirectcmd,
-PF_calltimeofday,		//102
+PF_calltimeofday,
+PF_forcedemoframe	//103
 };
 
 builtin_t *pr_builtins = pr_builtin;

@@ -948,8 +948,11 @@ void SV_SendDemoMessage(void)
 		min_fps = sv_demofps.value;
 
 	min_fps = max(4, min_fps);
-	if (sv.time - demo.time < 1.0/min_fps)
+
+	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
 		return;
+
+	demo.forceFrame = 0;
 
 	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
 	{

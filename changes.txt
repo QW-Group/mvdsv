@@ -1,4 +1,11 @@
 ----
+QWEX v0.171b Beta DEVELOP
+[server]
+- new MOD function forcedemoframe(float now)
+  now = 1 writes demo frame exaclty at the time the function is executed
+  now = 0 writes demo frame at the end of current frame
+
+----
 QWEX v0.170b Beta DEVELOP
 [server]
 - just minor changes:
