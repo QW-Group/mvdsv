@@ -10,11 +10,11 @@ Project's tools are:
 			"Custom Build" with flags ""
 			"<Component 0xa>" with flags ""
 
-Creating temp file "C:\WINDOWS\TEMP\RSP7093.TMP" with contents </nologo /ML /GX /Od /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /Fr".\SRelease/" /Fp".\SRelease/mvdsv.pch" /YX /Fo".\SRelease/" /Fd".\SRelease/" /FD /c 
+Creating temp file "C:\WINDOWS\TEMP\RSP3306.TMP" with contents </nologo /ML /GX /Od /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /Fr".\SRelease/" /Fp".\SRelease/mvdsv.pch" /YX /Fo".\SRelease/" /Fd".\SRelease/" /FD /c 
 "D:\projekty\qwe\source\sv_user.c"
 >
-Creating command line "cl.exe @C:\WINDOWS\TEMP\RSP7093.TMP" 
-Creating temp file "C:\WINDOWS\TEMP\RSP7094.TMP" with contents <wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /incremental:no /pdb:".\SRelease/mvdsv.pdb" /machine:I386 /out:"d:/quake/mvdsv.exe" 
+Creating command line "cl.exe @C:\WINDOWS\TEMP\RSP3306.TMP" 
+Creating temp file "C:\WINDOWS\TEMP\RSP3310.TMP" with contents <wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /incremental:no /pdb:".\SRelease/mvdsv.pdb" /machine:I386 /out:"d:/quake/mvdsv.exe" 
 .\SRelease\cmd.obj
 .\SRelease\common.obj
 .\SRelease\crc.obj
@@ -43,11 +43,11 @@ Creating temp file "C:\WINDOWS\TEMP\RSP7094.TMP" with contents <wsock32.lib kern
 .\SRelease\version.obj
 .\SRelease\world.obj
 .\SRelease\zone.obj>
-Creating command line "link.exe @C:\WINDOWS\TEMP\RSP7094.TMP" 
+Creating command line "link.exe @C:\WINDOWS\TEMP\RSP3310.TMP" 
 Compiling...
 sv_user.c
 Linking...
-Creating temp file "C:\WINDOWS\TEMP\RSP7101.TMP" with contents </nologo /o".\SRelease/mvdsv.bsc" 
+Creating temp file "C:\WINDOWS\TEMP\RSP3371.TMP" with contents </nologo /o".\SRelease/mvdsv.bsc" 
 .\SRelease\cmd.sbr
 .\SRelease\common.sbr
 .\SRelease\crc.sbr
@@ -76,7 +76,7 @@ Creating temp file "C:\WINDOWS\TEMP\RSP7101.TMP" with contents </nologo /o".\SRe
 .\SRelease\version.sbr
 .\SRelease\world.sbr
 .\SRelease\zone.sbr>
-Creating command line "bscmake.exe @C:\WINDOWS\TEMP\RSP7101.TMP" 
+Creating command line "bscmake.exe @C:\WINDOWS\TEMP\RSP3371.TMP" 
 Creating browse info file...
 
 

@@ -129,6 +129,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_serverinfo		52		// serverinfo
 #define svc_updatepl		53		// [byte] [byte]
 
+#define svc_nails2			54		// for interpolation, stores edict num
+
 
 
 //==============================================
@@ -279,7 +281,8 @@ typedef struct
 } entity_state_t;
 
 
-#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
+#define	MAX_PACKET_ENTITIES	196	// doesn't count nails
+#define OLD_MAX_PACKET_ENTITIES 64 
 typedef struct
 {
 	int		num_entities;

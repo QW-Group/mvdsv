@@ -74,6 +74,10 @@ cvar_t	sv_multiPOVlevel = {"sv_multiPOVlevel", "0"};
 cvar_t	sv_demofps = {"sv_demofps", "20"};
 cvar_t	sv_demoPings = {"sv_demopings", "3"};
 cvar_t	sv_demoNoVis = {"sv_demonovis", "1"};
+cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
+cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
+cvar_t	sv_demoMaxSize  = {"sv_demoMaxSize", "10240"};
+cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
 
 //
 // game rules mirrored in svs.info
@@ -91,6 +95,8 @@ cvar_t	serverdemo = {"serverdemo","",CVAR_SERVERINFO | CVAR_ROM};
 // not mirrored
 cvar_t	skill = {"skill", "1"};
 cvar_t	coop = {"coop", "0"};
+
+cvar_t	version = {"version", "QWExtended " QWE_VERSION, CVAR_ROM};
 
 cvar_t	hostname = {"hostname","unnamed",CVAR_SERVERINFO};
 
@@ -1326,6 +1332,7 @@ SV_Frame
 void SV_Frame (double time)
 {
 	static double	start, end;
+	double	demo_start, demo_end;
 
 #if 0	// disabled for now
 
@@ -1380,7 +1387,10 @@ void SV_Frame (double time)
 // send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
 
+	demo_start = Sys_DoubleTime ();
 	SV_SendDemoMessage();
+	demo_end = Sys_DoubleTime ();
+	svs.stats.demo += demo_end - demo_start;
 
 // send a heartbeat to the master if needed
 	Master_Heartbeat ();
@@ -1393,10 +1403,12 @@ void SV_Frame (double time)
 		svs.stats.latched_active = svs.stats.active;
 		svs.stats.latched_idle = svs.stats.idle;
 		svs.stats.latched_packets = svs.stats.packets;
+		svs.stats.latched_demo = svs.stats.demo;
 		svs.stats.active = 0;
 		svs.stats.idle = 0;
 		svs.stats.packets = 0;
 		svs.stats.count = 0;
+		svs.stats.demo = 0;
 	}
 }
 
@@ -1455,6 +1467,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&spawn);
 	Cvar_RegisterVariable (&watervis);
 	Cvar_RegisterVariable (&serverdemo);
+	Cvar_RegisterVariable (&version);
 
 	Cvar_RegisterVariable (&developer);
 
@@ -1493,6 +1506,10 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_demofps);
 	Cvar_RegisterVariable (&sv_demoPings);
 	Cvar_RegisterVariable (&sv_demoNoVis);
+	Cvar_RegisterVariable (&sv_demoUseCache);
+	Cvar_RegisterVariable (&sv_demoCacheSize);
+	Cvar_RegisterVariable (&sv_demoMaxSize);
+	Cvar_RegisterVariable (&sv_demoMaxDirSize);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
@@ -1651,9 +1668,9 @@ void SV_SetMultiPOV(client_t *cl)
 	}
 
 	// Decide client team, spectators uses tracking player team
-	strcpy(team,Info_ValueForKey (cl->userinfo, "team"));
+	strcpy(team,cl->team);
 	if (cl->spec_track > 0 && cl->spec_track <= MAX_CLIENTS) {
-		strcpy(team, Info_ValueForKey (svs.clients[cl->spec_track - 1].userinfo, "team"));
+		strcpy(team, svs.clients[cl->spec_track - 1].team);
 	} else if (cl->spectator) team[0] = 0;
 
 	cl->teamPOVs; // it will be build from scratch
@@ -1668,10 +1685,10 @@ void SV_SetMultiPOV(client_t *cl)
 			continue;
 
 		// decide client team, spectators uses tracking player team
-		strcpy(team2,Info_ValueForKey (client->userinfo, "team"));
+		strcpy(team2, client->team);
 
 		if (client->spec_track > 0 && client->spec_track <= MAX_CLIENTS) {
-			strcpy(team2, Info_ValueForKey (svs.clients[client->spec_track - 1].userinfo, "team"));
+			strcpy(team2, svs.clients[client->spec_track - 1].team);
 		} else if (client->spectator) team2[0] = 0;
 
 		if (!client->spectator && !strcmp(team, team2)) {
@@ -1870,6 +1887,9 @@ void SV_ExtractFromUserinfo (client_t *cl)
 
 	Q_strncpyz (cl->name, val, sizeof(cl->name));
 
+	// team
+	Q_strncpyz (cl->team, Info_ValueForKey (cl->userinfo, "team"), sizeof(cl->team));
+
 	// rate
 	val = Info_ValueForKey (cl->userinfo, "rate");
 	cl->netchan.rate = 1.0 / SV_BoundRate (atoi(val));
@@ -1946,6 +1966,8 @@ void SV_Init (quakeparms_t *parms)
 	Sys_Init ();
 	Pmove_Init ();
 
+	Demo_Init ();
+
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
@@ -1962,7 +1984,7 @@ void SV_Init (quakeparms_t *parms)
 	Con_Printf ("\nServer Version %s (Build %04d)\n\n", QWE_VERSION, build_number());
 #endif
 
-	Con_Printf ("QWExtended Project home page: http://http://www.wsb.poznan.pl/~pawel/q/q/qwex/\n\n");
+	Con_Printf ("QWExtended Project home page: http://qwex.n3.net/\n\n");
 
 	Con_Printf ("======== QuakeWorld Initialized ========\n");
 	

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
+#include "version.h"
 
 server_static_t	svs;				// persistent server info
 server_t		sv;					// local server
@@ -284,6 +285,7 @@ void SV_SpawnServer (char *server)
 {
 	edict_t		*ent;
 	int			i;
+	extern cvar_t version;
 
 	Con_DPrintf ("SpawnServer: %s\n",server);
 	
@@ -390,6 +392,12 @@ void SV_SpawnServer (char *server)
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
+
+	// information about the server
+	ent->v.netname = PR_SetString(version.string);
+	ent->v.targetname = PR_SetString("mvdsv");
+	ent->v.impulse = QWE_VERNUM;
+	ent->v.items = QWE_FUNCS;
 
 	pr_global_struct->mapname = /*sv.name - pr_strings;//*/PR_SetString(sv.name);
 	// serverflags are for cross level information (sigils)

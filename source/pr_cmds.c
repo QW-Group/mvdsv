@@ -222,6 +222,7 @@ single print to a specific client
 sprint(clientent, value)
 =================
 */
+
 void PF_sprint (void)
 {
 	char		*s;
@@ -277,8 +278,8 @@ void PF_centerprint (void)
 
 	if (sv.demorecording) {
 		DemoReliableWrite_Begin (dem_single, entnum - 1, 2 + strlen(s));
-		MSG_WriteByte (&demo.buf, svc_centerprint);
-		MSG_WriteString (&demo.buf, s);
+		MSG_WriteByte (demo.buf, svc_centerprint);
+		MSG_WriteString (demo.buf, s);
 	}
 }
 
@@ -719,8 +720,8 @@ void PF_stuffcmd (void)
 			ClientReliableWrite_String (cl, buf);
 			if (sv.demorecording) {
 				DemoReliableWrite_Begin ( dem_single, cl - svs.clients, 2+strlen(buf));
-				MSG_WriteByte(&demo.buf, svc_stufftext);
-				MSG_WriteString(&demo.buf, buf);
+				MSG_WriteByte(demo.buf, svc_stufftext);
+				MSG_WriteString(demo.buf, buf);
 			}
 			buf[0] = 0;
 		}
@@ -807,21 +808,6 @@ void PF_argv (void)
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 }
 
-/*
-=================
-PF_conprint
-
-Does Sys_Printf
-
-void conprint(string)
-=================
-*/
-
-void PF_conprint(void)
-{
-
-	Sys_Printf(G_STRING(OFS_PARM0));
-}
 
 /*
 =================
@@ -1182,9 +1168,9 @@ void PF_lightstyle (void)
 	if (sv.demorecording)
 	{
 		DemoReliableWrite_Begin( dem_all, 0, strlen(val)+3);
-		MSG_WriteByte(&demo.buf, svc_lightstyle);
-		MSG_WriteChar(&demo.buf, style);
-		MSG_WriteString(&demo.buf, val);
+		MSG_WriteByte(demo.buf, svc_lightstyle);
+		MSG_WriteChar(demo.buf, style);
+		MSG_WriteString(demo.buf, val);
 	}
 }
 
@@ -1478,6 +1464,11 @@ void PF_WriteByte (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1);
 		ClientReliableWrite_Byte(cl, G_FLOAT(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1);
+			MSG_WriteByte(demo.buf, G_FLOAT(OFS_PARM1));
+		}
 	} else
 		MSG_WriteByte (WriteDest(), G_FLOAT(OFS_PARM1));
 }
@@ -1488,6 +1479,11 @@ void PF_WriteChar (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1);
 		ClientReliableWrite_Char(cl, G_FLOAT(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1);
+			MSG_WriteByte(demo.buf, G_FLOAT(OFS_PARM1));
+		}
 	} else
 		MSG_WriteChar (WriteDest(), G_FLOAT(OFS_PARM1));
 }
@@ -1498,6 +1494,11 @@ void PF_WriteShort (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 2);
 		ClientReliableWrite_Short(cl, G_FLOAT(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 2);
+			MSG_WriteShort(demo.buf, G_FLOAT(OFS_PARM1));
+		}
 	} else
 		MSG_WriteShort (WriteDest(), G_FLOAT(OFS_PARM1));
 }
@@ -1508,6 +1509,11 @@ void PF_WriteLong (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 4);
 		ClientReliableWrite_Long(cl, G_FLOAT(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 4);
+			MSG_WriteLong(demo.buf, G_FLOAT(OFS_PARM1));
+		}
 	} else
 		MSG_WriteLong (WriteDest(), G_FLOAT(OFS_PARM1));
 }
@@ -1518,6 +1524,11 @@ void PF_WriteAngle (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1);
 		ClientReliableWrite_Angle(cl, G_FLOAT(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1);
+			MSG_WriteByte(demo.buf, G_FLOAT(OFS_PARM1));
+		}
 	} else
 		MSG_WriteAngle (WriteDest(), G_FLOAT(OFS_PARM1));
 }
@@ -1528,6 +1539,11 @@ void PF_WriteCoord (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 2);
 		ClientReliableWrite_Coord(cl, G_FLOAT(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 2);
+			MSG_WriteCoord(demo.buf, G_FLOAT(OFS_PARM1));
+		}
 	} else
 		MSG_WriteCoord (WriteDest(), G_FLOAT(OFS_PARM1));
 }
@@ -1538,6 +1554,11 @@ void PF_WriteString (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1+strlen(G_STRING(OFS_PARM1)));
 		ClientReliableWrite_String(cl, G_STRING(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 1 + strlen(G_STRING(OFS_PARM1)));
+			MSG_WriteString(demo.buf, G_STRING(OFS_PARM1));
+		}
 	} else
 		MSG_WriteString (WriteDest(), G_STRING(OFS_PARM1));
 }
@@ -1549,6 +1570,11 @@ void PF_WriteEntity (void)
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 2);
 		ClientReliableWrite_Short(cl, G_EDICTNUM(OFS_PARM1));
+		if (sv.demorecording)
+		{
+			DemoReliableWrite_Begin(dem_single, cl - svs.clients, 2);
+			MSG_WriteShort(demo.buf, G_EDICTNUM(OFS_PARM1));
+		}
 	} else
 		MSG_WriteShort (WriteDest(), G_EDICTNUM(OFS_PARM1));
 }
@@ -1838,9 +1864,9 @@ PF_multicast,
 PF_executecmd,	// #83
 PF_tokanize,
 PF_argc,
-PF_argv,
-PF_conprint		// #87
+PF_argv			// #86
 };
+// SET QWE_FUNCS IN VERSION.H IF NUMBER OF FUNCTIONS CHANGES
 
 builtin_t *pr_builtins = pr_builtin;
 int pr_numbuiltins = sizeof(pr_builtin)/sizeof(pr_builtin[0]);

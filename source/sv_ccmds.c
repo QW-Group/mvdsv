@@ -404,19 +404,25 @@ void SV_Status_f (void)
 {
 	int			i, j, l;
 	client_t	*cl;
-	float		cpu, avg, pak;
+	float		cpu, avg, pak, demo = 0;
 	char		*s;
 
 	cpu = (svs.stats.latched_active+svs.stats.latched_idle);
+
 	if (cpu)
+	{
+		demo = 100*svs.stats.latched_demo/cpu;
 		cpu = 100*svs.stats.latched_active/cpu;
+	}
+
 	avg = 1000*svs.stats.latched_active / STATFRAMES;
 	pak = (float)svs.stats.latched_packets/ STATFRAMES;
 
-	Con_Printf ("net address      : %s\n",NET_AdrToString (net_local_adr));
-	Con_Printf ("cpu utilization  : %3i%%\n",(int)cpu);
-	Con_Printf ("avg response time: %i ms\n",(int)avg);
-	Con_Printf ("packets/frame    : %5.2f (%d)\n", pak, num_prstr);
+	Con_Printf ("net address                 : %s\n",NET_AdrToString (net_local_adr));
+	Con_Printf ("cpu utilization (overall)   : %3i%%\n",(int)cpu);
+	Con_Printf ("cpu utilization (recording) : %3i%%\n", (int)demo);
+	Con_Printf ("avg response time           : %i ms\n",(int)avg);
+	Con_Printf ("packets/frame               : %5.2f (%d)\n", pak, num_prstr);
 	
 // min fps lat drp
 	if (sv_redirected != RD_NONE) {
@@ -535,9 +541,9 @@ void SV_ConSay_f(void)
 
 	if (sv.demorecording) {
 		DemoReliableWrite_Begin (dem_all, 0, strlen(text)+3);
-		MSG_WriteByte (&demo.buf, svc_print);
-		MSG_WriteByte (&demo.buf, PRINT_CHAT);
-		MSG_WriteString (&demo.buf, text);
+		MSG_WriteByte (demo.buf, svc_print);
+		MSG_WriteByte (demo.buf, PRINT_CHAT);
+		MSG_WriteString (demo.buf, text);
 	}
 
 }

@@ -8,6 +8,11 @@
 #include <limits.h>
 #include <direct.h>
 #include <ctype.h>
+#include <windows.h>
+#include <io.h>
+#include <fcntl.h>
+
+#define INI_FILE	"qwdtools.ini"
 
 #pragma warning( disable : 4244)
 
@@ -31,6 +36,24 @@ typedef vec_t vec3_t[3];
 #define DF_WEAPONFRAME (1<<10)
 #define DF_MODEL	(1<<11)
 
+// QWDTools options
+
+#define O_CONVERT	1
+#define O_ANALYSE	2
+#define O_LOG		4
+#define O_DEBUG		8
+#define O_FS		16 // filter_spectalk
+#define O_FQ		32 // filter_qizmotalk
+#define O_FC		64 // filter_qizmotalk
+#define O_FT		128
+#define O_WAITFORKBHIT	256 // "press any key" when finished
+#define O_SHUTDOWN	512
+#define O_STDIN		1024
+#define O_STDOUT	2048
+
+#define JOB_TODO	(O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
+
+
 #include "protocol.h"
 #include "bothdefs.h"
 #include "tools.h"
@@ -38,8 +61,8 @@ typedef vec_t vec3_t[3];
 
 extern	sizebuf_t	net_message;
 
-#define	MAX_LATENT	32
-#define HISTORY (UPDATE_BACKUP - 10)
+#define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
+#define	MAX_SOURCES		50
 
 typedef struct
 {
@@ -58,16 +81,8 @@ typedef struct
 	int			reliable_sequence;			// single bit
 	int			last_reliable_sequence;		// sequence number of last send
 
-// reliable staging and holding areas
-	sizebuf_t	message;		// writing buffer to send to server
-	byte		message_buf[MAX_MSGLEN];
-
 	int			reliable_length;
-	byte		reliable_buf[MAX_MSGLEN];	// unacked reliable message
 
-// time and size data to calculate bandwidth
-	int			outgoing_size[MAX_LATENT];
-	double		outgoing_time[MAX_LATENT];
 } netchan_t;
 
 
@@ -78,23 +93,18 @@ typedef enum {
 
 typedef struct
 {
-	FILE		*file;
-	char		name[MAX_OSPATH];
-	sizebuf_t	buf;
-	byte		buf_data[10*MAX_MSGLEN]; // heh?
 	sizebuf_t	datagram;
 	byte		datagram_data[MAX_DATAGRAM];
 	int			lastto;
 	int			lasttype;
 	double		time, pingtime;
 	int			stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
-	//double		frametime[UPDATE_BACKUP];
+	byte		buffer[40*MAX_MSGLEN];
+	int			bufsize;
 } demo_t;
 
 typedef struct
 {
-	FILE		*file;
-	char		name[MAX_OSPATH];
 	float		time;
 	format_t	format;
 	byte		type;
@@ -113,19 +123,55 @@ typedef struct
 	int			framecount;
 	float		latency;
 	int			spec_track;
+	qboolean	qwz;
+	float		prevtime;
+	float		lasttime;
 } source_t;
+
+typedef enum
+{
+	TYPE_S = 1,
+	TYPE_I = 2,
+	TYPE_O = 4,
+	TYPE_SO = 1 | 4,
+	TYPE_IO = 2 | 4
+} type_t;
+
+typedef struct
+{
+
+	char	*name, *shname;
+	type_t	type;
+	union {
+		char	*str;
+		int		*Int;
+		int		opt;
+	};
+	int	opt2;
+} param_t;
 
 //
 // main.c
 //
 
+void Sys_fclose (FILE *hndl);
+void Sys_Exit (int i);
+void Sys_mkdir (char *path);
 void Sys_Error (char *error, ...);
 void Sys_Printf (char *fmt, ...);
 void Dem_Stop(void);
+char *getPath(char *path);
+
+extern sizebuf_t	net_message;
+extern byte			net_message_buffer[MAX_UDP_PACKET];
+extern sizebuf_t	stats_msg;
+extern byte			stats_buf[MAX_MSGLEN];
+extern char			currentDir[MAX_OSPATH];
+extern HANDLE		ConsoleInHndl, ConsoleOutHndl;
+extern char			sourceName[MAX_SOURCES][MAX_OSPATH];
 
 extern demo_t	demo;
 extern source_t	from;
-extern qboolean debug;
 extern qboolean filter_spectalk;
 extern qboolean	filter_qizmotalk;
 
@@ -143,6 +189,26 @@ int TranslateFlags(int src, int to);
 // dem_send.c
 //
 
-//void WriteEntitiesToClient (sizebuf_t *msg, frame_t *frame);
 void WritePackets(int num);
 
+//
+// init.c
+//
+
+void CtrlH_Init(void);
+void World_Init(void);
+void ParseArgv(void);
+void Load_ini (void);
+int Files_Init (int options);
+
+//
+// ini.c
+//
+
+void ReadIni(char *buf);
+
+//
+// qwz.c
+//
+qboolean OpenQWZ (char *files);
+void StopQWZ (void);

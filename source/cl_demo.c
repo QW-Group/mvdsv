@@ -99,10 +99,10 @@ void CL_WriteDemoCmd (usercmd_t *pcmd)
 //Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	fl = LittleFloat((float)realtime);
-	fwrite (&fl, sizeof(fl), 1, cls.demofile);
+	fwrite (&fl, sizeof(fl), 1, cls.recordfile);
 
 	c = dem_cmd;
-	fwrite (&c, sizeof(c), 1, cls.demofile);
+	fwrite (&c, sizeof(c), 1, cls.recordfile);
 
 	// correct for byte order, bytes don't matter
 	cmd = *pcmd;
@@ -113,15 +113,15 @@ void CL_WriteDemoCmd (usercmd_t *pcmd)
 	cmd.sidemove    = LittleShort(cmd.sidemove);
 	cmd.upmove      = LittleShort(cmd.upmove);
 
-	fwrite(&cmd, sizeof(cmd), 1, cls.demofile);
+	fwrite(&cmd, sizeof(cmd), 1, cls.recordfile);
 
 	for (i=0 ; i<3 ; i++)
 	{
 		fl = LittleFloat (cl.viewangles[i]);
-		fwrite (&fl, 4, 1, cls.demofile);
+		fwrite (&fl, 4, 1, cls.recordfile);
 	}
 
-	fflush (cls.demofile);
+	fflush (cls.recordfile);
 }
 
 /*
@@ -143,16 +143,16 @@ void CL_WriteDemoMessage (sizebuf_t *msg)
 		return;
 
 	fl = LittleFloat((float)realtime);
-	fwrite (&fl, sizeof(fl), 1, cls.demofile);
+	fwrite (&fl, sizeof(fl), 1, cls.recordfile);
 
 	c = dem_read;
-	fwrite (&c, sizeof(c), 1, cls.demofile);
+	fwrite (&c, sizeof(c), 1, cls.recordfile);
 
 	len = LittleLong (msg->cursize);
-	fwrite (&len, 4, 1, cls.demofile);
-	fwrite (msg->data, msg->cursize, 1, cls.demofile);
+	fwrite (&len, 4, 1, cls.recordfile);
+	fwrite (msg->data, msg->cursize, 1, cls.recordfile);
 
-	fflush (cls.demofile);
+	fflush (cls.recordfile);
 }
 
 /*
@@ -311,8 +311,8 @@ readit:
 		fread (&net_message.cursize, 4, 1, cls.demofile);
 		net_message.cursize = LittleLong (net_message.cursize);
 		
-		if (net_message.cursize > MAX_MSGLEN)
-			Host_EndGame ("Demo message > MAX_MSGLEN");
+		if (net_message.cursize > net_message.maxsize)
+			Host_EndGame ("Demo message > MAX_UDP_PACKET");
 		r = fread (net_message.data, net_message.cursize, 1, cls.demofile);
 		if (r != 1)
 		{
@@ -430,8 +430,8 @@ void CL_Stop_f (void)
 	CL_WriteDemoMessage (&net_message);
 
 // finish up
-	fclose (cls.demofile);
-	cls.demofile = NULL;
+	fclose (cls.recordfile);
+	cls.recordfile = NULL;
 	cls.demorecording = false;
 	Con_Printf ("Completed demo\n");
 }
@@ -457,21 +457,21 @@ void CL_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 		return;
 
 	fl = LittleFloat((float)realtime);
-	fwrite (&fl, sizeof(fl), 1, cls.demofile);
+	fwrite (&fl, sizeof(fl), 1, cls.recordfile);
 
 	c = dem_read;
-	fwrite (&c, sizeof(c), 1, cls.demofile);
+	fwrite (&c, sizeof(c), 1, cls.recordfile);
 
 	len = LittleLong (msg->cursize + 8);
-	fwrite (&len, 4, 1, cls.demofile);
+	fwrite (&len, 4, 1, cls.recordfile);
 
 	i = LittleLong(seq);
-	fwrite (&i, 4, 1, cls.demofile);
-	fwrite (&i, 4, 1, cls.demofile);
+	fwrite (&i, 4, 1, cls.recordfile);
+	fwrite (&i, 4, 1, cls.recordfile);
 
-	fwrite (msg->data, msg->cursize, 1, cls.demofile);
+	fwrite (msg->data, msg->cursize, 1, cls.recordfile);
 
-	fflush (cls.demofile);
+	fflush (cls.recordfile);
 }
 
 
@@ -487,17 +487,17 @@ void CL_WriteSetDemoMessage (void)
 		return;
 
 	fl = LittleFloat((float)realtime);
-	fwrite (&fl, sizeof(fl), 1, cls.demofile);
+	fwrite (&fl, sizeof(fl), 1, cls.recordfile);
 
 	c = dem_set;
-	fwrite (&c, sizeof(c), 1, cls.demofile);
+	fwrite (&c, sizeof(c), 1, cls.recordfile);
 
 	len = LittleLong(cls.netchan.outgoing_sequence);
-	fwrite (&len, 4, 1, cls.demofile);
+	fwrite (&len, 4, 1, cls.recordfile);
 	len = LittleLong(cls.netchan.incoming_sequence);
-	fwrite (&len, 4, 1, cls.demofile);
+	fwrite (&len, 4, 1, cls.recordfile);
 
-	fflush (cls.demofile);
+	fflush (cls.recordfile);
 }
 
 
@@ -516,6 +516,8 @@ static void CL_Record (void)
 	int seq = 1;
 
 	cls.demorecording = true;
+
+	noscale_realtime = realtime;
 
 /*-------------------------------------------------*/
 
@@ -793,8 +795,8 @@ void CL_Record_f (void)
 //
 	COM_ForceExtension (name, ".qwd");
 
-	cls.demofile = fopen (name, "wb");
-	if (!cls.demofile)
+	cls.recordfile = fopen (name, "wb");
+	if (!cls.recordfile)
 	{
 		Con_Printf ("ERROR: couldn't open.\n");
 		return;
@@ -910,8 +912,8 @@ void CL_EasyRecord_f (void)
 //
 // open the demo file
 //
-	cls.demofile = fopen (name2, "wb");
-	if (!cls.demofile)
+	cls.recordfile = fopen (name2, "wb");
+	if (!cls.recordfile)
 	{
 		Con_Printf ("ERROR: couldn't open.\n");
 		return;
@@ -956,8 +958,8 @@ void CL_ReRecord_f (void)
 //
 	COM_ForceExtension (name, ".qwd");
 
-	cls.demofile = fopen (name, "wb");
-	if (!cls.demofile)
+	cls.recordfile = fopen (name, "wb");
+	if (!cls.recordfile)
 	{
 		Con_Printf ("ERROR: couldn't open.\n");
 		return;

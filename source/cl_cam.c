@@ -40,7 +40,7 @@ static int oldbuttons;
 
 // track high fragger
 cvar_t cl_hightrack = {"cl_hightrack", "0" };
-cvar_t cl_track_validonly = {"cl_track_validonly", "0" };
+cvar_t cl_track_validonly = {"cl_track_validonly", "1" };
 
 cvar_t cl_chasecam = {"cl_chasecam", "0"};
 

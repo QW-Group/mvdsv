@@ -1,7 +1,5 @@
 typedef struct sizebuf_s
 {
-	qboolean	allowoverflow;	// if false, do a Sys_Error
-	qboolean	overflowed;		// set to true if the buffer size failed
 	byte	*data;
 	int		maxsize;
 	int		cursize;
@@ -87,9 +85,6 @@ float MSG_ReadAngle (void);
 float MSG_ReadAngle16 (void);
 void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
-extern	char		com_token[1024];
-extern	qboolean	com_eof;
-
 char *Info_ValueForKey (char *s, char *key);
 
 #define MAX_NUM_ARGVS	50
@@ -99,21 +94,27 @@ extern	char	*com_argv[MAX_NUM_ARGVS];
 
 int CheckParm (char *parm);
 void AddParm (char *parm);
+void RemoveParm (int num);
 
 void Tools_Init (void);
 void InitArgv (int argc, char **argv);
 
 void StripExtension (char *in, char *out);
+char *FileExtension (char *in);
 void DefaultExtension (char *path, char *extension);
 void ForceExtension (char *path, char *extension);
+char *TemplateName (char *dst, char *src);
 
 char	*va(char *format, ...);
 // does a varargs printf into a temp buffer
 
-int filelength (FILE *f);
+int fileLength (FILE *f);
 int FileOpenRead (char *path, FILE **hndl);
+byte *LoadFile(char *path);
+
 void DemoWrite_Begin(byte type, int to, int size);
 void DemoWriteToDisk(int type, int to, float time);
+void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
 
 vec_t Length(vec3_t v);
 

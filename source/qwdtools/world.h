@@ -45,6 +45,7 @@ typedef struct
 	int		modelindex;
 	vec3_t	origin;
 	vec3_t	angles;
+	int		num;
 } projectile_t;
 
 #define	MAX_PROJECTILES	32
@@ -64,7 +65,6 @@ typedef struct
 	packet_entities_t	packet_entities;
 	qboolean	invalid;		// true if the packet_entities delta was invalid
 	sizebuf_t	buf;
-	byte		buf_data[20*MAX_MSGLEN]; // heh?
 	projectile_t projectiles[MAX_PROJECTILES];
 	int			num_projectiles;
 	int			parsecount;
@@ -94,6 +94,31 @@ typedef struct
 
 typedef struct
 {
+	FILE	*file;
+	char	name[MAX_OSPATH];
+	int		filesize;
+} file_t;
+
+typedef struct
+{
+	FILE *file;
+	char name[MAX_OSPATH];
+
+	int		frags[MAX_CLIENTS];
+	int		total_clients;
+	int		total_spectators;
+	int		teamfrags[MAX_CLIENTS];
+	int		deathmach;
+	int		teamplay;
+	char	*povs[MAX_CLIENTS];
+	int		timelimit;
+	int		fraglimit;
+	float	demotime;
+	int		demofps;
+} analyse_t;
+
+typedef struct
+{
 	int			servercount;	// server identification for prespawns
 	char		serverinfo[MAX_SERVERINFO_STRING];
 	int			parsecount;		// server message counter
@@ -105,16 +130,31 @@ typedef struct
 	frame_t		frames[UPDATE_BACKUP];
 
 	player_info_t	players[MAX_CLIENTS];
-	interpolate_t	int_entities[MAX_PACKET_ENTITIES];
-	int				int_packet;
 	qboolean	signonloaded;
 
 	demoinfo_t	demoinfo[MAX_CLIENTS];
 	float		time;
-
+	long		oldftell;
+	int			percentage;
 } world_state_t;
 
+typedef struct
+{
+	int			options;		// QWDTools options
+	int			fps;
+	int			msglevel;
+	file_t		debug;
+	file_t		log;
+	file_t		from;
+	file_t		demo;
+	analyse_t	analyse;
+	int			sources;
+} static_world_state_t;
+
+extern char				qizmoDir[MAX_OSPATH];
+extern char				outputDir[MAX_OSPATH];
 extern world_state_t	world;
+extern static_world_state_t	sworld;
 extern lightstyle_t		lightstyle[MAX_LIGHTSTYLES];
 extern entity_state_t	baselines[MAX_EDICTS];
 extern float			realtime;

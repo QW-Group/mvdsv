@@ -1416,7 +1416,7 @@ InputName=cl_math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1432,7 +1432,7 @@ InputName=cl_math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1448,7 +1448,7 @@ InputName=cl_math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1464,7 +1464,7 @@ InputName=cl_math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1487,7 +1487,7 @@ InputName=d_draw
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1503,7 +1503,7 @@ InputName=d_draw
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1535,7 +1535,7 @@ InputName=d_draw16
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1551,7 +1551,7 @@ InputName=d_draw16
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1583,7 +1583,7 @@ InputName=d_parta
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1599,7 +1599,7 @@ InputName=d_parta
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1631,7 +1631,7 @@ InputName=d_polysa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1647,7 +1647,7 @@ InputName=d_polysa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1679,7 +1679,7 @@ InputName=d_scana
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1695,7 +1695,7 @@ InputName=d_scana
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1727,7 +1727,7 @@ InputName=d_spr8
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1743,7 +1743,7 @@ InputName=d_spr8
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1775,7 +1775,7 @@ InputName=d_varsa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1791,7 +1791,7 @@ InputName=d_varsa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1823,7 +1823,7 @@ InputName=math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1839,7 +1839,7 @@ InputName=math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1855,7 +1855,7 @@ InputName=math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1871,7 +1871,7 @@ InputName=math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1894,7 +1894,7 @@ InputName=r_aclipa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1910,7 +1910,7 @@ InputName=r_aclipa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1942,7 +1942,7 @@ InputName=r_aliasa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1958,7 +1958,7 @@ InputName=r_aliasa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1990,7 +1990,7 @@ InputName=r_drawa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2006,7 +2006,7 @@ InputName=r_drawa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2038,7 +2038,7 @@ InputName=r_edgea
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2054,7 +2054,7 @@ InputName=r_edgea
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2086,7 +2086,7 @@ InputName=r_varsa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2102,7 +2102,7 @@ InputName=r_varsa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2134,7 +2134,7 @@ InputName=snd_mixa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2150,7 +2150,7 @@ InputName=snd_mixa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2166,7 +2166,7 @@ InputName=snd_mixa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2182,7 +2182,7 @@ InputName=snd_mixa
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2205,7 +2205,7 @@ InputName=surf16
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2221,7 +2221,7 @@ InputName=surf16
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2253,7 +2253,7 @@ InputName=surf8
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2269,7 +2269,7 @@ InputName=surf8
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2301,7 +2301,7 @@ InputName=sys_x86
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2317,7 +2317,7 @@ InputName=sys_x86
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2333,7 +2333,7 @@ InputName=sys_x86
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2349,7 +2349,7 @@ InputName=sys_x86
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-          $(OUTDIR)\$(InputName).asm 
+           $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build

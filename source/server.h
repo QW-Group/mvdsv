@@ -123,7 +123,7 @@ typedef struct
 	packet_entities_t	entities;
 } client_frame_t;
 
-#define MAX_BACK_BUFFERS	8
+#define MAX_BACK_BUFFERS	16
 #define MAX_STUFFTEXT		256
 
 typedef struct client_s
@@ -155,6 +155,7 @@ typedef struct client_s
 
 	edict_t			*edict;				// EDICT_NUM(clientnum+1)
 	char			name[32];			// for printing to other people
+	char			team[32];
 										// extracted from userinfo
 	int				messagelevel;		// for filtering printed messages
 
@@ -201,7 +202,6 @@ typedef struct client_s
 	char			uploadfn[MAX_QPATH];
 	netadr_t		snap_from;
 	qboolean		remote_snap;
-	demoinfo_t		demoinfo;
 
  
 //===== NETWORK ============
@@ -218,20 +218,66 @@ typedef struct client_s
 
 typedef struct
 {
+	demoinfo_t	info;
+	float		sec;
+	int			parsecount;
+	qboolean	fixangle;
+	vec3_t		angle;
+	float		cmdtime;
+	int			flags;
+	int			frame;
+} demo_client_t;
+
+typedef struct
+{
+	qboolean	allowoverflow;	// if false, do a Sys_Error
+	qboolean	overflowed;		// set to true if the buffer size failed
+	byte	*data;
+	int		maxsize;
+	int		cursize;
+	int		size, *msgsize;
+	int		curto, curtype;
+} demobuf_t;
+
+typedef struct
+{
+	demo_client_t clients[MAX_CLIENTS];
+	double		time;
+	demobuf_t	buf;
+
+} demo_frame_t;
+
+#define DEMO_FRAMES 64
+#define DEMO_FRAMES_MASK (DEMO_FRAMES - 1)
+
+typedef struct
+{
 	FILE		*file;
-	sizebuf_t	buf;
-	byte		buf_data[10*MAX_MSGLEN]; // heh?
-	int			bufsize, *cursize;
+
+	union {
+		sizebuf_t *buf;
+		demobuf_t *dbuf;
+	};
 	sizebuf_t	datagram;
 	byte		datagram_data[MAX_DATAGRAM];
-	int			lastto, curto;
-	int			lasttype, curtype;
+	int			lastto;
+	int			lasttype;
 	double		time, pingtime;
 	int			stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
 	client_t	recorder;
 	qboolean	fixangle[MAX_CLIENTS];
+	float		fixangletime[MAX_CLIENTS];
 	vec3_t		angles[MAX_CLIENTS];
 	char		name[MAX_QPATH];
+	int			parsecount;
+	int			lastwritten;
+	demo_frame_t	frames[DEMO_FRAMES];
+	demoinfo_t	info[MAX_CLIENTS];
+	int			size;
+	qboolean	disk;
+	void		*dest;
+	byte		buffer[40*MAX_MSGLEN];
+	int			bufsize;
 } demo_t;
 
 //=============================================================================
@@ -242,11 +288,13 @@ typedef struct
 {
 	double	active;
 	double	idle;
+	double	demo;
 	int		count;
 	int		packets;
 
 	double	latched_active;
 	double	latched_idle;
+	double	latched_demo;
 	int		latched_packets;
 } svstats_t;
 
@@ -282,6 +330,8 @@ typedef struct
 	byte		log_buf[2][MAX_DATAGRAM];
 
 	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
+	byte		*demomem;
+	int			demomemsize;
 } server_static_t;
 
 //=============================================================================
@@ -403,7 +453,7 @@ void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 qboolean SV_CheckBottom (edict_t *ent);
 qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
 
-void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg, qboolean fordemo);
+void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
 void SV_MoveToGoal (void);
 
@@ -502,6 +552,9 @@ void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 // sv_demo.c
 //
 void SV_DemoPings (void);
-void SV_DemoWriteToDisk(int type, int to);
+void SV_DemoWriteToDisk(int type, int to, float time);
 void DemoReliableWrite_Begin(int type, int to, int size);
+void SV_Stop (int reason);
 void SV_Stop_f (void);
+void SV_DemoWritePackets (int num);
+void Demo_Init (void);

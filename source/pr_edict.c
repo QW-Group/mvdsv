@@ -1050,7 +1050,7 @@ void PR_LoadProgs (void)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
 
 	// Zoid, find the spectator functions
-	SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
+	ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
 
 	if ((f = ED_FindFunction ("SpectatorConnect")) != NULL)
 		SpectatorConnect = (func_t)(f - pr_functions);

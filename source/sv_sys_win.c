@@ -75,33 +75,43 @@ Sys_listdir
 ================
 */
 
-dir_t *Sys_listdir (char *path, char *ext)
+dir_t Sys_listdir (char *path, char *ext)
 {
-	static dir_t list[MAX_DIRFILES];
+	static file_t	list[MAX_DIRFILES];
+	dir_t	dir;
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
 	int		i, pos, size;
-	int		numfiles;
-	char	name[MAX_DEMO_NAME];
+	char	name[MAX_DEMO_NAME], *s;
 
-	numfiles = 0;
 	memset(list, 0, sizeof(list));
+	memset(&dir, 0, sizeof(dir));
 
-	h = FindFirstFile (va("%s/*%s", path, ext), &fd);
+	dir.files = list;
+
+	h = FindFirstFile (va("%s/*.*", path), &fd);
 	if (h == INVALID_HANDLE_VALUE) {
-		return list;
+		return dir;
 	}
 	
 	do {
-		if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+		if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 		{
-			i = strlen(fd.cFileName);
-			if (i < 5 || (Q_strcasecmp(fd.cFileName+i-4, ext)))
-				continue;
+			dir.numdirs++;
+			continue;
 		}
 
 		size = fd.nFileSizeLow;
 		Q_strncpyz (name, fd.cFileName, MAX_DEMO_NAME);
+		dir.size += size;
+
+		for (s = fd.cFileName + strlen(fd.cFileName); s > fd.cFileName; s--) {
+			if (*s == '.')
+				break;
+		}
+
+		if (strcmp(s, ext))
+			continue;
 
 		// inclusion sort
 		/*
@@ -112,22 +122,20 @@ dir_t *Sys_listdir (char *path, char *ext)
 		}
 		*/
 
-		i = numfiles;
-		
-
+		i = dir.numfiles;
 		pos = i;
-		numfiles++;
-		for (i=numfiles-1 ; i>pos ; i--)
+		dir.numfiles++;
+		for (i=dir.numfiles-1 ; i>pos ; i--)
 			list[i] = list[i-1];
 
 		strcpy (list[i].name, name);
 		list[i].size = size;
-		if (numfiles == MAX_DIRFILES)
+		if (dir.numfiles == MAX_DIRFILES)
 			break;
 	} while ( FindNextFile(h, &fd) );
 	FindClose (h);
 
-	return list;
+	return dir;
 }
 
 /*

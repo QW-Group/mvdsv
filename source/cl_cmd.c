@@ -566,6 +566,19 @@ void CL_WriteConfig_f (void)
 	fclose (f);
 }
 
+void CL_DemoJump_f (void)
+{
+	if (Cmd_Argc() != 2) {
+		Sys_Printf("usage: demojump <sec>\n");
+		return;
+	}
+
+	if (atoi(Cmd_Argv(1)) <= 0)
+		return;
+
+	realtime += atoi(Cmd_Argv(1));
+}
+
 
 void Host_Savegame_f(void);
 void Host_Loadgame_f(void);
@@ -606,6 +619,7 @@ void CL_InitCommands (void)
 	Cmd_AddCommand ("stop", CL_Stop_f);
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f);
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
+	Cmd_AddCommand ("demojump", CL_DemoJump_f);
 
 //
 // forward to server commands

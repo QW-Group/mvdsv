@@ -201,6 +201,7 @@ typedef struct
 	int			lasttype;
 	qboolean	timedemo;
 	FILE		*demofile;
+	FILE		*recordfile;
 	float		td_lastframe;		// to meter out one message a frame
 	int			td_startframe;		// host_framecount at start
 	float		td_starttime;		// realtime at second frame of timedemo
@@ -225,6 +226,8 @@ typedef struct
 	vec3_t		angles;
 	int			oldindex;
 } interpolate_t;
+
+#define	MAX_PROJECTILES	32
 
 typedef struct
 {
@@ -318,6 +321,7 @@ typedef struct
 
 	// interpolation stuff
 	interpolate_t	int_entities[MAX_PACKET_ENTITIES];
+	interpolate_t	int_projectiles[MAX_PROJECTILES];
 	int				int_packet;
 	int				int_prevnum[MAX_CLIENTS];
 
@@ -501,7 +505,7 @@ void CL_SetSolidPlayers (int playernum);
 void CL_SetUpPlayerPrediction(qboolean dopred);
 void CL_EmitEntities (void);
 void CL_ClearProjectiles (void);
-void CL_ParseProjectiles (void);
+void CL_ParseProjectiles (qboolean nail2);
 void CL_ParsePacketEntities (qboolean delta);
 void CL_SetSolidEntities (void);
 void CL_ParsePlayerinfo (void);

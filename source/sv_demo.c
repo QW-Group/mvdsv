@@ -21,7 +21,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 #include "winquake.h"
 
-void SV_WriteDemoMessage (sizebuf_t *msg, qboolean change);
+#define MIN_DEMO_MEMORY 0x100000
+#define USACACHE (sv_demoUseCache.value && svs.demomemsize)
+#define DWRITE(a,b,c,d) b*dwrite(a,b,c,d)
+
+extern cvar_t	sv_demoUseCache;
+extern cvar_t	sv_demoCacheSize;
+extern cvar_t	sv_demoMaxDirSize;
+static int		demo_max_size;
+static int		demo_size;
+
+void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
+size_t (*dwrite) ( const void *buffer, size_t size, size_t count, void *stream);
 
 
 void SV_DemoPings (void)
@@ -35,12 +46,12 @@ void SV_DemoPings (void)
 			continue;
 
 		DemoReliableWrite_Begin (dem_all, 0, 7);
-		MSG_WriteByte(&demo.buf, svc_updateping);
-		MSG_WriteByte(&demo.buf,  j);
-		MSG_WriteShort(&demo.buf,  SV_CalcPing(client));
-		MSG_WriteByte(&demo.buf, svc_updatepl);
-		MSG_WriteByte (&demo.buf, j);
-		MSG_WriteByte (&demo.buf, client->lossage);
+		MSG_WriteByte(demo.buf, svc_updateping);
+		MSG_WriteByte(demo.buf,  j);
+		MSG_WriteShort(demo.buf,  SV_CalcPing(client));
+		MSG_WriteByte(demo.buf, svc_updatepl);
+		MSG_WriteByte (demo.buf, j);
+		MSG_WriteByte (demo.buf, client->lossage);
 	}
 }
 /*
@@ -57,22 +68,23 @@ Message is cleared from demobuf after that
 #define POS_SIZE 5
 #define POS_DATA 9
 
-void SV_DemoWriteToDisk(int type, int to)
+#define BUF_FULL (1<<31)
+
+void SV_DemoWriteToDisk(int type, int to, float time)
 {
 	int pos = 0;
 	byte *p;
 	int	btype, bto, bsize;
 	sizebuf_t msg;
-	qboolean change;
 
 	//Con_Printf("to disk:%d:%d, demo.bufsize:%d, cur:%d:%d\n", type, to, demo.bufsize, demo.curtype, demo.curto);
-	p = demo.buf.data;
-	while (pos < demo.bufsize)
+	p = demo.dbuf->data;
+	while (pos < demo.dbuf->size)
 	{
 
 		btype = *p;
 		bto = *(int*)(p+POS_TO);
-		bsize = *(int*)(p+POS_SIZE);
+		bsize = *(int*)(p+POS_SIZE) & (~BUF_FULL);
 		pos += POS_DATA + bsize; //pos now points to next message
 
 		//Con_Printf("type %d:%d, size :%d\n", btype, bto, bsize);
@@ -81,45 +93,27 @@ void SV_DemoWriteToDisk(int type, int to)
 		if (!type || (btype == type && bto == to))
 		{
 			if (bsize) {
-				change = false;
-				if (!demo.lasttype || demo.lasttype != btype || demo.lastto != bto)
-				{
-					//Con_Printf("change:%d\n", demo.lasttype);
-					// changed message direction
-					demo.lasttype = btype;
-					demo.lastto = bto;
-					change = true;
-
-					//SV_WriteDemoMessage(NULL, (byte)btype);
-				}
-
-				//Con_Printf("bsize:%d\n", bsize);
-
 				msg.data = p+POS_DATA;
 				msg.cursize = bsize;
 
-				SV_WriteDemoMessage(&msg, change);
+				SV_WriteDemoMessage(&msg, btype, bto, time);
 			}
 
 			// data is written so it need to be cleard from demobuf
 			//Con_Printf("memmove size:%d\n", demo.bufsize - pos);
-			memmove(p, p+POS_DATA+bsize, demo.bufsize - pos);
-			demo.bufsize -= bsize+POS_DATA;
+			memmove(p, p+POS_DATA+bsize, demo.dbuf->size - pos);
+			demo.dbuf->size -= bsize+POS_DATA;
 			pos -= bsize + POS_DATA;
-			if (demo.buf.cursize > pos)
-				demo.buf.cursize -= bsize + POS_DATA;
+			if (demo.dbuf->cursize > pos)
+				demo.dbuf->cursize -= bsize + POS_DATA;
 
-			if (btype == demo.curtype && bto == demo.curto)
+			if (btype == demo.dbuf->curtype && bto == demo.dbuf->curto)
 			{
 				//Con_Printf("remove\n");
-				demo.curtype = 0;
-				demo.curto = 0;
-				demo.cursize = NULL;
+				demo.dbuf->curtype = 0;
+				demo.dbuf->curto = 0;
+				demo.dbuf->msgsize = NULL;
 			}
-
-			// did we find what we were looking for ?
-			if (type)
-				return;
 		} else {
 			// move along
 			p += POS_DATA + bsize;
@@ -134,32 +128,31 @@ DemoSetBuf
 Sets position in the buf for writing to specific client
 ==============
 */
-
 void DemoSetBuf(int type, int to)
 {
 	byte *p;
 	int pos = 0;
 	int	btype, bto, bsize;
 
-	p = demo.buf.data;
-	while (pos < demo.bufsize)
+	p = demo.dbuf->data;
+	while (pos < demo.dbuf->size)
 	{
 		btype = *p;
 		bto = *(int*)(p+POS_TO);
 		bsize = *(int*)(p+POS_SIZE);
-		pos += POS_DATA + bsize;
+		pos += POS_DATA + (bsize & (~BUF_FULL));
 
 		//Con_Printf("type:%d, to:%d, size:%d\n", btype, bto, bsize);
 
-		if (type == btype && to == bto)
+		if (type == btype && to == bto && !(bsize&BUF_FULL))
 		{
-			demo.buf.cursize = pos;
-			demo.cursize = (int*)(p + POS_SIZE);
-			demo.curtype = type;
-			demo.curto = to;
+			demo.dbuf->cursize = pos;
+			demo.dbuf->msgsize = (int*)(p + POS_SIZE);
+			demo.dbuf->curtype = type;
+			demo.dbuf->curto = to;
 			return;
 		}
-		p += POS_DATA + bsize;
+		p += POS_DATA + (bsize & (~BUF_FULL));
 	}
 	// type&&to not exist in the buf, so add it
 
@@ -167,39 +160,43 @@ void DemoSetBuf(int type, int to)
 	*(int*)(p + POS_TO) = to;
 	*(int*)(p + POS_SIZE) = 0;
 	demo.bufsize += POS_DATA;
-	demo.cursize = (int*)(p + POS_SIZE);
-	demo.curtype = type;
-	demo.curto = to;
-	demo.buf.cursize = demo.bufsize;
+	demo.dbuf->size += POS_DATA;
+	demo.dbuf->msgsize = (int*)(p + POS_SIZE);
+	demo.dbuf->curtype = type;
+	demo.dbuf->curto = to;
+	demo.dbuf->cursize = demo.dbuf->size;
 }
 
 void DemoReliableWrite_Begin(int type, int to, int size)
 {
 	byte *p;
 
-	//Con_Printf("here %d:%d, size:%d, %d\n", type, to, size, demo.bufsize);
+	if (!sv.demorecording)
+		return;
+
 	// will it fit?
-	if (demo.bufsize + size + POS_DATA > demo.buf.maxsize) {
-		SV_DemoWriteToDisk(0,0); // flush everything on disk
+	while (demo.dbuf->size + size + POS_DATA > demo.dbuf->maxsize) {
+		SV_DemoWritePackets(1); // does it work?
 	}
 
-	if (demo.curtype != type || demo.curto != to)
+	if (demo.dbuf->curtype != type || demo.dbuf->curto != to)
 		DemoSetBuf(type, to);
 
-	if (*demo.cursize + size > MAX_MSGLEN)
+	if (*demo.dbuf->msgsize + size > MAX_MSGLEN)
 	{
-		SV_DemoWriteToDisk(type, to);
-		DemoSetBuf (type, to);
+		*demo.dbuf->msgsize |= BUF_FULL;
+		DemoSetBuf(type, to);
 	}
 
 	// we have to make room for new data
-	if (demo.buf.cursize != demo.bufsize) {
-		p = demo.buf.data + demo.buf.cursize;
-		memmove(p+size, p, demo.bufsize - demo.buf.cursize);
+	if (demo.dbuf->cursize != demo.dbuf->size) {
+		p = demo.dbuf->data + demo.dbuf->cursize;
+		memmove(p+size, p, demo.dbuf->size - demo.dbuf->cursize);
 	}
 
+	demo.dbuf->size += size;
+	*demo.dbuf->msgsize += size;
 	demo.bufsize += size;
-	*demo.cursize += size;
 }
 
 /*
@@ -209,49 +206,43 @@ SV_WriteDemoMessage
 Dumps the current net message, prefixed by the length and view angles
 ====================
 */
-void SV_WriteDemoMessage (sizebuf_t *msg, qboolean change)
+void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 {
-	int		len, to, msec;
-	byte	c, type;
+	int		len, i, msec;
+	byte	c;
 	static double prevtime;
-
-//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!sv.demorecording)
 		return;
 
-	msec = (demo.time - prevtime)*1000;
-	prevtime = demo.time;
-	//Con_Printf("msec:%d\n", msec);
+	msec = (time - prevtime)*1000;
+	prevtime = time;
 	if (msec > 255) msec = 255;
 
-	//fl = LittleFloat((float)demo.time);
-	//fwrite (&fl, sizeof(fl), 1, demo.file);
 	c = msec;
-	fwrite(&c, sizeof(c), 1, demo.file);
+	demo.size += DWRITE(&c, sizeof(c), 1, demo.dest);
 
-	//fwrite (&type, sizeof(type), 1, demo.file);
-
-	if (change)
+	if (demo.lasttype != type || demo.lastto != to)
 	{
+		demo.lasttype = type;
+		demo.lastto = to;
 		switch (demo.lasttype)
 		{
 		case dem_all:
 			c = dem_all;
-			fwrite (&c, sizeof(c), 1, demo.file);
+			demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 			break;
 		case dem_multiple:
 			c = dem_multiple;
-			fwrite (&c, sizeof(c), 1, demo.file);
+			demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 
-			to = LittleLong(demo.lastto);
-			fwrite (&to, sizeof(to), 1, demo.file);
+			i = LittleLong(demo.lastto);
+			demo.size += DWRITE (&i, sizeof(i), 1, demo.dest);
 			break;
 		case dem_single:
 		case dem_stats:
 			c = demo.lasttype + (demo.lastto << 3);
-			//c = demo.lastto;
-			fwrite (&c, sizeof(c), 1, demo.file);
+			demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 			break;
 		default:
 			SV_Stop_f ();
@@ -260,49 +251,342 @@ void SV_WriteDemoMessage (sizebuf_t *msg, qboolean change)
 		}
 	} else {
 		c = dem_read;
-		fwrite (&c, sizeof(c), 1, demo.file);
+		demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 	}
 
 
 	len = LittleLong (msg->cursize);
-	fwrite (&len, 4, 1, demo.file);
-	fwrite (msg->data, msg->cursize, 1, demo.file);
+	demo.size += DWRITE (&len, 4, 1, demo.dest);
+	demo.size += DWRITE (msg->data, msg->cursize, 1, demo.dest);
 
-	fflush (demo.file);
+	if (demo.disk)
+		fflush (demo.file);
+	else if (demo.size - demo_size > demo_max_size)
+	{
+		demo_size = demo.size;
+		(byte*) demo.dest -= 0x80000;
+		fwrite(svs.demomem, 1, 0x80000, demo.file);
+		fflush(demo.file);
+		memmove(svs.demomem, svs.demomem + 0x80000, demo.size - 0x80000);
+	}
 }
 
 
 /*
 ====================
-SV_Stop_f
+SV_DemoWritePackets
+
+Interpolates to get exact players position for current frame
+and writes packets to the disk/memory
+====================
+*/
+
+float adjustangle(float current, float ideal, float fraction)
+{
+	float move;
+
+	move = ideal - current;
+	if (ideal > current)
+	{
+
+		if (move >= 180)
+			move = move - 360;
+	}
+	else
+	{
+		if (move <= -180)
+			move = move + 360;
+	}
+
+	move *= fraction;
+
+	return (current + move);
+}
+
+#define DF_ORIGIN	1
+#define DF_ANGLES	(1<<3)
+#define DF_EFFECTS	(1<<6)
+#define DF_SKINNUM	(1<<7)
+#define DF_DEAD		(1<<8)
+#define DF_GIB		(1<<9)
+#define DF_WEAPONFRAME (1<<10)
+#define DF_MODEL	(1<<11)
+
+void SV_DemoWritePackets (int num)
+{
+	demo_frame_t	*frame, *nextframe;
+	demo_client_t	*cl, *nextcl;
+	int				i, j, flags;
+	qboolean		valid;
+	double			time, playertime, nexttime;
+	float			f;
+	vec3_t			origin, angles;
+	sizebuf_t		msg;
+	byte			msg_buf[MAX_MSGLEN];
+	demoinfo_t		*demoinfo;
+
+	if (!sv.demorecording)
+		return;
+
+	msg.data = msg_buf;
+	msg.maxsize = sizeof(msg_buf);
+
+	// 'num' frames to write
+	for ( ; num; num--, demo.lastwritten++)
+	{
+		frame = &demo.frames[demo.lastwritten&DEMO_FRAMES_MASK];
+		time = frame->time;
+		nextframe = frame;
+		msg.cursize = 0;
+
+		demo.dbuf = &frame->buf;
+
+		// find two frames
+		// one before the exact time (time - msec) and one after,
+		// then we can interpolte exact position for current frame
+		for (i = 0, cl = frame->clients, demoinfo = demo.info; i < MAX_CLIENTS; i++, cl++, demoinfo++)
+		{
+			if (cl->parsecount != demo.lastwritten)
+				continue; // not valid
+
+			nexttime = playertime = time - cl->sec;
+
+			for (j = demo.lastwritten+1, valid = false; nexttime < time && j < demo.parsecount; j++)
+			{
+				nextframe = &demo.frames[j&DEMO_FRAMES_MASK];
+				nextcl = &nextframe->clients[i];
+
+				if (nextcl->parsecount != j)
+					break; // disconnected?
+				if (nextcl->fixangle)
+					break; // respawned, or walked into teleport, do not interpolate!
+				if (!(nextcl->flags & DF_DEAD) && (cl->flags & DF_DEAD))
+					break; // respawned, do not interpolate
+
+				nexttime = nextframe->time - nextcl->sec;
+
+				if (nexttime >= time)
+				{
+					// good, found what we were looking for
+					valid = true;
+					break;
+				}
+			}
+
+			if (valid)
+			{
+				f = (time - nexttime)/(nexttime - playertime);
+				for (j=0;j<3;j++) {
+					angles[j] = adjustangle(cl->info.angles[j], nextcl->info.angles[j],1.0+f);
+					origin[j] = nextcl->info.origin[j] + f*(nextcl->info.origin[j]-cl->info.origin[j]);
+				}
+			} else {
+				VectorCopy(cl->info.origin, origin);
+				VectorCopy(cl->info.angles, angles);
+			}
+
+			// now write it to buf
+			flags = cl->flags;
+
+			if (cl->fixangle) {
+				demo.fixangletime[i] = cl->cmdtime;
+			}
+
+			for (j=0; j < 3; j++)
+				if (origin[j] != demoinfo->origin[i])
+					flags |= DF_ORIGIN << j;
+
+			if (cl->fixangle || demo.fixangletime[i] != cl->cmdtime)
+			{
+				for (j=0; j < 3; j++)
+					if (angles[j] != demoinfo->angles[j])
+						flags |= DF_ANGLES << j;
+			}
+
+			if (cl->info.model != demoinfo->model)
+				flags |= DF_MODEL;
+			if (cl->info.effects != demoinfo->effects)
+				flags |= DF_EFFECTS;
+			if (cl->info.skinnum != demoinfo->skinnum)
+				flags |= DF_SKINNUM;
+			if (cl->info.weaponframe != demoinfo->weaponframe)
+				flags |= DF_WEAPONFRAME;
+
+			MSG_WriteByte (&msg, svc_playerinfo);
+			MSG_WriteByte (&msg, i);
+			MSG_WriteShort (&msg, flags);
+
+			MSG_WriteByte (&msg, cl->frame);
+
+			for (j=0 ; j<3 ; j++)
+				if (flags & (DF_ORIGIN << j))
+					MSG_WriteCoord (&msg, origin[j]);
+		
+			for (j=0 ; j<3 ; j++)
+				if (flags & (DF_ANGLES << j))
+					MSG_WriteAngle16 (&msg, angles[j]);
+
+
+			if (flags & DF_MODEL)
+				MSG_WriteByte (&msg, cl->info.model);
+
+			if (flags & DF_SKINNUM)
+				MSG_WriteByte (&msg, cl->info.skinnum);
+
+			if (flags & DF_EFFECTS)
+				MSG_WriteByte (&msg, cl->info.effects);
+
+			if (flags & DF_WEAPONFRAME)
+				MSG_WriteByte (&msg, cl->info.weaponframe);
+
+			VectorCopy(cl->info.origin, demoinfo->origin);
+			VectorCopy(cl->info.angles, demoinfo->angles);
+			demoinfo->skinnum = cl->info.skinnum;
+			demoinfo->effects = cl->info.effects;
+			demoinfo->weaponframe = cl->info.weaponframe;
+			demoinfo->model = cl->info.model;
+		}
+
+		SV_DemoWriteToDisk(demo.lasttype,demo.lastto, (float)time); // this goes first to reduce demo size a bit
+		SV_DemoWriteToDisk(0,0, (float)time); // now goes the rest
+		if (msg.cursize)
+			SV_WriteDemoMessage(&msg, dem_all, 0, (float)time);
+	}
+
+	// now move the buffer back to make place for new data
+
+	// size of mem that has been written to disk
+	j = demo.frames[demo.lastwritten&DEMO_FRAMES_MASK].buf.data - demo.buffer;
+	demo.bufsize -= j;
+
+	memmove(demo.buffer, demo.buffer + j, demo.bufsize);
+	for (i = demo.lastwritten; i < demo.parsecount; i++)
+	{
+		demo.frames[i&DEMO_FRAMES_MASK].buf.data -= j;
+		demo.frames[i&DEMO_FRAMES_MASK].buf.maxsize += j; // is it necesery?
+		(byte*) demo.frames[i&DEMO_FRAMES_MASK].buf.msgsize -= j;
+	}
+
+	demo.dbuf = &demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf;
+}
+
+size_t memwrite ( const void *buffer, size_t size, size_t count, byte *mem)
+{
+	int i,c = count;
+	const byte *buf = buffer;
+	byte *m = mem;
+
+	for (;count; count--)
+		for (i = size, buf = buffer; i; i--)
+			*mem++ = *buf++;
+
+	(byte*) demo.dest += mem - m;
+	return c;
+}
+
+void Demo_Init (void)
+{
+	int p, size = MIN_DEMO_MEMORY;
+
+	p = COM_CheckParm ("-democache");
+	if (p)
+	{
+		if (p < com_argc-1)
+			size = Q_atoi (com_argv[p+1]) * 1024;
+		else
+			Sys_Error ("Memory_Init: you must specify a size in KB after -democache");
+	}
+
+	if (size < MIN_DEMO_MEMORY)
+	{
+		Con_Printf("Minimum memory size for demo cache is %dk\n", MIN_DEMO_MEMORY / 1024);
+		size = MIN_DEMO_MEMORY;
+	}
+
+	svs.demomem = Hunk_AllocName ( size, "demo" );
+	svs.demomemsize = size;
+	demo_max_size = size - 0x80000;
+	Cvar_SetROM(&sv_demoCacheSize, va("%d", size/1024));
+}
+
+/*
+====================
+SV_InitRecord
+====================
+*/
+
+qboolean SV_InitRecord(void)
+{
+	if (!USACACHE)
+	{
+		dwrite = &fwrite;
+		demo.dest = demo.file;
+		demo.disk = true;
+	} else 
+	{
+		dwrite = &memwrite;
+		demo.dest = svs.demomem;
+	}
+
+	demo_size = 0;
+
+	return true;
+}
+
+/*
+====================
+SV_Stop
 
 stop recording a demo
 ====================
 */
-void SV_Stop_f (void)
+void SV_Stop (int reason)
 {
 	if (!sv.demorecording)
 	{
 		Con_Printf ("Not recording a demo.\n");
 		return;
 	}
-
 	
 // write a disconnect message to the demo file
+
+	// clearup to be sure message will fit
+	demo.dbuf->cursize = 0;
+	demo.dbuf->curtype = 0;
+	demo.dbuf->size = 0;
 	DemoReliableWrite_Begin(dem_all, 0, 2+strlen("EndOfDemo"));
-	MSG_WriteByte (&demo.buf, svc_disconnect);
-	MSG_WriteString (&demo.buf, "EndOfDemo");
-	SV_DemoWriteToDisk(0,0);
+	MSG_WriteByte (demo.buf, svc_disconnect);
+	MSG_WriteString (demo.buf, "EndOfDemo");
+	SV_DemoWritePackets(demo.parsecount - demo.lastwritten + 1);
 
 // finish up
+	if (!demo.disk)
+	{
+		fwrite(svs.demomem, 1, demo.size - demo_size, demo.file);
+		fflush(demo.file);
+	}
+
 	fclose (demo.file);
+	
 	demo.file = NULL;
 	sv.demorecording = false;
-	SV_BroadcastPrintf (PRINT_CHAT, "Completed demo\n");
+	if (!reason)
+		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
+	else
+		SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
+
 	Cvar_SetROM(&serverdemo, "");
-	//Con_Printf ("Completed demo\n");
 }
 
+/*
+====================
+SV_Stop_f
+====================
+*/
+void SV_Stop_f (void)
+{
+	SV_Stop(0);
+}
 
 /*
 ====================
@@ -317,25 +601,23 @@ void SV_WriteRecordDemoMessage (sizebuf_t *msg, int seq)
 	int		len;
 	byte	c;
 
-//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
-
 	if (!sv.demorecording)
 		return;
 
 	c = 0;
-	fwrite (&c, sizeof(c), 1, demo.file);
+	demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 
 	c = dem_read;
-	fwrite (&c, sizeof(c), 1, demo.file);
+	demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 
 	len = LittleLong (msg->cursize);
-	fwrite (&len, 4, 1, demo.file);
+	demo.size += DWRITE (&len, 4, 1, demo.dest);
 
-	fwrite (msg->data, msg->cursize, 1, demo.file);
+	demo.size += DWRITE (msg->data, msg->cursize, 1, demo.dest);
 
-	fflush (demo.file);
+	if (demo.disk)
+		fflush (demo.file);
 }
-
 
 void SV_WriteSetDemoMessage (void)
 {
@@ -348,18 +630,19 @@ void SV_WriteSetDemoMessage (void)
 		return;
 
 	c = 0;
-	fwrite (&c, sizeof(c), 1, demo.file);
+	demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 
 	c = dem_set;
-	fwrite (&c, sizeof(c), 1, demo.file);
+	demo.size += DWRITE (&c, sizeof(c), 1, demo.dest);
 
 	
 	len = LittleLong(0);
-	fwrite (&len, 4, 1, demo.file);
+	demo.size += DWRITE (&len, 4, 1, demo.dest);
 	len = LittleLong(0);
-	fwrite (&len, 4, 1, demo.file);
+	demo.size += DWRITE (&len, 4, 1, demo.dest);
 
-	fflush (demo.file);
+	if (demo.disk)
+		fflush (demo.file);
 }
 
 static void SV_Record (void)
@@ -375,10 +658,6 @@ static void SV_Record (void)
 
 	sv.demorecording = true;
 	demo.pingtime = demo.time = sv.time;
-
-	//clean up demoinfo for clients
-	for (i = 0; i < MAX_CLIENTS; i++)
-		memset(&svs.clients[i].demoinfo, 0, sizeof(demoinfo_t));
 
 /*-------------------------------------------------*/
 
@@ -401,12 +680,6 @@ static void SV_Record (void)
 
 
 	MSG_WriteFloat (&buf, sv.time);
-	/*
-	if (cl.spectator)
-		MSG_WriteByte (&buf, cl.playernum | 128);
-	else
-		MSG_WriteByte (&buf, cl.playernum);
-	*/
 
 	// send full levelname
 	MSG_WriteString (&buf, PR_GetString(sv.edicts->v.message));
@@ -515,8 +788,6 @@ static void SV_Record (void)
 	for (i = 0; i < MAX_CLIENTS; i++) {
 		player = svs.clients + i;
 
-		memset(&player->demoinfo, 0, sizeof(player->demoinfo));
-
 		MSG_WriteByte (&buf, svc_updatefrags);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteShort (&buf, player->old_frags);
@@ -563,10 +834,65 @@ static void SV_Record (void)
 	SV_WriteRecordDemoMessage (&buf, seq++);
 
 	SV_WriteSetDemoMessage();
-
 	// done
 }
 
+
+/*
+====================
+SV_CleanName
+
+Cleans the demo name, removes restricted chars, makes name lowercase
+====================
+*/
+
+char *SV_CleanName (unsigned char *name)
+{
+	int	i;
+	unsigned char c, *out;
+	static char text[MAX_OSPATH];
+
+	out = text;
+
+	for ( ;*name; name++, out++)
+	{
+		if (*name >= 18 && *name <= 27) // liczby
+		{
+			*out = *name + 30;
+		} else if (*name >= 146 && *name <= 155) // liczby
+		{
+			*out = *name - 98;
+		} else if (*name == 29 || *name == 128 || *name == 157)
+		{
+			*out = '(';
+		} else if (*name == 31 || *name == 130 || *name == 159)
+		{
+			*out = ')';
+		} else if (*name == 16 || *name == 144)
+		{
+			*out = '[';
+		} else if (*name == 17 || *name == 145)
+		{
+			*out = ']';
+		} else if (*name > 128)
+		{
+			*out = *name - 128;
+		} else 
+			*out = *name;
+
+		if (*out >= 'A' && *out <= 'Z')
+			*out += 'a' - 'A';
+
+		*out &= 0x7F;		// strip high bit
+		c = *out;
+		if (c<=' ' || c=='?' || c=='*' || c=='\\' || c=='/' || c==':'
+			|| c=='<' || c=='>' || c=='"')
+			*out = '_';
+	}
+
+	*out = 0;
+	return text;
+}
 /*
 ====================
 SV_Record_f
@@ -576,8 +902,10 @@ record <demoname>
 */
 void SV_Record_f (void)
 {
-	int		c;
+	int		c, i;
 	char	name[MAX_OSPATH], *s;
+	dir_t	dir;
+	demo_frame_t *frame;
 
 	c = Cmd_Argc();
 	if (c != 2)
@@ -593,8 +921,15 @@ void SV_Record_f (void)
 
 	if (sv.demorecording)
 		SV_Stop_f();
+
+	dir = Sys_listdir(va("%s/demos", com_gamedir), ".*");
+	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
+	{
+		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
+		return;
+	}
   
-	sprintf (name, "%s/demos/%s", com_gamedir, Cmd_Argv(1));
+	sprintf (name, "%s/demos/%s", com_gamedir, SV_CleanName(Cmd_Argv(1)));
 	Sys_mkdir(va("%s/demos", com_gamedir));
 
 //
@@ -603,8 +938,10 @@ void SV_Record_f (void)
 	COM_ForceExtension (name, ".mvd");
 
 	memset(&demo, 0, sizeof(demo));
-	demo.buf.maxsize = sizeof(demo.buf_data);
-	demo.buf.data = demo.buf_data;
+
+	demo.dbuf = &demo.frames[0].buf;
+	demo.dbuf->data = demo.buffer;
+	demo.dbuf->maxsize = sizeof(demo.buffer);
 	demo.datagram.maxsize = sizeof(demo.datagram_data);
 	demo.datagram.data = demo.datagram_data;
 
@@ -615,12 +952,13 @@ void SV_Record_f (void)
 		return;
 	}
 
+	SV_InitRecord();
+
 	s = name + strlen(name);
 	while (*s != '/') s--;
 	strcpy(demo.name, s+1);
 
-	//Con_Printf ("recording to %s.\n", name);
-	SV_BroadcastPrintf (PRINT_CHAT, "recording to %s.\n", demo.name);
+	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", demo.disk ? "disk" : "memory", demo.name);
 	Cvar_SetROM(&serverdemo, demo.name);
 	SV_Record ();
 }
@@ -649,7 +987,7 @@ int	Dem_CountPlayers ()
 char *Dem_Team(int num)
 {
 	int i;
-	static char lastteam[2][32];
+	static char *lastteam[2];
 	qboolean first = true;
 	client_t *client;
 	static int index = 0;
@@ -661,11 +999,11 @@ char *Dem_Team(int num)
 		if (!client->name[0] || client->spectator)
 			continue;
 
-		if (first || strcmp(lastteam[index], Info_ValueForKey(client->userinfo, "team")))
+		if (first || strcmp(lastteam[index], client->team))
 		{
 			first = false;
 			num--;
-			strcpy(lastteam[index], Info_ValueForKey(client->userinfo, "team"));
+			lastteam[index] = client->team;
 		}
 	}
 
@@ -695,11 +1033,13 @@ char *Dem_PlayerName(int num)
 void SV_EasyRecord_f (void)
 {
 	int		c;
+	dir_t	dir;
 	char	name[1024], *s;
 	char	name2[MAX_OSPATH*2];
 	int		i;
 	unsigned char	*p;
 	FILE	*f;
+	demo_frame_t *frame;
 
 	c = Cmd_Argc();
 	if (c > 2)
@@ -711,6 +1051,12 @@ void SV_EasyRecord_f (void)
 	if (sv.demorecording)
 		SV_Stop_f();
 
+	dir = Sys_listdir(va("%s/demos", com_gamedir), ".*");
+	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
+	{
+		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
+		return;
+	}
 
 	if (c == 2)
 		sprintf (name, "%s", Cmd_Argv(1));
@@ -741,16 +1087,9 @@ void SV_EasyRecord_f (void)
 	}
 
 // Make sure the filename doesn't contain illegal characters
-	for (p=name ; *p ; p++)	{
-		char c;
-		*p &= 0x7F;		// strip high bit
-		c = *p;
-		if (c<=' ' || c=='?' || c=='*' || c=='\\' || c=='/' || c==':'
-			|| c=='<' || c=='>' || c=='"')
-			*p = '_';
-	}
+	s = SV_CleanName(name);
 
-	sprintf (name, va("%s/demos/%s", com_gamedir, name));
+	sprintf (name, va("%s/demos/%s", com_gamedir, s));
 	Sys_mkdir(va("%s/demos", com_gamedir));
 
 // find a filename that doesn't exist yet
@@ -773,8 +1112,10 @@ void SV_EasyRecord_f (void)
 //
 
 	memset(&demo, 0, sizeof(demo));
-	demo.buf.maxsize = sizeof(demo.buf_data);
-	demo.buf.data = demo.buf_data;
+
+	demo.dbuf = &demo.frames[0].buf;
+	demo.dbuf->data = demo.buffer;
+	demo.dbuf->maxsize = sizeof(demo.buffer);
 	demo.datagram.maxsize = sizeof(demo.datagram_data);
 	demo.datagram.data = demo.datagram_data;
 
@@ -784,29 +1125,32 @@ void SV_EasyRecord_f (void)
 		Con_Printf ("ERROR: couldn't open %s\n", name2);
 		return;
 	}
+
+	SV_InitRecord();
+
 	s = name2 + strlen(name2);
 	while (*s != '/') s--;
 	strcpy(demo.name, s+1);
 
-	//Con_Printf ("recording to %s.\n", name2);
-
-	SV_BroadcastPrintf (PRINT_CHAT, "recording to %s.\n", demo.name);
+	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", demo.disk ? "disk" : "memory", demo.name);
 	Cvar_SetROM(&serverdemo, demo.name);
 	SV_Record ();
 }
 
 void SV_DemoList_f (void)
 {
-	dir_t	*list;
-	int		i = 0;
+	dir_t	dir;
+	file_t	*list;
+	float	f;
+	int		i;
 	char	*key;
 
-	Con_Printf("demolist:\n");
-	list = Sys_listdir(va("%s/demos", com_gamedir), ".mvd");
+	Con_Printf("content of %s/demos/*.mvd\n", com_gamedir);
+	dir = Sys_listdir(va("%s/demos", com_gamedir), ".mvd");
+	list = dir.files;
 	if (!list->name[0])
 	{
 		Con_Printf("no demos\n");
-		return;
 	}
 
 	if (Cmd_Argc() == 2)
@@ -814,27 +1158,73 @@ void SV_DemoList_f (void)
 	else
 		key = "";
 
-	while (list->name[0])
+	for (i = 0; list->name[0]; i++, list++)
 	{
 		if (strstr(list->name, key) != NULL) {
 			if (sv.demorecording && !strcmp(list->name, demo.name))
-				Con_Printf("*%d: %s\n", i, list->name);
+				Con_Printf("*%d: %s %dk\n", i, list->name, demo.size/1024);
 			else
-				Con_Printf("%d: %s\n", i, list->name);//, (int)list->size/1024);
+				Con_Printf("%d: %s %dk\n", i, list->name, list->size/1024);
 		}
-		list++;
-		i++;
+	}
+
+	if (sv.demorecording)
+		dir.size += demo.size;
+
+	Con_Printf("\ndirectory size: %.1fMB\n",(float)dir.size/(1024*1024));
+	if (sv_demoMaxDirSize.value) {
+		f = (sv_demoMaxDirSize.value*1024 - dir.size)/(1024*1024);
+		if ( f < 0)
+			f = 0;
+		Con_Printf("space available: %.1fMB\n", f);
 	}
 }
 
 void SV_DemoRemove_f (void)
 {
-	char name[MAX_DEMO_NAME];
+	char name[MAX_DEMO_NAME], *ptr;
 	char path[MAX_OSPATH];
+	int i;
 
 	if (Cmd_Argc() != 2)
 	{
-		Con_Printf("rmdemo <demoname>\n");
+		Con_Printf("rmdemo <demoname> - removes the demo\nrmdemo *<token>   - removes demo with <token> in the name\nrmdemo *          - removes all demos\n");
+		return;
+	}
+
+	ptr = Cmd_Argv(1);
+	if (*ptr == '*')
+	{
+		dir_t dir;
+		file_t *list;
+
+		// remove all demos with specified token
+		ptr++;
+
+		dir = Sys_listdir(va("%s/demos", com_gamedir), ".mvd");
+		list = dir.files;
+		for (i = 0;list->name[0]; list++)
+		{
+			if (strstr(list->name, ptr))
+			{
+				if (sv.demorecording && !strcmp(list->name, demo.name))
+					SV_Stop_f();
+
+				// stop recording first;
+				sprintf(path, "%s/demos/%s", com_gamedir, list->name);
+				if (!Sys_remove(path)) {
+					Con_Printf("removing %s...\n", list->name);
+					i++;
+				}
+			}
+		}
+
+		if (i) {
+			Con_Printf("%d demos removed\n", i);
+		} else {
+			Con_Printf("no matching found\n");
+		}
+
 		return;
 	}
 
@@ -854,7 +1244,8 @@ void SV_DemoRemove_f (void)
 
 void SV_DemoRemoveNum_f (void)
 {
-	dir_t	*list;
+	file_t	*list;
+	dir_t	dir;
 	int		num;
 	char	*val;
 	char path[MAX_OSPATH];
@@ -872,7 +1263,8 @@ void SV_DemoRemoveNum_f (void)
 		return;
 	}
 
-	list = Sys_listdir(va("%s/demos", com_gamedir), ".mvd");
+	dir = Sys_listdir(va("%s/demos", com_gamedir), ".mvd");
+	list = dir.files;
 	while (list->name[0] && num) {list++; num--;};
 
 	if (list->name[0]) {
