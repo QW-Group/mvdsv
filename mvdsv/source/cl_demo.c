@@ -171,19 +171,12 @@ qboolean CL_GetDemoMessage (void)
 	byte	newtime;
 	byte	c;
 	usercmd_t *pcmd;
-	static float prevtime = 0.0;
 
 	if (qwz_unpacking)
 		return 0;
 
 	if (cl.paused & 2)
 		return 0;
-
-	//if (realtime < nextdemotime)
-	//	return 0;
-
-	if (prevtime < nextdemotime)
-		prevtime = nextdemotime;
 
 	if (!cls.demoplayback2)
 		nextdemotime = (float) realtime;
@@ -201,7 +194,7 @@ nextdemomessage:
 	if (cls.demoplayback2)
 	{
 		fread(&newtime, sizeof(newtime), 1, cls.demofile);
-		demotime =  prevtime + newtime*0.001;
+		demotime = cls.basetime + (cls.prevtime + newtime)*0.001;
 	} else {
 		fread(&demotime, sizeof(demotime), 1, cls.demofile);
 		demotime = LittleFloat(demotime);
@@ -215,6 +208,7 @@ nextdemomessage:
 		{
 			olddemotime = nextdemotime;
 			if (cls.demoplayback2) {
+				Con_Printf("here\n");
 				cls.netchan.incoming_sequence++;
 				cls.netchan.incoming_acknowledged++;
 				cls.netchan.frame_latency = 0;
@@ -269,7 +263,8 @@ nextdemomessage:
 	} else
 		realtime = demotime; // we're warping
 
-	prevtime = demotime;
+	cls.prevtime += newtime;
+	//prevtime = demotime;
 	if (cls.state < ca_demostart)
 		Host_Error ("CL_GetDemoMessage: cls.state != ca_active");
 	
@@ -1183,7 +1178,7 @@ void CL_PlayDemo_f (void)
 	}
 
 	cls.demoplayback = true;
-	if (!strcmp(name + strlen(name)-3, "mvd")) {
+	if (!stricmp(name + strlen(name)-3, "mvd")) {
 		cls.demoplayback2 = true;
 		Con_Printf("mvd\n");
 	} else
@@ -1195,6 +1190,8 @@ void CL_PlayDemo_f (void)
 	cls.findtrack = true;
 	cls.lasttype = 0;
 	cls.lastto = 0;
+	cls.prevtime = 0;
+	cls.basetime = 0;
 	CL_ClearPredict();
 }
 

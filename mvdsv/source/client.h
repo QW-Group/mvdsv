@@ -199,6 +199,8 @@ typedef struct
 	qboolean	demoplayback2;
 	int			lastto;
 	int			lasttype;
+	int			prevtime;
+	double		basetime;
 	qboolean	timedemo;
 	FILE		*demofile;
 	FILE		*recordfile;

@@ -81,6 +81,17 @@ typedef struct
 
 //=============================================================================
 
+typedef struct
+{
+	int sec;
+	int min;
+	int hour;
+	int day;
+	int mon;
+	int year;
+	char str[128];
+} date_t;
+
 //
 // host
 //
@@ -93,7 +104,7 @@ extern	qboolean	host_initialized;		// true if into command execution
 //extern	double		host_frametime;
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
-extern	double		sv_frametime;
+extern	float		sv_frametime;
 
 void SV_Error (char *error, ...);
 void SV_Init (quakeparms_t *parms);

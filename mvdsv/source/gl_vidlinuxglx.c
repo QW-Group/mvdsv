@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
+#include "keys.h"
 
 #ifdef USE_DGA
 #include <X11/extensions/xf86dga.h>
@@ -54,6 +55,7 @@ static float old_windowed_mouse = 0;
 
 unsigned short	d_8to16table[256];
 unsigned		d_8to24table[256];
+unsigned		d_8to24table2[256];
 unsigned char	d_15to8table[65536];
 
 cvar_t	_windowed_mouse = {"_windowed_mouse","0",CVAR_ARCHIVE};
@@ -529,7 +531,7 @@ qboolean VID_Is8bit(void)
 {
 	return is8bit;
 }
-
+#define GL_EXT_SHARED
 #ifdef GL_EXT_SHARED
 void VID_Init8bitPalette() 
 {

@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: r_aliasa.s,v 1.1.1.3 2004/10/13 18:54:44 vvd0 Exp $
+	$Id: r_aliasa.s,v 1.1.1.4 2004/10/18 17:44:35 vvd0 Exp $
 */
 // r_aliasa.s
 // x86 assembly-language Alias model transform and project code.

@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <conio.h>
 #include <limits.h>
 #include <direct.h>		// _mkdir
+#include <time.h>
+#include <process.h>
 
 cvar_t	sys_sleep = {"sys_sleep", "8"};
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
@@ -82,12 +84,14 @@ dir_t Sys_listdir (char *path, char *ext)
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
 	int		i, pos, size;
-	char	name[MAX_DEMO_NAME], *s;
+	char	name[MAX_DEMO_NAME];
+	qboolean all;
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
 
 	dir.files = list;
+	all = !strcmp(ext, ".*");
 
 	h = FindFirstFile (va("%s/*.*", path), &fd);
 	if (h == INVALID_HANDLE_VALUE) {
@@ -105,13 +109,17 @@ dir_t Sys_listdir (char *path, char *ext)
 		Q_strncpyz (name, fd.cFileName, MAX_DEMO_NAME);
 		dir.size += size;
 
-		for (s = fd.cFileName + strlen(fd.cFileName); s > fd.cFileName; s--) {
+		if (!all && !strstr(fd.cFileName, ext))
+			continue;
+
+		/*for (s = fd.cFileName + strlen(fd.cFileName); s > fd.cFileName; s--) {
 			if (*s == '.')
 				break;
 		}
 
 		if (strcmp(s, ext))
 			continue;
+		*/
 
 		// inclusion sort
 		/*
@@ -130,7 +138,7 @@ dir_t Sys_listdir (char *path, char *ext)
 
 		strcpy (list[i].name, name);
 		list[i].size = size;
-		if (dir.numfiles == MAX_DIRFILES)
+		if (dir.numfiles == MAX_DIRFILES - 1)
 			break;
 	} while ( FindNextFile(h, &fd) );
 	FindClose (h);
@@ -154,9 +162,30 @@ void Sys_Error (char *error, ...)
 
 //    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
 	printf ("ERROR: %s\n", text);
+	if (sv_errorlogfile)
+		fprintf(sv_errorlogfile, "ERROR: %s\n", text);
 
 	exit (1);
 }
+
+void Sys_TimeOfDay(date_t *date)
+{
+	struct tm *newtime;
+	time_t long_time;
+
+	time( &long_time );
+	newtime = localtime( &long_time );
+
+	date->day = newtime->tm_mday;
+	date->mon = newtime->tm_mon;
+	date->year = newtime->tm_year + 1900;
+	date->hour = newtime->tm_hour;
+	date->min = newtime->tm_min;
+	date->sec = newtime->tm_sec;
+	strftime( date->str, 128,
+         "%a %b %d, %H:%M %Y", newtime);
+}
+
 
 
 #if 1
@@ -346,6 +375,44 @@ void Sys_Init (void)
 	}
 }
 
+int NET_Sleep(double sec)
+{
+    struct timeval timeout;
+	fd_set	fdset;
+
+	FD_ZERO(&fdset);
+	FD_SET(net_serversocket, &fdset);
+
+	timeout.tv_sec = (long) sec;
+	timeout.tv_usec = (sec - floor(sec))*1000000L;
+	//Sys_Printf("%lf, %ld %ld\n", sec, timeout.tv_sec, timeout.tv_usec);
+	return select(net_serversocket+1, &fdset, NULL, NULL, &timeout);
+}
+
+void Sys_Sleep(unsigned long ms)
+{
+	Sleep(ms);
+}
+
+int Sys_Script(char *path, char *args)
+{
+	STARTUPINFO			si;
+	PROCESS_INFORMATION	pi;
+	char cmdline[1024], curdir[MAX_OSPATH];
+
+	memset (&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_SHOWMINNOACTIVE;
+
+	GetCurrentDirectory(sizeof(curdir), curdir);
+	strcat(curdir,va("\\%s", com_gamedir+2));
+
+	sprintf(cmdline, "%s\\%s.bat %s", curdir, path, args);
+
+	return CreateProcess (NULL, cmdline, NULL, NULL,
+		FALSE, DETACHED_PROCESS/*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
+}
 /*
 ==================
 main
@@ -359,8 +426,10 @@ int main (int argc, char **argv)
 	quakeparms_t	parms;
 	double			newtime, time, oldtime;
 	static	char	cwd[1024];
+#ifndef NEWWAY
 	struct timeval	timeout;
 	fd_set			fdset;
+#endif
 	int				t;
 	int				sleep_msec;
 
@@ -392,6 +461,7 @@ int main (int argc, char **argv)
 // main loop
 //
 	oldtime = Sys_DoubleTime () - 0.1;
+#ifndef NEWWAY 
 	while (1)
 	{
 		sleep_msec = sys_sleep.value;
@@ -419,7 +489,27 @@ int main (int argc, char **argv)
 		oldtime = newtime;
 		
 		SV_Frame (time);				
-	}	
+	}
+#else
+
+	/* main window message loop */
+	while (1)
+	{
+		// if at a full screen console, don't update unless needed
+		Sleep (1);
+
+		do
+		{
+			newtime = Sys_DoubleTime ();
+			time = newtime - oldtime;
+		} while (time < 0.001);
+
+		//_controlfp( _PC_24, _MCW_PC );
+
+		SV_Frame (time);
+		oldtime = newtime;
+	}
+#endif
 
 	return true;
 }

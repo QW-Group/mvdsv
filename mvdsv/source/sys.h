@@ -78,7 +78,7 @@ double Sys_DoubleTime (void);
 
 char *Sys_ConsoleInput (void);
 
-void Sys_Sleep (void);
+//void Sys_Sleep (void);
 // called to yield for a little bit so as
 // not to hog cpu when paused or debugging
 
@@ -90,3 +90,7 @@ void Sys_HighFPPrecision (void);
 void Sys_SetFPCW (void);
 
 void Sys_Init (void);
+void Sys_Sleep (unsigned long ms);
+int Sys_Script(char *path, char *args);
+
+

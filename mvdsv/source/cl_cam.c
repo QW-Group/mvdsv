@@ -41,6 +41,8 @@ static int oldbuttons;
 // track high fragger
 cvar_t cl_hightrack = {"cl_hightrack", "0" };
 cvar_t cl_track_validonly = {"cl_track_validonly", "1" };
+cvar_t cl_matrixcam_dist = {"cl_matrixcam_dist", "50" };
+cvar_t cl_matrixcam_speed = {"cl_matrixcam_speed", "3" };
 
 cvar_t cl_chasecam = {"cl_chasecam", "0"};
 
@@ -97,17 +99,23 @@ qboolean Cam_DrawViewModel(void)
 	if (!cl.spectator)
 		return true;
 
-	if (autocam && locked && cl_chasecam.value)
+	if (autocam && locked && cl_chasecam.value == 1)
 		return true;
 	return false;
 }
 
+static qboolean tooClose = false;
+
 // returns true if we should draw this player, we don't if we are chase camming
 qboolean Cam_DrawPlayer(int playernum)
 {
-	if (cl.spectator && autocam && locked && cl_chasecam.value && 
-		spec_track == playernum)
-		return false;
+	if (cl.spectator && autocam && locked && spec_track == playernum) {
+		if (cl_chasecam.value == 1) 
+			return false;
+		if (cl_chasecam.value == 3 && tooClose) 
+			return false;
+	}
+
 	return true;
 }
 
@@ -327,6 +335,87 @@ static void Cam_CheckHighTarget(void)
 	} else
 		Cam_Unlock();
 }
+
+void Transform(vec3_t in, double angle, vec3_t out)
+{
+	float si, co;
+
+	si = sin(angle);
+	co = cos(angle);
+
+	out[0] = in[0]*co + in[1]*si;
+	out[1] = -in[0]*si + in[1]*co;
+	out[2] = in[2];
+}
+
+void Cam_Matrix(usercmd_t *cmd, player_state_t *self, player_state_t *player)
+{
+	vec3_t		ideal, dist, forward;
+	pmtrace_t	trace;
+	float		l, scale, len, camdist, camspeed;
+
+	camdist = max(cl_matrixcam_dist.value, 5);
+	camspeed = max(cl_matrixcam_speed.value, 0);
+
+	cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
+
+	VectorCopy(self->origin, ideal);
+	ideal[2] = player->origin[2];
+
+	VectorSubtract(ideal, player->origin, dist);
+
+	if ( (len = vlen(dist)) == 0 ) {
+		len = 1;
+		dist[0] = 1;
+	}
+
+	Transform(dist, camspeed*real_frametime, forward);
+
+	l = camdist - len;
+	if (camdist > len)
+		scale = min(l, 500*real_frametime);
+	else
+		scale = max(l, -500*real_frametime);
+
+	VectorMA(player->origin, (len + scale)/len, forward, ideal);
+
+	trace = Cam_DoTrace(player->origin, ideal);
+	//VectorCopy(trace.endpos, self->origin);
+	VectorCopy(trace.endpos, desired_position);
+
+	//VectorSubtract(player->origin, self->origin, forward);
+	//vectoangles(forward, cl.viewangles);
+}
+
+void Cam_Chase(usercmd_t *cmd, player_state_t *self, player_state_t *player)
+{
+	vec3_t		ideal, forward, right, up;
+	pmtrace_t	trace;
+	float		camdist;
+
+	camdist = max(cl_matrixcam_dist.value, 5);
+	
+	cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
+
+	AngleVectors(player->viewangles, forward, right, up);
+
+	VectorMA(player->origin, -camdist, forward, ideal);
+	ideal[2] += 10;
+
+	trace = Cam_DoTrace(player->origin, ideal);
+	if (trace.fraction != 1.0) {
+		VectorMA(trace.endpos, -min(1.0 - trace.fraction, 16.0/camdist), forward, ideal);
+		VectorCopy(ideal, desired_position);
+	} else 
+		VectorCopy(trace.endpos, desired_position);
+
+	// if to close don't draw the player
+	VectorSubtract(desired_position, player->origin, ideal);
+	if (vlen(ideal) < 16)
+		tooClose = true;
+	else
+		tooClose = false;
+}
 	
 // ZOID
 //
@@ -393,7 +482,7 @@ void Cam_Track(usercmd_t *cmd)
 	if (!locked || !autocam)
 		return;
 
-	if (cl_chasecam.value) {
+	if (cl_chasecam.value == 1) {
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 
 		VectorCopy(player->viewangles, cl.viewangles);
@@ -409,12 +498,17 @@ void Cam_Track(usercmd_t *cmd)
 		self->weaponframe = player->weaponframe;
 
 	} else {
+		if (cl_chasecam.value == 2)
+			Cam_Matrix(cmd, self, player);
+		if (cl_chasecam.value == 3)
+			Cam_Chase(cmd, self, player);
+
 		// Ok, move to our desired position and set our angles to view
 		// the player
 		VectorSubtract(desired_position, self->origin, vec);
 		len = vlen(vec);
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
-		if (len > 16) { // close enough?
+		if (len > 16 || cl_chasecam.value == 2) { // close enough?
 			MSG_WriteByte (&cls.netchan.message, clc_tmove);
 			MSG_WriteCoord (&cls.netchan.message, desired_position[0]);
 			MSG_WriteCoord (&cls.netchan.message, desired_position[1]);
@@ -612,6 +706,8 @@ void CL_InitCam(void)
 	Cvar_RegisterVariable (&cl_hightrack);
 	Cvar_RegisterVariable (&cl_chasecam);
 	Cvar_RegisterVariable (&cl_track_validonly);
+	Cvar_RegisterVariable (&cl_matrixcam_dist);
+	Cvar_RegisterVariable (&cl_matrixcam_speed);
 //	Cvar_RegisterVariable (&cl_camera_maxpitch);
 //	Cvar_RegisterVariable (&cl_camera_maxyaw);
 }

@@ -380,7 +380,6 @@ void CL_ParseDownload (void)
 		Con_Printf ("File not found.\n");
 		if (cls.download)
 		{
-			Con_Printf ("cls.download shouldn't have been set\n");
 			fclose (cls.download);
 			cls.download = NULL;
 		}
@@ -623,7 +622,7 @@ void CL_ParseServerData (void)
 	}
 
 	if (cls.demoplayback2) {
-		cls.netchan.last_received = nextdemotime = olddemotime = MSG_ReadFloat();
+		realtime = cls.netchan.last_received = nextdemotime = olddemotime = cls.basetime = MSG_ReadFloat();
 		cl.playernum = 31;
 		cl.spectator = true;
 	} else {

@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "GL/fxmesa.h"
+#include "keys.h"
 
 #define WARP_WIDTH              320
 #define WARP_HEIGHT             200
@@ -42,6 +43,7 @@ static fxMesaContext fc = NULL;
 
 unsigned short	d_8to16table[256];
 unsigned	d_8to24table[256];
+unsigned	d_8to24table2[256];
 unsigned char d_15to8table[65536];
 
 int num_shades=32;

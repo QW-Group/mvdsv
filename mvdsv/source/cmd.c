@@ -232,6 +232,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 	cbuf_current = NULL;
 }
 
+
 /*
 ==============================================================================
 
@@ -969,6 +970,8 @@ A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
 */
+extern qboolean PR_ConsoleCmd(void);
+
 void Cmd_ExecuteString (char *text)
 {	
 	cmd_function_t	*cmd;
@@ -1031,6 +1034,10 @@ void Cmd_ExecuteString (char *text)
 		}
 	}
 
+#ifdef SERVERONLY
+	if (PR_ConsoleCmd())
+		return;
+#endif
 	if (cl_warncmd.value || developer.value)
 		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
 }
@@ -1141,7 +1148,6 @@ int Cmd_CheckParm (char *parm)
 			
 	return 0;
 }
-
 
 /*
 ============

@@ -442,6 +442,8 @@ void GL_EnableMultitexture (void)
 }
 
 #ifndef _WIN32
+void DrawGLWaterPoly (glpoly_t *p);
+void DrawGLWaterPolyLightmap (glpoly_t *p);
 /*
 ================
 R_DrawSequentialPoly
@@ -462,6 +464,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 	//
 	// normal lightmaped poly
 	//
+#if 0
 	if (!(s->flags & (SURF_DRAWSKY|SURF_DRAWTURB))
 	{
 		p = s->polys;
@@ -492,7 +495,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 
 		return;
 	}
-
+#endif
 	//
 	// subdivided water surface warp
 	//
@@ -502,10 +505,41 @@ void R_DrawSequentialPoly (msurface_t *s)
 		EmitWaterPolys (s);
 		return;
 	}
-
+ 
+        // subdivided sky warp
+	//
+	if (s->flags & SURF_DRAWSKY)
+	{
+		GL_Bind (solidskytexture);
+	        speedscale = realtime*8;
+	        speedscale -= (int)speedscale;
+	        EmitSkyPolys (s);
+	        glEnable (GL_BLEND);
+	        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	        GL_Bind (alphaskytexture);
+	        speedscale = realtime*16;
+	        speedscale -= (int)speedscale;
+	        EmitSkyPolys (s);
+	        if (gl_lightmap_format == GL_LUMINANCE)
+	        glBlendFunc (GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+	        glDisable (GL_BLEND);
+	}
 	//
 	// subdivided sky warp
 	//
+	
+	p = s->polys;
+
+        t = R_TextureAnimation (s->texinfo->texture);
+	GL_Bind (t->gl_texturenum);
+	DrawGLWaterPoly (p);
+
+	GL_Bind (lightmap_textures + s->lightmaptexturenum);
+	glEnable (GL_BLEND);
+	DrawGLWaterPolyLightmap (p);
+	glDisable (GL_BLEND);
+							
+#if 0
 	if (s->flags & SURF_DRAWSKY)
 	{
 		GL_Bind (solidskytexture);
@@ -525,7 +559,62 @@ void R_DrawSequentialPoly (msurface_t *s)
 
 		glDisable (GL_BLEND);
 	}
+#endif
 }
+
+/*
+================
+DrawGLWaterPoly
+
+Warp the vertex coordinates
+================
+*/
+void DrawGLWaterPoly (glpoly_t *p)
+{
+	int		i;
+	float	*v;
+	vec3_t	nv;
+
+	GL_DisableMultitexture();
+
+	glBegin (GL_TRIANGLE_FAN);
+	v = p->verts[0];
+	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	{
+		glTexCoord2f (v[3], v[4]);
+
+		nv[0] = v[0] + 8*sin(v[1]*0.05+realtime)*sin(v[2]*0.05+realtime);
+		nv[1] = v[1] + 8*sin(v[0]*0.05+realtime)*sin(v[2]*0.05+realtime);
+		nv[2] = v[2];
+
+		glVertex3fv (nv);
+	}
+	glEnd ();
+}
+
+void DrawGLWaterPolyLightmap (glpoly_t *p)
+{
+	int		i;
+	float	*v;
+	vec3_t	nv;
+
+	GL_DisableMultitexture();
+
+	glBegin (GL_TRIANGLE_FAN);
+	v = p->verts[0];
+	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	{
+		glTexCoord2f (v[5], v[6]);
+
+		nv[0] = v[0] + 8*sin(v[1]*0.05+realtime)*sin(v[2]*0.05+realtime);
+		nv[1] = v[1] + 8*sin(v[0]*0.05+realtime)*sin(v[2]*0.05+realtime);
+		nv[2] = v[2];
+
+		glVertex3fv (nv);
+	}
+	glEnd ();
+}
+
 #else
 /*
 ================

@@ -280,14 +280,26 @@ typedef struct
 	int		effects;
 } entity_state_t;
 
+#ifdef SERVERONLY
+
+#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
+#define MAX_DEMO_PACKET_ENTITIES 196 
+typedef struct
+{
+	int		num_entities;
+	entity_state_t	*entities;
+} packet_entities_t;
+
+#else
 
 #define	MAX_PACKET_ENTITIES	196	// doesn't count nails
-#define OLD_MAX_PACKET_ENTITIES 64 
 typedef struct
 {
 	int		num_entities;
 	entity_state_t	entities[MAX_PACKET_ENTITIES];
 } packet_entities_t;
+
+#endif
 
 typedef struct usercmd_s
 {

@@ -60,6 +60,7 @@ extern	globalvars_t	*pr_global_struct;
 extern	float			*pr_globals;			// same as pr_global_struct
 
 extern	int				pr_edict_size;	// in bytes
+extern	int				pr_teamfield;
 
 //============================================================================
 
@@ -140,8 +141,10 @@ eval_t *GetEdictFieldValue(edict_t *ed, char *field);
 #define MAX_PRSTR 1024
 
 extern char *pr_strtbl[MAX_PRSTR];
+extern char *pr_newstrtbl[MAX_PRSTR];
 extern int num_prstr;
 
 char *PR_GetString(int num);
 int PR_SetString(char *s);
+int PR_SetTmpString(char *s);
 

@@ -156,6 +156,10 @@ SOURCE=.\sv_init.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\sv_login.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\sv_main.c
 # End Source File
 # Begin Source File
@@ -389,7 +393,7 @@ InputName=math
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-           $(OUTDIR)\$(InputName).asm 
+            $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -416,7 +420,7 @@ InputName=worlda
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
 	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-           $(OUTDIR)\$(InputName).asm 
+            $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build

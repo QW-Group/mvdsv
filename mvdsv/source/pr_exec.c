@@ -153,7 +153,9 @@ void PR_PrintStatement (dstatement_t *s)
 	
 	if ( (unsigned)s->op < sizeof(pr_opnames)/sizeof(pr_opnames[0]))
 	{
+
 		Con_Printf ("%s ",  pr_opnames[s->op]);
+		
 		i = strlen(pr_opnames[s->op]);
 		for ( ; i<10 ; i++)
 			Con_Printf (" ");
@@ -266,6 +268,9 @@ void PR_RunError (char *error, ...)
 	va_start (argptr,error);
 	vsprintf (string,error,argptr);
 	va_end (argptr);
+
+
+	sv_error = true;
 
 	PR_PrintStatement (pr_statements + pr_xstatement);
 	PR_StackTrace ();
@@ -633,6 +638,7 @@ while (1)
 		}
 
 		s = PR_EnterFunction (newf);
+
 		break;
 
 	case OP_DONE:
@@ -665,6 +671,7 @@ while (1)
 
 /*----------------------*/
 
+char *pr_newstrtbl[MAX_PRSTR];
 char *pr_strtbl[MAX_PRSTR];
 int num_prstr;
 
@@ -672,6 +679,9 @@ char *PR_GetString(int num)
 {
 	if (num < 0) {
 //Con_DPrintf("GET:%d == %s\n", num, pr_strtbl[-num]);
+		if (num <= -MAX_PRSTR)
+			return pr_newstrtbl[-(num + MAX_PRSTR)];
+
 		return pr_strtbl[-num];
 	}
 	return pr_strings + num;
@@ -697,3 +707,22 @@ int PR_SetString(char *s)
 	return (int)(s - pr_strings);
 }
 
+/*
+==============
+PR_SetTmpString
+
+temp strings are used for qc function parameters
+many calls to function could cause strtbl overflow
+==============
+*/
+
+int PR_SetTmpString(char *s)
+{
+	static int index;
+	static char tmp[8][2048];
+
+	index = (index + 1)&7;
+
+	strcpy(tmp[index], s);
+	return PR_SetString(tmp[index]);
+}

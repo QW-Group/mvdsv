@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libc.h>
 #endif
 
-#if defined(__linux__) || defined(sun)
+#if defined(__linux__) || defined(sun) || defined(__GNUC__)
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <sys/dir.h>
 #endif
+#include <time.h>
 
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
 cvar_t	sys_extrasleep = {"sys_extrasleep","0"};
@@ -142,13 +143,15 @@ dir_t Sys_listdir (char *path, char *ext)
 		d.size += list[d.numfiles].size;
 
 		i = strlen(oneentry->d_name);
-		if (!all && (i < extsize || (Q_strcasecmp(oneentry->d_name+i-extsize, ext))))
+		//if (!all && (i < extsize || (Q_strcasecmp(oneentry->d_name+i-extsize, ext))))
+		//	continue;
+		if (!all && !strstr(oneentry->d_name, ext))
 			continue;
 
 		Q_strncpyz (list[d.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
 
-		if (++d.numfiles == MAX_DIRFILES)
+		if (++d.numfiles == MAX_DIRFILES - 1)
 			break;
 	}
 
@@ -157,6 +160,23 @@ dir_t Sys_listdir (char *path, char *ext)
 	return d;
 }
 
+void Sys_TimeOfDay(date_t *date)
+{
+	struct tm *newtime;
+	time_t long_time;
+	
+	time( &long_time );
+	newtime = localtime( &long_time );
+
+	date->day = newtime->tm_mday;
+	date->mon = newtime->tm_mon;
+	date->year = newtime->tm_year + 1900;
+	date->hour = newtime->tm_hour;
+	date->min = newtime->tm_min;
+	date->sec = newtime->tm_sec;
+	strftime( date->str, 128,
+         "%a %b %d, %H:%M %Y", newtime);
+}
 
 /*
 ================
@@ -194,6 +214,8 @@ void Sys_Error (char *error, ...)
 	vsprintf (string,error,argptr);
 	va_end (argptr);
 	printf ("Fatal error: %s\n",string);
+	if (sv_errorlogfile)
+		fprintf(sv_errorlogfile, "Fatal error: %s\n", string);
 	
 	exit (1);
 }
@@ -206,7 +228,7 @@ Sys_Printf
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-	static char		text[2048];
+	static char		text[4096];
 	unsigned char		*p;
 
 	va_start (argptr,fmt);
@@ -254,10 +276,25 @@ char *Sys_ConsoleInput (void)
 {
 	static char	text[256];
 	int		len;
+#ifdef NEWWAY
+	fd_set	fdset;
+    struct timeval timeout;
+
+	if (!do_stdin)
+		return;
+
+	FD_ZERO(&fdset);
+	FD_SET(0, &fdset); // stdin
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+	if (select (1, &fdset, NULL, NULL, &timeout) == -1 || !FD_ISSET(0, &fdset))
+		return NULL;
+#else
 
 	if (!stdin_ready || !do_stdin)
 		return NULL;		// the select didn't say it was ready
 	stdin_ready = false;
+#endif
 
 	len = read (0, text, sizeof(text));
 	if (len == 0) {
@@ -286,18 +323,69 @@ void Sys_Init (void)
 	Cvar_RegisterVariable (&sys_extrasleep);
 }
 
+int NET_Sleep(double sec)
+{
+    struct timeval timeout;
+	fd_set	fdset;
+	extern	int		net_socket;
+
+	FD_ZERO(&fdset);
+	if (do_stdin)
+		FD_SET(0, &fdset); // stdin is processed too
+	FD_SET(net_socket, &fdset); // network socket
+
+	timeout.tv_sec = (long) sec;
+	timeout.tv_usec = (sec - floor(sec))*1000000L;
+	return select(net_socket+1, &fdset, NULL, NULL, &timeout);
+}
+
+void Sys_Sleep(unsigned long ms)
+{
+        usleep(ms * 1000);
+}
+
+int Sys_Script(char *path, char *args)
+{
+	char str[1024];
+	
+	sprintf(str,"cd %s\n./%s.qws %s\ncd ..", com_gamedir, path, args);
+	
+	if (system(str) == -1)
+		return 0;
+	
+	return 1;
+	
+#if 0	
+	Cmd_TokenizeString(args);
+	for (i = 0; i < Cmd_Argc() && i < MAXSCRIPTARGS; i++)
+		Args[i] = Cmd_Argv(i);
+	
+	Args[i] = NULL;
+
+	
+	if (_spawnv(_P_WAITNO, va("%s\\%s",com_gamedir, path), args) == -1)
+		return 0;
+
+	return 1;
+#endif
+}
+
+
 /*
 =============
 main
 =============
 */
+
 void main (int argc, char *argv[])
 {
 	double			time, oldtime, newtime;
 	quakeparms_t	parms;
-	fd_set	fdset;
 	extern	int		net_socket;
+#ifndef NEWWAY
     struct timeval timeout;
+	fd_set	fdset;
+#endif
 	int j;
 
 	memset (&parms, 0, sizeof(parms));
@@ -324,6 +412,7 @@ void main (int argc, char *argv[])
 // main loop
 //
 	oldtime = Sys_DoubleTime () - 0.1;
+#ifndef NEWWAY 
 	while (1)
 	{
 	// select on the net socket and stdin
@@ -351,5 +440,22 @@ void main (int argc, char *argv[])
 		if (sys_extrasleep.value)
 			usleep (sys_extrasleep.value);
 	}	
+#else
+	while (1)
+	{
+		do
+		{
+			newtime = Sys_DoubleTime ();
+			time = newtime - oldtime;
+		} while (time < 0.001);
+
+		SV_Frame (time);
+		oldtime = newtime;
+
+		// extrasleep is just a way to generate a fucked up connection on purpose
+		if (sys_extrasleep.value)
+			usleep (sys_extrasleep.value);
+	}
+#endif
 }
 

@@ -283,7 +283,9 @@ void CL_Download_f (void)
 	if (cls.download)
 	{
 		fclose(cls.download);
+		cls.download = NULL;
 	}
+	
 
 	strcpy(cls.downloadtempname, cls.downloadname);
 	cls.download = fopen (cls.downloadname, "wb");
@@ -583,6 +585,40 @@ void CL_DemoJump_f (void)
 void Host_Savegame_f(void);
 void Host_Loadgame_f(void);
 
+double ping_time;
+void Cmd_Ping_f (void)
+{
+	char	data[6];
+	netadr_t	adr;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf ("ping <destination>\n");
+		return;
+	}
+
+	if (!NET_StringToAdr (Cmd_Argv(1), &adr))
+	{
+		Con_Printf ("Bad address\n");
+		return;
+	}
+
+	if (adr.port == 0)
+		adr.port = BigShort (27500);
+
+
+	data[0] = 0xff;
+	data[1] = 0xff;
+	data[2] = 0xff;
+	data[3] = 0xff;
+	data[4] = A2A_PING;
+	data[5] = 0;
+		
+	NET_SendPacket (net_clientsocket, 6, &data, adr);
+	ping_time = realtime;
+}
+
+
 void CL_InitCommands (void)
 {
 // general commands
@@ -601,6 +637,8 @@ void CL_InitCommands (void)
 	Cmd_AddCommand ("users", CL_Users_f);
 	Cmd_AddCommand ("version", CL_Version_f);
 	Cmd_AddCommand ("writeconfig", CL_WriteConfig_f);
+
+	Cmd_AddCommand ("ping", Cmd_Ping_f);
 
 // client info setting
 	Cmd_AddCommand ("color", CL_Color_f);
@@ -779,3 +817,4 @@ qboolean CL_CheckServerCommand ()
 
 	return false;
 }
+

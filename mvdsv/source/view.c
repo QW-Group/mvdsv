@@ -658,7 +658,9 @@ void V_UpdatePalette (void)
 	int		c;
 	float	gamma, contrast;
 	static float	old_gamma, old_contrast;
+#ifdef WIN32
 	extern float	vid_gamma;
+#endif
 
 	if (cls.state != ca_active) {
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
@@ -701,19 +703,22 @@ void V_UpdatePalette (void)
 
 	a = v_blend[3];
 
+#ifdef WIN32
 	if (!vid_hwgamma_enabled)
 		a = 0;
+#endif
 
 	rgb[0] = 255*v_blend[0]*a;
 	rgb[1] = 255*v_blend[1]*a;
 	rgb[2] = 255*v_blend[2]*a;
 
 	a = 1-a;
-
+#ifdef WIN32
 	if (vid_gamma != 1.0) {
 		contrast = pow (contrast, vid_gamma);
 		gamma = gamma/vid_gamma;
 	}
+#endif
 
 	for (i=0 ; i<256 ; i++)
 	{
@@ -732,7 +737,9 @@ void V_UpdatePalette (void)
 		}
 	}
 
+#ifdef WIN32
 	VID_SetDeviceGammaRamp ((unsigned short *) ramps);
+#endif
 }
 #else	// !GLQUAKE
 /*

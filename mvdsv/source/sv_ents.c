@@ -314,6 +314,12 @@ void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *
 
 		if (newnum < oldnum)
 		{	// this is a new entity, send it from the baseline
+			if (newnum == 9999)
+			{
+				Sys_Printf("LOL, %d, %d, %d, %d %d %d\n", newnum, oldnum, to->num_entities, oldmax, client->netchan.incoming_sequence & UPDATE_MASK, client->delta_sequence & UPDATE_MASK);
+				if (client->edict == NULL)
+					Sys_Printf("demo\n");
+			}
 			ent = EDICT_NUM(newnum);
 //Con_Printf ("baseline %i\n", newnum);
 			SV_WriteDelta (&ent->baseline, &to->entities[newindex], msg, true);
@@ -356,8 +362,6 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 	int			msec;
 	usercmd_t	cmd;
 	int			pflags;
-	int			dflags;
-	demoinfo_t	demoinfo;
 	demo_frame_t *demo_frame;
 	demo_client_t *dcl;
 	
@@ -520,7 +524,7 @@ svc_playerinfo messages
 
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 {
-	int		e, i, max_packet_entities = OLD_MAX_PACKET_ENTITIES;
+	int		e, i, max_packet_entities = MAX_PACKET_ENTITIES;
 	byte	*pvs;
 	vec3_t	org;
 	edict_t	*ent;
@@ -540,27 +544,22 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 	if (!recorder) {
 		VectorAdd (clent->v.origin, clent->v.view_ofs, org);
 		pvs = SV_FatPVS (org);
-	} else 
-		max_packet_entities = MAX_PACKET_ENTITIES;
+	} else {
+		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
 
-
-	for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
-	{
-		if (cl->state != cs_spawned)
-			continue;
-
-		if (cl->edict == clent)
-			continue;
-
-		if (cl->spectator)
-			continue;
-
-		if (pvs == NULL)
+		for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 		{
-			VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
-			pvs = SV_FatPVS (org);
-		} else {
-			if (client->POVs & (1 << i)) {
+			if (cl->state != cs_spawned)
+				continue;
+
+			if (cl->spectator)
+				continue;
+
+			if (pvs == NULL)
+			{
+				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
+				pvs = SV_FatPVS (org);
+			} else {
 				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
 				SV_AddToFatPVS (org, sv.worldmodel->nodes);
 			}
