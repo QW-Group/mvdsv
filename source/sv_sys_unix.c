@@ -47,6 +47,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "version.h"
 // Added by VVD }
 
+extern cvar_t sys_select_timeout;
+extern cvar_t sys_restart_on_error;
+extern cvar_t not_auth_timeout;
+extern cvar_t auth_timeout;
+
 cvar_t	sys_nostdout = {"sys_nostdout", "0"};
 cvar_t	sys_extrasleep = {"sys_extrasleep", "0"};
 
@@ -212,24 +217,29 @@ dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
 
 /*
 ================
-Sys_DoubleTime
+Sys_Exit
 ================
 */
-double Sys_DoubleTime (void)
+void Sys_Exit (int code)
 {
-	struct timeval tp;
-	struct timezone tzp;
-	static int		secbase;
+	exit(code);		// appkit isn't running
+}
 
-	gettimeofday(&tp, &tzp);
-	
-	if (!secbase)
-	{
-		secbase = tp.tv_sec;
-		return tp.tv_usec/1000000.0;
-	}
-	
-	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
+/*
+================
+Sys_Quit
+================
+*/
+char	*argv0;
+void Sys_Quit (qboolean restart)
+{
+	if (restart)
+		if (execv(argv0, com_argv) == -1)
+		{
+			Sys_Printf("Restart failed: %s\n", strerror(errno));
+			Sys_Exit(1);
+		}
+	Sys_Exit(0);		// appkit isn't running
 }
 
 /*
@@ -248,62 +258,31 @@ void Sys_Error (char *error, ...)
 	if (!sys_nostdout.value)
 		printf ("Fatal error: %s\n", string);
 	SV_Write_Log(ERROR_LOG, 1, va("Fatal error: %s\n", string));
-	exit (1);
+	if (sys_restart_on_error.value)
+		Sys_Quit(true);
+	Sys_Exit(1);
 }
 
 /*
 ================
-Sys_Printf
+Sys_DoubleTime
 ================
 */
-void Sys_Printf (char *fmt, ...)
+double Sys_DoubleTime (void)
 {
-	extern char	chartbl2[];
-	va_list		argptr;
-	unsigned char	text[4096];
-	unsigned char	*p;
+	struct timeval tp;
+	struct timezone tzp;
+	static int		secbase;
 
-	va_start (argptr,fmt);
-	vsnprintf(text, sizeof(text), fmt, argptr);
-//	if (vsnprintf(text, sizeof(text), fmt, argptr) >= sizeof(text))
-//        	Sys_Error("memory overwrite in Sys_Printf.\n");
-	va_end (argptr);
+	gettimeofday(&tp, &tzp);
 	
-	if (!(telnetport && telnet_connected && authenticated) && sys_nostdout.value)
-		return;
-
-	for (p = text; *p; p++)
+	if (!secbase)
 	{
-		*p = chartbl2[*p];
-		if (telnetport && telnet_connected && authenticated)
-		{
-			write (telnet_iosock, p, 1);
-			if (*p == '\n') // demand for M$ WIN 2K telnet support
-				write (telnet_iosock, "\r", 1);
-		}
-		if (!sys_nostdout.value)
-			putc(*p, stdout);
+		secbase = tp.tv_sec;
+		return tp.tv_usec/1000000.0;
 	}
-
-	if (telnetport && telnet_connected && authenticated)
-		SV_Write_Log(TELNET_LOG, 3, text);
-	if (!sys_nostdout.value)
-		fflush(stdout);
-}
-
-
-/*
-================
-Sys_Quit
-================
-*/
-char	*argv0;
-void Sys_Quit (qboolean restart)
-{
-	if (restart)
-		if (execv(argv0, com_argv) == -1)
-			Sys_Printf("Restart failed: %s\n", strerror(errno));
-	exit (0);		// appkit isn't running
+	
+	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
 }
 
 static int do_stdin = 1;
@@ -448,6 +427,46 @@ char *Sys_ConsoleInput (void)
 }
 
 /*
+================
+Sys_Printf
+================
+*/
+void Sys_Printf (char *fmt, ...)
+{
+	extern char	chartbl2[];
+	va_list		argptr;
+	unsigned char	text[4096];
+	unsigned char	*p;
+
+	va_start (argptr,fmt);
+	vsnprintf(text, sizeof(text), fmt, argptr);
+//	if (vsnprintf(text, sizeof(text), fmt, argptr) >= sizeof(text))
+//        	Sys_Error("memory overwrite in Sys_Printf.\n");
+	va_end (argptr);
+	
+	if (!(telnetport && telnet_connected && authenticated) && sys_nostdout.value)
+		return;
+
+	for (p = text; *p; p++)
+	{
+		*p = chartbl2[*p];
+		if (telnetport && telnet_connected && authenticated)
+		{
+			write (telnet_iosock, p, 1);
+			if (*p == '\n') // demand for M$ WIN 2K telnet support
+				write (telnet_iosock, "\r", 1);
+		}
+		if (!sys_nostdout.value)
+			putc(*p, stdout);
+	}
+
+	if (telnetport && telnet_connected && authenticated)
+		SV_Write_Log(TELNET_LOG, 3, text);
+	if (!sys_nostdout.value)
+		fflush(stdout);
+}
+
+/*
 =============
 Sys_Init
 
@@ -551,7 +570,6 @@ static int only_digits(const char *s) {
 inline void Sys_Telnet (void)
 {
 	static int			tempsock;
-	extern cvar_t		not_auth_timeout, auth_timeout;
 	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
 	static int			sockaddr_len = sizeof(struct sockaddr_in);
 	static double		cur_time_not_auth;
@@ -611,7 +629,6 @@ int main (int argc, char *argv[])
 	quakeparms_t	parms;
 
 //Added by VVD {
-	extern cvar_t	sys_select_timeout;
 	int	j;
 	uid_t   user_id;
 	gid_t   group_id;

@@ -1,4 +1,15 @@
 ----
+MVDSV v0.179 Beta DEVELOP build 19?? (2005.03.??)
+[server]
+- new cvar sys_restart_on_error (use with caution)
+  0 - quit on error (old style)
+  1 - restart instead quit on server error (SV_Error)
+  default: 0
+- bugfix: 'cmd mmode player N' cause server crash if 'N' >= 0x10000000, signed int32 => negative
+(Thanks to zip)
+
+
+----
 MVDSV v0.178 Beta DEVELOP build 1897 (2005.03.01)
 [server]
 - added drop client if no empty slots after "server is full" message (EXPERIMENTAL)
