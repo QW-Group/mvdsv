@@ -33,7 +33,8 @@ static char *mon[12] =
 { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 static char mond[12] = 
 { 31,    28,    31,    30,    31,    30,    31,    31,    30,    31,    30,    31 };
-char full_version[sizeof(FULL_VERSION)];
+
+char full_version[SIZEOF_FULL_VERSION];
 
 // returns days since Dec 21 1999
 int build_number (void)
@@ -74,6 +75,6 @@ Version_f
 void Version_f (void)
 {
 	Con_Printf ("QW version %4.2f\n", QW_VERSION);
-	Con_Printf (SERVER_NAME " version " QWE_VERSION " " QW_PLATFORM_SHORT ", build %d\n", build_number());
-	Con_Printf ("Build date: "__TIME__" "__DATE__"\n");
+	Con_Printf ("%s\n", full_version);
+	Con_Printf (PROJECT_NAME " Project home page: http://ktpro.does.it/\n\n");
 }

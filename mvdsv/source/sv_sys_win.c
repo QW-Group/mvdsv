@@ -841,13 +841,13 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		}
 // Added by VVD }
 		timeout.tv_sec = 0;
-		timeout.tv_usec = 100;
+		timeout.tv_usec = 10000;
 
-		if (select (j + 1, &fdset, NULL, NULL, &timeout) == -1)
-			continue;
-
-		if (telnetport && telnet_connected)
-			iosock_ready = FD_ISSET(telnet_iosock, &fdset);
+		if (select (j + 1, &fdset, NULL, NULL, &timeout) != -1)
+		{
+			if (telnetport && telnet_connected)
+				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
+		}
 
 	// find time passed since last cycle
 		newtime = Sys_DoubleTime ();

@@ -1236,8 +1236,7 @@ void SV_WriteIPVIP_f (void)
 
 	Con_Printf ("Writing %s.\n", name);
 
-	f = fopen (name, "wb");
-	if (!f)
+	if (!(f = fopen (name, "wb")))
 	{
 		Con_Printf ("Couldn't open %s\n", name);
 		return;
@@ -1348,8 +1347,7 @@ void SV_WriteIP_f (void)
 
 	Con_Printf ("Writing %s.\n", name);
 
-	f = fopen (name, "wb");
-	if (!f)
+	if (!(f = fopen (name, "wb")))
 	{
 		Con_Printf ("Couldn't open %s\n", name);
 		return;
@@ -2027,7 +2025,8 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&spawn);
 	Cvar_RegisterVariable (&watervis);
 	Cvar_RegisterVariable (&serverdemo);
-	snprintf(full_version, sizeof(FULL_VERSION), FULL_VERSION, build_number());
+
+	snprintf(full_version, SIZEOF_FULL_VERSION, FULL_VERSION "\n" BUILD_DATE "\n", build_number());
 	Cvar_RegisterVariable (&version);
 
 	Cvar_RegisterVariable (&developer);
@@ -2398,21 +2397,12 @@ void SV_Init (quakeparms_t *parms)
 
 	host_initialized = true;
 	
-//	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));	
 
-/*#ifdef RELEASE_VERSION
-	Con_Printf ("\nServer Version %s\n\n", QWE_VERSION);
-#else
-	Con_Printf ("\nServer Version %s, build %d\n\n", QWE_VERSION, build_number());
-#endif
-*/
 	Version_f();
 
-	Con_Printf (PROJECT_NAME " Project home page: http://ktpro.does.it/\n\n");
-
 	Con_Printf ("======== QuakeWorld Initialized ========\n");
-	
+
 // process command line arguments
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute ();

@@ -142,7 +142,7 @@ void Con_Printf (char *fmt, ...)
 	}
 
 	Sys_Printf ("%s", msg);	// also echo to debugging console
-	SV_Write_Log(CONSOLE_LOG, 1, msg);
+	SV_Write_Log(CONSOLE_LOG, 0, msg);
 
 	// dumb error message to log file if 
 	if (sv_error)

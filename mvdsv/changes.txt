@@ -1,9 +1,17 @@
 ----
+QWEX v0.1726
+[server]
+- bugfix in unix version with -mem command line option
+- bugfix: console logging (qconsole_PORT.log) only with qconsole_log_say 1
+- bugfix: can't download file with name contain 2 or more dots (".") in a row ("Disconnect"'s bug)
+
+
+----
 QWEX v0.1725 Beta DEVELOP
 [server]
 - change MAX_PACKET_ENTITIES form 300 down to 64
 (Thnaks to Fuh)
-- bugfix in reading and writing "accounts" file
+- bugfix in reading and writing "accounts" file under *nix systems
 
 Note: Bugfix only release.
 
@@ -23,10 +31,10 @@ QWEX v0.1724 Beta DEVELOP
   (reduce the overflow of the demo.datagram_data buffer to prevent potential demo corruption too)
 (Thanks to BorisU)
 - now telnet is off by default (same as -telnetport 0)
-- the blank character created with "$_" (with mqwcl for example) is now a normal space character,
-  so the name "$_" will be the same as name " " and result in the player's name being "unnamed"
-- bugfix from 0.1722b: when the same teams/players played on same map a 2nd time (thus the demo
-  name being the same) the demo name sometimes wasn't printed correctly on the client screen
+- the blank character created with "$_" (with mqwcl for example) is now a normal space character, so the
+  name "$_" will be the same as name " " and result in the player's name being "unnamed" ("Uno"'s bug)
+- bugfix from 0.1722b: when the same teams/players played on same map a 2nd time (thus the demo name 
+  being the same) the demo name sometimes wasn't printed correctly on the client screen ("Glad"'s bug)
 - new cvar: 
     qconsole_log_say 0/1
       0 - "say" and "say_team" messages are not logged

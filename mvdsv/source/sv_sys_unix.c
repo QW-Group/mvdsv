@@ -39,12 +39,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ctype.h>
+#include <pwd.h>
+#include <grp.h>
 #include "version.h"
 // Added by VVD }
 
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
 cvar_t	sys_extrasleep = {"sys_extrasleep","0"};
 
+qboolean isdaemon;
+	
 static qboolean	stdin_ready = false;
 // Added by VVD {
 static qboolean	iosock_ready = false;
@@ -226,7 +231,8 @@ void Sys_Error (char *error, ...)
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
-	printf ("Fatal error: %s\n",string);
+	if (sys_nostdout.value)
+		printf ("Fatal error: %s\n", string);
 	SV_Write_Log(ERROR_LOG, 1, va("Fatal error: %s\n", string));
 	exit (1);
 }
@@ -252,11 +258,6 @@ void Sys_Printf (char *fmt, ...)
 		return;
 
 	for (p = (unsigned char *)text; *p; p++) {
-//Commented by VVD
-//		*p &= 0x7f;
-//		if ((*p > 128 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
-//			printf("[%02x]", *p);
-//Added by VVD
 		if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
 		{
 			if (telnetport && telnet_connected && authenticated)
@@ -420,7 +421,7 @@ char *Sys_ConsoleInput (void)
 		len = 0;
 		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
 	}
-	if (do_stdin && stdin_ready)
+	if (do_stdin && stdin_ready && !isdaemon)
 	{
 		stdin_ready = false;
 		len = read (0, text, sizeof(text));
@@ -502,6 +503,16 @@ int Sys_Script(char *path, char *args)
 	return 1;
 }
 
+static int only_digits(const char *s) {
+	if (*s == '\0')
+		return (0);
+	while (*s != '\0') {
+		if (!isdigit(*s))
+			return (0);
+		s++;
+	}
+	return (1);
+}
 
 
 /*
@@ -520,6 +531,11 @@ int main (int argc, char *argv[])
 	struct	sockaddr_in remoteaddr, remoteaddr_temp;
 	int	sockaddr_len = sizeof(struct sockaddr_in);
 	double	cur_time_not_auth = 0, not_auth_timeout_value, auth_timeout_value;
+	uid_t	user_id;
+	gid_t	group_id;
+	struct passwd	*pw;
+	struct group	*gr;
+	char	*user_name, *group_name, *chroot_dir;
 //Added by VVD }
 #ifndef NEWWAY
 	struct timeval timeout;
@@ -541,13 +557,78 @@ int main (int argc, char *argv[])
 	j = COM_CheckParm("-mem");
 	if (j && j + 1 < com_argc)
 		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
-	else
+
+	j = COM_CheckParm ("-d");
+	if (j && j < com_argc)
+	{
+		if (daemon(0, 1))
+		{
+			Sys_Printf("daemon: %s\n", strerror(errno));
+			isdaemon = 0;
+		}
+		else
+			isdaemon = 1;
+	}
+	else 
+		isdaemon = 0;
 
 	parms.membase = Q_Malloc (parms.memsize);
 
 	parms.basedir = ".";
 
+// chroot
+	j = COM_CheckParm ("-c");
+	if (j && j + 1 < com_argc)
+	{
+		chroot_dir = com_argv[j + 1];
+		if (chroot(chroot_dir) < 0) {
+			Sys_Printf("chroot %s failed: %s\n", chroot_dir, strerror(errno));
+			//exit(1);
+		}
+		if (chdir("/") < 0) {
+			Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(errno));
+			//exit(1);
+		}
+	}
+
 	SV_Init (&parms);
+
+// set[e]uid, set[e]gid
+	j = COM_CheckParm ("-u");
+	if (j && j + 1 < com_argc)
+	{
+		user_name = com_argv[j + 1];
+		if (only_digits(user_name))
+			user_id = Q_atoi(user_name);
+		else {
+			pw = getpwnam(user_name);
+			if (pw == NULL) {
+				Sys_Printf("user \"%s\" unknown\n", user_name);
+				//exit(1);
+			}
+			user_id = pw->pw_uid;
+		}
+		if (setuid(user_id) < 0)
+			Sys_Printf("Can't setuid to user \"%s\": %s\n", user_name, strerror(errno));
+	}
+
+	j = COM_CheckParm ("-g");
+	if (j && j + 1 < com_argc)
+	{
+		group_name = com_argv[j + 1];
+		if (only_digits(group_name))
+			group_id = Q_atoi(group_name);
+		else {
+			gr = getgrnam(group_name);
+			if (gr == NULL) {
+				Sys_Printf("group \"%s\" unknown\n", group_name);
+				//exit(1);
+			}
+			group_id = gr->gr_gid;
+		}
+		if (setgid(group_id) < 0)
+			Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(errno));
+	}
 
 // run one frame immediately for first heartbeat
 	SV_Frame (0.1);		
@@ -621,20 +702,22 @@ int main (int argc, char *argv[])
 			}
 		}
 // Added by VVD }
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 10000;
 
 		if (do_stdin)
 			FD_SET(0, &fdset);
 
-		if (select (j + 1, &fdset, NULL, NULL, &timeout) == -1)
-			continue;
-
-		if (do_stdin)
-			stdin_ready = FD_ISSET(0, &fdset);
-		if (telnetport && telnet_connected)
-			iosock_ready = FD_ISSET(telnet_iosock, &fdset);
-
+		switch (select (j + 1, &fdset, NULL, NULL, &timeout))
+		{
+			case -1: continue;
+			case 0: break;
+			default:
+				if (do_stdin)
+					stdin_ready = FD_ISSET(0, &fdset);
+				if (telnetport && telnet_connected)
+					iosock_ready = FD_ISSET(telnet_iosock, &fdset);
+		}
 	// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;

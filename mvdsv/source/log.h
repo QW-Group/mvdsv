@@ -21,6 +21,5 @@ typedef struct log_s {
 extern	log_t	logs[];
 extern	cvar_t	frag_log_type;
 extern	cvar_t	telnet_log_level;
-extern	int		port;
 void	SV_Write_Log(int sv_log, int level, char *msg);
 #endif
