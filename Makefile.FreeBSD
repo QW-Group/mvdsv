@@ -49,44 +49,44 @@ DO_CFLAGS +=	-falign-loops=2 -falign-jumps=2 -falign-functions=2
 ########################################################################
 
 SV_OBJS = \
-		pr_cmds.o \
-		pr_edict.o \
-		pr_exec.o \
+		${SOURCEDIR}/pr_cmds.o \
+		${SOURCEDIR}/pr_edict.o \
+		${SOURCEDIR}/pr_exec.o \
 \
-		sv_ccmds.o \
-		sv_demo.o \
-		sv_ents.o \
-		sv_init.o \
-		sv_login.o \
-		sv_main.o \
-		sv_model.o \
-		sv_move.o \
-		sv_nchan.o \
-		sv_phys.o \
-		sv_send.o \
-		sv_sys_unix.o \
-		sv_user.o \
+		${SOURCEDIR}/sv_ccmds.o \
+		${SOURCEDIR}/sv_demo.o \
+		${SOURCEDIR}/sv_ents.o \
+		${SOURCEDIR}/sv_init.o \
+		${SOURCEDIR}/sv_login.o \
+		${SOURCEDIR}/sv_main.o \
+		${SOURCEDIR}/sv_model.o \
+		${SOURCEDIR}/sv_move.o \
+		${SOURCEDIR}/sv_nchan.o \
+		${SOURCEDIR}/sv_phys.o \
+		${SOURCEDIR}/sv_send.o \
+		${SOURCEDIR}/sv_sys_unix.o \
+		${SOURCEDIR}/sv_user.o \
 \
-		cmd.o \
-		common.o \
-		crc.o \
-		cvar.o \
-		mathlib.o \
-		mdfour.o \
-		net_chan.o \
-		net_udp.o \
-		pmove.o \
-		pmovetst.o \
-		version.o \
-		world.o \
-		zone.o \
-		sha1.o
+		${SOURCEDIR}/cmd.o \
+		${SOURCEDIR}/common.o \
+		${SOURCEDIR}/crc.o \
+		${SOURCEDIR}/cvar.o \
+		${SOURCEDIR}/mathlib.o \
+		${SOURCEDIR}/mdfour.o \
+		${SOURCEDIR}/net_chan.o \
+		${SOURCEDIR}/net_udp.o \
+		${SOURCEDIR}/pmove.o \
+		${SOURCEDIR}/pmovetst.o \
+		${SOURCEDIR}/version.o \
+		${SOURCEDIR}/world.o \
+		${SOURCEDIR}/zone.o \
+		${SOURCEDIR}/sha1.o
 
 .if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
 SV_AS_OBJS = \
-		math.o \
-		sys_x86.o \
-		worlda.o
+		${SOURCEDIR}/math.o \
+		${SOURCEDIR}/sys_x86.o \
+		${SOURCEDIR}/worlda.o
 .endif
 
 SV_LIBS = -lm
@@ -98,7 +98,7 @@ SV_LIBS = -lm
 		${CC} ${DO_CFLAGS} -DELF -x assembler-with-cpp -c $< -o $*.o
 
 all:	${SV_OBJS} ${SV_AS_OBJS}
-		${CC} ${CFLAGS} -o ../mvdsv ${SV_OBJS} ${SV_AS_OBJS} ${SV_LIBS}
+		${CC} ${CFLAGS} -o mvdsv ${SV_OBJS} ${SV_AS_OBJS} ${SV_LIBS}
 
 clean:
 		-rm -f *.o *.core

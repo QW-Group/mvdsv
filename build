@@ -1,16 +1,14 @@
 #!/bin/sh
 
 if [ "_$1" = _freebsd ]; then
-	cd source
-	make && strip ../mvdsv
+	make -f Makefile.FreeBSD && strip mvdsv
 
 elif [ "_$1" = _freebsd-qwdtools ]; then
 	cd source/qwdtools
 	make && strip ../../qwdtools
 
 elif [ "_$1" = _darwin ]; then
-	cd source
-	bsdmake && strip ../mvdsv
+	bsdmake -f Makefile.Darwin && strip mvdsv
 
 elif [ "_$1" = _darwin-qwdtools ]; then
 	cd source/qwdtools
