@@ -492,28 +492,53 @@ void SV_Kick_f (void)
 	Con_Printf ("Couldn't find user number %i\n", uid);
 }
 
-
 /*
 ================
 SV_Resolve
+
+resolve IP via DNS lookup
 ================
 */
-char *SV_Resolve(netadr_t addr)
+char *SV_Resolve(char *addr)
 {
-	char		*s;
 #if defined (__linux__) || defined (_WIN32)
 	unsigned long ip;
 #else
 	in_addr_t ip;
 #endif
+
 	struct hostent *hp;
 
-	s = NET_BaseAdrToString(addr);
-	ip = inet_addr(s);
-	if (hp = gethostbyaddr((const char *)&ip, sizeof(ip), AF_INET))
-		s = hp->h_name;
-	return s;
+	ip = inet_addr(addr);
+	if ((hp = gethostbyaddr((const char *)&ip, sizeof(ip), AF_INET)) != NULL)
+		addr = hp->h_name;
+	return addr;
 }
+
+/*
+==================
+SV_Nslookup_f
+==================
+*/
+void SV_Nslookup_f (void)
+{
+	char		*ip, *name;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf ("Usage: nslookup <IP address>\n");
+		return;
+	}
+
+	ip = Cmd_Argv(1);
+	name = SV_Resolve(ip);
+	if (ip != name)
+		Con_Printf ("Name:    %s\nAddress:  %s\n", name, ip);
+	else
+		Con_Printf ("Couldn't resolve %s\n", ip);
+
+}
+
 /*
 ================
 SV_Status_f
@@ -564,7 +589,9 @@ void SV_Status_f (void)
 			else			
 				Con_Printf("\n");
 
-			s = SV_Resolve(cl->netchan.remote_address);
+			s = NET_BaseAdrToString(cl->netchan.remote_address);
+			if (Cvar_VariableValue("sv_use_dns"))
+				s = SV_Resolve(s);
 			Con_Printf ("  %-16.16s", s);
 
 			if (cl->state == cs_connected || cl->state == cs_preconnected)
@@ -597,7 +624,9 @@ void SV_Status_f (void)
 				continue;
 			Con_Printf ("%5i %3i ", (int)cl->edict->v.frags,  cl->userid);
 
-			s = SV_Resolve(cl->netchan.remote_address);
+			s = NET_BaseAdrToString(cl->netchan.remote_address);
+			if (Cvar_VariableValue("sv_use_dns"))
+				s = SV_Resolve(s);
 			Con_Printf ("%s", s);
 
 			l = 16 - strlen(s);
@@ -1099,6 +1128,8 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("logrcon", SV_RconLogfile_f);
 	Cmd_AddCommand ("logtelnet", SV_TelnetLogfile_f);
 */
+
+	Cmd_AddCommand ("nslookup", SV_Nslookup_f);
 	Cmd_AddCommand ("snap", SV_Snap_f);
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
 	Cmd_AddCommand ("kick", SV_Kick_f);

@@ -136,9 +136,9 @@ void SV_LoadAccounts(void)
 		{
 			strlcpy(acc->pass, acc->login, MAX_LOGINNAME);
 			acc->use = use_ip;
-			fscanf(f, "%s %d\n", acc->pass, &acc->state);
+			fscanf(f, "%s %d\n", acc->pass, (int *)&acc->state);
 		} else
-			fscanf(f, "%s %d %d\n", acc->pass, &acc->state, &acc->failures);
+			fscanf(f, "%s %d %d\n", acc->pass,  (int *)&acc->state, &acc->failures);
 
 		if (acc->state != a_free) // lol?
 			acc++;
@@ -243,7 +243,7 @@ void SV_CreateAccount_f(void)
 			continue;
 		}
 
-		if (!stricmp(accounts[i].login, Cmd_Argv(1)) || (use == use_ip && !stricmp(accounts[i].login, Cmd_Argv(2))))
+		if (!strcasecmp(accounts[i].login, Cmd_Argv(1)) || (use == use_ip && !strcasecmp(accounts[i].login, Cmd_Argv(2))))
 			break;
 
 		c++;
@@ -297,7 +297,7 @@ void SV_RemoveAccount_f(void)
 		if (accounts[i].state == a_free)
 			continue;
 
-		if (!stricmp(accounts[i].login, Cmd_Argv(1)))
+		if (!strcasecmp(accounts[i].login, Cmd_Argv(1)))
 		{
 			if (accounts[i].inuse)
 				SV_Logout(&svs.clients[accounts[i].inuse -1]);
@@ -364,7 +364,7 @@ void SV_blockAccount(qboolean block)
 		if (accounts[i].state == a_free)
 			continue;
 
-		if (!stricmp(accounts[i].login, Cmd_Argv(1)))
+		if (!strcasecmp(accounts[i].login, Cmd_Argv(1)))
 		{
 			if (block)
 			{
@@ -433,7 +433,7 @@ int checklogin(char *log, char *pass, int num, int use)
 			continue;
 
 		if (use == accounts[i].use &&
-			/*use == use_log && accounts[i].use == use_log && */!stricmp(log, accounts[i].login))
+			/*use == use_log && accounts[i].use == use_log && */!strcasecmp(log, accounts[i].login))
 		{
 			if (accounts[i].inuse && accounts[i].use == use_log)
 				return -1;
@@ -441,7 +441,7 @@ int checklogin(char *log, char *pass, int num, int use)
 			if (accounts[i].state == a_blocked)
 				return -2;
 
-			if (use == use_ip || !stricmp(pass, accounts[i].pass)) {
+			if (use == use_ip || !strcasecmp(pass, accounts[i].pass)) {
 				accounts[i].failures = 0;
 				accounts[i].inuse++;
 				return i+1;
@@ -595,7 +595,7 @@ void SV_ParseLogin(client_t *cl)
 	case 0:
 		MSG_WriteByte (&cl->netchan.message, svc_print);
 		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, va("Acces denided\nPassword for %s:\n", cl->login));
+		MSG_WriteString (&cl->netchan.message, va("Access denied\nPassword for %s:\n", cl->login));
 		break;
 	default:
 		Sys_Printf("%s logged in as %s\n", cl->name, cl->login);

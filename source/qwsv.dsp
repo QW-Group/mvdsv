@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /G6 /GX /O2 /D "DEBUG" /D "SERVERONLY" /D "WIN32" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /GX /O2 /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "id386" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -217,6 +217,19 @@ SOURCE=.\zone.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl;fi;fd"
 # Begin Source File
 
+SOURCE="C:\Program Files\Microsoft Visual Studio\VC98\Include\BASETSD.H"
+
+!IF  "$(CFG)" == "qwsv - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=.\bothdefs.h
 # End Source File
 # Begin Source File
@@ -274,6 +287,10 @@ SOURCE=.\log.h
 # Begin Source File
 
 SOURCE=.\mathlib.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\mdfour.h
 # End Source File
 # Begin Source File
 
@@ -383,6 +400,10 @@ SOURCE=.\zone.h
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=.\qwcl2.ico
+# End Source File
 # End Group
 # Begin Group "Asm Files"
 
@@ -393,7 +414,19 @@ SOURCE=.\math.s
 
 !IF  "$(CFG)" == "qwsv - Win32 Release"
 
-# PROP Exclude_From_Build 1
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build
+OutDir=.\SRelease
+InputPath=.\math.s
+InputName=math
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
 
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
@@ -419,7 +452,19 @@ SOURCE=.\worlda.s
 
 !IF  "$(CFG)" == "qwsv - Win32 Release"
 
-# PROP Exclude_From_Build 1
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build
+OutDir=.\SRelease
+InputPath=.\worlda.s
+InputName=worlda
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
 
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 

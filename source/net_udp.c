@@ -47,12 +47,13 @@ netadr_t	net_local_adr;
 
 netadr_t	net_from;
 sizebuf_t	net_message;
-int			net_socket;			// non blocking, for receives
-int			net_send_socket;	// blocking, for sends
-
-int		net_clientsocket;	// @@@ dummy
-int		net_serversocket;	// @@@ dummy
+int		net_send_socket;	// blocking, for sends
+int		net_serversocket;	// non blocking, for receives
 int		net_telnetsocket;
+int		sv_port;
+int		telnetport;
+int		telnet_iosock;
+int		telnet_connected;
 
 #define	MAX_UDP_PACKET	8192
 byte		net_message_buffer[MAX_UDP_PACKET];
@@ -168,7 +169,7 @@ qboolean NET_GetPacket (int dummy)
 	int		fromlen;
 
 	fromlen = sizeof(from);
-	ret = recvfrom (net_socket, net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
+	ret = recvfrom (net_serversocket, net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
 	if (ret == -1) {
 		if (errno == EWOULDBLOCK)
 			return false;
@@ -193,7 +194,7 @@ void NET_SendPacket (int dummy, int length, void *data, netadr_t to)
 
 	NetadrToSockadr (&to, &addr);
 
-	ret = sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr) );
+	ret = sendto (net_serversocket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr) );
 	if (ret == -1) {
 		if (errno == EWOULDBLOCK)
 			return;
@@ -214,8 +215,10 @@ int UDP_OpenSocket (int port)
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
 		Sys_Error ("UDP_OpenSocket: socket:", strerror(errno));
+	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEADDR, &_true, sizeof(_true)))
+		Sys_Error ("UDP_OpenSocket: setsockopt SO_REUSEADDR: %s", strerror(errno));
 	if (ioctl (newsocket, FIONBIO, (char *)&_true) == -1)
-		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO:", strerror(errno));
+		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
 	address.sin_family = AF_INET;
 //ZOID -- check for interface binding option
 	i = COM_CheckParm("-ip");
@@ -230,7 +233,7 @@ int UDP_OpenSocket (int port)
 		address.sin_port = 0;
 	else
 		address.sin_port = htons((short)port);
-	if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
+	if (bind (newsocket, (void *)&address, sizeof(address)) == -1)
 		Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
 
 	return newsocket;
@@ -241,17 +244,19 @@ int TCP_OpenSocket (int port)
 	int newsocket;
 	struct sockaddr_in address;
 	qboolean _true = true;
-	int i, sockaddr_len = sizeof(struct sockaddr_in);
+	int i;
 
 	if ((newsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
 		Sys_Error ("TCP_OpenSocket: socket:", strerror(errno));
-#ifndef __linux__
+	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEADDR, &_true, sizeof(_true)))
+		Sys_Error ("TCP_OpenSocket: setsockopt SO_REUSEADDR: %s", strerror(errno));
+#ifdef __FreeBSD__
 	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEPORT, &_true, sizeof(_true)))
 		Sys_Error ("TCP_OpenSocket: setsockopt: %s", strerror(errno));
-	address.sin_len = sockaddr_len;
+	address.sin_len = sizeof(address);
 #endif
 	if (ioctl (newsocket, FIONBIO, (char *)&_true) == -1)
-		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO:", strerror(errno));
+		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
 
 	address.sin_family = AF_INET;
 //ZOID -- check for interface binding option
@@ -265,7 +270,7 @@ int TCP_OpenSocket (int port)
 		address.sin_addr.s_addr = INADDR_ANY;
 
 	address.sin_port = htons((short)port);
-	if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
+	if (bind (newsocket, (void *)&address, sizeof(address)) == -1)
 		Sys_Error ("TCP_OpenSocket: bind: %s", strerror(errno));
 	if (listen (newsocket, 1))
 		Sys_Error ("TCP_OpenSocket: listen: %s", strerror(errno));
@@ -286,7 +291,7 @@ void NET_GetLocalAddress (void)
 	NET_StringToAdr (buff, &net_local_adr);
 
 	namelen = sizeof(address);
-	if (getsockname (net_socket, (struct sockaddr *)&address, &namelen) == -1)
+	if (getsockname (net_serversocket, (struct sockaddr *)&address, &namelen) == -1)
 		Sys_Error ("NET_Init: getsockname:", strerror(errno));
 	net_local_adr.port = address.sin_port;
 
@@ -308,7 +313,7 @@ int NET_Init (int port, int dummy, int telnetport)
 	//
 	if (port)
 	{
-		net_socket = UDP_OpenSocket (port);
+		net_serversocket = UDP_OpenSocket (port);
 		//
 		// init the message buffer
 		//
@@ -338,13 +343,11 @@ NET_Shutdown
 */
 void	NET_Shutdown (void)
 {
-	extern int	iosock;
-	extern int	telnetport;
-	close (net_socket);
+	close (net_serversocket);
 	if (telnetport)
 	{
-		if (iosock)
-			close (iosock);
+		if (telnet_connected)
+			close (telnet_iosock);
 		close (net_telnetsocket);
 	}
 }
