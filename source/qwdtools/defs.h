@@ -39,19 +39,21 @@ typedef vec_t vec3_t[3];
 // QWDTools options
 
 #define O_CONVERT	1
-#define O_ANALYSE	2
-#define O_LOG		4
-#define O_DEBUG		8
-#define O_FS		16 // filter_spectalk
-#define O_FQ		32 // filter_qizmotalk
-#define O_FC		64 // filter_qizmotalk
-#define O_FT		128
-#define O_WAITFORKBHIT	256 // "press any key" when finished
-#define O_SHUTDOWN	512
-#define O_STDIN		1024
-#define O_STDOUT	2048
+#define O_MARGE		2
+#define O_ANALYSE	4
+#define O_LOG		8
+#define O_DEBUG		16
+#define O_FS		32 // filter_spectalk
+#define O_FQ		64 // filter_qizmotalk
+#define O_FC		128 // filter_qizmotalk
+#define O_FT		256
+#define O_WAITFORKBHIT	512 // "press any key" when finished
+#define O_SHUTDOWN	1024
+#define O_STDIN		2048
+#define O_STDOUT	4096
+#define O_SYNC		8192
 
-#define JOB_TODO	(O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
+#define JOB_TODO	(O_MARGE | O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
 
 
 #include "protocol.h"
@@ -99,21 +101,23 @@ typedef struct
 	int			lasttype;
 	double		time, pingtime;
 	int			stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
-	byte		buffer[40*MAX_MSGLEN];
-	int			bufsize;
+	byte		buffer[15*MAX_MSGLEN];
+	dbuffer_t	dbuffer;
 } demo_t;
 
 typedef struct
 {
+	float		sync;
 	float		time;
+	float		worldtime;
 	format_t	format;
 	byte		type;
 	int			to;
-	int			parsecountmod, parsecount;
+	int			parsecountmod, parsecount, oldparse;
 	frame_t		frames[UPDATE_BACKUP];
 	player_info_t	players[MAX_CLIENTS];
 	netchan_t	netchan;
-	qboolean	running;
+	int			running;
 	float		lastframe;
 	int			servercount;
 	int			playernum;
@@ -124,8 +128,18 @@ typedef struct
 	float		latency;
 	int			spec_track;
 	qboolean	qwz;
-	float		prevtime;
+	long		prevtime;
+	float		basetime;
 	float		lasttime;
+	byte		prevnewtime;
+	byte		buffer[15*MAX_MSGLEN];
+	sizebuf_t	buf[UPDATE_BACKUP];
+	sizebuf_t	*msgbuf;
+	sizebuf_t	signon_stats;
+	byte		signon_stats_buf[2*MAX_MSGLEN];
+	dbuffer_t	dbuffer;
+	qboolean	signonloaded;
+	float		ratio;
 } source_t;
 
 typedef enum
@@ -133,8 +147,6 @@ typedef enum
 	TYPE_S = 1,
 	TYPE_I = 2,
 	TYPE_O = 4,
-	TYPE_SO = 1 | 4,
-	TYPE_IO = 2 | 4
 } type_t;
 
 typedef struct
@@ -159,8 +171,7 @@ void Sys_Exit (int i);
 void Sys_mkdir (char *path);
 void Sys_Error (char *error, ...);
 void Sys_Printf (char *fmt, ...);
-void Dem_Stop(void);
-char *getPath(char *path);
+void Dem_Stop(source_t *s);
 
 extern sizebuf_t	net_message;
 extern byte			net_message_buffer[MAX_UDP_PACKET];
@@ -171,7 +182,8 @@ extern HANDLE		ConsoleInHndl, ConsoleOutHndl;
 extern char			sourceName[MAX_SOURCES][MAX_OSPATH];
 
 extern demo_t	demo;
-extern source_t	from;
+extern source_t	*from;
+extern source_t	*sources;
 extern qboolean filter_spectalk;
 extern qboolean	filter_qizmotalk;
 
@@ -181,7 +193,7 @@ extern qboolean	filter_qizmotalk;
 
 #define NET_TIMINGS 256
 #define NET_TIMINGSMASK 255
-extern int	packet_latency[NET_TIMINGS];
+
 void Dem_ParseDemoMessage (void);
 int TranslateFlags(int src, int to);
 
@@ -211,4 +223,5 @@ void ReadIni(char *buf);
 // qwz.c
 //
 qboolean OpenQWZ (char *files);
-void StopQWZ (void);
+void StopQWZ (source_t *s);
+

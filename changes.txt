@@ -1,4 +1,9 @@
 ----
+QWEX v0.172b Beta DEVELOP
+[server]
+- bugfix: A serious overflow bug in "download" function fixed
+
+----
 QWEX v0.171b Beta DEVELOP
 [server]
 - new MOD function forcedemoframe(float now)

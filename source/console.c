@@ -372,7 +372,8 @@ void Con_Printf (char *fmt, ...)
 	char		msg[MAXPRINTMSG];
 	
 	va_start (argptr,fmt);
-	vsprintf (msg,fmt,argptr);
+	_vsnprintf (msg,MAXPRINTMSG,fmt,argptr);
+	msg[MAXPRINTMSG-1] = 0;
 	va_end (argptr);
 	
 // also echo to debugging console

@@ -5,6 +5,12 @@ char *com_argv[MAX_NUM_ARGVS];
 
 usercmd_t nullcmd; // guarenteed to be zero
 
+//#define BUF_FULL (1<<31)
+
+sizebuf_t			*msgbuf;
+dbuffer_t	*demobuffer;
+static int			header = (int)&((header_t*)0)->data;
+
 /*
 ============================================================================
 
@@ -446,7 +452,7 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	{	
 		Sys_Printf ("SZ_GetSpace: overflow\n");
 		SZ_Clear (buf); 
-		Dem_Stop();
+		Dem_Stop(from);
 	}
 
 	data = buf->data + buf->cursize;
@@ -472,74 +478,114 @@ void SZ_Print (sizebuf_t *buf, char *data)
 		memcpy ((byte *)SZ_GetSpace(buf, len-1)-1,data,len); // write over trailing 0
 }
 
+void DemoBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg)
+{
+	demobuffer = dbuffer;
+
+	demobuffer->data = buf;
+	demobuffer->maxsize = size;
+	demobuffer->start = 0;
+	demobuffer->end = 0;
+	demobuffer->last = 0;
+	demobuffer->msgbuf = msgbuf = msg;
+	if (msgbuf) {
+		memset(msgbuf, 0, sizeof(*msgbuf));
+		msgbuf->data = demobuffer->data;
+		msgbuf->maxsize = MAXSIZE(demobuffer);
+	}
+}
+
+void DemoBuffer_Set(dbuffer_t *dbuffer)
+{
+	demobuffer = dbuffer;
+	msgbuf = demobuffer->msgbuf;
+}
+
+
+/*
+==============
+Demo_SetMsgBuf
+
+Sets the frame message buffer
+==============
+*/
+
+void DemoSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur)
+{
+	demobuffer = dbuffer;
+	// fix the maxsize of previous msg buffer,
+	// we won't be able to write there anymore
+	if (demobuffer->msgbuf != NULL)
+		demobuffer->msgbuf->maxsize = demobuffer->msgbuf->bufsize;
+
+	demobuffer->msgbuf = msgbuf = cur;
+	memset(msgbuf, 0, sizeof(*msgbuf));
+
+	msgbuf->data = demobuffer->data + demobuffer->end;
+	msgbuf->maxsize = MAXSIZE(demobuffer);
+}
 
 /*
 ==============
 DemoWriteToDisk
 
-Writes to disk a message ment for specifc client
+Writes to disk a message meant for specifc client
 or all messages if type == 0
 Message is cleared from demobuf after that
 ==============
 */
 
-#define POS_TO 1
-#define POS_SIZE 5
-#define POS_DATA 9
-
-#define BUF_FULL (1<<31)
-
-int			msgmax;
-sizebuf_t	*msgbuf;
-
-void DemoWriteToDisk(int type, int to, float time)
+void DemoWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 {
 	int pos = 0;
-	byte *p;
-	int	btype, bto, bsize;
+	header_t *p;
+	int	size;
 	sizebuf_t msg;
 
-	p = msgbuf->data;
-	while (pos < msgbuf->bufsize)
-	{
+	(byte*)p = buf->data;
+	buf->h = NULL;
 
-		btype = *p;
-		bto = *(int*)(p+POS_TO);
-		bsize = *(int*)(p+POS_SIZE) & (~BUF_FULL);
-		pos += POS_DATA + bsize; //pos now points to next message
+	while (pos < buf->bufsize)
+	{
+		size = p->size;
+		pos += header + size;
 
 		// no type means we are writing to disk everything
-		if (!type || (btype == type && bto == to))
+		if (!type || (p->type == type && p->to == to))
 		{
-			if (bsize) {
-				msg.data = p+POS_DATA;
-				msg.cursize = bsize;
+			if (size) {
+				msg.data = p->data;
+				msg.cursize = size;
 
-				WriteDemoMessage(&msg, btype, bto, time);
+				WriteDemoMessage(&msg, p->type, p->to, time);
 			}
 
 			// data is written so it need to be cleard from demobuf
-			memmove(p, p+POS_DATA+bsize, msgbuf->bufsize - pos);
-			msgbuf->bufsize -= bsize+POS_DATA;
-			pos -= bsize + POS_DATA;
-			if (msgbuf->cursize > pos)
-				msgbuf->cursize -= bsize + POS_DATA;
+			if (buf->data != (byte*)p)
+				memmove(buf->data + size + header, buf->data, (byte*)p - buf->data);
 
-			if (btype == msgbuf->curtype && bto == msgbuf->curto)
-			{
-				msgbuf->curtype = 0;
-				msgbuf->curto = 0;
-				msgbuf->size = NULL;
-			}
-
-			// did we find what we were looking for ?
-			//if (type)
-			//	return;
-		} else {
-			// move along
-			p += POS_DATA + bsize;
+			buf->bufsize -= size + header;
+			buf->data += size + header;
+			pos -= size + header;
+			buf->maxsize -= size + header;
+			//demobuffer->start += size + header;
 		}
+		// move along
+		(byte*)p = p->data + size;
 	}
+
+	/*
+	if (demobuffer->start == demobuffer->last) {
+		if (demobuffer->start == demobuffer->end) {
+			demobuffer->end = 0; // demobuffer is empty
+			msgbuf->data = demobuffer->data;
+		}
+
+		// go back to begining of the buffer
+		demobuffer->last = demobuffer->end;
+		demobuffer->start = 0;
+	}
+	*/
 }
 
 /*
@@ -552,77 +598,118 @@ Sets position in the buf for writing to specific client
 
 static void DemoSetBuf(byte type, int to)
 {
-	byte *p;
+	header_t *p;
 	int pos = 0;
-	int	btype, bto, bsize;
 
-	p = msgbuf->data;
-	msgbuf->curtype = -1;
+	(byte*)p = msgbuf->data;
+
 	while (pos < msgbuf->bufsize)
 	{
-		btype = *p;
-		bto = *(int*)(p+POS_TO);
-		bsize = *(int*)(p+POS_SIZE);
-		pos += POS_DATA + (bsize &(~BUF_FULL));
+		pos += header + p->size;
 
-		if (type == btype && to == bto && !(bsize &(~BUF_FULL)))
+		if (type == p->type && to == p->to && !p->full)
 		{
 			msgbuf->cursize = pos;
-			msgbuf->size = (int*)(p + POS_SIZE);
-			msgbuf->curtype = type;
-			msgbuf->curto = to;
+			msgbuf->h = p;
 			return;
 		}
-		p += POS_DATA + (bsize &(~BUF_FULL));
+
+		(byte*)p = p->data + p->size;
 	}
 	// type&&to not exist in the buf, so add it
 
-	*p = type;
-	*(int*)(p + POS_TO) = to;
-	*(int*)(p + POS_SIZE) = 0;
-	msgbuf->bufsize += POS_DATA;
-	demo.bufsize += POS_DATA;
-	msgbuf->size = (int*)(p + POS_SIZE);
-	msgbuf->curtype = type;
-	msgbuf->curto = to;
+	p->frame = world.parsecount;
+	p->source = 1 << (from - sources);
+	p->type = type;
+	p->to = to;
+	p->size = 0;
+	p->full = 0;
+
+	msgbuf->bufsize += header;
 	msgbuf->cursize = msgbuf->bufsize;
+	demobuffer->end += header;
+	msgbuf->h = p;
+}
+
+void DemoMoveBuf(void)
+{
+	// set the last message mark to the previous frame (i/e begining of this one)
+	demobuffer->last = demobuffer->end - msgbuf->bufsize;
+
+	// move buffer to the begining of demo buffer
+	memmove(demobuffer->data, msgbuf->data, msgbuf->bufsize);
+	msgbuf->data = demobuffer->data;
+	demobuffer->end = msgbuf->bufsize;
+	msgbuf->h = NULL; // it will be setup again
+	msgbuf->maxsize = MAXSIZE(demobuffer) + msgbuf->bufsize;
+}
+
+void DemoWrite_Cat(sizebuf_t *buf)
+{
+	qboolean move = false;
+	// will it fit?
+	while (msgbuf->bufsize + buf->cursize > msgbuf->maxsize)
+	{
+		// if we reached the end of buffer move msgbuf to the begining
+		if (!move && demobuffer->end > demobuffer->start)
+			move = true;
+
+		WritePackets(1);
+		if (move && demobuffer->start > msgbuf->bufsize + buf->cursize)
+			DemoMoveBuf();
+	}
+
+	msgbuf->h = NULL;
+	msgbuf->cursize = msgbuf->bufsize;
+
+	SZ_Write(msgbuf, buf->data, buf->cursize);
+	msgbuf->bufsize += buf->cursize;
+
+	if ((demobuffer->end += buf->cursize) > demobuffer->last)
+		demobuffer->last = demobuffer->end;
+
+
 }
 
 void DemoWrite_Begin(byte type, int to, int size)
 {
 	byte *p;
+	qboolean move = false;
 
-	if (!(sworld.options & O_CONVERT))
+	if (!(sworld.options & (O_CONVERT | O_MARGE)))
+		return;
+
+	if (sworld.options & O_SYNC)
 		return;
 
 	// signon message order cannot be changed
-	if (!world.signonloaded) {
-		if (msgbuf->curtype && (msgbuf->curtype != type || msgbuf->curto != to))
-		{
-			if (sworld.options & O_DEBUG)
-				fprintf(sworld.debug.file, "to disk (cur:%d, new:%d)\n", msgbuf->curtype, type);
-			DemoWriteToDisk(0,0, demo.time);
-		}
-	}
+	if (!world.signonloaded && msgbuf->h != NULL && (msgbuf->h->type != type || msgbuf->h->to != to))
+		msgbuf->h->full = 1;
 
-	// will it fit? 
-	while (msgbuf->bufsize + size + POS_DATA > msgbuf->maxsize) {
-		if (!world.signonloaded)
-			DemoWriteToDisk(0,0, demo.time); // dump everything on disk
-		else WritePackets(1);
-	}
+	if (sworld.options & O_MARGE && msgbuf->h != NULL)
+		msgbuf->h->full = 1;
 
-	if (msgbuf->curtype != type || msgbuf->curto != to) {
-		DemoSetBuf(type, to);
-	}
-
-	
-	if (*msgbuf->size + size > msgmax)
+	// will it fit?
+	while (msgbuf->bufsize + size + header > msgbuf->maxsize)
 	{
-		*msgbuf->size |= BUF_FULL;
+		// if we reached the end of buffer move msgbuf to the begining
+		if (!move && demobuffer->end > demobuffer->start)
+			move = true;
+
+		WritePackets(1);
+		if (move && demobuffer->start > msgbuf->bufsize + header + size)
+			DemoMoveBuf();
+	}
+
+	if (msgbuf->h == NULL || msgbuf->h->type != type || msgbuf->h->to != to || msgbuf->h->full) {
 		DemoSetBuf(type, to);
 	}
-	
+
+	if (msgbuf->h->size + size > MAX_MSGLEN)
+	{
+		msgbuf->h->full = 1;
+		DemoSetBuf(type, to);
+	}
 
 	// we have to make room for new data
 	if (msgbuf->cursize != msgbuf->bufsize) {
@@ -631,8 +718,9 @@ void DemoWrite_Begin(byte type, int to, int size)
 	}
 
 	msgbuf->bufsize += size;
-	*msgbuf->size += size;
-	demo.bufsize += size;
+	msgbuf->h->size += size;
+	if ((demobuffer->end += size) > demobuffer->last)
+		demobuffer->last = demobuffer->end;
 }
 
 /*
@@ -646,18 +734,31 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 {
 	int		len, i, msec;
 	byte	c;
-	static float prevtime;
+	static float prevtime = 0;
 
 	if (sworld.demo.file == NULL)
 		return;
 
 	msec = (time - prevtime)*1000;
-	prevtime = time;
-	
-	if (msec > 255) msec = 255;
+	prevtime += msec*0.001;
 
-	if (msgmax != MAX_MSGLEN)
+	//Sys_Printf("%f %f\n", time, prevtime);
+	
+	if (!world.signonloaded)
 		msec = 0;
+
+#if 0
+	if (msec > 255) { 
+		Sys_Printf("lag:%d\n", msec);
+		if (msec > 5000) msec = 5000;
+
+		for (len = 0; msec > 255; msec -= 255)
+			fwrite (&len, 4, 1, sworld.demo.file);
+
+		//msec = 255;
+	} else 
+#endif
+		if (msec < 2) msec = 0;
 
 	c = msec;
 	fwrite(&c, sizeof(c), 1, sworld.demo.file);
@@ -687,7 +788,7 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 			break;
 		default:
 			Sys_Printf("ERROR:bad demo message type:%d\n", type);
-			Dem_Stop();
+			Dem_Stop(from);
 			return;
 		}
 	} else {
@@ -823,7 +924,7 @@ void ForceExtension (char *path, char *extension)
 	strncat (path, extension, MAX_OSPATH);
 }
 
-char *TemplateName (char *from, char *to)
+char *TemplateName (char *from, char *to, char *ch)
 {
 	static char name[MAX_OSPATH];
 	char tmp[MAX_OSPATH];
@@ -831,7 +932,7 @@ char *TemplateName (char *from, char *to)
 
 	memset(name, 0, sizeof(name));
 
-	if ( !(p = strstr(to, "*")) )
+	if ( !(p = strstr(to, ch)) )
 		return to;
 
 	StripExtension(from, tmp);
@@ -839,6 +940,94 @@ char *TemplateName (char *from, char *to)
 	strcat(name,va("%s%s",tmp, p+1));
 
 	return name;
+}
+
+char *getPath(char *path)
+{
+	static char dir[MAX_OSPATH];
+	char *p;
+
+	strcpy(dir, path);
+	p = dir + strlen(dir);
+	while (p > dir) {
+		if (*p == '\\' || *p == '/') {
+			p++;
+			break;
+		}
+		p--;
+	}
+	*p = 0;
+
+	return dir;
+}
+
+/*
+==============
+GetFileList
+
+Reads wildcards to get full file list
+==============
+*/
+void *Q_Malloc (size_t size);
+int AddToFileList(flist_t *filelist, char *file)
+{
+	char	**flist = NULL, *p;
+	int		count;
+	long	hFile;
+	struct	_finddata_t c_file;
+
+	// move to the end of list
+	while (filelist->list != NULL)
+		filelist++;
+	
+	count = 0;
+
+	// get first file, add it to list even if file is not found
+	hFile = _findfirst( file, &c_file );
+	if (hFile == -1L)
+		filelist->path[0] = 0;
+	else
+		strcpy(filelist->path, getPath(file));
+
+	do {
+		if (hFile == -1L) {
+			strcpy(c_file.name, file);
+		} else if (c_file.attrib & _A_SUBDIR || c_file.attrib & _A_SYSTEM)
+			continue;
+
+		// realloc flist table
+		if ( (flist = (char**) realloc (flist, sizeof(char*) * count+1)) == NULL)
+			Sys_Error("faild to alloc memory for file list\n");
+
+		// alloc memory for file name
+		p = (char*) Q_Malloc (strlen(c_file.name)+1);
+			
+		// copy the name
+		strcpy(p, c_file.name);
+
+		flist[count++] = p;
+	} while ( hFile != -1L && _findnext( hFile, &c_file ) == 0 );
+	_findclose( hFile );
+
+	filelist->list = flist;
+	filelist->count = count;
+	if (!count)
+		count++;
+	return count;
+}
+
+void FreeFileList(flist_t *flist)
+{
+	char **p;
+
+	for ( ; flist->list != NULL; flist++)
+	{
+		for (p = flist->list; flist->count; p++, flist->count--)
+			free(*p);
+
+		free(flist->list);
+		flist->list == NULL;
+	}
 }
 
 //============================================================================
@@ -946,7 +1135,7 @@ void RemoveParm (int num)
 }
 
 
-void InitArgv (int argc, char **argv)
+void Argv_Init (int argc, char **argv)
 {
 	for (com_argc=0 ; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc) ;
 		 com_argc++)

@@ -17,6 +17,7 @@ typedef struct
 	int			effects;
 
 	int			flags;			// dead, gib, etc
+	int			msec;
 } player_state_t;
 
 
@@ -27,6 +28,7 @@ typedef struct player_info_s
 	char	name[MAX_SCOREBOARDNAME];
 	int		stats[MAX_CL_STATS];	// health, etc
 	qboolean	spectator;
+	int		lastsource;
 } player_info_t;
 
 typedef struct
@@ -95,8 +97,9 @@ typedef struct
 typedef struct
 {
 	FILE	*file;
+	char	path[MAX_OSPATH];
 	char	name[MAX_OSPATH];
-	int		filesize;
+	long	filesize;
 } file_t;
 
 typedef struct
@@ -120,6 +123,7 @@ typedef struct
 typedef struct
 {
 	int			servercount;	// server identification for prespawns
+	char		mapname[64];	// full map name
 	char		serverinfo[MAX_SERVERINFO_STRING];
 	int			parsecount;		// server message counter
 	int			delta_sequence;
@@ -136,6 +140,12 @@ typedef struct
 	float		time;
 	long		oldftell;
 	int			percentage;
+	long		demossize;
+	int			running;
+	sizebuf_t	messages;
+	byte		buffer[45*MAX_MSGLEN];
+	int			lastmarged;
+	qboolean	signonstats;
 } world_state_t;
 
 typedef struct
@@ -145,10 +155,14 @@ typedef struct
 	int			msglevel;
 	file_t		debug;
 	file_t		log;
-	file_t		from;
+	file_t		from[MAX_CLIENTS];
 	file_t		demo;
 	analyse_t	analyse;
 	int			sources;
+	int			count;
+	int			fromcount;
+	flist_t		filelist[50];
+	int			range;
 } static_world_state_t;
 
 extern char				qizmoDir[MAX_OSPATH];
@@ -157,4 +171,4 @@ extern world_state_t	world;
 extern static_world_state_t	sworld;
 extern lightstyle_t		lightstyle[MAX_LIGHTSTYLES];
 extern entity_state_t	baselines[MAX_EDICTS];
-extern float			realtime;
+

@@ -740,7 +740,6 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&msg);
 	Cvar_RegisterVariable (&noaim);
 
-
 	CL_InitCommands ();
 
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f);

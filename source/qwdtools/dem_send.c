@@ -42,28 +42,59 @@ void Interpolate(int num, frame_t *frame, demoinfo_t *demoinfo)
 	
 	i = world.lastwritten;
 	prevstate = nextstate = state = &frame->playerstate[num];
-	nexttime = exacttime = frame->time - (float)(state->command.msec)*0.001;
-	while (nexttime < frame->time && i < world.parsecount)
+	nexttime = exacttime = frame->time - (float)(state->msec)*0.001;
+
+	if (exacttime > frame->time)
 	{
-		good = false;
-		i++;
+		while (exacttime > frame->time && i > 0)
+		{
+			good = false;
+			i--;
 
-		prevstate = nextstate;
-		exacttime = nexttime;
-		nextframe = &world.frames[i&UPDATE_MASK];
-		nextstate = &nextframe->playerstate[num];
-		if (nextframe->fixangle[num]) {
-			break;
-		}
-		if (nextstate->messagenum != nextframe->parsecount){
-			break;
-		}
-		if (!ISDEAD(nextstate->frame) && ISDEAD(state->frame)) {
-			break;
-		}
+			nextstate = prevstate;
+			nexttime = exacttime;
+			nextframe = &world.frames[i&UPDATE_MASK];
+			prevstate = &nextframe->playerstate[num];
 
-		nexttime = nextframe->time - (float)(nextstate->command.msec)*0.001;
-		good = true;
+			if (prevstate->messagenum > state->messagenum)
+				break;
+
+			if (nextframe->fixangle[num]) {
+				break;
+			}
+			if (prevstate->messagenum != nextframe->parsecount){
+				break;
+			}
+			if (!ISDEAD(prevstate->frame) && ISDEAD(state->frame)) {
+				break;
+			}
+
+			exacttime = nextframe->time - (float)(prevstate->msec)*0.001;
+			good = true;
+		}
+	} else {
+		while (nexttime < frame->time && i < world.parsecount)
+		{
+			good = false;
+			i++;
+
+			prevstate = nextstate;
+			exacttime = nexttime;
+			nextframe = &world.frames[i&UPDATE_MASK];
+			nextstate = &nextframe->playerstate[num];
+			if (nextframe->fixangle[num]) {
+				break;
+			}
+			if (nextstate->messagenum != nextframe->parsecount){
+				break;
+			}
+			if (!ISDEAD(nextstate->frame) && ISDEAD(state->frame)) {
+				break;
+			}
+
+			nexttime = nextframe->time - (float)(nextstate->msec)*0.001;
+			good = true;
+		}
 	}
 
 	if (good && nexttime > frame->time)
@@ -91,15 +122,15 @@ Writes an update of players state
 void WritePlayers (sizebuf_t *msg, frame_t *frame)
 {
 	int i, j, msec, dflags;
-	player_info_t	*info;
 	player_state_t	*state;
 	demoinfo_t	demoinfo;
 	frame_t		*nextframe;
+	float miss;
 
-	state = frame->playerstate; //from.frames[from.parsecount&UPDATE_MASK].playerstate;
+	state = frame->playerstate;
 	nextframe = &world.frames[(world.lastwritten+1)&UPDATE_MASK];
 
-	for (i = 0, info = from.players; i < MAX_CLIENTS; i++, state++, info++)
+	for (i = 0; i < MAX_CLIENTS; i++, state++)
 	{
 		if (state->messagenum != frame->parsecount)
 			continue;
@@ -115,7 +146,7 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 		world.demoinfo[i].parsecount = world.lastwritten;
 
 		Interpolate(i, frame, &demoinfo);
-		msec = state->command.msec;
+		msec = state->msec;
 
 		demoinfo.angles[2] = 0; // no roll angle
 
@@ -137,9 +168,11 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 			demoinfo.angles[2] = 0;
 		}
 
-		for (j=0; j < 3; j++)
-			if (world.demoinfo[i].origin[j] != demoinfo.origin[j])
-				dflags |= DF_ORIGIN << j;
+		for (j=0; j < 3; j++) {
+			miss = world.demoinfo[i].origin[j] - demoinfo.origin[j];
+			if ( miss < -0.1 || miss > 0.1 )
+					dflags |= DF_ORIGIN << j;
+		}
 
 		for (j=0; j < 3; j++)
 			if (world.demoinfo[i].angles[j] != demoinfo.angles[j])
@@ -204,7 +237,7 @@ Writes part of a packetentities message.
 Can delta from either a baseline or a previous packet_entity
 ==================
 */
-void WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force)
+void WriteDelta (entity_state_t *efrom, entity_state_t *to, sizebuf_t *msg, qboolean force)
 {
 	int		bits;
 	int		i;
@@ -215,33 +248,33 @@ void WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool
 	
 	for (i=0 ; i<3 ; i++)
 	{
-		miss = to->origin[i] - from->origin[i];
+		miss = to->origin[i] - efrom->origin[i];
 		if ( miss < -0.1 || miss > 0.1 )
 			bits |= U_ORIGIN1<<i;
 	}
 
-	if ( to->angles[0] != from->angles[0] )
+	if ( to->angles[0] != efrom->angles[0] )
 		bits |= U_ANGLE1;
 		
-	if ( to->angles[1] != from->angles[1] )
+	if ( to->angles[1] != efrom->angles[1] )
 		bits |= U_ANGLE2;
 		
-	if ( to->angles[2] != from->angles[2] )
+	if ( to->angles[2] != efrom->angles[2] )
 		bits |= U_ANGLE3;
 		
-	if ( to->colormap != from->colormap )
+	if ( to->colormap != efrom->colormap )
 		bits |= U_COLORMAP;
 		
-	if ( to->skinnum != from->skinnum )
+	if ( to->skinnum != efrom->skinnum )
 		bits |= U_SKIN;
 		
-	if ( to->frame != from->frame )
+	if ( to->frame != efrom->frame )
 		bits |= U_FRAME;
 	
-	if ( to->effects != from->effects )
+	if ( to->effects != efrom->effects )
 		bits |= U_EFFECTS;
 	
-	if ( to->modelindex != from->modelindex )
+	if ( to->modelindex != efrom->modelindex )
 		bits |= U_MODEL;
 
 	if (bits & 511)
@@ -255,13 +288,13 @@ void WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool
 	//
 	if (!to->number) {
 		Sys_Printf ("ERROR:Unset entity number\n");
-		Dem_Stop();
+		Dem_Stop(from);
 		return;
 	}
 
 	if (to->number >= 512) {
 		Sys_Printf ("ERROR:Entity number >= 512\n");
-		Dem_Stop();
+		Dem_Stop(from);
 		return;
 	}
 
@@ -270,7 +303,7 @@ void WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool
 	i = to->number | (bits&~511);
 	if (i & U_REMOVE) {
 		Sys_Printf ("U_REMOVE");
-		Dem_Stop();
+		Dem_Stop(from);
 		return;
 	}
 	MSG_WriteShort (msg, i);
@@ -416,24 +449,32 @@ void EmitNailUpdate (sizebuf_t *msg, frame_t *frame)
 	}
 }
 
+void Marge (sizebuf_t *dest, int start, int end);
 void WritePackets(int num)
 {
 	frame_t *frame;
-	sizebuf_t	msg;
-	byte		buf[MAX_DATAGRAM];
-	int		i,j;
+	sizebuf_t	msg, msg2;
+	byte		buf[MAX_DATAGRAM], buf2[45*MAX_MSGLEN];
 
 	msg.data = buf;
 	msg.maxsize = sizeof(buf);
+	msg2.data = buf2;
+	msg2.maxsize = sizeof(buf2);
+	msg2.cursize = 0;
+	msg2.bufsize = 0;
 
 	while (num)
 	{
 		msg.cursize = 0;
 		frame = &world.frames[world.lastwritten&UPDATE_MASK];
-		msgbuf =  &frame->buf;
+
+		msg2.data = buf2;
+		msg2.maxsize = sizeof(buf2);
+
+		Marge(&msg2, world.lastwritten, world.lastwritten + sworld.range < world.parsecount ? world.lastwritten + sworld.range: world.parsecount);
 
 		if (sworld.options & O_DEBUG)
-			fprintf(sworld.debug.file, "real:%f, demo:%f\n", realtime, demo.time);
+			fprintf(sworld.debug.file, "real:%f, demo:%f\n", world.time, demo.time);
 		// Add packet entities, nails, and player
 		if (!frame->invalid) 
 		{
@@ -443,31 +484,23 @@ void WritePackets(int num)
 			WritePlayers (&msg, frame);
 			EmitPacketEntities (&msg, &frame->packet_entities);
 			EmitNailUpdate(&msg, frame);
+
+			if (frame->packet_entities.num_entities)
+				world.delta_sequence = world.lastwritten&255;
 		}
-		
-		DemoWriteToDisk(demo.lasttype,demo.lastto, frame->time); // this goes first to reduce demo size a bit
-		DemoWriteToDisk(0,0, frame->time); // now goes the rest
+
+		DemoWriteToDisk(&msg2, demo.lasttype,demo.lastto, frame->time); // this goes first to reduce demo size a bit
+		DemoWriteToDisk(&msg2, 0,0, frame->time); // now goes the rest
 		if (msg.cursize)
 			WriteDemoMessage(&msg, dem_all, 0, frame->time);
 
 		num--;
-		world.delta_sequence = world.lastwritten&255;
+		if (world.lastwritten == world.parsecount)
+			break;
+
 		world.lastwritten++;
 	}
 
-	// now move the buffer back to make place for new data
-
-	// size of mem that has been written to disk
-	j = world.frames[world.lastwritten&UPDATE_MASK].buf.data - demo.buffer;
-	demo.bufsize -= j;
-
-	memmove(demo.buffer, demo.buffer + j, demo.bufsize);
-	for (i = world.lastwritten; i < world.parsecount; i++)
-	{
-		world.frames[i&UPDATE_MASK].buf.data -= j;
-		world.frames[i&UPDATE_MASK].buf.maxsize += j; // is it necesery?
-		(byte*) world.frames[i&UPDATE_MASK].buf.size -= j;
-	}
-
-	msgbuf = &world.frames[world.parsecount&UPDATE_MASK].buf;
+	//msgbuf = &world.frames[world.parsecount&UPDATE_MASK].buf;
+	//msgbuf->maxsize = MAXSIZE + msgbuf->bufsize;
 }

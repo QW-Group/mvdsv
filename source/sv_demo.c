@@ -849,7 +849,7 @@ void Sys_TimeOfDay(date_t *date);
 static void SV_Record (char *name)
 {
 	sizebuf_t	buf;
-	char	buf_data[MAX_MSGLEN];
+	char buf_data[MAX_MSGLEN];
 	int n, i;
 	char *s, info[MAX_INFO_STRING], path[MAX_OSPATH];
 	
@@ -1219,9 +1219,7 @@ void SV_Record_f (void)
 		return;
 	}
 
-	if (sv.demorecording)
-		SV_Stop_f();
-
+	
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*");
 	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
 	{
@@ -1233,6 +1231,11 @@ void SV_Record_f (void)
 	strcat(newname, sv_demoSuffix.string);
   
 	sprintf (name, "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
+
+	if (sv.demorecording)
+		SV_Stop_f();
+
+
 	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 
 //

@@ -1081,7 +1081,8 @@ char	*va(char *format, ...)
 	
 	index = (index + 1)&3;
 	va_start (argptr, format);
-	vsprintf (string[index], format,argptr);
+	_vsnprintf (string[index], 1024, format,argptr);
+	string[index][1023] = 0;
 	va_end (argptr);
 
 	return string[index];
@@ -1226,7 +1227,8 @@ void COM_WriteFile (char *filename, void *data, int len)
 	FILE	*f;
 	char	name[MAX_OSPATH];
 	
-	sprintf (name, "%s/%s", com_gamedir, filename);
+	_snprintf (name, MAX_OSPATH, "%s/%s", com_gamedir, filename);
+	name[MAX_OSPATH-1] = 0;
 	
 	f = fopen (name, "wb");
 	if (!f) {
@@ -1347,7 +1349,8 @@ int COM_FOpenFile (char *filename, FILE **file)
 		}
 		else
 		{		
-			sprintf (netpath, "%s/%s",search->filename, filename);
+			_snprintf (netpath, sizeof(netpath), "%s/%s",search->filename, filename);
+			netpath[sizeof(netpath)-1] = 0;
 			
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1)

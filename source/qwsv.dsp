@@ -1,5 +1,5 @@
 # Microsoft Developer Studio Project File - Name="qwsv" - Package Owner=<4>
-# Microsoft Developer Studio Generated Build File, Format Version 5.00
+# Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
@@ -22,6 +22,7 @@ CFG=qwsv - Win32 Release
 !MESSAGE 
 
 # Begin Project
+# PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
 CPP=cl.exe
@@ -66,7 +67,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /W3 /GX /Od /D "_DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /D "id386" /FR /Fp".\SDebug/mvdsv.pch" /YX /FD /ZI /c
+# ADD CPP /nologo /W3 /GX /ZI /Od /D "_DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /D "id386" /FR /Fp".\SDebug/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -201,13 +202,6 @@ SOURCE=.\version.c
 # Begin Source File
 
 SOURCE=.\winquake.rc
-
-!IF  "$(CFG)" == "qwsv - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -404,15 +398,14 @@ SOURCE=.\math.s
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\.\SDebug
+OutDir=.\SDebug
 InputPath=.\math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-                $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -431,15 +424,14 @@ SOURCE=.\worlda.s
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\.\SDebug
+OutDir=.\SDebug
 InputPath=.\worlda.s
 InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
-                $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build

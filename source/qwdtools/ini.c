@@ -75,9 +75,21 @@ skipwhite:
 
 extern param_t params[];
 
+enum {D_COMMON, D_CONVERT, D_MARGE};
 void ReadIni(char *buf)
 {
 	param_t	*param;
+	int dest = D_COMMON;
+	int job = D_COMMON;
+
+	if (!(CheckParm("-m") || CheckParm("-marge")))
+	{
+		if (!(CheckParm("-debug") || CheckParm("-log"))
+			|| CheckParm("-c") || CheckParm("-convert"))
+			job = D_CONVERT;
+		else
+			job = D_COMMON;
+	} else job = D_MARGE;
 
 	while (buf)
 	{
@@ -86,7 +98,17 @@ void ReadIni(char *buf)
 		if (!token[0])
 			return;
 
-		if (token[0] == '[')
+		if (token[0] == '[') {
+			if (!stricmp(token, "[marge]"))
+				dest = D_MARGE;
+			else if (!stricmp(token, "[convert]"))
+				dest = D_CONVERT;
+			else if (!stricmp(token, "[common]"))
+				dest = D_COMMON;
+			goto finish;
+		}
+
+		if (dest != D_COMMON && dest != job)
 			goto finish;
 
 		// settings

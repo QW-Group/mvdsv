@@ -454,7 +454,7 @@ int Sys_Script(char *path, char *args)
 	sprintf(cmdline, "%s\\sh.exe %s.qws %s", curdir, path, args);
 	strcat(curdir,va("\\%s", com_gamedir+2));
 
-	CreateProcess (NULL, cmdline, NULL, NULL,
+	return CreateProcess (NULL, cmdline, NULL, NULL,
 		FALSE, 0/*DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
 }
 
