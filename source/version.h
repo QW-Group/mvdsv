@@ -21,12 +21,14 @@
 #endif
 
 #define	QW_VERSION		2.40
-#define QWE_VERSION	"0.1725"
-#define QWE_VERNUM 0.1725
+#define QWE_VERSION	"0.1726"
+#define QWE_VERNUM 0.1726
 #define LINUX_VERSION 0.98
 #define PROJECT_NAME	"QWExtended"
 #define SERVER_NAME	"MVDSV"
-#define FULL_VERSION SERVER_NAME " " QWE_VERSION " " QW_PLATFORM_SHORT ", build %d\nBuild date: " __DATE__ ", " __TIME__ "\0\0\0\0\0\0"
+#define FULL_VERSION	SERVER_NAME " " QWE_VERSION " " QW_PLATFORM_SHORT ", build %d"
+#define BUILD_DATE	"Build date: " __DATE__ ", " __TIME__
+#define SIZEOF_FULL_VERSION	(sizeof(FULL_VERSION) + sizeof(BUILD_DATE) + sizeof(int) * 3)
 
 #define RELEASE_VERSION
 

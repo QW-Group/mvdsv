@@ -780,8 +780,8 @@ void SV_BeginDownload_f(void)
 
 	name = Cmd_Argv(1);
 // hacked by zoid to allow more conrol over download
-		// first off, no .. or global allow check
-	if (strstr (name, "..") || !allow_download.value
+		// first off, no ../ or global allow check
+	if (strstr (name, "../") || !allow_download.value
 		// leading dot is no good
 		|| *name == '.' 
 		// leading slash bad as well, must be in subdir
