@@ -1,7 +1,7 @@
 #
 # $FreeBSD: ports/games/mvdsv/files/Makefile,v 1.1 2003/06/03 19:36:13 fjoe Exp $
 #
-# QuakeWorld/MVDSV Makefile for FreeBSD
+# QuakeWorld/MVDSV and QWDTools Makefile for FreeBSD
 #
 #	- now should build on non-x86
 #	- no longer requires gmake(1)
@@ -12,10 +12,9 @@
 #
 
 CC=gcc
-MAINDIR=.
-
-#BUILDDIR=release${MACHINE_ARCH}
-SOURCEDIR=${MAINDIR}/source
+MAINDIR!=	/bin/pwd
+SV_DIR=${MAINDIR}/source
+QWDTOOLS_DIR=${MAINDIR}/source/qwdtools
 
 DO_CFLAGS =	${CFLAGS} -funsigned-char -DSERVERONLY
 WITH_OPTIMIZED_CFLAGS = YES
@@ -27,78 +26,112 @@ DO_CFLAGS +=	-Did386
 .if defined(WITH_OPTIMIZED_CFLAGS)
 
 DO_CFLAGS +=	-O9 -pipe -s -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations
-# Get __FreeBSD_version
-.if !defined(OSVERSION)
-.if exists(/sbin/sysctl)
-OSVERSION!=     /sbin/sysctl -n kern.osreldate
-.else
-OSVERSION!=     /usr/sbin/sysctl -n kern.osreldate
-.endif
-.endif
 
-.if ${OSVERSION} < 500035
+UNAME=0
+
+. if ${UNAME} == FreeBSD
+# Get __FreeBSD_version
+.  if !defined(OSVERSION)
+.   if exists(/sbin/sysctl)
+OSVERSION!=	/sbin/sysctl -n kern.osreldate
+.   else
+OSVERSION!=	/usr/sbin/sysctl -n kern.osreldate
+.   endif
+.  endif
+. else
+OSVERSION = 500035
+. endif
+
+. if ${OSVERSION} < 500035
 #GCC 2
 DO_CFLAGS +=	-malign-loops=2 -malign-jumps=2 -malign-functions=2
-.else
-DO_CFLAGS +=	-falign-loops=2 -falign-jumps=2 -falign-functions=2
+. else
 #GCC 3
-.endif
+DO_CFLAGS +=	-falign-loops=2 -falign-jumps=2 -falign-functions=2
+. endif
 
 .endif
 
-########################################################################
+LDFLAGS = -lm
+
+#############################################################################
+# SERVER
+#############################################################################
 
 SV_OBJS = \
-		${SOURCEDIR}/pr_cmds.o \
-		${SOURCEDIR}/pr_edict.o \
-		${SOURCEDIR}/pr_exec.o \
+		${SV_DIR}/pr_cmds.o \
+		${SV_DIR}/pr_edict.o \
+		${SV_DIR}/pr_exec.o \
 \
-		${SOURCEDIR}/sv_ccmds.o \
-		${SOURCEDIR}/sv_demo.o \
-		${SOURCEDIR}/sv_ents.o \
-		${SOURCEDIR}/sv_init.o \
-		${SOURCEDIR}/sv_login.o \
-		${SOURCEDIR}/sv_main.o \
-		${SOURCEDIR}/sv_model.o \
-		${SOURCEDIR}/sv_move.o \
-		${SOURCEDIR}/sv_nchan.o \
-		${SOURCEDIR}/sv_phys.o \
-		${SOURCEDIR}/sv_send.o \
-		${SOURCEDIR}/sv_sys_unix.o \
-		${SOURCEDIR}/sv_user.o \
+		${SV_DIR}/sv_ccmds.o \
+		${SV_DIR}/sv_demo.o \
+		${SV_DIR}/sv_ents.o \
+		${SV_DIR}/sv_init.o \
+		${SV_DIR}/sv_login.o \
+		${SV_DIR}/sv_main.o \
+		${SV_DIR}/sv_model.o \
+		${SV_DIR}/sv_move.o \
+		${SV_DIR}/sv_nchan.o \
+		${SV_DIR}/sv_phys.o \
+		${SV_DIR}/sv_send.o \
+		${SV_DIR}/sv_sys_unix.o \
+		${SV_DIR}/sv_user.o \
 \
-		${SOURCEDIR}/cmd.o \
-		${SOURCEDIR}/common.o \
-		${SOURCEDIR}/crc.o \
-		${SOURCEDIR}/cvar.o \
-		${SOURCEDIR}/mathlib.o \
-		${SOURCEDIR}/mdfour.o \
-		${SOURCEDIR}/net_chan.o \
-		${SOURCEDIR}/net_udp.o \
-		${SOURCEDIR}/pmove.o \
-		${SOURCEDIR}/pmovetst.o \
-		${SOURCEDIR}/version.o \
-		${SOURCEDIR}/world.o \
-		${SOURCEDIR}/zone.o \
-		${SOURCEDIR}/sha1.o
+		${SV_DIR}/cmd.o \
+		${SV_DIR}/common.o \
+		${SV_DIR}/crc.o \
+		${SV_DIR}/cvar.o \
+		${SV_DIR}/mathlib.o \
+		${SV_DIR}/mdfour.o \
+		${SV_DIR}/net_chan.o \
+		${SV_DIR}/net_udp.o \
+		${SV_DIR}/pmove.o \
+		${SV_DIR}/pmovetst.o \
+		${SV_DIR}/sha1.o \
+		${SV_DIR}/version.o \
+		${SV_DIR}/world.o \
+		${SV_DIR}/zone.o
 
 .if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
 SV_AS_OBJS = \
-		${SOURCEDIR}/math.o \
-		${SOURCEDIR}/sys_x86.o \
-		${SOURCEDIR}/worlda.o
+		${SV_DIR}/math.o \
+		${SV_DIR}/sys_x86.o \
+		${SV_DIR}/worlda.o
 .endif
 
-SV_LIBS = -lm
+#############################################################################
+# QWDTOOLS
+#############################################################################
+
+QWDTOOLS_OBJS = \
+		${QWDTOOLS_DIR}/dem_parse.o \
+		${QWDTOOLS_DIR}/dem_send.o \
+		${QWDTOOLS_DIR}/ini.o \
+		${QWDTOOLS_DIR}/init.o \
+		${QWDTOOLS_DIR}/main.o \
+		${QWDTOOLS_DIR}/marge.o \
+		${QWDTOOLS_DIR}/qwz.o \
+		${QWDTOOLS_DIR}/sync.o \
+		${QWDTOOLS_DIR}/tools.o
+
+#############################################################################
+# SETUP AND BUILD
+#############################################################################
 
 .c.o:
-		${CC} ${DO_CFLAGS} -c $< -o $*.o
+		${CC} ${DO_CFLAGS} -I${SV_DIR} -c $< -o $*.o
 
 .s.o:
 		${CC} ${DO_CFLAGS} -DELF -x assembler-with-cpp -c $< -o $*.o
+		
+all:	mvdsv qwdtools
+		-strip mvdsv qwdtools
 
-all:	${SV_OBJS} ${SV_AS_OBJS}
-		${CC} ${CFLAGS} -o mvdsv ${SV_OBJS} ${SV_AS_OBJS} ${SV_LIBS}
+mvdsv:	${SV_OBJS} ${SV_AS_OBJS}
+		${CC} ${CFLAGS} ${LDFLAGS} -o mvdsv ${SV_OBJS} ${SV_AS_OBJS}
+
+qwdtools:	${QWDTOOLS_OBJS}
+		${CC} ${CFLAGS} ${LDFLAGS} -o qwdtools ${QWDTOOLS_OBJS}
 
 clean:
-		-rm -f *.o *.core
+		-rm -f ${SV_DIR}/*.o ${SV_DIR}/*.core ${QWDTOOLS_DIR}/*.o ${QWDTOOLS_DIR}/*.core
