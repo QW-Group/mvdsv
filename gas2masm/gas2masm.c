@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -33,7 +33,7 @@ typedef enum {NOT_WHITESPACE, WHITESPACE, TOKEN_AVAILABLE, LINE_DONE, FILE_DONE,
 typedef enum {NOSEG, DATASEG, TEXTSEG} segtype;
 
 int		tokennum;
-int		inline, outline;
+int		linein, lineout;
 
 char	*token;
 char	tokens[MAX_TOKENS][MAX_TOKEN_LENGTH+1];
@@ -396,32 +396,44 @@ void emitonecalldata (void)
 
 void emitonejumpdata (void)
 {
+	/*jmp  *Ljmptab(,%eax,4)
+	  jmp dword ptr[Ljmptab(,%eax,4)]
+	  jmp dword ptr[Ljmptab+eax*4]
+	*/
 	int	i, isaddr, len;
 
-	if (tokens[1][0] == '*')
-	{
-		printf (" dword ptr[%s]", &tokens[1][1]);
-	}
-	else
-	{
-		isaddr = 0;
-		len = strlen(tokens[1]);
+	isaddr = 0;
+	len = strlen(tokens[1]);
 
-		for (i=0 ; i<len ; i++)
-		{
-			if (tokens[1][i] == '(')
-			{
+	if (tokens[1][0] == '*') {
+
+		for (i=0 ; i<len ; i++) {
+			if (tokens[1][i] == '(') {
+				isaddr = 1;
+				break;
+			}
+		}
+		memmove(&tokens[1][0],&tokens[1][1],strlen(tokens[1]));
+		if ( !isaddr ) {
+			//printf (" dword ptr [%s]", &tokens[1][1]);
+			printf (" dword ptr [");
+			emitanoperand (1, "", 1);
+			printf ("]");
+		} else {
+			emitanoperand (1, " dword ptr", 1);
+		}
+	} else {
+
+		for (i=0 ; i<len ; i++) {
+			if (tokens[1][i] == '(') {
 				isaddr = 1;
 				break;
 			}
 		}
 
-		if (!isaddr)
-		{
+		if (!isaddr) {
 			printf (" %s", tokens[1]);
-		}
-		else
-		{
+		} else {
 			emitanoperand (1, " dword ptr", 1);
 		}
 	}
@@ -430,7 +442,6 @@ void emitonejumpdata (void)
 
 void emitexterndef (void)
 {
-
 	printf (" %s:dword", tokens[1]);
 }
 
@@ -673,8 +684,8 @@ parsefield	parsedata[] = {
 	{"fcoms",  " fcom", 2, emitoneoperandl},
 	{"fcomp",  " fcomp", 2, emitoneoperandl},
 	{"fcomps", " fcomp", 2, emitoneoperandl},
-	{"fdiv",   "", -2, special_fdivl}, 
-	{"fdivp",  "", -2, special_fdivpl}, 
+	{"fdiv",   "", -2, special_fdivl},
+	{"fdivp",  "", -2, special_fdivpl},
 	{"fdivr",  "", -2, special_fdivrl},
 	{"fdivrp", "", -2, special_fdivrpl},
 	{"fdivrs", "", -2, special_fdivrl},
@@ -744,7 +755,7 @@ parsefield	parsedata[] = {
 	{"sarl",   " sar", 3, emittwooperandsl},
 	{"sbbl",   " sbb", 3, emittwooperandsl},
 	{"shll",   " shl", 3, emittwooperandsl},
-	{"shrl",   " shr", 3, emittwooperandsl},	
+	{"shrl",   " shr", 3, emittwooperandsl},
 	{"subl",   " sub", 3, emittwooperandsl},
 	{"testb",  " test", 3, emittwooperandsb},
 	{"testl",  " test", 3, emittwooperandsl},
@@ -758,18 +769,18 @@ int	numparse = sizeof (parsedata) / sizeof (parsedata[0]);
 
 void errorexit (void)
 {
-	fprintf (stderr, "In line: %d, out line: %d\n", inline, outline);
+	fprintf (stderr, "In line: %d, out line: %d\n", linein, lineout);
 	exit (1);
 }
 
 
-tokenstat whitespace (char c)
+tokenstat whitespace (int c)
 {
 	if (c == '\n')
 		return LINE_DONE;
 
 	if ((c <= ' ') ||
-		(c > 127) ||
+		//(c > 127) ||
 		(c == ','))
 	{
 		return WHITESPACE;
@@ -781,7 +792,7 @@ tokenstat whitespace (char c)
 
 int gettoken (void)
 {
-	char		c;
+	int		c;
 	int			count, parencount;
 	tokenstat	stat;
 
@@ -820,7 +831,7 @@ int gettoken (void)
 
 		} while (c != ')');
 	}
-	
+
 	for ( ;; )
 	{
 		if ((c = getchar ()) == EOF)
@@ -968,7 +979,7 @@ tokenstat parseline (void)
 				else
 					printf ("\n");
 
-				outline++;
+				lineout++;
 			}
 			return PARSED_OKAY;
 
@@ -1019,19 +1030,19 @@ tokenstat parseline (void)
 }
 
 
-void main (int argc, char **argv)
+int main ()
 {
 	tokenstat	stat;
 
 	printf (" .386P\n"
             " .model FLAT\n");
-	inline = 1;
-	outline = 3;
+	linein = 1;
+	lineout = 3;
 
 	for ( ;; )
 	{
 		stat = parseline ();
-		inline++;
+		linein++;
 
 		switch (stat)
 		{
@@ -1042,14 +1053,14 @@ void main (int argc, char **argv)
 				printf ("_DATA ENDS\n");
 
 			printf (" END\n");
-			exit (0);
-		
+			return 0;
+
 		case PARSED_OKAY:
 			break;
 
 		default:
 			fprintf (stderr, "Error: unknown tokenstat %d\n", stat);
-			exit (0);
+			return 1;
 		}
 	}
 }
