@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern cvar_t	sv_demoUseCache;
 extern cvar_t	sv_demoCacheSize;
 extern cvar_t	sv_demoMaxDirSize;
+extern cvar_t	sv_demoClearOld; //bliP: 24/9 clear old demos
 extern cvar_t	sv_demoDir;
 extern cvar_t	sv_demofps;
 extern cvar_t	sv_demoPings;
@@ -139,7 +140,7 @@ void SV_DemoWriteToDisk(int type, int to, float time)
 	int	size;
 	sizebuf_t msg;
 
-	(byte*)p = demo.dbuf->data;
+	p = (header_t *)demo.dbuf->data;
 	demo.dbuf->h = NULL;
 
 	oldm = demo.dbuf->bufsize;
@@ -170,7 +171,7 @@ void SV_DemoWriteToDisk(int type, int to, float time)
 			demobuffer->start += size + header;
 		}
 		// move along
-		(byte*)p = p->data + size;
+		p = (header_t *)p->data + size;
 	}
 
 	if (demobuffer->start == demobuffer->last) {
@@ -198,7 +199,7 @@ static void DemoSetBuf(byte type, int to)
 	header_t *p;
 	int pos = 0;
 
-	(byte*)p = demo.dbuf->data;
+	p = (header_t *)demo.dbuf->data;
 
 	while (pos < demo.dbuf->bufsize)
 	{
@@ -211,7 +212,7 @@ static void DemoSetBuf(byte type, int to)
 			return;
 		}
 
-		(byte*)p = p->data + p->size;
+		p = (header_t *)p->data + p->size;
 	}
 	// type&&to not exist in the buf, so add it
 
@@ -569,6 +570,7 @@ void Demo_Init (void)
 	Cvar_RegisterVariable (&sv_demoCacheSize);
 	Cvar_RegisterVariable (&sv_demoMaxSize);
 	Cvar_RegisterVariable (&sv_demoMaxDirSize);
+	Cvar_RegisterVariable (&sv_demoClearOld); //bliP: 24/9 clear old demos
 	Cvar_RegisterVariable (&sv_demoDir);
 	Cvar_RegisterVariable (&sv_demoPrefix);
 	Cvar_RegisterVariable (&sv_demoSuffix);
@@ -658,16 +660,16 @@ void SV_Stop (int reason)
 			demo.file = NULL;
 			sv.demorecording = false;
 
-			SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed.\n");
 
 			Cvar_SetROM(&serverdemo, "");
 
 			return;
 		case 1:
-			SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stopped.\nMax demo size exceeded.\n");
 			break;
 		case 0:
-			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed.\n");
 	}
 // write a disconnect message to the demo file
 
@@ -1243,7 +1245,42 @@ char *SV_CleanName (unsigned char *name)
 	*++out = 0;
 	return text;
 }
+//bliP: 24/9 clear old demos ->
+/*
+====================
+SV_DirSizeCheck
 
+Deletes sv_demoClearOld files from demo dir if out of space
+====================
+*/
+int SV_DirSizeCheck (void)
+{
+	dir_t	dir;
+  file_t *list;
+  int i;
+
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
+	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024) {
+    if (sv_demoClearOld.value <= 0) {
+		  Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
+		  return 0;
+    }
+
+	  list = dir.files;
+    i = sv_demoClearOld.value;
+    Con_Printf("clearing %d old files\n", i);
+    for (; list->name[0] && i > 0; list++) {
+      if (list->isdir)
+        continue;
+      Sys_remove(va("%s/%s/%s", com_gamedir, sv_demoDir.string, list->name));
+      //Con_Printf("remove %d - %s/%s/%s\n", i, com_gamedir, sv_demoDir.string, list->name);
+      i--;
+    }
+	}
+
+  return 1;
+}
+//<-
 /*
 ====================
 SV_Record_f
@@ -1256,7 +1293,6 @@ void SV_Record_f (void)
 	int		c;
 	char	name[MAX_OSPATH+MAX_DEMO_NAME];
 	char	newname[MAX_DEMO_NAME];
-	dir_t	dir;
 
 	c = Cmd_Argc();
 	if (c != 2)
@@ -1270,13 +1306,10 @@ void SV_Record_f (void)
 		return;
 	}
 
-	
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_NO);
-	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
-	{
-		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
+//bliP: 24/9 clear old demos
+	if (!SV_DirSizeCheck())
 		return;
-	}
+//<-
 
 	strlcpy(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))),
 			sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
@@ -1294,7 +1327,6 @@ void SV_Record_f (void)
 // open the demo file
 //
 	COM_ForceExtension (name, ".mvd");
-
 	
 	SV_Record (name);
 }
@@ -1416,7 +1448,6 @@ int	Dem_CountTeamPlayers (char *t)
 void SV_EasyRecord_f (void)
 {
 	int		c;
-	dir_t	dir;
 	char	name[1024];
 	char	name2[MAX_OSPATH*7]; // scream
 	//char	name2[MAX_OSPATH*2];
@@ -1433,12 +1464,8 @@ void SV_EasyRecord_f (void)
 	if (sv.demorecording)
 		SV_Stop_f();
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".*", SORT_NO);
-	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
-	{
-		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
+	if (!SV_DirSizeCheck()) //bliP: 24/9 clear old demos
 		return;
-	}
 
 	// -> scream
 	/*if (c == 2)
@@ -1480,7 +1507,7 @@ void SV_EasyRecord_f (void)
 		{
 			// Teamplay
 			snprintf (name, sizeof(name), "%don%d_", Dem_CountTeamPlayers(Dem_Team(1)), Dem_CountTeamPlayers(Dem_Team(2)));
-			if (sv_demoExtraNames.value > 0)
+			if (sv_demoExtraNames.value)
 			{
 				strlcat (name, va("[%s]_%s_vs_[%s]_%s_%s", 
 									Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)), 
@@ -1599,17 +1626,33 @@ char *SV_DemoNum(int num)
 
 char *SV_DemoName2Txt(char *name)
 {
-	char s[MAX_OSPATH];
+	char	s[MAX_OSPATH];
+	int	len;
 
 	if (!name)
 		return NULL;
 
 	strlcpy(s, name, MAX_OSPATH);
-
-	if (strstr(s, ".mvd.gz") != NULL)
+	len = strlen(s) - 4;
+	if (len < 0)
+		return va("%s", s);
+	if (strcmp(&s[len], ".mvd"))
+	{
+		if (len < 3)
+			return va("%s", s);
+		len -= 3;
+		if (strcmp(&s[len], ".mvd.gz"))
+			return va("%s", s);
+	}
+	s[++len] = 't';
+	s[++len] = 'x';
+	s[++len] = 't';
+	s[++len] = '\0';
+/*	if (strstr(s, ".mvd.gz"))
 		strlcpy(s + strlen(s) - 6, "txt", MAX_OSPATH - strlen(s) + 6);
-	else
+	else if (strstr(s, ".mvd"))
 		strlcpy(s + strlen(s) - 3, "txt", MAX_OSPATH - strlen(s) + 3);
+*/
 
 	return va("%s", s);
 }
@@ -1862,14 +1905,7 @@ void SV_DemoInfo_f (void)
 	while (!feof(f))
 	{
 		buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
-		for (name = buf; *name; name++)
-		{
-			if ((*name >= 'a' && *name <= 'z') || (*name >= 'A' && *name <= 'Z'))
-				*name |= 128;
-			else if (*name >= '0' && *name <= '9')
-				*name += 18 - '0';
-		}
-		Con_Printf("%s", buf);
+		Con_Printf("%s", Q_yelltext(buf));
 	}
 
 	fclose(f);
@@ -1881,7 +1917,7 @@ void SV_LastScores_f (void)
 	int	demos, i;
 	char	buf[512];
 	FILE	*f = NULL;
-	char	*name, path[MAX_OSPATH];
+	char	path[MAX_OSPATH];
 	dir_t	dir;
 
 	if (Cmd_Argc() > 2) {
@@ -1897,21 +1933,21 @@ void SV_LastScores_f (void)
 	if (sv.demorecording && demos > MAXDEMOS)
 		Con_Printf("<numlastdemos> was decreased to %i: demo recording in progress.\n", demos = MAXDEMOS);
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".txt", SORT_BY_DATE);
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
 
 	if (!dir.numfiles)
 	{
-		Con_Printf("No txt files with info.\n");
+		Con_Printf("No demos.\n");
 		return;
 	}
 	if (dir.numfiles < demos || !demos)
 		demos = dir.numfiles;
 
-	for (i = dir.numfiles - demos; i < dir.numfiles; i++)
+	for (i = dir.numfiles - demos; i < dir.numfiles; )
 	{
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, dir.files[i].name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, SV_DemoName2Txt(dir.files[i].name));
 
-		Con_Printf("%i. ", i);
+		Con_Printf("%i. ", ++i);
 		if ((f = fopen(path, "rt")) == NULL)
 		{
 			Con_Printf("(empty)\n");
@@ -1921,19 +1957,8 @@ void SV_LastScores_f (void)
 		while (!feof(f))
 		{
 			buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
-			for (name = buf; *name; name++)
-			{
-				if (*name == '\n')
-				{
-					name[1] = 0;
-					break;
-				}
-				else if ((*name >= 'a' && *name <= 'z') || (*name >= 'A' && *name <= 'Z'))
-					*name |= 128;
-				else if (*name >= '0' && *name <= '9')
-					*name += 18 - '0';
-			}
-			Con_Printf("%s", buf);
+			*strchr(buf, '\n') = 0;
+			Con_Printf("%s\n", Q_yelltext(buf));
 		}
 		fclose(f);
 	}

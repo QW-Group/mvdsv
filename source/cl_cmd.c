@@ -77,24 +77,30 @@ void CL_ForwardToServer_f (void)
 		return;
 	}
 
-	if (strcasecmp(Cmd_Argv(1), "snap") == 0) {
-		SCR_RSShot_f ();
-		return;
-	}
-
-//bliP ->
-	if (strcasecmp(Cmd_Argv(1), "fileul") == 0) {
-		CL_StartFileUpload ();
-		return;
-	}
-//<-
-	
 	if (cls.demoplayback)
 		return;		// not really connected
 
 	if (Cmd_Argc() > 1)
 	{
+		if (strcasecmp(Cmd_Argv(1), "snap") == 0) {
+			SCR_RSShot_f ();
+			return;
+		}
+
+//bliP ->
+		if (strcasecmp(Cmd_Argv(1), "fileul") == 0) {
+			CL_StartFileUpload ();
+			return;
+		}
+//<-
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
+		if (strcasecmp(Cmd_Argv(1), "download") == 0 && Cmd_Argc() > 2)
+		{
+			strlcpy(cls.downloadname, Cmd_Argv(2), sizeof(cls.downloadname));
+			COM_StripExtension(cls.downloadname, cls.downloadtempname);
+			strlcat(cls.downloadtempname, ".tmp", sizeof(cls.downloadtempname));
+			cls.downloadtype = dl_single;
+		}
 // Added by VVD {
 		if (cl_crypt_rcon.value && strcasecmp(Cmd_Argv(1), "techlogin") == 0)
 		{
@@ -284,7 +290,7 @@ void CL_Rcon_f (void)
 		{
 			snprintf(client_time_str + i * 2, 8 * 2 + 1 - i * 2, "%02X",
 				(client_time >> (i * 8)) & 0xFF);
-			Con_Printf("client_time_str = %s\n", client_time_str);
+//			Con_Printf("client_time_str = %s\n", client_time_str);
 		}
 		strlcat (message, client_time_str, sizeof(message));
 		strlcat (message, " ", sizeof(message));

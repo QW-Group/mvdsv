@@ -1249,7 +1249,7 @@ void PR_CleanLogText_Init ()
 	chartbl2[17] = chartbl2[17 + 128] = ']';
 
 	// hash
-	for (i = 1; i < 10; i++) // 5 redefined as '.'
+	for (i = 0; i < 10; i++) // 5 redefined as '.'
 		chartbl2[i] = chartbl2[i + 128] = '#';
 
 	chartbl2[11] = chartbl2[11 + 128] = '#';
@@ -2403,6 +2403,7 @@ void PF_listmaps (void)
 				snprintf(tmp, sizeof(tmp), "%03d", id);
 				Q_redtext(tmp);
 				SV_ClientPrintf(client, level, "%s %s\x85%-13s\n", line, tmp, list->name);
+				line[0] = 0; //bliP: 24/9 bugfix
 				break;
 			default:
 				snprintf(tmp, sizeof(tmp), "%d", id);

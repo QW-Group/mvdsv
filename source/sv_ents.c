@@ -217,7 +217,7 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 	if ( to->modelindex != from->modelindex )
 		bits |= U_MODEL;
 
-	if (bits & 511)
+	if (bits & U_CHECKMOREBITS)
 		bits |= U_MOREBITS;
 
 	if (to->flags & U_SOLID)
@@ -228,12 +228,16 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 	//
 	if (!to->number)
 		SV_Error ("Unset entity number");
-	if (to->number >= 512)
-		SV_Error ("Entity number >= 512");
+	if (to->number >= MAX_EDICTS)
+	{
+		/*SV_Error*/
+		Con_Printf ("Entity number >= MAX_EDICTS (%d), set to MAX_EDICTS - 1\n", MAX_EDICTS);
+		to->number = MAX_EDICTS - 1;
+	}
 
 	if (!bits && !force)
 		return;		// nothing to send!
-	i = to->number | (bits&~511);
+	i = to->number | (bits&~U_CHECKMOREBITS);
 	if (i & U_REMOVE)
 		Sys_Error ("U_REMOVE");
 	MSG_WriteShort (msg, i);
@@ -241,7 +245,7 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 	if (bits & U_MOREBITS)
 		MSG_WriteByte (msg, bits&255);
 	if (bits & U_MODEL)
-		MSG_WriteByte (msg,	to->modelindex);
+		MSG_WriteByte (msg, to->modelindex);
 	if (bits & U_FRAME)
 		MSG_WriteByte (msg, to->frame);
 	if (bits & U_COLORMAP)
@@ -321,7 +325,10 @@ void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *
 		{	// this is a new entity, send it from the baseline
 			if (newnum == 9999)
 			{
-				Sys_Printf("LOL, %d, %d, %d, %d %d %d\n", newnum, oldnum, to->num_entities, oldmax, client->netchan.incoming_sequence & UPDATE_MASK, client->delta_sequence & UPDATE_MASK);
+				Sys_Printf("LOL, %d, %d, %d, %d %d %d\n",
+					newnum, oldnum, to->num_entities, oldmax,
+					client->netchan.incoming_sequence & UPDATE_MASK,
+					client->delta_sequence & UPDATE_MASK);
 				if (client->edict == NULL)
 					Sys_Printf("demo\n");
 			}

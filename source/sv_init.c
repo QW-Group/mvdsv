@@ -481,6 +481,8 @@ void SV_SpawnServer (char *server)
 	int			i;
 	extern cvar_t version;
 	dfunction_t *f;
+	extern cvar_t sv_loadentfiles;
+	char		*entitystring;
 
 	Con_DPrintf ("SpawnServer: %s\n",server);
 	
@@ -603,8 +605,27 @@ void SV_SpawnServer (char *server)
 	// run the frame start qc function to let progs check cvars
 	SV_ProgStartFrame ();
 
+	// ********* External Entity support (.ent file(s) in gamedir/maps) pinched from ZQuake *********
 	// load and spawn all other entities
-	ED_LoadFromFile (sv.worldmodel->entities);
+
+	entitystring = NULL;
+	if (sv_loadentfiles.value)
+		entitystring = COM_LoadHunkFile (va("maps/%s.ent", sv.name));
+	
+	if (entitystring)
+	{
+		Con_DPrintf ("Using entfile maps/%s.ent\n", sv.name);
+		//Info_SetValueForStarKey (svs.info, "*entfile", va("%i", CRC_Block(entitystring, fs_filesize)), MAX_SERVERINFO_STRING);
+		ED_LoadFromFile (entitystring);
+	}
+	
+	if (!entitystring)
+	{
+		//Info_SetValueForStarKey (svs.info,  "*entfile", "", MAX_SERVERINFO_STRING);
+		//entitystring = CM_EntityString();
+		ED_LoadFromFile (sv.worldmodel->entities); //just use the QWE way of doing it if no entfile.
+	}
+	// ********* End of External Entity support code *********
 
 	// look up some model indexes for specialized message compression
 	SV_FindModelNumbers ();

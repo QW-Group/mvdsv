@@ -6,65 +6,114 @@
 --------------------Configuration: qwcl - Win32 GLRelease--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "c:\Temp\RSP241.tmp" with contents
+Creating temporary file "E:\Temp\RSP37.bat" with contents
 [
-/nologo /G6 /Zp4 /ML /W3 /GX /O1 /Ob1 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "LITTLE_ENDIAN" /Fp".\GLRelease/qwplayer.pch" /YX /Fo".\GLRelease/" /Fd".\GLRelease/" /FD /c 
-"D:\Quake\qwex\mvdsv_0.1727\source\cd_win.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_cam.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_cmd.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_demo.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_ents.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_input.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_main.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_parse.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_pred.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_slist.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cl_tent.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cmd.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\common.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\console.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\crc.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\cvar.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_draw.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_mesh.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_model.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_ngraph.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_refrag.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_rlight.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_rmain.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_rmisc.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_rsurf.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_screen.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_test.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\gl_warp.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\in_win.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\keys.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\mathlib.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\mdfour.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\menu.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\net_chan.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\net_wins.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\nonintel.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\pmove.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\pmovetst.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\r_part.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\sbar.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\sha1.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\skin.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\snd_dma.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\snd_mem.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\snd_mix.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\snd_win.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\sys_win.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\teamplay.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\version.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\vid_wgl.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\view.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\wad.c"
-"D:\Quake\qwex\mvdsv_0.1727\source\zone.c"
+@echo off
+cl /nologo /EP > .\GLRelease\sys_x86.spp .\sys_x86.s
+gas2masm < .\GLRelease\sys_x86.spp >.\GLRelease\sys_x86.asm
+ml /nologo /c /Cp /coff /Fo.\GLRelease\sys_x86.obj /Zm /Zi             .\GLRelease\sys_x86.asm
+del .\GLRelease\sys_x86.spp
 ]
-Creating command line "cl.exe @c:\Temp\RSP241.tmp" 
-Creating temporary file "c:\Temp\RSP242.tmp" with contents
+Creating command line "E:\Temp\RSP37.bat"
+Creating temporary file "E:\Temp\RSP38.bat" with contents
+[
+@echo off
+cl /nologo /EP > .\GLRelease\snd_mixa.spp .\snd_mixa.s
+gas2masm < .\GLRelease\snd_mixa.spp >.\GLRelease\snd_mixa.asm
+ml /nologo /c /Cp /coff /Fo.\GLRelease\snd_mixa.obj /Zm /Zi             .\GLRelease\snd_mixa.asm
+del .\GLRelease\snd_mixa.spp
+]
+Creating command line "E:\Temp\RSP38.bat"
+Creating temporary file "E:\Temp\RSP39.bat" with contents
+[
+@echo off
+cl /nologo /EP > .\GLRelease\math.spp .\math.s
+gas2masm < .\GLRelease\math.spp >.\GLRelease\math.asm
+ml /nologo /c /Cp /coff /Fo.\GLRelease\math.obj /Zm /Zi             .\GLRelease\math.asm
+del .\GLRelease\math.spp
+]
+Creating command line "E:\Temp\RSP39.bat"
+Creating temporary file "E:\Temp\RSP3A.bat" with contents
+[
+@echo off
+cl /nologo /EP > .\GLRelease\cl_math.spp .\cl_math.s
+gas2masm < .\GLRelease\cl_math.spp >.\GLRelease\cl_math.asm
+ml /nologo /c /Cp /coff /Fo.\GLRelease\cl_math.obj /Zm /Zi             .\GLRelease\cl_math.asm
+del .\GLRelease\cl_math.spp
+]
+Creating command line "E:\Temp\RSP3A.bat"
+Creating command line "rc.exe /l 0x409 /fo".\GLRelease/winquake.res" /d "_DEBUG" "D:\Quake\Projects\mvdsv\mvdsv_0.174\source\winquake.rc"" 
+Performing Custom Build Step on .\sys_x86.s
+sys_x86.s
+ Assembling: .\GLRelease\sys_x86.asm
+Performing Custom Build Step on .\snd_mixa.s
+snd_mixa.s
+ Assembling: .\GLRelease\snd_mixa.asm
+Performing Custom Build Step on .\math.s
+math.s
+ Assembling: .\GLRelease\math.asm
+Performing Custom Build Step on .\cl_math.s
+cl_math.s
+ Assembling: .\GLRelease\cl_math.asm
+Creating temporary file "E:\Temp\RSP3B.tmp" with contents
+[
+/nologo /G6 /Zp4 /ML /W3 /GX /O1 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "LITTLE_ENDIAN" /Fp".\GLRelease/qwplayer.pch" /YX /Fo".\GLRelease/" /Fd".\GLRelease/" /FD /c 
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cd_win.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_cam.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_cmd.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_demo.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_ents.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_input.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_main.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_parse.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_pred.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_slist.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cl_tent.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cmd.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\common.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\console.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\crc.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\cvar.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_draw.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_mesh.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_model.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_ngraph.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_refrag.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_rlight.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_rmain.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_rmisc.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_rsurf.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_screen.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_test.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\gl_warp.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\in_win.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\keys.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\mathlib.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\mdfour.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\menu.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\net_chan.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\net_wins.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\nonintel.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\pmove.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\pmovetst.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\r_part.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\sbar.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\sha1.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\skin.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\snd_dma.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\snd_mem.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\snd_mix.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\snd_win.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\sys_win.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\teamplay.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\version.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\vid_wgl.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\view.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\wad.c"
+"D:\Quake\Projects\mvdsv\mvdsv_0.174\source\zone.c"
+]
+Creating command line "cl.exe @E:\Temp\RSP3B.tmp" 
+Creating temporary file "E:\Temp\RSP3C.tmp" with contents
 [
 comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /incremental:no /pdb:".\GLRelease/qwplayer-gl.pdb" /machine:I386 /out:"..\qwplayer-gl.exe" 
 .\GLRelease\cd_win.obj
@@ -126,8 +175,9 @@ comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.l
 .\GLRelease\snd_mixa.obj
 .\GLRelease\sys_x86.obj
 ]
-Creating command line "link.exe @c:\Temp\RSP242.tmp"
+Creating command line "link.exe @E:\Temp\RSP3C.tmp"
 <h3>Output Window</h3>
+Compiling resources...
 Compiling...
 cd_win.c
 cl_cam.c

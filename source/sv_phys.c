@@ -51,13 +51,14 @@ cvar_t	sv_airaccelerate	 = { "sv_airaccelerate", "10"};
 cvar_t	sv_wateraccelerate	 = { "sv_wateraccelerate", "10"};     
 cvar_t	sv_friction			 = { "sv_friction", "4"};      
 cvar_t	sv_waterfriction	 = { "sv_waterfriction", "4"};      
-cvar_t	sv_bunnyspeedcap	 = {"sv_bunnyspeedcap", "", CVAR_SERVERINFO};
+cvar_t	sv_bunnyspeedcap	 = {"sv_bunnyspeedcap", "0"};
 
+/* Not used variables
 cvar_t	sv_max_addspeed = {"pm_max_addspeed","0",CVAR_SERVERINFO};
 cvar_t	sv_max_addspeed_type = {"pm_max_addspeed_type","0",CVAR_SERVERINFO};
 cvar_t	sv_use_forward_control = {"pm_use_forward_control","0",CVAR_SERVERINFO};
 cvar_t	sv_max_wishspeed = {"pm_max_wishspeed","0",CVAR_SERVERINFO};
-
+*/
 
 #define	MOVE_EPSILON	0.01
 
@@ -528,7 +529,10 @@ qboolean SV_Push (edict_t *pusher, vec3_t move)
 			SV_LinkEdict (check, false);
 			continue;
 		}
-		if (check->v.solid == SOLID_NOT || check->v.solid == SOLID_TRIGGER)
+	// Tonik: the check for SOLID_NOT is to fix the way dead bodies and 
+	// gibs behave (should not be blocked by players & monsters); 
+	// The SOLID_TRIGGER check is disabled lest we break frikbots (from ZQuake)
+		if (check->v.solid == SOLID_NOT/* || check->v.solid == SOLID_TRIGGER*/)
 		{	// corpse
 			check->v.mins[0] = check->v.mins[1] = 0;
 			VectorCopy (check->v.mins, check->v.maxs);

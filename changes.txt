@@ -1,25 +1,93 @@
 ----
+MVDSV v0.174 Beta DEVELOP build 1742
+- Project was reorganized: MVDSV (MultiView Demos SerVer) is now synonym to QWEX (QuakeWorld Extended).
+  Consist of mvdsv (server), qwdplayer gl/soft (client - for testing purposes only) and qwdtools
+  (demo convertion tool).
+- Changed link to home site to http://mvdsv.sourceforge.net
+[server]
+- bugfix: print message "Server recording stopped. Max demo size exceeded." instead of
+  "Server recording completed."
+- extensions in connectionless command status:
+    use 2nd argument to return indicated information
+    (flags - sum up to return more than one type of information):
+      0 - old style status command response
+      1 - add serverinfo in response
+      2 - add information about players in response
+      4 - add information about spectators in response
+      8 - change only frags in info about spectators: show frags as "S" (for ASE)
+    spectators names returned as "\s\<name>" instead "<name>(s)" (players can't use '\' in names)
+    not specifying a 2nd argument returns the old style status command response (same as 0)
+- changed status output in server console and via rcon
+- some spelling fixes
+- bugfix: server crashes with message "Error: Entity number >= 512" (EXPERIMENTAL)
+- removed cvar sv_showspectators
+- red "\" excluded from list of allowed characters in player's and spectator's names, 
+  so the name with red "\" result in the player's name being "unnamed"
+- new cvar sys_command_line - show command line arguments during start of server, cannot be changed
+  (use only with master_rcon_password)
+- bugfix: restart command didn't work if path or server executable name contained spaces in win32
+- added .ent files support: (by ???)
+    new cvar sv_loadentfiles 0/1 - loads .ent files
+    0 - no
+    1 - yes
+    default: 1
+- added button1 support for the ability to use objects with a key or mouse:
+  mod must support this feature (from ezQuake)
+- cmd upload syntax changed to: cmd upload <local file> <remote file>
+- action of commands was correctly limited by root of the quake dir (example: restrict path like "/../",
+  but can operate with files and directories which containing substring ".."):
+  client commands:
+    cmd upload, cmd download, download
+  server commands:
+    ls, rm, rmdir, chmod
+- removeed cvars sv_bunnyspeedcap and maxvip_spectators from serverinfo
+  (become more frequent warning message: "Info string length exceeded ...")
+- code cleanup for removing warning message from gcc3:
+  "warning: use of cast expressions as lvalues is deprecated" (by danfe)
+- prevented extra packets being sent to invalid addresses (for example: 127.0.0.1),
+  and boosted connect times by 5 (changed to 3) seconds on improperly/non-configured servers
+- fixed intermittent non-solid FrikBot behaviour inherited (from ZQuake)
+- increased MAX_BACK_BUFFERS from 4 to 16 (EXPERIMENTAL)
+- new cvar sv_rconlim - limit of rcon requests per second
+- bugfix: occur packets lost if sv_minping > real client's ping
+- new cvar sys_select_timeout - timeout in micro seconds for function select in main loop
+- bugfix: buffer overrun condition when handling quoted strings in COM_Parse (thanks to hexum)
+- bugfix: make check for pwd.cfg case insensitive in SV_BeginDownload_f (thanks to hexum)
+- new cvar sv_logdir <dir> - directory to store logs in (by bliP)
+- new cvar sv_demoClearOld <number of files> (by bliP)
+  if the demo directory is out of space (sv_demoMaxDirSize), this will delete X number of files
+  starting with the oldest to make room for new demos, use 0 to disable
+- new cvar sv_speedcheck 0/1 (by bliP)
+  anti speed cheat code from AM101, slows cheaters down to normal speed
+- rename cvar sv_kickfake to sv_unfake - auto unfakes any mm1 messages (by bliP)
+- bugfix: allow one back a directory with script (by bliP)
+- bugfix: PF_listmaps style 3 misprinted if even number of maps (by bliP)
+[client]
+- Ability to download any file in the server's quake dir from the server via cmd download.
+
+
+----
 QWEX v0.173 build 1683
 [server]
 - QC:
   TeamFortress map voting: (by bliP)
     - listmaps - new style 3
-- new cvar sv_enable_cmd_minping 0/1 (by VVD)
+- new cvar sv_enable_cmd_minping 0/1
     0 - disable cmd minping command
     1 - enable cmd minping command
     default: 0
-- bugfix: write 0 frags in demo txt-files instead real players/teams frags (by VVD)
-- cmd minping change value only if ktpro serverinfo key status is "Standby" and
-  demo recording is not in progress (by VVD)
+- bugfix: write 0 frags in demo txt-files instead real players/teams frags
+- cmd minping change value only if serverinfo key status is "Standby" and
+  demo recording is not in progress
 
 
 ----
 QWEX v0.1728 build 1675
 [server]
 - win32: bugfix: used NT function for parse command line did not work in win9x/ME -
-  changed to another function (by VVD)
-- win32: changed window font to Fixedsys (formatted messages, such as status, look better) (by VVD)
-- added feature that logs player's scores in demo txt-files and first string now has format: (by VVD)
+  changed to another function
+- win32: changed window font to Fixedsys (formatted messages, such as status, look better)
+- added feature that logs player's scores in demo txt-files and first string now has format:
     tp: team1[ player1_1(scores1_1) ... playerN_1(scoresN_1) ](scores1) ...
         teamM[ player1_M(scores1_M) ... playerK_M(scoresK_M) ](scoresM)  @ map
     duel: player1 vs player2 @ map - scores1:scores2
@@ -27,14 +95,15 @@ QWEX v0.1728 build 1675
 - new cmd lastscores [<numlastdemos>] - read information from txt-files (first string)
   '0' - for all demos
   ''  - for last 10 demos
-  if demo recording is in progress <numlastdemos> is decreased to 10 (by VVD)
+  if demo recording is in progress <numlastdemos> is decreased to 10
 - new cmd minping [<value>] - set or show sv_minping value
-  if demo recording is in progress sv_minping isn't changed (by VVD)
-- fixed a bug that allowed players to join the server even though the server was full, thus exceeding the 
-  maxplayers limit, thus causing for example 9/8 players (by bliP)
-- new cvar sv_showspectators 0/1 (by VVD)
-    Added feature to show spectators as players in qplug, qspy, servu (irc bot) etc. (connectionless command status),
-    but adding "(s)" to spectators' names; "specators' ping" = -"real ping" and frags are set to -9999.
+  if demo recording is in progress sv_minping isn't changed
+- fixed a bug that allowed players to join the server even though the server was full,
+  thus exceeding the maxplayers limit, thus causing for example 9/8 players (by bliP)
+- new cvar sv_showspectators 0/1
+    Added feature to show spectators as players in qplug, qspy, servu (irc bot) etc.
+    (connectionless command status), but adding "(s)" to spectators' names;
+    "specators' ping" = -"real ping" and frags are set to -9999.
     This makes it possible to find spectating players too with (for example) servu's !qw fp
     0 - don't show spectators
     1 - show spectators
@@ -77,10 +146,10 @@ QWEX v0.1728 build 1675
 ----
 QWEX v0.1727 Beta DEVELOP build 1667
 [server]
-- bugfix: linux server cpu usage bug (by VVD)
-- bugfix: sg hit effects, blood, etc disappearing in certain situations (by VVD)
+- bugfix: linux server cpu usage bug
+- bugfix: sg hit effects, blood, etc disappearing in certain situations
 (Thanks to Tonik)
-- bugfix: fraglogfile sometimes resulted in server crash (by VVD)
+- bugfix: fraglogfile sometimes resulted in server crash
 
 
 ----
@@ -199,8 +268,7 @@ QWEX v0.1726 (no release)
 [server]
 - bugfix: console logging (qconsole_PORT.log) only with qconsole_log_say 1
 - bugfix: can't download files where the name contains 2 or more dots (".") in a row ("Disconnect"'s bug)
-- bugfix: low entity speed if bad connection (high ping and packet loss)
-  ("luny"'s bug, thanks for testing)
+- bugfix: low entity speed if bad connection (high ping and packet loss) ("luny"'s bug, thanks for testing)
 - some spelling fixes
 - new command:
     restart - restart the server
@@ -211,7 +279,7 @@ QWEX v0.1726 (no release)
     1 - use encryption
     default: 0
 [client]
-- added qwdplayer's source back into qwex
+- added qwdplayer's source back into QWEX
 - cl_crypt_rcon 0/1 - use SHA1 for encryption of rcon_password and using timestamps
     0 - don't use encryption
     1 - use encryption
@@ -248,7 +316,8 @@ QWEX v0.1725 build 1501
 [server]
 - change MAX_PACKET_ENTITIES form 300 down to 64
 (Thanks to Fuh)
-- bugfix in reading and writing "accounts" file under *nix systems
+[unix]
+- bugfix in reading and writing "accounts" file
 
 Note: Bugfix only release.
 
@@ -300,7 +369,7 @@ QWEX v0.1723 Beta
     in PF_substr - for example: ktpro weapon aliases didn't work
     demo recording - bug in the generation of demo names
 - now show all name changes: didn't show when player change name from NAME to NAME_AND_SOMETHING_ELSE_AT_END
-- some spell cheking fixes
+- some spelling fixes
 
 [client]
 - the most part of source codes of the client is removed 
@@ -580,7 +649,8 @@ QWEX v0.159 Beta DEVELOP
   - acc_create <login> [<password>]
     acc_create <adress> <username>
     creates an account,
-    login is case sensitive and contains at least 3 chars, if password is not specified it will be assumed to be the same as login
+    login is case sensitive and contains at least 3 chars, if password is not specified
+    it will be assumed to be the same as login
     if login has a format of ip adress (xxx.xxx.xxx.xxx) also username is required.
   - acc_remove <login>
     removes specified login
@@ -642,7 +712,8 @@ QWEX v0.149 Beta DEVELOP
 - new cvars/commands:
   logerrors		toggles logging errors 
   maxvip_spectators	max of vip spectators, vip spectators are an alternative for spectators
-  vip_spectator_password password for vip spectators (if password is not set only players from vip_iplist can enter as vip)
+  vip_spectator_password password for vip spectators
+    (if password is not set only players from vip_iplist can enter as vip)
   vip_addip		adds ip to vip list
   vip_removeip		removes ip from iplist
   vip_listip		prints ip list
@@ -651,12 +722,15 @@ QWEX v0.149 Beta DEVELOP
   sv_demoSuffix		string added as a suffix to demoname
 - qc stuff
   new functions:
-  void(string dst, string src) strcpy = #97		// copies src to dst
-  string(string str, string substr) strstr = #98	// searches for substring in str, returns pointer to it or "" if not found
-  void(string dst, string src, float n) strncpy = #99	// copies max n chars to dst
-  void(string logname, float console, string text) = %100 // prints text to file 'logname', if console is non-zero, prints to the server console as well
-  void(entity cl, string text) redirectcmd = #101	// executes string on the console and redirects output to client (eg redirect(self, "status"))
-  void() calltimeofday = #102				// force server to call mod function timeofday
+  void(string dst, string src) strcpy = #97 - copies src to dst
+  string(string str, string substr) strstr = #98 - searches for substring in str,
+    returns pointer to it or "" if not found
+  void(string dst, string src, float n) strncpy = #99 - copies max n chars to dst
+  void(string logname, float console, string text) = %100 - prints text to file 'logname',
+    if console is non-zero, prints to the server console as well
+  void(entity cl, string text) redirectcmd = #101 - executes string on the console and
+    redirects output to client (eg redirect(self, "status"))
+  void() calltimeofday = #102 - force server to call mod function timeofday
 
   server searches for following functions in the MOD:
   void timeofday(float sec, float min, float hour, float day, float mon, float year, string date) = {..}
@@ -676,7 +750,8 @@ changes over QWE v0.142 Beta
 
 - new mod commands:
   void(string str) conprint = #94   - prints to server console only (no redirects)
-  string (string str) readcmd = #95 - executes command on server, but result is returned by this function instead of writing to the console
+  string (string str) readcmd = #95 - executes command on server,
+    but result is returned by this function instead of writing to the console
 [client]
 - cl_chasecam 2 -> matrix-like chasing, when watching demo, set demotimescale to 0 and set cl_chasecam to 2
   to adjust rotation speed, and distance, use cvars cl_matrixcam_speed and cl_matrixcam_dist
@@ -693,8 +768,9 @@ changes over QWE v0.13 Beta
 [client]
 - nails fixed, stupid bug coused them to disapear
 - nails are interpolated now (only in demos with new protocol)
-- demotimescale works as it should, i/e it slows/speeds up demo, but it doesn't affect conspeed, cursor blinking and free spec movement
-  also demotimescale can be set to 0, to freeze the map (free spec can still fly around the map)
+- demotimescale works as it should, i/e it slows/speeds up demo, but it doesn't affect conspeed,
+  cursor blinking and free spec movement also demotimescale can be set to 0, to freeze the map
+  (free spec can still fly around the map)
 
 [qwdtools]
 - svc_disconnect message is now written correctly at the end of the demo
@@ -702,7 +778,8 @@ changes over QWE v0.13 Beta
 - loads of new options
 - option -debug writes debug data to an output file (debug.txt)
 - option -log writes all text messages to an output file (log.txt)
-- option -c for converting demos (needed only if either -log or -debug is added to cmdline, otherwise assumed to be enabled)
+- option -c for converting demos (needed only if either -log or -debug is added to cmdline,
+  otherwise assumed to be enabled)
 - option -stdin / -stdout reads/writes from/to pipes
 - option -help prints help :)
 - option -ft - filters team chats
@@ -772,9 +849,9 @@ changes over QWE v0.11 Beta
   you can set size of the cache in the command line (e/g -democache 4096 will alloc 4MB for cache)
   if parameter is not given 1MB will be allocated
   if demo is larger than cache size, server will flush on disk 500kb and continue recording
-- new cvar: sv_demoCacheSize   - CVAR_ROM shows size of demo cache
-- new cvar: sv_demoMaxSize     - defines maximum size of the demo (stops recording if exceeded)
-- new cvar: sv_demoMaxDirSize  - defines maximum size of .mvd demos, doesnt allow to record if exceeded
+- new cvar: sv_demoCacheSize  - CVAR_ROM shows size of demo cache
+- new cvar: sv_demoMaxSize    - defines maximum size of the demo (stops recording if exceeded)
+- new cvar: sv_demoMaxDirSize - defines maximum size of .mvd demos, doesnt allow to record if exceeded
 - changes to command rmdemo:
      rmdemo <demoname> - removes the demo
      rmdemo *<token>   - removes demo with <token> in the name
@@ -791,6 +868,4 @@ changes over QWE v0.11 Beta
 
 
 ---
-HighlandeR
-
-
+HighlandeR & VVD

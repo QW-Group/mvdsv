@@ -122,19 +122,20 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
+//#define	SERVER_PRINTF	"MVDSV: "
 // FIXME: make a buffer size safe vs<n>printf? - FIXED.
 void Con_Printf (char *fmt, ...)
 {
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
-	
+
 	va_start (argptr,fmt);
 	vsnprintf (msg, MAXPRINTMSG, fmt, argptr);
 	va_end (argptr);
-
 	// add to redirected message
 	if (sv_redirected)
 	{
+//		strlcpy (msg, va(SERVER_PRINTF"%s", msg), MAXPRINTMSG);
 		if (strlen (msg) + strlen(outputbuf) > /*sizeof(outputbuf) - 1*/ MAX_MSGLEN - 10)
 			SV_FlushRedirect ();
 		strlcat (outputbuf, msg, sizeof(outputbuf));

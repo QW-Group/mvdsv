@@ -33,16 +33,26 @@ cvar_t	sv_mapcheck	= {"sv_mapcheck", "1"};
 
 extern	vec3_t	player_mins;
 
-extern int fp_messages, fp_persecond, fp_secondsdead;
-extern char fp_msg[];
-extern cvar_t pausable;
-//extern cvar_t	sv_bunnyspeedcap;
+extern int	fp_messages, fp_persecond, fp_secondsdead;
+extern char	fp_msg[];
+extern cvar_t	pausable;
+extern cvar_t	sv_bunnyspeedcap; //bliP: 24/9
 
 //bliP: init ->
-extern cvar_t	sv_kickfake;
+extern cvar_t	sv_unfake; //bliP: 24/9 kickfake to unfake
 extern cvar_t	sv_kicktop;
+extern cvar_t	sv_speedcheck; //bliP: 24/9
 //<-
 
+qboolean IsLocalIP(netadr_t a)
+{
+	return a.ip[0] == 10 || (a.ip[0] == 172 && (a.ip[1] & 0xF0) == 16)
+	   || (a.ip[0] == 192 && a.ip[1] == 168) || a.ip[0] >= 224;
+}
+qboolean IsInetIP(netadr_t a)
+{
+	return a.ip[0] != 127 && !IsLocalIP(a);
+}
 /*
 ============================================================
 
@@ -79,21 +89,37 @@ void SV_New_f (void)
 	// do not proceed if realip is unknown
 	if (host_client->state == cs_preconnected && host_client->realip.ip[0] == 0 && sv_getrealip.value)
 	{
-		host_client->state = cs_preconnected;
-		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message, va("packet %s \"ip %d %d\"\ncmd new\n", 
-			sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr), host_client - svs.clients, host_client->realip_num));
-		if (realtime - host_client->connection_started > 5)
-		{
-			if (sv_getrealip.value == 2) {
-				Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
-				SV_DropClient (host_client);
-				return;
-			}
+		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr);
 
+		if (!(IsLocalIP(net_local_adr) && IsLocalIP(host_client->netchan.remote_address)  ||
+		      IsInetIP (net_local_adr) && IsInetIP (host_client->netchan.remote_address)) &&
+		    host_client->netchan.remote_address.ip[0] != 127)
+		{
+			Sys_Printf ("WARNING: Incorrect server ip address: %s\n"
+			"Set hostname in your operation system or set correctly sv_serverip cvar.\n",
+			server_ip);
+			*(int *)&host_client->realip = *(int *)&host_client->netchan.remote_address;
 			host_client->state = cs_connected;
-		} else
-			return;
+		}
+		else
+		{
+			host_client->state = cs_preconnected;
+			MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
+			MSG_WriteString (&host_client->netchan.message,
+					va("packet %s \"ip %d %d\"\ncmd new\n", server_ip,
+					host_client - svs.clients, host_client->realip_num));
+			if (realtime - host_client->connection_started > 3)
+			{
+				if (sv_getrealip.value == 2) {
+					Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
+					SV_DropClient (host_client);
+					return;
+				}
+
+				host_client->state = cs_connected;
+			} else
+				return;
+		}
 	}
 	
 	// rip_vip means that client can be connected if he has VIP for he's real ip
@@ -137,10 +163,10 @@ void SV_New_f (void)
 	if (!host_client->logged && sv_login.value)
 		return; // not so fast;
 
-  //bliP: cuff, mute ->
-  host_client->lockedtill = SV_RestorePenaltyFilter(host_client, ft_mute);
-  host_client->cuff_time = SV_RestorePenaltyFilter(host_client, ft_cuff);
-  //<-
+//bliP: cuff, mute ->
+	host_client->lockedtill = SV_RestorePenaltyFilter(host_client, ft_mute);
+	host_client->cuff_time = SV_RestorePenaltyFilter(host_client, ft_cuff);
+//<-
 
 // send the info about the new client to all connected clients
 //	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
@@ -192,8 +218,8 @@ void SV_New_f (void)
 	MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
 	MSG_WriteString (&host_client->netchan.message, va("fullserverinfo \"%s\"\n", svs.info) );
 
-  //bliP: player logging
-  SV_LogPlayer(host_client, "connect", 1);
+//bliP: player logging
+	SV_LogPlayer(host_client, "connect", 1);
 }
 
 /*
@@ -625,7 +651,7 @@ SV_NextDownload_f
 */
 void SV_NextDownload_f (void)
 {
-	byte	buffer[1024];
+	byte	buffer[FILE_TRANSFER_BUF_SIZE];
 	int		r, tmp;
 	int		percent;
 	int		size;
@@ -658,7 +684,6 @@ void SV_NextDownload_f (void)
 	r = fread (buffer, 1, r, host_client->download);
 	ClientReliableWrite_Begin (host_client, svc_download, 6+r);
 	ClientReliableWrite_Short (host_client, r);
-
 	host_client->downloadcount += r;
 	size = host_client->downloadsize;
 	if (!size)
@@ -666,14 +691,14 @@ void SV_NextDownload_f (void)
 	percent = host_client->downloadcount*100/size;
 	ClientReliableWrite_Byte (host_client, percent);
 	ClientReliableWrite_SZ (host_client, buffer, r);
-  host_client->file_percent = percent; //bliP: file percent
+	host_client->file_percent = percent; //bliP: file percent
 
 	if (host_client->downloadcount != host_client->downloadsize)
 		return;
 
 	fclose (host_client->download);
 	host_client->download = NULL;
-  host_client->file_percent = 0; //bliP: file percent
+	host_client->file_percent = 0; //bliP: file percent
 
 	// if map changed tell the client to reconnect
 	if (host_client->spawncount != svs.spawncount)
@@ -708,49 +733,57 @@ void OutofBandPrintf(netadr_t where, char *fmt, ...)
 SV_NextUpload
 ==================
 */
+void SV_ReplaceChar(char *s, char from, char to);
 void SV_NextUpload (void)
 {
 	int		percent;
 	int		size;
-//	byte	buffer[1024];
-//	int		r;
-//	client_t *client;
-  Sys_Printf("-- %s\n", host_client->uploadfn);
+	char		*name = host_client->uploadfn;
+//	Sys_Printf("-- %s\n", name);
 
-  if (!*host_client->uploadfn || strstr(host_client->uploadfn, "..")) { //bliP: can't upload back a directory
+	SV_ReplaceChar(name, '\\', '/');
+	if (!*name || !strncmp(name, "../", 3) || strstr(name, "/../") || *name == '/'
+#ifdef _WIN32
+	|| (name[1] == ':' && (*name >= 'a' && *name <= 'z' || *name >= 'A' && *name <= 'Z'))
+#endif //_WIN32
+	   )
+	{ //bliP: can't upload back a directory
 		SV_ClientPrintf(host_client, PRINT_HIGH, "Upload denied\n");
 		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 		ClientReliableWrite_String (host_client, "stopul");
 
 		// suck out rest of packet
-		size = MSG_ReadShort ();	MSG_ReadByte ();
+		size = MSG_ReadShort ();
+		MSG_ReadByte ();
 		msg_readcount += size;
 		return;
 	}
 
 	size = MSG_ReadShort ();
 	percent = MSG_ReadByte ();
-  host_client->file_percent = percent;
+	host_client->file_percent = percent;
 
 	if (!host_client->upload)
 	{
-		host_client->upload = fopen(host_client->uploadfn, "wb");
+		host_client->upload = fopen(name, "wb");
 		if (!host_client->upload) {
-			Sys_Printf("Can't create %s\n", host_client->uploadfn);
+			Sys_Printf("Can't create %s\n", name);
 			ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 			ClientReliableWrite_String (host_client, "stopul");
-			*host_client->uploadfn = 0;
+			*name = 0;
 			return;
 		}
-		Sys_Printf("Receiving %s from %d...\n", host_client->uploadfn, host_client->userid);
+		Sys_Printf("Receiving %s from %d...\n", name, host_client->userid);
 		if (host_client->remote_snap)
-			OutofBandPrintf(host_client->snap_from, "Server receiving %s from %d...\n", host_client->uploadfn, host_client->userid);
+			OutofBandPrintf(host_client->snap_from, "Server receiving %s from %d...\n",
+					name, host_client->userid);
 	}
 
+	Sys_Printf("-");
 	fwrite (net_message.data + msg_readcount, 1, size, host_client->upload);
 	msg_readcount += size;
 
-  Con_DPrintf ("UPLOAD: %d received\n", size);
+	Con_DPrintf ("UPLOAD: %d received\n", size);
 
 	if (percent != 100) {
 		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
@@ -758,19 +791,20 @@ void SV_NextUpload (void)
 	} else {
 		fclose (host_client->upload);
 		host_client->upload = NULL;
-    host_client->file_percent = 0; //bliP: file percent
+		host_client->file_percent = 0; //bliP: file percent
 
-		Sys_Printf("%s upload completed.\n", host_client->uploadfn);
+		Sys_Printf("\n%s upload completed.\n", name);
 
 		if (host_client->remote_snap) {
 			char *p;
 
-			if ((p = strchr(host_client->uploadfn, '/')) != NULL)
+			if ((p = strchr(name, '/')) != NULL)
 				p++;
 			else
-				p = host_client->uploadfn;
-			OutofBandPrintf(host_client->snap_from, "%s upload completed.\nTo download, enter:\ndownload %s\n", 
-				host_client->uploadfn, p);
+				p = name;
+			OutofBandPrintf(host_client->snap_from,
+					"%s upload completed.\nTo download, enter:\ndownload %s\n", 
+					name, p);
 		}
 	}
 
@@ -781,6 +815,7 @@ void SV_NextUpload (void)
 SV_BeginDownload_f
 ==================
 */
+void SV_ReplaceChar(char *s, char from, char to);
 void SV_BeginDownload_f(void)
 {
 	char	*name, n[MAX_OSPATH], *val;
@@ -790,57 +825,70 @@ void SV_BeginDownload_f(void)
 	extern	cvar_t	allow_download_sounds;
 	extern	cvar_t	allow_download_maps;
 	extern	cvar_t	allow_download_demos;
-  extern  cvar_t	allow_download_pakmaps; //bliP: pakmaps
-  extern  cvar_t  download_map_url; //bliP: download url
+	extern  cvar_t	allow_download_pakmaps; //bliP: pakmaps
+	extern  cvar_t  download_map_url; //bliP: download url
 	extern	cvar_t	sv_demoDir;
 	extern	int		file_from_pak; // ZOID did file come from pak?
+	int			i;
 
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf("download [filename]\n");
+		return;
+	}
 	name = Cmd_Argv(1);
+	SV_ReplaceChar(name, '\\', '/');
 // hacked by zoid to allow more conrol over download		
-  //bliP: download ->
+//bliP: download ->
   if
   (
     (
-      // no ..
-      strstr (name, "..")
-      // leading dot is no good
-      || *name == '.' 
-      // leading slash bad as well, must be in subdir
-      || *name == '/'
+	// leading slash bad as well, must be in subdir
+	*name == '/'
+	// no leading ../
+	|| !strncmp(name, "../", 3)
+	// no /../
+	|| strstr (name, "/../")
+	// no /.. at end
+	|| ( (i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4) )
+#ifdef _WIN32
+	// no leading X:
+	|| ( name[1] == ':' && (*name >= 'a' && *name <= 'z' ||
+				*name >= 'A' && *name <= 'Z') )
+#endif //_WIN32
+	// no logs 
+	|| ( (i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 4) )
     )
     ||
     (
-      !host_client->special &&
-      (
-        // global allow check
-        !allow_download.value
-	      // next up, skin check
-  	    || (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
-	      // now models
-	      || (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
-  	    // now sounds
-	      || (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
-  	    // now maps (note special case for maps, must not be in pak)
-	      || (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
-	      // now demos
-	      || (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
-  	    || (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
-        // MUST be in a subdirectory	
-		    || !strstr (name, "/")
-      )
+	!host_client->special &&
+	(
+		// global allow check
+		!allow_download.value
+		// next up, skin check
+		|| (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
+		// now models
+		|| (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
+		// now sounds
+		|| (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
+		// now maps (note special case for maps, must not be in pak)
+		|| (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
+		// now demos
+		|| (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
+		|| (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
+		// MUST be in a subdirectory	
+		|| !strstr (name, "/")
+	)
     )
-    ||
-    (
-      strstr (name, "pwd.cfg")
-    )
+	|| strcasestr (name, "pwd.cfg")
   )
-  //<-
-  {
- 		ClientReliableWrite_Begin (host_client, svc_download, 4);
-	  ClientReliableWrite_Short (host_client, -1);
-	  ClientReliableWrite_Byte (host_client, 0);
-	  return;
-  }
+//<-
+	{
+		ClientReliableWrite_Begin (host_client, svc_download, 4);
+		ClientReliableWrite_Short (host_client, -1);
+		ClientReliableWrite_Byte (host_client, 0);
+		return;
+	}
 
 	if (host_client->download) {
 		fclose (host_client->download);
@@ -849,10 +897,13 @@ void SV_BeginDownload_f(void)
 		host_client->netchan.rate = 1.0/SV_BoundRate(false, atoi(val));
 	}
 
-	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0]) {
+	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0])
+	{
 		snprintf(n,sizeof(n), "%s/%s", sv_demoDir.string, name + 6);
 		name = n;
-	} else if (!strncmp(name, "demonum/", 8)) {
+	}
+	else if (!strncmp(name, "demonum/", 8))
+	{
 		int num;
 
 		if ((num = atoi(name + 8)) == 0 && name[8] != '0')
@@ -865,7 +916,8 @@ void SV_BeginDownload_f(void)
 			return;
 		}
 		name = SV_DemoNum(num);
-		if (!name) {
+		if (!name)
+		{
 			Con_Printf("demo num %d not found\n", num);
 
 			ClientReliableWrite_Begin (host_client, svc_download, 4);
@@ -881,26 +933,23 @@ void SV_BeginDownload_f(void)
 		return;
 	}
 
-
 	// lowercase name (needed for casesen file systems)
 	{
 		char *p;
-
 		for (p = name; *p; p++)
 			*p = (char)tolower(*p);
 	}
 
-
-  host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
+	host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
 	host_client->downloadcount = 0;
 
-	if (!host_client->download
+	if (!host_client->download ||
 		// special check for maps, if it came from a pak file, don't allow
 		// download  ZOID
-		//|| (strncmp(name, "maps/", 5) == 0 && file_from_pak))
-      || (strncmp(name, "maps/", 5) == 0 && file_from_pak && !allow_download_pakmaps.value)) //bliP: pakmaps
-  {
-	  if (host_client->download) {
+		(strncmp(name, "maps/", 5) == 0 && file_from_pak &&
+		!allow_download_pakmaps.value)) //bliP: pakmaps
+	{
+		if (host_client->download) {
 			fclose(host_client->download);
 			host_client->download = NULL;
 		}
@@ -919,28 +968,31 @@ void SV_BeginDownload_f(void)
 	SV_NextDownload_f ();
 	Sys_Printf ("Downloading %s to %s\n", name, host_client->name);
 
-  //bliP: download info/download url ->
-  if (!strncmp(name, "maps/", 5)) {
-    if (download_map_url.string[0]) {
-      name = name + 5;
-      COM_StripExtension(name, name);
-      SV_ClientPrintf (host_client, PRINT_HIGH,	"Map %s/maps/%s.bsp is %.0fKB (%.2fMB)\n\n", com_gamedir, name, (float)host_client->downloadsize/1024, (float)host_client->downloadsize/1024/1024);
-      SV_ClientPrintf (host_client, PRINT_HIGH,	"Download this map faster:\n");
-      SV_ClientPrintf (host_client, PRINT_HIGH,	"%s%s\n\n", download_map_url.string, name);
-    }
-    else {
-      SV_ClientPrintf (host_client, PRINT_HIGH,	"Map %s/maps/%s is %.0fKB (%.2fMB)\n\n", com_gamedir, name, (float)host_client->downloadsize/1024, (float)host_client->downloadsize/1024/1024);
-    }
-  }
-  else {
-    SV_ClientPrintf (host_client, PRINT_HIGH,	"File %s is %.0fKB (%.2fMB)\n", name, (float)host_client->downloadsize/1024, (float)host_client->downloadsize/1024/1024);
-  }
-  //<-
+//bliP: download info/download url ->
+	if (!strncmp(name, "maps/", 5))
+	{
+		SV_ClientPrintf (host_client, PRINT_HIGH, "Map %s is %.0fKB (%.2fMB)\n",
+				name, (float)host_client->downloadsize / 1024,
+				(float)host_client->downloadsize / 1024 / 1024);
+		if (download_map_url.string[0])
+		{
+			name += 5;
+			COM_StripExtension(name, name);
+			SV_ClientPrintf (host_client, PRINT_HIGH, "Download this map faster:\n");
+			SV_ClientPrintf (host_client, PRINT_HIGH, "%s%s\n\n",
+					download_map_url.string, name);
+		}
+	}
+	else
+		SV_ClientPrintf (host_client, PRINT_HIGH, "File %s is %.0fKB (%.2fMB)\n",
+				name, (float)host_client->downloadsize / 1024,
+				(float)host_client->downloadsize / 1024 / 1024);
+//<-
 }
 
 /*
 ==================
-SV_BeginDownload_f
+SV_StopDownload_f
 ==================
 */
 void SV_StopDownload_f(void)
@@ -965,10 +1017,10 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_Say (qboolean team)
 {
 	client_t *client;
-  int   saved_state;
+//	int   saved_state;
 	int		j, tmp, cls = 0;
 	char	*p;
-  char  *i;
+	char  *i;
 	char	text[2048];
 
 	if (Cmd_Argc () < 2)
@@ -1044,27 +1096,13 @@ void SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-  //bliP: kick fake ->
-  if (!team) {
-    for (i = p; *i; i++) {
-      if (*i == 13) { // ^M
-        if (sv_kickfake.value == 1) {
-          saved_state = host_client->state;
-          host_client->state = cs_free;
-	  	    SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for attempting to fake messages\n", host_client->name);
-          host_client->state = saved_state;
- 			    SV_ClientPrintf (host_client, PRINT_HIGH, "You were kicked from the game for attempting to fake messages\n");
-          SV_LogPlayer (host_client, "fake message", 1);
-    	    SV_DropClient (host_client);
- 			    return;
-        }
-        else if (sv_kickfake.value == 2) {
-  		    *i = '#';
-        }
-      }
-    }
-  }
-  //<-
+//bliP: kick fake ->
+	if (!team)
+		for (i = p; *i; i++)
+//bliP: 24/9 kickfake to unfake ->
+			if (*i == 13 && sv_unfake.value) // ^M
+				*i = '#';
+//<-
 
 	Sys_Printf ("%s", text);
 	SV_Write_Log(CONSOLE_LOG, 1, text);
@@ -1346,26 +1384,27 @@ SV_TechLogin_f
 Login to upload
 =================
 */
-int Master_Rcon_Validate_ (void);
+int Master_Rcon_Validate (void);
 void SV_TechLogin_f (void)
 {	
-  if (host_client->logincount > 4) { //denied
-    return;
-  }
+	if (host_client->logincount > 4) //denied
+		return;
 
-  if (Cmd_Argc() < 2) {
-    host_client->special = false;
-    host_client->logincount = 0;
-    return;
-  }
+	if (Cmd_Argc() < 2)
+	{
+		host_client->special = false;
+		host_client->logincount = 0;
+		return;
+	}
 
-  if (!Master_Rcon_Validate_()) { //don't even let them know they're wrong
-    host_client->logincount++;
-    return;
-  }
+	if (!Master_Rcon_Validate()) //don't even let them know they're wrong
+	{
+		host_client->logincount++;
+		return;
+	}
 
-  host_client->special = true;
-  SV_ClientPrintf (host_client, PRINT_HIGH, "Logged in.\n");
+	host_client->special = true;
+	SV_ClientPrintf (host_client, PRINT_HIGH, "Logged in.\n");
 }
 
 /*
@@ -1375,37 +1414,41 @@ SV_ClientUpload_f
 */
 void SV_ClientUpload_f (void)
 {
-  char str[MAX_OSPATH];
+	char str[MAX_OSPATH];
 
 	if (host_client->state != cs_spawned)
-	  return;
+		return;
 
-  if (!host_client->special) {
-    Con_Printf ("Client not tagged to upload.\n");
-    return;
-  }
-
-  if (Cmd_Argc() != 3) {
-		Con_Printf ("upload [path] [filename]\n");
+	if (!host_client->special)
+	{
+		Con_Printf ("Client not tagged to upload.\n");
 		return;
 	}
 
-  snprintf(host_client->uploadfn, sizeof(host_client->uploadfn), "%s/%s", Cmd_Argv(1), Cmd_Argv(2));
+	if (Cmd_Argc() != 3)
+	{
+		Con_Printf ("upload [local filename] [remote filename]\n");
+		return;
+	}
 
-  if (!host_client->uploadfn[0]) { //just in case..
-    Con_Printf ("Bad file name.\n");
-    return;
-  }
+	snprintf(host_client->uploadfn, sizeof(host_client->uploadfn), "%s", Cmd_Argv(2));
 
-  if (Sys_FileTime(host_client->uploadfn) != -1) {
-    Con_Printf ("File already exists.\n");
-    return;
-  }
+	if (!host_client->uploadfn[0])
+	{ //just in case..
+		Con_Printf ("Bad file name.\n");
+		return;
+	}
+
+	if (Sys_FileTime(host_client->uploadfn) != -1)
+	{
+		Con_Printf ("File already exists.\n");
+		return;
+	}
   
 	host_client->remote_snap = false;
-  COM_CreatePath(host_client->uploadfn); //fixed, need to create path
-  snprintf(str, sizeof(str), "cmd fileul \"%s\" \"%s\"\n", Cmd_Argv(1), Cmd_Argv(2));
-  ClientReliableWrite_Begin (host_client, svc_stufftext, strlen(str) + 2);
+	COM_CreatePath(host_client->uploadfn); //fixed, need to create path
+	snprintf(str, sizeof(str), "cmd fileul \"%s\"\n", Cmd_Argv(1));
+	ClientReliableWrite_Begin (host_client, svc_stufftext, strlen(str) + 2);
 	ClientReliableWrite_String (host_client, str);
 }
 //<-
@@ -1665,7 +1708,6 @@ void SV_ExecuteUserCommand (char *s)
 	if (!u->name)
 		if (!PR_UserCmd())
 			Con_Printf ("Bad user command: %s\n", Cmd_Argv(0));
-
 	SV_EndRedirect ();
 }
 
@@ -1853,12 +1895,41 @@ void SV_PreRunCmd(void)
 SV_RunCmd
 ===========
 */
-void SV_RunCmd (usercmd_t *ucmd)
+void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 {
 	edict_t		*ent;
 	int			i, n;
 	int			oldmsec;
+//bliP: 24/9 anti speed ->
+	int     tmp_time;
 
+	if (!inside && sv_speedcheck.value) {
+/* AM101 method */
+		tmp_time = (int)((realtime - host_client->last_check) * 1000); // ie. Old 'timepassed'
+		if (tmp_time) {
+		  if (ucmd->msec > tmp_time) {
+			  tmp_time += host_client->msecs; // use accumulated msecs
+				if (ucmd->msec > tmp_time) { // If still over...
+					ucmd->msec = tmp_time;
+					host_client->msecs = 0;
+				} else {
+					host_client->msecs = tmp_time - ucmd->msec; // readjust to leftovers
+				}
+			} else {
+				// Add up extra msecs
+				host_client->msecs += (tmp_time - ucmd->msec);
+			}
+		}
+
+		host_client->last_check = realtime;
+			
+		/* Cap it */
+		if (host_client->msecs > 500)
+			host_client->msecs = 500;
+		else if (host_client->msecs < 0)
+			host_client->msecs = 0;
+	}
+//<-
 	cmd = *ucmd;
 
 	// chop up very long command
@@ -1866,10 +1937,10 @@ void SV_RunCmd (usercmd_t *ucmd)
 	{
 		oldmsec = ucmd->msec;
 		cmd.msec = oldmsec/2;
-		SV_RunCmd (&cmd);
+		SV_RunCmd (&cmd, true);
 		cmd.msec = oldmsec/2;
 		cmd.impulse = 0;
-		SV_RunCmd (&cmd);
+		SV_RunCmd (&cmd, true);
 		return;
 	}
 
@@ -1878,12 +1949,13 @@ void SV_RunCmd (usercmd_t *ucmd)
 
 	sv_player->v.button0 = ucmd->buttons & 1;
 	sv_player->v.button2 = (ucmd->buttons & 2)>>1;
+	sv_player->v.button1 = (ucmd->buttons & 4) >> 2;
 	if (ucmd->impulse)
 		sv_player->v.impulse = ucmd->impulse;
-  //bliP: cuff
-  if (host_client->cuff_time > realtime)
-    sv_player->v.button0 = sv_player->v.impulse = 0;
-  //<-
+//bliP: cuff
+	if (host_client->cuff_time > realtime)
+		sv_player->v.button0 = sv_player->v.impulse = 0;
+//<-
 
 //
 // angles
@@ -1929,7 +2001,7 @@ void SV_RunCmd (usercmd_t *ucmd)
 
 	movevars.entgravity = host_client->entgravity;
 	movevars.maxspeed = host_client->maxspeed;
-//  movevars.bunnyspeedcap = sv_bunnyspeedcap.value;
+	movevars.bunnyspeedcap = sv_bunnyspeedcap.value;
 
 	for (i=0 ; i<3 ; i++)
 	{
@@ -2048,11 +2120,11 @@ void SV_ExecuteClientMessage (client_t *cl)
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
 	frame->ping_time = realtime - frame->senttime;
 
-	if (frame->ping_time*1000 > sv_minping.value) {
+	if (frame->ping_time*995 > sv_minping.value) {
 		cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
 		if (cl->delay < 0)
 			cl->delay = 0;
-	} else if (frame->ping_time*1000 < sv_minping.value) {
+	} else if (frame->ping_time*1005 < sv_minping.value) {
 		cl->delay += 0.001;//-0.5*(frame->ping_time - sv_minping.value*0.001);
 		if (cl->delay > 300)
 			cl->delay = 300;
@@ -2159,15 +2231,15 @@ void SV_ExecuteClientMessage (client_t *cl)
 				{
 					while (net_drop > 2)
 					{
-						SV_RunCmd (&cl->lastcmd);
+						SV_RunCmd (&cl->lastcmd, false);
 						net_drop--;
 					}
 					if (net_drop > 1)
-						SV_RunCmd (&oldest);
+						SV_RunCmd (&oldest, false);
 					if (net_drop > 0)
-						SV_RunCmd (&oldcmd);
+						SV_RunCmd (&oldcmd, false);
 				}
-				SV_RunCmd (&newcmd);
+				SV_RunCmd (&newcmd, false);
 
 				SV_PostRunCmd();
 			}
