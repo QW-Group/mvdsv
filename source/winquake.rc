@@ -61,28 +61,14 @@ IDI_ICON2               ICON    DISCARDABLE     "qwcl2.ico"
 // Dialog
 //
 
-IDD_DIALOG1 DIALOGEX 0, 0, 167, 27
+IDD_DIALOG1 DIALOGEX 0, 0, 124, 27
 STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_CENTER | WS_POPUP | 
     WS_VISIBLE
 EXSTYLE WS_EX_TOOLWINDOW | WS_EX_CLIENTEDGE
-FONT 16, "Times New Roman", 0, 0, 0x1
+FONT 16, "Times New Roman"
 BEGIN
-    CONTROL         112,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,0,0,
-                    167,28
-END
-
-IDD_PROGRESS DIALOGEX 0, 0, 333, 75
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_3DLOOK | DS_CENTER | WS_POPUP | 
-    WS_VISIBLE
-EXSTYLE WS_EX_TOOLWINDOW | WS_EX_CLIENTEDGE
-FONT 8, "MS Sans Serif", 0, 0, 0x1
-BEGIN
-    LTEXT           "Creating 15 bit inverse palette.  This is only done once, so just be patient for the next 30-60 seconds.",
-                    IDC_STATIC,7,51,319,10
-    CONTROL         112,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,0,0,
-                    333,49
-    CONTROL         "Progress1",IDC_PROGRESS,"msctls_progress32",0x0,7,61,
-                    319,11
+    CONTROL         115,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,0,0,
+                    124,28
 END
 
 
@@ -91,24 +77,7 @@ END
 // Bitmap
 //
 
-IDB_QWBITMAP            BITMAP  DISCARDABLE     "quakeworld.bmp"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_PROGRESS, DIALOG
-    BEGIN
-        VERTGUIDE, 7
-        VERTGUIDE, 326
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
+IDB_ZQBITMAP            BITMAP  DISCARDABLE     "zquake.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -24,11 +24,10 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: mdfour.c,v 1.1.1.1 2004/09/28 18:56:47 vvd0 Exp $
+	$Id: mdfour.c,v 1.1.1.2 2004/09/28 19:04:30 vvd0 Exp $
 */
 
 #include <string.h>		/* XoXus: needed for memset call */
-#include "uint32.h"
 #include "mdfour.h"
 
 /* NOTE: This code makes no attempt to be fast!

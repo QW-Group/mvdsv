@@ -320,16 +320,6 @@ model_t *Mod_ForName (char *name, qboolean crash)
 }
 
 
-/*
-===============================================================================
-
-					BRUSHMODEL LOADING
-
-===============================================================================
-*/
-
-byte	*mod_base;
-
 static qboolean HasFullbrights (byte *pixels, int size)
 {
     int i;
@@ -341,6 +331,16 @@ static qboolean HasFullbrights (byte *pixels, int size)
     return false;
 }
 
+
+/*
+===============================================================================
+
+					BRUSHMODEL LOADING
+
+===============================================================================
+*/
+
+byte	*mod_base;
 
 /*
 =================
@@ -381,7 +381,9 @@ void Mod_LoadTextures (lump_t *l)
 		
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
-		pixels = mt->width*mt->height/64*85;
+//		pixels = mt->width*mt->height/64*85;
+		pixels = mt->width*mt->height;	// Tonik: we don't need
+								// precalculated mip textures in GL
 		tx = Hunk_AllocName (sizeof(texture_t) + pixels, loadname);
 		loadmodel->textures[i] = tx;
 
@@ -391,8 +393,16 @@ void Mod_LoadTextures (lump_t *l)
 		for (j=0 ; j<MIPLEVELS ; j++)
 			tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
 		// the pixels immediately follow the structures
-		memcpy ( tx+1, mt+1, pixels);
+		memcpy (tx+1, mt+1, pixels);
 		
+		// HACK HACK HACK
+		if (!strcmp(mt->name, "shot1sid") && mt->width==32 && mt->height==32
+			&& CRC_Block((byte*)(mt+1), mt->width*mt->height) == 65393)
+		{	// This texture in b_shell1.bsp has some of the first 32 pixels painted white.
+			// They are invisible in software, but look really ugly in GL. So we just copy
+			// 32 pixels from the bottom to make it look nice.
+			memcpy (tx+1, (byte *)(tx+1) + 32*31, 32);
+		}
 
 		if (!strncmp(mt->name,"sky",3))	
 			R_InitSky (tx);
@@ -914,8 +924,6 @@ void Mod_LoadLeafs (lump_t *l)
 	dleaf_t 	*in;
 	mleaf_t 	*out;
 	int			i, j, count, p;
-	char s[80];
-	qboolean isnotmap = true;
 
 	in = (void *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -925,9 +933,6 @@ void Mod_LoadLeafs (lump_t *l)
 
 	loadmodel->leafs = out;
 	loadmodel->numleafs = count;
-	sprintf(s, "maps/%s.bsp", Info_ValueForKey(cl.serverinfo,"map"));
-	if (!strcmp(s, loadmodel->name))
-		isnotmap = false;
 	for ( i=0 ; i<count ; i++, in++, out++)
 	{
 		for (j=0 ; j<3 ; j++)
@@ -952,18 +957,6 @@ void Mod_LoadLeafs (lump_t *l)
 		
 		for (j=0 ; j<4 ; j++)
 			out->ambient_sound_level[j] = in->ambient_level[j];
-
-		// gl underwater warp
-		if (out->contents != CONTENTS_EMPTY)
-		{
-			for (j=0 ; j<out->nummarksurfaces ; j++)
-				out->firstmarksurface[j]->flags |= SURF_UNDERWATER;
-		}
-		if (isnotmap)
-		{
-			for (j=0 ; j<out->nummarksurfaces ; j++)
-				out->firstmarksurface[j]->flags |= SURF_DONTWARP;
-		}
 	}	
 }
 
@@ -1329,7 +1322,7 @@ void * Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
 Mod_LoadAliasGroup
 =================
 */
-void *Mod_LoadAliasGroup (void * pin,  maliasframedesc_t *frame)
+void * Mod_LoadAliasGroup (void * pin,  maliasframedesc_t *frame)
 {
 	daliasgroup_t		*pingroup;
 	int					i, numframes;
@@ -1472,9 +1465,8 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	for (i=0 ; i<numskins ; i++)
 	{
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
-			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
+			Mod_FloodFillSkin (skin, pheader->skinwidth, pheader->skinheight);
 
-			// save 8 bit texels for the player model to remap
 			// save 8 bit texels for the player model to remap
 			if (!strcmp(loadmodel->name,"progs/player.mdl"))
 			{
@@ -1482,13 +1474,23 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 					Sys_Error ("Player skin too large");
 				memcpy (player_8bit_texels, (byte *)(pskintype + 1), s);
 			}
-			sprintf (name, "%s_%i", loadmodel->name, i);
+			_snprintf (name, sizeof(name)-1, "%s_%i", loadmodel->name, i);
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
 			pheader->gl_texturenum[i][3] =
-				GL_LoadTexture (name, pheader->skinwidth, 
-				pheader->skinheight, (byte *)(pskintype + 1), true, false, false);
+				GL_LoadTexture (name, pheader->skinwidth, pheader->skinheight,
+				(byte *)(pskintype + 1), true, false, false);
+
+			if (HasFullbrights((byte *)(pskintype + 1),	pheader->skinwidth*pheader->skinheight))
+				pheader->fb_texturenum[i][0] = pheader->fb_texturenum[i][1] =
+				pheader->fb_texturenum[i][2] = pheader->fb_texturenum[i][3] =
+					GL_LoadTexture (va("@fb_%s", name), pheader->skinwidth, 
+					pheader->skinheight, (byte *)(pskintype + 1), true, 2, false);
+			else
+				pheader->fb_texturenum[i][0] = pheader->fb_texturenum[i][1] =
+				pheader->fb_texturenum[i][2] = pheader->fb_texturenum[i][3] = 0;
+			
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		} else {
 			// animating skin group.  yuck.
@@ -1501,11 +1503,19 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 			for (j=0 ; j<groupskins ; j++)
 			{
-					Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
-					sprintf (name, "%s_%i_%i", loadmodel->name, i,j);
+					Mod_FloodFillSkin (skin, pheader->skinwidth, pheader->skinheight);
+					_snprintf (name, sizeof(name)-1, "%s_%i_%i", loadmodel->name, i, j);
 					pheader->gl_texturenum[i][j&3] = 
 						GL_LoadTexture (name, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), true, false, false);
+
+					if (HasFullbrights((byte *)(pskintype),	pheader->skinwidth*pheader->skinheight))
+						pheader->fb_texturenum[i][j&3] =
+							GL_LoadTexture (va("@fb_%s", name), pheader->skinwidth, 
+							pheader->skinheight, (byte *)(pskintype), true, 2, false);
+					else
+						pheader->fb_texturenum[i][j&3] = 0;
+
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
 			k = j;
@@ -1538,8 +1548,20 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	daliasskintype_t	*pskintype;
 	int					start, end, total;
 
-	if (!strcmp(loadmodel->name, "progs/player.mdl") ||
-		!strcmp(loadmodel->name, "progs/eyes.mdl")) {
+// some models are special
+	if(!strcmp(mod->name, "progs/player.mdl"))
+		mod->modhint = MOD_PLAYER;
+	else if(!strcmp(mod->name, "progs/eyes.mdl"))
+		mod->modhint = MOD_EYES;
+	else if (!strcmp(mod->name, "progs/flame.mdl") ||
+		!strcmp(mod->name, "progs/flame2.mdl"))
+		mod->modhint = MOD_FLAME;
+	else if (!strcmp(mod->name, "progs/bolt.mdl") ||
+		!strcmp(mod->name, "progs/bolt2.mdl") ||
+		!strcmp(mod->name, "progs/bolt3.mdl"))
+		mod->modhint = MOD_THUNDERBOLT;
+
+	if (mod->modhint == MOD_PLAYER || mod->modhint == MOD_EYES) {
 		unsigned short crc;
 		byte *p;
 		int len;
@@ -1551,13 +1573,13 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	
 		sprintf(st, "%d", (int) crc);
 		Info_SetValueForKey (cls.userinfo, 
-			!strcmp(loadmodel->name, "progs/player.mdl") ? pmodel_name : emodel_name,
+			mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
 			st, MAX_INFO_STRING);
 
 		if (cls.state >= ca_connected) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			sprintf(st, "setinfo %s %d", 
-				!strcmp(loadmodel->name, "progs/player.mdl") ? pmodel_name : emodel_name,
+				mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
 				(int)crc);
 			SZ_Print (&cls.netchan.message, st);
 		}

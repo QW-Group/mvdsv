@@ -86,7 +86,12 @@ void VID_HandlePause (qboolean pause);
 void VID_LockBuffer (void);
 void VID_UnlockBuffer (void);
 
+
 #ifdef GLQUAKE
 qboolean VID_Is8bit(void);
 #endif
 
+#ifdef _WIN32
+void VID_SetDeviceGammaRamp (unsigned short *ramps);
+extern qboolean vid_hwgamma_enabled;
+#endif

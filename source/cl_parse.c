@@ -509,7 +509,7 @@ void CL_StartUpload (byte *data, int size)
 
 Con_DPrintf("Upload starting of %d...\n", size);
 
-	upload_data = malloc(size);
+	upload_data = Q_Malloc (size);
 	memcpy(upload_data, data, size);
 	upload_size = size;
 	upload_pos = 0;
@@ -626,7 +626,7 @@ void CL_ParseServerData (void)
 
 	// get the full level name
 	str = MSG_ReadString ();
-	strncpy (cl.levelname, str, sizeof(cl.levelname)-1);
+	Q_strncpyz (cl.levelname, str, sizeof(cl.levelname));
 
 	// get the movevars
 	movevars.gravity			= MSG_ReadFloat();
@@ -793,13 +793,6 @@ void CL_ParseStatic (void)
 
 	CL_ParseBaseline (&es);
 		
-// Tonik -->
-	if (!r_drawflame.value)
-	if (!strcmp(cl.model_precache[es.modelindex]->name, "progs/flame.mdl")
-	|| !strcmp(cl.model_precache[es.modelindex]->name, "progs/flame2.mdl"))
-		return;
-// <-- Tonik
-
 	i = cl.num_statics;
 	if (i >= MAX_STATIC_ENTITIES)
 		Host_EndGame ("Too many static entities");
@@ -888,6 +881,8 @@ void CL_ParseStartSoundPacket(void)
 		Host_EndGame ("CL_ParseStartSoundPacket: ent = %i", ent);
 	
     S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
+	if (ent == cl.playernum+1)
+		TP_CheckPickupSound (cl.sound_name[sound_num]);
 }       
 
 
@@ -1067,7 +1062,7 @@ CL_ProcessUserInfo
 */
 void CL_ProcessUserInfo (int slot, player_info_t *player)
 {
-	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name)-1);
+	Q_strncpyz (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
 	player->real_topcolor = atoi(Info_ValueForKey (player->userinfo, "topcolor"));
 	player->real_bottomcolor = atoi(Info_ValueForKey (player->userinfo, "bottomcolor"));
 	strcpy (player->team, Info_ValueForKey (player->userinfo, "team"));
@@ -1111,7 +1106,7 @@ void CL_UpdateUserinfo (void)
 
 	player = &cl.players[slot];
 	player->userid = MSG_ReadLong ();
-	strncpy (player->userinfo, MSG_ReadString(), sizeof(player->userinfo)-1);
+	Q_strncpyz (player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
 
 	CL_ProcessUserInfo (slot, player);
 }
@@ -1125,8 +1120,8 @@ void CL_SetInfo (void)
 {
 	int		slot;
 	player_info_t	*player;
-	char key[MAX_MSGLEN];
-	char value[MAX_MSGLEN];
+	char key[MAX_INFO_STRING];
+	char value[MAX_INFO_STRING];
 
 	slot = MSG_ReadByte ();
 	if (slot >= MAX_CLIENTS)
@@ -1134,10 +1129,8 @@ void CL_SetInfo (void)
 
 	player = &cl.players[slot];
 
-	strncpy (key, MSG_ReadString(), sizeof(key) - 1);
-	key[sizeof(key) - 1] = 0;
-	strncpy (value, MSG_ReadString(), sizeof(value) - 1);
-	key[sizeof(value) - 1] = 0;
+	Q_strncpyz (key, MSG_ReadString(), sizeof(key));
+	Q_strncpyz (value, MSG_ReadString(), sizeof(value));
 
 	Con_DPrintf("SETINFO %s: %s=%s\n", player->name, key, value);
 
@@ -1154,35 +1147,30 @@ CL_ProcessServerInfo
 Called by CL_FullServerinfo_f and CL_ParseServerInfoChange
 ==============
 */
-void TP_CheckFPD ();
 void CL_ProcessServerInfo (void)
 {
 	char	*p;
-	static int _teamplay = 0;
-	static int _fpd = 0;
+	static int old_teamplay = 0;
+	static int old_fpd = 0;
 	int teamplay;	// FIXME: make it cl.teamplay?
 	int i;
 
-	if ((p = Info_ValueForKey(cl.serverinfo, "fpd")) != NULL)
-		cl.fpd = Q_atof(p);
-	else
-		cl.fpd = 0;
+	cl.fpd = Q_atof(Info_ValueForKey(cl.serverinfo, "fpd"));
+	teamplay = Q_atof(Info_ValueForKey(cl.serverinfo, "teamplay"));
 	
-	if ((p = Info_ValueForKey(cl.serverinfo, "deathmatch")) != NULL)
-		cl.gametype = Q_atof(p) ? 1 : 0;
+	p = Info_ValueForKey(cl.serverinfo, "deathmatch");
+	if (*p)
+		cl.gametype = Q_atof(p) ? GAME_DEATHMATCH : GAME_COOP;
 	else
 		cl.gametype = GAME_DEATHMATCH;	// assume GAME_DEATHMATCH by default
 
-	if ((p = Info_ValueForKey(cl.serverinfo, "teamplay")) != NULL)
-		teamplay = Q_atof(p);
-	else 
-		teamplay = 0;
-
-	if (teamplay != _teamplay || cl.fpd != _fpd) {
-		_teamplay = teamplay;
-		_fpd = cl.fpd;
-		for (i = 0; i < MAX_CLIENTS ; i++)
-			CL_NewTranslation (i);
+	if (teamplay != old_teamplay || cl.fpd != old_fpd) {
+		old_teamplay = teamplay;
+		old_fpd = cl.fpd;
+		if (cls.state >= ca_connected) {
+			for (i = 0; i < MAX_CLIENTS ; i++)
+				CL_NewTranslation (i);
+		}
 	}
 }
 
@@ -1193,13 +1181,11 @@ CL_ParseServerInfoChange
 */
 void CL_ParseServerInfoChange (void)
 {
-	char key[MAX_MSGLEN];
-	char value[MAX_MSGLEN];
+	char key[MAX_INFO_STRING];
+	char value[MAX_INFO_STRING];
 
-	strncpy (key, MSG_ReadString(), sizeof(key) - 1);
-	key[sizeof(key) - 1] = 0;
-	strncpy (value, MSG_ReadString(), sizeof(value) - 1);
-	key[sizeof(value) - 1] = 0;
+	Q_strncpyz (key, MSG_ReadString(), sizeof(key));
+	Q_strncpyz (value, MSG_ReadString(), sizeof(value));
 
 	Con_DPrintf("SERVERINFO: %s=%s\n", key, value);
 
@@ -1386,7 +1372,6 @@ int	received_framecount;
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
-	char		*s;
 	int			i, j;
 
 	received_framecount = host_framecount;

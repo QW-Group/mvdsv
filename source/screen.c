@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -88,7 +86,8 @@ float		oldscreensize, oldfov;
 float		oldsbar;
 cvar_t		scr_viewsize = {"viewsize","100",CVAR_ARCHIVE};
 cvar_t		scr_fov = {"fov","90",CVAR_ARCHIVE};	// 10 - 170
-cvar_t		scr_conspeed = {"scr_conspeed","300"};
+cvar_t		scr_consize = {"scr_consize","0.5"};
+cvar_t		scr_conspeed = {"scr_conspeed","1000"};
 cvar_t		scr_centertime = {"scr_centertime","2"};
 cvar_t		scr_showram = {"showram","1"};
 cvar_t		scr_showturtle = {"showturtle","0"};
@@ -154,7 +153,7 @@ for a few moments
 */
 void SCR_CenterPrint (char *str)
 {
-	strncpy (scr_centerstring, str, sizeof(scr_centerstring)-1);
+	Q_strncpyz (scr_centerstring, str, sizeof(scr_centerstring));
 	scr_centertime_off = scr_centertime.value;
 	scr_centertime_start = cl.time;
 
@@ -382,6 +381,7 @@ void SCR_Init (void)
 {
 	Cvar_RegisterVariable (&scr_fov);
 	Cvar_RegisterVariable (&scr_viewsize);
+	Cvar_RegisterVariable (&scr_consize);
 	Cvar_RegisterVariable (&scr_conspeed);
 	Cvar_RegisterVariable (&scr_showram);
 	Cvar_RegisterVariable (&scr_showturtle);
@@ -403,9 +403,9 @@ void SCR_Init (void)
 	Cmd_AddCommand ("sizeup",SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown",SCR_SizeDown_f);
 
-	scr_ram = W_GetLumpName ("ram");
-	scr_net = W_GetLumpName ("net");
-	scr_turtle = W_GetLumpName ("turtle");
+	scr_ram = Draw_PicFromWad ("ram");
+	scr_net = Draw_PicFromWad ("net");
+	scr_turtle = Draw_PicFromWad ("turtle");
 
 	scr_initialized = true;
 }
@@ -622,21 +622,26 @@ void SCR_SetUpToDrawConsole (void)
 		scr_conlines = vid.height;		// full screen
 		scr_con_current = scr_conlines;
 	}
-	else if (key_dest == key_console)
-		scr_conlines = vid.height/2;	// half screen
+	else if (key_dest == key_console) {
+		scr_conlines = vid.height * scr_consize.value;
+		if (scr_conlines < 30)
+			scr_conlines = 30;
+		if (scr_conlines > vid.height - 10)
+			scr_conlines = vid.height - 10;
+	}
 	else
 		scr_conlines = 0;				// none visible
 	
 	if (scr_conlines < scr_con_current)
 	{
-		scr_con_current -= scr_conspeed.value*host_frametime;
+		scr_con_current -= scr_conspeed.value*host_frametime*vid.height/320;
 		if (scr_conlines > scr_con_current)
 			scr_con_current = scr_conlines;
 
 	}
 	else if (scr_conlines > scr_con_current)
 	{
-		scr_con_current += scr_conspeed.value*host_frametime;
+		scr_con_current += scr_conspeed.value*host_frametime*vid.height/320;
 		if (scr_conlines < scr_con_current)
 			scr_con_current = scr_conlines;
 	}
@@ -762,28 +767,35 @@ SCR_ScreenShot_f
 */  
 void SCR_ScreenShot_f (void) 
 { 
-	int     i; 
-	char		pcxname[80]; 
+	int			i; 
+	char		pcxname[MAX_OSPATH]; 
 	char		checkname[MAX_OSPATH];
 	extern byte	current_pal[768];	// Tonik
 
-// 
-// find a file name to save it to 
-// 
-	strcpy(pcxname,"quake00.pcx");
-		
-	for (i=0 ; i<=99 ; i++) 
-	{ 
-		pcxname[5] = i/10 + '0'; 
-		pcxname[6] = i%10 + '0'; 
-		sprintf (checkname, "%s/%s", com_gamedir, pcxname);
-		if (Sys_FileTime(checkname) == -1)
-			break;	// file doesn't exist
-	} 
-	if (i==100) 
+	if (Cmd_Argc() == 2) {
+		Q_strncpyz (pcxname, Cmd_Argv(1), sizeof(pcxname));
+		COM_ForceExtension (pcxname, ".tga");
+	}
+	else
 	{
-		Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX"); 
-		return;
+		// 
+		// find a file name to save it to 
+		// 
+		strcpy(pcxname,"quake00.pcx");
+		
+		for (i=0 ; i<=99 ; i++) 
+		{ 
+			pcxname[5] = i/10 + '0'; 
+			pcxname[6] = i%10 + '0'; 
+			sprintf (checkname, "%s/%s", com_gamedir, pcxname);
+			if (Sys_FileTime(checkname) == -1)
+				break;	// file doesn't exist
+		} 
+		if (i==100) 
+		{
+			Con_Printf ("SCR_ScreenShot_f: Couldn't create a PCX"); 
+			return;
+		}
 	}
  
 // 
@@ -793,8 +805,7 @@ void SCR_ScreenShot_f (void)
 									//  buffer
 
 	WritePCXfile (pcxname, vid.buffer, vid.width, vid.height, vid.rowbytes,
-//Tonik				  host_basepal, false);
-				  current_pal, false);		// Tonik
+				  current_pal, false);
 
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in
 									//  for linear writes all the time
@@ -948,7 +959,7 @@ void SCR_RSShot_f (void)
 	fracw = (float)vid.width / (float)w;
 	frach = (float)vid.height / (float)h;
 
-	newbuf = malloc(w*h);
+	newbuf = Q_Malloc (w*h);
 
 	for (y = 0; y < h; y++) {
 		dest = newbuf + (w * y);
@@ -983,15 +994,13 @@ void SCR_RSShot_f (void)
 
 	time(&now);
 	strcpy(st, ctime(&now));
-	st[strlen(st) - 1] = 0;
+	st[strlen(st) - 1] = 0;		// remove the trailing \n
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, 0, w);
 
-	strncpy(st, cls.servername, sizeof(st));
-	st[sizeof(st) - 1] = 0;
+	Q_strncpyz (st, cls.servername, sizeof(st));
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, 10, w);
 
-	strncpy(st, name.string, sizeof(st));
-	st[sizeof(st) - 1] = 0;
+	Q_strncpyz (st, name.string, sizeof(st));
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, 20, w);
 
 	WritePCXfile (pcxname, newbuf, w, h, w, host_basepal, true);

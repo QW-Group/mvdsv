@@ -402,7 +402,7 @@ void LoadPCX (FILE *f)
 	fseek (f, sizeof(pcxbuf) - 4, SEEK_SET);
 
 	count = (pcx->xmax+1) * (pcx->ymax+1);
-	pcx_rgb = malloc( count * 4);
+	pcx_rgb = Q_Malloc ( count * 4);
 
 	for (y=0 ; y<=pcx->ymax ; y++)
 	{
@@ -512,7 +512,7 @@ void LoadTGA (FILE *fin)
 	rows = targa_header.height;
 	numPixels = columns * rows;
 
-	targa_rgba = malloc (numPixels*4);
+	targa_rgba = Q_Malloc (numPixels*4);
 	
 	if (targa_header.id_length != 0)
 		fseek(fin, targa_header.id_length, SEEK_CUR);  // skip TARGA image comment

@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -245,8 +243,7 @@ typedef struct
 	float		item_gettime[32];	// cl.time of aquiring item, for blinking
 	float		faceanimtime;		// use anim frame if cl.time < this
 
-	cshift_t	cshifts[NUM_CSHIFTS];	// color shifts for damage, powerups
-	cshift_t	prev_cshifts[NUM_CSHIFTS];	// and content types
+	cshift_t	cshifts[NUM_CSHIFTS];	// color shifts for damage, powerups and content types
 
 // the client maintains its own idea of view angles, which are
 // sent to the server each frame.  And only reset at level change
@@ -335,21 +332,20 @@ extern	cvar_t	m_yaw;
 extern	cvar_t	m_forward;
 extern	cvar_t	m_side;
 
-extern cvar_t		_windowed_mouse;
+extern	cvar_t	_windowed_mouse;
 
 extern	cvar_t	name;
 
-// Tonik -->
-extern	cvar_t	r_drawflame;
+// ZQuake cvars
 extern	cvar_t	cl_deadbodyfilter;
 extern	cvar_t	cl_explosion;
 extern	cvar_t	cl_gibfilter;
 extern	cvar_t	cl_muzzleflash;
+extern	cvar_t	cl_trueLightning;
 extern	cvar_t	r_rocketlight;
 extern	cvar_t	r_rockettrail;
 extern	cvar_t	r_grenadetrail;
 extern	cvar_t	r_powerupglow;
-// <-- Tonik
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
 
@@ -362,7 +358,6 @@ extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 
-extern	qboolean	nomaster;
 extern float	server_version;	// version of server we connected to
 
 //=============================================================================

@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -83,7 +81,7 @@ void SV_New_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -158,7 +156,7 @@ void SV_Soundlist_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_Soundlist] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_Soundlist] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -214,7 +212,7 @@ void SV_Modellist_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_Modellist] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_Modellist] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -283,7 +281,7 @@ void SV_PreSpawn_f (void)
 //NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_PreSpawn] Back buffered (%d0, clearing\n", host_client->name, host_client->netchan.message.cursize); 
+		Con_Printf("WARNING %s: [SV_PreSpawn] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -595,11 +593,11 @@ SV_NextUpload
 */
 void SV_NextUpload (void)
 {
-	byte	buffer[1024];
-	int		r;
 	int		percent;
 	int		size;
-	client_t *client;
+//	byte	buffer[1024];
+//	int		r;
+//	client_t *client;
 
 	if (!*host_client->uploadfn) {
 		SV_ClientPrintf(host_client, PRINT_HIGH, "Upload denied\n");
@@ -749,16 +747,14 @@ void SV_Say (qboolean team)
 	int		j, tmp;
 	char	*p;
 	char	text[2048];
-	char	t1[32], *t2;
+	char	t1[32] = "";
+	char	*t2;
 
 	if (Cmd_Argc () < 2)
 		return;
 
 	if (team)
-	{
-		strncpy (t1, Info_ValueForKey (host_client->userinfo, "team"), 31);
-		t1[31] = 0;
-	}
+		Q_strncpyz (t1, Info_ValueForKey (host_client->userinfo, "team"), sizeof(t1));
 
 	if (host_client->spectator && (!sv_spectalk.value || team))
 		sprintf (text, "[SPEC] %s: ", host_client->name);
@@ -936,8 +932,7 @@ SV_Pause_f
 */
 void SV_Pause_f (void)
 {
-	int i;
-	client_t *cl;
+//	client_t *cl;
 	char st[sizeof(host_client->name) + 32];
 
 	if (!pausable.value) {
@@ -950,8 +945,7 @@ void SV_Pause_f (void)
 		return;
 	}
 
-//Tonik	if (sv.paused)
-	if (!sv.paused)	// Tonik
+	if (!sv.paused)
 		sprintf (st, "%s paused the game\n", host_client->name);
 	else
 		sprintf (st, "%s unpaused the game\n", host_client->name);
@@ -1036,11 +1030,7 @@ void SV_Rate_f (void)
 		return;
 	}
 	
-	rate = atoi(Cmd_Argv(1));
-	if (rate < 500)
-		rate = 500;
-	if (rate > 10000)
-		rate = 10000;
+	rate = SV_BoundRate (atoi(Cmd_Argv(1)));
 
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
 	host_client->netchan.rate = 1.0/rate;
@@ -1101,8 +1091,8 @@ void SV_SetInfo_f (void)
 
 	Info_SetValueForKey (host_client->userinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_INFO_STRING);
 // name is extracted below in ExtractFromUserInfo
-//	strncpy (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
-//		, sizeof(host_client->name)-1);	
+//	Q_strncpyz (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
+//		, sizeof(host_client->name));
 //	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 //	host_client->sendinfo = true;
 
@@ -1721,5 +1711,3 @@ void SV_UserInit (void)
 	Cvar_RegisterVariable (&sv_spectalk);
 	Cvar_RegisterVariable (&sv_mapcheck);
 }
-
-

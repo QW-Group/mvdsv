@@ -212,7 +212,7 @@ void Sys_Init (void)
 main
 =============
 */
-void main(int argc, char *argv[])
+void main (int argc, char *argv[])
 {
 	double			time, oldtime, newtime;
 	quakeparms_t	parms;
@@ -232,16 +232,9 @@ void main(int argc, char *argv[])
 	j = COM_CheckParm("-mem");
 	if (j)
 		parms.memsize = (int) (Q_atof(com_argv[j+1]) * 1024 * 1024);
-	if ((parms.membase = malloc (parms.memsize)) == NULL)
-		Sys_Error("Can't allocate %ld\n", parms.memsize);
+	parms.membase = Q_Malloc (parms.memsize);
 
 	parms.basedir = ".";
-
-/*
-	if (Sys_FileTime ("id1/pak0.pak") != -1)
-	else
-		parms.basedir = "/raid/quake/v2";
-*/
 
 	SV_Init (&parms);
 

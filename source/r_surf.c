@@ -138,13 +138,12 @@ void R_BuildDLightList (void)
 {
 	msurface_t *surf;
 	int			lnum;
-	int			sd, td;
 	float		dist;
 	vec3_t		impact;
 	int			i;
 	int			smax, tmax;
 	mtexinfo_t	*tex;
-	int			irad, idist, iminlight;
+	int			irad, iminlight;
 	int			local[2];
 	int			tdmin, sdmin, distmin;
 	dlightinfo_t	*light;

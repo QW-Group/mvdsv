@@ -53,7 +53,7 @@ double cam_lastviewtime;
 int spec_track = 0; // player# of who we are tracking
 int autocam = CAM_NONE;
 
-static void vectoangles(vec3_t vec, vec3_t ang)
+void vectoangles(vec3_t vec, vec3_t ang)
 {
 	float	forward;
 	float	yaw, pitch;

@@ -104,7 +104,7 @@ void main (int argc, char **argv)
 	quakeparms_t	parms;
 
 	parms.memsize = 5861376;
-	parms.membase = malloc (parms.memsize);
+	parms.membase = Q_Malloc (parms.memsize);
 	parms.basedir = ".";
 
 	COM_InitArgv (argc, argv);

@@ -286,12 +286,15 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 	int		i, j;
 	int			*cmds;
 	trivertx_t	*verts;
+#if 0
 	char	cache[MAX_QPATH], fullpath[MAX_OSPATH];
 	FILE	*f;
+#endif
 
 	aliasmodel = m;
 	paliashdr = hdr;	// (aliashdr_t *)Mod_Extradata (m);
 
+#if 0
 	//
 	// look for a cached version
 	//
@@ -339,7 +342,11 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 			fclose (f);
 		}
 	}
-
+#else
+	// Tonik: don't cache anything, because it's seems just as fast
+	// (if not faster) to rebuild the tris instead of loading them from disk
+	BuildTris ();		// trifans or lists
+#endif
 
 	// save the data out
 

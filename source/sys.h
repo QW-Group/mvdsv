@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -22,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sys.h -- non-portable functions
 
 
-#ifndef SERVERONLY
 //
 // file IO
 //
@@ -48,7 +45,7 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 //
 // system IO
 //
-void Sys_DebugLog(char *file, char *fmt, ...);
+void Sys_DebugLog (char *file, char *fmt, ...);
 
 void Sys_Error (char *error, ...);
 // an error will cause the entire program to exit
@@ -73,21 +70,4 @@ void Sys_LowFPPrecision (void);
 void Sys_HighFPPrecision (void);
 void Sys_SetFPCW (void);
 
-#else
-
-int	Sys_FileTime (char *path);
-
-void Sys_mkdir (char *path);
-
-void Sys_Error (char *error, ...);
-// an error will cause the entire program to exit
-
-void Sys_Printf (char *fmt, ...);
-// send text to the console
-
-void Sys_Quit (void);
-double Sys_DoubleTime (void);
-char *Sys_ConsoleInput (void);
 void Sys_Init (void);
-
-#endif

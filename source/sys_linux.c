@@ -370,7 +370,7 @@ int main (int c, char **v)
 	j = COM_CheckParm("-mem");
 	if (j)
 		parms.memsize = (int) (Q_atof(com_argv[j+1]) * 1024 * 1024);
-	parms.membase = malloc (parms.memsize);
+	parms.membase = Q_Malloc (parms.memsize);
 
 	parms.basedir = basedir;
 

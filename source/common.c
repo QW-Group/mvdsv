@@ -231,6 +231,14 @@ float Q_atof (char *str)
 	return val*sign;
 }
 
+
+void Q_strncpyz (char *dest, char *src, size_t size)
+{
+	strncpy (dest, src, size-1);
+	dest[size-1] = 0;
+}
+
+
 /*
 ============================================================================
 
@@ -787,15 +795,15 @@ void COM_FileBase (char *in, char *out)
 /*
 ==================
 COM_DefaultExtension
+
+If path doesn't have a .EXT, append extension
+(extension should include the .)
 ==================
 */
 void COM_DefaultExtension (char *path, char *extension)
 {
 	char    *src;
-//
-// if path doesn't have a .EXT, append extension
-// (extension should include the .)
-//
+
 	src = path + strlen(path) - 1;
 
 	while (*src != '/' && src != path)
@@ -805,7 +813,27 @@ void COM_DefaultExtension (char *path, char *extension)
 		src--;
 	}
 
-	strcat (path, extension);
+	strncat (path, extension, MAX_OSPATH);
+}
+
+/*
+==================
+COM_ForceExtension
+
+If path doesn't have an extension or has a different extension,
+append(!) specified extension
+Extension should include the .
+==================
+*/
+void COM_ForceExtension (char *path, char *extension)
+{
+	char    *src;
+
+	src = path + strlen(path) - strlen(extension);
+	if (src >= path && !strcmp(src, extension))
+		return;
+
+	strncat (path, extension, MAX_OSPATH);
 }
 
 //============================================================================
@@ -861,6 +889,8 @@ skipwhite:
 			if (c=='\"' || !c)
 			{
 				com_token[len] = 0;
+				if (!c)
+					data--;
 				return data;
 			}
 			com_token[len] = c;
@@ -1605,9 +1635,13 @@ void COM_InitFilesystem (void)
 //
 	i = COM_CheckParm ("-basedir");
 	if (i && i < com_argc-1)
-		strcpy (com_basedir, com_argv[i+1]);
+		Q_strncpyz (com_basedir, com_argv[i+1], sizeof(com_basedir));
 	else
-		strcpy (com_basedir, host_parms.basedir);
+		Q_strncpyz (com_basedir, host_parms.basedir, sizeof(com_basedir));
+
+	i = strlen(com_basedir)-1;
+	if ((i >= 0) && (com_basedir[i]=='/' || com_basedir[i]=='\\'))
+		com_basedir[i] = '\0';
 
 //
 // start up with id1 by default

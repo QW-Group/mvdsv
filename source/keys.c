@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -434,18 +432,25 @@ no_lf:
 	if (keydown[K_CTRL]) {
 		if (key >= '0' && key <= '9')
 			key = key - '0' + 0x12;	// yellow number
-		else if (key == '[')
-			key = 0x10;
-		else if (key == ']')
-			key = 0x11;
-		else if (key == 'g')
-			key = 0x86;
-		else if (key == 'r')
-			key = 0x87;
-		else if (key == 'y')
-			key = 0x88;
-		else if (key == 'b')
-			key = 0x89;
+		else switch (key)
+		{
+		case '[': key = 0x10; break;
+		case ']': key = 0x11; break;
+		case 'g': key = 0x86; break;
+		case 'r': key = 0x87; break;
+		case 'y': key = 0x88; break;
+		case 'b': key = 0x89; break;
+		case '(': key = 0x80; break;
+		case '=': key = 0x81; break;
+		case ')': key = 0x82; break;
+		case 'a': key = 0x83; break;
+		case '<': key = 0x1d; break;
+		case '-': key = 0x1e; break;
+		case '>': key = 0x1f; break;
+		case ',': key = 0x1c; break;
+		case '.': key = 0x9c; break;
+		//case '?': key = 0x8b; break;	// filled red block
+		}
 	}
 
 	if (keydown[K_ALT])

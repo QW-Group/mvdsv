@@ -354,6 +354,7 @@ void R_RocketTrail (vec3_t start, vec3_t end, int type)
 
 	VectorSubtract (end, start, vec);
 	len = VectorNormalize (vec);
+	VectorScale (vec, 3, vec);
 	while (len > 0)
 	{
 		len -= 3;

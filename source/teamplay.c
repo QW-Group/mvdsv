@@ -3,7 +3,7 @@
 
 	Teamplay enhancements ("proxy features")
 
-	Copyright (C) 2000       Anton Gavrilov (tonik@quake.ru)
+	Copyright (C) 2000-2001       Anton Gavrilov
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -22,14 +22,11 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
-
-	$Id: teamplay.c,v 1.1.1.2 2004/09/28 18:58:02 vvd0 Exp $
 */
 
 #include "quakedef.h"
 #include "version.h"
 
-cvar_t	_cmd_macros = {"_cmd_macros", "0"};
 cvar_t	cl_parsesay = {"cl_parsesay", "0"};
 cvar_t	cl_triggers = {"cl_triggers", "0"};
 cvar_t	cl_nofake = {"cl_nofake", "0"};
@@ -41,17 +38,37 @@ cvar_t	cl_rocket2grenade = {"cl_r2g", "0"};
 cvar_t	cl_teamskin = {"teamskin", ""};
 cvar_t	cl_enemyskin = {"enemyskin", ""};
 
+cvar_t	tp_name_axe = {"tp_name_axe", "axe"};
+cvar_t	tp_name_sg = {"tp_name_sg", "sg"};
+cvar_t	tp_name_ssg = {"tp_name_ssg", "ssg"};
+cvar_t	tp_name_ng = {"tp_name_ng", "ng"};
+cvar_t	tp_name_sng = {"tp_name_sng", "sng"};
+cvar_t	tp_name_gl = {"tp_name_gl", "gl"};
+cvar_t	tp_name_rl = {"tp_name_rl", "rl"};
+cvar_t	tp_name_lg = {"tp_name_lg", "lg"};
+cvar_t	tp_name_ra = {"tp_name_ra", "ra"};
+cvar_t	tp_name_ya = {"tp_name_ya", "ya"};
+cvar_t	tp_name_ga = {"tp_name_ga", "ga"};
+cvar_t	tp_name_quad = {"tp_name_quad", "quad"};
+cvar_t	tp_name_pent = {"tp_name_pent", "pent"};
+cvar_t	tp_name_ring = {"tp_name_ring", "ring"};
+cvar_t	tp_name_suit = {"tp_name_suit", "suit"};
+cvar_t	tp_name_shells = {"tp_name_shells", "shells"};
+cvar_t	tp_name_nails = {"tp_name_nails", "nails"};
+cvar_t	tp_name_rockets = {"tp_name_rockets", "rockets"};
+cvar_t	tp_name_cells = {"tp_name_cells", "cells"};
+cvar_t	tp_name_mh = {"tp_name_mh", "mh"};
+cvar_t	tp_name_health = {"tp_name_health", "health"};
+cvar_t	tp_name_backpack = {"tp_name_backpack", "pack"};
+cvar_t	tp_name_flag = {"tp_name_flag", "flag"};
+
 
 //===========================================================================
 //								TRIGGERS
 //===========================================================================
 
-void *Cmd_FindAlias(s);	 // hmm, it's NOT void in fact
-
-// dest must point to a 1024-byte buffer
-void Cmd_ExpandString (char *data, char *dest);
-
-char *Macro_Location_f (void);	// defined later
+char *Macro_Location_f (void);
+void TP_FindModelNumbers (void);
 
 #define MAX_LOC_NAME 32
 
@@ -74,66 +91,27 @@ void TP_ExecTrigger (char *s)
 	if (!cl_triggers.value || cls.demoplayback)
 		return;
 
-	if (Cmd_FindAlias(s)) {
-		Cbuf_AddText (s);
-		Cbuf_AddText ("\n");
-	}
-}
-
-#define	IT_WEAPONS (2|4|8|16|32|64)
-void TP_StatChanged (int stat, int value)
-{
-	int		i;
-
-	if (stat == STAT_HEALTH)
+	if (Cmd_FindAlias(s))
 	{
-		if (value > 0) {
-			if (vars.health <= 0 /*&& last_health != -999*/
-				/* && Q_strcasecmp(Info_ValueForKey(cl.serverinfo, "status"),
-				"standby") */)	// detect Kombat Teams status
-			{
-				extern cshift_t	cshift_empty;
-				vars.respawntrigger_time = realtime;
-				//if (cl.teamfortress)
-					memset (&cshift_empty, 0, sizeof(cshift_empty));
-				if (!cl.spectator)
-					TP_ExecTrigger ("f_respawn");
-			}
-			vars.health = value;
-			return;
-		}
-		if (vars.health > 0) {		// We just died
-			vars.deathtrigger_time = realtime;
-			strcpy (vars.lastdeathloc, Macro_Location_f());
-			if (!cl.spectator)
-				TP_ExecTrigger ("f_death");
-		}
-		vars.health = value;
-	}
-	else if (stat == STAT_ITEMS)
-	{
-		i = value &~ vars.items;
-		if (i & IT_WEAPONS && (i & IT_WEAPONS != IT_WEAPONS)
-		|| i & (IT_ARMOR1|IT_ARMOR2|IT_ARMOR3|IT_SUPERHEALTH)
-		|| i & (IT_INVISIBILITY|IT_INVULNERABILITY|IT_SUIT|IT_QUAD))
+		char *astr, *p;
+		qboolean quote = false;
+
+		astr = Cmd_AliasString (s);
+		for (p=astr ; *p ; p++)
 		{
-			// ...
-			//TP_ExecTrigger ("f_took");
+			if (*p == '"')
+				quote = !quote;
+			if (!quote && *p == ';')
+			{
+				// more than one command, add it to the command buffer
+				Cbuf_AddText (astr);
+				Cbuf_AddText ("\n");
+				return;
+			}
 		}
-
-		if (i & (IT_KEY1|IT_KEY2)) {
-			if (cl.teamfortress)
-				strcpy (vars.tookitem, "flag");
-			else
-				strcpy (vars.tookitem, "key");
-
-			// TODO: only if tooktriggers are enabled
-			strcpy (vars.last_tooktrigger, vars.tookitem);
-			if (!cl.spectator)
-				TP_ExecTrigger ("f_took");
-		}
-
-		vars.items = value;
+		// a single line, so execute it right away
+		Cmd_ExecuteString (astr);
+		return;
 	}
 }
 
@@ -204,6 +182,23 @@ char *Macro_Weapon_f (void)
 	case IT_LIGHTNING: return "lg";
 	default:
 		return "";
+	}
+}
+
+char *Macro_WeaponNum_f (void)
+{
+	switch (cl.stats[STAT_ACTIVEWEAPON])
+	{
+	case IT_AXE: return "1";
+	case IT_SHOTGUN: return "2";
+	case IT_SUPER_SHOTGUN: return "3";
+	case IT_NAILGUN: return "4";
+	case IT_SUPER_NAILGUN: return "5";
+	case IT_GRENADE_LAUNCHER: return "6";
+	case IT_ROCKET_LAUNCHER: return "7";
+	case IT_LIGHTNING: return "8";
+	default:
+		return "0";
 	}
 }
 
@@ -344,6 +339,44 @@ char *Macro_LastDeath_f (void)
 		return "someplace";
 }
 
+char *Macro_Time_f (void)
+{
+	time_t		t;
+	struct tm	*ptm;
+
+	macro_buf[0] = 0;
+	time(&t);
+	ptm = localtime(&t);
+	strftime(macro_buf, sizeof(macro_buf)-1, "%H:%M", ptm);
+	return macro_buf;
+}
+
+char *Macro_Date_f (void)
+{
+	time_t		t;
+	struct tm	*ptm;
+
+	macro_buf[0] = 0;
+	time(&t);
+	ptm = localtime(&t);
+	strftime(macro_buf, sizeof(macro_buf)-1, "%d.%m.%y", ptm);
+	return macro_buf;
+}
+
+// returns the last item picked up
+char *Macro_Item_f (void)
+{
+	strcpy (macro_buf, vars.tookitem);
+	return macro_buf;
+}
+
+// returns the last item that triggered f_took
+char *Macro_Took_f (void)
+{
+	strcpy (macro_buf, vars.last_tooktrigger);
+	return macro_buf;
+}
+
 typedef struct
 {
 	char	*name;
@@ -361,27 +394,66 @@ macro_command_t macro_commands[] =
 	{"nails", Macro_Nails_f},
 	{"rockets", Macro_Rockets_f},
 	{"cells", Macro_Cells_f},
+	{"weaponnum", Macro_WeaponNum_f},
 	{"weapon", Macro_Weapon_f},
 	{"ammo", Macro_Ammo_f},
 	{"bestweapon", Macro_BestWeapon_f},
 	{"bestammo", Macro_BestAmmo_f},
 	{"powerups", Macro_Powerups_f},
 	{"location", Macro_Location_f},
+	{"time", Macro_Time_f},
+	{"date", Macro_Date_f},
+	{"item", Macro_Item_f},
+	{"took", Macro_Took_f},
 	{NULL, NULL}
 };
 
 #define MAX_MACRO_STRING 1024
 
+/*
+==============
+TP_MacroString
+
+returns NULL if no matching macro was found
+==============
+*/
+int macro_length;	// length of macro name
+
+char *TP_MacroString (char *s)
+{
+	static char	buf[MAX_MACRO_STRING];
+	macro_command_t	*macro;
+
+	macro = macro_commands;
+	while (macro->name) {
+		if (!Q_strncasecmp(s, macro->name, strlen(macro->name)))
+		{
+			macro_length = strlen(macro->name);
+			return macro->func();
+		}
+		macro++;
+	}
+
+	macro_length = 0;
+	return NULL;
+}
+
+/*
+=============
+TP_ParseChatString
+
+Parses %a-like expressions
+=============
+*/
 char *TP_ParseMacroString (char *string)
 {
 	static char	buf[MAX_MACRO_STRING];
 	char	*s;
 	int		i;
-	macro_command_t	*macro;
 	char	*macro_string;
 	char	ch;
 
-	if (!_cmd_macros.value && !cl_parsesay.value)
+	if (!cl_parsesay.value)
 		return string;
 
 	s = string;
@@ -389,60 +461,58 @@ char *TP_ParseMacroString (char *string)
 
 	while (*s && i < MAX_MACRO_STRING-1)
 	{
-		if (cl_parsesay.value == 1)
+		// check %[P], etc
+		if (*s == '%' && s[1]=='[' && s[2] && s[3]==']')
 		{
-			// check %[P], etc
-			if (*s == '%' && s[1]=='[' && s[2] && s[3]==']')
-			{
-				static char mbuf[MAX_MACRO_VALUE];
-				switch (s[2]) {
-				case 'a':
-					macro_string = Macro_ArmorType_f();
-					if (!macro_string[0])
-						macro_string = "a";
-					if (cl.stats[STAT_ARMOR] < 30)
-						sprintf (mbuf, "\x10%s:%i\x11", macro_string, cl.stats[STAT_ARMOR]);
-					else
-						sprintf (mbuf, "%s:%i", macro_string, cl.stats[STAT_ARMOR]);
-					macro_string = mbuf;
-					break;
-
-				case 'h':
-					if (cl.stats[STAT_HEALTH] >= 50)
-						sprintf (macro_buf, "%i", cl.stats[STAT_HEALTH]);
-					else
-						sprintf (macro_buf, "\x10%i\x11", cl.stats[STAT_HEALTH]);
-					macro_string = macro_buf;
-					break;
-
-				case 'P':
-					macro_string = Macro_Powerups_f();
-					if (macro_string[0])
-						sprintf (mbuf, "\x10%s\x11", macro_string);
-					else
-						mbuf[0] = 0;
-					macro_string = mbuf;
-					break;
-
-				// todo: %[w], %[h], %[b]
-
-				default:
-					buf[i++] = *s++;
-					continue;
-				}
-				if (i + strlen(macro_string) >= MAX_MACRO_STRING-1)
-					Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
-				strcpy (&buf[i], macro_string);
-				i += strlen(macro_string);
-				s += 4;	// skip %[<char>]
+			static char mbuf[MAX_MACRO_VALUE];
+			switch (s[2]) {
+			case 'a':
+				macro_string = Macro_ArmorType_f();
+				if (!macro_string[0])
+					macro_string = "a";
+				if (cl.stats[STAT_ARMOR] < 30)
+					sprintf (mbuf, "\x10%s:%i\x11", macro_string, cl.stats[STAT_ARMOR]);
+				else
+					sprintf (mbuf, "%s:%i", macro_string, cl.stats[STAT_ARMOR]);
+				macro_string = mbuf;
+				break;
+				
+			case 'h':
+				if (cl.stats[STAT_HEALTH] >= 50)
+					sprintf (macro_buf, "%i", cl.stats[STAT_HEALTH]);
+				else
+					sprintf (macro_buf, "\x10%i\x11", cl.stats[STAT_HEALTH]);
+				macro_string = macro_buf;
+				break;
+				
+			case 'P':
+				macro_string = Macro_Powerups_f();
+				if (macro_string[0])
+					sprintf (mbuf, "\x10%s\x11", macro_string);
+				else
+					mbuf[0] = 0;
+				macro_string = mbuf;
+				break;
+				
+				// todo: %[w], %[b]
+				
+			default:
+				buf[i++] = *s++;
 				continue;
 			}
-			
-			// check %a, etc
-			if (*s == '%')
+			if (i + strlen(macro_string) >= MAX_MACRO_STRING-1)
+				Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
+			strcpy (&buf[i], macro_string);
+			i += strlen(macro_string);
+			s += 4;	// skip %[<char>]
+			continue;
+		}
+		
+		// check %a, etc
+		if (*s == '%')
+		{
+			switch (s[1])
 			{
-				switch (s[1])
-				{
 				case 'a': macro_string = Macro_Armor_f(); break;
 				case 'A': macro_string = Macro_ArmorType_f(); break;
 				case 'b': macro_string = Macro_BestWeaponAndAmmo_f(); break;
@@ -461,20 +531,21 @@ char *TP_ParseMacroString (char *string)
 				default: 
 					buf[i++] = *s++;
 					continue;
-				}
-				if (i + strlen(macro_string) >= MAX_MACRO_STRING-1)
-					Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
-				strcpy (&buf[i], macro_string);
-					i += strlen(macro_string);
-				s += 2;	// skip % and letter
-				continue;
 			}
-
-			if (*s == '$')
+			if (i + strlen(macro_string) >= MAX_MACRO_STRING-1)
+				Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
+			strcpy (&buf[i], macro_string);
+			i += strlen(macro_string);
+			s += 2;	// skip % and letter
+			continue;
+		}
+		
+		// "fun chars"
+		if (*s == '$')
+		{
+			ch = 0;
+			switch (s[1])
 			{
-				ch = 0;
-				switch (s[1])
-				{
 				case '\\': ch = 0x0D; break;
 				case ':': ch = 0x0A; break;
 				case '[': ch = 0x10; break;
@@ -483,59 +554,37 @@ char *TP_ParseMacroString (char *string)
 				case 'R': ch = 0x87; break;
 				case 'Y': ch = 0x88; break;
 				case 'B': ch = 0x89; break;
-				}
-
-				if (ch) 
-				{
-					buf[i++] = ch;
-					s += 2;
-					continue;
-				}
-
 			}
-		}
-
-		if (_cmd_macros.value)
-		if (*s == '$')
-		{	
-			s++;
-
-			if (*s == '$') {
-				buf[i++] = '$';
-				s++;
+			
+			if (ch) {
+				buf[i++] = ch;
+				s += 2;
 				continue;
 			}
-
-			// macro search
-			if (_cmd_macros.value) {
-				macro = macro_commands;
-				while (macro->name) {
-					if (!strncmp(s, macro->name, strlen(macro->name)))
-					{
-						macro_string = macro->func();
-						if (i + strlen(macro_string) >= MAX_MACRO_STRING-1) // !!! is this right?
-							Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
-						strcpy (&buf[i], macro_string);
-						i += strlen(macro_string);
-						s += strlen(macro->name);
-						goto _continue;
-					}
-					macro++;
-				}
-			}
-
-			buf[i++] = '$';
 		}
 
 		buf[i++] = *s++;
-
-		_continue: ;
 	}
 	buf[i] = 0;
 
 	return	buf;
 }
 
+/*
+==============
+TP_MacroList
+==============
+*/
+void TP_MacroList_f (void)
+{
+	macro_command_t	*macro;
+	int	i;
+
+	for (macro=macro_commands,i=0 ; macro->name ; macro++,i++)
+		Con_Printf ("%s\n", macro->name);
+
+	Con_Printf ("------------\n%d macros\n", i);
+}
 
 /*
 =============================================================================
@@ -746,14 +795,15 @@ char *Macro_Location_f (void)
 */
 
 typedef struct msg_trigger_s {
-	char name[32];
-	char string[64];
+	char	name[32];
+	char	string[64];
+	int		level;
 	struct msg_trigger_s *next;
 } msg_trigger_t;
 
 static msg_trigger_t *msg_triggers;
 
-msg_trigger_t *CL_FindTrigger (char *name)
+msg_trigger_t *TP_FindTrigger (char *name)
 {
 	msg_trigger_t *t;
 
@@ -773,8 +823,8 @@ void TP_MsgTrigger_f (void)
 
 	c = Cmd_Argc();
 
-	if (c > 3) {
-		Con_Printf ("msg_trigger <trigger name> \"string\"\n");
+	if (c > 5) {
+		Con_Printf ("msg_trigger <trigger name> \"string\" [-l <level>]\n");
 		return;
 	}
 
@@ -794,7 +844,7 @@ void TP_MsgTrigger_f (void)
 	}
 
 	if (c == 2) {
-		trig = CL_FindTrigger (name);
+		trig = TP_FindTrigger (name);
 		if (trig)
 			Con_Printf ("%s: \"%s\"\n", trig->name, trig->string);
 		else
@@ -802,13 +852,13 @@ void TP_MsgTrigger_f (void)
 		return;
 	}
 
-	if (c == 3) {
+	if (c >= 3) {
 		if (strlen(Cmd_Argv(2)) > 63) {
 			Con_Printf ("trigger string too long\n");
 			return;
 		}
 		
-		trig = CL_FindTrigger (name);
+		trig = TP_FindTrigger (name);
 
 		if (!trig) {
 			// allocate new trigger
@@ -816,9 +866,15 @@ void TP_MsgTrigger_f (void)
 			trig->next = msg_triggers;
 			msg_triggers = trig;
 			strcpy (trig->name, name);
+			trig->level = PRINT_HIGH;
 		}
 
 		strcpy (trig->string, Cmd_Argv(2));
+		if (c == 5 && !Q_strcasecmp (Cmd_Argv(3), "-l")) {
+			trig->level = Q_atoi (Cmd_Argv(4));
+			if ((unsigned)trig->level > PRINT_CHAT)
+				trig->level = PRINT_HIGH;
+		}
 	}
 }
 
@@ -839,6 +895,7 @@ char *trigger_commands[] = {
 	"record",
 	"easyrecord",
 	"stop"
+	"if"
 };
 
 #define NUM_TRIGGER_COMMANDS (sizeof(trigger_commands)/sizeof(trigger_commands[0]))
@@ -911,16 +968,18 @@ void TP_SearchForMsgTriggers (char *s, int level)
 {
 	msg_trigger_t	*t;
 	char *string;
-	extern char *Cmd_AliasString (char *);
 
 	if (cls.demoplayback)
 		return;
 
-	if (level != PRINT_HIGH)	// FIXME
-		return;
-
 	for (t=msg_triggers; t; t=t->next)
-		if (t->string[0] && strstr(s, t->string)) {
+		if (t->level == level && t->string[0] && strstr(s, t->string))
+		{
+			if (level == PRINT_CHAT && (
+				strstr (s, "f_version") || strstr (s, "f_system") ||
+				strstr (s, "f_speed") || strstr (s, "f_modified")))
+				continue; 	// don't let llamas fake proxy replies
+
 			string = Cmd_AliasString (t->name);
 			if (string)
 				TP_ExecuteTriggerBuf (string);
@@ -962,7 +1021,13 @@ ok:
 
 	if (!strncmp(buf, " f_version\n", 11) || !strncmp(buf, " z_version\n", 11))
 	{
-		Cbuf_AddText (va("say ZQuake version %s (Build %04d)\n", Z_VERSION, build_number()));
+#ifdef RELEASE_VERSION
+		Cbuf_AddText (va("say ZQuake version %s "
+			QW_PLATFORM ":" QW_RENDERER "\n", Z_VERSION));
+#else
+		Cbuf_AddText (va("say ZQuake version %s (Build %04d) "
+			QW_PLATFORM ":" QW_RENDERER "\n", Z_VERSION, build_number()));
+#endif
 		vars.f_version_reply_time = realtime;
 	}
 }
@@ -1155,6 +1220,7 @@ void TP_NewMap ()
 	char mapname[MAX_QPATH];
 
 	memset (&vars, 0, sizeof(vars));
+	TP_FindModelNumbers ();
 
 	COM_StripExtension (COM_SkipPath (cl.worldmodel->name), mapname);
 	if (strcmp(mapname, last_map))
@@ -1168,6 +1234,8 @@ void TP_NewMap ()
 		strcpy (last_map, mapname);
 		Cvar_SetROM (&cl_mapname, mapname);
 	}
+
+	TP_ExecTrigger ("f_newmap");
 }
 
 /*
@@ -1226,9 +1294,414 @@ int TP_CategorizeMessage (char *s)
 	return flags;
 }
 
+//===================================================================
+// Pickup triggers
+//
+
+// symbolic names used in tp_took command
+char *pknames[] = {"quad", "pent", "ring", "suit", "ra", "ya",	"ga",
+"mh", "health", "lg", "rl", "gl", "sng", "ng", "ssg", "pack",
+"cells", "rockets", "nails", "shells", "flag"};
+
+enum {pk_quad, pk_pent, pk_ring, pk_suit, pk_ra, pk_ya, pk_ga,
+pk_mh, pk_health, pk_lg, pk_rl, pk_gl, pk_sng, pk_ng, pk_ssg, pk_pack,
+pk_cells, pk_rockets, pk_nails, pk_shells, pk_flag, MAX_PKFLAGS};
+
+#define default_pkflags ((1<<pk_quad)|(1<<pk_pent)|(1<<pk_ring)| \
+		(1<<pk_ra)|(1<<pk_ya)|(1<<pk_lg)|(1<<pk_rl)|(1<<pk_mh)|(1<<pk_flag))
+
+int pkflags = default_pkflags;
+
+
+void TP_TookTrigger_f (void)
+{
+	int		i, j, c;
+	char	*p;
+	char	str[255] = "";
+	qboolean	removeflag = false;
+	int		flag;
+	
+	c = Cmd_Argc ();
+	if (c == 1)
+	{
+		if (!pkflags)
+			strcpy (str, "nothing");
+		for (i=0 ; i<MAX_PKFLAGS ; i++)
+			if (pkflags & (1<<i))
+			{
+				if (*str)
+					strcat (str, " ");
+				strcat (str, pknames[i]);
+			}
+		Con_Printf ("%s\n", str);
+		return;
+	}
+
+	if (*Cmd_Argv(1) != '+' && *Cmd_Argv(1) != '-')
+		pkflags = 0;
+
+	for (i=1 ; i<c ; i++)
+	{
+		p = Cmd_Argv (i);
+		if (*p == '+') {
+			removeflag = false;
+			p++;
+		} else if (*p == '-') {
+			removeflag = true;
+			p++;
+		}
+
+		flag = 0;
+		for (j=0 ; j<MAX_PKFLAGS ; j++) {
+			if (!Q_strncasecmp (p, pknames[j], 3)) {
+				flag = 1<<j;
+				break;
+			}
+		}
+
+		if (!flag) {
+			if (!Q_strcasecmp (p, "armor"))
+				flag = (1<<pk_ra)|(1<<pk_ya)|(1<<pk_ga);
+			else if (!Q_strcasecmp (p, "weapons"))
+				flag = (1<<pk_lg)|(1<<pk_rl)|(1<<pk_gl)|(1<<pk_sng)|
+						(1<<pk_ng)|(1<<pk_ssg);
+			else if (!Q_strcasecmp (p, "powerups"))
+				flag = (1<<pk_quad)|(1<<pk_pent)|(1<<pk_ring);
+			else if (!Q_strcasecmp (p, "ammo"))
+				flag = (1<<pk_cells)|(1<<pk_rockets)|(1<<pk_nails)|(1<<pk_shells);
+			else if (!Q_strcasecmp (p, "default"))
+				flag = default_pkflags;
+			else if (!Q_strcasecmp (p, "all"))
+				flag = (1<<MAX_PKFLAGS)-1;
+		}
+
+		if (removeflag)
+			pkflags &= ~flag;
+		else
+			pkflags |= flag;
+	}
+}
+
+
+/*
+// FIXME: maybe use sound indexes so we don't have to make strcmp's
+// every time?
+
+#define S_LOCK4		1	// weapons/lock4.wav
+#define S_PKUP		2	// weapons/pkup.wav
+#define S_HEALTH25	3	// items/health1.wav
+#define S_HEALTH15	4	// items/r_item1.wav
+#define S_MHEALTH	5	// items/r_item2.wav
+#define S_DAMAGE	6	// items/damage.wav
+#define S_EYES		7	// items/inv1.wav
+#define S_PENT		8	// items/protect.wav
+#define S_ARMOR		9	// items/armor1.wav
+
+static char *tp_soundnames[] =
+{
+	"weapons/lock4.wav",
+	"weapons/pkup.wav",
+	"items/health1.wav",
+	"items/r_item1.wav",
+	"items/r_item2.wav",
+	"items/damage.wav",
+	"items/inv1.wav",
+	"items/protect.wav"
+	"items/armor1.wav"
+};
+
+#define TP_NUMSOUNDS (sizeof(tp_soundnames)/sizeof(tp_soundnames[0]))
+
+int	sound_numbers[MAX_SOUNDS];
+
+void TP_FindSoundNumbers (void)
+{
+	int		i, j;
+	char	*s;
+	for (i=0 ; i<MAX_SOUNDS ; i++)
+	{
+		s = &cl.sound_name[i];
+		for (j=0 ; j<TP_NUMSOUNDS ; j++)
+			...
+	}
+}
+*/
+
+// model numbers
+int tp_armorindex;	// armor
+int tp_packindex;	// backpack
+int tp_ssgindex, tp_ngindex, tp_sngindex, tp_glindex,
+	tp_rlindex, tp_lgindex;		// weapons
+int tp_shells1index, tp_shells2index,
+	tp_nails1index, tp_nails2index,
+	tp_rockets1index, tp_rockets2index,
+	tp_cells1index, tp_cells2index;	// ammo
+
+void TP_FindModelNumbers (void)
+{
+	int		i;
+	char	*s;
+	
+	tp_ssgindex = tp_ngindex = tp_sngindex =
+	tp_glindex = tp_rlindex = tp_lgindex = tp_packindex =
+	tp_armorindex = tp_shells1index = tp_shells2index =
+	tp_nails1index = tp_nails2index = tp_rockets1index =
+	tp_rockets2index = tp_cells1index = tp_cells2index = -1;
+
+	// model 0 is world
+	for (i=1 ; i<MAX_MODELS ; i++)
+	{
+		s = cl.model_name[i];
+		if (!strcmp(s, "progs/g_shot.mdl"))
+			tp_ssgindex = i;
+		else if (!strcmp(s, "progs/g_nail.mdl"))
+			tp_ngindex = i;
+		else if (!strcmp(s, "progs/g_nail2.mdl"))
+			tp_sngindex = i;
+		else if (!strcmp(s, "progs/g_rock.mdl"))
+			tp_glindex = i;
+		else if (!strcmp(s, "progs/g_rock2.mdl"))
+			tp_rlindex = i;
+		else if (!strcmp(s, "progs/g_light.mdl"))
+			tp_lgindex = i;
+		else if (!strcmp(s, "progs/armor.mdl"))
+			tp_armorindex = i;
+		else if (!strcmp(s, "progs/backpack.mdl"))
+			tp_packindex = i;
+		else if (!strcmp(s, "maps/b_shell0.bsp"))
+			tp_shells1index = i;
+		else if (!strcmp(s, "maps/b_shell1.bsp"))
+			tp_shells2index = i;
+		else if (!strcmp(s, "maps/b_nail0.bsp"))
+			tp_nails1index = i;
+		else if (!strcmp(s, "maps/b_nail1.bsp"))
+			tp_nails2index = i;
+		else if (!strcmp(s, "maps/b_rock0.bsp"))
+			tp_rockets1index = i;
+		else if (!strcmp(s, "maps/b_rock1.bsp"))
+			tp_rockets2index = i;
+		else if (!strcmp(s, "maps/b_batt0.bsp"))
+			tp_cells1index = i;
+		else if (!strcmp(s, "maps/b_batt1.bsp"))
+			tp_cells2index = i;
+	}
+}
+
+
+static int FindNearestItem (int type)
+{
+	frame_t		*frame;
+	packet_entities_t	*pak;
+	entity_state_t		*ent;
+	int	i, bestidx, bestdist, bestskin;
+	vec3_t	org, v;
+	extern	int oldparsecountmod;
+
+	VectorCopy (cl.frames[(cls.netchan.incoming_sequence)&UPDATE_MASK]
+		.playerstate[cl.playernum].origin, org);
+
+	// look in previous frame 
+	frame = &cl.frames[oldparsecountmod&UPDATE_MASK];
+	pak = &frame->packet_entities;
+	bestdist = 250;
+	bestidx = 0;
+	for (i=0,ent=pak->entities ; i<pak->num_entities ; i++,ent++)
+	{
+		int j, dist;
+		
+		j = ent->modelindex;
+		switch (type)
+		{
+		case 0:	// weapon
+			if (j != tp_ssgindex && j != tp_ngindex && j != tp_sngindex
+				&& j != tp_glindex && j != tp_rlindex && j != tp_lgindex)
+				continue;
+			break;
+		case 1:	// armor
+			if (j != tp_armorindex)
+				continue;
+			break;
+		case 2:	// ammo or backpack
+			if (j != tp_packindex && j != tp_shells1index && j != tp_shells2index
+				&& j != tp_nails1index && j != tp_nails2index 
+				&& j != tp_rockets1index && j != tp_rockets2index
+				&& j != tp_cells1index && j != tp_cells2index)
+				continue;
+		}
+		VectorSubtract (ent->origin, org, v);
+		if ((dist = Length(v)) > bestdist)
+			continue;
+		bestdist = dist;
+		bestidx = j;
+		bestskin = ent->skinnum;
+	}
+
+	if (type == 1 && bestidx)	// armor
+		return -(bestskin + 1);	// -1=green, -2=yellow, -3=red
+
+	return bestidx;
+}
+
+static int CountTeammates ()
+{
+	int	i, count;
+	player_info_t	*player;
+	char	*myteam;
+
+	count = 0;
+	myteam = cl.players[cl.playernum].team;
+	for (i=0, player=cl.players; i < MAX_CLIENTS ; i++, player++) {
+		if (player->name[0] && !player->spectator && (i != cl.playernum)
+									&& !strcmp(player->team, myteam))
+			count++;
+	}
+
+	return count;
+}
+
+static void ExecTookTrigger (char *s, int flag)
+{
+	strcpy (vars.tookitem, s);
+	if (pkflags & (1<<flag))
+	{
+		if (CountTeammates () > 0)
+		{
+			strcpy (vars.last_tooktrigger, s);
+			TP_ExecTrigger ("f_took");
+		}
+	}
+}
+
+void TP_CheckPickupSound (char *s)
+{
+	int		idx;
+
+	if (cl.spectator || !atoi(Info_ValueForKey(cl.serverinfo, "teamplay")))
+		return;
+
+	if (!strcmp(s, "items/damage.wav"))
+		ExecTookTrigger (tp_name_quad.string, pk_quad);
+	else if (!strcmp(s, "items/protect.wav"))
+		ExecTookTrigger (tp_name_pent.string, pk_pent);
+	else if (!strcmp(s, "items/inv1.wav"))
+		ExecTookTrigger (tp_name_ring.string, pk_ring);
+	else if (!strcmp(s, "items/suit.wav"))
+		ExecTookTrigger (tp_name_suit.string, pk_suit);
+	else if (!strcmp(s, "items/health1.wav") ||
+			 !strcmp(s, "items/r_item1.wav"))
+		ExecTookTrigger (tp_name_health.string, pk_health);
+	else if (!strcmp(s, "items/r_item2.wav"))
+		ExecTookTrigger (tp_name_mh.string, pk_mh);
+	else
+		goto more;
+	return;
+
+more:
+	if (!cl.validsequence)
+		return;
+
+	// weapons
+	if (!strcmp(s, "weapons/pkup.wav"))
+	{
+		int	deathmatch;
+
+		deathmatch = atoi(Info_ValueForKey(cl.serverinfo, "deathmatch"));
+		if (deathmatch == 2 || deathmatch == 3)
+			return;
+		idx = FindNearestItem(0);
+		if (idx == tp_ssgindex)
+			ExecTookTrigger (tp_name_ssg.string, pk_ssg);
+		else if (idx == tp_ngindex)
+			ExecTookTrigger (tp_name_ng.string, pk_ng);
+		else if (idx == tp_sngindex)
+			ExecTookTrigger (tp_name_sng.string, pk_sng);
+		else if (idx == tp_glindex)
+			ExecTookTrigger (tp_name_gl.string, pk_gl);
+		else if (idx == tp_rlindex)
+			ExecTookTrigger (tp_name_rl.string, pk_rl);
+		else if (idx == tp_lgindex)
+			ExecTookTrigger (tp_name_lg.string, pk_lg);
+		return;
+	}
+
+	// armor
+	if (!strcmp(s, "items/armor1.wav"))
+	{
+		idx = FindNearestItem (1);
+
+		switch (idx) {
+			case -1: ExecTookTrigger (tp_name_ga.string, pk_ga); break;
+			case -2: ExecTookTrigger (tp_name_ya.string, pk_ya); break;
+			case -3: ExecTookTrigger (tp_name_ra.string, pk_ra); break;
+		}
+		return;
+	}
+
+	// backpack or ammo
+	if (!strcmp (s, "weapons/lock4.wav"))
+	{
+		idx = FindNearestItem (2);
+		if (idx == tp_packindex)
+			ExecTookTrigger (tp_name_backpack.string, pk_pack);
+		else if (idx == tp_shells1index || idx == tp_shells2index)
+			ExecTookTrigger (tp_name_shells.string, pk_shells);
+		else if (idx == tp_nails1index || idx == tp_nails2index)
+			ExecTookTrigger (tp_name_nails.string, pk_nails);
+		else if (idx == tp_rockets1index || idx == tp_rockets2index)
+			ExecTookTrigger (tp_name_rockets.string, pk_rockets);
+		else if (idx == tp_cells1index || idx == tp_cells2index)
+			ExecTookTrigger (tp_name_cells.string, pk_cells);
+		return;
+	}
+}
+
+
+#define	IT_WEAPONS (2|4|8|16|32|64)
+void TP_StatChanged (int stat, int value)
+{
+	int		i;
+
+	if (stat == STAT_HEALTH)
+	{
+		if (value > 0) {
+			if (vars.health <= 0 /*&& last_health != -999*/
+				/* && Q_strcasecmp(Info_ValueForKey(cl.serverinfo, "status"),
+				"standby") */)	// detect Kombat Teams status
+			{
+				extern cshift_t	cshift_empty;
+				vars.respawntrigger_time = realtime;
+				//if (cl.teamfortress)
+					memset (&cshift_empty, 0, sizeof(cshift_empty));
+				if (!cl.spectator)
+					TP_ExecTrigger ("f_respawn");
+			}
+			vars.health = value;
+			return;
+		}
+		if (vars.health > 0) {		// We just died
+			vars.deathtrigger_time = realtime;
+			strcpy (vars.lastdeathloc, Macro_Location_f());
+			if (!cl.spectator)
+				TP_ExecTrigger ("f_death");
+		}
+		vars.health = value;
+	}
+	else if (stat == STAT_ITEMS)
+	{
+		i = value &~ vars.items;
+
+		if (i & (IT_KEY1|IT_KEY2)) {
+			if (cl.teamfortress && !cl.spectator)
+				ExecTookTrigger (tp_name_flag.string, pk_flag);
+		}
+
+		vars.items = value;
+	}
+}
+
+
 void TP_Init ()
 {
-	Cvar_RegisterVariable (&_cmd_macros);
 	Cvar_RegisterVariable (&cl_parsesay);
 	Cvar_RegisterVariable (&cl_triggers);
 	Cvar_RegisterVariable (&cl_nofake);
@@ -1237,9 +1710,34 @@ void TP_Init ()
 	Cvar_RegisterVariable (&cl_mapname);
 	Cvar_RegisterVariable (&cl_teamskin);
 	Cvar_RegisterVariable (&cl_enemyskin);
+	Cvar_RegisterVariable (&tp_name_axe);
+	Cvar_RegisterVariable (&tp_name_sg);
+	Cvar_RegisterVariable (&tp_name_ssg);
+	Cvar_RegisterVariable (&tp_name_ng);
+	Cvar_RegisterVariable (&tp_name_sng);
+	Cvar_RegisterVariable (&tp_name_gl);
+	Cvar_RegisterVariable (&tp_name_rl);
+	Cvar_RegisterVariable (&tp_name_lg);
+	Cvar_RegisterVariable (&tp_name_ra);
+	Cvar_RegisterVariable (&tp_name_ya);
+	Cvar_RegisterVariable (&tp_name_ga);
+	Cvar_RegisterVariable (&tp_name_quad);
+	Cvar_RegisterVariable (&tp_name_pent);
+	Cvar_RegisterVariable (&tp_name_ring);
+	Cvar_RegisterVariable (&tp_name_suit);
+	Cvar_RegisterVariable (&tp_name_shells);
+	Cvar_RegisterVariable (&tp_name_nails);
+	Cvar_RegisterVariable (&tp_name_rockets);
+	Cvar_RegisterVariable (&tp_name_cells);
+	Cvar_RegisterVariable (&tp_name_mh);
+	Cvar_RegisterVariable (&tp_name_health);
+	Cvar_RegisterVariable (&tp_name_backpack);
+	Cvar_RegisterVariable (&tp_name_flag);
 
+	Cmd_AddCommand ("macrolist", TP_MacroList_f);
 	Cmd_AddCommand ("loadloc", TP_LoadLocFile_f);
 	Cmd_AddCommand ("msg_trigger", TP_MsgTrigger_f);
 	Cmd_AddCommand ("teamcolor", TP_TeamColor_f);
 	Cmd_AddCommand ("enemycolor", TP_EnemyColor_f);
+	Cmd_AddCommand ("tp_took", TP_TookTrigger_f);
 }

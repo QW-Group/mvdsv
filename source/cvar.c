@@ -1,5 +1,3 @@
-// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
-
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -28,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #ifdef QW_BOTH
-#include "progs.h"		// FIXME
 #include "server.h"
 #endif
 
@@ -173,9 +170,11 @@ void Cvar_Set (cvar_t *var, char *value)
 #if defined(SERVERONLY) || defined(QW_BOTH)
 	if (var->flags & CVAR_SERVERINFO)
 	{
-		Info_SetValueForKey (svs.info, var->name, var->string, MAX_SERVERINFO_STRING);
-		SV_SendServerInfoChange(var->name, var->string);
-//		SV_BroadcastCommand ("fullserverinfo \"%s\"\n", svs.info);
+		if (strcmp(var->string, Info_ValueForKey (svs.info, var->name)))
+		{
+			Info_SetValueForKey (svs.info, var->name, var->string, MAX_SERVERINFO_STRING);
+			SV_SendServerInfoChange(var->name, var->string);
+		}
 	}
 #endif
 
@@ -192,6 +191,11 @@ void Cvar_Set (cvar_t *var, char *value)
 #endif
 }
 
+/*
+============
+Cvar_SetROM
+============
+*/
 void Cvar_SetROM (cvar_t *var, char *value)
 {
 	int saved_flags;
@@ -276,7 +280,9 @@ Handles variable inspection and changing from the console
 */
 qboolean Cvar_Command (void)
 {
-	cvar_t			*v;
+	int			i, c;
+	cvar_t		*v;
+	char		string[1024];
 
 // check variables
 	v = Cvar_FindVar (Cmd_Argv(0));
@@ -284,13 +290,22 @@ qboolean Cvar_Command (void)
 		return false;
 		
 // perform a variable print or set
-	if (Cmd_Argc() == 1)
+	c = Cmd_Argc();
+	if (c == 1)
 	{
 		Con_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
 		return true;
 	}
 
-	Cvar_Set (v, Cmd_Argv(1));
+	string[0] = 0;
+	for (i=1 ; i < c ; i++)
+	{
+		if (i > 1)
+			strcat (string, " ");
+		strcat (string, Cmd_Argv(i));
+	}
+
+	Cvar_Set (v, string);
 	return true;
 }
 

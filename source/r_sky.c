@@ -28,12 +28,12 @@ int		iskyspeed = 8;
 int		iskyspeed2 = 2;
 float	skyspeed, skyspeed2;
 
-float		skytime;
+float	skyshift;
 
-byte		*r_skysource;
+byte	*r_skysource;
 
-int r_skymade;
-int r_skydirect;		// not used?
+int		r_skymade;
+int		r_skydirect;		// not used?
 
 
 // TODO: clean up these routines
@@ -102,8 +102,8 @@ void R_MakeSky (void)
 	unsigned	*pnewsky;
 	static int	xlast = -1, ylast = -1;
 
-	xshift = skytime*skyspeed;
-	yshift = skytime*skyspeed;
+	xshift = skyshift;
+	yshift = skyshift;
 
 	if ((xshift == xlast) && (yshift == ylast))
 		return;
@@ -166,8 +166,8 @@ void R_GenSkyTile (void *pdest)
 	unsigned	*pnewsky;
 	unsigned	*pd;
 
-	xshift = skytime*skyspeed;
-	yshift = skytime*skyspeed;
+	xshift = skyshift;
+	yshift = skyshift;
 
 	pnewsky = (unsigned *)&newsky[0];
 	pd = (unsigned *)pdest;
@@ -225,8 +225,8 @@ void R_GenSkyTile16 (void *pdest)
 	byte			*pnewsky;
 	unsigned short	*pd;
 
-	xshift = skytime * skyspeed;
-	yshift = skytime * skyspeed;
+	xshift = skyshift;
+	yshift = skyshift;
 
 	pnewsky = (byte *)&newsky[0];
 	pd = (unsigned short *)pdest;
@@ -261,7 +261,7 @@ R_SetSkyFrame
 void R_SetSkyFrame (void)
 {
 	int		g, s1, s2;
-	float	temp;
+	float	temp, skytime;
 
 	skyspeed = iskyspeed;
 	skyspeed2 = iskyspeed2;
@@ -272,7 +272,7 @@ void R_SetSkyFrame (void)
 	temp = SKYSIZE * s1 * s2;
 
 	skytime = cl.time - ((int)(cl.time / temp) * temp);
-	
+	skyshift = skytime * skyspeed;	
 
 	r_skymade = 0;
 }

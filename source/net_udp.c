@@ -157,37 +157,6 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 	return true;
 }
 
-// Returns true if we can't bind the address locally--in other words, 
-// the IP is NOT one of our interfaces.
-qboolean NET_IsClientLegal(netadr_t *adr)
-{
-	struct sockaddr_in sadr;
-	int newsocket;
-
-#if 0
-	if (adr->ip[0] == 127)
-		return false; // no local connections period
-
-	NetadrToSockadr (adr, &sadr);
-
-	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-		Sys_Error ("NET_IsClientLegal: socket:", strerror(errno));
-
-	sadr.sin_port = 0;
-
-	if( bind (newsocket, (void *)&sadr, sizeof(sadr)) == -1) 
-	{
-		// It is not a local address
-		close(newsocket);
-		return true;
-	}
-	close(newsocket);
-	return false;
-#else
-	return true;
-#endif
-}
-
 
 //=============================================================================
 

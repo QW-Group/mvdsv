@@ -27,20 +27,14 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: cl_slist.c,v 1.1.1.2 2004/09/28 18:57:41 vvd0 Exp $
+	$Id: cl_slist.c,v 1.1.1.3 2004/09/28 19:04:19 vvd0 Exp $
 */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "quakedef.h"
-//#include "common.h"
-//#include "console.h"
 #include "cl_slist.h"
 
 //Better watch out for buffer overflows
 server_entry_t	slist[MAX_SERVER_LIST];
-extern char	com_basedir[MAX_OSPATH];
 
 char *gettokstart (char *str, int req, char delim);
 int gettoklen(char *str, int req, char delim);
@@ -96,8 +90,8 @@ void SList_Set (int i, char *addr, char *desc)
 	if (slist[i].description)
 		free(slist[i].description);
 
-	slist[i].server = malloc(strlen(addr) + 1);
-	slist[i].description = malloc(strlen(desc) + 1);
+	slist[i].server = Q_Malloc (strlen(addr) + 1);
+	slist[i].description = Q_Malloc (strlen(desc) + 1);
 	strcpy (slist[i].server, addr);
 	strcpy (slist[i].description, desc);
 }
@@ -181,9 +175,8 @@ void SList_Load ()	 // This could get messy
 		// Now we can parse it
 		if ((start = gettokstart(line,1,' ')) != NULL) {
 			len = gettoklen(line,1,' ');
-			addr = malloc(len + 1);
-			strncpy(addr, line, len);
-			addr[len] = '\0';
+			addr = Q_Malloc (len + 1);
+			Q_strncpyz (addr, line, len+1);
 			if ((start = gettokstart(line,2,' '))) {
 				SList_Set (serv, addr, start);
 			}

@@ -413,3 +413,70 @@ pmtrace_t PM_PlayerMove (vec3_t start, vec3_t end)
 }
 
 
+/*
+================
+PM_TraceLine
+
+FIXME: merge with PM_PlayerMove (PM_Move?)
+================
+*/
+pmtrace_t PM_TraceLine (vec3_t start, vec3_t end)
+{
+	pmtrace_t		trace, total;
+	vec3_t		offset;
+	vec3_t		start_l, end_l;
+	hull_t		*hull;
+	int			i;
+	physent_t	*pe;
+
+// fill in a default trace
+	memset (&total, 0, sizeof(pmtrace_t));
+	total.fraction = 1;
+	total.ent = -1;
+	VectorCopy (end, total.endpos);
+
+	for (i=0 ; i< pmove.numphysent ; i++)
+	{
+		pe = &pmove.physents[i];
+	// get the clipping hull
+		if (pe->model)
+			hull = &pmove.physents[i].model->hulls[0];
+		else
+			hull = PM_HullForBox (pe->mins, pe->maxs);
+
+	// PM_HullForEntity (ent, mins, maxs, offset);
+	VectorCopy (pe->origin, offset);
+
+		VectorSubtract (start, offset, start_l);
+		VectorSubtract (end, offset, end_l);
+
+	// fill in a default trace
+		memset (&trace, 0, sizeof(pmtrace_t));
+		trace.fraction = 1;
+		trace.allsolid = true;
+//		trace.startsolid = true;
+		VectorCopy (end, trace.endpos);
+
+	// trace a line through the apropriate clipping hull
+		PM_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
+
+		if (trace.allsolid)
+			trace.startsolid = true;
+		if (trace.startsolid)
+			trace.fraction = 0;
+
+	// did we clip the move?
+		if (trace.fraction < total.fraction)
+		{
+			// fix trace up by the offset
+			VectorAdd (trace.endpos, offset, trace.endpos);
+			total = trace;
+			total.ent = i;
+		}
+
+	}
+
+	return total;
+}
+
+
