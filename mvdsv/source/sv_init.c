@@ -581,7 +581,7 @@ void SV_SpawnServer (char *server)
 #ifdef USE_PR2
 //restore client names
 //for -progtype 0 (VM_NONE) names stored in clientnames array
-//for -progtype 1 (VM_NAITVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
+//for -progtype 1 (VM_NATIVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
 		if(sv_vm)
 			svs.clients[i].name = PR2_GetString(ent->v.netname);
 		else
@@ -604,25 +604,21 @@ void SV_SpawnServer (char *server)
 	//
 	// clear physics interaction links
 	//
-
 	SV_ClearWorld ();
-	
-	sv.sound_precache[0] = pr_strings;
 
 #ifdef USE_PR2
-	if ( !sv_vm )
-	{
-#endif
-		sv.model_precache[0] = pr_strings;
-		sv.model_precache[1] = sv.modelname;
-#ifdef USE_PR2
-	}
-	else
+	if ( sv_vm )
 	{
 		sv.sound_precache[0] = "";
 		sv.model_precache[0] = "";
 	}
+	else
 #endif
+	{
+		sv.sound_precache[0] = pr_strings;
+		sv.model_precache[0] = pr_strings;
+	}
+	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
 	{
@@ -655,18 +651,8 @@ void SV_SpawnServer (char *server)
 	ent->v.movetype = MOVETYPE_PUSH;
 
 	// information about the server
-#ifdef USE_PR2
-	if ( sv_vm )
-		strlcpy(PR2_GetString(ent->v.netname), sv.worldmodel->name, 64);
-	else 
-#endif
-		ent->v.netname = PR_SetString(version.string);
-#ifdef USE_PR2
-	if ( sv_vm )
-		strlcpy(PR2_GetString(ent->v.targetname), sv.worldmodel->name, 64);
-	else 
-#endif
-		ent->v.targetname = PR_SetString("mvdsv");
+	ent->v.netname = PR_SetString(version.string);
+	ent->v.targetname = PR_SetString("mvdsv");
 	ent->v.impulse = QWE_VERNUM;
 	ent->v.items = pr_numbuiltins - 1;
 
@@ -734,6 +720,9 @@ void SV_SpawnServer (char *server)
 
 	Info_SetValueForKey (svs.info, "map", sv.name, MAX_SERVERINFO_STRING);
 
+#ifdef USE_PR2
+	if ( !sv_vm )
+#endif
 	if ((f = ED_FindFunction ("timeofday")) != NULL) {
 		date_t date;
 

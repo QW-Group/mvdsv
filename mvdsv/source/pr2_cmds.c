@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.2 2005/02/21 15:19:05 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.3 2005/03/01 18:20:51 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -2131,7 +2131,6 @@ pr2_trapcall_t pr2_API[]=
 	PF2_FS_GetFileList,
 	PF2_cvar_set_float,
 	PF2_cvar_string,
-	PF2_Map_Extension,
 	PF2_Map_Extension,
 	PF2_strcmp,
 	PF2_strncmp,

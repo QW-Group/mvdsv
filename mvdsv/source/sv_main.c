@@ -964,7 +964,7 @@ void SVC_DirectConnect (void)
 #ifdef USE_PR2
 //restore pointer to client name
 //for -progtype 0 (VM_NONE) names stored in clientnames array
-//for -progtype 1 (VM_NAITVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
+//for -progtype 1 (VM_NATIVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
 	if(sv_vm)
 		newcl->name = PR2_GetString(ent->v.netname);
 	else
