@@ -1,15 +1,37 @@
+typedef struct {
+	int frame;
+	byte source;
+	byte type;
+	byte full;
+	int to;
+	int size;
+	byte data[];
+} header_t;
+
 typedef struct sizebuf_s
 {
 	byte	*data;
 	int		maxsize;
 	int		cursize;
-	int		*size;
 	int		bufsize;
-	int		curtype, curto;
+	header_t *h;
 } sizebuf_t;
 
-extern int			msgmax;
+typedef struct {
+	byte	*data;
+	int		start, end, last;
+	int		maxsize;
+	sizebuf_t *msgbuf;
+} dbuffer_t;
+
 extern sizebuf_t	*msgbuf;
+
+typedef struct
+{
+	char **list;
+	char path[MAX_OSPATH];
+	int  count;
+} flist_t;
 
 
 void SZ_Clear (sizebuf_t *buf);
@@ -97,13 +119,17 @@ void AddParm (char *parm);
 void RemoveParm (int num);
 
 void Tools_Init (void);
-void InitArgv (int argc, char **argv);
+void Argv_Init (int argc, char **argv);
 
 void StripExtension (char *in, char *out);
 char *FileExtension (char *in);
 void DefaultExtension (char *path, char *extension);
 void ForceExtension (char *path, char *extension);
-char *TemplateName (char *dst, char *src);
+char *TemplateName (char *dst, char *src, char *ch);
+
+char *getPath(char *path);
+int AddToFileList(flist_t*filelist, char *file);
+void FreeFileList(flist_t*filelist);
 
 char	*va(char *format, ...);
 // does a varargs printf into a temp buffer
@@ -112,11 +138,28 @@ int fileLength (FILE *f);
 int FileOpenRead (char *path, FILE **hndl);
 byte *LoadFile(char *path);
 
+#define DemoBuffer_Clear(b)	{(b)->start = (b)->end = (b)->last = 0;(b)->msgbuf = NULL;}
+
+void DemoBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg);
+void DemoBuffer_Set(dbuffer_t *dbuffer);
+void DemoSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur);
 void DemoWrite_Begin(byte type, int to, int size);
-void DemoWriteToDisk(int type, int to, float time);
+void DemoWrite_Cat(sizebuf_t *buf);
+void DemoWriteToDisk(sizebuf_t *m, int type, int to, float time);
 void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
 
 vec_t Length(vec3_t v);
+
+/*
+#define MAXSIZE (demobuffer->end < demobuffer->last ? \
+				demobuffer->start - demobuffer->end : \
+				demobuffer->maxsize - demobuffer->end)
+*/
+#define MAXSIZE(d) ((d)->end < (d)->last ? \
+				(d)->start - (d)->end : \
+				(d)->maxsize - (d)->end)
+
+
 
 
 

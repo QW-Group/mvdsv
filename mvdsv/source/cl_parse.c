@@ -1234,6 +1234,7 @@ void CL_ProcessServerInfo (void)
 				CL_NewTranslation (i);
 		}
 	}
+
 }
 
 /*

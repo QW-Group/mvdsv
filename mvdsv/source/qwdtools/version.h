@@ -1,2 +1,2 @@
-#define VERSION "QWDtools ver. 0.14b"
+#define VERSION "QWDtools ver. 0.152b"
 

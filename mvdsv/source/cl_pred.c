@@ -68,6 +68,7 @@ void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, 
 {
 	extern cvar_t	cl_speedjumpfix;
 
+
 	// split up very long moves
 	if (u->msec > 50)
 	{

@@ -451,6 +451,8 @@ void PM_AirAccelerate (vec3_t wishdir, float wishspeed, float accel)
 	addspeed = wishspd - currentspeed;
 	if (addspeed <= 0)
 		return;
+
+
 	accelspeed = accel * wishspeed * frametime;
 	if (accelspeed > addspeed)
 		accelspeed = addspeed;

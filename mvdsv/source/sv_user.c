@@ -814,7 +814,8 @@ void SV_BeginDownload_f(void)
 	}
 
 	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0]) {
-		sprintf(n, "%s/%s", sv_demoDir.string, name + 6);
+		_snprintf(n,sizeof(n), "%s/%s", sv_demoDir.string, name + 6);
+		n[sizeof(n)-1] = 0;
 		name = n;
 	} else if (!strncmp(name, "demonum/", 8)) {
 		int num;
@@ -838,7 +839,8 @@ void SV_BeginDownload_f(void)
 			return;
 		}
 		Con_Printf("downloading demos/%s\n",name);
-		sprintf(n, "download demos/%s\n", name);
+		_snprintf(n, sizeof(n), "download demos/%s\n", name);
+		n[sizeof(n)-1] = 0;
 
 		ClientReliableWrite_Begin (host_client, svc_stufftext,strlen(n) + 2);
 		ClientReliableWrite_String (host_client, n);

@@ -28,14 +28,18 @@ static qboolean QizmoRunning ()
 	return false;
 }
 
-void StopQWZ (void)
+void StopQWZ (source_t *s)
 {
-	if (from.qwz && sworld.from.file) {
-		Sys_fclose(sworld.from.file);
-		from.qwz = false;
-		if (remove (sworld.from.name) != 0)
-			Sys_Printf ("Couldn't delete %s\n", sworld.from.name);
-		else Sys_Printf (" deleted %s\n", sworld.from.name);
+	int num;
+
+	num = s - sources;
+
+	if (s->qwz && sworld.from[num].file) {
+		Sys_fclose(sworld.from[num].file);
+		s->qwz = false;
+		if (remove (sworld.from[num].name) != 0)
+			Sys_Printf ("Couldn't delete %s\n", sworld.from[num].name);
+		else Sys_Printf (" deleted %s\n", sworld.from[num].name);
 	}
 }
 

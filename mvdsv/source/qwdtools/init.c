@@ -29,6 +29,7 @@ void Help (void)
 	Sys_Printf("-ft                    filters team chats\n");
 	Sys_Printf("-msg                   msg level (same as QW's msg command)\n");
 	Sys_Printf("-c                     converts to mvd (assumed if no options are given)\n");
+	Sys_Printf("-m                     marges multiple demos to one mvd demo\n");
 	//Sys_Printf("-analyse/-a            - analysing demo\n");
 	Sys_Printf("-log                   creates log file\n");
 	Sys_Printf("-debug                 prints way too much messages\n");
@@ -37,7 +38,7 @@ void Help (void)
 	Sys_Printf("-ini path              name of ini file (default: qwdtools.ini)\n");
 	Sys_Printf("-stdin [format]        file from stdin  (default format: qwd)\n");
 	Sys_Printf("-stdout                result to stdout (first found option: -c/-log/-debug)\n");
-	Sys_Printf("\n" VERSION " (c) 2001 Bartlomiej Rychtarski (highlander@gracz.net)\nhttp://qwex.n3.net/\n");
+	//Sys_Printf("\n" VERSION " (c) 2001 Bartlomiej Rychtarski (highlander@gracz.net)\nhttp://qwex.n3.net/\n");
 }
 
 BOOL WINAPI CtrlC( DWORD dwCtrlType )
@@ -80,7 +81,7 @@ World_Init
 Initial values
 ===================
 */
-extern float olddemotime;
+void CleanName_Init ();
 void World_Init(void)
 {
 	int i;
@@ -91,6 +92,7 @@ void World_Init(void)
 	strcpy(outputDir, "");
 
 	sworld.fps = DEFAULT_FPS;
+	sworld.range = 5;
 	strcpy (sworld.debug.name, DEBUG_FILE);
 	strcpy (sworld.log.name, LOG_FILE);
 	strcpy (sworld.demo.name, "*");
@@ -118,6 +120,8 @@ void World_Init(void)
 
 	if (CheckParm("-stdout"))
 		sworld.options |= O_STDOUT;
+
+	CleanName_Init ();
 }
 
 /*
@@ -155,6 +159,8 @@ param_t params[] =
 	{"-noini"},
 	{"-base_dir", "-bd", TYPE_S, currentDir},
 	{"-msglevel", "-msg", TYPE_I, &sworld.msglevel},
+	{"-marge", "-m", TYPE_O, O_MARGE},
+	{"-range", "-r", TYPE_I, &sworld.range},
 	NULL
 };
 #pragma warning( default : 4133 4047)
@@ -174,7 +180,7 @@ void ParseArgv(void)
 {
 	int		i, o;
 	param_t	*param;
-	char	qwz_files[1024] = "", *ext, *arg;
+	char	qwz_files[1024] = "", *ext, *arg, tmp[MAX_OSPATH];
 
 	if (CheckParm("-help"))
 	{
@@ -207,9 +213,12 @@ void ParseArgv(void)
 				Sys_Exit(1);
 			}
 
-			// it's a file name
-			strcpy(sourceName[sworld.sources], arg);
-			DefaultExtension(sourceName[sworld.sources], ".qwd");
+			// it's a file name, first add default extension if needed
+			// then add to file list
+			strcpy(tmp, arg);
+			DefaultExtension(tmp, ".qwd");
+			sworld.sources += AddToFileList(sworld.filelist, tmp);
+
 			// check for qwz extension
 			ext = FileExtension (arg);
 			if (!_stricmp(ext, ".qwz")) {
@@ -221,7 +230,6 @@ void ParseArgv(void)
 				else
 					strcat(qwz_files, va("\"%s\\%s\" ", currentDir, arg));
 			}
-			sworld.sources++;
 
 			continue;
 		}
@@ -237,9 +245,10 @@ void ParseArgv(void)
 				strcpy(param->str, com_argv[i]);
 			} else {
 				// if it's stdin assume qwd
-				if (param->opt2 == O_STDIN)
+				if (param->opt2 == O_STDIN) {
 					strcpy(param->str, "qwd");
-				else {
+					i--;
+				} else {
 					Sys_Printf("init: missing argument for %s\n", arg);
 					Help();
 					Sys_Exit(1);
@@ -280,22 +289,30 @@ void ParseArgv(void)
 		whatToStdout = O_CONVERT;
 	}
 
+	if (sworld.options & O_MARGE)
+		sworld.options -= (sworld.options & (O_CONVERT | O_STDIN));
+
 	// change translation mode for stdin
 	if (sworld.options & O_STDIN)
 	{	
 		sworld.sources = 1;
-		sworld.from.file = stdin;
-		strcpy(sourceName[0], "stdin");
-		DefaultExtension(sworld.from.name, va(".%s", stdintype));
-		if (_setmode (_fileno(sworld.from.file), _O_BINARY) == -1)
+		sworld.from->file = stdin;
+
+		// free file list, files from argument list won't be used
+		FreeFileList(sworld.filelist);
+		AddToFileList(sworld.filelist, "");
+
+		if (_setmode (_fileno(sworld.from->file), _O_BINARY) == -1)
 			Sys_Error("failed to set binary mode for stdin");
-	} else if (qwz_files[0]) {
-		// decompress qwz files
-		if (!OpenQWZ(qwz_files))
-			Sys_Printf("Couldn't decompress qwz file(s)\n");
+	} else {
+		if (qwz_files[0]) {
+			// decompress qwz files
+			if (!OpenQWZ(qwz_files))
+				Sys_Printf("Couldn't decompress qwz file(s)\n");
+		}
 	}
 
-	if (!sworld.sources)
+	if (sworld.filelist[0].list == NULL/* && !(sworld.options & O_STDIN)*/)
 	{
 		Sys_Printf("demo name not specified\n");
 		Help();
@@ -307,6 +324,9 @@ void ParseArgv(void)
 		sworld.fps = 4;
 	if (sworld.fps > 100)
 		sworld.fps = 100;
+
+	if (sworld.range < 1) sworld.range = 1;
+	if (sworld.range > 15) sworld.range = 15;
 }
 
 
@@ -343,17 +363,30 @@ Init file system
 
 int Files_Init (int options)
 {
-	char *p, log[MAX_OSPATH], debug[MAX_OSPATH], convert[MAX_OSPATH], out[MAX_OSPATH], analyse[MAX_OSPATH];
-	int job = 0;
-	extern char *sourcePath;
+	char *p, log[MAX_OSPATH], debug[MAX_OSPATH], convert[MAX_OSPATH], out[MAX_OSPATH], analyse[MAX_OSPATH], d[MAX_OSPATH];
+	int job = 0, i;
 
-	strcpy(convert, TemplateName(sworld.from.name, sworld.demo.name));
+	if (!strcmp(currentDir, sworld.from->path))
+		strcpy(d, ".");
+	else
+		strcpy(d, sworld.from->path);
+	
+	strcpy(out, TemplateName(d, outputDir, "@"));
+	//Sys_Printf("%s, %s, %s, %s\n", sworld.from->path, d, outputDir, out);
+
+	if (options & O_MARGE) 
+		p = "marge";
+	else
+		p = sworld.from->name;
+
+
+	strcpy(convert, TemplateName(p, sworld.demo.name, "*"));
 	ForceExtension(convert, ".mvd");
 
-	strcpy(log, TemplateName(sworld.from.name, sworld.log.name));
-	strcpy(debug, TemplateName(sworld.from.name, sworld.debug.name));
-	strcpy(out, TemplateName(sworld.from.name, outputDir));
-	strcpy(analyse, TemplateName(sworld.from.name, sworld.analyse.name));
+	strcpy(log, TemplateName(p, sworld.log.name, "*"));
+	strcpy(debug, TemplateName(p, sworld.debug.name, "*"));
+	strcpy(out, TemplateName(p, out, "*"));
+	strcpy(analyse, TemplateName(p, sworld.analyse.name, "*"));
 	
 	if (out[0]) 
 	{
@@ -371,34 +404,50 @@ int Files_Init (int options)
 	sprintf(log, "%s", va("%s%s", out, log));
 	sprintf(debug, "%s", va("%s%s", out, debug));
 
-	if (strcmp(currentDir, sourcePath))
-		strcpy(sworld.from.name, va("%s%s", sourcePath, sworld.from.name));
-
-	if (!strcmp(convert, sworld.from.name) && options & O_CONVERT) {
-		Sys_Printf("Can't convert from %s to %s!\n", sworld.from.name, convert);
-		options -= O_CONVERT;
-	}
-
-	// open source file
-
-	if (sworld.options & O_STDIN) {
-		if (from.format == qwd)
-			strcat(sworld.from.name, " (qwd)");
-		else
-			strcat(sworld.from.name, " (mvd)");
-	} else if ((sworld.from.filesize = FileOpenRead(sworld.from.name, &sworld.from.file)) == -1)
+	// open source file(s)
+	for (i = 0, from = sources; i < sworld.fromcount; i++, from++)
 	{
-		Sys_Printf("couldn't open for reading: %s\n", sworld.from.name);
-		return 0;
+		if (strcmp(currentDir, sworld.from[i].path))
+			strcpy(sworld.from[i].name, va("%s%s", sworld.from[i].path, sworld.from[i].name));
+
+		if (!strcmp(convert, sworld.from[i].name) && options & O_CONVERT) {
+			Sys_Printf("Can't convert from %s to %s!\n", sworld.from[i].name, convert);
+			options -= O_CONVERT;
+		}
+
+		if (sworld.options & O_STDIN) {
+			if (from->format == qwd)
+				strcat(sworld.from[i].name, " (qwd)");
+			else
+				strcat(sworld.from[i].name, " (mvd)");
+		} else if ((sworld.from[i].filesize = FileOpenRead(sworld.from[i].name, &sworld.from[i].file)) == -1)
+		{
+			Sys_Printf("couldn't open for reading: %s\n", sworld.from[i].name);
+			return 0;
+		}
+
+		world.demossize += sworld.from[i].filesize;
 	}
 
-	Sys_Printf("\nsource: %s\n", sworld.from.name);
+	if (options & O_MARGE)
+	{
+		Sys_Printf("sources: %s\n", sworld.from[0].name);
+		for (i = 1; i < sworld.fromcount; i++)
+			Sys_Printf("         %s\n", sworld.from[i].name);
+	} else
+		Sys_Printf("source: %s\n", sworld.from[0].name);
 
 	// open output files
 	if (options & O_CONVERT) {
 		sworld.demo.file = openFile(convert, " converting to", O_CONVERT, _O_BINARY);
 		if (sworld.demo.file)
 			job |= O_CONVERT;
+	}
+
+	if (options & O_MARGE) {
+		sworld.demo.file = openFile(convert, " marging to", O_CONVERT, _O_BINARY);
+		if (sworld.demo.file)
+			job |= O_MARGE;
 	}
 
 	if (options & O_DEBUG) {
