@@ -243,6 +243,7 @@ DialogFunc
 Main window procedure
 =================
 */
+void SV_Quit_f(void);
 
 BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {

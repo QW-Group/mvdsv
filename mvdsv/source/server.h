@@ -227,20 +227,16 @@ typedef struct client_s
 
 	int				spawncount;			// for tracking map changes during downloading
 
-  //bliP: additional ->
-  int       file_percent;
-  qboolean  special;
-  int       logincount;
-
-  float			lasttoptime;		// time of last topcolor change
+//bliP: additional ->
+	int				file_percent;
+	qboolean		special;
+	int				logincount;
+	float			lasttoptime;		// time of last topcolor change
 	int				lasttopcount;		// count of last topcolor change
- 
-  int				lastconnect;
-
-  int       spec_print;
-
-  double    cuff_time;
-  //<-
+	int				lastconnect;
+	int				spec_print;
+	double			cuff_time;
+//<-
  
 //===== NETWORK ============
 	int				chokecount;

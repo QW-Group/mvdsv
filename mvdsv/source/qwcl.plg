@@ -6,58 +6,9 @@
 --------------------Configuration: qwcl - Win32 GLRelease--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "c:\Temp\RSP4E.bat" with contents
+Creating temporary file "c:\Temp\RSP241.tmp" with contents
 [
-@echo off
-cl /nologo /EP > .\GLRelease\sys_x86.spp .\sys_x86.s
-gas2masm < .\GLRelease\sys_x86.spp >.\GLRelease\sys_x86.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\sys_x86.obj /Zm /Zi             .\GLRelease\sys_x86.asm
-del .\GLRelease\sys_x86.spp
-]
-Creating command line "c:\Temp\RSP4E.bat"
-Creating temporary file "c:\Temp\RSP4F.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\GLRelease\snd_mixa.spp .\snd_mixa.s
-gas2masm < .\GLRelease\snd_mixa.spp >.\GLRelease\snd_mixa.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\snd_mixa.obj /Zm /Zi             .\GLRelease\snd_mixa.asm
-del .\GLRelease\snd_mixa.spp
-]
-Creating command line "c:\Temp\RSP4F.bat"
-Creating temporary file "c:\Temp\RSP50.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\GLRelease\math.spp .\math.s
-gas2masm < .\GLRelease\math.spp >.\GLRelease\math.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\math.obj /Zm /Zi             .\GLRelease\math.asm
-del .\GLRelease\math.spp
-]
-Creating command line "c:\Temp\RSP50.bat"
-Creating temporary file "c:\Temp\RSP51.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\GLRelease\cl_math.spp .\cl_math.s
-gas2masm < .\GLRelease\cl_math.spp >.\GLRelease\cl_math.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\cl_math.obj /Zm /Zi             .\GLRelease\cl_math.asm
-del .\GLRelease\cl_math.spp
-]
-Creating command line "c:\Temp\RSP51.bat"
-Creating command line "rc.exe /l 0x409 /fo".\GLRelease/winquake.res" /d "_DEBUG" "D:\Quake\qwex\mvdsv_0.1727\source\winquake.rc"" 
-Performing Custom Build Step on .\sys_x86.s
-sys_x86.s
- Assembling: .\GLRelease\sys_x86.asm
-Performing Custom Build Step on .\snd_mixa.s
-snd_mixa.s
- Assembling: .\GLRelease\snd_mixa.asm
-Performing Custom Build Step on .\math.s
-math.s
- Assembling: .\GLRelease\math.asm
-Performing Custom Build Step on .\cl_math.s
-cl_math.s
- Assembling: .\GLRelease\cl_math.asm
-Creating temporary file "c:\Temp\RSP52.tmp" with contents
-[
-/nologo /G5 /ML /W3 /GX /Ot /Ow /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "LITTLE_ENDIAN" /Fr".\GLRelease/" /Fp".\GLRelease/qwplayer.pch" /YX /Fo".\GLRelease/" /Fd".\GLRelease/" /FD /c 
+/nologo /G6 /Zp4 /ML /W3 /GX /O1 /Ob1 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "GLQUAKE" /D "id386" /D "LITTLE_ENDIAN" /Fp".\GLRelease/qwplayer.pch" /YX /Fo".\GLRelease/" /Fd".\GLRelease/" /FD /c 
 "D:\Quake\qwex\mvdsv_0.1727\source\cd_win.c"
 "D:\Quake\qwex\mvdsv_0.1727\source\cl_cam.c"
 "D:\Quake\qwex\mvdsv_0.1727\source\cl_cmd.c"
@@ -112,8 +63,8 @@ Creating temporary file "c:\Temp\RSP52.tmp" with contents
 "D:\Quake\qwex\mvdsv_0.1727\source\wad.c"
 "D:\Quake\qwex\mvdsv_0.1727\source\zone.c"
 ]
-Creating command line "cl.exe @c:\Temp\RSP52.tmp" 
-Creating temporary file "c:\Temp\RSP53.tmp" with contents
+Creating command line "cl.exe @c:\Temp\RSP241.tmp" 
+Creating temporary file "c:\Temp\RSP242.tmp" with contents
 [
 comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /incremental:no /pdb:".\GLRelease/qwplayer-gl.pdb" /machine:I386 /out:"..\qwplayer-gl.exe" 
 .\GLRelease\cd_win.obj
@@ -175,9 +126,8 @@ comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.l
 .\GLRelease\snd_mixa.obj
 .\GLRelease\sys_x86.obj
 ]
-Creating command line "link.exe @c:\Temp\RSP53.tmp"
+Creating command line "link.exe @c:\Temp\RSP242.tmp"
 <h3>Output Window</h3>
-Compiling resources...
 Compiling...
 cd_win.c
 cl_cam.c
@@ -233,65 +183,6 @@ view.c
 wad.c
 zone.c
 Linking...
-Creating temporary file "c:\Temp\RSP55.tmp" with contents
-[
-/nologo /o".\GLRelease/qwplayer.bsc" 
-.\GLRelease\cd_win.sbr
-.\GLRelease\cl_cam.sbr
-.\GLRelease\cl_cmd.sbr
-.\GLRelease\cl_demo.sbr
-.\GLRelease\cl_ents.sbr
-.\GLRelease\cl_input.sbr
-.\GLRelease\cl_main.sbr
-.\GLRelease\cl_parse.sbr
-.\GLRelease\cl_pred.sbr
-.\GLRelease\cl_slist.sbr
-.\GLRelease\cl_tent.sbr
-.\GLRelease\cmd.sbr
-.\GLRelease\common.sbr
-.\GLRelease\console.sbr
-.\GLRelease\crc.sbr
-.\GLRelease\cvar.sbr
-.\GLRelease\gl_draw.sbr
-.\GLRelease\gl_mesh.sbr
-.\GLRelease\gl_model.sbr
-.\GLRelease\gl_ngraph.sbr
-.\GLRelease\gl_refrag.sbr
-.\GLRelease\gl_rlight.sbr
-.\GLRelease\gl_rmain.sbr
-.\GLRelease\gl_rmisc.sbr
-.\GLRelease\gl_rsurf.sbr
-.\GLRelease\gl_screen.sbr
-.\GLRelease\gl_test.sbr
-.\GLRelease\gl_warp.sbr
-.\GLRelease\in_win.sbr
-.\GLRelease\keys.sbr
-.\GLRelease\mathlib.sbr
-.\GLRelease\mdfour.sbr
-.\GLRelease\menu.sbr
-.\GLRelease\net_chan.sbr
-.\GLRelease\net_wins.sbr
-.\GLRelease\nonintel.sbr
-.\GLRelease\pmove.sbr
-.\GLRelease\pmovetst.sbr
-.\GLRelease\r_part.sbr
-.\GLRelease\sbar.sbr
-.\GLRelease\sha1.sbr
-.\GLRelease\skin.sbr
-.\GLRelease\snd_dma.sbr
-.\GLRelease\snd_mem.sbr
-.\GLRelease\snd_mix.sbr
-.\GLRelease\snd_win.sbr
-.\GLRelease\sys_win.sbr
-.\GLRelease\teamplay.sbr
-.\GLRelease\version.sbr
-.\GLRelease\vid_wgl.sbr
-.\GLRelease\view.sbr
-.\GLRelease\wad.sbr
-.\GLRelease\zone.sbr]
-Creating command line "bscmake.exe @c:\Temp\RSP55.tmp"
-Creating browse info file...
-<h3>Output Window</h3>
 
 
 

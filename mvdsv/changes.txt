@@ -1,10 +1,70 @@
 ----
+QWEX v0.1728 build 1675
+[server]
+- win32: bugfix: used NT function for parse command line not work in win9x/ME (by VVD)
+- win32: changed window font to Fixedsys (formatted messages, such as status, look better) (by VVD)
+- added feature that logs player's scores in demo txt-files and first string now has format: (by VVD)
+    tp: team1[ player1_1(scores1_1) ... playerN_1(scoresN_1) ](scores1) ...
+        teamM[ player1_M(scores1_M) ... playerK_M(scoresK_M) ](scoresM)  @ map
+    duel: player1 vs player2 @ map - scores1:scores2
+    ffa: player1(scores1) ... playerN(scoresN) @ map
+- new cmd lastscores [<numlastdemos>] - read information from txt-files (first string)
+  '0' - for all demos
+  ''  - for last 10 demos
+  if demo recording is in progress <numlastdemos> is decreased to 10 (by VVD)
+- new cmd minping [<value>] - set or show sv_minping value
+  if demo recording is in progress sv_minping isn't changed (by VVD)
+- fixed a bug that allowed players to join the server even though the server was full, thus exceeding the 
+  maxplayers limit, thus causing for example 9/8 players (by bliP)
+- new cvar sv_showspectators 0/1 (by VVD)
+    Added feature to show spectators as players in qplug, qspy, servu (irc bot) etc. (connectionless command status),
+    but adding "(s)" to spectators' names; "specators' ping" = -"real ping" and frags are set to -9999.
+    This makes it possible to find spectating players too with (for example) servu's !qw fp
+    0 - don't show spectators
+    1 - show spectators
+    default: 1
+- QC:
+  TeamFortress map voting: (by bliP)
+    - bugfix in PF_findmap
+    - float(entity client, float level, float range, float start, float style, float footer) listmaps = #105; 
+    - string(float id) findmapname = #106;
+
+  Example:
+    local float fl;
+
+    // check if map exists
+    fl = findmap("2fort5r"); //or you can findmap("1") which will get map with id of 1
+    if (fl == 0) {
+      sprint(self, PRINT_HIGH, "File not found\n");
+    }
+    else {
+      sprint(self, PRINT_HIGH, "Exists, map id is: ");
+      sprint(self, PRINT_HIGH, ftos(fl));
+      sprint(self, PRINT_HIGH, "\n");
+    }
+
+    // print map name with id of 1
+    sprint(self, PRINT_HIGH, "Map with id of 1 is: ");
+    sprint(self, PRINT_HIGH, findmapname(1));
+    sprint(self, PRINT_HIGH, "\n");
+
+    // print 50 maps at a time to client
+    // recommended there's a wait as not to flood the client off the server
+    // style 0-2: 0-list, 1-chart, 2-long line
+    fl = 1;
+    while (fl) {
+      fl = listmaps(self, PRINT_HIGH, 50, fl, 2, 1);
+      //add wait here
+    }
+
+
+----
 QWEX v0.1727 Beta DEVELOP build 1667
 [server]
-- bugfix: linux server cpu usage bug
-- bugfix: sg hit effects, blood, etc disappearing in certain situations
+- bugfix: linux server cpu usage bug (by VVD)
+- bugfix: sg hit effects, blood, etc disappearing in certain situations (by VVD)
 (Thanks to Tonik)
-- bugfix: fraglogfile sometimes resulted in server crash
+- bugfix: fraglogfile sometimes resulted in server crash (by VVD)
 
 
 ----
@@ -24,7 +84,7 @@ QWEX v0.1727 Beta DEVELOP build 1666
   - new cvar sv_admininfo
   sv_admininfo "Name (email@address)", will set "*admin" "Name (email@address)" in serverinfo.
   - new cmd techlogin
-  Login to upload files and also download any file from inside the quake directory. (password encrypted)
+  Login to upload files and also download any file from inside the quake directory (password encrypted).
   - Ability to upload files from client to server.
   /cmd techlogin <master_rcon_password>
   /cmd upload somedir somefile.ext
@@ -252,7 +312,7 @@ QWEX v0.1722b Beta DEVELOP
       0 - old style log (  qwsv - v0.165)
       1 - new style log (v0.168 - v0.172)
       default: 0
-- add possibility for server-management via telnet:  
+- added possibility for server-management via telnet:  
   new command line options:
     -ipt IP - use the specified IP address for remote connection
     -telnetport port - use the specified tcp port for remote connection
@@ -716,3 +776,5 @@ changes over QWE v0.11 Beta
 
 ---
 HighlandeR
+
+

@@ -1228,8 +1228,10 @@ void PR_CleanLogText_Init ()
 {
 	int i;
 
-	for (i = 0; i < 256; i++)
-		chartbl2[i] = (i&127) < 32 ? ' ' : i&127;
+	for (i = 0; i < 33; i++)
+		chartbl2[i] = ' ';
+	for (i = 33; i < 256; i++)
+		chartbl2[i] = i & 127;
 
 	chartbl2[13] = 13;
 	chartbl2[10] = 10;
@@ -2214,12 +2216,12 @@ void PF_logfrag (void)
 	SV_Write_Log(FRAG_LOG, 1, s);
 }
 
-//bliP: find map ->
+//bliP: map voting ->
 /*==================
 PF_findmap
-finds maps in sv_gamedir for proper map voting
-either by id number or name, 1 for exist, 0 for not
-findmap(mapname/id)
+finds maps in sv_gamedir either by id number or name
+returns id for exist, 0 for not
+float(string s) findmap
 ==================*/
 void PF_findmap (void)
 {
@@ -2230,18 +2232,25 @@ void PF_findmap (void)
   int id;
   int i;
 
-	strlcpy(map, G_STRING(OFS_PARM0), sizeof(map));
-  if ((s = strchr(map, '.')) == NULL)
+	strlcpy(map, G_STRING(OFS_PARM0), sizeof(map)); 
+  for (i = 0, s = map; *s; s++) {
+    if (*s < '0' || *s > '9') {
+      i = 1;
+      break;
+    }
+  }
+  id = (i) ? 0 : Q_atoi(map);
+
+  if (!strstr(map, ".bsp"))
     strlcat(map, ".bsp", sizeof(map));
-  id = Q_atoi(map);  
 
 	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")), ".bsp", SORT_BY_NAME);
 	list = dir.files;
 
   i = 1;
 	while (list->name[0]) {
-    if ((id && i == id) || !strcmp(list->name, map)) {
-			G_FLOAT(OFS_RETURN) = 1;
+    if (((id > 0) && (i == id)) || !strcmp(list->name, map)) {
+			G_FLOAT(OFS_RETURN) = i;
       return;
     }
     i++;
@@ -2252,21 +2261,54 @@ void PF_findmap (void)
 }
 
 /*==================
+PF_findmapname
+returns map name from a map id
+string(float id) findmapname
+==================*/
+void PF_findmapname (void)
+{
+  dir_t	dir;
+	file_t *list;
+  //char *s;
+  int id;
+  int i;
+
+	id = G_FLOAT(OFS_PARM0);
+
+	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")), ".bsp", SORT_BY_NAME);
+	list = dir.files;
+
+  i = 1;
+	while (list->name[0]) {
+    if (i == id) {
+      list->name[strlen(list->name) - 4] = 0; //strip .bsp
+      //if ((s = strchr(list->name, '.'))) 
+      //  *s = '\0';
+			RETURN_STRING(list->name);
+      return;
+    }
+    i++;
+    list++;
+	}
+ 	G_FLOAT(OFS_RETURN) = 0;
+}
+
+/*==================
 PF_listmaps
-prints a range of map names from sv_gamedir (for thundervote)
+prints a range of map names from sv_gamedir (because of the likes of thundervote)
 returns position if more maps, 0 if displayed them all
-listmaps(client, level, number_to_display, start_position, footer)
+float(entity client, float level, float range, float start, float style, float footer) listmaps
 ==================*/
 void PF_listmaps (void)
 {
-  int entnum, level, start, range, foot;
+  int entnum, level, start, range, foot, style;
   client_t	*client;
   char line[256];
   char tmp[64];
   char num[16];
   dir_t	dir;
 	file_t *list;
-  char *s;
+  //char *s;
   int id, pad;
   int ti, i, j;
   
@@ -2274,7 +2316,8 @@ void PF_listmaps (void)
   level = G_FLOAT(OFS_PARM1);
   range = G_FLOAT(OFS_PARM2);
   start = G_FLOAT(OFS_PARM3);
-  foot = G_FLOAT(OFS_PARM4);
+  style = G_FLOAT(OFS_PARM4);
+  foot = G_FLOAT(OFS_PARM5);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)	{
 		Con_Printf ("tried to listmap to a non-client\n");
@@ -2313,35 +2356,53 @@ void PF_listmaps (void)
   line[0] = '\0';
   j = 1;
   for (i = 0, id = start + 1; list->name[0] && i < range && id < dir.numfiles + 1; id++) {
-    if ((s = strchr(list->name, '.'))) //strip .bsp
-      *s = '\0';
-    
-    if (i % ti == 0) { //print header     
-      snprintf(tmp, sizeof(tmp), "%d-%d", id, id + ti - 1);
+    list->name[strlen(list->name) - 4] = 0; //strip .bsp
+    //if ((s = strchr(list->name, '.'))) //strip .bsp
+    //  *s = '\0';
+
+    if (style == 2) {
+      snprintf(tmp, sizeof(tmp), "%d", id);
       num[0] = '\0';
-      for (j = strlen(tmp); j < ((pad * 2) + 1); j++) //padding to align
+      for (j = strlen(tmp); j < pad; j++) //padding to align
         strlcat(num, " ", sizeof(num));
-      SV_ClientPrintf(client, level, "%s%s %c ", num, tmp, 133);
-      j = 1;
-    }
-    i++;
-
-    //print id and name
-    snprintf(tmp, sizeof(tmp), "%d:%s ", j++, list->name);
-    if (i % 2 != 0) //red every second
       Q_redtext(tmp);
-    strlcat(line, tmp, sizeof(line));
+      SV_ClientPrintf(client, level, "%s%s%c %s\n", num, tmp, 133, list->name);
+    }
+    else if (style == 1) {
+      if (i % ti == 0) { //print header     
+        snprintf(tmp, sizeof(tmp), "%d-%d", id, id + ti - 1);
+        num[0] = '\0';
+        for (j = strlen(tmp); j < ((pad * 2) + 1); j++) //padding to align
+          strlcat(num, " ", sizeof(num));
+        SV_ClientPrintf(client, level, "%s%s %c ", num, tmp, 133);
+        j = 1;
+      }
+      i++;
 
-    if (i % 10 == 0) { //print entire line
-      SV_ClientPrintf(client, level, "%s\n", line);
-      line[0] = '\0';
+      //print id and name
+      snprintf(tmp, sizeof(tmp), "%d:%s ", j++, list->name);
+      if (i % 2 != 0) //red every second
+        Q_redtext(tmp);
+      strlcat(line, tmp, sizeof(line));
+
+      if (i % 10 == 0) { //print entire line
+        SV_ClientPrintf(client, level, "%s\n", line);
+        line[0] = '\0';
+      }
+    }
+    else {
+      snprintf(tmp, sizeof(tmp), "%d", id);
+      Q_redtext(tmp);
+      SV_ClientPrintf(client, level, "%s%c%s%s", tmp, 133, list->name, (i == range) ? "\n" : " ");
+      i++;
     }
     list++;
   }
-  if (line[0]) { //still things to print
+  if ((style == 1) && line[0]) //still things to print
     SV_ClientPrintf(client, level, "%s\n", line);
-  }
-
+  else if (style == 0)
+    SV_ClientPrintf(client, level, "\n");
+  
   if (id < dir.numfiles + 1) { //more to come
     G_FLOAT(OFS_RETURN) = id;
     return;
@@ -2618,10 +2679,10 @@ PF_calltimeofday,
 PF_forcedemoframe,	//103
 //bliP: find map ->
 PF_findmap, //104
-PF_listmaps //105
+PF_listmaps, //105
+PF_findmapname, //106
 //<-
 };
 
 builtin_t *pr_builtins = pr_builtin;
 int pr_numbuiltins = sizeof(pr_builtin)/sizeof(pr_builtin[0]);
-

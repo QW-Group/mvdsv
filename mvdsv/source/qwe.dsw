@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "demomanager_cl"=.\demomanager\demomanager_cl.dsp - Package Owner=<4>
+Project: "demomanager_cl"=.\gas2masm\demomanager\demomanager_cl.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -15,7 +15,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "demomanager_sv"=.\demomanager\demomanager_sv.dsp - Package Owner=<4>
+Project: "demomanager_sv"=.\gas2masm\demomanager\demomanager_sv.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

@@ -715,7 +715,7 @@ int main (int argc, char **argv)
 }
 
 #else  // _CONSOLE
-
+void PR_CleanLogText_Init(void);
 int APIENTRY WinMain(   HINSTANCE   hInstance,
                         HINSTANCE   hPrevInstance,
                         LPSTR       lpCmdLine,
@@ -736,16 +736,24 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
 	static int			sockaddr_len = sizeof(struct sockaddr_in);
 	static double		cur_time_not_auth, not_auth_timeout_value, auth_timeout_value;
-//Added by VVD }
 
 	// get the command line parameters
-	LPWSTR *argv2;
-	int argc2;
-	argv2 = CommandLineToArgvW(GetCommandLineW(), &argc2);
-	for (j = 0; argv2[0][j]; j++);
+	LPTSTR				argv2;
+	char				c = '"';
+	int					i;
+	argv2 = GetCommandLine();
+	if (argv2[0] == '"')
+		argv2++;
+	else
+		c = ' ';
+
+	for (j = 0; argv2[j] != c && argv2[j]; j++);
 	_argv[0] = (char *)Q_Malloc (j + 1);
-	for (j = 0; _argv[0][j] = *(char *)(&argv2[0][j]); j++);
-	_argv[0][j + 1] = 0;
+	for (i = 0; i < j; i++)
+		_argv[0][i] = argv2[i];
+	_argv[0][j] = 0;
+//Added by VVD }
+
 	parms.argc = 1;
 
 	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS))

@@ -793,14 +793,18 @@ void SV_WriteSetDemoMessage (void)
 		fflush (demo.file);
 }
 
+void SV_TimeOfDay(date_t *date);
 static char *SV_PrintTeams(void)
 {
-	char *teams[MAX_CLIENTS], *p;
-	int	i, j, numcl = 0, numt = 0;
-	client_t *clients[MAX_CLIENTS];
-	char buf[2048] = {0};
-	extern cvar_t teamplay;
-	extern char chartbl2[];
+	char		*teams[MAX_CLIENTS], *p;
+	int		i, j, numcl = 0, numt = 0, scores;
+	client_t	*clients[MAX_CLIENTS];
+	char		buf[2048];
+	static char	lastscores[2048];
+	extern cvar_t	teamplay;
+	extern char	chartbl2[];
+	date_t		date;
+	SV_TimeOfDay(&date);
 
 	// count teams and players
 	for (i=0; i < MAX_CLIENTS; i++)
@@ -821,37 +825,74 @@ static char *SV_PrintTeams(void)
 	}
 
 	// create output
-	
+	lastscores[0] = 0;
+	snprintf(buf, sizeof(buf),
+		"date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n",
+		date.str, sv.name, (int)teamplay.value, (int)deathmatch.value,
+		(int)timelimit.value);
 	if (numcl == 2) // duel
 	{
-		snprintf(buf, sizeof(buf), "team1 %s\nteam2 %s\n", clients[0]->name, clients[1]->name);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+			"player1: %s (%i)\nplayer2: %s (%i)\n",
+			clients[0]->name, clients[0]->old_frags,
+			clients[1]->name, clients[1]->old_frags);
+		snprintf(lastscores, sizeof(lastscores), "duel: %s vs %s @ %s - %i:%i\n",
+			clients[0]->name, clients[1]->name, sv.name, 
+			clients[0]->old_frags, clients[1]->old_frags);
 	} else if (!teamplay.value) // ffa
 	{ 
-		snprintf(buf, sizeof(buf), "players:\n");
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "players:\n");
+		snprintf(lastscores, sizeof(lastscores), "ffa:");
 		for (i = 0; i < numcl; i++)
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
+		{
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+				"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
+			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+				"  %s(%i)", clients[i]->name, clients[i]->old_frags);
+		}
+		snprintf(lastscores + strlen(lastscores),
+			sizeof(lastscores) - strlen(lastscores), " @ %s\n", sv.name);
 	} else { // teamplay
+		snprintf(lastscores, sizeof(lastscores), "tp:");
 		for (j = 0; j < numt; j++) {
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "team %s:\n", teams[j]);
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+				"team[%i] %s:\n", j, teams[j]);
+			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+				"%s[", teams[j]);
+			scores = 0;
 			for (i = 0; i < numcl; i++)
 				if (!strcmp(clients[i]->team, teams[j]))
-					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
+				{
+					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+						"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
+					snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+						" %s(%i) ", clients[i]->name, clients[i]->old_frags);
+					scores += clients[i]->old_frags;
+				}
+			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+				"](%i)  ", scores);
+
 		}
+		snprintf(lastscores + strlen(lastscores),
+			sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.name);
 	}
 
-	if (!numcl)
-		return "\n";
 	for (p = buf; *p; p++) *p = chartbl2[(byte)*p];
-	return va("%s",buf);
+	for (p = lastscores; *p; p++) *p = chartbl2[(byte)*p];
+	strlcat(lastscores, buf, sizeof(lastscores));
+	return lastscores;
 }
+//tp: team1[ player1_1(scores1_1) ... playerN_1(scoresN_1) ](scores1) ...
+//    teamM[ player1_M(scores1_M) ... playerK_M(scoresK_M) ](scoresM)  @ map
+//duel: player1 vs player2 @ map - scores1:scores2
+//ffa: player1(scores1) ... playerN(scoresN) @ map
 
-void SV_TimeOfDay(date_t *date);
 static void SV_Record (char *name)
 {
 	sizebuf_t	buf;
 	char buf_data[MAX_MSGLEN];
 	int n, i;
-	char *s, info[MAX_INFO_STRING], path[MAX_OSPATH];
+	char *s, info[MAX_INFO_STRING], path[MAX_OSPATH], *text;
 	
 	client_t *player;
 	char *gamedir;
@@ -892,21 +933,14 @@ static void SV_Record (char *name)
 
 	if (sv_demotxt.value) {
 		FILE *f;
-
-		f = fopen (path, "w+t");
-		if (f != NULL)
+		if (f = fopen (path, "w+t"))
 		{
-			char buf[2000];
-			date_t date;
-
-			SV_TimeOfDay(&date);
-
-			snprintf(buf, sizeof(buf), "date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n%s",date.str, sv.name, (int)teamplay.value, (int)deathmatch.value, (int)timelimit.value, SV_PrintTeams());
-			fwrite(buf, strlen(buf),1,f);
+			text = SV_PrintTeams();
+			fwrite(text, strlen(text), 1, f);
 			fflush(f);
 			fclose(f);
 		}
-	} else 
+	} else
 		Sys_remove(path);
 
 	sv.demorecording = true;
@@ -1527,11 +1561,14 @@ char *SV_DemoNum(int num)
 	file_t	*list;
 	dir_t	dir;
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
-	list = dir.files;
-
 	if (num <= 0)
 		return NULL;
+
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
+	if (num > dir.numfiles)
+		return NULL;
+
+	list = dir.files;
 
 	num--;
 
@@ -1771,12 +1808,12 @@ void SV_DemoInfoRemove_f (void)
 
 void SV_DemoInfo_f (void)
 {
-	char buf[64];
+	char buf[512];
 	FILE *f = NULL;
 	char *name, path[MAX_OSPATH];
 
 	if (Cmd_Argc() < 2) {
-		Con_Printf("usage:demoinfo <demonum>\n<demonum> = * for currently recorded demo\n");
+		Con_Printf("usage: demoinfo <demonum>\n<demonum> = * for currently recorded demo\n");
 		return;
 	}
 
@@ -1807,9 +1844,80 @@ void SV_DemoInfo_f (void)
 
 	while (!feof(f))
 	{
-		buf[fread (buf, 1, sizeof(buf)-1, f)] = 0;
+		buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
+		for (name = buf; *name; name++)
+		{
+			if ((*name >= 'a' && *name <= 'z') || (*name >= 'A' && *name <= 'Z'))
+				*name |= 128;
+			else if (*name >= '0' && *name <= '9')
+				*name += 18 - '0';
+		}
 		Con_Printf("%s", buf);
 	}
 
 	fclose(f);
+}
+
+#define MAXDEMOS	10
+void SV_LastScores_f (void)
+{
+	int	demos, i;
+	char	buf[512];
+	FILE	*f = NULL;
+	char	*name, path[MAX_OSPATH];
+	dir_t	dir;
+
+	if (Cmd_Argc() > 2) {
+		Con_Printf("usage: lastscores [<numlastdemos>]\n<numlastdemos> = '0' for all demos\n<numlastdemos> = '' for last %i demos\n", MAXDEMOS);
+		return;
+	}
+
+	if (Cmd_Argc() == 1)
+		demos = MAXDEMOS;
+	else
+		demos = atoi(Cmd_Argv(1));
+
+	if (sv.demorecording && demos > MAXDEMOS)
+		Con_Printf("<numlastdemos> was decreased to %i: demo recording in progress.\n", demos = MAXDEMOS);
+
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".txt", SORT_BY_DATE);
+
+	if (!dir.numfiles)
+	{
+		Con_Printf("No txt files with info.\n");
+		return;
+	}
+	if (dir.numfiles < demos || !demos)
+		demos = dir.numfiles;
+
+	for (i = dir.numfiles - demos; i < dir.numfiles; i++)
+	{
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, dir.files[i].name);
+
+		Con_Printf("%i. ", i);
+		if ((f = fopen(path, "rt")) == NULL)
+		{
+			Con_Printf("(empty)\n");
+			continue;
+		}
+
+		while (!feof(f))
+		{
+			buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
+			for (name = buf; *name; name++)
+			{
+				if (*name == '\n')
+				{
+					name[1] = 0;
+					break;
+				}
+				else if ((*name >= 'a' && *name <= 'z') || (*name >= 'A' && *name <= 'Z'))
+					*name |= 128;
+				else if (*name >= '0' && *name <= '9')
+					*name += 18 - '0';
+			}
+			Con_Printf("%s", buf);
+		}
+		fclose(f);
+	}
 }

@@ -86,6 +86,9 @@ cvar_t	auth_timeout = {"auth_timeout", "3600"};
 // If set to 0, no timeout will occur
 
 cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status command, 0 - don't use
+cvar_t	sv_showspectators = {"sv_showspectators", "1"};
+// 1 - show spectators in qplug, qspy, servu (irc bot) and etc. (connectionless command status)
+// 0 - don't show (old style)
 
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
@@ -451,28 +454,46 @@ Responds with all the info that qplug or qspy can see
 This message can be up to around 5k with worst case string lengths.
 ================
 */
+void SVC_Status_Print (client_t *cl, qboolean spectator)
+{
+	int		top, bottom, ping, frags;
+	char		*name;
+
+	top	= atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
+	bottom	= atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
+	top	= (top < 0) ? 0 : ((top > 13) ? 13 : top);
+	bottom	= (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
+	ping	= SV_CalcPing (cl);
+	name	= cl->name;
+	if (spectator)
+	{
+		ping	= -ping;
+		frags	= -9999;
+		name	= va("%s(s)", name);
+	}
+	else
+		frags	= cl->old_frags;
+	Con_Printf ("%i %i %i %i \"%s\" \"%s\" %i %i\n", cl->userid, frags,
+		(int)(realtime - cl->connection_started)/60, ping, name,
+		Info_ValueForKey (cl->userinfo, "skin"), top, bottom);
+}
+
 void SVC_Status (void)
 {
 	int		i;
 	client_t	*cl;
-	int		ping;
-	int		top, bottom;
 
 	SV_BeginRedirect (RD_PACKET);
 	Con_Printf ("%s\n", svs.info);
 	for (i=0 ; i<MAX_CLIENTS ; i++)
 	{
 		cl = &svs.clients[i];
-		if ((cl->state >= cs_preconnected/* || cl->state == cs_spawned */) && !cl->spectator)
+		if (cl->state >= cs_preconnected/* || cl->state == cs_spawned */)
 		{
-			top = atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
-			bottom = atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
-			top = (top < 0) ? 0 : ((top > 13) ? 13 : top);
-			bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
-			ping = SV_CalcPing (cl);
-			Con_Printf ("%i %i %i %i \"%s\" \"%s\" %i %i\n", cl->userid, 
-				cl->old_frags, (int)(realtime - cl->connection_started)/60,
-				ping, cl->name, Info_ValueForKey (cl->userinfo, "skin"), top, bottom);
+			if (!cl->spectator)
+				SVC_Status_Print (cl, false);
+			else if (cl->spectator && sv_showspectators.value)
+				SVC_Status_Print (cl, true);
 		}
 	}
 	SV_EndRedirect ();
@@ -645,6 +666,7 @@ void SVC_DirectConnect (void)
 	int			qport;
 	int			version;
 	int			challenge;
+	qboolean	gotnewcl; //bliP: reuse connection
 	qboolean	spass = false, vip;
 	extern char *shortinfotbl[];
 
@@ -742,6 +764,8 @@ void SVC_DirectConnect (void)
 
 	newcl->userid = userid;
 
+	gotnewcl = false; //bliP: reuse connection
+
 	// works properly
 	if (!sv_highchars.value) {
 		byte *p, *q;
@@ -753,7 +777,7 @@ void SVC_DirectConnect (void)
 	} else
 		strlcpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
 
-	// if there is already a slot for this ip, drop it
+	// if there is already a slot for this ip, reuse (changed from drop) it
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
 		if (cl->state == cs_free)
@@ -778,12 +802,12 @@ void SVC_DirectConnect (void)
 			}
 
 			Con_Printf ("%s:reconnect\n", NET_AdrToString (adr));
-      //bliP: reuse connect ->
+//bliP: reuse connect ->
 			//SV_DropClient (cl);
-      //break;
-      newcl = cl;
-      goto gotnewcl;
-      //<-
+			newcl = cl;
+			gotnewcl = true;
+			break;
+//<-
 		}
 	}
 
@@ -795,6 +819,11 @@ void SVC_DirectConnect (void)
 	{
 		if (cl->state == cs_free)
 			continue;
+//bliP: reuse connect ->
+//don't count their existing connection so they can connect
+		if (gotnewcl && cl->userid == newcl->userid)
+			continue;
+//<-
 
 		if (cl->vip)
 			vips++;
@@ -829,27 +858,31 @@ void SVC_DirectConnect (void)
 		} else {
 			Con_Printf ("%s:full connect\n", NET_AdrToString (adr));
 			Netchan_OutOfBandPrint (net_serversocket, adr, "%c\nserver is full\n\n", A2C_PRINT);
+			userid--; //bliP: count users properly
 			return;
 		}
 	}
 
 	// find a client slot
-	newcl = NULL;
-	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
-	{
-		if (cl->state == cs_free)
+//bliP: reuse connection ->
+	if (!gotnewcl) {
+		newcl = NULL;
+		for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 		{
-			newcl = cl;
-			break;
+			if (cl->state == cs_free)
+			{
+				newcl = cl;
+				break;
+			}
+		}
+		if (!newcl)
+		{
+			Con_Printf ("WARNING: miscounted available clients\n");
+			return;
 		}
 	}
-	if (!newcl)
-	{
-		Con_Printf ("WARNING: miscounted available clients\n");
-		return;
-	}
+//<-
 
-gotnewcl:	//bliP: reuse connect
 	// build a new connection
 	// accept the new client
 	// this is the only place a client_t is ever initialized
@@ -2372,6 +2405,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&not_auth_timeout);
 	Cvar_RegisterVariable (&auth_timeout);
 	Cvar_RegisterVariable (&sv_use_dns);
+	Cvar_RegisterVariable (&sv_showspectators);
 //Added by VVD }
 	Cvar_RegisterVariable (&spectator_password);
 	Cvar_RegisterVariable (&vip_password);
@@ -2733,6 +2767,7 @@ qboolean OnChange_telnetloglevel_var (cvar_t *var, char *value)
 SV_InitNet
 ====================
 */
+void SetWindowText_(char*);
 void SV_InitNet (void)
 {
 	int	p;

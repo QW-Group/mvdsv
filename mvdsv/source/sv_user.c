@@ -1557,8 +1557,35 @@ void SV_NoSnap_f(void)
 	}
 }
 
+/*
+==============
+SV_MinPing_f
+==============
+*/
+void SV_MinPing_f (void)
+{
+        extern cvar_t	sv_minping;
+	float		minping;
+	switch (Cmd_Argc())
+	{
+		case 2:
+			if (sv.demorecording)
+				Con_Printf("Can't change sv_minping value: demo recording in progress.\n");
+			else if ((minping = Q_atof(Cmd_Argv(1))) < 0)
+				Con_Printf("Value must be >= 0.\n");
+			else
+				Cvar_SetValue (&sv_minping, minping);
+		case 1:
+			Con_Printf("sv_minping = %s\n", sv_minping.string);
+			break;
+		default:
+			Con_Printf("usage: minping [<value>]\n<value> = '' show current sv_minping value\n");
+	}
+}
+
 void SV_DemoList_f (void);
 void SV_DemoInfo_f(void);
+void SV_LastScores_f(void);
 
 typedef struct
 {
@@ -1605,6 +1632,8 @@ ucmd_t ucmds[] =
 	{"stopdownload", SV_StopDownload_f},
 	{"demolist", SV_DemoList_f},
 	{"demoinfo", SV_DemoInfo_f},
+	{"lastscores", SV_LastScores_f},
+	{"minping", SV_MinPing_f},
 	
 	{NULL, NULL}
 };
