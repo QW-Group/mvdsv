@@ -52,7 +52,7 @@ static qboolean usedga = false;
 
 #define stringify(m) { #m, m }
 
-cvar_t vid_mode = {"vid_mode","0",false};
+cvar_t vid_mode = {"vid_mode","0"};
  
 cvar_t  mouse_button_commands[3] =
 {
@@ -68,7 +68,7 @@ static float mouse_x, mouse_y;
 static float p_mouse_x, p_mouse_y;
 static float old_mouse_x, old_mouse_y;
 
-cvar_t _windowed_mouse = {"_windowed_mouse", "1", true};
+cvar_t _windowed_mouse = {"_windowed_mouse","1",CVAR_ARCHIVE};
 cvar_t m_filter = {"m_filter","0"};
 static float old_windowed_mouse;
 
@@ -856,10 +856,7 @@ void IN_Move (usercmd_t *cmd)
 		if (cl.viewangles[PITCH] < -70)
 			cl.viewangles[PITCH] = -70;
 	} else {
-		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward.value * mouse_y;
-		else
-			cmd->forwardmove -= m_forward.value * mouse_y;
+		cmd->forwardmove -= m_forward.value * mouse_y;
 	}
 	mouse_x = mouse_y = 0.0;
 }

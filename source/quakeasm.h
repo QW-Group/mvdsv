@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define id386	0
 #endif
 
+#ifndef SERVERONLY
+
 // !!! must be kept the same as in d_iface.h !!!
 #define TRANSPARENT_COLOR	255
 
@@ -260,15 +262,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	.extern spr8entryvec_table
 #endif
 
-	.extern C(snd_scaletable)
-	.extern C(paintbuffer)
-	.extern C(snd_linear_count)
-	.extern C(snd_p)
-	.extern C(snd_vol)
-	.extern C(snd_out)
 	.extern C(vright)
 	.extern C(vup)
 	.extern C(vpn)
-	.extern C(BOPS_Error)
 
 #endif
+
+#endif	// SERVERONLY

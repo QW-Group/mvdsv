@@ -59,7 +59,7 @@ void SV_FlushRedirect (void)
 		send[4] = A2C_PRINT;
 		memcpy (send+5, outputbuf, strlen(outputbuf)+1);
 
-		NET_SendPacket (strlen(send)+1, send, net_from);
+		NET_SendPacket (net_serversocket, strlen(send)+1, send, net_from);
 	}
 	else if (sv_redirected == RD_CLIENT)
 	{
@@ -94,6 +94,7 @@ void SV_EndRedirect (void)
 }
 
 
+#ifndef QW_BOTH			// FIXME: redirect does not work atm!!!
 /*
 ================
 Con_Printf
@@ -147,6 +148,7 @@ void Con_DPrintf (char *fmt, ...)
 	
 	Con_Printf ("%s", msg);
 }
+#endif	// QW_BOTH
 
 /*
 =============================================================================
@@ -339,7 +341,7 @@ Each entity can have eight independant sound sources, like voice,
 weapon, feet, etc.
 
 Channel 0 is an auto-allocate channel, the others override anything
-allready running on that entity/channel pair.
+already running on that entity/channel pair.
 
 An attenuation of 0 will play full volume everywhere in the level.
 Larger attenuations will drop off.  (max 4 attenuation)

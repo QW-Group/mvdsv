@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -19,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
+#include "pmove.h"
+#include "teamplay.h"
 
 void CL_FinishTimeDemo (void);
 
@@ -44,6 +48,8 @@ Called when a demo file runs out, or the user starts a game
 */
 void CL_StopPlayback (void)
 {
+	extern qboolean	v_updatepalette;
+
 	if (!cls.demoplayback)
 		return;
 
@@ -54,6 +60,9 @@ void CL_StopPlayback (void)
 
 	if (cls.timedemo)
 		CL_FinishTimeDemo ();
+
+	memset (cl.cshifts, 0, sizeof(cl.cshifts));
+	v_updatepalette = true;
 }
 
 #define dem_cmd		0
@@ -148,6 +157,11 @@ qboolean CL_GetDemoMessage (void)
 	byte	c;
 	usercmd_t *pcmd;
 
+// Tonik -->
+	if (cl.paused & 1)
+		return 0;
+// <-- Tonik
+
 	// read the time from the packet
 	fread(&demotime, sizeof(demotime), 1, cls.demofile);
 	demotime = LittleFloat(demotime);
@@ -161,14 +175,14 @@ qboolean CL_GetDemoMessage (void)
 			// rewind back to time
 			fseek(cls.demofile, ftell(cls.demofile) - sizeof(demotime),
 					SEEK_SET);
-			return 0;		// allready read this frame's message
+			return 0;		// already read this frame's message
 		}
 		if (!cls.td_starttime && cls.state == ca_active) {
 			cls.td_starttime = Sys_DoubleTime();
 			cls.td_startframe = host_framecount;
 		}
 		realtime = demotime; // warp
-	} else if (!cl.paused && cls.state >= ca_onserver) {	// allways grab until fully connected
+	} else if (!(cl.paused & 2) && cls.state >= ca_onserver) {	// always grab until fully connected
 		if (realtime + 1.0 < demotime) {
 			// too far back
 			realtime = demotime - 1.0;
@@ -224,7 +238,8 @@ qboolean CL_GetDemoMessage (void)
 		net_message.cursize = LittleLong (net_message.cursize);
 	//Con_Printf("read: %ld bytes\n", net_message.cursize);
 		if (net_message.cursize > MAX_MSGLEN)
-			Sys_Error ("Demo message > MAX_MSGLEN");
+//Tonik			Sys_Error ("Demo message > MAX_MSGLEN");
+			Host_EndGame ("Demo message > MAX_MSGLEN");	// Tonik!!!
 		r = fread (net_message.data, net_message.cursize, 1, cls.demofile);
 		if (r != 1)
 		{
@@ -261,7 +276,7 @@ qboolean CL_GetMessage (void)
 	if	(cls.demoplayback)
 		return CL_GetDemoMessage ();
 
-	if (!NET_GetPacket ())
+	if (!NET_GetPacket(net_clientsocket))
 		return false;
 
 	CL_WriteDemoMessage (&net_message);
@@ -366,17 +381,8 @@ void CL_WriteSetDemoMessage (void)
 
 
 
-/*
-====================
-CL_Record_f
-
-record <demoname> <server>
-====================
-*/
-void CL_Record_f (void)
+static void CL_Record (void)
 {
-	int		c;
-	char	name[MAX_OSPATH];
 	sizebuf_t	buf;
 	char	buf_data[MAX_MSGLEN];
 	int n, i, j;
@@ -387,36 +393,6 @@ void CL_Record_f (void)
 	extern	char gamedirfile[];
 	int seq = 1;
 
-	c = Cmd_Argc();
-	if (c != 2)
-	{
-		Con_Printf ("record <demoname>\n");
-		return;
-	}
-
-	if (cls.state != ca_active) {
-		Con_Printf ("You must be connected to record.\n");
-		return;
-	}
-
-	if (cls.demorecording)
-		CL_Stop_f();
-  
-	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
-
-//
-// open the demo file
-//
-	COM_DefaultExtension (name, ".qwd");
-
-	cls.demofile = fopen (name, "wb");
-	if (!cls.demofile)
-	{
-		Con_Printf ("ERROR: couldn't open.\n");
-		return;
-	}
-
-	Con_Printf ("recording to %s.\n", name);
 	cls.demorecording = true;
 
 /*-------------------------------------------------*/
@@ -663,6 +639,165 @@ void CL_Record_f (void)
 
 /*
 ====================
+CL_Record_f
+
+record <demoname>
+====================
+*/
+void CL_Record_f (void)
+{
+	int		c;
+	char	name[MAX_OSPATH];
+
+	c = Cmd_Argc();
+	if (c != 2)
+	{
+		Con_Printf ("record <demoname>\n");
+		return;
+	}
+
+	if (cls.state != ca_active) {
+		Con_Printf ("You must be connected to record.\n");
+		return;
+	}
+
+	if (cls.demorecording)
+		CL_Stop_f();
+  
+	sprintf (name, "%s/%s", com_gamedir, Cmd_Argv(1));
+
+//
+// open the demo file
+//
+	COM_DefaultExtension (name, ".qwd");
+
+	cls.demofile = fopen (name, "wb");
+	if (!cls.demofile)
+	{
+		Con_Printf ("ERROR: couldn't open.\n");
+		return;
+	}
+
+	Con_Printf ("recording to %s.\n", name);
+	CL_Record ();
+}
+
+
+/*
+====================
+CL_EasyRecord_f
+
+easyrecord [demoname]
+====================
+*/
+void CL_EasyRecord_f (void)
+{
+	int		c;
+	char	name[1024];
+	char	name2[MAX_OSPATH*2];
+	int		i;
+	unsigned char	*p;
+	FILE	*f;
+
+	c = Cmd_Argc();
+	if (c > 2)
+	{
+		Con_Printf ("record <demoname>\n");
+		return;
+	}
+
+	if (cls.state != ca_active) {
+		Con_Printf ("You must be connected to record.\n");
+		return;
+	}
+
+	if (cls.demorecording)
+		CL_Stop_f();
+
+/// FIXME: check buffer sizes!!!
+
+	if (c == 2)
+		sprintf (name, "%s", Cmd_Argv(1));
+	else {
+		// guess game type and write demo name
+		i = CL_CountPlayers();
+		if (atoi(Info_ValueForKey(cl.serverinfo, "teamplay"))
+			&& i >= 3)
+		{
+			// Teamplay
+			sprintf (name, "%s_%s_vs_%s_%s",
+				CL_PlayerName(),
+				CL_PlayerTeam(),
+				CL_EnemyTeam(),
+				CL_MapName());
+		} else {
+			if (i == 2) {
+				// Duel
+				sprintf (name, "%s_vs_%s_%s",
+					CL_PlayerName(),
+					CL_EnemyName(),
+					CL_MapName());
+			}
+			else if (i > 2) {
+				// FFA
+				sprintf (name, "%s_ffa_%s",
+					CL_PlayerName, 
+					CL_MapName());
+			}
+			else {
+				// one player
+				sprintf (name, "%s_%s",
+					CL_PlayerName(),
+					CL_MapName());
+			}
+		}
+	}
+
+// Make sure the filename doesn't contain illegal characters
+	for (p=name ; *p ; p++)	{
+		char c;
+		*p &= 0x7F;		// strip high bit
+		c = *p;
+		if (c<=' ' || c=='?' || c=='*' || c=='\\' || c=='/' || c==':'
+			|| c=='<' || c=='>' || c=='"')
+			*p = '_';
+	}
+
+	strncpy (name, va("%s/%s", com_gamedir, name), MAX_OSPATH-1);
+	name[MAX_OSPATH-1] = 0;
+
+// find a filename that doesn't exist yet
+	strcpy (name2, name);
+	COM_DefaultExtension (name2, ".qwd");
+	f = fopen (name2, "rb");
+	if (f) {
+		i = 0;
+		do {
+			fclose (f);
+			strcpy (name2, va("%s_%02i", name, i));
+			COM_DefaultExtension (name2, ".qwd");
+			f = fopen (name2, "rb");
+			i++;
+		} while (f);
+	}
+
+//
+// open the demo file
+//
+	cls.demofile = fopen (name2, "wb");
+	if (!cls.demofile)
+	{
+		Con_Printf ("ERROR: couldn't open.\n");
+		return;
+	}
+
+	Con_Printf ("recording to %s.\n", name2);
+	CL_Record ();
+}
+
+
+/*
+====================
 CL_ReRecord_f
 
 record <demoname>
@@ -749,7 +884,7 @@ void CL_PlayDemo_f (void)
 
 	cls.demoplayback = true;
 	cls.state = ca_demostart;
-	Netchan_Setup (&cls.netchan, net_from, 0);
+	Netchan_Setup (&cls.netchan, net_from, 0, net_clientsocket);
 	realtime = 0;
 }
 

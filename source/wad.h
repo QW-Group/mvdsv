@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // wad.h
 
+#ifndef _WAD_H
+#define _WAD_H
+
 //===============
 //   TYPES
 //===============
@@ -73,3 +76,5 @@ void	*W_GetLumpName (char *name);
 void	*W_GetLumpNum (int num);
 
 void SwapPic (qpic_t *pic);
+
+#endif // _WAD_H

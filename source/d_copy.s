@@ -1,12 +1,34 @@
-//
-// d_copy.s
-// x86 assembly-language screen copying code.
-//
+/*
+	d_copy.S - x86 assembly-language screen copying code.
+
+	Copyright (C) 1996-1997  Id Software, Inc.
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id: d_copy.s,v 1.1.1.2 2004/09/28 18:56:39 vvd0 Exp $
+*/
 
 #include "asm_i386.h"
 #include "quakeasm.h"
 #include "asm_draw.h"
 
+#ifdef id386
 	.data
 
 LCopyWidth:		.long	0
@@ -146,4 +168,4 @@ LLRowLoop:
 	popl	%ebp				// restore the caller's stack frame
 
 	ret
-
+#endif // id386

@@ -29,7 +29,7 @@ you can add a ,true flag for variables that you want saved to the configuration
 file when the game is quit:
 
 cvar_t	r_draworder = {"r_draworder","1"};
-cvar_t	scr_screensize = {"screensize","1",true};
+cvar_t	scr_screensize = {"screensize","1",CVAR_ARCHIVE};
 
 Cvars must be registered before use, or they will have a 0 value instead of the float interpretation of the string.  Generally, all cvar_t declarations should be registered in the apropriate init function before any console commands are executed:
 Cvar_RegisterVariable (&host_framerate);
@@ -53,24 +53,33 @@ Cvars are restricted from having the same names as commands to keep this
 interface from being ambiguous.
 */
 
+// cvar flags
+#define CVAR_ARCHIVE		1
+#define CVAR_USERINFO		2       // sent to server on connect or change
+#define CVAR_SERVERINFO		4
+#define CVAR_READONLY		64		// TODO
+#define	CVAR_USER_CREATED	128		// created by a set command
+
 typedef struct cvar_s
 {
 	char	*name;
 	char	*string;
-	qboolean archive;		// set to true to cause it to be saved to vars.rc
-	qboolean info;			// added to serverinfo or userinfo when changed
+	int		flags;
+	qboolean	(*OnChange)(struct cvar_s *var, char *value);
 	float	value;
+	struct cvar_s *hash_next;
 	struct cvar_s *next;
 } cvar_t;
 
+
 void 	Cvar_RegisterVariable (cvar_t *variable);
-// registers a cvar that allready has the name, string, and optionally the
+// registers a cvar that already has the name, string, and optionally the
 // archive elements set.
 
-void 	Cvar_Set (char *var_name, char *value);
-// equivelant to "<name> <variable>" typed at the console
+void 	Cvar_Set (cvar_t *var, char *value);
+// equivalent to "<name> <variable>" typed at the console
 
-void	Cvar_SetValue (char *var_name, float value);
+void	Cvar_SetValue (cvar_t *var, float value);
 // expands value to a string and calls Cvar_Set
 
 float	Cvar_VariableValue (char *var_name);
@@ -94,4 +103,6 @@ void 	Cvar_WriteVariables (FILE *f);
 
 cvar_t *Cvar_FindVar (char *var_name);
 
-extern cvar_t	*cvar_vars;
+cvar_t *Cvar_Create (char *name, char *string, int cvarflags);
+
+void Cvar_Init (void);

@@ -20,6 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sbar.c -- status bar code
 
 #include "quakedef.h"
+#include "sbar.h"
+#ifdef QW_BOTH
+#include "progs.h"
+#include "server.h"
+#endif
 
 
 int			sb_updates;		// if >= vid.numpages, no update needed
@@ -348,8 +353,6 @@ void Sbar_DrawNum (int x, int y, int num, int digits, int color)
 
 //=============================================================================
 
-//ZOID: this should be MAX_CLIENTS, not MAX_SCOREBOARD!!
-//int		fragsort[MAX_SCOREBOARD];
 int		fragsort[MAX_CLIENTS];
 int		scoreboardlines;
 typedef struct {
@@ -477,17 +480,38 @@ Sbar_SoloScoreboard
 void Sbar_SoloScoreboard (void)
 {
 	char	str[80];
+	double	_time;
 	int		minutes, seconds, tens, units;
 
 	Sbar_DrawPic (0, 0, sb_scorebar);
 
+	if (cl.gametype == GAME_COOP)
+	{
+		sprintf(str, "Monsters:%3i /%3i", cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
+		Sbar_DrawString (8, 4, str);
+
+		sprintf(str, "Secrets :%3i /%3i", cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
+		Sbar_DrawString (8, 12, str);
+	}
+
 	// time
-	minutes = cl.time / 60;
-	seconds = cl.time - 60*minutes;
+	_time = cl.time;
+	if (cl.gametype == GAME_COOP)
+		_time -= cl.players[cl.playernum].entertime;
+	minutes = _time / 60;
+	seconds = _time - 60*minutes;
 	tens = seconds / 10;
 	units = seconds - 10*tens;
 	sprintf (str,"Time :%3i:%i%i", minutes, tens, units);
 	Sbar_DrawString (184, 4, str);
+
+	if (cl.gametype == GAME_COOP)
+	{
+		// draw level name
+		int l = strlen (cl.levelname);
+		if (l < 22 && !strstr(cl.levelname, "\n"))
+			Sbar_DrawString (232 - l*4, 12, cl.levelname);
+	}
 }
 
 //=============================================================================
@@ -613,6 +637,9 @@ void Sbar_DrawFrags (void)
 	char			num[12];
 	player_info_t	*s;
 	
+	if (cl.gametype == GAME_COOP)
+		return;
+
 	Sbar_SortFrags (false);
 
 // draw the text
@@ -909,6 +936,14 @@ void Sbar_TeamOverlay (void)
 // request new ping times every two second
 	teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
 
+#ifdef QW_BOTH
+	// FIXME
+	// check number of connections instead?
+	if (cl.gametype == GAME_COOP && sv.state != ss_dead
+		&& !coop.value)
+		return;
+#endif
+
 	if (!teamplay) {
 		Sbar_DeathmatchOverlay(0);
 		return;
@@ -1002,6 +1037,14 @@ void Sbar_DeathmatchOverlay (int start)
 	int				teamplay;
 	char			team[5];
 	int				skip = 10;
+
+#ifdef QW_BOTH
+	// FIXME
+	// check number of connections instead?
+	if (cl.gametype == GAME_COOP && sv.state != ss_dead
+		&& !coop.value)
+		return;
+#endif
 
 	if (largegame)
 		skip = 8;
@@ -1301,13 +1344,43 @@ Sbar_IntermissionOverlay
 */
 void Sbar_IntermissionOverlay (void)
 {
+	qpic_t	*pic;
+	int		dig;
+	int		num;
+
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	if (atoi(Info_ValueForKey(cl.serverinfo, "teamplay")) > 0 && !sb_showscores)
-		Sbar_TeamOverlay ();
-	else
-		Sbar_DeathmatchOverlay (0);
+	if (cl.gametype == GAME_DEATHMATCH)
+	{
+		if (atoi(Info_ValueForKey(cl.serverinfo, "teamplay")) > 0 && !sb_showscores)
+			Sbar_TeamOverlay ();
+		else
+			Sbar_DeathmatchOverlay (0);
+		return;
+	}
+
+	pic = Draw_CachePic ("gfx/complete.lmp");
+	Draw_Pic (64, 24, pic);
+
+	pic = Draw_CachePic ("gfx/inter.lmp");
+	Draw_TransPic (0, 56, pic);
+
+	// time
+	dig = (cl.completed_time - cl.players[cl.playernum].entertime) / 60;
+	Sbar_IntermissionNumber (160, 64, dig, 3, 0);
+	num = (cl.completed_time - cl.players[cl.playernum].entertime) - dig*60;
+	Draw_TransPic (234,64,sb_colon);
+	Draw_TransPic (246,64,sb_nums[0][num/10]);
+	Draw_TransPic (266,64,sb_nums[0][num%10]);
+
+	Sbar_IntermissionNumber (160, 104, cl.stats[STAT_SECRETS], 3, 0);
+	Draw_TransPic (232,104,sb_slash);
+	Sbar_IntermissionNumber (240, 104, cl.stats[STAT_TOTALSECRETS], 3, 0);
+
+	Sbar_IntermissionNumber (160, 144, cl.stats[STAT_MONSTERS], 3, 0);
+	Draw_TransPic (232,144,sb_slash);
+	Sbar_IntermissionNumber (240, 144, cl.stats[STAT_TOTALMONSTERS], 3, 0);
 }
 
 

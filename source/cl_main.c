@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -21,36 +23,45 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "cl_slist.h"
+#include "keys.h"
+#include "pmove.h"
+#include "sbar.h"
+#include "sound.h"
+#include "version.h"
+#include "teamplay.h"
 #ifdef _WIN32
 #include "winsock.h"
 #else
 #include <netinet/in.h>
 #endif
 
+#ifdef QW_BOTH
+#include "progs.h"	// FIXME
+#include "server.h"
+#endif
+
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
 
-qboolean	noclip_anglehack;		// remnant from old quake
 
-
-cvar_t	rcon_password = {"rcon_password", "", false};
-
+cvar_t	rcon_password = {"rcon_password", ""};
 cvar_t	rcon_address = {"rcon_address", ""};
 
 cvar_t	cl_timeout = {"cl_timeout", "60"};
 
 cvar_t	cl_shownet = {"cl_shownet","0"};	// can be 0, 1, or 2
 
-cvar_t	cl_sbar		= {"cl_sbar", "0", true};
-cvar_t	cl_hudswap	= {"cl_hudswap", "0", true};
-cvar_t	cl_maxfps	= {"cl_maxfps", "0", true};
+cvar_t	cl_sbar		= {"cl_sbar", "0", CVAR_ARCHIVE};
+cvar_t	cl_hudswap	= {"cl_hudswap", "0", CVAR_ARCHIVE};
+cvar_t	cl_maxfps	= {"cl_maxfps", "0", CVAR_ARCHIVE};
 
-cvar_t	lookspring = {"lookspring","0", true};
-cvar_t	lookstrafe = {"lookstrafe","0", true};
-cvar_t	sensitivity = {"sensitivity","3", true};
+cvar_t	lookspring = {"lookspring","0", CVAR_ARCHIVE};
+cvar_t	lookstrafe = {"lookstrafe","0", CVAR_ARCHIVE};
+cvar_t	sensitivity = {"sensitivity","3", CVAR_ARCHIVE};
 
-cvar_t	m_pitch = {"m_pitch","0.022", true};
+cvar_t	m_pitch = {"m_pitch","0.022", CVAR_ARCHIVE};
 cvar_t	m_yaw = {"m_yaw","0.022"};
 cvar_t	m_forward = {"m_forward","1"};
 cvar_t	m_side = {"m_side","0.8"};
@@ -64,19 +75,43 @@ cvar_t  localid = {"localid", ""};
 
 static qboolean allowremotecmd = true;
 
+// Tonik -->
+cvar_t	cl_speedjumpfix = {"cl_speedjumpfix", "1"};
+
+cvar_t	cl_demotimescale = {"demotimescale", "1"};
+
+cvar_t	cl_deadbodyfilter = {"cl_deadbodyfilter", "0"};
+cvar_t	cl_explosion = {"cl_explosion", "0"};
+cvar_t	r_drawflame = {"r_drawflame", "1"};
+cvar_t	cl_gibfilter = {"cl_gibfilter", "0"};
+cvar_t	r_rocketlight = {"r_rocketlight", "1"};
+cvar_t	r_rockettrail = {"r_rockettrail", "1"};
+cvar_t	cl_muzzleflash = {"cl_muzzleflash", "1"};
+
+cvar_t	cl_teamskin = {"teamskin", ""};
+cvar_t	cl_enemyskin = {"enemyskin", ""};
+
+cvar_t	default_fov = {"default_fov", "0"};
+
+int cl_teamtopcolor = -1;
+int cl_teambottomcolor;
+int cl_enemytopcolor = -1;
+int cl_enemybottomcolor;
+// <-- Tonik
+
 //
 // info mirrors
 //
-cvar_t	password = {"password", "", false, true};
-cvar_t	spectator = {"spectator", "", false, true};
-cvar_t	name = {"name","unnamed", true, true};
-cvar_t	team = {"team","", true, true};
-cvar_t	skin = {"skin","", true, true};
-cvar_t	topcolor = {"topcolor","0", true, true};
-cvar_t	bottomcolor = {"bottomcolor","0", true, true};
-cvar_t	rate = {"rate","2500", true, true};
-cvar_t	noaim = {"noaim","0", true, true};
-cvar_t	msg = {"msg","1", true, true};
+cvar_t	password = {"password", "", CVAR_USERINFO};
+cvar_t	spectator = {"spectator", "", CVAR_USERINFO};
+cvar_t	name = {"name","unnamed", CVAR_ARCHIVE|CVAR_USERINFO};
+cvar_t	team = {"team","", CVAR_ARCHIVE|CVAR_USERINFO};
+cvar_t	skin = {"skin","", CVAR_ARCHIVE|CVAR_USERINFO};
+cvar_t	topcolor = {"topcolor","0", CVAR_ARCHIVE|CVAR_USERINFO};
+cvar_t	bottomcolor = {"bottomcolor","0", CVAR_ARCHIVE|CVAR_USERINFO};
+cvar_t	rate = {"rate","2500", CVAR_ARCHIVE|CVAR_USERINFO};
+cvar_t	noaim = {"noaim","0", CVAR_ARCHIVE|CVAR_USERINFO};
+cvar_t	msg = {"msg","1", CVAR_ARCHIVE|CVAR_USERINFO};
 
 extern cvar_t cl_hightrack;
 
@@ -102,7 +137,7 @@ double			connect_time = -1;		// for connection retransmits
 quakeparms_t host_parms;
 
 qboolean	host_initialized;		// true if into command execution
-qboolean	nomaster;
+//qboolean	nomaster;
 
 double		host_frametime;
 double		realtime;				// without any filtering or bounding
@@ -114,7 +149,7 @@ int			host_hunklevel;
 byte		*host_basepal;
 byte		*host_colormap;
 
-netadr_t	master_adr;				// address of the master server
+//netadr_t	master_adr;				// address of the master server
 
 cvar_t	host_speeds = {"host_speeds","0"};			// set for running times
 cvar_t	show_fps = {"show_fps","0"};			// set for running times
@@ -124,7 +159,7 @@ int			fps_count;
 
 jmp_buf 	host_abort;
 
-void Master_Connect_f (void);
+//void Master_Connect_f (void);
 
 float	server_version = 0;	// version of server we connected to
 
@@ -158,17 +193,19 @@ void CL_Quit_f (void)
 	Sys_Quit ();
 }
 
-/*
-=======================
-CL_Version_f
-======================
-*/
-void CL_Version_f (void)
-{
-	Con_Printf ("Version %4.2f\n", VERSION);
-	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-}
 
+qboolean CL_OnFovChange (cvar_t *var, char *value)
+{
+	extern cvar_t scr_fov;
+
+	if (var == &scr_fov && cbuf_current == &cbuf_svc
+		&& Q_atof(value) == 90.0 && default_fov.value)
+	{
+		Cvar_SetValue (&scr_fov, default_fov.value);
+		return true;
+	}
+	return false;
+}
 
 /*
 =======================
@@ -213,12 +250,10 @@ void CL_SendConnectPacket (void)
 
 	cls.qport = Cvar_VariableValue("qport");
 
-	Info_SetValueForStarKey (cls.userinfo, "*ip", NET_AdrToString(adr), MAX_INFO_STRING);
-
 //	Con_Printf ("Connecting to %s...\n", cls.servername);
 	sprintf (data, "%c%c%c%cconnect %i %i %i \"%s\"\n",
 		255, 255, 255, 255,	PROTOCOL_VERSION, cls.qport, cls.challenge, cls.userinfo);
-	NET_SendPacket (strlen(data), data, adr);
+	NET_SendPacket (net_clientsocket, strlen(data), data, adr);
 }
 
 /*
@@ -264,7 +299,7 @@ void CL_CheckForResend (void)
 
 	Con_Printf ("Connecting to %s...\n", cls.servername);
 	sprintf (data, "%c%c%c%cgetchallenge\n", 255, 255, 255, 255);
-	NET_SendPacket (strlen(data), data, adr);
+	NET_SendPacket (net_clientsocket, strlen(data), data, adr);
 }
 
 void CL_BeginServerConnect(void)
@@ -312,12 +347,12 @@ void CL_Rcon_f (void)
 	int		i;
 	netadr_t	to;
 
-	if (!rcon_password.string)
+/*	if (!rcon_password.string[0])
 	{
 		Con_Printf ("You must set 'rcon_password' before\n"
 					"issuing an rcon command.\n");
 		return;
-	}
+	}	*/
 
 	message[0] = 255;
 	message[1] = 255;
@@ -327,8 +362,11 @@ void CL_Rcon_f (void)
 
 	strcat (message, "rcon ");
 
-	strcat (message, rcon_password.string);
-	strcat (message, " ");
+	if (rcon_password.string[0])
+	{
+		strcat (message, rcon_password.string);
+		strcat (message, " ");
+	}
 
 	for (i=1 ; i<Cmd_Argc() ; i++)
 	{
@@ -351,7 +389,7 @@ void CL_Rcon_f (void)
 		NET_StringToAdr (rcon_address.string, &to);
 	}
 	
-	NET_SendPacket (strlen(message)+1, message
+	NET_SendPacket (net_clientsocket, strlen(message)+1, message
 		, to);
 }
 
@@ -366,13 +404,23 @@ void CL_ClearState (void)
 {
 	int			i;
 
+	CL_NewMap();	// Triggers...
+	
 	S_StopAllSounds (true);
 
 	Con_DPrintf ("Clearing memory\n");
+//	D_FlushCaches ();
+#ifdef QW_BOTH
+	if (sv.state == ss_dead) // connecting to a remote server
+	{
+#endif
 	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)	// FIXME: check this...
 		Hunk_FreeToLowMark (host_hunklevel);
+#ifdef QW_BOTH
+	}
+#endif
 
 	CL_ClearTEnts ();
 
@@ -405,6 +453,7 @@ This is also called on Host_Error, so it shouldn't cause any errors
 */
 void CL_Disconnect (void)
 {
+	extern qboolean	v_updatepalette;
 	byte	final[10];
 
 	connect_time = -1;
@@ -432,6 +481,11 @@ void CL_Disconnect (void)
 
 		cls.state = ca_disconnected;
 
+#ifdef QW_BOTH
+		if (sv.state != ss_dead)
+			SV_ShutdownServer(false);
+#endif
+
 		cls.demoplayback = cls.demorecording = cls.timedemo = false;
 	}
 	Cam_Reset();
@@ -443,6 +497,8 @@ void CL_Disconnect (void)
 
 	CL_StopUpload();
 
+	memset (cl.cshifts, 0, sizeof(cl.cshifts));
+	v_updatepalette = true;
 }
 
 void CL_Disconnect_f (void)
@@ -544,10 +600,109 @@ void CL_Color_f (void)
 		bottom = 13;
 	
 	sprintf (num, "%i", top);
-	Cvar_Set ("topcolor", num);
+	Cvar_Set (&topcolor, num);
 	sprintf (num, "%i", bottom);
-	Cvar_Set ("bottomcolor", num);
+	Cvar_Set (&bottomcolor, num);
 }
+
+// Tonik -->
+void CL_ForceTeamColor_f (void)
+{
+	int	top, bottom;
+	int	i;
+
+	if (Cmd_Argc() == 1)
+	{
+		if (cl_teamtopcolor < 0)
+			Con_Printf ("\"teamcolor\" is \"off\"\n");
+		else
+			Con_Printf ("\"teamcolor\" is \"%i %i\"\n", 
+				cl_teamtopcolor,
+				cl_teambottomcolor);
+		return;
+	}
+
+	if (!strcmp(Cmd_Argv(1), "off"))
+	{
+		cl_teamtopcolor = -1;
+		return;
+	}
+
+	if (Cmd_Argc() == 2)
+		top = bottom = atoi(Cmd_Argv(1));
+	else {
+		top = atoi(Cmd_Argv(1));
+		bottom = atoi(Cmd_Argv(2));
+	}
+	
+	top &= 15;
+	if (top > 13)
+		top = 13;
+	bottom &= 15;
+	if (bottom > 13)
+		bottom = 13;
+	
+	if (top != cl_teamtopcolor || bottom != cl_teambottomcolor)
+	{
+		cl_teamtopcolor = top;
+		cl_teambottomcolor = bottom;
+
+		for (i = 0; i < MAX_CLIENTS; i++) {
+			cl.players[i]._topcolor = -1; // force an update
+			CL_NewTranslation(i);
+		}
+	}
+}
+
+void CL_ForceEnemyColor_f (void)
+{
+	int	top, bottom;
+	int	i;
+
+	if (Cmd_Argc() == 1)
+	{
+		if (cl_enemytopcolor < 0)
+			Con_Printf ("\"enemycolor\" is \"off\"\n");
+		else
+			Con_Printf ("\"enemycolor\" is \"%i %i\"\n", 
+				cl_enemytopcolor,
+				cl_enemybottomcolor);
+		return;
+	}
+
+	if (!strcmp(Cmd_Argv(1), "off"))
+	{
+		cl_enemytopcolor = -1;
+		return;
+	}
+
+	if (Cmd_Argc() == 2)
+		top = bottom = atoi(Cmd_Argv(1));
+	else {
+		top = atoi(Cmd_Argv(1));
+		bottom = atoi(Cmd_Argv(2));
+	}
+	
+	top &= 15;
+	if (top > 13)
+		top = 13;
+	bottom &= 15;
+	if (bottom > 13)
+		bottom = 13;
+	
+	if (top != cl_enemytopcolor || bottom != cl_enemybottomcolor)
+	{
+		cl_enemytopcolor = top;
+		cl_enemybottomcolor = bottom;
+
+		for (i = 0; i < MAX_CLIENTS; i++) {
+			cl.players[i]._topcolor = -1; // force an update
+			CL_NewTranslation(i);
+		}
+	}
+}
+// <-- Tonik
+
 
 /*
 ==================
@@ -569,7 +724,16 @@ void CL_FullServerinfo_f (void)
 
 	strcpy (cl.serverinfo, Cmd_Argv(1));
 
-	if ((p = Info_ValueForKey(cl.serverinfo, "*vesion")) && *p) {
+	server_version = 0;
+
+	if ((p = Info_ValueForKey(cl.serverinfo, "*z_version")) && *p) {
+		v = Q_atof(p);
+		if (v) {
+			Con_Printf("ZQuake Version %s Server\n", p);
+			server_version = 2.40;
+		}
+	}
+	if ((p = Info_ValueForKey(cl.serverinfo, "*version")) && *p) {
 		v = Q_atof(p);
 		if (v) {
 			if (!server_version)
@@ -577,6 +741,10 @@ void CL_FullServerinfo_f (void)
 			server_version = v;
 		}
 	}
+	if ((p = Info_ValueForKey(cl.serverinfo, "deathmatch")) && *p)
+		cl.gametype = Q_atof(p) ? GAME_DEATHMATCH : GAME_COOP;
+	else
+		cl.gametype = GAME_DEATHMATCH;	// assume GAME_DEATHMATCH by default
 }
 
 /*
@@ -704,7 +872,7 @@ void CL_Packet_f (void)
 	}
 	*out = 0;
 
-	NET_SendPacket (out-send, send, adr);
+	NET_SendPacket (net_clientsocket, out-send, send, adr);
 }
 
 
@@ -755,6 +923,7 @@ void CL_Changing_f (void)
 	S_StopAllSounds (true);
 	cl.intermission = 0;
 	cls.state = ca_connected;	// not active anymore, but not disconnected
+
 	Con_Printf ("\nChanging map...\n");
 }
 
@@ -817,7 +986,7 @@ void CL_ConnectionlessPacket (void)
 				Con_Printf ("Dup connect received.  Ignored.\n");
 			return;
 		}
-		Netchan_Setup (&cls.netchan, net_from, cls.qport);
+		Netchan_Setup (&cls.netchan, net_from, cls.qport, net_clientsocket);
 		MSG_WriteChar (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");	
 		cls.state = ca_connected;
@@ -869,7 +1038,7 @@ void CL_ConnectionlessPacket (void)
 				"You may need to reload your server browser and QuakeWorld.\n",
 				s, localid.string);
 			Con_Printf("===========================\n");
-			Cvar_Set("localid", "");
+			Cvar_Set(&localid, "");
 			return;
 		}
 
@@ -901,7 +1070,7 @@ void CL_ConnectionlessPacket (void)
 		data[4] = A2A_ACK;
 		data[5] = 0;
 		
-		NET_SendPacket (6, &data, net_from);
+		NET_SendPacket (net_clientsocket, 6, &data, net_from);
 		return;
 	}
 
@@ -914,14 +1083,15 @@ void CL_ConnectionlessPacket (void)
 		return;
 	}
 
-#if 0
+// Tonik -->
 	if (c == svc_disconnect) {
-		Con_Printf ("disconnect\n");
-
-		Host_EndGame ("Server disconnected");
+		if (cls.demoplayback)
+			Host_EndGame ("End of demo");
+//		else
+//			Host_EndGame ("Server disconnected");
 		return;
 	}
-#endif
+// <-- Tonik
 
 	Con_Printf ("unknown:  %c\n", c);
 }
@@ -1042,6 +1212,19 @@ void CL_Windows_f (void) {
 }
 #endif
 
+#ifdef QW_BOTH
+void CL_Serverinfo_f (void)
+{
+	if (cls.state < ca_connected || sv.state != ss_dead)
+		SV_Serverinfo_f();
+	else
+		Cmd_ForwardToServer();
+}
+
+void Host_Savegame_f(void);
+void Host_Loadgame_f(void);
+#endif
+
 /*
 =================
 CL_Init
@@ -1049,6 +1232,9 @@ CL_Init
 */
 void CL_Init (void)
 {
+	FILE *serlist;	// Tonik
+	extern	char	com_basedir[MAX_OSPATH];	// Tonik
+
 	extern	cvar_t		baseskin;
 	extern	cvar_t		noskins;
 	char st[80];
@@ -1060,8 +1246,13 @@ void CL_Init (void)
 	Info_SetValueForKey (cls.userinfo, "bottomcolor", "0", MAX_INFO_STRING);
 	Info_SetValueForKey (cls.userinfo, "rate", "2500", MAX_INFO_STRING);
 	Info_SetValueForKey (cls.userinfo, "msg", "1", MAX_INFO_STRING);
-	sprintf (st, "%4.2f-%04d", VERSION, build_number());
-	Info_SetValueForStarKey (cls.userinfo, "*ver", st, MAX_INFO_STRING);
+//	sprintf (st, "%4.2f", (float)VERSION);
+//	Info_SetValueForStarKey (cls.userinfo, "*ver", st, MAX_INFO_STRING);
+
+#ifndef RELEASE_VERSION
+	sprintf (st, "%s", Z_VERSION);
+	Info_SetValueForStarKey (cls.userinfo, "*z_ver", st, MAX_INFO_STRING);
+#endif
 
 	CL_InitInput ();
 	CL_InitTEnts ();
@@ -1112,6 +1303,23 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&baseskin);
 	Cvar_RegisterVariable (&noskins);
 
+// Tonik -->
+	Cvar_RegisterVariable (&cl_speedjumpfix);
+	Cvar_RegisterVariable (&cl_demotimescale);
+	Cvar_RegisterVariable (&cl_deadbodyfilter);
+	Cvar_RegisterVariable (&cl_explosion);
+	Cvar_RegisterVariable (&cl_gibfilter);
+	Cvar_RegisterVariable (&cl_muzzleflash);
+	Cvar_RegisterVariable (&cl_teamskin);
+	Cvar_RegisterVariable (&cl_enemyskin);
+	Cvar_RegisterVariable (&r_drawflame);
+	Cvar_RegisterVariable (&r_rockettrail);
+	Cvar_RegisterVariable (&r_rocketlight);
+	Cvar_RegisterVariable (&default_fov);
+	Cmd_AddCommand ("teamcolor", CL_ForceTeamColor_f);
+	Cmd_AddCommand ("enemycolor", CL_ForceEnemyColor_f);
+// <-- Tonik
+
 	//
 	// info mirrors
 	//
@@ -1132,6 +1340,7 @@ void CL_Init (void)
 	Cmd_AddCommand ("changing", CL_Changing_f);
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
 	Cmd_AddCommand ("record", CL_Record_f);
+	Cmd_AddCommand ("easyrecord", CL_EasyRecord_f);
 	Cmd_AddCommand ("rerecord", CL_ReRecord_f);
 	Cmd_AddCommand ("stop", CL_Stop_f);
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f);
@@ -1167,7 +1376,13 @@ void CL_Init (void)
 	Cmd_AddCommand ("pause", NULL);
 	Cmd_AddCommand ("say", NULL);
 	Cmd_AddCommand ("say_team", NULL);
+#ifdef QW_BOTH
+	Cmd_AddCommand ("serverinfo", CL_Serverinfo_f);
+	Cmd_AddCommand ("save", Host_Savegame_f);
+	Cmd_AddCommand ("load", Host_Loadgame_f);
+#else
 	Cmd_AddCommand ("serverinfo", NULL);
+#endif
 
 //
 //  Windows commands
@@ -1175,6 +1390,12 @@ void CL_Init (void)
 #ifdef _WINDOWS
 	Cmd_AddCommand ("windows", CL_Windows_f);
 #endif
+
+	Server_List_Init();
+	if ((serlist = fopen(va("%s/servers.txt", com_basedir),"r")) != NULL) {
+		Server_List_Load(serlist);
+		fclose(serlist);
+	}
 }
 
 
@@ -1264,31 +1485,37 @@ void Host_WriteConfiguration (void)
 
 //============================================================================
 
-#if 0
-/*
-==================
-Host_SimulationTime
 
-This determines if enough time has passed to run a simulation frame
-==================
-*/
-qboolean Host_SimulationTime(float time)
+void Host_ClearMemory()
 {
-	float fps;
+/*  // WinQuake:
+	Con_DPrintf ("Clearing memory\n");
+	D_FlushCaches ();
+	Mod_ClearAll ();
+	if (host_hunklevel)
+		Hunk_FreeToLowMark (host_hunklevel);
 
-	if (oldrealtime > realtime)
-		oldrealtime = 0;
+	cls.signon = 0;
+	memset (&sv, 0, sizeof(sv));
+	memset (&cl, 0, sizeof(cl));*/
 
-	if (cl_maxfps.value)
-		fps = max(30.0, min(cl_maxfps.value, 72.0));
-	else
-		fps = max(30.0, min(rate.value/80.0, 72.0));
+//	cls.state = ca_disconnected;	// !!!
+	memset (&cl, 0, sizeof(cl));
+};
 
-	if (!cls.timedemo && (realtime + time) - oldrealtime < 1.0/fps)
-		return false;			// framerate is too high
-	return true;
+// FIXME
+void Host_ForceReconnect()
+{
+	if (cls.state > ca_connected)
+		cls.state = ca_connected;
 }
-#endif
+
+// FIXME
+void Host_ConnectLocal()
+{
+	if (cls.state == ca_disconnected)
+		Cbuf_AddText ("connect local\n");
+}
 
 
 /*
@@ -1298,19 +1525,33 @@ Host_Frame
 Runs all active servers
 ==================
 */
+
 int		nopacketcount;
-void Host_Frame (float time)
+void Host_Frame (double time)
 {
 	static double		time1 = 0;
 	static double		time2 = 0;
 	static double		time3 = 0;
 	int			pass1, pass2, pass3;
 	float fps;
+	float scale;
+
 	if (setjmp (host_abort) )
 		return;			// something bad happened, or the server disconnected
 
 	// decide the simulation time
-	realtime += time;
+
+	if (!cls.demoplayback)
+		realtime += time;
+	else
+	{
+		scale = cl_demotimescale.value;
+		if (scale <= 0) scale = 1;
+		if (scale < 0.1) scale = 0.1;
+		if (scale > 10) scale = 1;
+		realtime += time*scale;
+	}
+
 	if (oldrealtime > realtime)
 		oldrealtime = 0;
 
@@ -1323,6 +1564,11 @@ void Host_Frame (float time)
 		return;			// framerate is too high
 
 	host_frametime = realtime - oldrealtime;
+
+// Tonik:
+	if (cls.demoplayback && (cl.paused & 1))
+		realtime = oldrealtime;
+
 	oldrealtime = realtime;
 	if (host_frametime > 0.2)
 		host_frametime = 0.2;
@@ -1335,6 +1581,12 @@ void Host_Frame (float time)
 
 	// process console commands
 	Cbuf_Execute ();
+	Cbuf_ExecuteEx (&cbuf_svc);
+
+#ifdef QW_BOTH
+	if (sv.state == ss_active)
+		SV_Frame(host_frametime);
+#endif
 
 	// fetch results from server
 	CL_ReadPackets ();
@@ -1346,17 +1598,20 @@ void Host_Frame (float time)
 	} else
 		CL_SendCmd ();
 
-	// Set up prediction for other players
-	CL_SetUpPlayerPrediction(false);
-
-	// do client side motion prediction
-	CL_PredictMove ();
-
-	// Set up prediction for other players
-	CL_SetUpPlayerPrediction(true);
-
-	// build a refresh entity list
-	CL_EmitEntities ();
+	if (cls.state >= ca_onserver)	// !!! Tonik
+	{
+		// Set up prediction for other players
+		CL_SetUpPlayerPrediction(false);
+		
+		// do client side motion prediction
+		CL_PredictMove ();
+		
+		// Set up prediction for other players
+		CL_SetUpPlayerPrediction(true);
+		
+		// build a refresh entity list
+		CL_EmitEntities ();
+	}
 
 	// update video
 	if (host_speeds.value)
@@ -1420,7 +1675,7 @@ void Host_Init (quakeparms_t *parms)
 	COM_AddParm ("-game");
 	COM_AddParm ("qw");
 
-	Sys_mkdir("qw");
+//	Sys_mkdir("qw");
 
 	if (COM_CheckParm ("-minmemory"))
 		parms->memsize = MINIMUM_MEMORY;
@@ -1433,13 +1688,35 @@ void Host_Init (quakeparms_t *parms)
 	Memory_Init (parms->membase, parms->memsize);
 	Cbuf_Init ();
 	Cmd_Init ();
+	Cvar_Init ();
 	V_Init ();
+	CL_InitTeamplay ();
 
 	COM_Init ();
 
+#ifdef QW_BOTH
+	PR_Init ();
+	SV_InitLocal ();	// register server cvars and commands
+#endif
+
 	Host_FixupModelNames();
 	
-	NET_Init (PORT_CLIENT);
+#ifdef QW_BOTH
+	{
+		int	port, p;
+	
+		port = PORT_SERVER;
+		p = COM_CheckParm ("-port");
+		if (p && p < com_argc)
+		{
+			port = atoi(com_argv[p+1]);
+			//Con_Printf ("Port: %i\n", port);
+		}
+		NET_Init (PORT_CLIENT, port);
+	}
+#else
+	NET_Init (PORT_CLIENT, 0);
+#endif
 	Netchan_Init ();
 
 	W_LoadWadFile ("gfx.wad");
@@ -1490,7 +1767,12 @@ void Host_Init (quakeparms_t *parms)
 #endif
 
 	Cbuf_InsertText ("exec quake.rc\n");
-	Cbuf_AddText ("echo Type connect <internet address> or use GameSpy to connect to a game.\n");
+#ifdef TEST_VERSION
+	Cbuf_AddText ("echo This is a test release! Please do not distribute.\n");
+	Cbuf_AddText ("echo Report bugs to tonik@quake.ru\necho\n");
+#else
+//	Cbuf_AddText ("echo Type connect <internet address> or use GameSpy to connect to a game.\n");
+#endif
 	Cbuf_AddText ("cl_warncmd 1\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
@@ -1498,7 +1780,11 @@ void Host_Init (quakeparms_t *parms)
 
 	host_initialized = true;
 
-	Con_Printf ("\nClient Version %4.2f (Build %04d)\n\n", VERSION, build_number());
+#ifdef RELEASE_VERSION
+	Con_Printf ("\nClient Version %s\n\n", Z_VERSION);
+#else
+	Con_Printf ("\nClient Version %s (Build %04d)\n\n", Z_VERSION, build_number());
+#endif
 
 	Con_Printf ("ÄÅÅÅÅÅÅ QuakeWorld Initialized ÅÅÅÅÅÅÇ\n");	
 }
@@ -1524,7 +1810,8 @@ void Host_Shutdown(void)
 	isdown = true;
 
 	Host_WriteConfiguration (); 
-		
+
+	Server_List_Shutdown ();	// Tonik
 	CDAudio_Shutdown ();
 	NET_Shutdown ();
 	S_Shutdown();

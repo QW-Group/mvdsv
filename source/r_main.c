@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "r_local.h"
+#include "sound.h"
 
 //define	PASSAGES
 
@@ -219,8 +220,8 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_aliastransbase);
 	Cvar_RegisterVariable (&r_aliastransadj);
 
-	Cvar_SetValue ("r_maxedges", (float)NUMSTACKEDGES);
-	Cvar_SetValue ("r_maxsurfs", (float)NUMSTACKSURFACES);
+	Cvar_SetValue (&r_maxedges, (float)NUMSTACKEDGES);
+	Cvar_SetValue (&r_maxsurfs, (float)NUMSTACKSURFACES);
 
 	view_clipplanes[0].leftedge = true;
 	view_clipplanes[1].rightedge = true;
@@ -630,7 +631,7 @@ void R_DrawViewModel (void)
 	float		add;
 	dlight_t	*dl;
 	
-	if (!r_drawviewmodel.value || r_fov_greater_than_90 || !Cam_DrawViewModel())
+	if (!r_drawviewmodel.value /*|| r_fov_greater_than_90*/ || !Cam_DrawViewModel())
 		return;
 
 	if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
@@ -652,7 +653,7 @@ void R_DrawViewModel (void)
 	j = R_LightPoint (currententity->origin);
 
 	if (j < 24)
-		j = 24;		// allways give some light on gun
+		j = 24;		// always give some light on gun
 	r_viewlighting.ambientlight = j;
 	r_viewlighting.shadelight = j;
 

@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -20,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_ents.c -- entity parsing and management
 
 #include "quakedef.h"
+#include "pmove.h"
+#include "teamplay.h"
 
 extern	cvar_t	cl_predict_players;
 extern	cvar_t	cl_predict_players2;
@@ -399,6 +403,10 @@ void CL_ParsePacketEntities (qboolean delta)
 }
 
 
+extern	int		cl_playerindex; 
+extern	int		cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
+extern	int		cl_rocketindex, cl_grenadeindex;
+
 /*
 ===============
 CL_LinkPacketEntities
@@ -441,6 +449,19 @@ void CL_LinkPacketEntities (void)
 		else if (s1->effects & EF_DIMLIGHT)
 			CL_NewDlight (s1->number, s1->origin[0], s1->origin[1], s1->origin[2], 200 + (rand()&31), 0.1, 0);
 
+		if (cl_deadbodyfilter.value && s1->modelindex == cl_playerindex
+			&& ( (i=s1->frame)==49 || i==60 || i==69 || i==84 || i==93 || i==102) )
+			continue;
+
+		if (cl_gibfilter.value)
+		if (s1->modelindex == cl_h_playerindex || s1->modelindex == cl_gib1index
+			|| s1->modelindex == cl_gib2index || s1->modelindex == cl_gib3index)
+			continue;
+
+		if (cl_rocket2grenade.value && cl_grenadeindex != -1)
+			if (s1->modelindex == cl_rocketindex)
+				s1->modelindex = cl_grenadeindex;
+
 		// if set to invisible, skip
 		if (!s1->modelindex)
 			continue;
@@ -454,7 +475,7 @@ void CL_LinkPacketEntities (void)
 
 		ent->keynum = s1->number;
 		ent->model = model = cl.model_precache[s1->modelindex];
-	
+
 		// set colormap
 		if (s1->colormap && (s1->colormap < MAX_CLIENTS) 
 			&& !strcmp(ent->model->name,"progs/player.mdl") )
@@ -526,11 +547,21 @@ void CL_LinkPacketEntities (void)
 			}
 		if (model->flags & EF_ROCKET)
 		{
-			R_RocketTrail (old_origin, ent->origin, 0);
-			dl = CL_AllocDlight (s1->number);
-			VectorCopy (ent->origin, dl->origin);
-			dl->radius = 200;
-			dl->die = cl.time + 0.1;
+			if (r_rockettrail.value)
+			{
+				int	trailnum = r_rockettrail.value - 1;
+				if (trailnum < 0 || trailnum > 6)
+					trailnum = 0;
+				R_RocketTrail (old_origin, ent->origin, trailnum);
+			}
+
+			if (r_rocketlight.value)	// Tonik
+			{
+				dl = CL_AllocDlight (s1->number);
+				VectorCopy (ent->origin, dl->origin);
+				dl->radius = 200;
+				dl->die = cl.time + 0.1;
+			}
 		}
 		else if (model->flags & EF_GRENADE)
 			R_RocketTrail (old_origin, ent->origin, 1);
@@ -799,6 +830,8 @@ void CL_LinkPlayers (void)
 	int				msec;
 	frame_t			*frame;
 	int				oldphysent;
+	vec3_t			org;
+	int				i;
 
 	playertime = realtime - cls.latency + 0.02;
 	if (playertime > realtime)
@@ -816,16 +849,21 @@ void CL_LinkPlayers (void)
 #ifdef GLQUAKE
 		if (!gl_flashblend.value || j != cl.playernum) {
 #endif
+			if (j == cl.playernum) {
+				VectorCopy (cl.simorg, org);
+			} else
+				VectorCopy (state->origin, org);
+
 			if ((state->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED))
-				CL_NewDlight (j, state->origin[0], state->origin[1], state->origin[2], 200 + (rand()&31), 0.1, 3);
+				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 3);
 			else if (state->effects & EF_BLUE)
-				CL_NewDlight (j, state->origin[0], state->origin[1], state->origin[2], 200 + (rand()&31), 0.1, 1);
+				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 1);
 			else if (state->effects & EF_RED)
-				CL_NewDlight (j, state->origin[0], state->origin[1], state->origin[2], 200 + (rand()&31), 0.1, 2);
+				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 2);
 			else if (state->effects & EF_BRIGHTLIGHT)
-				CL_NewDlight (j, state->origin[0], state->origin[1], state->origin[2] + 16, 400 + (rand()&31), 0.1, 0);
+				CL_NewDlight (j, org[0], org[1], org[2] + 16, 400 + (rand()&31), 0.1, 0);
 			else if (state->effects & EF_DIMLIGHT)
-				CL_NewDlight (j, state->origin[0], state->origin[1], state->origin[2], 200 + (rand()&31), 0.1, 0);
+				CL_NewDlight (j, org[0], org[1], org[2], 200 + (rand()&31), 0.1, 0);
 #ifdef GLQUAKE
 		}
 #endif
@@ -837,6 +875,10 @@ void CL_LinkPlayers (void)
 		if (!state->modelindex)
 			continue;
 
+		if (cl_deadbodyfilter.value && state->modelindex == cl_playerindex
+			&& ( (i=state->frame)==49 || i==60 || i==69 || i==84 || i==93 || i==102) )
+			continue;
+		
 		if (!Cam_DrawPlayer(j))
 			continue;
 

@@ -210,7 +210,7 @@ R_NetGraph
 void R_NetGraph (void)
 {
 	int		a, x, y, y2, w, i;
-	frame_t	*frame;
+//	frame_t	*frame;
 	int lost;
 	char st[80];
 

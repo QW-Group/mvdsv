@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "quakedef.h"
 #include "winquake.h"
+#include "pmove.h"
 
 cvar_t	cl_nopred = {"cl_nopred","0"};
 cvar_t	cl_pushlatency = {"pushlatency","-999"};
@@ -63,6 +64,8 @@ CL_PredictUsercmd
 */
 void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, qboolean spectator)
 {
+	extern cvar_t	cl_speedjumpfix;	// Tonik
+
 	// split up very long moves
 	if (u->msec > 50)
 	{
@@ -93,7 +96,11 @@ void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, 
 //for (i=0 ; i<3 ; i++)
 //pmove.origin[i] = ((int)(pmove.origin[i]*8))*0.125;
 	to->waterjumptime = pmove.waterjumptime;
-	to->oldbuttons = pmove.cmd.buttons;
+// Tonik: optional speed jumping fix
+	if (cl_speedjumpfix.value)
+		to->oldbuttons = pmove.oldbuttons;
+	else
+		to->oldbuttons = pmove.cmd.buttons;
 	VectorCopy (pmove.origin, to->origin);
 	VectorCopy (pmove.angles, to->viewangles);
 	VectorCopy (pmove.velocity, to->velocity);
@@ -117,7 +124,7 @@ void CL_PredictMove (void)
 	int			oldphysent;
 
 	if (cl_pushlatency.value > 0)
-		Cvar_Set ("pushlatency", "0");
+		Cvar_Set (&cl_pushlatency, "0");
 
 	if (cl.paused)
 		return;
@@ -156,6 +163,7 @@ void CL_PredictMove (void)
 	{
 		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);
+		cl.onground = 0;	// :(
 		return;
 	}
 
@@ -171,6 +179,7 @@ void CL_PredictMove (void)
 		to = &cl.frames[(cls.netchan.incoming_sequence+i) & UPDATE_MASK];
 		CL_PredictUsercmd (&from->playerstate[cl.playernum]
 			, &to->playerstate[cl.playernum], &to->cmd, cl.spectator);
+		cl.onground = onground;
 		if (to->senttime >= cl.time)
 			break;
 		from = to;
@@ -208,7 +217,7 @@ void CL_PredictMove (void)
 			+ f*(to->playerstate[cl.playernum].origin[i] - from->playerstate[cl.playernum].origin[i]);
 		cl.simvel[i] = from->playerstate[cl.playernum].velocity[i] 
 			+ f*(to->playerstate[cl.playernum].velocity[i] - from->playerstate[cl.playernum].velocity[i]);
-	}		
+	}
 }
 
 

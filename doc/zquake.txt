@@ -1,0 +1,390 @@
+
+                    "ZQuake" QuakeWorld Client (zqwcl) v0.098
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+1. About the ZQuake Project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Quake has been  played  for many years,  and  as perfect an online game  as
+QuakeWorld is, nothing is completely perfect.  People often thought, "oh, how
+nice it would be if I had 'this'"  or  "man,  too bad 'that' isn't  the way
+I want it".  Some of them created proxies like cheapo, Qizmo, NFProxy, etc that
+extended the QW client's abilities, to allow their wishes to become reality.
+But proxies work only on the information sent to/from server and client, what
+more do you want from a proxy?  In any case, ZQuake was thought up as the best
+things a proxy could have, with some additional capabilities that a proxy could
+never possess (such as ability to bind CAPS and NUM locks, numpad keys, etc).
+The features of ZQuake expand continuously, and members of the Quake community
+are encouraged to voice their opinion on what ZQuake should have
+(that means YOU! :).
+
+1.1. Contents
+~~~~~~~~~~~~~
+
+Project ZQuake is:
+zqwcl.exe ---- QW-Client (qwcl modification)
+zqwcl-gl.exe - QW-Client for OpenGL (glqwcl modif.)
+zqwsv.exe ---- QW-Server (qwsv modif.)
+zquake.exe --- This is something new, a client && server in one .exe, still
+	under testing, so there might be bugs!
+	There is no zquake-gl yet, but we're working on it.
+
+This readme is about zqwcl, zqwcl-gl, and zquake.
+Documentation for zqwsv is in the zqwsv archive :)
+
+1.2. Differences between zquake and zqwsv commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Since QuakeWorld, originally, did not have a client and server in a single
+binary (.exe), thus during their merge some problems arose with cvars and
+commands that had the same names in qwcl and qwsv.
+
+- Cvars cl_rollangle and cl_rollspeed were renamed to sv_rollangle and
+sv_rollspeed respectively, because those cvars already exist in the client,
+but have different meanings.
+
+- The status command was renamed to serverstatus, because the status alias
+is already used in the very popular Kombat Teams for information printout
+about the mod's settings.
+
+- The serverinfo command behaves differently depending on which server you
+are connected to -- localhost or external.  In the off state (right after
+loading of zquake), or localhost state (after executing the map command), it
+works like the serverinfo in zqwsv, and you can change serverinfo settings of
+the server.  However, if you are connected to an external server, it works
+like the serverinfo in zqwcl (i.e. read-only printout of the server's
+settings).
+
+
+2. List of New Commands
+~~~~~~~~~~~~~~~~~~~~~~~
+* cmdlist - list all commands :)
+* cvarlist - list all console variables (also known as cvars)
+	It also prints each cvar's flags:
+	* - archived variable (for example, m_pitch, name)
+	u - userinfo (name, bottomcolor)
+	s - serverinfo (deathmatch, hostname)
+* toggle - invert the value of a cvar (1 -> 0 and 0 -> 1)
+* unalias - destroys an existing alias
+* loadloc - loads a loc-file (must be located in id1/locs, qw/locs,
+	or <gamedir>/locs -- this means fortress/locs when you play TF).
+	The ".loc" extention need not be specified, for example, "loadloc dm6";
+	if the file itself has no extension, use its explicit name ("loadloc dm6.")
+* set - set a value to/create a cvar
+* teamcolor - overrides the color of teammates (doesn't work in GL)
+* enemycolor - overrides the color of enemies (doesn't work in GL) 
+* enemyskin - overrides the skins of enemies
+* teamskin - overrides the skins of teammates
+* easyrecord - records demos without worrying about the filename
+* msg_trigger - message catcher system, to be explained later below.
+
+
+3. List of New/Modified CVars
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* crosshair 3 - a mini crosshair (color of crosshaircolor, of course)
+
+* cl_bonusflash [1,0] - turn on/off the weapon/item pickup flash
+
+* cl_c2spps - packet filtering (a la Qizmo's .c2spps command). Use this to
+	reduce network traffic when you're playing on a 33600 (or worse)
+	connection. The recommended settings are cl_maxfps 72 and cl_c2spps 30.
+
+* cl_chatmode [1,2] - console command state
+	0 - a-la NetQuake, text in the console is always treated as a command
+	and in order to chat you have to press T (messagemode) or use the say
+	command
+	1 - new Q3A-like command state, where everything you type in the console
+	goes into chat, in order to issue a ocmmand, prefix it with a slash (/)
+	2 - default qw2.30 state, if the first word in the line is a command, it
+	is executed, otherwise the line is sent as chat
+
+* cl_clock [0,1,2] - a clock (a la NFProxy)
+	0 - off (default)
+	1 - shows the time you spent on server (you'll also see it in the status
+		bar when you press TAB)
+	2 - shows the time of day
+* cl_clock_x - horizontal coordinates of the clock
+* cl_clock_y - vertical coordinates of the clock (if < 0, then the lowest line of
+	the screen is used)
+
+* cl_deadbodyfilter - if 1 (by default 0), corpses are not drawn.  this helps
+	the FPS somewhat, not to mention your concentration.  (ATTENTION!!!  if
+	you use this in TF, you will NOT be able to see a feigned spy!!  so use
+	this wisely!)
+
+* cl_gibfilter - [0-1] - if 1, gibs are turned off.  default is 0.
+
+* cl_explosion [0-3,6,7,8] - changes standard explosions on less fps-hogging ones
+	0 - normal (default); 1 - no particles; 2 - no dynamic lighting;
+	3 - no particles, no dynamic lighting;
+	6 - teleport; 7 - blood; 8 - bigblood
+
+* cl_loadlocs - if 1 (by default 0), loc-files are loaded automagically upon
+        change of map. 	As always, they should be located in /id1/locs
+        or /qw/locs  (loc-files are files that assosiate spots on the map with
+        a message, and they can be used to figure out which spot youre closest
+        to on the map and use it's message to show your current location, etc.)
+        No ability exists in zquake, as of yet, to create loc files..  best way
+        is to make your own with a proxy, or download one from a friend.)
+
+* cl_muzzleflash [0,1,2] - "Muzzleflash" (the flashes when a gun is shot)
+	0 - all turned off; 1 - all turned on (default);
+	2 - own's flash off, all other on
+
+* cl_r2g - if 1, converts all rockets to grenades. I think it sucks, but
+	some people say they like it.
+
+* cl_speedjumpfix - if 1, which is the default, jump prediction is turned on.
+	result?  perfect jumps even at 200+ ping.
+
+* cl_triggers - if 1 (0 by default), then special aliases can be executed,
+	or triggered, when something happens.
+
+	aliases:
+	~~~~~~~~
+	f_respawn - triggered when you are (re)spawned.
+	f_death - triggered when you die.
+	f_mapend - triggered when the map is chenged.
+
+	examples:
+	~~~~~~~~~
+	alias f_respawn "say_team respawned at %l;easyrecord mydemo_start"
+	alias f_death "say_team died at %l;stop"
+	alias f_mapend "exec fornewmap.cfg;say Let's get ready to rrrrrumble!!"
+
+* default_fov - useful in TF, and other mods that reset your fov when you
+		spawn to 90. Basically, when the server sends you "fov 90",
+		your fov is set to default_fov.
+
+* demotimescale (0.1 - 10) - changes speed of demo playback.
+
+* impulse imp1 [imp2 [imp3...]] - choice of the best weapon
+	example:
+	impulse 5 4 - chooses either nailgun or supernailgun, depending on which
+	one you have. If you have both, chooses supernailgun.
+
+* r_drawflame - if set to 0, torch models are not drawn.  on maps like
+	dm6 this really helps the frame rate.  when you change this cvar,
+	you have to reconnect (reload the map) in order for it to take
+	effect.
+
+* r_rocketlight [0,1] - turn off/on dynamic lighting of rockets.
+
+* r_rockettrail [0-7] - changes rocket trail (duh)
+	0 - trail turned off
+	1 - standard (default)
+	2 - grenade
+
+* show_speed - shows your horizontal velocity component in upper right corner.
+
+* v_contentblend [0,1] - if 0, water becomes clear.
+
+* v_damagecshift [0..1] - coefficient of the flash (1-full flash, 0-no flash)
+	when you are hit.  some people are annoyd by the flash, others use it
+	as the only indicator that they are hit, so toggle it as you wish.
+
+* v_pentcshift [0..1] - flash coefficient for when you take the pent
+* v_quadcshift [0..1] - ...same thing, but for quad
+* v_ringcshift [0..1] - ...for ring of shadows
+* v_suitcshift [0..1] - ...and for bio-suit.
+
+
+4. How to use Team_Say Macros
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* _cmd_macros - if on, using the $ sign you can give out some information, e.g.
+	say_team "at $location  $armor/$health  $powerups"
+
+* cl_nofake 1 disables "fake" messages sent by other players (0 by default).
+	It replaces all 0x0D characters with white '#' symbols.
+
+* cl_parsesay - if 1 (default 0), you can use macros a-la NFProxy such as
+	say_team "at %l %a/%h %P"
+
+* When cl_parsay is turned on, you can use Ocrana LED's
+	($R/$G/$B/$Y-lamps) by hand, right out of the console.
+	as well as chat anonymously through "$\" without showing your name.
+	(i.e., chat that are seen without your name at the beginning.)
+
+	$R - Red lamp
+	$G - Green lamp
+	$B - Blue lamp
+	$Y - Yellow lamp
+	(In order to use the lamps, it's a good idea to install the Ocrana
+	pak.)
+
+	For example:
+	say "$\$R$YYou just suck!$Y$R"
+	Your oponnents would see:
+	@@You just suck!@@
+
+	notes:
+	$\ - Before this combination, all words are ignored.
+
+* List of macros
+~~~~~~~~~~~~~~~~
+Macros column - full macro name
+(in order to turn macro formatting on, use _cmd_macros 1)
+NF column - alternative, NFProxy (and others) compatible
+macro name (use cl_parsesay to turn it on)
+
+Macro           NF      Description
+~~~~~~~~~~~~~~  ~~      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$armor		%a	amount of armor
+$armortype	%A	type of armor (ga, ya, ra)
+$health		%h	health (i think...)
+
+$shells			amount of shells
+$nails			...nails
+$rockets	%r	...rockets/grenades
+$cells		%c	...lg batteries
+
+$weapon		%w	selected weapon
+$ammo		%W	amount of ammo for current weapon
+
+$powerups	%P	powerups which you have (quad/pent/ring)
+
+$location	%l	current location according to loc-file (which
+			should be loaded)
+
+		%L	current location, or location of death if you
+			died 5 or less seconds ago
+
+		%d	location of last death
+----------------------------------------------------------------------
+
+
+5. Other features
+~~~~~~~~~~~~~~~~~
+
+5.1. $-expansion (cvar expansion)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This uses the cvars value (a-la QII)
+Example:
+echo $sensitivity - shows your current sens through the console/viewport.
+
+alias +zoom "set _fov $fov; fov 45"
+alias -zoom "set fov $_fov"
+	with the above two aliases you'll be able to always set a previous
+	value of a cvar. Useful when youre writing scripts that regulate
+	your rate, volume, sens, etc...
+
+* inc [cvar] [value] -
+	if value is left out, increments the specified cvar by one
+	otherwise adds the value to the cvar.  for example, inc volume -0.1
+	would subtract 0.1 from volume.
+
+5.2. Message catcher system
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* msg_trigger <alias> <string>
+	With the help of this command you can automatically execute some
+	alias if a specific string is found in the console.  The alias is
+	limited to the following commands:
+	alias, echo, play, playvol, say, say_team, set, msg_trigger, inc.
+	You can also set cvars, but you can't execute nested aliases!
+	The length of the <string> parameter is limited to 64 chars.
+
+	example (worth a thousand words hehe):
+	alias no_ammo "play noammo.wav"
+	msg_trigger no_ammo "No enough ammo"
+	With this, when you run out of ammo and quake says "No enough ammo",
+	alias no_ammo will be automatically executed (in this case it plays
+	a wav file).
+
+	for TF:
+	alias play_count "play count.wav"
+	msg_trigger play_count "renade primed"
+	So if, for example, in the console you get something like
+	"Grenade primed, 3 seconds..." or
+	"Napalm grenade primed, 3 seconds...", then play_count will execute.
+
+	Attention: Message catcher system is a feature still in development,
+	so don't be suprised if we change the format of the msg_trigger command
+	in future.
+
+5.3. Keys
+~~~~~~~~~
+* cl_keypad - [0,1] if 1 (by default), you will be able to bind such
+	keys as capslock, numlock, and all numpad keys. the full listing is:
+	CAPSLOCK
+	KP_NUMLOCK	(or NUMLOCK)
+	KP_SLASH
+	KP_STAR
+	KP_MINUS
+	KP_HOME
+	KP_UPARROW
+	KP_PGUP
+	KP_PLUS
+	KP_LEFTARROW
+	KP_5
+	KP_RIGHTARROW
+	KP_END
+	KP_DOWNARROW
+	KP_PGDN
+	KP_ENTER
+	KP_INS
+	KP_DEL
+
+5.4. Key Use in Console
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ZQuake uses keys in the console more effectively now.  Keys such as <--
+and -->, home and end work as expected in editing the current line.
+(in order to use home and end as they were originally intended, i.e.
+to scroll the console buffer all the way up or down, use ctrl+home/ctrl+end)
+
+5.5. Demos
+~~~~~~~~~~
+During playback of demos, pause now actually works, as does demotimescale:
+* demotimescale 0.25 - slomo viewing (1/4th normal speed)
+* demotimescale 5 - fast forward (5 times normal speed)
+* demotimescale 1 - normal speed
+
+* easyrecord [demoname] - with this command, you can record demos without
+	specifying a name.  in other words if demoname is not specified (and
+	it shouldnt, as it defeats the whole purpose :), the name is generated
+	in the following manner:
+
+	duel: player1_vs_player2_map
+	teamplay: player1_team1_vs_team2_map
+	ffa: player1_ffa_map
+	one player: player1_map
+
+	if the demo with that name already exist, the demo will be postfixed with
+	two numbers (at the end) such as 00, and counting upwards from that,
+	so if there is already a unnamed_dm6.qwd, unnamed_dm6_00.qwd will be created,
+	then unnamed_dm6_01.qwd, and so forth.	
+
+	also, when demoname is specified, it will work like record, except it
+	will retain the aforementioned reinumeration of demos (it won't overwrite
+	existing demos, instead it will append numbers to the filename).
+	
+	example:
+		easyrecord tempdemo
+		easyrecord $name_$team
+
+5.6. command-line parameter -port <portnum>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+works only in zquake.exe and zqwsv.exe.
+changes the port of the server (default - 27500).
+
+5.7. "f_version", "z_version"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+zquake replies, like a proxy, to f_version or z_version with its current version
+and build.
+
+5.8. Note about TF
+~~~~~~~~~~~~~~~~~~
+Commands v_cshift, v_idlescale and v_i* in TF are disabled, in order to
+avoid cheating with old flash and concussion grenades.
+
+
+-----------------------
+Project Author:
+Anthony Gavriloff aka Tonik (tonik@quake.ru)
+
+Ideas and stuff:
+Turba (turba@hrg.dhtp.kiae.ru)
+
+Translator of this readme:
+GuPH (guph@netzero.net || http://guph.net)
+
+Official ZQuake site: http://zquake.da.ru/ (or http://zquake.frag.ru)

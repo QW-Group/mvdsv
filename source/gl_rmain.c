@@ -466,7 +466,7 @@ void R_DrawAliasModel (entity_t *e)
 
 	ambientlight = shadelight = R_LightPoint (currententity->origin);
 
-	// allways give the gun some light
+	// always give the gun some light
 	if (e == &cl.viewent && ambientlight < 24)
 		ambientlight = shadelight = 24;
 
@@ -497,6 +497,13 @@ void R_DrawAliasModel (entity_t *e)
 	if (!strcmp(clmodel->name, "progs/player.mdl")) {
 		if (ambientlight < 8)
 			ambientlight = shadelight = 8;
+
+// Tonik: make thunderbolt model look nice
+// FIXME: we don't want to make strcmp's for every model!
+	} else if (!strcmp (clmodel->name, "progs/bolt.mdl")
+		|| !strcmp (clmodel->name, "progs/bolt2.mdl")
+		|| !strcmp (clmodel->name, "progs/bolt3.mdl") ) {
+		ambientlight = shadelight = 190;
 
 	} else if (!strcmp (clmodel->name, "progs/flame2.mdl")
 		|| !strcmp (clmodel->name, "progs/flame.mdl") )
@@ -673,7 +680,7 @@ void R_DrawViewModel (void)
 	j = R_LightPoint (currententity->origin);
 
 	if (j < 24)
-		j = 24;		// allways give some light on gun
+		j = 24;		// always give some light on gun
 	ambientlight = j;
 	shadelight = j;
 

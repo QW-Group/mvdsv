@@ -19,7 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
+#include "pmove.h"
 
+cvar_t	pm_jumpfix = {"pm_jumpfix","1"};
+cvar_t	pm_slidefix = {"pm_slidefix","0"};	// FIXME: remove?
+cvar_t	pm_ktphysics = {"pm_ktphysics", "0"};	// set this when
+			// playing on a server running Kombat Teams 2.10 or later
 
 movevars_t		movevars;
 
@@ -50,6 +55,13 @@ void PM_InitBoxHull (void);
 
 void Pmove_Init (void)
 {
+#if defined(SERVERONLY) || defined(QW_BOTH)
+	Cvar_RegisterVariable (&pm_jumpfix);
+#else
+	pm_jumpfix.value = 1;
+#endif
+	Cvar_RegisterVariable (&pm_slidefix);
+	Cvar_RegisterVariable (&pm_ktphysics);
 	PM_InitBoxHull ();
 }
 
@@ -238,14 +250,19 @@ void PM_GroundMove (void)
 	vec3_t	original, originalvel, down, up, downvel;
 	float	downdist, updist;
 
-	pmove.velocity[2] = 0;
-	if (!pmove.velocity[0] && !pmove.velocity[1] && !pmove.velocity[2])
+	if (!pm_slidefix.value)
+		pmove.velocity[2] = 0;
+
+	if (!pmove.velocity[0] && !pmove.velocity[1])
+	{
+		pmove.velocity[2] = 0;
 		return;
+	}
 
 	// first try just moving to the destination	
 	dest[0] = pmove.origin[0] + pmove.velocity[0]*frametime;
 	dest[1] = pmove.origin[1] + pmove.velocity[1]*frametime;	
-	dest[2] = pmove.origin[2];
+	dest[2] = pmove.origin[2] + pmove.velocity[2]*frametime;
 
 	// first try moving directly to the next spot
 	VectorCopy (dest, start);
@@ -300,7 +317,7 @@ void PM_GroundMove (void)
 	updist = (up[0] - original[0])*(up[0] - original[0])
 		+ (up[1] - original[1])*(up[1] - original[1]);
 
-	if (downdist > updist)
+	if (downdist >= updist)
 	{
 usedown:
 		VectorCopy (down, pmove.origin);
@@ -508,6 +525,7 @@ void PM_AirMove (void)
 	float		fmove, smove;
 	vec3_t		wishdir;
 	float		wishspeed;
+	vec3_t		original;
 
 	fmove = pmove.cmd.forwardmove;
 	smove = pmove.cmd.sidemove;
@@ -538,20 +556,42 @@ void PM_AirMove (void)
 
 	if ( onground != -1)
 	{
-		pmove.velocity[2] = 0;
+		if (pmove.velocity[2] > 0 || !pm_slidefix.value)
+			pmove.velocity[2] = 0;
 		PM_Accelerate (wishdir, wishspeed, movevars.accelerate);
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity * frametime;
 		PM_GroundMove ();
 	}
 	else
 	{	// not on ground, so little effect on velocity
+#if 0
+		PM_AirAccelerate (wishdir, wishspeed, movevars.airaccelerate);
+#else
 		PM_AirAccelerate (wishdir, wishspeed, movevars.accelerate);
+#endif
 
 		// add gravity
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity * frametime;
 
-		PM_FlyMove ();
-
+		i = PM_FlyMove();
+		if (!i && pm_jumpfix.value)
+		{
+			// the move didn't get blocked
+			PM_CategorizePosition ();
+			if (onground != -1)		// but we're on ground now
+			{
+			// This is a hack to fix the jumping bug
+				VectorCopy (pmove.origin, original);
+				// Calculate correct velocity
+				if ( ! PM_FlyMove() )
+				{
+					// This shouldn't probably happen (?)
+					if (pmove.velocity[2] < 0)
+						pmove.velocity[2] = 0;
+				}
+				VectorCopy (original, pmove.origin);
+			}
+		}
 	}
 
 //Con_Printf("airmove:vec: %4.2f %4.2f %4.2f\n",
@@ -568,10 +608,10 @@ void PM_AirMove (void)
 
 /*
 =============
-PM_CatagorizePosition
+PM_CategorizePosition
 =============
 */
-void PM_CatagorizePosition (void)
+void PM_CategorizePosition (void)
 {
 	vec3_t		point;
 	int			cont;
@@ -677,6 +717,12 @@ void JumpButton (void)
 	if ( pmove.oldbuttons & BUTTON_JUMP )
 		return;		// don't pogo stick
 
+// When connected to a Kombat Teams server, "fix" the jumping bug
+// the same way qc code does to minimize prediction errors
+	if (pm_ktphysics.value)
+		if (pmove.velocity[2] < 0)
+			pmove.velocity[2] = 0;
+
 	onground = -1;
 	pmove.velocity[2] += 270;
 
@@ -775,7 +821,7 @@ SpectatorMove
 */
 void SpectatorMove (void)
 {
-	float	speed, drop, friction, control, newspeed, accel;
+	float	speed, drop, friction, control, newspeed;
 	float	currentspeed, addspeed, accelspeed;
 	int			i;
 	vec3_t		wishvel;
@@ -878,7 +924,7 @@ void PlayerMove (void)
 	VectorCopy (pmove.cmd.angles, pmove.angles);
 
 	// set onground, watertype, and waterlevel
-	PM_CatagorizePosition ();
+	PM_CategorizePosition ();
 
 	if (waterlevel == 2)
 		CheckWaterJump ();
@@ -899,6 +945,6 @@ void PlayerMove (void)
 		PM_AirMove ();
 
 	// set onground, watertype, and waterlevel for final spot
-	PM_CatagorizePosition ();
+	PM_CategorizePosition ();
 }
 

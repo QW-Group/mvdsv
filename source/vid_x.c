@@ -41,9 +41,10 @@ typedef unsigned short PIXEL;
 
 #include "quakedef.h"
 #include "d_local.h"
+#include "keys.h"
 
-cvar_t		_windowed_mouse = {"_windowed_mouse","0", true};
-cvar_t		m_filter = {"m_filter","0", true};
+cvar_t		_windowed_mouse = {"_windowed_mouse","0",CVAR_ARCHIVE};
+cvar_t		m_filter = {"m_filter","0",CVAR_ARCHIVE};
 float old_windowed_mouse;
 
 // not used
@@ -68,7 +69,7 @@ typedef struct
 	int output;
 } keymap_t;
 
-viddef_t vid; // global video state
+extern viddef_t vid; // global video state
 unsigned short d_8to16table[256];
 
 int		num_shades=32;
@@ -1098,10 +1099,7 @@ void IN_Move (usercmd_t *cmd)
 		if (cl.viewangles[PITCH] < -70)
 			cl.viewangles[PITCH] = -70;
 	} else {
-		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward.value * mouse_y;
-		else
-			cmd->forwardmove -= m_forward.value * mouse_y;
+		cmd->forwardmove -= m_forward.value * mouse_y;
 	}
 	mouse_x = mouse_y = 0.0;
 }

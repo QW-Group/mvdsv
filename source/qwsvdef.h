@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// quakedef.h -- primary header for server
+// qwsvdef.h -- primary header for server
 
 #define	QUAKE_GAME			// as opposed to utilities
 
@@ -64,7 +64,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct
 {
 	char	*basedir;
-	char	*cachedir;		// for development over ISDN lines
 	int		argc;
 	char	**argv;
 	void	*membase;
@@ -83,9 +82,10 @@ extern	cvar_t		sys_nostdout;
 extern	cvar_t		developer;
 
 extern	qboolean	host_initialized;		// true if into command execution
-extern	double		host_frametime;
+//extern	double		host_frametime;
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
+extern	double		sv_frametime;
 
 void SV_Error (char *error, ...);
 void SV_Init (quakeparms_t *parms);

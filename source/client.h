@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -210,6 +212,8 @@ typedef struct
 	int			servercount;	// server identification for prespawns
 
 	char		serverinfo[MAX_SERVERINFO_STRING];
+	int			gametype;
+	qboolean	teamfortress;
 
 	int			parsecount;		// server message counter
 	int			validsequence;	// this is the sequence number of the last good
@@ -243,7 +247,7 @@ typedef struct
 
 // the client simulates or interpolates movement to get these values
 	double		time;			// this is the time value that the client
-								// is rendering at.  allways <= realtime
+								// is rendering at.  always <= realtime
 	vec3_t		simorg;
 	vec3_t		simvel;
 	vec3_t		simangles;
@@ -254,7 +258,7 @@ typedef struct
 	float		driftmove;
 	double		laststop;
 
-
+	int			onground;		// -1 when in air    -- Tonik
 	float		crouch;			// local amount for smoothing stepups
 
 	qboolean	paused;			// send over by server
@@ -288,6 +292,8 @@ typedef struct
 
 // all player information
 	player_info_t	players[MAX_CLIENTS];
+
+	char		sprint_buf[1024];	// Tonik
 } client_state_t;
 
 
@@ -325,6 +331,20 @@ extern cvar_t		_windowed_mouse;
 
 extern	cvar_t	name;
 
+// Tonik -->
+extern	cvar_t	r_drawflame;
+extern	cvar_t	cl_deadbodyfilter;
+extern	cvar_t	cl_explosion;
+extern	cvar_t	cl_gibfilter;
+extern	cvar_t	cl_muzzleflash;
+extern	cvar_t	r_rocketlight;
+extern	cvar_t	r_rockettrail;
+
+extern int cl_teamtopcolor;
+extern int cl_teambottomcolor;
+extern int cl_enemytopcolor;
+extern int cl_enemybottomcolor;
+// <-- Tonik
 
 #define	MAX_STATIC_ENTITIES	128			// torches, etc
 
@@ -409,6 +429,7 @@ void CL_WriteDemoCmd (usercmd_t *pcmd);
 
 void CL_Stop_f (void);
 void CL_Record_f (void);
+void CL_EasyRecord_f (void);
 void CL_ReRecord_f (void);
 void CL_PlayDemo_f (void);
 void CL_TimeDemo_f (void);

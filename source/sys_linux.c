@@ -42,7 +42,6 @@ int noconinput = 0;
 int nostdout = 0;
 
 char *basedir = ".";
-char *cachedir = "/tmp";
 
 cvar_t  sys_linerefresh = {"sys_linerefresh","0"};// set for entity display
 
@@ -374,8 +373,6 @@ int main (int c, char **v)
 	parms.membase = malloc (parms.memsize);
 
 	parms.basedir = basedir;
-// caching is disabled by default, use -cachedir to enable
-//	parms.cachedir = cachedir;
 
 	noconinput = COM_CheckParm("-noconinput");
 	if (!noconinput)

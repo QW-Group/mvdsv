@@ -1,13 +1,41 @@
-//
+/*
+	worlda.S
+
+	(description)
+
+	Copyright (C) 1996-1997  Id Software, Inc.
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id: worlda.s,v 1.1.1.2 2004/09/28 18:57:04 vvd0 Exp $
+*/
 // worlda.s
 // x86 assembly-language server testing stuff
-//
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include "asm_i386.h"
-#include "quakeasm.h"
+//#include "quakeasm.h"
 //include "d_ifacea.h"
 
-#if id386
+#ifdef id386
 
 	.data
 
@@ -70,7 +98,7 @@ Lhloop:
 
 //		if (plane->type < 3)
 //			d = p[plane->type] - plane->dist;
-	movl	pl_type(%ebp,%ecx,4),%bl
+	movb	pl_type(%ebp,%ecx,4),%bl
 	cmpb	$3,%bl
 	jb		Lnodot
 

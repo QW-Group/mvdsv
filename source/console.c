@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // console.c
 
 #include "quakedef.h"
+#include "keys.h"
 
 int			con_ormask;
 console_t	con_main;
@@ -105,8 +106,11 @@ Con_Clear_f
 */
 void Con_Clear_f (void)
 {
-	Q_memset (con_main.text, ' ', CON_TEXTSIZE);
-	Q_memset (con_chat.text, ' ', CON_TEXTSIZE);
+	con_main.numlines = 0;
+	con_chat.numlines = 0;
+	memset (con_main.text, ' ', CON_TEXTSIZE);
+	memset (con_chat.text, ' ', CON_TEXTSIZE);
+	con_main.display = con_main.current;
 }
 
 						
@@ -167,7 +171,7 @@ void Con_Resize (console_t *con)
 		width = 38;
 		con_linewidth = width;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
-		Q_memset (con->text, ' ', CON_TEXTSIZE);
+		memset (con->text, ' ', CON_TEXTSIZE);
 	}
 	else
 	{
@@ -185,8 +189,8 @@ void Con_Resize (console_t *con)
 		if (con_linewidth < numchars)
 			numchars = con_linewidth;
 
-		Q_memcpy (tbuf, con->text, CON_TEXTSIZE);
-		Q_memset (con->text, ' ', CON_TEXTSIZE);
+		memcpy (tbuf, con->text, CON_TEXTSIZE);
+		memset (con->text, ' ', CON_TEXTSIZE);
 
 		for (i=0 ; i<numlines ; i++)
 		{
@@ -260,7 +264,9 @@ void Con_Linefeed (void)
 	if (con->display == con->current)
 		con->display++;
 	con->current++;
-	Q_memset (&con->text[(con->current%con_totallines)*con_linewidth]
+	if (con->numlines < con_totallines)
+		con->numlines++;
+	memset (&con->text[(con->current%con_totallines)*con_linewidth]
 	, ' ', con_linewidth);
 }
 
@@ -352,14 +358,33 @@ Handles cursor positioning, line wrapping, etc
 // FIXME: make a buffer size safe vsprintf?
 void Con_Printf (char *fmt, ...)
 {
+#ifdef QW_BOTH
+	extern qboolean	sv_redirected;
+	extern FILE *	sv_logfile;
+	extern char		outputbuf[8000];
+	void SV_FlushRedirect ();
+#endif
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
-	static qboolean	inupdate;
 	
 	va_start (argptr,fmt);
 	vsprintf (msg,fmt,argptr);
 	va_end (argptr);
 	
+#ifdef QW_BOTH
+	// add to redirected message
+	if (sv_redirected)
+	{
+		if (strlen (msg) + strlen(outputbuf) > sizeof(outputbuf) - 1)
+			SV_FlushRedirect ();
+		strcat (outputbuf, msg);
+		return;
+	}
+
+	if (sv_logfile)
+		fprintf (sv_logfile, "%s", msg);
+#endif
+
 // also echo to debugging console
 	Sys_Printf ("%s", msg);	// also echo to debugging console
 
@@ -372,10 +397,13 @@ void Con_Printf (char *fmt, ...)
 		
 // write it to the scrollable buffer
 	Con_Print (msg);
-	
+
+#if 0	// Tonik	
 // update the screen immediately if the console is displayed
 	if (cls.state != ca_active)
 	{
+		static qboolean	inupdate;
+
 	// protect against infinite loop if something in SCR_UpdateScreen calls
 	// Con_Printd
 		if (!inupdate)
@@ -385,6 +413,7 @@ void Con_Printf (char *fmt, ...)
 			inupdate = false;
 		}
 	}
+#endif	// Tonik
 }
 
 /*
@@ -430,31 +459,30 @@ void Con_DrawInput (void)
 	int		y;
 	int		i;
 	char	*text;
+	char	temp[MAXCMDLINE];
 
 	if (key_dest != key_console && cls.state == ca_active)
-		return;		// don't draw anything (allways draw if not active)
+		return;		// don't draw anything (always draw if not active)
 
-	text = key_lines[edit_line];
-	
-// add the cursor frame
-	text[key_linepos] = 10+((int)(realtime*con_cursorspeed)&1);
-	
+	text = strcpy (temp, key_lines[edit_line]);
+
 // fill out remainder with spaces
-	for (i=key_linepos+1 ; i< con_linewidth ; i++)
+	for (i=strlen(text) ; i < MAXCMDLINE ; i++)
 		text[i] = ' ';
-		
+
+// add the cursor frame
+	if ( (int)(realtime*con_cursorspeed) & 1 )
+		text[key_linepos] = 11;
+
 //	prestep if horizontally scrolling
 	if (key_linepos >= con_linewidth)
 		text += 1 + key_linepos - con_linewidth;
-		
+
 // draw it
 	y = con_vislines-22;
 
 	for (i=0 ; i<con_linewidth ; i++)
 		Draw_Character ( (i+1)<<3, con_vislines - 22, text[i]);
-
-// remove cursor
-	key_lines[edit_line][key_linepos] = 0;
 }
 
 

@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // snd_dma.c -- main control for any streaming sound output device
 
 #include "quakedef.h"
+#include "sound.h"
 
 #ifdef _WIN32
 #include "winquake.h"
@@ -71,8 +72,8 @@ int 		desired_bits = 16;
 
 int sound_started=0;
 
-cvar_t bgmvolume = {"bgmvolume", "1", true};
-cvar_t volume = {"volume", "0.7", true};
+cvar_t bgmvolume = {"bgmvolume", "1", CVAR_ARCHIVE};
+cvar_t volume = {"volume", "0.7", CVAR_ARCHIVE};
 
 cvar_t nosound = {"nosound", "0"};
 cvar_t precache = {"precache", "1"};
@@ -82,7 +83,7 @@ cvar_t ambient_level = {"ambient_level", "0.3"};
 cvar_t ambient_fade = {"ambient_fade", "100"};
 cvar_t snd_noextraupdate = {"snd_noextraupdate", "0"};
 cvar_t snd_show = {"snd_show", "0"};
-cvar_t _snd_mixahead = {"_snd_mixahead", "0.1", true};
+cvar_t _snd_mixahead = {"_snd_mixahead", "0.1", CVAR_ARCHIVE};
 
 
 // ====================================================================
@@ -169,20 +170,7 @@ S_Init
 */
 void S_Init (void)
 {
-
 //	Con_Printf("\nSound Initialization\n");
-
-	if (COM_CheckParm("-nosound"))
-		return;
-
-	if (COM_CheckParm("-simsound"))
-		fakedma = true;
-
-	Cmd_AddCommand("play", S_Play);
-	Cmd_AddCommand("playvol", S_PlayVol);
-	Cmd_AddCommand("stopsound", S_StopAllSoundsC);
-	Cmd_AddCommand("soundlist", S_SoundList);
-	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
 
 	Cvar_RegisterVariable(&nosound);
 	Cvar_RegisterVariable(&volume);
@@ -196,9 +184,21 @@ void S_Init (void)
 	Cvar_RegisterVariable(&snd_show);
 	Cvar_RegisterVariable(&_snd_mixahead);
 
+	if (COM_CheckParm("-nosound"))
+		return;
+
+	if (COM_CheckParm("-simsound"))
+		fakedma = true;
+
+	Cmd_AddCommand("play", S_Play);
+	Cmd_AddCommand("playvol", S_PlayVol);
+	Cmd_AddCommand("stopsound", S_StopAllSoundsC);
+	Cmd_AddCommand("soundlist", S_SoundList);
+	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
+
 	if (host_parms.memsize < 0x800000)
 	{
-		Cvar_Set ("loadas8bit", "1");
+		Cvar_Set (&loadas8bit, "1");
 		Con_Printf ("loading all sounds as 8bit\n");
 	}
 
@@ -285,12 +285,12 @@ sfx_t *S_FindName (char *name)
 	if (!name)
 		Sys_Error ("S_FindName: NULL\n");
 
-	if (Q_strlen(name) >= MAX_QPATH)
+	if (strlen(name) >= MAX_QPATH)
 		Sys_Error ("Sound name too long: %s", name);
 
 // see if already loaded
 	for (i=0 ; i < num_sfx ; i++)
-		if (!Q_strcmp(known_sfx[i].name, name))
+		if (!strcmp(known_sfx[i].name, name))
 		{
 			return &known_sfx[i];
 		}
@@ -368,7 +368,7 @@ channel_t *SND_PickChannel(int entnum, int entchannel)
 		if (entchannel != 0		// channel 0 never overrides
 		&& channels[ch_idx].entnum == entnum
 		&& (channels[ch_idx].entchannel == entchannel || entchannel == -1) )
-		{	// allways override sound from same entity
+		{	// always override sound from same entity
 			first_to_die = ch_idx;
 			break;
 		}
@@ -406,7 +406,7 @@ void SND_Spatialize(channel_t *ch)
     vec3_t source_vec;
 	sfx_t *snd;
 
-// anything coming from the view entity will allways be full volume
+// anything coming from the view entity will always be full volume
 	if (ch->entnum == cl.viewentity)
 	{
 		ch->leftvol = ch->master_vol;
@@ -548,7 +548,7 @@ void S_StopAllSounds(qboolean clear)
 		if (channels[i].sfx)
 			channels[i].sfx = NULL;
 
-	Q_memset(channels, 0, MAX_CHANNELS * sizeof(channel_t));
+	memset(channels, 0, MAX_CHANNELS * sizeof(channel_t));
 
 	if (clear)
 		S_ClearBuffer ();
@@ -602,7 +602,7 @@ void S_ClearBuffer (void)
 			}
 		}
 
-		Q_memset(pData, clear, shm->samples * shm->samplebits/8);
+		memset(pData, clear, shm->samples * shm->samplebits/8);
 
 		pDSBuf->lpVtbl->Unlock(pDSBuf, pData, dwSize, NULL, 0);
 	
@@ -610,7 +610,7 @@ void S_ClearBuffer (void)
 	else
 #endif
 	{
-		Q_memset(shm->buffer, clear, shm->samples * shm->samplebits/8);
+		memset(shm->buffer, clear, shm->samples * shm->samplebits/8);
 	}
 }
 
@@ -839,8 +839,10 @@ void GetSoundtime(void)
 	soundtime = buffers*fullsamples + samplepos/shm->channels;
 }
 
+
 void S_ExtraUpdate (void)
 {
+	extern void IN_Accumulate (void);
 
 #ifdef _WIN32
 	IN_Accumulate ();
@@ -919,13 +921,13 @@ void S_Play(void)
 	i = 1;
 	while (i<Cmd_Argc())
 	{
-		if (!Q_strrchr(Cmd_Argv(i), '.'))
+		if (!strrchr(Cmd_Argv(i), '.'))
 		{
-			Q_strcpy(name, Cmd_Argv(i));
-			Q_strcat(name, ".wav");
+			strcpy(name, Cmd_Argv(i));
+			strcat(name, ".wav");
 		}
 		else
-			Q_strcpy(name, Cmd_Argv(i));
+			strcpy(name, Cmd_Argv(i));
 		sfx = S_PrecacheSound(name);
 		S_StartSound(hash++, 0, sfx, listener_origin, 1.0, 1.0);
 		i++;
@@ -943,13 +945,13 @@ void S_PlayVol(void)
 	i = 1;
 	while (i<Cmd_Argc())
 	{
-		if (!Q_strrchr(Cmd_Argv(i), '.'))
+		if (!strrchr(Cmd_Argv(i), '.'))
 		{
-			Q_strcpy(name, Cmd_Argv(i));
-			Q_strcat(name, ".wav");
+			strcpy(name, Cmd_Argv(i));
+			strcat(name, ".wav");
 		}
 		else
-			Q_strcpy(name, Cmd_Argv(i));
+			strcpy(name, Cmd_Argv(i));
 		sfx = S_PrecacheSound(name);
 		vol = Q_atof(Cmd_Argv(i+1));
 		S_StartSound(hash++, 0, sfx, listener_origin, vol, 1.0);

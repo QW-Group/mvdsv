@@ -1,12 +1,38 @@
-//
+/*
+	math.S
+
+	(description)
+
+	Copyright (C) 1996-1997  Id Software, Inc.
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id: math.s,v 1.1.1.2 2004/09/28 18:56:47 vvd0 Exp $
+*/
 // math.s
 // x86 assembly-language math routines.
 
 #include "asm_i386.h"
-#include "quakeasm.h"
+// #include "quakeasm.h"
 
 
-#if id386
+#ifdef id386
 
 	.data
 
@@ -15,6 +41,8 @@ Ljmptab:	.long	Lcase0, Lcase1, Lcase2, Lcase3
 			.long	Lcase4, Lcase5, Lcase6, Lcase7
 
 	.text
+
+	.extern C(BOPS_Error)
 
 
 #define EMINS	4+4
@@ -31,7 +59,7 @@ C(BoxOnPlaneSide):
 	xorl	%eax,%eax
 	movl	EMAXS(%esp),%ebx
 	movb	pl_signbits(%edx),%al
-	cmpl	$8,%al
+	cmpb	$8,%al
 	jge		Lerror
 	flds	pl_normal(%edx)		// p->normal[0]
 	fld		%st(0)				// p->normal[0] | p->normal[0]

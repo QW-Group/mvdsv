@@ -4,25 +4,6 @@
 #include "errno.h"
 
 
-/*
-================
-filelength
-================
-*/
-int filelength (FILE *f)
-{
-	int		pos;
-	int		end;
-
-	pos = ftell (f);
-	fseek (f, 0, SEEK_END);
-	end = ftell (f);
-	fseek (f, pos, SEEK_SET);
-
-	return end;
-}
-
-
 int	Sys_FileTime (char *path)
 {
 	FILE	*f;

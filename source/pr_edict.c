@@ -912,9 +912,20 @@ void ED_LoadFromFile (char *data)
 		data = ED_ParseEdict (data, ent);
 		
 // remove things from different skill levels or deathmatch
-		if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
+		if (deathmatch.value)
 		{
-			ED_Free (ent);	
+			if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
+			{
+				ED_Free (ent);
+				inhibit++;
+				continue;
+			}
+		}
+		else if ((current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY))
+				|| (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
+				|| (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)) )
+		{
+			ED_Free (ent);
 			inhibit++;
 			continue;
 		}

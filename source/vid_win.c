@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -22,7 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "winquake.h"
 #include "d_local.h"
+#include "keys.h"
 #include "resource.h"
+#include "sound.h"
 
 #define	MINIMUM_MEMORY	0x550000
 
@@ -58,7 +62,7 @@ static HICON	hIcon;
 
 qboolean mouseactive; // from in_win.c
 
-viddef_t	vid;				// global video state
+//viddef_t	vid;				// global video state
 
 #define MODE_WINDOWED			0
 #define MODE_SETTABLE_WINDOW	2
@@ -66,23 +70,23 @@ viddef_t	vid;				// global video state
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 3)
 
 // Note that 0 is MODE_WINDOWED
-cvar_t		vid_mode = {"vid_mode","0", false};
+cvar_t		vid_mode = {"vid_mode","0"};
 // Note that 0 is MODE_WINDOWED
-cvar_t		_vid_default_mode = {"_vid_default_mode","0", true};
+cvar_t		_vid_default_mode = {"_vid_default_mode","0",CVAR_ARCHIVE};
 // Note that 3 is MODE_FULLSCREEN_DEFAULT
-cvar_t		_vid_default_mode_win = {"_vid_default_mode_win","3", true};
+cvar_t		_vid_default_mode_win = {"_vid_default_mode_win","3",CVAR_ARCHIVE};
 cvar_t		vid_wait = {"vid_wait","0"};
-cvar_t		vid_nopageflip = {"vid_nopageflip","0", true};
-cvar_t		_vid_wait_override = {"_vid_wait_override", "0", true};
-cvar_t		vid_config_x = {"vid_config_x","800", true};
-cvar_t		vid_config_y = {"vid_config_y","600", true};
-cvar_t		vid_stretch_by_2 = {"vid_stretch_by_2","1", true};
-cvar_t		_windowed_mouse = {"_windowed_mouse","0", true};
-cvar_t		vid_fullscreen_mode = {"vid_fullscreen_mode","3", true};
-cvar_t		vid_windowed_mode = {"vid_windowed_mode","0", true};
-cvar_t		block_switch = {"block_switch","0", true};
-cvar_t		vid_window_x = {"vid_window_x", "0", true};
-cvar_t		vid_window_y = {"vid_window_y", "0", true};
+cvar_t		vid_nopageflip = {"vid_nopageflip","0",CVAR_ARCHIVE};
+cvar_t		_vid_wait_override = {"_vid_wait_override","0",CVAR_ARCHIVE};
+cvar_t		vid_config_x = {"vid_config_x","800",CVAR_ARCHIVE};
+cvar_t		vid_config_y = {"vid_config_y","600",CVAR_ARCHIVE};
+cvar_t		vid_stretch_by_2 = {"vid_stretch_by_2","1",CVAR_ARCHIVE};
+cvar_t		_windowed_mouse = {"_windowed_mouse","0",CVAR_ARCHIVE};
+cvar_t		vid_fullscreen_mode = {"vid_fullscreen_mode","3",CVAR_ARCHIVE};
+cvar_t		vid_windowed_mode = {"vid_windowed_mode","0",CVAR_ARCHIVE};
+cvar_t		block_switch = {"block_switch","0",CVAR_ARCHIVE};
+cvar_t		vid_window_x = {"vid_window_x","0",CVAR_ARCHIVE};
+cvar_t		vid_window_y = {"vid_window_y","0",CVAR_ARCHIVE};
 
 typedef struct {
 	int		width;
@@ -113,9 +117,9 @@ unsigned char	vid_curpal[256*3];
 unsigned short	d_8to16table[256];
 unsigned	d_8to24table[256];
 
-int     driver = grDETECT,mode;
-bool    useWinDirect = true, useDirectDraw = true;
-MGLDC	*mgldc = NULL,*memdc = NULL,*dibdc = NULL,*windc = NULL;
+int			driver = grDETECT,mode;
+qboolean	useWinDirect = true, useDirectDraw = true;
+MGLDC		*mgldc = NULL,*memdc = NULL,*dibdc = NULL,*windc = NULL;
 
 typedef struct {
 	modestate_t	type;
@@ -166,8 +170,8 @@ void VID_RememberWindowPos (void)
 			(rect.right > 0)                             &&
 			(rect.bottom > 0))
 		{
-			Cvar_SetValue ("vid_window_x", (float)rect.left);
-			Cvar_SetValue ("vid_window_y", (float)rect.top);
+			Cvar_SetValue (&vid_window_x, (float)rect.left);
+			Cvar_SetValue (&vid_window_y, (float)rect.top);
 		}
 	}
 }
@@ -186,8 +190,8 @@ void VID_CheckWindowXY (void)
 		((int)vid_window_x.value < 0)									   ||
 		((int)vid_window_y.value < 0))
 	{
-		Cvar_SetValue ("vid_window_x", 0.0);
-		Cvar_SetValue ("vid_window_y", 0.0 );
+		Cvar_SetValue (&vid_window_x, 0.0);
+		Cvar_SetValue (&vid_window_y, 0.0 );
 	}
 }
 
@@ -218,12 +222,15 @@ ClearAllStates
 */
 void ClearAllStates (void)
 {
+	extern void IN_ClearStates (void);
+	extern qboolean keydown[256];
 	int		i;
 	
 // send an up event for each key, to make sure the server clears them all
 	for (i=0 ; i<256 ; i++)
 	{
-		Key_Event (i, false);
+		if (keydown[i])
+			Key_Event (i, false);
 	}
 
 	Key_ClearStates ();
@@ -385,6 +392,7 @@ int VID_Suspend (MGLDC *dc, int flags)
 		return MGL_NO_SUSPEND_APP;
 	}
 
+	return MGL_NO_SUSPEND_APP;
 }
 #endif
 
@@ -425,7 +433,7 @@ void registerAllMemDrivers(void)
 
 void VID_InitMGLFull (HINSTANCE hInstance)
 {
-	int			i, xRes, yRes, bits, vMode, lowres, curmode, temp;
+	int			i, xRes, yRes, bits, /*vMode,*/ lowres, curmode, temp;
 	int			lowstretchedres, stretchedmode, lowstretched;
     uchar		*m;
 
@@ -660,7 +668,6 @@ void VID_InitMGLDIB (HINSTANCE hInstance)
 {
 	WNDCLASS		wc;
 	HDC				hdc;
-	int				i;
 
 	hIcon = LoadIcon (hInstance, MAKEINTRESOURCE (IDI_ICON2));
 
@@ -751,7 +758,7 @@ VID_InitFullDIB
 void VID_InitFullDIB (HINSTANCE hInstance)
 {
 	DEVMODE	devmode;
-	int		i, j, modenum, cmodes, existingmode, originalnummodes, lowestres;
+	int		i, j, modenum, /*cmodes,*/ existingmode, originalnummodes, lowestres;
 	int		numlowresmodes, bpp, done;
 	int		cstretch, istretch, mstretch;
 	BOOL	stat;
@@ -1259,14 +1266,14 @@ qboolean VID_SetWindowedMode (int modenum)
 	pixel_format_t	pf;
 	qboolean		stretched;
 	int				lastmodestate;
-	LONG			wlong;
+//	LONG			wlong;
 
 	if (!windowed_mode_set)
 	{
 		if (COM_CheckParm ("-resetwinpos"))
 		{
-			Cvar_SetValue ("vid_window_x", 0.0);
-			Cvar_SetValue ("vid_window_y", 0.0);
+			Cvar_SetValue (&vid_window_x, 0.0);
+			Cvar_SetValue (&vid_window_y, 0.0);
 		}
 
 		windowed_mode_set;
@@ -1318,7 +1325,7 @@ qboolean VID_SetWindowedMode (int modenum)
 		mainwindow = CreateWindowEx (
 			 ExWindowStyle,
 			 "WinQuake",
-			 "WinQuake",
+			 "QuakeWorld",		// Tonik: was "WinQuake"
 			 WindowStyle,
 			 0, 0,
 			 WindowRect.right - WindowRect.left,
@@ -1604,7 +1611,7 @@ void VID_SetDefaultMode (void)
 
 int VID_SetMode (int modenum, unsigned char *palette)
 {
-	int				original_mode, temp, dummy;
+	int				original_mode, temp /*, dummy */;
 	qboolean		stat;
     MSG				msg;
 	HDC				hdc;
@@ -1622,11 +1629,11 @@ int VID_SetMode (int modenum, unsigned char *palette)
 				modenum = vid_default;
 			}
 
-			Cvar_SetValue ("vid_mode", (float)modenum);
+			Cvar_SetValue (&vid_mode, (float)modenum);
 		}
 		else
 		{
-			Cvar_SetValue ("vid_mode", (float)vid_modenum);
+			Cvar_SetValue (&vid_mode, (float)vid_modenum);
 			return 0;
 		}
 	}
@@ -1713,7 +1720,7 @@ int VID_SetMode (int modenum, unsigned char *palette)
 	ReleaseDC(NULL,hdc);
 
 	vid_modenum = modenum;
-	Cvar_SetValue ("vid_mode", (float)vid_modenum);
+	Cvar_SetValue (&vid_mode, (float)vid_modenum);
 
 	if (!VID_AllocBuffers (vid.width, vid.height))
 	{
@@ -2081,7 +2088,7 @@ VID_ForceMode_f
 void VID_ForceMode_f (void)
 {
 	int		modenum;
-	double	testduration;
+//	double	testduration;
 
 	if (!vid_testingmode)
 	{
@@ -2219,8 +2226,8 @@ void	VID_Init (unsigned char *palette)
 
 void	VID_Shutdown (void)
 {
-	HDC				hdc;
-	int				dummy;
+//	HDC				hdc;
+//	int				dummy;
 
 	if (vid_initialized)
 	{
@@ -2256,7 +2263,7 @@ FlipScreen
 */
 void FlipScreen(vrect_t *rects)
 {
-	HRESULT		ddrval;
+//	HRESULT		ddrval;
 
 	// Flip the surfaces
 
@@ -2368,8 +2375,8 @@ void	VID_Update (vrect_t *rects)
 			{
 				if (COM_CheckParm ("-resetwinpos"))
 				{
-					Cvar_SetValue ("vid_window_x", 0.0);
-					Cvar_SetValue ("vid_window_y", 0.0);
+					Cvar_SetValue (&vid_window_x, 0.0);
+					Cvar_SetValue (&vid_window_y, 0.0);
 				}
 
 				VID_CheckWindowXY ();
@@ -2386,17 +2393,17 @@ void	VID_Update (vrect_t *rects)
 
 			if (COM_CheckParm ("-resetwinpos"))
 			{
-				Cvar_SetValue ("vid_window_x", 0.0);
-				Cvar_SetValue ("vid_window_y", 0.0);
+				Cvar_SetValue (&vid_window_x, 0.0);
+				Cvar_SetValue (&vid_window_y, 0.0);
 			}
 
 			if ((_vid_default_mode_win.value < 0) ||
 				(_vid_default_mode_win.value >= nummodes))
 			{
-				Cvar_SetValue ("_vid_default_mode_win", windowed_default);
+				Cvar_SetValue (&_vid_default_mode_win, windowed_default);
 			}
 
-			Cvar_SetValue ("vid_mode", _vid_default_mode_win.value);
+			Cvar_SetValue (&vid_mode, _vid_default_mode_win.value);
 		}
 	}
 
@@ -2416,7 +2423,7 @@ void	VID_Update (vrect_t *rects)
 		if ((int)vid_mode.value != vid_realmode)
 		{
 			VID_SetMode ((int)vid_mode.value, vid_curpal);
-			Cvar_SetValue ("vid_mode", (float)vid_modenum);
+			Cvar_SetValue (&vid_mode, (float)vid_modenum);
 								// so if mode set fails, we don't keep on
 								//  trying to set that mode
 			vid_realmode = vid_modenum;
@@ -2631,43 +2638,6 @@ void D_EndDirectRect (int x, int y, int width, int height)
 
 //==========================================================================
 
-byte        scantokey[128] = 
-					{ 
-//  0           1       2       3       4       5       6       7 
-//  8           9       A       B       C       D       E       F 
-	0  ,    27,     '1',    '2',    '3',    '4',    '5',    '6', 
-	'7',    '8',    '9',    '0',    '-',    '=',    K_BACKSPACE, 9, // 0 
-	'q',    'w',    'e',    'r',    't',    'y',    'u',    'i', 
-	'o',    'p',    '[',    ']',    13 ,    K_CTRL,'a',  's',      // 1 
-	'd',    'f',    'g',    'h',    'j',    'k',    'l',    ';', 
-	'\'' ,    '`',    K_SHIFT,'\\',  'z',    'x',    'c',    'v',      // 2 
-	'b',    'n',    'm',    ',',    '.',    '/',    K_SHIFT,'*', 
-	K_ALT,' ',   0  ,    K_F1, K_F2, K_F3, K_F4, K_F5,   // 3 
-	K_F6, K_F7, K_F8, K_F9, K_F10,  K_PAUSE,    0  , K_HOME, 
-	K_UPARROW,K_PGUP,'-',K_LEFTARROW,'5',K_RIGHTARROW,'+',K_END, //4 
-	K_DOWNARROW,K_PGDN,K_INS,K_DEL,0,0,             0,              K_F11, 
-	K_F12,0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,        // 5
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0, 
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,        // 6 
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0, 
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0         // 7 
-}; 
-
-/*
-=======
-MapKey
-
-Map from windows to quake keynums
-=======
-*/
-int MapKey (int key)
-{
-	key = (key>>16)&255;
-	if (key > 127)
-		return 0;
-
-	return scantokey[key];
-}
 
 void AppActivate(BOOL fActive, BOOL minimize)
 /****************************************************************************
@@ -2852,6 +2822,8 @@ MAIN WINDOW
 
 LONG CDAudio_MessageHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+int IN_MapKey (int key);
+
 /* main window procedure */
 LONG WINAPI MainWndProc (
     HWND    hWnd,
@@ -2860,7 +2832,7 @@ LONG WINAPI MainWndProc (
     LPARAM  lParam)
 {
 	LONG			lRet = 0;
-	int				fwKeys, xPos, yPos, fActive, fMinimized, temp;
+	int				/* fwKeys, xPos, yPos,*/ fActive, fMinimized, temp;
 	HDC				hdc;
 	PAINTSTRUCT		ps;
 	extern unsigned int uiWheelMessage;
@@ -2976,13 +2948,13 @@ LONG WINAPI MainWndProc (
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
 			if (!in_mode_set)
-				Key_Event (MapKey(lParam), true);
+				Key_Event (IN_MapKey(lParam), true);
 			break;
 
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
 			if (!in_mode_set)
-				Key_Event (MapKey(lParam), false);
+				Key_Event (IN_MapKey(lParam), false);
 			break;
 
 	// this is complicated because Win32 seems to pack multiple mouse events into
@@ -3382,7 +3354,7 @@ void VID_MenuKey (int key)
 	case 'd':
 		S_LocalSound ("misc/menu1.wav");
 		firstupdate = 0;
-		Cvar_SetValue ("_vid_default_mode_win", vid_modenum);
+		Cvar_SetValue (&_vid_default_mode_win, vid_modenum);
 		break;
 
 	default:

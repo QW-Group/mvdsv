@@ -56,8 +56,8 @@ unsigned short	d_8to16table[256];
 unsigned		d_8to24table[256];
 unsigned char	d_15to8table[65536];
 
-cvar_t	_windowed_mouse = {"_windowed_mouse","0", true};
-cvar_t	vid_mode = {"vid_mode","0",false};
+cvar_t	_windowed_mouse = {"_windowed_mouse","0",CVAR_ARCHIVE};
+cvar_t	vid_mode = {"vid_mode","0"};
  
 static float   mouse_x, mouse_y;
 static float	old_mouse_x, old_mouse_y;
@@ -770,10 +770,7 @@ void IN_MouseMove (usercmd_t *cmd)
 	}
 	else
 	{
-		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward.value * mouse_y;
-		else
-			cmd->forwardmove -= m_forward.value * mouse_y;
+		cmd->forwardmove -= m_forward.value * mouse_y;
 	}
 	mouse_x = mouse_y = 0.0;
 }

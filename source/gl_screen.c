@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
 #include "quakedef.h"
-
+#include "keys.h"
 #include <time.h>
 
 /*
@@ -60,7 +60,7 @@ Con_Printf ();
 net 
 turn off messages option
 
-the refresh is allways rendered, unless the console is full screen
+the refresh is always rendered, unless the console is full screen
 
 
 console is:
@@ -82,8 +82,9 @@ float           scr_con_current;
 float           scr_conlines;           // lines of console to display
 
 float           oldscreensize, oldfov;
-cvar_t          scr_viewsize = {"viewsize","100", true};
-cvar_t          scr_fov = {"fov","90"}; // 10 - 170
+cvar_t          scr_viewsize = {"viewsize","100",CVAR_ARCHIVE};
+qboolean CL_OnFovChange (cvar_t *var, char *value);
+cvar_t          scr_fov = {"fov","90",0,CL_OnFovChange}; // 10 - 170
 cvar_t          scr_conspeed = {"scr_conspeed","300"};
 cvar_t          scr_centertime = {"scr_centertime","2"};
 cvar_t          scr_showram = {"showram","1"};
@@ -91,21 +92,27 @@ cvar_t          scr_showturtle = {"showturtle","0"};
 cvar_t          scr_showpause = {"showpause","1"};
 cvar_t          scr_printspeed = {"scr_printspeed","8"};
 cvar_t			scr_allowsnap = {"scr_allowsnap", "1"};
-cvar_t			gl_triplebuffer = {"gl_triplebuffer", "1", true };
-extern  		cvar_t  crosshair;
+cvar_t			gl_triplebuffer = {"gl_triplebuffer", "1",CVAR_ARCHIVE};
+extern cvar_t   crosshair;
+
+// Tonik:
+cvar_t			scr_clock = {"cl_clock","0"};
+cvar_t			scr_clock_x = {"cl_clock_x","0"};
+cvar_t			scr_clock_y = {"cl_clock_y","-1"};
+cvar_t			show_speed = {"show_speed","0"};
+
+extern cvar_t	show_fps;
 
 qboolean        scr_initialized;                // ready to draw
 
 qpic_t          *scr_ram;
-qpic_t          *scr_net;
+qpic_t          *scr_net; 
 qpic_t          *scr_turtle;
 
-int                     scr_fullupdate;
+int				scr_fullupdate;
 
-int                     clearconsole;
-int                     clearnotify;
-
-int                     sb_lines;
+int				clearconsole;
+int				clearnotify;
 
 viddef_t        vid;                            // global video state
 
@@ -272,15 +279,15 @@ static void SCR_CalcRefdef (void)
 	
 // bound viewsize
 	if (scr_viewsize.value < 30)
-		Cvar_Set ("viewsize","30");
+		Cvar_Set (&scr_viewsize,"30");
 	if (scr_viewsize.value > 120)
-		Cvar_Set ("viewsize","120");
+		Cvar_Set (&scr_viewsize,"120");
 
 // bound field of view
 	if (scr_fov.value < 10)
-		Cvar_Set ("fov","10");
+		Cvar_Set (&scr_fov,"10");
 	if (scr_fov.value > 170)
-		Cvar_Set ("fov","170");
+		Cvar_Set (&scr_fov,"170");
 
 // intermission is always full screen   
 	if (cl.intermission)
@@ -348,7 +355,7 @@ Keybinding command
 */
 void SCR_SizeUp_f (void)
 {
-	Cvar_SetValue ("viewsize",scr_viewsize.value+10);
+	Cvar_SetValue (&scr_viewsize,scr_viewsize.value+10);
 	vid.recalc_refdef = 1;
 }
 
@@ -362,7 +369,7 @@ Keybinding command
 */
 void SCR_SizeDown_f (void)
 {
-	Cvar_SetValue ("viewsize",scr_viewsize.value-10);
+	Cvar_SetValue (&scr_viewsize,scr_viewsize.value-10);
 	vid.recalc_refdef = 1;
 }
 
@@ -386,6 +393,11 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_allowsnap);
 	Cvar_RegisterVariable (&gl_triplebuffer);
 
+// Tonik:
+	Cvar_RegisterVariable (&scr_clock_x);
+	Cvar_RegisterVariable (&scr_clock_y);
+	Cvar_RegisterVariable (&scr_clock);
+	Cvar_RegisterVariable (&show_speed);
 //
 // register our commands
 //
@@ -484,6 +496,94 @@ void SCR_DrawFPS (void)
 	y = vid.height - sb_lines - 8;
 //	Draw_TileClear(x, y, strlen(st) * 8, 8);
 	Draw_String(x, y, st);
+}
+
+
+void SCR_DrawSpeed (void)
+{
+	int x, y;
+	char st[80];
+	vec3_t vel;
+	float speed, vspeed;
+	static float maxspeed = 0;
+	static float display_speed = -1;
+	static double lastrealtime = 0;
+
+	if (!show_speed.value)
+		return;
+
+	if (lastrealtime > realtime)
+	{
+		lastrealtime = 0;
+		display_speed = -1;
+		maxspeed = 0;
+	}
+
+//	VectorCopy (cl.simvel, vel);
+	VectorCopy (cl.frames[(cls.netchan.incoming_sequence)&UPDATE_MASK].playerstate[cl.playernum].velocity, vel);
+	vspeed = vel[2];
+	vel[2] = 0;
+	speed = Length(vel);
+
+	if (speed > maxspeed)
+		maxspeed = speed;
+
+	if (display_speed >= 0)
+	{
+		sprintf(st, "%3d", (int)display_speed);
+		x = vid.width - strlen(st) * 8 - 8;
+		y = 8;
+	//	Draw_TileClear(x, y, strlen(st) * 8, 8);
+		Draw_String(x, y, st);
+	}
+
+	if (realtime - lastrealtime >= 0.1)
+	{
+		lastrealtime = realtime;
+		display_speed = maxspeed;
+		maxspeed = 0;
+	}
+}
+
+void SCR_DrawClock (void)
+{
+	char	str[80];
+	int		hours, minutes, seconds;
+	int		tens_hours, tens_minutes, tens_seconds;
+
+	if (!scr_clock.value || cls.demoplayback || cl.intermission)
+		return;
+
+	if (scr_clock.value == 2)
+	{
+		time_t		t;
+		struct tm	*ptm;
+		str[0] = 0;
+		t = time(NULL);
+		if (t != -1) {
+			ptm = localtime (&t);
+			if (ptm)
+				strftime(str, sizeof(str)-1, "%H:%M:%S", ptm);
+		}
+	}
+	else
+	{
+		float	time;
+		time = cl.time;
+		tens_hours = fmod (time / 36000, 10);
+		hours = fmod (time / 3600, 10);
+		tens_minutes = fmod (time / 600, 6);
+		minutes = fmod (time / 60, 10);
+		tens_seconds = fmod (time / 10, 6);
+		seconds = fmod (time, 10);
+		sprintf (str, "%i%i:%i%i:%i%i", tens_hours, hours, tens_minutes, minutes,
+			tens_seconds, seconds);
+	}
+
+	if (scr_clock_y.value < 0)
+		Draw_String (8 * scr_clock_x.value, vid.height - sb_lines + 8*scr_clock_y.value, str);
+	else
+		Draw_String (8 * scr_clock_x.value, 8*scr_clock_y.value, str);
 }
 
 
@@ -702,11 +802,11 @@ void WritePCXfile (char *filename, byte *data, int width, int height,
 	pcx->ymax = LittleShort((short)(height-1));
 	pcx->hres = LittleShort((short)width);
 	pcx->vres = LittleShort((short)height);
-	Q_memset (pcx->palette,0,sizeof(pcx->palette));
+	memset (pcx->palette,0,sizeof(pcx->palette));
 	pcx->color_planes = 1;		// chunky image
 	pcx->bytes_per_line = LittleShort((short)width);
 	pcx->palette_type = LittleShort(2);		// not a grey scale
-	Q_memset (pcx->filler,0,sizeof(pcx->filler));
+	memset (pcx->filler,0,sizeof(pcx->filler));
 
 // pack the image
 	pack = &pcx->data;
@@ -1027,26 +1127,6 @@ int SCR_ModalMessage (char *text)
 
 //=============================================================================
 
-/*
-===============
-SCR_BringDownConsole
-
-Brings the console down and fades the palettes back to normal
-================
-*/
-void SCR_BringDownConsole (void)
-{
-	int             i;
-	
-	scr_centertime_off = 0;
-	
-	for (i=0 ; i<20 && scr_conlines != scr_con_current ; i++)
-		SCR_UpdateScreen ();
-
-	cl.cshifts[0].percent = 0;              // no area contents palette on next frame
-	VID_SetPalette (host_basepal);
-}
-
 void SCR_TileClear (void)
 {
 	if (r_refdef.vrect.x > 0) {
@@ -1177,6 +1257,8 @@ void SCR_UpdateScreen (void)
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
 		SCR_CheckDrawCenterString ();
+		SCR_DrawSpeed ();	// Tonik
+		SCR_DrawClock ();	// Tonik
 		Sbar_Draw ();
 		SCR_DrawConsole ();     
 		M_Draw ();

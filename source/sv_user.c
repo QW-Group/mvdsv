@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -25,8 +27,13 @@ edict_t	*sv_player;
 
 usercmd_t	cmd;
 
-cvar_t	cl_rollspeed = {"cl_rollspeed", "200"};
-cvar_t	cl_rollangle = {"cl_rollangle", "2.0"};
+#ifdef QW_BOTH
+cvar_t	sv_rollspeed = {"sv_rollspeed", "200"};
+cvar_t	sv_rollangle = {"sv_rollangle", "2.0"};
+#else
+cvar_t	sv_rollspeed = {"cl_rollspeed", "200"};
+cvar_t	sv_rollangle = {"cl_rollangle", "2.0"};
+#endif
 cvar_t	sv_spectalk = {"sv_spectalk", "1"};
 
 cvar_t	sv_mapcheck	= {"sv_mapcheck", "1"};
@@ -128,7 +135,7 @@ void SV_Soundlist_f (void)
 
 	if (host_client->state != cs_connected)
 	{
-		Con_Printf ("soundlist not valid -- allready spawned\n");
+		Con_Printf ("soundlist not valid -- already spawned\n");
 		return;
 	}
 
@@ -178,7 +185,7 @@ void SV_Modellist_f (void)
 
 	if (host_client->state != cs_connected)
 	{
-		Con_Printf ("modellist not valid -- allready spawned\n");
+		Con_Printf ("modellist not valid -- already spawned\n");
 		return;
 	}
 	
@@ -227,7 +234,7 @@ void SV_PreSpawn_f (void)
 
 	if (host_client->state != cs_connected)
 	{
-		Con_Printf ("prespawn not valid -- allready spawned\n");
+		Con_Printf ("prespawn not valid -- already spawned\n");
 		return;
 	}
 	
@@ -302,7 +309,7 @@ void SV_Spawn_f (void)
 
 	if (host_client->state != cs_connected)
 	{
-		Con_Printf ("Spawn not valid -- allready spawned\n");
+		Con_Printf ("Spawn not valid -- already spawned\n");
 		return;
 	}
 
@@ -466,6 +473,11 @@ void SV_Begin_f (void)
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 		PR_ExecuteProgram (pr_global_struct->ClientConnect);
 
+//#ifdef QW_BOTH		// FIXME!!!
+//		if (sv.loadgame)
+//			memcpy (host_client->spawn_parms, spawn_parms, sizeof(spawn_parms));
+//#endif
+
 		// actually spawn the player
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -486,6 +498,8 @@ void SV_Begin_f (void)
 	if (pmodel != sv.model_player_checksum ||
 		emodel != sv.eyes_player_checksum)
 		SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: non standard player/eyes model detected\n", host_client->name);
+
+	sv.paused &= ~2;	// FIXME!!!		-- Tonik
 
 	// if we are paused, tell the client
 	if (sv.paused) {
@@ -563,7 +577,7 @@ void OutofBandPrintf(netadr_t where, char *fmt, ...)
 	vsprintf (send+5, fmt, argptr);
 	va_end (argptr);
 
-	NET_SendPacket (strlen(send)+1, send, where);
+	NET_SendPacket (net_serversocket, strlen(send)+1, send, where);
 }
 
 /*
@@ -778,11 +792,11 @@ void SV_Say (qboolean team)
 	if (*p == '"')
 	{
 		p++;
-		p[Q_strlen(p)-1] = 0;
+		p[strlen(p)-1] = 0;
 	}
 
-	Q_strcat(text, p);
-	Q_strcat(text, "\n");
+	strcat(text, p);
+	strcat(text, "\n");
 
 	Sys_Printf ("%s", text);
 
@@ -872,7 +886,7 @@ void SV_Kill_f (void)
 {
 	if (sv_player->v.health <= 0)
 	{
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Can't suicide -- allready dead!\n");
+		SV_ClientPrintf (host_client, PRINT_HIGH, "Can't suicide -- already dead!\n");
 		return;
 	}
 	
@@ -902,7 +916,7 @@ void SV_TogglePause (const char *msg)
 		if (!cl->state)
 			continue;
 		ClientReliableWrite_Begin (cl, svc_setpause, 2);
-		ClientReliableWrite_Byte (cl, sv.paused);
+		ClientReliableWrite_Byte (cl, sv.paused ? 1 : 0);
 	}
 }
 
@@ -928,7 +942,8 @@ void SV_Pause_f (void)
 		return;
 	}
 
-	if (sv.paused)
+//Tonik	if (sv.paused)
+	if (!sv.paused)	// Tonik
 		sprintf (st, "%s paused the game\n", host_client->name);
 	else
 		sprintf (st, "%s unpaused the game\n", host_client->name);
@@ -1194,12 +1209,12 @@ USER CMD EXECUTION
 
 /*
 ===============
-V_CalcRoll
+SV_CalcRoll
 
 Used by view and sv_user
 ===============
 */
-float V_CalcRoll (vec3_t angles, vec3_t velocity)
+float SV_CalcRoll (vec3_t angles, vec3_t velocity)
 {
 	vec3_t	forward, right, up;
 	float	sign;
@@ -1211,10 +1226,10 @@ float V_CalcRoll (vec3_t angles, vec3_t velocity)
 	sign = side < 0 ? -1 : 1;
 	side = fabs(side);
 	
-	value = cl_rollangle.value;
+	value = sv_rollangle.value;
 
-	if (side < cl_rollspeed.value)
-		side = side * value / cl_rollspeed.value;
+	if (side < sv_rollspeed.value)
+		side = side * value / sv_rollspeed.value;
 	else
 		side = value;
 	
@@ -1407,16 +1422,16 @@ void SV_RunCmd (usercmd_t *ucmd)
 			sv_player->v.angles[YAW] = sv_player->v.v_angle[YAW];
 		}
 		sv_player->v.angles[ROLL] = 
-			V_CalcRoll (sv_player->v.angles, sv_player->v.velocity)*4;
+			SV_CalcRoll (sv_player->v.angles, sv_player->v.velocity)*4;
 	}
 
-	host_frametime = ucmd->msec * 0.001;
-	if (host_frametime > 0.1)
-		host_frametime = 0.1;
+	sv_frametime = ucmd->msec * 0.001;
+	if (sv_frametime > 0.1)
+		sv_frametime = 0.1;
 
 	if (!host_client->spectator)
 	{
-		pr_global_struct->frametime = host_frametime;
+		pr_global_struct->frametime = sv_frametime;
 
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -1693,8 +1708,8 @@ SV_UserInit
 */
 void SV_UserInit (void)
 {
-	Cvar_RegisterVariable (&cl_rollspeed);
-	Cvar_RegisterVariable (&cl_rollangle);
+	Cvar_RegisterVariable (&sv_rollspeed);
+	Cvar_RegisterVariable (&sv_rollangle);
 	Cvar_RegisterVariable (&sv_spectalk);
 	Cvar_RegisterVariable (&sv_mapcheck);
 }

@@ -39,20 +39,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bothdefs.h"
 
 #include "common.h"
-#include "bspfile.h"
+//#include "bspfile.h"
 #include "vid.h"
 #include "sys.h"
 #include "zone.h"
 #include "mathlib.h"
-#include "wad.h"
+//#include "wad.h"
 #include "draw.h"
 #include "cvar.h"
 #include "screen.h"
 #include "net.h"
 #include "protocol.h"
 #include "cmd.h"
-#include "sbar.h"
-#include "sound.h"
+//#include "sbar.h"
+//#include "sound.h"
 #include "render.h"
 #include "client.h"
 
@@ -64,13 +64,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "input.h"
-#include "keys.h"
+//#include "keys.h"
 #include "console.h"
 #include "view.h"
 #include "menu.h"
 #include "crc.h"
 #include "cdaudio.h"
-#include "pmove.h"
+//#include "pmove.h"
 
 #ifdef GLQUAKE
 #include "glquake.h"
@@ -90,7 +90,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct
 {
 	char	*basedir;
-	char	*cachedir;		// for development over ISDN lines
 	int		argc;
 	char	**argv;
 	void	*membase;
@@ -101,9 +100,6 @@ typedef struct
 //=============================================================================
 
 #define MAX_NUM_ARGVS	50
-
-
-extern qboolean noclip_anglehack;
 
 
 //
@@ -121,7 +117,7 @@ extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	byte		*host_basepal;
 extern	byte		*host_colormap;
-extern	int			host_framecount;	// incremented every frame, never reset
+extern	int		host_framecount;		// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
 
@@ -131,8 +127,8 @@ void Host_Init (quakeparms_t *parms);
 void Host_Shutdown(void);
 void Host_Error (char *error, ...);
 void Host_EndGame (char *message, ...);
-qboolean Host_SimulationTime(float time);
-void Host_Frame (float time);
+//qboolean Host_SimulationTime(float time);
+void Host_Frame (double time);
 void Host_Quit_f (void);
 void Host_ClientCommands (char *fmt, ...);
 void Host_ShutdownServer (qboolean crash);
