@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: math.s,v 1.1.1.7 2004/11/11 16:35:05 vvd0 Exp $
+	$Id: math.s,v 1.1.1.8 2004/11/18 19:09:26 vvd0 Exp $
 */
 
 #include "asm_i386.h"

@@ -288,7 +288,7 @@ Dumps the current net message, prefixed by the length and view angles
 */
 void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 {
-	int		len, i, msec;
+	int		len, i, msec, for_write;
 	byte	c;
 	static double prevtime;
 
@@ -342,13 +342,12 @@ void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 
 	if (demo.disk)
 		fflush (demo.file);
-	else if (demo.size - demo_size > demo_max_size)
+	else if ((for_write = min(demo.size - demo_size, svs.demomemsize)) > demo_max_size)
 	{
+		fwrite(svs.demomem, for_write, 1, demo.file);
 		demo_size = demo.size;
-		demo.mfile -= 0x80000;
-		fwrite(svs.demomem, 1, 0x80000, demo.file);
+		demo.mfile = svs.demomem;
 		fflush(demo.file);
-		memmove(svs.demomem, svs.demomem + 0x80000, demo.size - 0x80000);
 	}
 }
 
@@ -550,7 +549,7 @@ size_t memwrite ( const void *buffer, size_t size, size_t count, byte **mem)
 	const byte *buf;
 
 	for (;count; count--)
-		for (i = size, buf = buffer; i; i--)
+		for (i = size, buf = buffer; i && buf < svs.demomem + svs.demomemsize; i--)
 			*(*mem)++ = *buf++;
 
 	return c;

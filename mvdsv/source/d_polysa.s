@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: d_polysa.s,v 1.1.1.5 2004/11/11 16:35:00 vvd0 Exp $
+	$Id: d_polysa.s,v 1.1.1.6 2004/11/18 19:09:19 vvd0 Exp $
 */
 // d_polysa.s
 // x86 assembly-language polygon model drawing code

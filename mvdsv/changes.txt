@@ -1,4 +1,13 @@
 ----
+MVDSV v0.177 build 1794 (2004.11.18)
+[server]
+- bugfix from 0.176: incorrect writing .mvd demos
+- bugfix from 0.14b: incorrect writing .mvd demos if demo size is more than 3 time bigger than
+democache size and sv_demoUseCache isn't 0
+(Thanks 2 puh)
+
+
+----
 MVDSV v0.176 build 1787 (2004.11.11)
 [server]
 - bugfix: didn't display *.mvd.gz files by cmd dlist and cmd demolist commands
