@@ -1564,13 +1564,15 @@ SV_MinPing_f
 */
 void SV_MinPing_f (void)
 {
-        extern cvar_t	sv_minping;
+        extern cvar_t	sv_minping, sv_enable_cmd_minping;
 	float		minping;
 	switch (Cmd_Argc())
 	{
 		case 2:
-			if (sv.demorecording)
-				Con_Printf("Can't change sv_minping value: demo recording in progress.\n");
+			if (sv.demorecording || strncasecmp(Info_ValueForKey(svs.info, "status"), "Standby", 8))
+				Con_Printf("Can't change sv_minping value: demo recording in progress or ktpro serverinfo key status not equal 'Standby'.\n");
+			else if (!sv_enable_cmd_minping.value)
+				Con_Printf("Can't change sv_minping: sv_enable_cmd_minping == 0.\n");
 			else if ((minping = Q_atof(Cmd_Argv(1))) < 0)
 				Con_Printf("Value must be >= 0.\n");
 			else

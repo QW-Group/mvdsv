@@ -1,7 +1,23 @@
 ----
+QWEX v0.173 build 1683
+[server]
+- QC:
+  TeamFortress map voting: (by bliP)
+    - listmaps - new style 3
+- new cvar sv_enable_cmd_minping 0/1 (by VVD)
+    0 - disable cmd minping command
+    1 - enable cmd minping command
+    default: 0
+- bugfix: write 0 frags in demo txt-files instead real players/teams frags (by VVD)
+- cmd minping change value only if ktpro serverinfo key status is "Standby" and
+  demo recording is not in progress (by VVD)
+
+
+----
 QWEX v0.1728 build 1675
 [server]
-- win32: bugfix: used NT function for parse command line not work in win9x/ME (by VVD)
+- win32: bugfix: used NT function for parse command line did not work in win9x/ME -
+  changed to another function (by VVD)
 - win32: changed window font to Fixedsys (formatted messages, such as status, look better) (by VVD)
 - added feature that logs player's scores in demo txt-files and first string now has format: (by VVD)
     tp: team1[ player1_1(scores1_1) ... playerN_1(scoresN_1) ](scores1) ...
@@ -228,7 +244,7 @@ QWEX v0.1726 (no release)
 
 
 ----
-QWEX v0.1725 Beta DEVELOP build 1501
+QWEX v0.1725 build 1501
 [server]
 - change MAX_PACKET_ENTITIES form 300 down to 64
 (Thanks to Fuh)
@@ -238,7 +254,7 @@ Note: Bugfix only release.
 
 
 ----
-QWEX v0.1724 Beta DEVELOP build 1500
+QWEX v0.1724 build 1500
 [server]
 - changed the MAX_DEMO_PACKET_ENTITIES limit from 196 to 300 to fix entities not being recorded
   sometimes (especially in TF). Clients should be updated to support this new limit, because in
@@ -271,7 +287,7 @@ QWEX v0.1724 Beta DEVELOP build 1500
 
 
 ----
-QWEX v0.1723b Beta DEVELOP
+QWEX v0.1723 Beta
 [server]
 - new cvar:
     sv_use_dns n
@@ -291,7 +307,7 @@ QWEX v0.1723b Beta DEVELOP
 
  
 ----
-QWEX v0.1722b Beta DEVELOP
+QWEX v0.1722 Beta
 [client] and [server]
 - replace all:
       sprintf ->  snprintf

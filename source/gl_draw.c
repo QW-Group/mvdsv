@@ -352,7 +352,7 @@ void Draw_TextureMode_f (void)
 
 	for (i=0 ; i< 6 ; i++)
 	{
-		if (!Q_strcasecmp (modes[i].name, Cmd_Argv(1) ) )
+		if (!strcasecmp (modes[i].name, Cmd_Argv(1) ) )
 			break;
 	}
 	if (i == 6)
@@ -426,8 +426,8 @@ void Draw_Init (void)
 	Cvar_RegisterVariable (&gl_conalpha);
 
 	// 3dfx can only handle 256 wide textures
-	if (!Q_strncasecmp ((char *)gl_renderer, "3dfx",4) ||
-		!Q_strncasecmp ((char *)gl_renderer, "Mesa",4))
+	if (!strncasecmp ((char *)gl_renderer, "3dfx",4) ||
+		!strncasecmp ((char *)gl_renderer, "Mesa",4))
 		Cvar_Set (&gl_max_size, "256");
 
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);

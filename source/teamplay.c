@@ -428,7 +428,7 @@ char *TP_MacroString (char *s)
 
 	macro = macro_commands;
 	while (macro->name) {
-		if (!Q_strncasecmp(s, macro->name, strlen(macro->name)))
+		if (!strncasecmp(s, macro->name, strlen(macro->name)))
 		{
 			macro_length = strlen(macro->name);
 			return macro->func();
@@ -872,7 +872,7 @@ void TP_MsgTrigger_f (void)
 		}
 
 		strlcpy (trig->string, Cmd_Argv(2), MSG_TRIGGER_NAME_LEN);
-		if (c == 5 && !Q_strcasecmp (Cmd_Argv(3), "-l")) {
+		if (c == 5 && !strcasecmp (Cmd_Argv(3), "-l")) {
 			trig->level = Q_atoi (Cmd_Argv(4));
 			if ((unsigned)trig->level > PRINT_CHAT)
 				trig->level = PRINT_HIGH;
@@ -923,7 +923,7 @@ void TP_ExecuteTriggerString (char *text)
 	arg0 = Cmd_Argv(0);
 
 	for (i=0; i < NUM_TRIGGER_COMMANDS ; i++)
-		if (!Q_strcasecmp(arg0, trigger_commands[i]))
+		if (!strcasecmp(arg0, trigger_commands[i]))
 		{
 			cmd = Cmd_FindCommand (arg0);
 			if (cmd) {
@@ -1365,25 +1365,25 @@ void TP_TookTrigger_f (void)
 
 		flag = 0;
 		for (j=0 ; j<MAX_PKFLAGS ; j++) {
-			if (!Q_strncasecmp (p, pknames[j], 3)) {
+			if (!strncasecmp (p, pknames[j], 3)) {
 				flag = 1<<j;
 				break;
 			}
 		}
 
 		if (!flag) {
-			if (!Q_strcasecmp (p, "armor"))
+			if (!strcasecmp (p, "armor"))
 				flag = (1<<pk_ra)|(1<<pk_ya)|(1<<pk_ga);
-			else if (!Q_strcasecmp (p, "weapons"))
+			else if (!strcasecmp (p, "weapons"))
 				flag = (1<<pk_lg)|(1<<pk_rl)|(1<<pk_gl)|(1<<pk_sng)|
 						(1<<pk_ng)|(1<<pk_ssg);
-			else if (!Q_strcasecmp (p, "powerups"))
+			else if (!strcasecmp (p, "powerups"))
 				flag = (1<<pk_quad)|(1<<pk_pent)|(1<<pk_ring);
-			else if (!Q_strcasecmp (p, "ammo"))
+			else if (!strcasecmp (p, "ammo"))
 				flag = (1<<pk_cells)|(1<<pk_rockets)|(1<<pk_nails)|(1<<pk_shells);
-			else if (!Q_strcasecmp (p, "default"))
+			else if (!strcasecmp (p, "default"))
 				flag = default_pkflags;
-			else if (!Q_strcasecmp (p, "all"))
+			else if (!strcasecmp (p, "all"))
 				flag = (1<<MAX_PKFLAGS)-1;
 		}
 
@@ -1677,7 +1677,7 @@ void TP_StatChanged (int stat, int value)
 	{
 		if (value > 0) {
 			if (vars.health <= 0 /*&& last_health != -999*/
-				/* && Q_strcasecmp(Info_ValueForKey(cl.serverinfo, "status"),
+				/* && strcasecmp(Info_ValueForKey(cl.serverinfo, "status"),
 				"standby") */)	// detect Kombat Teams status
 			{
 				extern cshift_t	cshift_empty;

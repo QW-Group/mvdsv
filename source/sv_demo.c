@@ -633,35 +633,41 @@ stop recording a demo
 ====================
 */
 void SV_Script_f (void);
+static char *SV_PrintTeams (void);
 void SV_Stop (int reason)
 {
+	char	path[MAX_OSPATH];
 	if (!sv.demorecording)
 	{
 		Con_Printf ("Not recording a demo.\n");
 		return;
 	}
-
-	if (reason == 2)
+	switch (reason)
 	{
-		char path[MAX_OSPATH];
-		// stop and remove
-		if (demo.disk)
-			fclose(demo.file);
+		case 2:
+			// stop and remove
+			if (demo.disk)
+				fclose(demo.file);
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, demo.name);
-		Sys_remove(path);
+			snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, demo.name);
+			Sys_remove(path);
 
-		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
-		Sys_remove(path);
+			strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+			Sys_remove(path);
 
-		demo.file = NULL;
-		sv.demorecording = false;
+			demo.file = NULL;
+			sv.demorecording = false;
 
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
 
-		Cvar_SetROM(&serverdemo, "");
+			Cvar_SetROM(&serverdemo, "");
 
-		return;
+			return;
+		case 1:
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
+			break;
+		case 0:
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
 	}
 // write a disconnect message to the demo file
 
@@ -685,16 +691,27 @@ void SV_Stop (int reason)
 	
 	demo.file = NULL;
 	sv.demorecording = false;
-	if (!reason)
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
-	else
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
+
+	snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, demo.name);
+	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+
+	if (sv_demotxt.value) {
+		FILE *f;
+		char *text;
+		if (f = fopen (path, "w+t"))
+		{
+			text = SV_PrintTeams();
+			fwrite(text, strlen(text), 1, f);
+			fflush(f);
+			fclose(f);
+		}
+	} else
+		Sys_remove(path);
 
 	if (sv_onrecordfinish.string[0])
 	{
 		extern redirect_t sv_redirected;
 		int old = sv_redirected;
-		char path[MAX_OSPATH];
 		char *p;
 
 		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)

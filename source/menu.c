@@ -1537,8 +1537,8 @@ static void ReadDir (void)
 			size = fd.nFileSizeLow;
 #endif
 			i = strlen(fname);
-			if (i < 5 || (Q_strcasecmp(fname+i-4, ".qwd")
-				&& Q_strcasecmp(fname+i-4, ".qwz") && Q_strcasecmp(fname+i-4, ".mvd")))
+			if (i < 5 || (strcasecmp(fname+i-4, ".qwd")
+				&& strcasecmp(fname+i-4, ".qwz") && strcasecmp(fname+i-4, ".mvd")))
 				continue;
 			type = 0;
 		}

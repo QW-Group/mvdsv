@@ -138,6 +138,7 @@ cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
 
 cvar_t	sv_getrealip = {"sv_getrealip", "1"};
 cvar_t	sv_minping = {"sv_minping", "0"};
+cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
 cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
@@ -2390,6 +2391,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_getrealip);
 	Cvar_RegisterVariable (&sv_maxdownloadrate);
 	Cvar_RegisterVariable (&sv_minping);
+	Cvar_RegisterVariable (&sv_enable_cmd_minping);
 	Cvar_RegisterVariable (&sv_serverip);
 	Cvar_RegisterVariable (&sv_cpserver);
 	Cvar_RegisterVariable (&rcon_password);
