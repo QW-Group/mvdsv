@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -20,8 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl.input.c  -- builds an intended movement command to send to the server
 
 #include "quakedef.h"
+#include "pmove.h"		// Swimup hack
 
 cvar_t	cl_nodelta = {"cl_nodelta","0"};
+cvar_t	cl_deltarecord = {"cl_deltarecord","0"};	// Tonik
+cvar_t	cl_c2spps = {"cl_c2spps","0"};				// Tonik
 
 /*
 ===============================================================================
@@ -155,7 +160,68 @@ void IN_UseUp (void) {KeyUp(&in_use);}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
 
-void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
+//Tonik void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
+
+// Tonik -->
+void IN_Impulse (void)
+{
+	int best, i, imp, items;
+
+	in_impulse = Q_atoi(Cmd_Argv(1));
+
+	if (Cmd_Argc() <= 2)
+		return;
+
+	items = cl.stats[STAT_ITEMS];
+	best = 0;
+
+	for (i = Cmd_Argc() - 1; i > 0; i--)
+	{
+		imp = Q_atoi(Cmd_Argv(i));
+		if (imp < 1 || imp > 8)
+			continue;
+
+		switch (imp)
+		{
+			case 1:
+				if (items & IT_AXE)
+					best = 1;
+				break;
+			case 2:
+				if (items & IT_SHOTGUN && cl.stats[STAT_SHELLS] >= 1)
+					best = 2;
+				break;
+			case 3:
+				if (items & IT_SUPER_SHOTGUN && cl.stats[STAT_SHELLS] >= 2)
+					best = 3;
+				break;
+			case 4:
+				if (items & IT_NAILGUN && cl.stats[STAT_NAILS] >= 1)
+					best = 4;
+				break;
+			case 5:
+				if (items & IT_SUPER_NAILGUN && cl.stats[STAT_NAILS] >= 2)
+					best = 5;
+				break;
+			case 6:
+				if (items & IT_GRENADE_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
+					best = 6;
+				break;
+			case 7:
+				if (items & IT_ROCKET_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
+					best = 7;
+				break;
+			case 8:
+				if (items & IT_LIGHTNING && cl.stats[STAT_CELLS] >= 1)
+					best = 8;
+			
+		}
+	}
+	
+	if (best)
+		in_impulse = best;
+}
+// <-- Tonik
 
 /*
 ===============
@@ -209,8 +275,8 @@ float CL_KeyState (kbutton_t *key)
 //==========================================================================
 
 cvar_t	cl_upspeed = {"cl_upspeed","200"};
-cvar_t	cl_forwardspeed = {"cl_forwardspeed","200", true};
-cvar_t	cl_backspeed = {"cl_backspeed","200", true};
+cvar_t	cl_forwardspeed = {"cl_forwardspeed","200", CVAR_ARCHIVE};
+cvar_t	cl_backspeed = {"cl_backspeed","200", CVAR_ARCHIVE};
 cvar_t	cl_sidespeed = {"cl_sidespeed","350"};
 
 cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0"};
@@ -336,7 +402,7 @@ void CL_FinishMove (usercmd_t *cmd)
 	int		ms;
 
 //
-// allways dump the first two message, because it may contain leftover inputs
+// always dump the first two message, because it may contain leftover inputs
 // from the last level
 //
 	if (++cl.movemessages <= 2)
@@ -351,6 +417,22 @@ void CL_FinishMove (usercmd_t *cmd)
 	if (in_jump.state & 3)
 		cmd->buttons |= 2;
 	in_jump.state &= ~2;
+
+// Swimup hack -->
+	if (cmd->buttons & 2 && (cl.stats[STAT_HEALTH] > 0) && CL_KeyState (&in_up))
+	{
+/*		Crashes :(
+		pmove.numtouch = 0;
+		VectorCopy (cl.simvel, pmove.velocity);
+		VectorCopy (cl.simorg, pmove.origin);
+		PM_CategorizePosition();	*/
+		if (waterlevel >= 2)
+		{
+			cmd->upmove = cl_upspeed.value;
+			cmd->buttons &= ~2;
+		}
+	}
+// <-- Swimup hack
 
 	// send milliseconds of time to apply the move
 	ms = host_frametime * 1000;
@@ -389,6 +471,7 @@ void CL_SendCmd (void)
 	int			checksumIndex;
 	int			lost;
 	int			seq_hash;
+	static float	pps_balance;
 
 	if (cls.demoplayback)
 		return; // sendcmds come from the demo
@@ -456,7 +539,7 @@ void CL_SendCmd (void)
 		cl.validsequence = 0;
 
 	if (cl.validsequence && !cl_nodelta.value && cls.state == ca_active &&
-		!cls.demorecording)
+		(!cls.demorecording || cl_deltarecord.value))
 	{
 		cl.frames[cls.netchan.outgoing_sequence&UPDATE_MASK].delta_sequence = cl.validsequence;
 		MSG_WriteByte (&buf, clc_delta);
@@ -468,12 +551,29 @@ void CL_SendCmd (void)
 	if (cls.demorecording)
 		CL_WriteDemoCmd(cmd);
 
+	if (cl_c2spps.value) {
+		pps_balance += host_frametime;
+		if (pps_balance > 0) {
+			float	pps;
+			pps = cl_c2spps.value;
+			if (pps < 10) pps = 10;
+			if (pps > 72) pps = 72;
+			pps_balance -= 1 / pps;
+			// hmmm
+			if (pps_balance > 0)
+				pps_balance = 0;
+		} else {
+			// drop this message
+			cls.netchan.outgoing_sequence++;
+			return;
+		}
+	}
+
 //
 // deliver the message
 //
 	Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);	
 }
-
 
 
 /*
@@ -520,6 +620,8 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
 
 	Cvar_RegisterVariable (&cl_nodelta);
+//	Cvar_RegisterVariable (&cl_deltarecord);	// Tonik
+	Cvar_RegisterVariable (&cl_c2spps);			// Tonik
 }
 
 /*

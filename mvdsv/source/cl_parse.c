@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -20,6 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_parse.c  -- parse a message received from the server
 
 #include "quakedef.h"
+#include "pmove.h"
+#include "sbar.h"
+#include "sound.h"
+#include "teamplay.h"
+#include "version.h"
 
 char *svc_strings[] =
 {
@@ -107,6 +114,9 @@ double	parsecounttime;
 
 int		cl_spikeindex, cl_playerindex, cl_flagindex;
 
+int		cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index; // Tonik
+int		cl_rocketindex, cl_grenadeindex; // Tonik
+
 //=============================================================================
 
 int packet_latency[NET_TIMINGS];
@@ -116,7 +126,7 @@ int CL_CalcNet (void)
 	int		a, i;
 	frame_t	*frame;
 	int lost;
-	char st[80];
+//	char st[80];
 
 	for (i=cls.netchan.outgoing_sequence-UPDATE_BACKUP+1
 		; i <= cls.netchan.outgoing_sequence
@@ -292,6 +302,11 @@ void Sound_NextDownload (void)
 	cl_playerindex = -1;
 	cl_spikeindex = -1;
 	cl_flagindex = -1;
+// Tonik -->
+	cl_h_playerindex = -1;
+	cl_gib1index = cl_gib2index = cl_gib3index = -1;
+	cl_rocketindex = cl_grenadeindex = -1;
+// <-- Tonik
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 //	MSG_WriteString (&cls.netchan.message, va("modellist %i 0", cl.servercount));
 	MSG_WriteString (&cls.netchan.message, va(modellist_name, cl.servercount, 0));
@@ -530,12 +545,16 @@ void CL_ParseServerData (void)
 	qboolean	cflag = false;
 	extern	char	gamedirfile[MAX_OSPATH];
 	int protover;
+	extern cshift_t	cshift_empty;
+	extern qboolean v_updatepalette;
 	
 	Con_DPrintf ("Serverdata packet received.\n");
 //
 // wipe the client_state_t struct
 //
 	CL_ClearState ();
+	memset (&cshift_empty, 0, sizeof(cshift_empty));	// Tonik
+	v_updatepalette = true;
 
 // parse protocol version number
 // allow 2.2 and 2.29 demos to play
@@ -549,6 +568,20 @@ void CL_ParseServerData (void)
 	// game directory
 	str = MSG_ReadString ();
 
+	cl.teamfortress = !Q_strcasecmp(str, "fortress");
+	if (cl.teamfortress) {
+		extern cvar_t	v_iyaw_cycle, v_iroll_cycle, v_ipitch_cycle,
+			v_iyaw_level, v_iroll_level, v_ipitch_level, v_idlescale;
+		cbuf_current = &cbuf_svc;	// hack
+		Cvar_SetValue (&v_iyaw_cycle, 2);
+		Cvar_SetValue (&v_iroll_cycle, 0.5);
+		Cvar_SetValue (&v_ipitch_cycle, 1);
+		Cvar_SetValue (&v_iyaw_level, 0.3);
+		Cvar_SetValue (&v_iroll_level, 0.1);
+		Cvar_SetValue (&v_ipitch_level, 0.3);
+		Cvar_SetValue (&v_idlescale, 0);
+	}
+
 	if (stricmp(gamedirfile, str)) {
 		// save current config
 		Host_WriteConfiguration (); 
@@ -560,14 +593,22 @@ void CL_ParseServerData (void)
 	//ZOID--run the autoexec.cfg in the gamedir
 	//if it exists
 	if (cflag) {
-		sprintf(fn, "%s/%s", com_gamedir, "config.cfg");
+		int cl_warncmd_val = cl_warncmd.value;
+		// FIXME: _snprintf is Win32 only
+		_snprintf(fn, sizeof(fn), "%s/%s", com_gamedir, "config.cfg");
 		if ((f = fopen(fn, "r")) != NULL) {
 			fclose(f);
 			Cbuf_AddText ("cl_warncmd 0\n");
-			Cbuf_AddText("exec config.cfg\n");
-			Cbuf_AddText("exec frontend.cfg\n");
-			Cbuf_AddText ("cl_warncmd 1\n");
+			Cbuf_AddText ("exec config.cfg\n");
 		}
+		_snprintf(fn, sizeof(fn), "%s/%s", com_gamedir, "frontend.cfg");
+		if ((f = fopen(fn, "r")) != NULL) {
+			fclose(f);
+			Cbuf_AddText ("cl_warncmd 0\n");
+			Cbuf_AddText ("exec frontend.cfg\n");
+		}
+		_snprintf(fn,sizeof(fn), "cl_warncmd %d\n", cl_warncmd_val);
+		Cbuf_AddText(fn);
 	}
 
 	// parse player slot, high bit means spectator
@@ -657,6 +698,7 @@ void CL_ParseModellist (void)
 {
 	int	nummodels;
 	char	*str;
+	char	buf[MAX_QPATH];	// Tonik
 	int n;
 
 // precache models and note certain default indexes
@@ -667,6 +709,19 @@ void CL_ParseModellist (void)
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
+// Tonik -->
+		if (nummodels == 0)
+		if (cl_loadlocs.value)
+		{
+			loc_numentries = 0;	// clear loc file
+			if (!strncmp(str, "maps/", 5))
+			{
+				COM_StripExtension (&str[5], buf);
+				strcat (buf, ".loc");
+				CL_LoadLocFile ((char *)&buf, true);
+			}
+		}
+// <-- Tonik
 		nummodels++;
 		if (nummodels==MAX_MODELS)
 			Host_EndGame ("Server sent too many model_precache");
@@ -678,6 +733,21 @@ void CL_ParseModellist (void)
 			cl_playerindex = nummodels;
 		if (!strcmp(cl.model_name[nummodels],"progs/flag.mdl"))
 			cl_flagindex = nummodels;
+
+// Tonik -->
+		else if (!strcmp(cl.model_name[nummodels],"progs/h_player.mdl"))
+			cl_h_playerindex = nummodels;
+		else if (!strcmp(cl.model_name[nummodels],"progs/gib1.mdl"))
+			cl_gib1index = nummodels;
+		else if (!strcmp(cl.model_name[nummodels],"progs/gib2.mdl"))
+			cl_gib2index = nummodels;
+		else if (!strcmp(cl.model_name[nummodels],"progs/gib3.mdl"))
+			cl_gib3index = nummodels;
+		else if (!strcmp(cl.model_name[nummodels],"progs/missile.mdl"))
+			cl_rocketindex = nummodels;
+		else if (!strcmp(cl.model_name[nummodels],"progs/grenade.mdl"))
+			cl_grenadeindex = nummodels;
+// <-- Tonik
 	}
 
 	n = MSG_ReadByte();
@@ -732,6 +802,13 @@ void CL_ParseStatic (void)
 
 	CL_ParseBaseline (&es);
 		
+// Tonik -->
+	if (!r_drawflame.value)
+	if (!strcmp(cl.model_precache[es.modelindex]->name, "progs/flame.mdl")
+	|| !strcmp(cl.model_precache[es.modelindex]->name, "progs/flame2.mdl"))
+		return;
+// <-- Tonik
+
 	i = cl.num_statics;
 	if (i >= MAX_STATIC_ENTITIES)
 		Host_EndGame ("Too many static entities");
@@ -877,6 +954,7 @@ void CL_NewTranslation (int slot)
 	R_TranslatePlayerSkin(slot);
 #else
 
+	int		teamplay;						// Tonik
 	int		i, j;
 	int		top, bottom;
 	byte	*dest, *source;
@@ -894,22 +972,43 @@ void CL_NewTranslation (int slot)
 		player->skin = NULL;
 
 	if (player->_topcolor != player->topcolor ||
-		player->_bottomcolor != player->bottomcolor || !player->skin) {
+		player->_bottomcolor != player->bottomcolor || !player->skin)
+	{
 		player->_topcolor = player->topcolor;
 		player->_bottomcolor = player->bottomcolor;
 
 		dest = player->translations;
 		source = vid.colormap;
 		memcpy (dest, vid.colormap, sizeof(player->translations));
+
+//*** Tonik: some changes here (teamcolor, enemycolor)
 		top = player->topcolor;
+		bottom = player->bottomcolor;
+
+		strcpy (s, Info_ValueForKey(cls.userinfo, "team"));
+		teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
+
+		if (cl_teamtopcolor >= 0 && teamplay && 
+			!strcmp(Info_ValueForKey(player->userinfo, "team"), s))
+		{
+			top = cl_teamtopcolor;
+			bottom = cl_teambottomcolor;
+		}
+		
+		if (cl_enemytopcolor >= 0 && (!teamplay || 
+			strcmp(Info_ValueForKey(player->userinfo, "team"), s)))
+		{
+			top = cl_enemytopcolor;
+			bottom = cl_enemybottomcolor;
+		}
 		if (top > 13 || top < 0)
 			top = 13;
 		top *= 16;
-		bottom = player->bottomcolor;
 		if (bottom > 13 || bottom < 0)
 			bottom = 13;
 		bottom *= 16;
-
+//*** 
+		
 		for (i=0 ; i<VID_GRADES ; i++, dest += 256, source+=256)
 		{
 			if (top < 128)	// the artists made some backwards ranges.  sigh.
@@ -962,7 +1061,7 @@ void CL_UpdateUserinfo (void)
 
 	slot = MSG_ReadByte ();
 	if (slot >= MAX_CLIENTS)
-		Host_EndGame ("CL_ParseServerMessage: svc_updateuserinfo > MAX_SCOREBOARD");
+		Host_EndGame ("CL_ParseServerMessage: svc_updateuserinfo > MAX_CLIENTS");
 
 	player = &cl.players[slot];
 	player->userid = MSG_ReadLong ();
@@ -985,7 +1084,7 @@ void CL_SetInfo (void)
 
 	slot = MSG_ReadByte ();
 	if (slot >= MAX_CLIENTS)
-		Host_EndGame ("CL_ParseServerMessage: svc_setinfo > MAX_SCOREBOARD");
+		Host_EndGame ("CL_ParseServerMessage: svc_setinfo > MAX_CLIENTS");
 
 	player = &cl.players[slot];
 
@@ -1008,8 +1107,9 @@ CL_ServerInfo
 */
 void CL_ServerInfo (void)
 {
-	int		slot;
-	player_info_t	*player;
+//	int		slot;
+//	player_info_t	*player;
+	char	*p;
 	char key[MAX_MSGLEN];
 	char value[MAX_MSGLEN];
 
@@ -1021,6 +1121,11 @@ void CL_ServerInfo (void)
 	Con_DPrintf("SERVERINFO: %s=%s\n", key, value);
 
 	Info_SetValueForKey (cl.serverinfo, key, value, MAX_SERVERINFO_STRING);
+
+	if (p = Info_ValueForKey(cl.serverinfo, "deathmatch"))
+		cl.gametype = Q_atof(p) ? 1 : 0;
+	else
+		cl.gametype = GAME_DEATHMATCH;	// assume GAME_DEATHMATCH by default
 }
 
 /*
@@ -1032,7 +1137,8 @@ void CL_SetStat (int stat, int value)
 {
 	int	j;
 	if (stat < 0 || stat >= MAX_CL_STATS)
-		Sys_Error ("CL_SetStat: %i is invalid", stat);
+//		Sys_Error ("CL_SetStat: %i is invalid", stat);
+		Host_EndGame ("CL_SetStat: %i is invalid", stat);	// Tonik
 
 	Sbar_Changed ();
 	
@@ -1045,6 +1151,9 @@ void CL_SetStat (int stat, int value)
 	}
 
 	cl.stats[stat] = value;
+
+//	if (stat == STAT_HEALTH)
+		CL_StatChanged(stat, value);	// Triggers...
 }
 
 /*
@@ -1057,18 +1166,50 @@ void CL_MuzzleFlash (void)
 	vec3_t		fv, rv, uv;
 	dlight_t	*dl;
 	int			i;
+	int			j, num_ent;
+	entity_state_t	*ent;
 	player_state_t	*pl;
 
 	i = MSG_ReadShort ();
 
-	if ((unsigned)(i-1) >= MAX_CLIENTS)
+	if (!cl_muzzleflash.value)
 		return;
+
+	if ((unsigned)(i-1) >= MAX_CLIENTS)
+	{
+// Tonik: a monster firing...
+		num_ent = cl.frames[cls.netchan.incoming_sequence&UPDATE_MASK].packet_entities.num_entities;
+		for (j = 0; j < num_ent; j++)
+		{
+			ent = &cl.frames[cls.netchan.incoming_sequence&UPDATE_MASK].packet_entities.entities[j];
+			if (ent->number == i)
+			{
+				dl = CL_AllocDlight (i);
+				VectorCopy (ent->origin,  dl->origin);
+				AngleVectors (ent->angles, fv, rv, uv);
+				VectorMA (dl->origin, 18, fv, dl->origin);
+				dl->radius = 200 + (rand()&31);
+				dl->minlight = 32;
+				dl->die = cl.time + 0.1;
+				dl->color[0] = 0.2;
+				dl->color[1] = 0.1;
+				dl->color[2] = 0.05;
+				dl->color[3] = 0.7;
+				break;
+			}
+		}
+		return;
+	}
 
 #ifdef GLQUAKE
 	// don't draw our own muzzle flash in gl if flashblending
 	if (i-1 == cl.playernum && gl_flashblend.value)
 		return;
 #endif
+
+	// Tonik:
+	if (cl_muzzleflash.value == 2 && i-1 == cl.playernum)
+		return;
 
 	pl = &cl.frames[parsecountmod].playerstate[i-1];
 
@@ -1086,6 +1227,73 @@ void CL_MuzzleFlash (void)
 	dl->color[3] = 0.7;
 }
 
+
+void CL_CheckVersionRequest(char *s)
+{
+	char buf[11];
+	int	i;
+
+	while (1)
+	{
+		switch (*s++)
+		{
+		case 0:
+		case '\n':
+			return;
+		case ':':
+		case (char)':'|128:
+			goto ok;
+		}
+	}
+	return;
+
+ok:
+	for (i = 0; i < 11 && s[i]; i++)
+		buf[i] = s[i] &~ 128;			// strip high bit
+
+	if (!strncmp(buf, " f_version\n", 11) || !strncmp(buf, " z_version\n", 11))
+		Cbuf_AddText (va("say ZQuake version %s (Build %04d)\n", Z_VERSION, build_number()));
+}
+
+
+void CL_ParsePrint (int level, char *s)
+{
+	char	str[1024];
+	char	*p;
+	int		len;
+
+	strncat (cl.sprint_buf, s, sizeof(cl.sprint_buf)-1);
+
+	while ( (p=strchr(cl.sprint_buf, '\n')) != NULL ) {
+		len = p - cl.sprint_buf + 1;
+		memcpy(str, cl.sprint_buf, len);
+		str[len] = '\0';
+		strcpy (cl.sprint_buf, p+1);
+		
+		if (level == PRINT_CHAT)
+		{
+			char *p;
+			// Tonik:
+			CL_CheckVersionRequest(str);
+			if (cl_nofake.value) {
+				for (p = str; *p; p++) {
+					switch (*p)	{
+					case 13: *p = '#'; 
+					case 10: break;
+					default:
+						*p |= 128;
+					}
+				}
+			} else
+				con_ormask = 128;
+			S_LocalSound ("misc/talk.wav");
+		}
+		Con_Printf ("%s", str);
+		con_ormask = 0;
+		CL_SearchForMsgTriggers (str);
+	}
+
+}
 
 #define SHOWNET(x) if(cl_shownet.value==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
 /*
@@ -1158,13 +1366,8 @@ void CL_ParseServerMessage (void)
 
 		case svc_print:
 			i = MSG_ReadByte ();
-			if (i == PRINT_CHAT)
-			{
-				S_LocalSound ("misc/talk.wav");
-				con_ormask = 128;
-			}
-			Con_Printf ("%s", MSG_ReadString ());
-			con_ormask = 0;
+			s = MSG_ReadString ();
+			CL_ParsePrint (i, s);
 			break;
 			
 		case svc_centerprint:
@@ -1174,7 +1377,7 @@ void CL_ParseServerMessage (void)
 		case svc_stufftext:
 			s = MSG_ReadString ();
 			Con_DPrintf ("stufftext: %s\n", s);
-			Cbuf_AddText (s);
+			Cbuf_AddTextEx (&cbuf_svc, s);
 			break;
 			
 		case svc_damage:
@@ -1196,9 +1399,9 @@ void CL_ParseServerMessage (void)
 		case svc_lightstyle:
 			i = MSG_ReadByte ();
 			if (i >= MAX_LIGHTSTYLES)
-				Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-			Q_strcpy (cl_lightstyle[i].map,  MSG_ReadString());
-			cl_lightstyle[i].length = Q_strlen(cl_lightstyle[i].map);
+				Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
+			strcpy (cl_lightstyle[i].map,  MSG_ReadString());
+			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
 			
 		case svc_sound:
@@ -1214,21 +1417,21 @@ void CL_ParseServerMessage (void)
 			Sbar_Changed ();
 			i = MSG_ReadByte ();
 			if (i >= MAX_CLIENTS)
-				Host_EndGame ("CL_ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD");
+				Host_EndGame ("CL_ParseServerMessage: svc_updatefrags > MAX_CLIENTS");
 			cl.players[i].frags = MSG_ReadShort ();
 			break;			
 
 		case svc_updateping:
 			i = MSG_ReadByte ();
 			if (i >= MAX_CLIENTS)
-				Host_EndGame ("CL_ParseServerMessage: svc_updateping > MAX_SCOREBOARD");
+				Host_EndGame ("CL_ParseServerMessage: svc_updateping > MAX_CLIENTS");
 			cl.players[i].ping = MSG_ReadShort ();
 			break;
 			
 		case svc_updatepl:
 			i = MSG_ReadByte ();
 			if (i >= MAX_CLIENTS)
-				Host_EndGame ("CL_ParseServerMessage: svc_updatepl > MAX_SCOREBOARD");
+				Host_EndGame ("CL_ParseServerMessage: svc_updatepl > MAX_CLIENTS");
 			cl.players[i].pl = MSG_ReadByte ();
 			break;
 			
@@ -1236,7 +1439,7 @@ void CL_ParseServerMessage (void)
 		// time is sent over as seconds ago
 			i = MSG_ReadByte ();
 			if (i >= MAX_CLIENTS)
-				Host_EndGame ("CL_ParseServerMessage: svc_updateentertime > MAX_SCOREBOARD");
+				Host_EndGame ("CL_ParseServerMessage: svc_updateentertime > MAX_CLIENTS");
 			cl.players[i].entertime = realtime - MSG_ReadFloat ();
 			break;
 			
@@ -1288,6 +1491,7 @@ void CL_ParseServerMessage (void)
 			for (i=0 ; i<3 ; i++)
 				cl.simangles[i] = MSG_ReadAngle ();
 			VectorCopy (vec3_origin, cl.simvel);
+			CL_ExecTrigger ("f_mapend");
 			break;
 
 		case svc_finale:
@@ -1367,8 +1571,11 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_setpause:
-			cl.paused = MSG_ReadByte ();
-			if (cl.paused)
+			if (cls.demoplayback)
+				cl.paused = (MSG_ReadByte () != 0) * 2;
+			else
+				cl.paused = (MSG_ReadByte () != 0);
+			if (cl.paused)	// FIXME
 				CDAudio_Pause ();
 			else
 				CDAudio_Resume ();

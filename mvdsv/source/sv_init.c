@@ -190,6 +190,10 @@ void SV_CalcPHS (void)
 	byte	*scan;
 	int		count, vcount;
 
+#ifdef QW_BOTH
+//	if (dedicated)
+	if (false)
+#endif
 	Con_Printf ("Building PHS...\n");
 
 	num = sv.worldmodel->numleafs;
@@ -249,6 +253,10 @@ void SV_CalcPHS (void)
 				count++;
 	}
 
+#ifdef QW_BOTH
+//	if (dedicated)
+	if (false)
+#endif
 	Con_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n"
 		, vcount/num, count/num, num);
 }
@@ -258,12 +266,11 @@ unsigned SV_CheckModel(char *mdl)
 	byte	stackbuf[1024];		// avoid dirtying the cache heap
 	byte *buf;
 	unsigned short crc;
-//	int len;
 
 	buf = (byte *)COM_LoadStackFile (mdl, stackbuf, sizeof(stackbuf));
+	if (!buf)
+		SV_Error ("SV_CheckModel: could not load %s\n", mdl);
 	crc = CRC_Block(buf, com_filesize);
-//	for (len = com_filesize; len; len--, buf++)
-//		CRC_ProcessByte(&crc, *buf);
 
 	return crc;
 }
@@ -291,9 +298,28 @@ void SV_SpawnServer (char *server)
 							// restarted
 
 	sv.state = ss_dead;
+	sv.paused = false;
 
+#ifdef QW_BOTH
+	D_FlushCaches ();
+#endif
 	Mod_ClearAll ();
 	Hunk_FreeToLowMark (host_hunklevel);
+
+#ifdef QW_BOTH
+	Host_ClearMemory();	// Just wipes the cl structure (FIXME)
+#endif
+
+
+	if (coop.value)
+		Cvar_Set (&deathmatch, "0");
+	current_skill = (int)(skill.value + 0.5);
+	if (current_skill < 0)
+		current_skill = 0;
+	if (current_skill > 3)
+		current_skill = 3;
+	Cvar_Set (&skill, va("%d", (int)current_skill));
+
 
 	// wipe the entire per-level structure
 	memset (&sv, 0, sizeof(sv));
@@ -394,7 +420,7 @@ void SV_SpawnServer (char *server)
 	sv.state = ss_active;
 	
 	// run two frames to allow everything to settle
-	host_frametime = 0.1;
+	sv_frametime = 0.1;
 	SV_Physics ();
 	SV_Physics ();
 

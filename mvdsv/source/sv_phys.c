@@ -46,7 +46,7 @@ cvar_t	sv_stopspeed		 = { "sv_stopspeed", "100"};
 cvar_t	sv_maxspeed			 = { "sv_maxspeed", "320"};    
 cvar_t	sv_spectatormaxspeed = { "sv_spectatormaxspeed", "500"};
 cvar_t	sv_accelerate		 = { "sv_accelerate", "10"};     
-cvar_t	sv_airaccelerate	 = { "sv_airaccelerate", "0.7"};    
+cvar_t	sv_airaccelerate	 = { "sv_airaccelerate", "10"};    
 cvar_t	sv_wateraccelerate	 = { "sv_wateraccelerate", "10"};     
 cvar_t	sv_friction			 = { "sv_friction", "4"};      
 cvar_t	sv_waterfriction	 = { "sv_waterfriction", "4"};      
@@ -90,6 +90,7 @@ SV_CheckVelocity
 void SV_CheckVelocity (edict_t *ent)
 {
 	int		i;
+	float	wishspeed;
 
 //
 // bound velocity
@@ -106,10 +107,19 @@ void SV_CheckVelocity (edict_t *ent)
 			Con_Printf ("Got a NaN origin on %s\n", PR_GetString(ent->v.classname));
 			ent->v.origin[i] = 0;
 		}
-		if (ent->v.velocity[i] > sv_maxvelocity.value)
+/*		if (ent->v.velocity[i] > sv_maxvelocity.value)
 			ent->v.velocity[i] = sv_maxvelocity.value;
 		else if (ent->v.velocity[i] < -sv_maxvelocity.value)
 			ent->v.velocity[i] = -sv_maxvelocity.value;
+*/
+	}
+
+	// SV_MAXVELOCITY fix by Maddes
+	wishspeed = Length(ent->v.velocity);
+	if (wishspeed > sv_maxvelocity.value)
+	{
+		VectorScale (ent->v.velocity, sv_maxvelocity.value/wishspeed, ent->v.velocity);
+		wishspeed = sv_maxvelocity.value;
 	}
 }
 
@@ -132,7 +142,7 @@ qboolean SV_RunThink (edict_t *ent)
 		thinktime = ent->v.nextthink;
 		if (thinktime <= 0)
 			return true;
-		if (thinktime > sv.time + host_frametime)
+		if (thinktime > sv.time + sv_frametime)
 			return true;
 		
 		if (thinktime < sv.time)
@@ -376,7 +386,7 @@ SV_AddGravity
 */
 void SV_AddGravity (edict_t *ent, float scale)
 {
-	ent->v.velocity[2] -= scale * movevars.gravity * host_frametime;
+	ent->v.velocity[2] -= scale * movevars.gravity * sv_frametime;
 }
 
 /*
@@ -585,14 +595,14 @@ float	l;
 	oldltime = ent->v.ltime;
 	
 	thinktime = ent->v.nextthink;
-	if (thinktime < ent->v.ltime + host_frametime)
+	if (thinktime < ent->v.ltime + sv_frametime)
 	{
 		movetime = thinktime - ent->v.ltime;
 		if (movetime < 0)
 			movetime = 0;
 	}
 	else
-		movetime = host_frametime;
+		movetime = sv_frametime;
 
 	if (movetime)
 	{
@@ -650,8 +660,8 @@ void SV_Physics_Noclip (edict_t *ent)
 	if (!SV_RunThink (ent))
 		return;
 	
-	VectorMA (ent->v.angles, host_frametime, ent->v.avelocity, ent->v.angles);
-	VectorMA (ent->v.origin, host_frametime, ent->v.velocity, ent->v.origin);
+	VectorMA (ent->v.angles, sv_frametime, ent->v.avelocity, ent->v.angles);
+	VectorMA (ent->v.origin, sv_frametime, ent->v.velocity, ent->v.origin);
 
 	SV_LinkEdict (ent, false);
 }
@@ -734,10 +744,10 @@ void SV_Physics_Toss (edict_t *ent)
 		SV_AddGravity (ent, 1.0);
 
 // move angles
-	VectorMA (ent->v.angles, host_frametime, ent->v.avelocity, ent->v.angles);
+	VectorMA (ent->v.angles, sv_frametime, ent->v.avelocity, ent->v.angles);
 
 // move origin
-	VectorScale (ent->v.velocity, host_frametime, move);
+	VectorScale (ent->v.velocity, sv_frametime, move);
 	trace = SV_PushEntity (ent, move);
 	if (trace.fraction == 1)
 		return;
@@ -801,7 +811,7 @@ void SV_Physics_Step (edict_t *ent)
 
 		SV_AddGravity (ent, 1.0);
 		SV_CheckVelocity (ent);
-		SV_FlyMove (ent, host_frametime, NULL);
+		SV_FlyMove (ent, sv_frametime, NULL);
 		SV_LinkEdict (ent, true);
 
 		if ( (int)ent->v.flags & FL_ONGROUND )	// just hit ground
@@ -878,7 +888,7 @@ void SV_RunNewmis (void)
 	if (!pr_global_struct->newmis)
 		return;
 	ent = PROG_TO_EDICT(pr_global_struct->newmis);
-	host_frametime = 0.05;
+	sv_frametime = 0.05;
 	pr_global_struct->newmis = 0;
 	
 	SV_RunEntity (ent);		
@@ -897,14 +907,14 @@ void SV_Physics (void)
 	static double	old_time;
 
 // don't bother running a frame if sys_ticrate seconds haven't passed
-	host_frametime = realtime - old_time;
-	if (host_frametime < sv_mintic.value)
+	sv_frametime = realtime - old_time;
+	if (sv_frametime < sv_mintic.value)
 		return;
-	if (host_frametime > sv_maxtic.value)
-		host_frametime = sv_maxtic.value;
+	if (sv_frametime > sv_maxtic.value)
+		sv_frametime = sv_maxtic.value;
 	old_time = realtime;
 
-	pr_global_struct->frametime = host_frametime;
+	pr_global_struct->frametime = sv_frametime;
 
 	SV_ProgStartFrame ();
 

@@ -1,33 +1,39 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
+	d_parta.S
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+	(description)
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+	Copyright (C) 1996-1997  Id Software, Inc.
 
-See the GNU General Public License for more details.
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+	$Id: d_parta.s,v 1.1.1.2 2004/09/28 18:56:39 vvd0 Exp $
 */
-//
 // d_parta.s
 // x86 assembly-language 8-bpp particle-drawing code.
-//
 
 #include "asm_i386.h"
 #include "quakeasm.h"
 #include "d_ifacea.h"
 #include "asm_draw.h"
 
-#if	id386
+#ifdef id386
 
 //----------------------------------------------------------------------
 // 8-bpp particle drawing code.

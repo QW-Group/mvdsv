@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -20,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_tent.c -- client side temporary entities
 
 #include "quakedef.h"
-
+#include "sound.h"
 
 #define	MAX_BEAMS	8
 typedef struct
@@ -230,30 +232,52 @@ void CL_ParseTEnt (void)
 		
 	case TE_EXPLOSION:			// rocket explosion
 	// particles
+
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
-		R_ParticleExplosion (pos);
+
+		if (cl_explosion.value == 6)
+			R_TeleportSplash (pos);
+		else if (cl_explosion.value == 7)
+			R_RunParticleEffect (pos, vec3_origin, 73, 20*32);
+		else if (cl_explosion.value == 8)
+			R_RunParticleEffect (pos, vec3_origin, 225, 50);
+		else
+		{
+
+		// Tonik: explosion modifiers...
+			if (cl_explosion.value != 1 && cl_explosion.value != 3)
+			{
+				R_ParticleExplosion (pos);
+			}
 		
-	// light
-		dl = CL_AllocDlight (0);
-		VectorCopy (pos, dl->origin);
-		dl->radius = 350;
-		dl->die = cl.time + 0.5;
-		dl->decay = 300;
-		dl->color[0] = 0.2;
-		dl->color[1] = 0.1;
-		dl->color[2] = 0.05;
-		dl->color[3] = 0.7;
-	
+		// light
+			if (cl_explosion.value != 2 && cl_explosion.value != 3)
+			{
+				dl = CL_AllocDlight (0);
+				VectorCopy (pos, dl->origin);
+				dl->radius = 350;
+				dl->die = cl.time + 0.5;
+				dl->decay = 300;
+				dl->color[0] = 0.2;
+				dl->color[1] = 0.1;
+				dl->color[2] = 0.05;
+				dl->color[3] = 0.7;
+			}
+		}
+
 	// sound
 		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
-	
+
 	// sprite
-		ex = CL_AllocExplosion ();
-		VectorCopy (pos, ex->origin);
-		ex->start = cl.time;
-		ex->model = Mod_ForName ("progs/s_explod.spr", true);
+		if (cl_explosion.value != 6 && cl_explosion.value != 7 && cl_explosion.value != 8)
+		{
+			ex = CL_AllocExplosion ();
+			VectorCopy (pos, ex->origin);
+			ex->start = cl.time;
+			ex->model = Mod_ForName ("progs/s_explod.spr", true);
+		}
 		break;
 		
 	case TE_TAREXPLOSION:			// tarbaby explosion

@@ -34,6 +34,24 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 
 */
 
+#define MAXCMDBUF 16384
+
+typedef struct cbuf_s {
+	char	text_buf[MAXCMDBUF];
+	int		text_start;
+	int		text_end;
+	qboolean	wait;
+} cbuf_t;
+
+extern cbuf_t	cbuf_main;
+#ifndef SERVERONLY
+extern cbuf_t cbuf_svc;
+#endif
+extern cbuf_t	*cbuf_current;
+
+void Cbuf_AddTextEx (cbuf_t *cbuf, char *text);
+void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text);
+void Cbuf_ExecuteEx (cbuf_t *cbuf);
 
 void Cbuf_Init (void);
 // allocates an initial text buffer that will grow as needed
@@ -64,6 +82,14 @@ then searches for a command or variable that matches the first token.
 
 typedef void (*xcommand_t) (void);
 
+typedef struct cmd_function_s
+{
+	struct cmd_function_s	*hash_next;
+	struct cmd_function_s	*next;
+	char					*name;
+	xcommand_t				function;
+} cmd_function_t;
+
 void	Cmd_Init (void);
 
 void	Cmd_AddCommand (char *cmd_name, xcommand_t function);
@@ -76,6 +102,8 @@ void	Cmd_AddCommand (char *cmd_name, xcommand_t function);
 qboolean Cmd_Exists (char *cmd_name);
 // used by the cvar code to check for cvar / command name overlap
 
+cmd_function_t *Cmd_FindCommand (char *cmd_name);  // for message triggers
+
 char 	*Cmd_CompleteCommand (char *partial);
 // attempts to match a partial command for automatic command line completion
 // returns NULL if nothing fits
@@ -85,7 +113,7 @@ char	*Cmd_Argv (int arg);
 char	*Cmd_Args (void);
 // The functions that execute commands get their parameters with these
 // functions. Cmd_Argv () will return an empty string, not a NULL
-// if arg > argc, so string operations are allways safe.
+// if arg > argc, so string operations are always safe.
 
 int Cmd_CheckParm (char *parm);
 // Returns the position (1 to argc-1) in the command's argument list

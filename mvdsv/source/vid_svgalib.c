@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "d_local.h"
+#include "keys.h"
 
 #define stringify(m) { #m, m }
 
@@ -74,9 +75,9 @@ int		UseKeyboard = 1;
 
 int		mouserate = MOUSE_DEFAULTSAMPLERATE;
 
-cvar_t		vid_mode = {"vid_mode","5",false};
-cvar_t		vid_redrawfull = {"vid_redrawfull","0",false};
-cvar_t		vid_waitforrefresh = {"vid_waitforrefresh","0",true};
+cvar_t		vid_mode = {"vid_mode","5"};
+cvar_t		vid_redrawfull = {"vid_redrawfull","0"};
+cvar_t		vid_waitforrefresh = {"vid_waitforrefresh","0",CVAR_ARCHIVE};
  
 char	*framebuffer_ptr;
 
@@ -94,7 +95,7 @@ float   mouse_x, mouse_y;
 float	old_mouse_x, old_mouse_y;
 int		mx, my;
 
-cvar_t _windowed_mouse = {"_windowed_mouse", "1", true};
+cvar_t _windowed_mouse = {"_windowed_mouse", "1", CVAR_ARCHIVE};
 cvar_t	m_filter = {"m_filter","0"};
 
 static byte     backingbuf[48*24];
@@ -330,7 +331,7 @@ void VID_InitModes(void)
 	for (i=0 ; i<num_modes ; i++)
 	{
 		if (vga_hasmode(i))
-			Q_memcpy(&modes[i], vga_getmodeinfo(i), sizeof (vga_modeinfo));
+			memcpy(&modes[i], vga_getmodeinfo(i), sizeof (vga_modeinfo));
 		else
 			modes[i].width = 0; // means not available
 	}
@@ -476,14 +477,14 @@ int VID_SetMode (int modenum, unsigned char *palette)
 
 	if ((modenum >= num_modes) || (modenum < 0) || !modes[modenum].width)
 	{
-		Cvar_SetValue ("vid_mode", (float)current_mode);
+		Cvar_SetValue (&vid_mode, (float)current_mode);
 		
 		Con_Printf("No such video mode: %d\n",modenum);
 		
 		return 0;
 	}
 
-	Cvar_SetValue ("vid_mode", (float)modenum);
+	Cvar_SetValue (&vid_mode, (float)modenum);
 	
 	current_mode=modenum;
 
@@ -979,10 +980,7 @@ void IN_MouseMove (usercmd_t *cmd)
 	}
 	else
 	{
-		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward.value * mouse_y;
-		else
-			cmd->forwardmove -= m_forward.value * mouse_y;
+		cmd->forwardmove -= m_forward.value * mouse_y;
 	}
 }
 

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // vid buffer
 
 #include "quakedef.h"
+#include "version.h"
 
 extern unsigned char d_15to8table[65536];
 extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor;
@@ -389,7 +390,7 @@ void Draw_Init (void)
 	// 3dfx can only handle 256 wide textures
 	if (!Q_strncasecmp ((char *)gl_renderer, "3dfx",4) ||
 		!Q_strncasecmp ((char *)gl_renderer, "Mesa",4))
-		Cvar_Set ("gl_max_size", "256");
+		Cvar_Set (&gl_max_size, "256");
 
 	Cmd_AddCommand ("gl_texturemode", &Draw_TextureMode_f);
 
@@ -1317,7 +1318,7 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 	int			i;
 	gltexture_t	*glt;
 
-	// see if the texture is allready present
+	// see if the texture is already present
 	if (identifier[0])
 	{
 		for (i=0, glt=gltextures ; i<numgltextures ; i++, glt++)

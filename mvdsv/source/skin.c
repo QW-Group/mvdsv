@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -28,6 +30,9 @@ char		allskins[128];
 skin_t		skins[MAX_CACHED_SKINS];
 int			numskins;
 
+extern cvar_t	cl_teamskin;	// Tonik
+extern cvar_t	cl_enemyskin;	// Tonik
+
 /*
 ================
 Skin_Find
@@ -42,6 +47,8 @@ void Skin_Find (player_info_t *sc)
 	skin_t		*skin;
 	int			i;
 	char		name[128], *s;
+	int			teamplay;	// Tonik
+	char		buf[128];	// Tonik
 
 	if (allskins[0])
 		strcpy (name, allskins);
@@ -56,6 +63,25 @@ void Skin_Find (player_info_t *sc)
 
 	if (strstr (name, "..") || *name == '.')
 		strcpy (name, "base");
+
+// Tonik -->		
+	strcpy (buf, Info_ValueForKey(cls.userinfo, "team"));
+	teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
+
+	if (cl_teamskin.string[0] && teamplay && 
+	!strcmp(Info_ValueForKey(sc->userinfo, "team"), buf)
+	&& strlen(cl_teamskin.string) < 128)
+	{
+		strcpy (name, cl_teamskin.string);
+	}
+
+	if (cl_enemyskin.string[0] && (!teamplay || 
+	strcmp(Info_ValueForKey(sc->userinfo, "team"), buf))
+	&& strlen(cl_enemyskin.string) < 128)
+	{
+		strcpy (name, cl_enemyskin.string);
+	}
+// <-- Tonik
 
 	COM_StripExtension (name, name);
 

@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// comndef.h  -- general definitions
+// common.h  -- general definitions
 
 typedef unsigned char 		byte;
 #define _DEF_BYTE_
@@ -132,17 +132,6 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 //============================================================================
 
-#define Q_memset(d, f, c) memset((d), (f), (c))
-#define Q_memcpy(d, s, c) memcpy((d), (s), (c))
-#define Q_memcmp(m1, m2, c) memcmp((m1), (m2), (c))
-#define Q_strcpy(d, s) strcpy((d), (s))
-#define Q_strncpy(d, s, n) strncpy((d), (s), (n))
-#define Q_strlen(s) ((int)strlen(s))
-#define Q_strrchr(s, c) strrchr((s), (c))
-#define Q_strcat(d, s) strcat((d), (s))
-#define Q_strcmp(s1, s2) strcmp((s1), (s2))
-#define Q_strncmp(s1, s2, n) strncmp((s1), (s2), (n))
-
 #ifdef _WIN32
 
 #define Q_strcasecmp(s1, s2) _stricmp((s1), (s2))
@@ -205,7 +194,6 @@ void COM_CreatePath (char *path);
 void COM_Gamedir (char *dir);
 
 extern	struct cvar_s	registered;
-extern qboolean		standard_quake, rogue, hipnotic;
 
 char *Info_ValueForKey (char *s, char *key);
 void Info_RemoveKey (char *s, char *key);
@@ -218,5 +206,3 @@ unsigned Com_BlockChecksum (void *buffer, int length);
 void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);
 byte	COM_BlockSequenceCheckByte (byte *base, int length, int sequence, unsigned mapchecksum);
 byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
-
-int build_number( void );

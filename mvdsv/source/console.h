@@ -29,6 +29,7 @@ typedef struct
 	int		current;		// line where next message will be printed
 	int		x;				// offset in current line for next print
 	int		display;		// bottom of console displays this line
+	int		numlines;		// number of non-blank text lines, used for backscroling
 } console_t;
 
 extern	console_t	con_main;

@@ -72,9 +72,9 @@ int		UseKeyboard = 1;
 
 int		mouserate = MOUSE_DEFAULTSAMPLERATE;
 
-cvar_t		vid_mode = {"vid_mode","5",false};
-cvar_t		vid_redrawfull = {"vid_redrawfull","0",false};
-cvar_t		vid_waitforrefresh = {"vid_waitforrefresh","0",true};
+cvar_t		vid_mode = {"vid_mode","5"};
+cvar_t		vid_redrawfull = {"vid_redrawfull","0"};
+cvar_t		vid_waitforrefresh = {"vid_waitforrefresh","0",CVAR_ARCHIVE};
  
 char	*framebuffer_ptr;
 
@@ -92,7 +92,7 @@ float   mouse_x, mouse_y;
 float	old_mouse_x, old_mouse_y;
 int		mx, my;
 
-cvar_t _windowed_mouse = {"_windowed_mouse", "1", true};
+cvar_t _windowed_mouse = {"_windowed_mouse", "1",CVAR_ARCHIVE};
 cvar_t	m_filter = {"m_filter","0"};
 
 int scr_width, scr_height;
@@ -837,10 +837,7 @@ void IN_MouseMove (usercmd_t *cmd)
 	}
 	else
 	{
-		if ((in_strafe.state & 1) && noclip_anglehack)
-			cmd->upmove -= m_forward.value * mouse_y;
-		else
-			cmd->forwardmove -= m_forward.value * mouse_y;
+		cmd->forwardmove -= m_forward.value * mouse_y;
 	}
 }
 

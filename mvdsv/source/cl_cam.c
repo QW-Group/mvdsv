@@ -27,10 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "winquake.h"
+#include "pmove.h"
+#include "sbar.h"
 
-#define	PM_SPECTATORMAXSPEED	500
-#define	PM_STOPSPEED	100
-#define	PM_MAXSPEED			320
 #define BUTTON_JUMP 2
 #define BUTTON_ATTACK 1
 #define MAX_ANGLE_TURN 10

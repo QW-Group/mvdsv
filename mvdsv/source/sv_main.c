@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -18,32 +20,56 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include "version.h"
+#ifdef QW_BOTH
+#include "quakedef.h"
+#include "keys.h"
+#include "progs.h"
+#include "server.h"
+#else
 #include "qwsvdef.h"
+#endif
 
 quakeparms_t host_parms;
 
 qboolean	host_initialized;		// true if into command execution (compatability)
 
-double		host_frametime;
+double		sv_frametime;
+
+#ifndef	QW_BOTH
 double		realtime;				// without any filtering or bounding
 
 int			host_hunklevel;
+#endif
+
+int			current_skill;	// Tonik
 
 netadr_t	master_adr[MAX_MASTERS];	// address of group servers
 
 client_t	*host_client;			// current client
 
+#ifdef QW_BOTH
+cvar_t	sv_mintic = {"sv_mintic","0"};		//
+#else										//
 cvar_t	sv_mintic = {"sv_mintic","0.03"};	// bound the size of the
-cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic 
+#endif										// physics time tic 
+cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	//
 
+#ifndef QW_BOTH
 cvar_t	developer = {"developer","0"};		// show extra messages
+#endif
 
 cvar_t	timeout = {"timeout","65"};		// seconds without any message
 cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 											// after disconnect
 
+#ifndef QW_BOTH
 cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
+#else
+extern cvar_t rcon_password;
+extern cvar_t password;
+#endif
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 
 cvar_t	allow_download = {"allow_download", "1"};
@@ -62,17 +88,19 @@ cvar_t pausable	= {"pausable", "1"};
 //
 // game rules mirrored in svs.info
 //
-cvar_t	fraglimit = {"fraglimit","0",false,true};
-cvar_t	timelimit = {"timelimit","0",false,true};
-cvar_t	teamplay = {"teamplay","0",false,true};
-cvar_t	samelevel = {"samelevel","0", false, true};
-cvar_t	maxclients = {"maxclients","8", false, true};
-cvar_t	maxspectators = {"maxspectators","8", false, true};
-cvar_t	deathmatch = {"deathmatch","1", false, true};			// 0, 1, or 2
-cvar_t	spawn = {"spawn","0", false, true};
-cvar_t	watervis = {"watervis", "0", false, true};
+cvar_t	skill = {"skill", "1"};
+cvar_t	coop = {"coop", "0"};
+cvar_t	fraglimit = {"fraglimit","0",CVAR_SERVERINFO};
+cvar_t	timelimit = {"timelimit","0",CVAR_SERVERINFO};
+cvar_t	teamplay = {"teamplay","0",CVAR_SERVERINFO};
+cvar_t	samelevel = {"samelevel","0",CVAR_SERVERINFO};
+cvar_t	maxclients = {"maxclients","8",CVAR_SERVERINFO};
+cvar_t	maxspectators = {"maxspectators","8",CVAR_SERVERINFO};
+cvar_t	deathmatch = {"deathmatch","1",CVAR_SERVERINFO};			// 0, 1, or 2
+cvar_t	spawn = {"spawn","0",CVAR_SERVERINFO};
+cvar_t	watervis = {"watervis","0",CVAR_SERVERINFO};
 
-cvar_t	hostname = {"hostname","unnamed", false, true};
+cvar_t	hostname = {"hostname","unnamed",CVAR_SERVERINFO};
 
 FILE	*sv_logfile;
 FILE	*sv_fraglogfile;
@@ -86,6 +114,39 @@ qboolean ServerPaused(void)
 {
 	return sv.paused;
 }
+
+
+// Tonik:
+#ifdef QW_BOTH
+/*
+=================
+SV_ShutdownServer
+=================
+*/
+void SV_ShutdownServer (void)
+{
+	Master_Shutdown ();
+	if (sv_logfile)
+	{
+		fclose (sv_logfile);
+		sv_logfile = NULL;
+	}
+	if (sv_fraglogfile)
+	{
+		fclose (sv_fraglogfile);
+		sv_logfile = NULL;
+	}
+
+	SV_FinalMessage ("");
+
+	memset (&sv, 0, sizeof(sv));
+	sv.state = ss_dead;
+
+	memset (svs.clients, 0, sizeof(svs.clients));
+	//memset (svs.challenges, 0, sizeof(svs.challenges));
+}
+#endif
+
 
 /*
 ================
@@ -372,7 +433,7 @@ SV_CheckLog
 
 ===================
 */
-#define	LOG_HIGHWATER	4096
+#define	LOG_HIGHWATER	(MAX_DATAGRAM - 128)
 #define	LOG_FLUSH		10*60
 void SV_CheckLog (void)
 {
@@ -390,7 +451,7 @@ void SV_CheckLog (void)
 		svs.logsequence++;
 		sz = &svs.log[svs.logsequence&1];
 		sz->cursize = 0;
-		Con_Printf ("beginning fraglog sequence %i\n", svs.logsequence);
+		Con_DPrintf ("beginning fraglog sequence %i\n", svs.logsequence);
 	}
 
 }
@@ -416,9 +477,9 @@ void SVC_Log (void)
 		seq = -1;
 
 	if (seq == svs.logsequence-1 || !sv_fraglogfile)
-	{	// they allready have this data, or we aren't logging frags
+	{	// they already have this data, or we aren't logging frags
 		data[0] = A2A_NACK;
-		NET_SendPacket (1, data, net_from);
+		NET_SendPacket (net_serversocket, 1, data, net_from);
 		return;
 	}
 
@@ -427,7 +488,7 @@ void SVC_Log (void)
 	sprintf (data, "stdlog %i\n", svs.logsequence-1);
 	strcat (data, (char *)svs.log_buf[((svs.logsequence-1)&1)]);
 
-	NET_SendPacket (strlen(data)+1, data, net_from);
+	NET_SendPacket (net_serversocket, strlen(data)+1, data, net_from);
 }
 
 /*
@@ -443,7 +504,7 @@ void SVC_Ping (void)
 
 	data = A2A_ACK;
 
-	NET_SendPacket (1, &data, net_from);
+	NET_SendPacket (net_serversocket, 1, &data, net_from);
 }
 
 /*
@@ -488,7 +549,7 @@ void SVC_GetChallenge (void)
 	}
 
 	// send it back
-	Netchan_OutOfBandPrint (net_from, "%c%i", S2C_CHALLENGE, 
+	Netchan_OutOfBandPrint (net_serversocket, net_from, "%c%i", S2C_CHALLENGE, 
 			svs.challenges[i].challenge);
 }
 
@@ -519,7 +580,7 @@ void SVC_DirectConnect (void)
 	version = atoi(Cmd_Argv(1));
 	if (version != PROTOCOL_VERSION)
 	{
-		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, VERSION);
+		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, VERSION);
 		Con_Printf ("* rejected connect from version %i\n", version);
 		return;
 	}
@@ -539,13 +600,13 @@ void SVC_DirectConnect (void)
 		{
 			if (challenge == svs.challenges[i].challenge)
 				break;		// good
-			Netchan_OutOfBandPrint (net_from, "%c\nBad challenge.\n", A2C_PRINT);
+			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nBad challenge.\n", A2C_PRINT);
 			return;
 		}
 	}
 	if (i == MAX_CHALLENGES)
 	{
-		Netchan_OutOfBandPrint (net_from, "%c\nNo challenge for address.\n", A2C_PRINT);
+		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nNo challenge for address.\n", A2C_PRINT);
 		return;
 	}
 
@@ -558,7 +619,7 @@ void SVC_DirectConnect (void)
 			strcmp(spectator_password.string, s) )
 		{	// failed
 			Con_Printf ("%s:spectator password failed\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_from, "%c\nrequires a spectator password\n\n", A2C_PRINT);
+			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nrequires a spectator password\n\n", A2C_PRINT);
 			return;
 		}
 		Info_RemoveKey (userinfo, "spectator"); // remove passwd
@@ -573,7 +634,7 @@ void SVC_DirectConnect (void)
 			strcmp(password.string, s) )
 		{
 			Con_Printf ("%s:password failed\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_from, "%c\nserver requires a password\n\n", A2C_PRINT);
+			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nserver requires a password\n\n", A2C_PRINT);
 			return;
 		}
 		spectator = false;
@@ -599,7 +660,7 @@ void SVC_DirectConnect (void)
 	} else
 		strncpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo)-1);
 
-	// if there is allready a slot for this ip, drop it
+	// if there is already a slot for this ip, drop it
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
 		if (cl->state == cs_free)
@@ -635,16 +696,16 @@ void SVC_DirectConnect (void)
 
 	// if at server limits, refuse connection
 	if ( maxclients.value > MAX_CLIENTS )
-		Cvar_SetValue ("maxclients", MAX_CLIENTS);
+		Cvar_SetValue (&maxclients, MAX_CLIENTS);
 	if (maxspectators.value > MAX_CLIENTS)
-		Cvar_SetValue ("maxspectators", MAX_CLIENTS);
+		Cvar_SetValue (&maxspectators, MAX_CLIENTS);
 	if (maxspectators.value + maxclients.value > MAX_CLIENTS)
-		Cvar_SetValue ("maxspectators", MAX_CLIENTS - maxspectators.value + maxclients.value);
+		Cvar_SetValue (&maxspectators, MAX_CLIENTS - maxclients.value);
 	if ( (spectator && spectators >= (int)maxspectators.value)
 		|| (!spectator && clients >= (int)maxclients.value) )
 	{
 		Con_Printf ("%s:full connect\n", NET_AdrToString (adr));
-		Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
+		Netchan_OutOfBandPrint (net_serversocket, adr, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
 
@@ -670,11 +731,11 @@ void SVC_DirectConnect (void)
 	// this is the only place a client_t is ever initialized
 	*newcl = temp;
 
-	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION );
+	Netchan_OutOfBandPrint (net_serversocket, adr, "%c", S2C_CONNECTION );
 
 	edictnum = (newcl-svs.clients)+1;
 	
-	Netchan_Setup (&newcl->netchan , adr, qport);
+	Netchan_Setup (&newcl->netchan , adr, qport, net_serversocket);
 
 	newcl->state = cs_connected;
 
@@ -1034,7 +1095,7 @@ void SV_SendBan (void)
 	data[5] = 0;
 	strcat (data, "\nbanned.\n");
 	
-	NET_SendPacket (strlen(data), data, net_from);
+	NET_SendPacket (net_serversocket, strlen(data), data, net_from);
 }
 
 /*
@@ -1071,7 +1132,7 @@ void SV_ReadPackets (void)
 	int			qport;
 
 	good = false;
-	while (NET_GetPacket ())
+	while (NET_GetPacket(net_serversocket))
 	{
 		if (SV_FilterPacket ())
 		{
@@ -1214,7 +1275,7 @@ void SV_CheckVars (void)
 	if (spw && spw[0] && strcmp(spw, "none"))
 		v |= 2;
 
-	Con_Printf ("Updated needpass.\n");
+	Con_DPrintf ("Updated needpass.\n");
 	if (!v)
 		Info_SetValueForKey (svs.info, "needpass", "", MAX_SERVERINFO_STRING);
 	else
@@ -1227,10 +1288,23 @@ SV_Frame
 
 ==================
 */
-void SV_Frame (float time)
+void SV_Frame (double time)
 {
 	static double	start, end;
-	
+
+#ifdef QW_BOTH
+	if (sv.state != ss_active || cls.state != ca_active || (int)maxclients.value > 1 || key_dest == key_game)
+	{
+		sv.paused &= ~2;
+		cl.paused &= ~4;
+	}
+	else
+	{
+		sv.paused |= 2;
+		cl.paused |= 4;
+	}
+#endif
+
 	start = Sys_DoubleTime ();
 	svs.stats.idle += start - end;
 	
@@ -1238,8 +1312,11 @@ void SV_Frame (float time)
 	rand ();
 
 // decide the simulation time
-	if (!sv.paused) {
+	if (!sv.paused)
+	{
+#ifndef QW_BOTH
 		realtime += time;
+#endif
 		sv.time += time;
 	}
 
@@ -1256,11 +1333,13 @@ void SV_Frame (float time)
 // get packets
 	SV_ReadPackets ();
 
+#ifndef QW_BOTH
 // check for commands typed to the host
 	SV_GetConsoleCommands ();
 	
 // process console commands
 	Cbuf_Execute ();
+#endif	// QW_BOTH
 
 	SV_CheckVars ();
 
@@ -1303,17 +1382,27 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_wateraccelerate;
 	extern	cvar_t	sv_friction;
 	extern	cvar_t	sv_waterfriction;
+	extern	cvar_t	sv_nailhack;
 
+#ifndef QW_BOTH
+	Cvar_Init ();
+#endif
 	SV_InitOperatorCommands	();
 	SV_UserInit ();
 	
+#ifndef QW_BOTH
 	Cvar_RegisterVariable (&rcon_password);
 	Cvar_RegisterVariable (&password);
+#endif
 	Cvar_RegisterVariable (&spectator_password);
+
+	Cvar_RegisterVariable (&sv_nailhack);	// Tonik
 
 	Cvar_RegisterVariable (&sv_mintic);
 	Cvar_RegisterVariable (&sv_maxtic);
 
+	Cvar_RegisterVariable (&skill);		// Tonik
+	Cvar_RegisterVariable (&coop);		// Tonik
 	Cvar_RegisterVariable (&fraglimit);
 	Cvar_RegisterVariable (&timelimit);
 	Cvar_RegisterVariable (&teamplay);
@@ -1325,7 +1414,9 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&spawn);
 	Cvar_RegisterVariable (&watervis);
 
+#ifndef QW_BOTH
 	Cvar_RegisterVariable (&developer);
+#endif
 
 	Cvar_RegisterVariable (&timeout);
 	Cvar_RegisterVariable (&zombietime);
@@ -1365,8 +1456,9 @@ void SV_InitLocal (void)
 	for (i=0 ; i<MAX_MODELS ; i++)
 		sprintf (localmodels[i], "*%i", i);
 
+	Info_SetValueForStarKey (svs.info, "*z_version", Z_VERSION, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*version", va("%4.2f", VERSION), MAX_SERVERINFO_STRING);
-
+	
 	// init fraglog stuff
 	svs.logsequence = 1;
 	svs.logtime = realtime;
@@ -1422,7 +1514,7 @@ void Master_Heartbeat (void)
 		if (master_adr[i].port)
 		{
 			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (strlen(string), string, master_adr[i]);
+			NET_SendPacket (net_serversocket, strlen(string), string, master_adr[i]);
 		}
 }
 
@@ -1445,7 +1537,7 @@ void Master_Shutdown (void)
 		if (master_adr[i].port)
 		{
 			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (strlen(string), string, master_adr[i]);
+			NET_SendPacket (net_serversocket, strlen(string), string, master_adr[i]);
 		}
 }
 
@@ -1588,11 +1680,11 @@ void SV_InitNet (void)
 		port = atoi(com_argv[p+1]);
 		Con_Printf ("Port: %i\n", port);
 	}
-	NET_Init (port);
+	NET_Init (0, port);
 
 	Netchan_Init ();
 
-	// heartbeats will allways be sent to the id master
+	// heartbeats will always be sent to the id master
 	svs.last_heartbeat = -99999;		// send immediately
 //	NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
 }
@@ -1642,7 +1734,13 @@ void SV_Init (quakeparms_t *parms)
 	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));	
 
-	Con_Printf ("\nServer Version %4.2f (Build %04d)\n\n", VERSION, build_number());
+#ifdef RELEASE_VERSION
+	Con_Printf ("\nServer Version %s\n\n", Z_VERSION);
+#else
+	Con_Printf ("\nServer Version %s (Build %04d)\n\n", Z_VERSION, build_number());
+#endif
+
+	Con_Printf ("For help on ZQuake, go to http://zquake.da.ru/\n\n");
 
 	Con_Printf ("======== QuakeWorld Initialized ========\n");
 	

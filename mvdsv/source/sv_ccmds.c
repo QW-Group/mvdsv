@@ -67,7 +67,7 @@ void SV_SetMaster_f (void)
 
 		data[0] = A2A_PING;
 		data[1] = 0;
-		NET_SendPacket (2, data, master_adr[i-1]);
+		NET_SendPacket (net_serversocket, 2, data, master_adr[i-1]);
 	}
 
 	svs.last_heartbeat = -99999;
@@ -305,20 +305,33 @@ void SV_Map_f (void)
 	char	expanded[MAX_QPATH];
 	FILE	*f;
 
+#ifdef QW_BOTH
+	// An ugly hack to let you run zquake and qwsv or proxy without
+	// changing ports via the command line
+	if  (net_serversocket == -1)
+	{
+		extern int	__serverport;
+		int	i;
+		for (i = 0; i < 10; i++) {
+			net_serversocket = UDP_OpenSocket (__serverport+i, false);
+			if (net_serversocket != -1)
+				break;
+		}
+		if (net_serversocket == -1) {
+			Con_Printf ("Can't start server because server socket could not be opened.\n");
+			return;
+		}
+		if (i)
+			Con_Printf ("Server socket opened on port %i\n", __serverport + i);
+	}
+#endif
+
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf ("map <levelname> : continue game on a new level\n");
 		return;
 	}
 	strcpy (level, Cmd_Argv(1));
-
-#if 0
-	if (!strcmp (level, "e1m8"))
-	{	// QuakeWorld can't go to e1m8
-		SV_BroadcastPrintf (PRINT_HIGH, "can't go to low grav level in QuakeWorld...\n");
-		strcpy (level, "e1m5");
-	}
-#endif
 
 	// check to make sure the level exists
 	sprintf (expanded, "maps/%s.bsp", level);
@@ -330,12 +343,20 @@ void SV_Map_f (void)
 	}
 	fclose (f);
 
+#ifdef QW_BOTH
+//	cls.state = ca_connected;
+	Host_ForceReconnect();	// !!! FIXME...
+#endif
 	SV_BroadcastCommand ("changing\n");
 	SV_SendMessagesToAll ();
 
 	SV_SpawnServer (level);
 
 	SV_BroadcastCommand ("reconnect\n");
+
+#ifdef QW_BOTH
+	Host_ConnectLocal();	// FIXME
+#endif
 }
 
 
@@ -494,16 +515,16 @@ void SV_ConSay_f(void)
 	if (Cmd_Argc () < 2)
 		return;
 
-	Q_strcpy (text, "console: ");
+	strcpy (text, "console: ");
 	p = Cmd_Args();
 
 	if (*p == '"')
 	{
 		p++;
-		p[Q_strlen(p)-1] = 0;
+		p[strlen(p)-1] = 0;
 	}
 
-	Q_strcat(text, p);
+	strcat(text, p);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
@@ -874,23 +895,31 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("logfile", SV_Logfile_f);
 	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f);
 
-	Cmd_AddCommand ("snap", SV_Snap_f);
+	Cmd_AddCommand ("sv_snap", SV_Snap_f);	// FIXME: was "snap"
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
 	Cmd_AddCommand ("kick", SV_Kick_f);
+#ifdef QW_BOTH
+	Cmd_AddCommand ("serverstatus", SV_Status_f);
+#else
 	Cmd_AddCommand ("status", SV_Status_f);
+#endif
 
 	Cmd_AddCommand ("map", SV_Map_f);
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
 
-	Cmd_AddCommand ("say", SV_ConSay_f);
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
+#ifndef QW_BOTH
+	Cmd_AddCommand ("say", SV_ConSay_f);
 	Cmd_AddCommand ("quit", SV_Quit_f);
+#endif
 	Cmd_AddCommand ("god", SV_God_f);
 	Cmd_AddCommand ("give", SV_Give_f);
 	Cmd_AddCommand ("noclip", SV_Noclip_f);
-	Cmd_AddCommand ("serverinfo", SV_Serverinfo_f);
 	Cmd_AddCommand ("localinfo", SV_Localinfo_f);
+#ifndef QW_BOTH	// FIXME
+	Cmd_AddCommand ("serverinfo", SV_Serverinfo_f);
 	Cmd_AddCommand ("user", SV_User_f);
+#endif
 	Cmd_AddCommand ("gamedir", SV_Gamedir_f);
 	Cmd_AddCommand ("sv_gamedir", SV_Gamedir);
 	Cmd_AddCommand ("floodprot", SV_Floodprot_f);

@@ -19,8 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // server.h
 
-#define	QW_SERVER
-
 #define	MAX_MASTERS	8				// max recipients for heartbeat packets
 
 #define	MAX_SIGNON_BUFFERS	8
@@ -35,7 +33,7 @@ typedef enum {
 
 typedef struct
 {
-	qboolean	active;				// false when server is going down
+//	qboolean	active;				// false when server is going down
 	server_state_t	state;			// precache commands are only valid during load
 
 	double		time;
@@ -44,6 +42,9 @@ typedef struct
 	double		lastchecktime;		// for monster ai 
 
 	qboolean	paused;				// are we paused?
+#ifdef QW_BOTH
+	qboolean	loadgame;			// handle connections specially
+#endif
 
 	//check player/eyes models for hacks
 	unsigned	model_player_checksum;
@@ -100,7 +101,7 @@ typedef enum
 					// connection for a couple seconds
 	cs_connected,	// has been assigned to a client_t, but not in game yet
 	cs_spawned		// client is fully in game
-} client_state_t;
+} sv_client_state_t;		// FIXME
 
 typedef struct
 {
@@ -116,7 +117,7 @@ typedef struct
 
 typedef struct client_s
 {
-	client_state_t	state;
+	sv_client_state_t	state;
 
 	int				spectator;			// non-interactive
 
@@ -320,11 +321,15 @@ extern	cvar_t	sv_maxspeed;
 
 extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
 
+extern	int		current_skill;
+
 extern	cvar_t	spawn;
 extern	cvar_t	teamplay;
 extern	cvar_t	deathmatch;
 extern	cvar_t	fraglimit;
 extern	cvar_t	timelimit;
+extern	cvar_t	skill;
+extern	cvar_t	coop;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
@@ -347,7 +352,7 @@ extern	FILE		*sv_fraglogfile;
 // sv_main.c
 //
 void SV_Shutdown (void);
-void SV_Frame (float time);
+void SV_Frame (double time);
 void SV_FinalMessage (char *message);
 void SV_DropClient (client_t *drop);
 

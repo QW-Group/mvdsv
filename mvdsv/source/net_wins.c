@@ -26,12 +26,21 @@ netadr_t	net_local_adr;
 
 netadr_t	net_from;
 sizebuf_t	net_message;
-int			net_socket;
+int			net_clientsocket;
+int			net_serversocket;
 
 #define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
 byte		net_message_buffer[MAX_UDP_PACKET];
 
 WSADATA		winsockdata;
+
+// Tonik -->
+#define	 PORT_LOOPBACK 65535
+int			loop_c2s_messageLength;
+char		loop_c2s_message[MAX_UDP_PACKET];
+int			loop_s2c_messageLength;
+char		loop_s2c_message[MAX_UDP_PACKET];
+// <-- Tonik
 
 //=============================================================================
 
@@ -67,7 +76,12 @@ qboolean	NET_CompareAdr (netadr_t a, netadr_t b)
 char	*NET_AdrToString (netadr_t a)
 {
 	static	char	s[64];
-	
+
+#ifdef QW_BOTH
+	if (*(int *)&a == 0 && a.port == PORT_LOOPBACK)
+		return "loopback";
+#endif
+
 	sprintf (s, "%i.%i.%i.%i:%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3], ntohs(a.port));
 
 	return s;
@@ -98,7 +112,17 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 	struct sockaddr_in sadr;
 	char	*colon;
 	char	copy[128];
-	
+
+// Tonik -->	
+#ifdef QW_BOTH
+	if (!strcmp(s, "local"))
+	{
+		memset(a, 0, sizeof(*a));
+		a->port = PORT_LOOPBACK;
+		return true;
+	}
+#endif
+// <-- Tonik
 	
 	memset (&sadr, 0, sizeof(sadr));
 	sadr.sin_family = AF_INET;
@@ -134,10 +158,10 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 // the IP is NOT one of our interfaces.
 qboolean NET_IsClientLegal(netadr_t *adr)
 {
+#if 0
 	struct sockaddr_in sadr;
 	int newsocket;
 
-#if 0
 	if (adr->ip[0] == 127)
 		return false; // no local connections period
 
@@ -163,11 +187,36 @@ qboolean NET_IsClientLegal(netadr_t *adr)
 
 //=============================================================================
 
-qboolean NET_GetPacket (void)
+qboolean NET_GetPacket (int net_socket)
 {
 	int 	ret;
 	struct sockaddr_in	from;
 	int		fromlen;
+
+// Tonik -->
+	if (net_socket == net_clientsocket && loop_s2c_messageLength > 0)
+	{
+		memcpy (net_message_buffer, loop_s2c_message, loop_s2c_messageLength);
+		net_message.cursize = loop_s2c_messageLength;
+		loop_s2c_messageLength = 0;
+		memset (&from, 0, sizeof(from));
+		from.sin_port = PORT_LOOPBACK;
+		SockadrToNetadr (&from, &net_from);
+		return net_message.cursize;
+	}
+
+	if (net_socket == net_serversocket && loop_c2s_messageLength > 0)
+	{
+//		Con_DPrintf ("NET_GetPacket: c2s\n");
+		memcpy (net_message_buffer, loop_c2s_message, loop_c2s_messageLength);
+		net_message.cursize = loop_c2s_messageLength;
+		loop_c2s_messageLength = 0;
+		memset (&from, 0, sizeof(from));
+		from.sin_port = PORT_LOOPBACK;
+		SockadrToNetadr (&from, &net_from);
+		return net_message.cursize;
+	}
+// <-- Tonik
 
 	fromlen = sizeof(from);
 	ret = recvfrom (net_socket, (char *)net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
@@ -201,10 +250,34 @@ qboolean NET_GetPacket (void)
 
 //=============================================================================
 
-void NET_SendPacket (int length, void *data, netadr_t to)
+void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 {
 	int ret;
 	struct sockaddr_in	addr;
+
+// Tonik -->
+	if (*(int *)&to.ip == 0 && to.port == 65535)	// Loopback
+	{
+		if (net_socket == net_clientsocket)
+		{
+//			if (loop_c2s_messageLength)
+//				Con_Printf ("Warning: NET_SendPacket: loop_c2s: NET_SendPacket without NET_GetPacket\n");
+			memcpy (loop_c2s_message, data, length);
+			loop_c2s_messageLength = length;
+			return;
+		}
+		else if (net_socket == net_serversocket)
+		{
+//			if (loop_s2c_messageLength)
+//				Con_Printf ("Warning: NET_SendPacket: loop_s2c: NET_SendPacket without NET_GetPacket\n");
+			memcpy (loop_s2c_message, data, length);
+			loop_s2c_messageLength = length;
+			return;
+		}
+		Sys_Error("NET_SendPacket: loopback: unknown socket");
+		return;
+	}
+// <-- Tonik
 
 	NetadrToSockadr (&to, &addr);
 
@@ -228,7 +301,7 @@ void NET_SendPacket (int length, void *data, netadr_t to)
 
 //=============================================================================
 
-int UDP_OpenSocket (int port)
+int UDP_OpenSocket (int port, qboolean crash)
 {
 	int newsocket;
 	struct sockaddr_in address;
@@ -255,12 +328,19 @@ int UDP_OpenSocket (int port)
 	else
 		address.sin_port = htons((short)port);
 	if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
+	{
+#ifdef QW_BOTH
+		if (!crash)
+			return -1;
+		else
+#endif
 		Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
+	}
 
 	return newsocket;
 }
 
-void NET_GetLocalAddress (void)
+void NET_GetLocalAddress (int net_socket)	// FIXME
 {
 	char	buff[512];
 	struct sockaddr_in	address;
@@ -284,7 +364,8 @@ void NET_GetLocalAddress (void)
 NET_Init
 ====================
 */
-void NET_Init (int port)
+int __serverport;	// so we can open it later
+void NET_Init (int clientport, int serverport)
 {
 	WORD	wVersionRequested; 
 	int		r;
@@ -299,7 +380,22 @@ void NET_Init (int port)
 	//
 	// open the single socket to be used for all communications
 	//
-	net_socket = UDP_OpenSocket (port);
+//	net_socket = UDP_OpenSocket (port);
+	if (clientport)
+		net_clientsocket = UDP_OpenSocket (clientport, true);
+#ifndef QW_BOTH
+	if (serverport)
+		net_serversocket = UDP_OpenSocket (serverport, false);
+#else
+	// An ugly hack to let you run zquake and qwsv or proxy without
+	// changing ports via the command line	-- Tonik, 5 Aug 2000
+	__serverport = serverport;
+	net_serversocket = -1;
+/*	if (net_serversocket == -1)
+	{
+		Con_Printf ("NET_Init: Could not open server socket\n");
+	}	*/
+#endif
 
 	//
 	// init the message buffer
@@ -310,7 +406,10 @@ void NET_Init (int port)
 	//
 	// determine my name & address
 	//
-	NET_GetLocalAddress ();
+	if (clientport)
+		NET_GetLocalAddress (net_clientsocket);
+	else if (serverport)
+		NET_GetLocalAddress (net_serversocket);
 
 	Con_Printf("UDP Initialized\n");
 }
@@ -322,7 +421,10 @@ NET_Shutdown
 */
 void	NET_Shutdown (void)
 {
-	closesocket (net_socket);
+	if (net_clientsocket)
+		closesocket (net_clientsocket);
+	if (net_serversocket)
+		closesocket (net_serversocket);
 	WSACleanup ();
 }
 

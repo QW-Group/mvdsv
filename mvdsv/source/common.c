@@ -40,44 +40,12 @@ static char	*safeargvs[NUM_SAFE_ARGVS] =
 
 cvar_t	registered = {"registered","0"};
 
-qboolean	com_modified;	// set true if using non-id files
-
-int		static_registered = 1;	// only for startup check, then set
-
 qboolean		msg_suppress_1 = 0;
 
 void COM_InitFilesystem (void);
 void COM_Path_f (void);
 
-
-// if a packfile directory differs from this, it is assumed to be hacked
-#define	PAK0_COUNT		339
-#define	PAK0_CRC		52883
-
-qboolean		standard_quake = true, rogue, hipnotic;
-
 char	gamedirfile[MAX_OSPATH];
-
-// this graphic needs to be in the pak file to use registered features
-unsigned short pop[] =
-{
- 0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000
-,0x0000,0x0000,0x6600,0x0000,0x0000,0x0000,0x6600,0x0000
-,0x0000,0x0066,0x0000,0x0000,0x0000,0x0000,0x0067,0x0000
-,0x0000,0x6665,0x0000,0x0000,0x0000,0x0000,0x0065,0x6600
-,0x0063,0x6561,0x0000,0x0000,0x0000,0x0000,0x0061,0x6563
-,0x0064,0x6561,0x0000,0x0000,0x0000,0x0000,0x0061,0x6564
-,0x0064,0x6564,0x0000,0x6469,0x6969,0x6400,0x0064,0x6564
-,0x0063,0x6568,0x6200,0x0064,0x6864,0x0000,0x6268,0x6563
-,0x0000,0x6567,0x6963,0x0064,0x6764,0x0063,0x6967,0x6500
-,0x0000,0x6266,0x6769,0x6a68,0x6768,0x6a69,0x6766,0x6200
-,0x0000,0x0062,0x6566,0x6666,0x6666,0x6666,0x6562,0x0000
-,0x0000,0x0000,0x0062,0x6364,0x6664,0x6362,0x0000,0x0000
-,0x0000,0x0000,0x0000,0x0062,0x6662,0x0000,0x0000,0x0000
-,0x0000,0x0000,0x0000,0x0061,0x6661,0x0000,0x0000,0x0000
-,0x0000,0x0000,0x0000,0x0000,0x6500,0x0000,0x0000,0x0000
-,0x0000,0x0000,0x0000,0x0000,0x6400,0x0000,0x0000,0x0000
-};
 
 /*
 
@@ -88,10 +56,6 @@ The "base directory" is the path to the directory holding the quake.exe and all 
 only used during filesystem initialization.
 
 The "game directory" is the first tree on the search path and directory that all generated files (savegames, screenshots, demos, config files) will be saved to.  This can be overridden with the "-game" command line parameter.  The game directory can never be changed while quake is executing.  This is a precacution against having a malicious server instruct clients to write files over areas they shouldn't.
-
-The "cache directory" is only used during development to save network bandwidth, especially over ISDN / T1 lines.  If there is a cache directory
-specified, when a file is found by the normal search path, it will be mirrored
-into the cache directory, then opened there.
 	
 */
 
@@ -132,163 +96,6 @@ void InsertLinkAfter (link_t *l, link_t *after)
 
 ============================================================================
 */
-
-#if 0
-void Q_memset (void *dest, int fill, int count)
-{
-	int		i;
-	
-	if ( (((long)dest | count) & 3) == 0)
-	{
-		count >>= 2;
-		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
-		for (i=0 ; i<count ; i++)
-			((int *)dest)[i] = fill;
-	}
-	else
-		for (i=0 ; i<count ; i++)
-			((byte *)dest)[i] = fill;
-}
-
-void Q_memcpy (void *dest, void *src, int count)
-{
-	int		i;
-	
-	if (( ( (long)dest | (long)src | count) & 3) == 0 )
-	{
-		count>>=2;
-		for (i=0 ; i<count ; i++)
-			((int *)dest)[i] = ((int *)src)[i];
-	}
-	else
-		for (i=0 ; i<count ; i++)
-			((byte *)dest)[i] = ((byte *)src)[i];
-}
-
-int Q_memcmp (void *m1, void *m2, int count)
-{
-	while(count)
-	{
-		count--;
-		if (((byte *)m1)[count] != ((byte *)m2)[count])
-			return -1;
-	}
-	return 0;
-}
-
-void Q_strcpy (char *dest, char *src)
-{
-	while (*src)
-	{
-		*dest++ = *src++;
-	}
-	*dest++ = 0;
-}
-
-void Q_strncpy (char *dest, char *src, int count)
-{
-	while (*src && count--)
-	{
-		*dest++ = *src++;
-	}
-	if (count)
-		*dest++ = 0;
-}
-
-int Q_strlen (char *str)
-{
-	int		count;
-	
-	count = 0;
-	while (str[count])
-		count++;
-
-	return count;
-}
-
-char *Q_strrchr(char *s, char c)
-{
-    int len = Q_strlen(s);
-    s += len;
-    while (len--)
-        if (*--s == c) return s;
-    return 0;
-}
-
-void Q_strcat (char *dest, char *src)
-{
-	dest += Q_strlen(dest);
-	Q_strcpy (dest, src);
-}
-
-int Q_strcmp (char *s1, char *s2)
-{
-	while (1)
-	{
-		if (*s1 != *s2)
-			return -1;		// strings not equal	
-		if (!*s1)
-			return 0;		// strings are equal
-		s1++;
-		s2++;
-	}
-	
-	return -1;
-}
-
-int Q_strncmp (char *s1, char *s2, int count)
-{
-	while (1)
-	{
-		if (!count--)
-			return 0;
-		if (*s1 != *s2)
-			return -1;		// strings not equal	
-		if (!*s1)
-			return 0;		// strings are equal
-		s1++;
-		s2++;
-	}
-	
-	return -1;
-}
-
-int Q_strncasecmp (char *s1, char *s2, int n)
-{
-	int		c1, c2;
-	
-	while (1)
-	{
-		c1 = *s1++;
-		c2 = *s2++;
-
-		if (!n--)
-			return 0;		// strings are equal until end point
-		
-		if (c1 != c2)
-		{
-			if (c1 >= 'a' && c1 <= 'z')
-				c1 -= ('a' - 'A');
-			if (c2 >= 'a' && c2 <= 'z')
-				c2 -= ('a' - 'A');
-			if (c1 != c2)
-				return -1;		// strings not equal
-		}
-		if (!c1)
-			return 0;		// strings are equal
-//		s1++;
-//		s2++;
-	}
-	
-	return -1;
-}
-
-int Q_strcasecmp (char *s1, char *s2)
-{
-	return Q_strncasecmp (s1, s2, 99999);
-}
-
-#endif
 
 int Q_atoi (char *str)
 {
@@ -579,7 +386,7 @@ void MSG_WriteString (sizebuf_t *sb, char *s)
 	if (!s)
 		SZ_Write (sb, "", 1);
 	else
-		SZ_Write (sb, s, Q_strlen(s)+1);
+		SZ_Write (sb, s, strlen(s)+1);
 }
 
 void MSG_WriteCoord (sizebuf_t *sb, float f)
@@ -878,19 +685,19 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 
 void SZ_Write (sizebuf_t *buf, void *data, int length)
 {
-	Q_memcpy (SZ_GetSpace(buf,length),data,length);		
+	memcpy (SZ_GetSpace(buf,length),data,length);		
 }
 
 void SZ_Print (sizebuf_t *buf, char *data)
 {
 	int		len;
 	
-	len = Q_strlen(data)+1;
+	len = strlen(data)+1;
 
 	if (!buf->cursize || buf->data[buf->cursize-1])
-		Q_memcpy ((byte *)SZ_GetSpace(buf, len),data,len); // no trailing 0
+		memcpy ((byte *)SZ_GetSpace(buf, len),data,len); // no trailing 0
 	else
-		Q_memcpy ((byte *)SZ_GetSpace(buf, len-1)-1,data,len); // write over trailing 0
+		memcpy ((byte *)SZ_GetSpace(buf, len-1)-1,data,len); // write over trailing 0
 }
 
 
@@ -1003,10 +810,11 @@ void COM_DefaultExtension (char *path, char *extension)
 
 //============================================================================
 
-char		com_token[1024];
+#define MAX_COM_TOKEN	1024
+
+char	com_token[MAX_COM_TOKEN];
 int		com_argc;
 char	**com_argv;
-
 
 /*
 ==============
@@ -1017,15 +825,16 @@ Parse a token out of a string
 */
 char *COM_Parse (char *data)
 {
-	int		c;
+//	int		c;
+	unsigned int c;	// Tonik
 	int		len;
-	
+
 	len = 0;
 	com_token[0] = 0;
-	
+
 	if (!data)
 		return NULL;
-		
+
 // skip whitespace
 skipwhite:
 	while ( (c = *data) <= ' ')
@@ -1034,7 +843,14 @@ skipwhite:
 			return NULL;			// end of file;
 		data++;
 	}
-	
+/*
+	while ( (c = *data) == ' ' || c == 9 || c == 13)
+		data++;
+
+	if (c == 0)
+		return NULL;			// end of file;
+*/
+
 // skip // comments
 	if (c=='/' && data[1] == '/')
 	{
@@ -1042,7 +858,7 @@ skipwhite:
 			data++;
 		goto skipwhite;
 	}
-	
+
 
 // handle quoted strings specially
 	if (c == '\"')
@@ -1067,9 +883,12 @@ skipwhite:
 		com_token[len] = c;
 		data++;
 		len++;
+		if (len >= MAX_COM_TOKEN-1)
+			break;
 		c = *data;
-	} while (c>32);
-	
+//	} while (c && c != ' ' && c != 9 && c != 13);
+	} while (c > 32);
+
 	com_token[len] = 0;
 	return data;
 }
@@ -1091,55 +910,33 @@ int COM_CheckParm (char *parm)
 	{
 		if (!com_argv[i])
 			continue;		// NEXTSTEP sometimes clears appkit vars.
-		if (!Q_strcmp (parm,com_argv[i]))
+		if (!strcmp (parm,com_argv[i]))
 			return i;
 	}
 		
 	return 0;
 }
 
+
 /*
 ================
 COM_CheckRegistered
 
-Looks for the pop.txt file and verifies it.
+Checks the existence of gfx/pop.lmp file.
 Sets the "registered" cvar.
-Immediately exits out if an alternate game was attempted to be started without
-being registered.
 ================
 */
 void COM_CheckRegistered (void)
 {
 	FILE		*h;
-	unsigned short	check[128];
-	int			i;
 
 	COM_FOpenFile("gfx/pop.lmp", &h);
-	static_registered = 0;
 
-	if (!h)
-	{
-		Con_Printf ("Playing shareware version.\n");
-#ifndef SERVERONLY
-// FIXME DEBUG -- only temporary
-		if (com_modified)
-			Sys_Error ("You must have the registered version to play QuakeWorld");
-#endif
-		return;
+	if (h) {
+		Cvar_Set (&registered, "1");
+		fclose (h);
 	}
-
-	fread (check, 1, sizeof(check), h);
-	fclose (h);
-	
-	for (i=0 ; i<128 ; i++)
-		if (pop[i] != (unsigned short)BigShort (check[i]))
-			Sys_Error ("Corrupted data file.");
-	
-	Cvar_Set ("registered", "1");
-	static_registered = 1;
-	Con_Printf ("Playing registered version.\n");
 }
-
 
 
 /*
@@ -1158,7 +955,7 @@ void COM_InitArgv (int argc, char **argv)
 		 com_argc++)
 	{
 		largv[com_argc] = argv[com_argc];
-		if (!Q_strcmp ("-safe", argv[com_argc]))
+		if (!strcmp ("-safe", argv[com_argc]))
 			safe = true;
 	}
 
@@ -1496,7 +1293,8 @@ int COM_FOpenFile (char *filename, FILE **file)
 			for (i=0 ; i<pak->numfiles ; i++)
 				if (!strcmp (pak->files[i].name, filename))
 				{	// found it!
-					Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
+					if (developer.value)
+						Sys_Printf ("PackFile: %s : %s\n", pak->filename, filename);
 				// open a new file on the pakfile
 					*file = fopen (pak->filename, "rb");
 					if (!*file)
@@ -1509,20 +1307,14 @@ int COM_FOpenFile (char *filename, FILE **file)
 		}
 		else
 		{		
-	// check a file in the directory tree
-			if (!static_registered)
-			{	// if not a registered version, don't ever go beyond base
-				if ( strchr (filename, '/') || strchr (filename,'\\'))
-					continue;
-			}
-			
 			sprintf (netpath, "%s/%s",search->filename, filename);
 			
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1)
 				continue;
-				
-			Sys_Printf ("FindFile: %s\n",netpath);
+			
+			if (developer.value)
+				Sys_Printf ("FindFile: %s\n",netpath);
 
 			*file = fopen (netpath, "rb");
 			return COM_filelength (*file);
@@ -1542,7 +1334,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 COM_LoadFile
 
 Filename are reletive to the quake directory.
-Allways appends a 0 byte to the loaded data.
+Always appends a 0 byte to the loaded data.
 ============
 */
 cache_user_t *loadcache;
@@ -1646,7 +1438,6 @@ pack_t *COM_LoadPackFile (char *packfile)
 	pack_t			*pack;
 	FILE			*packhandle;
 	dpackfile_t		info[MAX_FILES_IN_PACK];
-	unsigned short		crc;
 
 	if (COM_FileOpenRead (packfile, &packhandle) == -1)
 		return NULL;
@@ -1663,22 +1454,10 @@ pack_t *COM_LoadPackFile (char *packfile)
 	if (numpackfiles > MAX_FILES_IN_PACK)
 		Sys_Error ("%s has %i files", packfile, numpackfiles);
 
-	if (numpackfiles != PAK0_COUNT)
-		com_modified = true;	// not the original file
-
 	newfiles = Z_Malloc (numpackfiles * sizeof(packfile_t));
 
 	fseek (packhandle, header.dirofs, SEEK_SET);
 	fread (&info, 1, header.dirlen, packhandle);
-
-// crc the directory to check for modifications
-	crc = CRC_Block((byte *)info, header.dirlen);
-
-//	CRC_Init (&crc);
-//	for (i=0 ; i<header.dirlen ; i++)
-//		CRC_ProcessByte (&crc, ((byte *)info)[i]);
-	if (crc != PAK0_CRC)
-		com_modified = true;
 
 // parse the directory
 	for (i=0 ; i<numpackfiles ; i++)
@@ -2254,46 +2033,5 @@ byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 	crc &= 0xff;
 
 	return crc;
-}
-
-// char *date = "Oct 24 1996";
-static char *date = __DATE__ ;
-static char *mon[12] = 
-{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-static char mond[12] = 
-{ 31,    28,    31,    30,    31,    30,    31,    31,    30,    31,    30,    31 };
-
-// returns days since Oct 24 1996
-int build_number( void )
-{
-	int m = 0; 
-	int d = 0;
-	int y = 0;
-	static int b = 0;
-
-	if (b != 0)
-		return b;
-
-	for (m = 0; m < 11; m++)
-	{
-		if (Q_strncasecmp( &date[0], mon[m], 3 ) == 0)
-			break;
-		d += mond[m];
-	}
-
-	d += atoi( &date[4] ) - 1;
-
-	y = atoi( &date[7] ) - 1900;
-
-	b = d + (int)((y - 1) * 365.25);
-
-	if (((y % 4) == 0) && m > 1)
-	{
-		b += 1;
-	}
-
-	b -= 35778; // Dec 16 1998
-
-	return b;
 }
 

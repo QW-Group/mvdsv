@@ -1,3 +1,5 @@
+// Portions Copyright (C) 2000 by Anton Gavrilov (tonik@quake.ru)
+
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
 
@@ -80,7 +82,7 @@ given point.
 byte *SV_FatPVS (vec3_t org)
 {
 	fatbytes = (sv.worldmodel->numleafs+31)>>3;
-	Q_memset (fatpvs, 0, fatbytes);
+	memset (fatpvs, 0, fatbytes);
 	SV_AddToFatPVS (org, sv.worldmodel->nodes);
 	return fatpvs;
 }
@@ -95,8 +97,17 @@ int		numnails;
 
 extern	int	sv_nailmodel, sv_supernailmodel, sv_playermodel;
 
+#ifdef QW_BOTH
+cvar_t	sv_nailhack	= {"sv_nailhack", "1"};
+#else
+cvar_t	sv_nailhack	= {"sv_nailhack", "0"};
+#endif
+
 qboolean SV_AddNailUpdate (edict_t *ent)
 {
+	if (sv_nailhack.value)
+		return false;
+
 	if (ent->v.modelindex != sv_nailmodel
 		&& ent->v.modelindex != sv_supernailmodel)
 		return false;

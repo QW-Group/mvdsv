@@ -190,7 +190,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&gl_texsort);
  
  	if (gl_mtexable)
-		Cvar_SetValue ("gl_texsort", 0.0);
+		Cvar_SetValue (&gl_texsort, 0.0);
 
 	Cvar_RegisterVariable (&gl_cull);
 	Cvar_RegisterVariable (&gl_smoothmodels);
@@ -423,9 +423,9 @@ void R_NewMap (void)
 	{
 		if (!cl.worldmodel->textures[i])
 			continue;
-		if (!Q_strncmp(cl.worldmodel->textures[i]->name,"sky",3) )
+		if (!strncmp(cl.worldmodel->textures[i]->name,"sky",3) )
 			skytexturenum = i;
-		if (!Q_strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )
+		if (!strncmp(cl.worldmodel->textures[i]->name,"window02_1",10) )
 			mirrortexturenum = i;
  		cl.worldmodel->textures[i]->texturechain = NULL;
 	}

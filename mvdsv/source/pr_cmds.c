@@ -465,7 +465,7 @@ Each entity can have eight independant sound sources, like voice,
 weapon, feet, etc.
 
 Channel 0 is an auto-allocate channel, the others override anything
-allready running on that entity/channel pair.
+already running on that entity/channel pair.
 
 An attenuation of 0 will play full volume everywhere in the level.
 Larger attenuations will drop off.
@@ -743,11 +743,19 @@ float cvar (string)
 */
 void PF_cvar_set (void)
 {
-	char	*var, *val;
-	
-	var = G_STRING(OFS_PARM0);
+	char	*var_name, *val;
+	cvar_t	*var;
+
+	var_name = G_STRING(OFS_PARM0);
 	val = G_STRING(OFS_PARM1);
-	
+
+	var = Cvar_FindVar(var_name);
+	if (!var)
+	{
+		Con_Printf ("PF_cvar_set: variable %s not found\n", var_name);
+		return;
+	}
+
 	Cvar_Set (var, val);
 }
 
