@@ -1,0 +1,367 @@
+.:
+total 376
+-rw-rw-rw-   1 root     wheel        30260 Apr 21  1999 Makefile.Linux
+-rw-rw-rw-   1 root     wheel         4752 Nov  3  1998 Makefile.Solaris
+-rw-rw-rw-   1 root     wheel          694 Dec 20  1999 clean.bat
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 client
+-rw-rw-rw-   1 root     wheel         8033 Jun 17  1997 cmds.txt
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 docs
+drwxrwxrwx   3 root     wheel         4096 Sep 28 21:09 dxsdk
+-rwxrwxrwx   1 root     wheel          104 Aug 26  1998 fixskins.sh
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:11 gas2masm
+-rwxrwxrwx   1 root     wheel          374 Aug 14  1998 glqwcl.3dfxgl
+-rwxrwxrwx   1 root     wheel         1052 Aug 15  1998 glqwcl.spec.sh
+-rwxrwxrwx   1 root     wheel           91 Aug  5  1998 makezip
+-rw-rw-rw-   1 root     wheel          143 Dec 16  1998 makezip.bat
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 progs
+-rw-rw-rw-   1 root     wheel         1300 Aug 13  1998 quake.gif
+-rw-rw-rw-   1 root     wheel        90902 Jun 28  1997 quakeworld.bmp
+-rw-rw-rw-   1 root     wheel         1208 Dec 20  1999 qw.dsw
+-rw-rw-rw-   1 root     wheel       111104 Dec 21  1999 qw.opt
+-rw-rw-rw-   1 root     wheel         5265 Aug  4  1998 qw2do.txt
+-rw-rw-rw-   1 root     wheel         9977 Sep  5  1997 qwchangelog.txt
+-rwxrwxrwx   1 root     wheel         2235 Aug 26  1998 qwcl.spec.sh
+-rwxrwxrwx   1 root     wheel          943 Aug 15  1998 qwcl.x11.spec.sh
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:12 qwfwd
+-rw-rw-rw-   1 root     wheel        16008 Aug 26  1998 qwrlnote.txt
+-rwxrwxrwx   1 root     wheel         2689 Aug 26  1998 qwsv.spec.sh
+-rw-rw-rw-   1 root     wheel         1839 Dec 16  1998 release233_notes.txt
+drwxrwxrwx   4 root     wheel         4096 Sep 28 21:09 scitech
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 server
+
+client:
+total 2884
+-rw-rw-rw-   1 root     wheel        10537 Dec 21  1999 adivtab.h
+-rw-rw-rw-   1 root     wheel        21280 Dec 21  1999 anorm_dots.h
+-rw-rw-rw-   1 root     wheel         6314 Dec 21  1999 anorms.h
+-rw-rw-rw-   1 root     wheel         4259 Dec 21  1999 asm_draw.h
+-rw-rw-rw-   1 root     wheel         2542 Dec 21  1999 asm_i386.h
+-rw-rw-rw-   1 root     wheel         2110 Jul  7  1997 block16.h
+-rw-rw-rw-   1 root     wheel         2059 Jul  7  1997 block8.h
+-rw-rw-rw-   1 root     wheel         3770 Dec 21  1999 bothdefs.h
+-rw-rw-rw-   1 root     wheel         5980 Dec 21  1999 bspfile.h
+-rw-rw-rw-   1 root     wheel         1830 Dec 21  1999 buildnum.c
+-rw-rw-rw-   1 root     wheel        17524 Jul  7  1997 cd_audio.c
+-rw-rw-rw-   1 root     wheel         7693 Dec 21  1999 cd_linux.c
+-rw-rw-rw-   1 root     wheel          242 Jul  7  1997 cd_null.c
+-rw-rw-rw-   1 root     wheel        10208 Dec 21  1999 cd_win.c
+-rw-rw-rw-   1 root     wheel          957 Dec 21  1999 cdaudio.h
+-rw-rw-rw-   1 root     wheel        13708 Dec 21  1999 cl_cam.c
+-rw-rw-rw-   1 root     wheel        17325 Dec 21  1999 cl_demo.c
+-rw-rw-rw-   1 root     wheel        25981 Dec 21  1999 cl_ents.c
+-rw-rw-rw-   1 root     wheel        13554 Dec 21  1999 cl_input.c
+-rw-rw-rw-   1 root     wheel        31646 Dec 21  1999 cl_main.c
+-rw-rw-rw-   1 root     wheel        29847 Dec 21  1999 cl_parse.c
+-rw-rw-rw-   1 root     wheel         5592 Dec 21  1999 cl_pred.c
+-rw-rw-rw-   1 root     wheel         9504 Dec 21  1999 cl_tent.c
+-rw-rw-rw-   1 root     wheel        12204 Dec 21  1999 client.h
+-rw-rw-rw-   1 root     wheel        14094 Dec 21  1999 cmd.c
+-rw-rw-rw-   1 root     wheel         3905 Dec 21  1999 cmd.h
+-rw-rw-rw-   1 root     wheel        42869 Dec 21  1999 common.c
+-rw-rw-rw-   1 root     wheel         6815 Dec 21  1999 common.h
+-rw-rw-rw-   1 root     wheel        12910 Dec 21  1999 console.c
+-rw-rw-rw-   1 root     wheel         1805 Dec 21  1999 console.h
+-rw-rw-rw-   1 root     wheel         3641 Dec 21  1999 crc.c
+-rw-rw-rw-   1 root     wheel          965 Dec 21  1999 crc.h
+-rw-rw-rw-   1 root     wheel         4787 Dec 21  1999 cvar.c
+-rw-rw-rw-   1 root     wheel         3421 Dec 21  1999 cvar.h
+-rw-rw-rw-   1 root     wheel         2610 May  9  1998 d_copy.s
+-rw-rw-rw-   1 root     wheel        21750 Sep 18  1996 d_draw.asm
+-rw-rw-rw-   1 root     wheel        24375 Dec 21  1999 d_draw.s
+-rw-rw-rw-   1 root     wheel        22422 Sep 18  1996 d_draw16.asm
+-rw-rw-rw-   1 root     wheel        22728 Dec 21  1999 d_draw16.s
+-rw-rw-rw-   1 root     wheel         7674 Dec 21  1999 d_edge.c
+-rw-rw-rw-   1 root     wheel         1919 Dec 21  1999 d_fill.c
+-rw-rw-rw-   1 root     wheel         6529 Dec 21  1999 d_iface.h
+-rw-rw-rw-   1 root     wheel         2847 Dec 21  1999 d_ifacea.h
+-rw-rw-rw-   1 root     wheel         3302 Dec 21  1999 d_init.c
+-rw-rw-rw-   1 root     wheel         3079 Dec 21  1999 d_local.h
+-rw-rw-rw-   1 root     wheel         2323 Dec 21  1999 d_modech.c
+-rw-rw-rw-   1 root     wheel         3706 Dec 21  1999 d_part.c
+-rw-rw-rw-   1 root     wheel        14030 Sep 18  1996 d_parta.asm
+-rw-rw-rw-   1 root     wheel        10186 Dec 21  1999 d_parta.s
+-rw-rw-rw-   1 root     wheel        27338 Sep 18  1996 d_polysa.asm
+-rw-rw-rw-   1 root     wheel        45606 Dec 21  1999 d_polysa.s
+-rw-rw-rw-   1 root     wheel        24107 Dec 21  1999 d_polyse.c
+-rw-rw-rw-   1 root     wheel        10838 Dec 21  1999 d_scan.c
+-rw-rw-rw-   1 root     wheel         7898 Sep 18  1996 d_scana.asm
+-rw-rw-rw-   1 root     wheel         2087 Dec 21  1999 d_scana.s
+-rw-rw-rw-   1 root     wheel         3206 Dec 21  1999 d_sky.c
+-rw-rw-rw-   1 root     wheel        20687 Sep 18  1996 d_spr8.asm
+-rw-rw-rw-   1 root     wheel        20702 Dec 21  1999 d_spr8.s
+-rw-rw-rw-   1 root     wheel        10122 Dec 21  1999 d_sprite.c
+-rw-rw-rw-   1 root     wheel         7604 Dec 21  1999 d_surf.c
+-rw-rw-rw-   1 root     wheel         1531 Dec 21  1999 d_vars.c
+-rw-rw-rw-   1 root     wheel        10352 Sep 18  1996 d_varsa.asm
+-rw-rw-rw-   1 root     wheel         5292 Dec 21  1999 d_varsa.s
+-rw-rw-rw-   1 root     wheel         1238 Dec 21  1999 d_zpoint.c
+-rw-rw-rw-   1 root     wheel         3817 Mar  9  1997 docs.txt
+-rw-rw-rw-   1 root     wheel        19639 Dec 21  1999 draw.c
+-rw-rw-rw-   1 root     wheel         1671 Dec 21  1999 draw.h
+-rw-rw-rw-   1 root     wheel          551 Jun 14  1997 exitscrn.txt
+-rw-rw-rw-   1 root     wheel        30090 Dec 21  1999 gl_draw.c
+-rw-rw-rw-   1 root     wheel         8033 Dec 21  1999 gl_mesh.c
+-rw-rw-rw-   1 root     wheel        41592 Dec 21  1999 gl_model.c
+-rw-rw-rw-   1 root     wheel         9660 Dec 21  1999 gl_model.h
+-rw-rw-rw-   1 root     wheel         3274 Dec 21  1999 gl_ngraph.c
+-rw-rw-rw-   1 root     wheel         4245 Dec 21  1999 gl_refrag.c
+-rw-rw-rw-   1 root     wheel         7775 Dec 21  1999 gl_rlight.c
+-rw-rw-rw-   1 root     wheel        24298 Dec 21  1999 gl_rmain.c
+-rw-rw-rw-   1 root     wheel        11747 Dec 21  1999 gl_rmisc.c
+-rw-rw-rw-   1 root     wheel        35725 Dec 21  1999 gl_rsurf.c
+-rw-rw-rw-   1 root     wheel        24859 Dec 21  1999 gl_screen.c
+-rw-rw-rw-   1 root     wheel         3544 Dec 21  1999 gl_test.c
+-rw-rw-rw-   1 root     wheel        17785 Dec 21  1999 gl_vidlinux.c
+-rw-rw-rw-   1 root     wheel        18719 Dec 21  1999 gl_vidlinux_svga.c
+-rw-rw-rw-   1 root     wheel        19278 Dec 21  1999 gl_vidlinux_x11.c
+-rw-rw-rw-   1 root     wheel        17118 Dec 21  1999 gl_vidlinuxglx.c
+-rw-rw-rw-   1 root     wheel        46584 Dec 21  1999 gl_vidnt.c
+-rw-rw-rw-   1 root     wheel        22045 Dec 21  1999 gl_warp.c
+-rw-rw-rw-   1 root     wheel         3202 Dec 21  1999 gl_warp_sin.h
+-rw-rw-rw-   1 root     wheel         8190 Dec 21  1999 glquake.h
+-rw-rw-rw-   1 root     wheel         5422 Jul  7  1997 glquake2.h
+-rw-rw-rw-   1 root     wheel          272 Jul  7  1997 in_null.c
+-rw-rw-rw-   1 root     wheel        28407 Dec 21  1999 in_win.c
+-rw-rw-rw-   1 root     wheel         1108 Dec 21  1999 input.h
+-rw-rw-rw-   1 root     wheel        16738 Dec 21  1999 keys.c
+-rw-rw-rw-   1 root     wheel         3266 Dec 21  1999 keys.h
+-rw-rw-rw-   1 root     wheel         1612 May 28  1997 makefile.svgalib
+-rw-rw-rw-   1 root     wheel        12008 Sep 18  1996 math.asm
+-rw-rw-rw-   1 root     wheel        10942 Dec 21  1999 math.s
+-rw-rw-rw-   1 root     wheel        12270 Dec 21  1999 mathlib.c
+-rw-rw-rw-   1 root     wheel         2924 Dec 21  1999 mathlib.h
+-rw-rw-rw-   1 root     wheel        10433 Dec 21  1999 md4.c
+-rw-rw-rw-   1 root     wheel        25599 Dec 21  1999 menu.c
+-rw-rw-rw-   1 root     wheel         1191 Dec 21  1999 menu.h
+-rw-rw-rw-   1 root     wheel        41356 Dec 21  1999 model.c
+-rw-rw-rw-   1 root     wheel         8286 Dec 21  1999 model.h
+-rw-rw-rw-   1 root     wheel         3031 Dec 21  1999 modelgen.h
+-rw-rw-rw-   1 root     wheel         3394 Dec 21  1999 net.h
+-rw-rw-rw-   1 root     wheel        11100 Dec 21  1999 net_chan.c
+-rw-rw-rw-   1 root     wheel         6928 Dec 21  1999 net_udp.c
+-rw-rw-rw-   1 root     wheel         7146 Dec 21  1999 net_wins.c
+-rw-rw-rw-   1 root     wheel         1205 Dec 21  1999 nonintel.c
+-rw-rw-rw-   1 root     wheel          901 Sep 18  1996 notes.txt
+-rw-rw-rw-   1 root     wheel        18839 Dec 21  1999 pmove.c
+-rw-rw-rw-   1 root     wheel         2485 Dec 21  1999 pmove.h
+-rw-rw-rw-   1 root     wheel         9478 Dec 21  1999 pmovetst.c
+-rw-rw-rw-   1 root     wheel         8379 Dec 21  1999 protocol.h
+-rw-rw-rw-   1 root     wheel           57 Sep 18  1996 q.bat
+-rw-rw-rw-   1 root     wheel          766 May 24  1997 qe3.ico
+-rw-rw-rw-   1 root     wheel         6271 Dec 21  1999 quakeasm.h
+-rw-rw-rw-   1 root     wheel         3432 Dec 21  1999 quakedef.h
+-rw-rw-rw-   1 root     wheel        41078 Jul  7  1997 quakeworld.bmp
+-rw-rw-rw-   1 root     wheel        60760 Jul 21  1999 qwcl.dsp
+-rw-rw-rw-   1 root     wheel          531 Jul 10  1997 qwcl.dsw
+-rw-rw-rw-   1 root     wheel       212734 Oct 16  1997 qwcl.mak
+-rw-rw-rw-   1 root     wheel        64000 Oct 17  1997 qwcl.mdp
+-rw-rw-rw-   1 root     wheel        22342 Dec 21  1999 qwcl.plg
+-rw-rw-rw-   1 root     wheel         9822 Oct 20  1997 qwcl2.ico
+-rw-rw-rw-   1 root     wheel         8390 Dec 21  1999 r_aclip.c
+-rw-rw-rw-   1 root     wheel         9447 Sep 18  1996 r_aclipa.asm
+-rw-rw-rw-   1 root     wheel         5545 Dec 21  1999 r_aclipa.s
+-rw-rw-rw-   1 root     wheel        18991 Dec 21  1999 r_alias.c
+-rw-rw-rw-   1 root     wheel         9811 Sep 18  1996 r_aliasa.asm
+-rw-rw-rw-   1 root     wheel         7090 Dec 21  1999 r_aliasa.s
+-rw-rw-rw-   1 root     wheel        14884 Dec 21  1999 r_bsp.c
+-rw-rw-rw-   1 root     wheel        20102 Dec 21  1999 r_draw.c
+-rw-rw-rw-   1 root     wheel        16568 Sep 18  1996 r_drawa.asm
+-rw-rw-rw-   1 root     wheel        18931 Dec 21  1999 r_drawa.s
+-rw-rw-rw-   1 root     wheel        15792 Dec 21  1999 r_edge.c
+-rw-rw-rw-   1 root     wheel        17095 Sep 18  1996 r_edgea.asm
+-rw-rw-rw-   1 root     wheel        17963 Dec 21  1999 r_edgea.s
+-rw-rw-rw-   1 root     wheel         5062 Dec 21  1999 r_efrag.c
+-rw-rw-rw-   1 root     wheel         5339 Dec 21  1999 r_light.c
+-rw-rw-rw-   1 root     wheel         8411 Dec 21  1999 r_local.h
+-rw-rw-rw-   1 root     wheel        25677 Dec 21  1999 r_main.c
+-rw-rw-rw-   1 root     wheel        10938 Dec 21  1999 r_misc.c
+-rw-rw-rw-   1 root     wheel        11911 Dec 21  1999 r_part.c
+-rw-rw-rw-   1 root     wheel         4807 Dec 21  1999 r_shared.h
+-rw-rw-rw-   1 root     wheel         5165 Dec 21  1999 r_sky.c
+-rw-rw-rw-   1 root     wheel        10794 Dec 21  1999 r_sprite.c
+-rw-rw-rw-   1 root     wheel        13783 Dec 21  1999 r_surf.c
+-rw-rw-rw-   1 root     wheel         1224 Dec 21  1999 r_vars.c
+-rw-rw-rw-   1 root     wheel         7598 Sep 18  1996 r_varsa.asm
+-rw-rw-rw-   1 root     wheel         1725 Dec 21  1999 r_varsa.s
+-rw-rw-rw-   1 root     wheel         4676 Dec 21  1999 render.h
+-rw-rw-rw-   1 root     wheel          679 Aug 18  1997 resource.h
+-rw-rw-rw-   1 root     wheel        28383 Dec 21  1999 sbar.c
+-rw-rw-rw-   1 root     wheel         1283 Dec 21  1999 sbar.h
+-rw-rw-rw-   1 root     wheel        23821 Dec 21  1999 screen.c
+-rw-rw-rw-   1 root     wheel         1513 Dec 21  1999 screen.h
+-rw-rw-rw-   1 root     wheel         5842 Dec 21  1999 skin.c
+-rw-rw-rw-   1 root     wheel        21189 Dec 21  1999 snd_dma.c
+-rw-rw-rw-   1 root     wheel         5112 Jul  7  1997 snd_linux.c
+-rw-rw-rw-   1 root     wheel         7038 Dec 21  1999 snd_mem.c
+-rw-rw-rw-   1 root     wheel         8325 Dec 21  1999 snd_mix.c
+-rw-rw-rw-   1 root     wheel         9525 Sep 18  1996 snd_mixa.asm
+-rw-rw-rw-   1 root     wheel         4883 Dec 21  1999 snd_mixa.s
+-rw-rw-rw-   1 root     wheel        16026 Dec 21  1999 snd_win.c
+-rw-rw-rw-   1 root     wheel         4930 Dec 21  1999 sound.h
+-rw-rw-rw-   1 root     wheel         2827 Dec 21  1999 spritegn.h
+-rw-rw-rw-   1 root     wheel        11688 Sep 18  1996 surf16.asm
+-rw-rw-rw-   1 root     wheel         3349 Dec 21  1999 surf16.s
+-rw-rw-rw-   1 root     wheel        17498 Sep 18  1996 surf8.asm
+-rw-rw-rw-   1 root     wheel        13932 Dec 21  1999 surf8.s
+-rw-rw-rw-   1 root     wheel         1959 Dec 21  1999 sys.h
+-rw-rw-rw-   1 root     wheel         1242 May  9  1998 sys_dosa.s
+-rw-rw-rw-   1 root     wheel         8306 Dec 21  1999 sys_linux.c
+-rw-rw-rw-   1 root     wheel         1773 Jul  7  1997 sys_null.c
+-rw-rw-rw-   1 root     wheel        13595 Dec 21  1999 sys_win.c
+-rw-rw-rw-   1 root     wheel         8060 Sep 18  1996 sys_wina.asm
+-rw-rw-rw-   1 root     wheel         2056 Dec 21  1999 sys_wina.s
+-rw-rw-rw-   1 root     wheel         2949 Dec 21  1999 vid.h
+-rw-rw-rw-   1 root     wheel         1245 Jul  7  1997 vid_null.c
+-rw-rw-rw-   1 root     wheel        21539 Dec 21  1999 vid_svgalib.c
+-rw-rw-rw-   1 root     wheel        76747 Dec 21  1999 vid_win.c
+-rw-rw-rw-   1 root     wheel        26402 Dec 21  1999 vid_x.c
+-rw-rw-rw-   1 root     wheel        22950 Dec 21  1999 view.c
+-rw-rw-rw-   1 root     wheel          986 Dec 21  1999 view.h
+-rw-rw-rw-   1 root     wheel         3436 Dec 21  1999 wad.c
+-rw-rw-rw-   1 root     wheel         1756 Dec 21  1999 wad.h
+-rw-rw-rw-   1 root     wheel        69576 Dec 21  1999 winquake.aps
+-rw-rw-rw-   1 root     wheel         3581 Dec 21  1999 winquake.h
+-rw-rw-rw-   1 root     wheel         3417 Aug 18  1997 winquake.rc
+-rw-rw-rw-   1 root     wheel        19114 Dec 21  1999 zone.c
+-rw-rw-rw-   1 root     wheel         3201 Dec 21  1999 zone.h
+
+docs:
+total 64
+-rw-rw-rw-   1 root     wheel         6531 May 11  1998 glqwcl-readme.txt
+-rw-rw-rw-   1 root     wheel        42604 May 11  1998 qwcl-readme.txt
+-rw-rw-rw-   1 root     wheel         7854 Aug 26  1998 readme.qwcl
+-rw-rw-rw-   1 root     wheel          257 Aug 14  1998 readme.qwsv
+
+dxsdk:
+total 4
+drwxrwxrwx   4 root     wheel         4096 Sep 28 21:09 sdk
+
+dxsdk/sdk:
+total 8
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 inc
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 lib
+
+dxsdk/sdk/inc:
+total 308
+-rw-rw-rw-   1 root     wheel        18414 Jan 28  1997 d3d.h
+-rw-rw-rw-   1 root     wheel        13527 Jan 28  1997 d3dcaps.h
+-rw-rw-rw-   1 root     wheel         5488 Jan 28  1997 d3drm.h
+-rw-rw-rw-   1 root     wheel        14133 Jan 28  1997 d3drmdef.h
+-rw-rw-rw-   1 root     wheel        32372 Jan 28  1997 d3drmobj.h
+-rw-rw-rw-   1 root     wheel         1180 Jan 28  1997 d3drmwin.h
+-rw-rw-rw-   1 root     wheel        31957 Jan 28  1997 d3dtypes.h
+-rw-rw-rw-   1 root     wheel       110021 Jan 28  1997 ddraw.h
+-rw-rw-rw-   1 root     wheel        31883 Aug 28  1996 dinput.h
+-rw-rw-rw-   1 root     wheel        10913 Jan 28  1997 dplay.h
+-rw-rw-rw-   1 root     wheel         2860 Jan 28  1997 dsetup.h
+-rw-rw-rw-   1 root     wheel        13417 Jan 28  1997 dsound.h
+-rw-rw-rw-   1 root     wheel         1070 Jan 28  1997 fastfile.h
+
+dxsdk/sdk/lib:
+total 80
+-rw-rw-rw-   1 root     wheel        11886 Aug 29  1996 dinput.lib
+-rw-rw-rw-   1 root     wheel        64852 Aug 28  1996 dxguid.lib
+
+gas2masm:
+total 76
+-rw-rw-rw-   1 root     wheel        20090 Dec 21  1999 gas2masm.c
+-rw-rw-rw-   1 root     wheel         3738 Jul 21  1999 gas2masm.dsp
+-rw-rw-rw-   1 root     wheel         6205 Feb  6  1997 gas2masm.mak
+-rw-rw-rw-   1 root     wheel        37888 Feb  6  1997 gas2masm.mdp
+-rw-rw-rw-   1 root     wheel         1023 Dec 21  1999 gas2masm.plg
+
+progs:
+total 492
+-rw-rw-rw-   1 root     wheel         2910 Dec  5  1996 buttons.qc
+-rw-rw-rw-   1 root     wheel        34077 Aug 12  1997 client.qc
+-rw-rw-rw-   1 root     wheel         7678 Aug 26  1998 combat.qc
+-rw-rw-rw-   1 root     wheel        25010 Jul 30  1997 defs.qc
+-rw-rw-rw-   1 root     wheel        18318 Aug 12  1997 doors.qc
+-rw-rw-rw-   1 root     wheel         6076 Aug 26  1998 files.dat
+-rw-rw-rw-   1 root     wheel        36842 Aug 12  1997 items.qc
+-rw-rw-rw-   1 root     wheel        17280 Aug 12  1997 misc.qc
+-rw-rw-rw-   1 root     wheel         9788 Dec  5  1996 models.qc
+-rw-rw-rw-   1 root     wheel         8167 Aug 12  1997 plats.qc
+-rw-rw-rw-   1 root     wheel        21418 Jul 27  1997 player.qc
+-rw-rw-rw-   1 root     wheel         2541 Aug 26  1998 progdefs.h
+-rw-rw-rw-   1 root     wheel          180 Aug 11  1997 progs.src
+-rw-rw-rw-   1 root     wheel       197684 Aug 26  1998 qwprogs.dat
+-rw-rw-rw-   1 root     wheel         2517 Aug 12  1997 server.qc
+-rw-rw-rw-   1 root     wheel         2048 Aug 11  1997 spectate.qc
+-rw-rw-rw-   1 root     wheel          486 Dec  5  1996 sprites.qc
+-rw-rw-rw-   1 root     wheel         5542 Dec 13  1996 subs.qc
+-rw-rw-rw-   1 root     wheel        15060 Aug 12  1997 triggers.qc
+-rw-rw-rw-   1 root     wheel        29264 Aug 12  1997 weapons.qc
+-rw-rw-rw-   1 root     wheel        12183 Jul 31  1997 world.qc
+
+qwfwd:
+total 28
+-rw-rw-rw-   1 root     wheel         6469 Nov 19  1996 misc.c
+-rw-rw-rw-   1 root     wheel         6491 Dec 21  1999 qwfwd.c
+-rw-rw-rw-   1 root     wheel         3463 Dec 20  1999 qwfwd.dsp
+-rw-rw-rw-   1 root     wheel          533 May  9  1998 qwfwd.dsw
+-rw-rw-rw-   1 root     wheel         1006 Dec 21  1999 qwfwd.plg
+
+scitech:
+total 8
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 include
+drwxrwxrwx   3 root     wheel         4096 Sep 28 21:09 lib
+
+scitech/include:
+total 100
+-rw-rw-rw-   1 root     wheel         7390 Mar  4  1997 debug.h
+-rw-rw-rw-   1 root     wheel         2482 Jan 30  1997 mgldos.h
+-rw-rw-rw-   1 root     wheel         5481 Mar 14  1997 mglwin.h
+-rw-rw-rw-   1 root     wheel        76932 Mar 11  1997 mgraph.h
+
+scitech/lib:
+total 4
+drwxrwxrwx   3 root     wheel         4096 Sep 28 21:09 win32
+
+scitech/lib/win32:
+total 4
+drwxrwxrwx   2 root     wheel         4096 Sep 28 21:09 vc
+
+scitech/lib/win32/vc:
+total 464
+-rw-rw-rw-   1 root     wheel       468854 Mar 18  1997 mgllt.lib
+
+server:
+total 520
+-rw-rw-rw-   1 root     wheel         2542 Dec 21  1999 asm_i386.h
+-rw-rw-rw-   1 root     wheel         1080 Apr 30  1997 makefile
+-rw-rw-rw-   1 root     wheel         8331 Jul 12  1996 math.s
+-rw-rw-rw-   1 root     wheel        24220 Dec 21  1999 model.c
+-rw-rw-rw-   1 root     wheel          464 Jul 20  1996 move.txt
+-rw-rw-rw-   1 root     wheel         2169 Jul 28  1996 newnet.txt
+-rw-rw-rw-   1 root     wheel          279 Feb  2  1998 notes.txt
+-rw-rw-rw-   1 root     wheel        32659 Dec 21  1999 pr_cmds.c
+-rw-rw-rw-   1 root     wheel         3086 Dec 21  1999 pr_comp.h
+-rw-rw-rw-   1 root     wheel        21496 Dec 21  1999 pr_edict.c
+-rw-rw-rw-   1 root     wheel        12957 Dec 21  1999 pr_exec.c
+-rw-rw-rw-   1 root     wheel         3101 Feb 26  1997 profile.txt
+-rw-rw-rw-   1 root     wheel         3150 Dec 21  1999 progdefs.h
+-rw-rw-rw-   1 root     wheel         4079 Dec 21  1999 progs.h
+-rw-rw-rw-   1 root     wheel          934 Dec 21  1999 quakeasm.h
+-rw-rw-rw-   1 root     wheel         8185 Jul 21  1999 qwsv.dsp
+-rw-rw-rw-   1 root     wheel          531 Jul 11  1997 qwsv.dsw
+-rw-rw-rw-   1 root     wheel        50800 Oct 13  1997 qwsv.mak
+-rw-rw-rw-   1 root     wheel        39936 Oct 13  1997 qwsv.mdp
+-rw-rw-rw-   1 root     wheel         3010 Dec 21  1999 qwsv.plg
+-rw-rw-rw-   1 root     wheel         2404 Dec 21  1999 qwsvdef.h
+-rw-rw-rw-   1 root     wheel        12671 Dec 21  1999 server.h
+-rw-rw-rw-   1 root     wheel        17621 Dec 21  1999 sv_ccmds.c
+-rw-rw-rw-   1 root     wheel        12128 Dec 21  1999 sv_ents.c
+-rw-rw-rw-   1 root     wheel         9812 Dec 21  1999 sv_init.c
+-rw-rw-rw-   1 root     wheel        37032 Dec 21  1999 sv_main.c
+-rw-rw-rw-   1 root     wheel         9334 Dec 21  1999 sv_move.c
+-rw-rw-rw-   1 root     wheel         4565 Dec 21  1999 sv_nchan.c
+-rw-rw-rw-   1 root     wheel        21300 Dec 21  1999 sv_phys.c
+-rw-rw-rw-   1 root     wheel        18694 Dec 21  1999 sv_send.c
+-rw-rw-rw-   1 root     wheel        40796 Dec 21  1999 sv_user.c
+-rw-rw-rw-   1 root     wheel         1101 Dec 21  1999 sys.h
+-rw-rw-rw-   1 root     wheel         5306 Dec 21  1999 sys_unix.c
+-rw-rw-rw-   1 root     wheel         4470 Dec 21  1999 sys_win.c
+-rw-rw-rw-   1 root     wheel        20564 Dec 21  1999 world.c
+-rw-rw-rw-   1 root     wheel         2811 Dec 21  1999 world.h
+-rw-rw-rw-   1 root     wheel         2157 Jul 12  1996 worlda.s
