@@ -139,8 +139,6 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 int snprintf(char *str, size_t n, char const *fmt, ...);
 int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 #endif
-#define Q_strcasecmp(s1, s2)	strcasecmp((s1), (s2))
-#define Q_strncasecmp(s1, s2, n)	strncasecmp((s1), (s2), (n))
 
 #if defined(__linux__) || defined(_WIN32)
 size_t strlcpy (char *dst, char *src, size_t siz);

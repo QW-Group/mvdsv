@@ -212,9 +212,9 @@ qboolean CheckForCommand (void)
 	command[i] = 0;
 
 	cmd = Cmd_CompleteCommand (command);
-	if (!cmd || Q_strcasecmp (cmd, command))
+	if (!cmd || strcasecmp (cmd, command))
 		cmd = Cvar_CompleteVariable (command);
-	if (!cmd || Q_strcasecmp (cmd, command) )
+	if (!cmd || strcasecmp (cmd, command) )
 		return false;		// just a chat message
 	return true;
 }
@@ -599,7 +599,7 @@ int Key_StringToKeynum (char *str)
 
 	for (kn=keynames ; kn->name ; kn++)
 	{
-		if (!Q_strcasecmp(str,kn->name))
+		if (!strcasecmp(str,kn->name))
 			return kn->keynum;
 	}
 	return -1;

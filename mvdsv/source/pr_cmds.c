@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
+#include "log.h"
 #include <time.h>
 
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
@@ -2199,19 +2200,18 @@ void PF_logfrag (void)
 	t = time (NULL);
 	tblock = localtime (&t);
 
-  //bliP: date check ->
-  if (!tblock)
-    s = va("%s\n", "#bad date#");
-  else {
-  	if (Cvar_VariableValue ("frag_log_type")) // need for old-style frag log file
-	  	s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
-		  		tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
-			  	tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
-	  else
-  		s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
-  }
-  //<-
-	// <-
+//bliP: date check ->
+	if (!tblock)
+		s = va("%s\n", "#bad date#");
+	else {
+		if (frag_log_type.value) // need for old-style frag log file
+			s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
+				tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
+				tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+		else
+			s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
+	}
+// <-
 	SZ_Print (&svs.log[svs.logsequence&1], s);
 	SV_Write_Log(FRAG_LOG, 1, s);
 }
@@ -2321,7 +2321,7 @@ void PF_listmaps (void)
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)	{
 		Con_Printf ("tried to listmap to a non-client\n");
-    G_FLOAT(OFS_RETURN) = 0;
+		G_FLOAT(OFS_RETURN) = 0;
 		return;
 	}
 
@@ -2355,50 +2355,64 @@ void PF_listmaps (void)
   list = dir.files + start;
   line[0] = '\0';
   j = 1;
-  for (i = 0, id = start + 1; list->name[0] && i < range && id < dir.numfiles + 1; id++) {
-    list->name[strlen(list->name) - 4] = 0; //strip .bsp
-    //if ((s = strchr(list->name, '.'))) //strip .bsp
-    //  *s = '\0';
-
-    if (style == 2) {
-      snprintf(tmp, sizeof(tmp), "%d", id);
-      num[0] = '\0';
-      for (j = strlen(tmp); j < pad; j++) //padding to align
-        strlcat(num, " ", sizeof(num));
-      Q_redtext(tmp);
-      SV_ClientPrintf(client, level, "%s%s%c %s\n", num, tmp, 133, list->name);
-    }
-    else if (style == 1) {
-      if (i % ti == 0) { //print header     
-        snprintf(tmp, sizeof(tmp), "%d-%d", id, id + ti - 1);
-        num[0] = '\0';
-        for (j = strlen(tmp); j < ((pad * 2) + 1); j++) //padding to align
-          strlcat(num, " ", sizeof(num));
-        SV_ClientPrintf(client, level, "%s%s %c ", num, tmp, 133);
-        j = 1;
-      }
-      i++;
-
-      //print id and name
-      snprintf(tmp, sizeof(tmp), "%d:%s ", j++, list->name);
-      if (i % 2 != 0) //red every second
-        Q_redtext(tmp);
-      strlcat(line, tmp, sizeof(line));
-
-      if (i % 10 == 0) { //print entire line
-        SV_ClientPrintf(client, level, "%s\n", line);
-        line[0] = '\0';
-      }
-    }
-    else {
-      snprintf(tmp, sizeof(tmp), "%d", id);
-      Q_redtext(tmp);
-      SV_ClientPrintf(client, level, "%s%c%s%s", tmp, 133, list->name, (i == range) ? "\n" : " ");
-      i++;
-    }
-    list++;
-  }
-  if ((style == 1) && line[0]) //still things to print
+	for (i = 0, id = start + 1; list->name[0] && i < range && id < dir.numfiles + 1; id++) {
+		list->name[strlen(list->name) - 4] = 0; //strip .bsp
+		//if ((s = strchr(list->name, '.'))) //strip .bsp
+		//	*s = '\0';
+		switch (style)
+		{
+			case 1:
+				if (i % ti == 0) { //print header     
+					snprintf(tmp, sizeof(tmp), "%d-%d", id, id + ti - 1);
+					num[0] = '\0';
+					for (j = strlen(tmp); j < ((pad * 2) + 1); j++) //padding to align
+						strlcat(num, " ", sizeof(num));
+					SV_ClientPrintf(client, level, "%s%s %c ", num, tmp, 133);
+					j = 1;
+				}
+				i++;
+				//print id and name
+				snprintf(tmp, sizeof(tmp), "%d:%s ", j++, list->name);
+				if (i % 2 != 0) //red every second
+					Q_redtext(tmp);
+				strlcat(line, tmp, sizeof(line));
+				if (i % 10 == 0) { //print entire line
+					SV_ClientPrintf(client, level, "%s\n", line);
+					line[0] = '\0';
+				}
+				break;
+			case 2:
+				snprintf(tmp, sizeof(tmp), "%d", id);
+				num[0] = '\0';
+				for (j = strlen(tmp); j < pad; j++) //padding to align
+					strlcat(num, " ", sizeof(num));
+				Q_redtext(tmp);
+				SV_ClientPrintf(client, level, "%s%s%c %s\n", num, tmp, 133, list->name);
+				break;
+			case 3:
+				list->name[13] = 0;
+				snprintf(tmp, sizeof(tmp), "%03d", id);
+				Q_redtext(tmp);
+				snprintf(line, sizeof(line), "%s\x85%-13s", tmp, list->name);
+				id++;
+				list++;
+				if (!list->name[0])
+					continue;
+				list->name[13] = 0;
+				list->name[strlen(list->name) - 4] = 0;
+				snprintf(tmp, sizeof(tmp), "%03d", id);
+				Q_redtext(tmp);
+				SV_ClientPrintf(client, level, "%s %s\x85%-13s\n", line, tmp, list->name);
+				break;
+			default:
+				snprintf(tmp, sizeof(tmp), "%d", id);
+				Q_redtext(tmp);
+				SV_ClientPrintf(client, level, "%s%c%s%s", tmp, 133, list->name, (i == range) ? "\n" : " ");
+				i++;
+		}
+		list++;
+	}
+  if (((style == 1) || (style == 3)) && line[0]) //still things to print
     SV_ClientPrintf(client, level, "%s\n", line);
   else if (style == 0)
     SV_ClientPrintf(client, level, "\n");
@@ -2409,7 +2423,9 @@ void PF_listmaps (void)
   } 
 
   if (foot) { //footer
-    SV_ClientPrintf (client, level,	"Total: %d maps %.0fKB (%.2fMB)\n", dir.numfiles, (float)dir.size/1024, (float)dir.size/1024/1024);
+    strlcpy(tmp, "Total:", sizeof(tmp));
+    Q_redtext(tmp);
+    SV_ClientPrintf (client, level,	"%s %d maps %.0fKB (%.2fMB)\n", tmp, dir.numfiles, (float)dir.size/1024, (float)dir.size/1024/1024);
   }
 
   G_FLOAT(OFS_RETURN) = 0;
@@ -2560,7 +2576,7 @@ void PF_Fixme (void)
 
 builtin_t pr_builtin[] =
 {
-	PF_Fixme,
+PF_Fixme,		//#0
 PF_makevectors,	// void(entity e)	makevectors 		= #1;
 PF_setorigin,	// void(entity e, vector o) setorigin	= #2;
 PF_setmodel,	// void(entity e, string m) setmodel	= #3;
@@ -2590,7 +2606,7 @@ PF_ftos,	// void(string s) ftos				= #26;
 PF_vtos,	// void(string s) vtos				= #27;
 PF_coredump,
 PF_traceon,
-PF_traceoff,
+PF_traceoff,		//#30
 PF_eprint,	// void(entity e) debug print an entire entity
 PF_walkmove, // float(float yaw, float dist) walkmove
 PF_Fixme, // float(float yaw, float dist) walkmove
@@ -2600,7 +2616,7 @@ PF_rint,
 PF_floor,
 PF_ceil,
 PF_Fixme,
-PF_checkbottom, //40
+PF_checkbottom,		//#40
 PF_pointcontents,
 PF_Fixme,
 PF_fabs,
@@ -2610,7 +2626,7 @@ PF_localcmd,
 PF_nextent,
 PF_Fixme,
 PF_changeyaw,
-PF_Fixme, //50
+PF_Fixme,		//#50
 PF_vectoangles,
 
 PF_WriteByte,
@@ -2620,7 +2636,7 @@ PF_WriteLong,
 PF_WriteCoord,
 PF_WriteAngle,
 PF_WriteString,
-PF_WriteEntity, //59
+PF_WriteEntity,		//#59
 
 //bliP: added pr as requested ->
 PF_sin, //float(float f) sin = #60;
@@ -2637,7 +2653,7 @@ SV_MoveToGoal,
 PF_precache_file,
 PF_makestatic,
 
-PF_changelevel,
+PF_changelevel,		//#70
 PF_Fixme,
 
 PF_cvar_set,
@@ -2653,17 +2669,17 @@ PF_setspawnparms,
 
 PF_logfrag,
 
-PF_infokey,
+PF_infokey,		//#80
 PF_stof,
 PF_multicast,
-PF_executecmd,	// #83
+PF_executecmd,		//#83
 PF_tokanize,
 PF_argc,
 PF_argv,
 PF_teamfield,
 PF_substr,
 PF_strcat,
-PF_strlen,
+PF_strlen,		//#90
 PF_str2byte,
 PF_str2short,
 PF_newstr,
@@ -2673,14 +2689,14 @@ PF_readcmd,
 PF_strcpy,
 PF_strstr,
 PF_strncpy,
-PF_log,
+PF_log,			//#100
 PF_redirectcmd,
 PF_calltimeofday,
-PF_forcedemoframe,	//103
+PF_forcedemoframe,	//#103
 //bliP: find map ->
-PF_findmap, //104
-PF_listmaps, //105
-PF_findmapname, //106
+PF_findmap,		//#104
+PF_listmaps,		//#105
+PF_findmapname,		//#106
 //<-
 };
 

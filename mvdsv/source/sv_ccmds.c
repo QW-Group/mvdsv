@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
+#include "log.h"
 #include <time.h>
 #ifdef _WIN32
 #include <Winsock2.h>
@@ -449,7 +450,7 @@ void SV_Map (qboolean now)
 		SV_SendMessagesToAll ();
 
 		// -> scream
-		if (Cvar_VariableValue("frag_log_type"))
+		if (frag_log_type.value)
 		{
 //bliP: date check ->
 			SV_TimeOfDay(&date);

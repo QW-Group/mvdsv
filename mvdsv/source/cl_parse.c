@@ -670,7 +670,7 @@ void CL_ParseServerData (void)
 	// game directory
 	str = MSG_ReadString ();
 
-	cl.teamfortress = !Q_strcasecmp(str, "fortress");
+	cl.teamfortress = !strcasecmp(str, "fortress");
 	if (cl.teamfortress) {
 		extern cvar_t	v_iyaw_cycle, v_iroll_cycle, v_ipitch_cycle,
 			v_iyaw_level, v_iroll_level, v_ipitch_level, v_idlescale;

@@ -1159,18 +1159,19 @@ varargs versions of all text functions.
 FIXME: make this buffer size safe someday
 ============
 */
+#define MAX_STRINGS 4
 char	*va(char *format, ...)
 {
 	va_list		argptr;
-	static char		string[4][1024];
+	static char		string[MAX_STRINGS][1024];
 	static int		index = 0;
 	
-	index = (index + 1)&3;
+	index %= MAX_STRINGS;
 	va_start (argptr, format);
 	vsnprintf (string[index], sizeof(string[0]), format, argptr);
 	va_end (argptr);
 
-	return string[index];
+	return string[index++];
 }
 
 
