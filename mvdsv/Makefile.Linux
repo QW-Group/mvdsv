@@ -210,7 +210,8 @@ $(BUILDDIR)/net_udp.o :   $(SERVER_DIR)/net_udp.c
 
 $(BUILDDIR)/version.o :   $(SERVER_DIR)/version.c
 	$(DO_SERVER_CC)
-$(BUILDDIR)/sha1.o :      $(SERVER_DIR)/sha1.o
+
+$(BUILDDIR)/sha1.o :      $(SERVER_DIR)/sha1.c
 	$(DO_SERVER_CC)
 
 $(BUILDDIR)/worlda.o :   $(SERVER_DIR)/worlda.s

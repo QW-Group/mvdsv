@@ -1095,7 +1095,8 @@ int main (int argc, char **argv)
 	CtrlH_Init();
 	World_Init();
 
-	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
+//	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
+	Sys_Printf( VERSION " (c) 2001-2004 Bartlomiej Rychtarski\nhttp:// ???   mailto:highlander@gracz.net\n\n");
 
 	Tools_Init();
 

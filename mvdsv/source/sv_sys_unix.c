@@ -572,6 +572,7 @@ int main (int argc, char *argv[])
 #ifndef NEWWAY
 	struct timeval timeout;
 	fd_set	fdset;
+	int	timeout_tv_usec;
 #endif
 	_argv = argv;
 	telnet_connected = 0;
@@ -690,8 +691,7 @@ int main (int argc, char *argv[])
 //
 	oldtime = Sys_DoubleTime () - 0.1;
 #ifndef NEWWAY 
-	timeout.tv_sec = 0;
-	timeout.tv_usec = max(sv_mintic.value, sv_maxtic.value / 2) * 1000000.0;
+	timeout_tv_usec = max(sv_mintic.value, sv_maxtic.value / 2) * 1000000.0;
 	while (1)
 	{
 	// select on the net socket and stdin
@@ -756,8 +756,8 @@ int main (int argc, char *argv[])
 			}
 		}
 // Added by VVD }
-//		timeout.tv_sec = 0;
-//		timeout.tv_usec = 10000;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = timeout_tv_usec;
 
 		if (do_stdin)
 			FD_SET(0, &fdset);

@@ -314,6 +314,7 @@ void SV_Multicast (vec3_t origin, int to)
 	int			leafnum;
 	int			j;
 	qboolean	reliable;
+	vec3_t		org;
 
 	leaf = Mod_PointInLeaf (origin, sv.worldmodel);
 	if (!leaf)
@@ -354,14 +355,16 @@ void SV_Multicast (vec3_t origin, int to)
 		if (client->state != cs_spawned)
 			continue;
 
+		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, org);
+
 		if (to == MULTICAST_PHS_R || to == MULTICAST_PHS) {
 			vec3_t delta;
-			VectorSubtract(origin, client->edict->v.origin, delta);
+			VectorSubtract(origin, org, delta);
 			if (Length(delta) <= 1024)
 				goto inrange;
 		}
 
-		leaf = Mod_PointInLeaf (client->edict->v.origin, sv.worldmodel);
+		leaf = Mod_PointInLeaf (org, sv.worldmodel);
 		if (leaf)
 		{
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
