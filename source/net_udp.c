@@ -52,6 +52,7 @@ int			net_send_socket;	// blocking, for sends
 
 int		net_clientsocket;	// @@@ dummy
 int		net_serversocket;	// @@@ dummy
+int		net_telnetsocket;
 
 #define	MAX_UDP_PACKET	8192
 byte		net_message_buffer[MAX_UDP_PACKET];
@@ -95,7 +96,7 @@ char	*NET_AdrToString (netadr_t a)
 {
 	static	char	s[64];
 	
-	sprintf (s, "%i.%i.%i.%i:%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3], ntohs(a.port));
+	snprintf (s, sizeof(s), "%i.%i.%i.%i:%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3], ntohs(a.port));
 
 	return s;
 }
@@ -104,7 +105,7 @@ char	*NET_BaseAdrToString (netadr_t a)
 {
 	static	char	s[64];
 	
-	sprintf (s, "%i.%i.%i.%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3]);
+	snprintf (s, sizeof(s), "%i.%i.%i.%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3]);
 
 	return s;
 }
@@ -132,7 +133,7 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 	
 	sadr.sin_port = 0;
 
-	strcpy (copy, s);
+	strlcpy (copy, s, sizeof(copy));
 	// strip off a trailing :port if present
 	for (colon = copy ; *colon ; colon++)
 		if (*colon == ':')
@@ -217,7 +218,9 @@ int UDP_OpenSocket (int port)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO:", strerror(errno));
 	address.sin_family = AF_INET;
 //ZOID -- check for interface binding option
-	if ((i = COM_CheckParm("-ip")) != 0 && i < com_argc) {
+	i = COM_CheckParm("-ip");
+	if (i && i + 1 < com_argc)
+	{
 		address.sin_addr.s_addr = inet_addr(com_argv[i+1]);
 		Con_Printf("Binding to IP Interface Address of %s\n",
 				inet_ntoa(address.sin_addr));
@@ -232,6 +235,44 @@ int UDP_OpenSocket (int port)
 
 	return newsocket;
 }
+
+int TCP_OpenSocket (int port)
+{
+	int newsocket;
+	struct sockaddr_in address;
+	qboolean _true = true;
+	int i, sockaddr_len = sizeof(struct sockaddr_in);
+
+	if ((newsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+		Sys_Error ("TCP_OpenSocket: socket:", strerror(errno));
+#ifndef __linux__
+	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEPORT, &_true, sizeof(_true)))
+		Sys_Error ("TCP_OpenSocket: setsockopt: %s", strerror(errno));
+	address.sin_len = sockaddr_len;
+#endif
+	if (ioctl (newsocket, FIONBIO, (char *)&_true) == -1)
+		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO:", strerror(errno));
+
+	address.sin_family = AF_INET;
+//ZOID -- check for interface binding option
+	i = COM_CheckParm("-ipt");
+	if (i && i + 1 < com_argc)
+	{
+		address.sin_addr.s_addr = inet_addr(com_argv[i + 1]);
+		Con_Printf("Binding telnet service to IP Interface Address of %s\n",
+				inet_ntoa(address.sin_addr));
+	} else
+		address.sin_addr.s_addr = INADDR_ANY;
+
+	address.sin_port = htons((short)port);
+	if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
+		Sys_Error ("TCP_OpenSocket: bind: %s", strerror(errno));
+	if (listen (newsocket, 1))
+		Sys_Error ("TCP_OpenSocket: listen: %s", strerror(errno));
+
+	return newsocket;
+}
+
 
 void NET_GetLocalAddress (void)
 {
@@ -257,7 +298,7 @@ void NET_GetLocalAddress (void)
 NET_Init
 ====================
 */
-int NET_Init (int port, int dummy)
+int NET_Init (int port, int dummy, int telnetport)
 {
 	if (dummy)
 		port = dummy;
@@ -265,22 +306,29 @@ int NET_Init (int port, int dummy)
 	//
 	// open the single socket to be used for all communications
 	//
-	net_socket = UDP_OpenSocket (port);
+	if (port)
+	{
+		net_socket = UDP_OpenSocket (port);
+		//
+		// init the message buffer
+		//
+		net_message.maxsize = sizeof(net_message_buffer);
+		net_message.data = net_message_buffer;
 
-	//
-	// init the message buffer
-	//
-	net_message.maxsize = sizeof(net_message_buffer);
-	net_message.data = net_message_buffer;
+		//
+		// determine my name & address
+		//
+		NET_GetLocalAddress ();
 
-	//
-	// determine my name & address
-	//
-	NET_GetLocalAddress ();
-
-	Con_Printf("UDP Initialized\n");
-
-	return port;
+		Con_Printf("UDP Initialized\n");
+		return port;
+	}
+	else
+	{
+		net_telnetsocket = TCP_OpenSocket (telnetport);
+		Con_Printf("TCP Initialized\n");
+		return telnetport;
+	}
 }
 
 /*
@@ -290,6 +338,14 @@ NET_Shutdown
 */
 void	NET_Shutdown (void)
 {
+	extern int	iosock;
+	extern int	telnetport;
 	close (net_socket);
+	if (telnetport)
+	{
+		if (iosock)
+			close (iosock);
+		close (net_telnetsocket);
+	}
 }
 

@@ -266,7 +266,7 @@ void PR_RunError (char *error, ...)
 	char		string[1024];
 
 	va_start (argptr,error);
-	vsprintf (string,error,argptr);
+	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 
 
@@ -723,6 +723,6 @@ int PR_SetTmpString(char *s)
 
 	index = (index + 1)&7;
 
-	strcpy(tmp[index], s);
+	strlcpy(tmp[index], s, sizeof(tmp[index]));
 	return PR_SetString(tmp[index]);
 }

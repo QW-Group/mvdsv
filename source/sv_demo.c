@@ -648,10 +648,10 @@ void SV_Stop (int reason)
 		if (demo.disk)
 			fclose(demo.file);
 
-		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, demo.name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, demo.name);
 		Sys_remove(path);
 
-		strcpy(path + strlen(path) - 3, "txt");
+		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 		Sys_remove(path);
 
 		demo.file = NULL;
@@ -700,8 +700,8 @@ void SV_Stop (int reason)
 		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
 			*p = 0; // strip parameters
 
-		strcpy(path, demo.name);
-		strcpy(path + strlen(demo.name) - 3, "txt");
+		strlcpy(path, demo.name, MAX_OSPATH);
+		strlcpy(path + strlen(demo.name) - 3, "txt", MAX_OSPATH - strlen(demo.name) + 3);
 
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
 		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" \"%s\" %s", sv_onrecordfinish.string, demo.path, serverdemo.string, path, p != NULL ? p+1 : ""));
@@ -824,18 +824,18 @@ static char *SV_PrintTeams(void)
 	
 	if (numcl == 2) // duel
 	{
-		sprintf(buf, "team1 %s\nteam2 %s\n", clients[0]->name, clients[1]->name);
+		snprintf(buf, sizeof(buf), "team1 %s\nteam2 %s\n", clients[0]->name, clients[1]->name);
 	} else if (!teamplay.value) // ffa
 	{ 
-		sprintf(buf, "players:\n");
+		snprintf(buf, sizeof(buf), "players:\n");
 		for (i = 0; i < numcl; i++)
-			sprintf(buf+strlen(buf), "  %s\n", clients[i]->name);
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
 	} else { // teamplay
 		for (j = 0; j < numt; j++) {
-			sprintf(buf + strlen(buf), "team %s:\n", teams[j]);
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "team %s:\n", teams[j]);
 			for (i = 0; i < numcl; i++)
 				if (!strcmp(clients[i]->team, teams[j]))
-					sprintf(buf + strlen(buf), "  %s\n", clients[i]->name);
+					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
 		}
 	}
 
@@ -845,7 +845,7 @@ static char *SV_PrintTeams(void)
 	return va("%s",buf);
 }
 
-void Sys_TimeOfDay(date_t *date);
+void SV_TimeOfDay(date_t *date);
 static void SV_Record (char *name)
 {
 	sizebuf_t	buf;
@@ -878,17 +878,17 @@ static void SV_Record (char *name)
 
 	s = name + strlen(name);
 	while (*s != '/') s--;
-	Q_strncpyz(demo.name, s+1, sizeof(demo.name));
-	Q_strncpyz(demo.path, sv_demoDir.string, sizeof(demo.path));
+	strlcpy(demo.name, s+1, sizeof(demo.name));
+	strlcpy(demo.path, sv_demoDir.string, sizeof(demo.path));
 	
 	if (!*demo.path)
-		strcpy(demo.path, ".");
+		strlcpy(demo.path, ".", MAX_OSPATH);
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", demo.disk ? "disk" : "memory", demo.name);
 	Cvar_SetROM(&serverdemo, demo.name);
 
-	strcpy(path, name);
-	strcpy(path + strlen(path)-3, "txt");
+	strlcpy(path, name, MAX_OSPATH);
+	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 
 	if (sv_demotxt.value) {
 		FILE *f;
@@ -899,9 +899,9 @@ static void SV_Record (char *name)
 			char buf[2000];
 			date_t date;
 
-			Sys_TimeOfDay(&date);
+			SV_TimeOfDay(&date);
 
-			sprintf(buf, "date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n%s",date.str, sv.name, (int)teamplay.value, (int)deathmatch.value, (int)timelimit.value, SV_PrintTeams());
+			snprintf(buf, sizeof(buf), "date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n%s",date.str, sv.name, (int)teamplay.value, (int)deathmatch.value, (int)timelimit.value, SV_PrintTeams());
 			fwrite(buf, strlen(buf),1,f);
 			fflush(f);
 			fclose(f);
@@ -1057,7 +1057,7 @@ static void SV_Record (char *name)
 		MSG_WriteByte (&buf, i);
 		MSG_WriteFloat (&buf, realtime - player->connection_started);
 
-		strcpy (info, player->userinfoshort);
+		strlcpy (info, player->userinfoshort, MAX_INFO_STRING);
 		Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);
@@ -1227,10 +1227,10 @@ void SV_Record_f (void)
 		return;
 	}
 
-	Q_strncpyz(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))), sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
-	strcat(newname, sv_demoSuffix.string);
+	strlcpy(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))), sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
+	strlcat(newname, sv_demoSuffix.string, MAX_DEMO_NAME);
   
-	sprintf (name, "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
+	snprintf (name, MAX_OSPATH+MAX_DEMO_NAME, "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
 
 	if (sv.demorecording)
 		SV_Stop_f();
@@ -1334,8 +1334,8 @@ char *Dem_PlayerNameTeam(char *t)
 		if (strcmp(t, client->team)==0) 
 		{
 			if (sep >= 1)
-				sprintf (n, "%s_", n);
-			sprintf (n ,"%s%s", n, client->name);
+				snprintf (n, sizeof(n), "%s_", n);
+			snprintf (n, sizeof(n),"%s%s", n, client->name);
 			sep++;
 		}
 	}
@@ -1388,7 +1388,7 @@ void SV_EasyRecord_f (void)
 
 	// -> scream
 	/*if (c == 2)
-		sprintf (name, "%s", Cmd_Argv(1));
+		snprintf (name, sizeof(name), "%s", Cmd_Argv(1));
 		
 	else { 
 		// guess game type and write demo name
@@ -1396,20 +1396,20 @@ void SV_EasyRecord_f (void)
 		if (teamplay.value && i > 2)
 		{
 			// Teamplay
-			sprintf (name, "team_%s_vs_%s_%s",
+			snprintf (name, sizeof(name), "team_%s_vs_%s_%s",
 				Dem_Team(1),
 				Dem_Team(2),
 				sv.name);
 		} else {
 			if (i == 2) {
 				// Duel
-				sprintf (name, "duel_%s_vs_%s_%s",
+				snprintf (name, sizeof(name), "duel_%s_vs_%s_%s",
 					Dem_PlayerName(1),
 					Dem_PlayerName(2),
 					sv.name);
 			} else {
 				// FFA
-				sprintf (name, "ffa_%s(%d)",
+				snprintf (name, sizeof(name), "ffa_%s(%d)",
 					sv.name,
 					i);
 			}
@@ -1418,31 +1418,31 @@ void SV_EasyRecord_f (void)
 
 	*/
 	if (c == 2)
-		sprintf (name, "%s", Cmd_Argv(1));
+		snprintf (name, sizeof(name), "%s", Cmd_Argv(1));
 	else
 	{
 		i = Dem_CountPlayers();
 		if (teamplay.value >= 1 && i > 2)
 		{
 			// Teamplay
-			sprintf (name, "%don%d_", Dem_CountTeamPlayers(Dem_Team(1)), Dem_CountTeamPlayers(Dem_Team(2)));
+			snprintf (name, sizeof(name), "%don%d_", Dem_CountTeamPlayers(Dem_Team(1)), Dem_CountTeamPlayers(Dem_Team(2)));
 			if (sv_demoExtraNames.value > 0)
 			{
-				sprintf (name, "%s[%s]_%s_", name, Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)));
-				sprintf (name, "%svs_[%s]_%s_", name, Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)));
-				sprintf (name, "%s%s", name, sv.name);
+				snprintf (name, sizeof(name), "%s[%s]_%s_", name, Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)));
+				snprintf (name, sizeof(name), "%svs_[%s]_%s_", name, Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)));
+				snprintf (name, sizeof(name), "%s%s", name, sv.name);
 			} else
-				sprintf (name, "%s%s_vs_%s_%s", name, Dem_Team(1), Dem_Team(2), sv.name);
+				snprintf (name, sizeof(name), "%s%s_vs_%s_%s", name, Dem_Team(1), Dem_Team(2), sv.name);
 		} else {
 			if (i == 2) {
 				// Duel
-				sprintf (name, "duel_%s_vs_%s_%s",
+				snprintf (name, sizeof(name), "duel_%s_vs_%s_%s",
 					Dem_PlayerName(1),
 					Dem_PlayerName(2),
 					sv.name);
 			} else {
 				// FFA
-				sprintf (name, "ffa_%s(%d)",
+				snprintf (name, sizeof(name), "ffa_%s(%d)",
 					sv.name,
 					i);
 			}
@@ -1452,13 +1452,13 @@ void SV_EasyRecord_f (void)
 	// <-
 
 // Make sure the filename doesn't contain illegal characters
-	Q_strncpyz(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)), MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
-	strcat(name, sv_demoSuffix.string);
-	sprintf (name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name));
+	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)), MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
+	strlcat(name, sv_demoSuffix.string, sizeof(name));
+	snprintf (name, sizeof(name), "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
 	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 
 // find a filename that doesn't exist yet
-	strcpy (name2, name);
+	strlcpy (name2, name, sizeof(name2));
 	COM_ForceExtension (name2, ".mvd");
 	if ((f = fopen (name2, "rb")) == 0)
 		f = fopen(va("%s.gz", name2), "rb");
@@ -1467,7 +1467,7 @@ void SV_EasyRecord_f (void)
 		i = 1;
 		do {
 			fclose (f);
-			strcpy (name2, va("%s_%02i", name, i));
+			strlcpy (name2, va("%s_%02i", name, i), sizeof(name2));
 			COM_ForceExtension (name2, ".mvd");
 			if ((f = fopen (name2, "rb")) == 0)
 				f = fopen(va("%s.gz", name2), "rb");
@@ -1549,12 +1549,12 @@ char *SV_DemoName2Txt(char *name)
 	if (!name)
 		return NULL;
 
-	strcpy(s, name);
+	strlcpy(s, name, MAX_OSPATH);
 
 	if (strstr(s, ".mvd.gz") != NULL)
-		strcpy(s + strlen(s) - 6, "txt");
+		strlcpy(s + strlen(s) - 6, "txt", MAX_OSPATH - strlen(s) + 6);
 	else
-		strcpy(s + strlen(s) - 3, "txt");
+		strlcpy(s + strlen(s) - 3, "txt", MAX_OSPATH - strlen(s) + 3);
 
 	return va("%s", s);
 }
@@ -1595,7 +1595,7 @@ void SV_DemoRemove_f (void)
 					SV_Stop_f();
 
 				// stop recording first;
-				sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, list->name);
+				snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, list->name);
 				if (!Sys_remove(path)) {
 					Con_Printf("removing %s...\n", list->name);
 					i++;
@@ -1614,10 +1614,10 @@ void SV_DemoRemove_f (void)
 		return;
 	}
 
-	Q_strncpyz(name ,Cmd_Argv(1), MAX_DEMO_NAME);
+	strlcpy(name ,Cmd_Argv(1), MAX_DEMO_NAME);
 	COM_DefaultExtension(name, ".mvd");
 
-	sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+	snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
 
 	if (sv.demorecording && !strcmp(name, demo.name))
 		SV_Stop_f();
@@ -1667,7 +1667,7 @@ void SV_DemoRemoveNum_f (void)
 		if (sv.demorecording && !strcmp(name, demo.name))
 			SV_Stop_f();
 
-		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
 		if (!Sys_remove(path)) {
 			Con_Printf("demo %s succesfully removed\n", name);
 			if (*sv_ondemoremove.string)
@@ -1706,7 +1706,7 @@ void SV_DemoInfoAdd_f (void)
 			return;
 		}
 
-		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
 	} else {
 		name = SV_DemoTxTNum(atoi(Cmd_Argv(1)));
 
@@ -1715,7 +1715,7 @@ void SV_DemoInfoAdd_f (void)
 			return;
 		}
 
-		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
 	}
 
 	if ((f = fopen(path, "a+t")) == NULL)
@@ -1751,7 +1751,7 @@ void SV_DemoInfoRemove_f (void)
 			return;
 		}
 
-		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
 	} else {
 		name = SV_DemoTxTNum(atoi(Cmd_Argv(1)));
 
@@ -1760,7 +1760,7 @@ void SV_DemoInfoRemove_f (void)
 			return;
 		}
 
-		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
 	}
 
 	if (Sys_remove(path))
@@ -1786,7 +1786,7 @@ void SV_DemoInfo_f (void)
 			return;
 		}
 
-		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
 	} else {
 		name = SV_DemoTxTNum(atoi(Cmd_Argv(1)));
 
@@ -1795,7 +1795,7 @@ void SV_DemoInfo_f (void)
 			return;
 		}
 
-		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
 	}
 
 	if ((f = fopen(path, "rt")) == NULL)

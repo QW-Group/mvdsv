@@ -669,10 +669,10 @@ void Draw_ConsoleBackground (int lines)
 // hack the version number directly into the pic
 
 	if (cls.download) {
-		strcpy (ver, QWE_VERSION);
+		strlcpy (ver, QWE_VERSION, sizeof(ver));
 		dest = conback->data + 320 + 320*186 - 11 - 8*strlen(ver);
 	} else {
-		sprintf (ver, "QWExtended client %s", QWE_VERSION);
+		snprintf (ver, sizeof(ver), "QWExtended client %s", QWE_VERSION);
 		dest = conback->data + 320 - (strlen(ver)*8 + 11) + 320*186;
 	}
 

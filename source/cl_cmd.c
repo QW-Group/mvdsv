@@ -210,18 +210,18 @@ void CL_Rcon_f (void)
 	message[3] = 255;
 	message[4] = 0;
 
-	strcat (message, "rcon ");
+	strlcat (message, "rcon ", sizeof(message));
 
 	if (rcon_password.string[0])
 	{
-		strcat (message, rcon_password.string);
-		strcat (message, " ");
+		strlcat (message, rcon_password.string, sizeof(message));
+		strlcat (message, " ", sizeof(message));
 	}
 
 	for (i=1 ; i<Cmd_Argc() ; i++)
 	{
-		strcat (message, Cmd_Argv(i));
-		strcat (message, " ");
+		strlcat (message, Cmd_Argv(i), sizeof(message));
+		strlcat (message, " ", sizeof(message));
 	}
 
 	if (cls.state >= ca_connected)
@@ -267,7 +267,7 @@ void CL_Download_f (void)
 		return;
 	}
 
-	sprintf (cls.downloadname, "%s/%s", com_gamedir, Cmd_Argv(1));
+	snprintf (cls.downloadname, MAX_OSPATH, "%s/%s", com_gamedir, Cmd_Argv(1));
 
 	p = cls.downloadname;
 	for (;;) {
@@ -287,7 +287,7 @@ void CL_Download_f (void)
 	}
 	
 
-	strcpy(cls.downloadtempname, cls.downloadname);
+	strlcpy(cls.downloadtempname, cls.downloadname, MAX_OSPATH);
 	cls.download = fopen (cls.downloadname, "wb");
 	cls.downloadtype = dl_single;
 
@@ -396,9 +396,9 @@ void CL_Color_f (void)
 	if (bottom > 13)
 		bottom = 13;
 	
-	sprintf (num, "%i", top);
+	snprintf (num, sizeof(num), "%i", top);
 	Cvar_Set (&topcolor, num);
-	sprintf (num, "%i", bottom);
+	snprintf (num, sizeof(num), "%i", bottom);
 	Cvar_Set (&bottomcolor, num);
 }
 
@@ -551,7 +551,7 @@ void CL_WriteConfig_f (void)
 		return;
 	}
 
-	Q_strncpyz (name, Cmd_Argv(1), sizeof(name));
+	strlcpy (name, Cmd_Argv(1), sizeof(name));
 	COM_ForceExtension (name, ".cfg");
 
 	Con_Printf ("Writing %s\n", name);
@@ -727,7 +727,7 @@ void CL_FullServerinfo_f (void)
 		return;
 	}
 
-	strcpy (cl.serverinfo, Cmd_Argv(1));
+	strlcpy (cl.serverinfo, Cmd_Argv(1), MAX_SERVERINFO_STRING);
 
 	
 	server_version = 0;

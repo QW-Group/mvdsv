@@ -29,12 +29,38 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sv_windows.h"
 
+// Added by VVD {
+//#include <fcntl.h>
+//#include <sys/socket.h>
+//#include <netinet/in.h>
+//#include <arpa/inet.h>
+#include <errno.h>
+//#include "version.h"
+// Added by VVD }
+
 cvar_t	sys_sleep = {"sys_sleep", "8"};
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
 
 qboolean WinNT;
 
 static char title[16];
+
+// Added by VVD {
+qboolean	iosock_ready; 
+static int	connected = 0;
+static int	authenticated = 0;
+extern int	telnetport;
+extern int	sv_port;
+int			iosock;
+extern int	net_telnetsocket;
+static double	cur_time_auth;
+extern cvar_t	not_auth_timeout;
+extern cvar_t	auth_timeout;
+#ifndef min
+#define min(a,b)    (((a) < (b)) ? (a) : (b))
+#define max(a,b)    (((a) > (b)) ? (a) : (b))
+#endif
+// Added by VVD }
 
 /*
 ================
@@ -95,7 +121,7 @@ dir_t Sys_listdir (char *path, char *ext)
 	memset(&dir, 0, sizeof(dir));
 
 	dir.files = list;
-	all = !strcmp(ext, ".*");
+	all = !strncmp(ext, ".*", 3);
 
 	h = FindFirstFile (va("%s/*.*", path), &fd);
 	if (h == INVALID_HANDLE_VALUE) {
@@ -110,7 +136,7 @@ dir_t Sys_listdir (char *path, char *ext)
 		}
 
 		size = fd.nFileSizeLow;
-		Q_strncpyz (name, fd.cFileName, MAX_DEMO_NAME);
+		strlcpy (name, fd.cFileName, MAX_DEMO_NAME);
 		dir.size += size;
 
 		if (!all && !strstr(fd.cFileName, ext))
@@ -140,7 +166,7 @@ dir_t Sys_listdir (char *path, char *ext)
 		for (i=dir.numfiles-1 ; i>pos ; i--)
 			list[i] = list[i-1];
 
-		strcpy (list[i].name, name);
+		strlcpy (list[i].name, name, MAX_DEMO_NAME);
 		list[i].size = size;
 		if (dir.numfiles == MAX_DIRFILES - 1)
 			break;
@@ -176,7 +202,7 @@ void Sys_Error (char *error, ...)
 	char		text[1024];
 
 	va_start (argptr,error);
-	vsprintf (text, error,argptr);
+	vsnprintf (text, sizeof(text), error,argptr);
 	va_end (argptr);
 #ifdef _CONSOLE
 //    MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
@@ -188,32 +214,13 @@ void Sys_Error (char *error, ...)
 		Sys_Printf("ERROR: %s\n", text);
 
 #endif
-	if (sv_errorlogfile) {
-		fprintf(sv_errorlogfile, "ERROR: %s\n", text);
-		fclose(sv_errorlogfile);
+	if (logs[ERROR_LOG].sv_logfile)
+	{
+		SV_Write_Log(ERROR_LOG, 1, va("ERROR: %s\n", text));
+		fclose(logs[ERROR_LOG].sv_logfile);
 	}
-
 	Sys_Exit (1);
 }
-
-void Sys_TimeOfDay(date_t *date)
-{
-	struct tm *newtime;
-	time_t long_time;
-
-	time( &long_time );
-	newtime = localtime( &long_time );
-
-	date->day = newtime->tm_mday;
-	date->mon = newtime->tm_mon;
-	date->year = newtime->tm_year + 1900;
-	date->hour = newtime->tm_hour;
-	date->min = newtime->tm_min;
-	date->sec = newtime->tm_sec;
-	strftime( date->str, 128,
-         "%a %b %d, %H:%M %Y", newtime);
-}
-
 
 
 #if 1
@@ -271,9 +278,9 @@ Sys_ConsoleInput
 */
 char *Sys_ConsoleInput (void)
 {
+	static char	text[256], *t;
+	static int		len = 0;
 #ifdef _CONSOLE
-	static char	text[256];
-	static int		len;
 	int		c;
 
 	// read a line out
@@ -319,11 +326,98 @@ char *Sys_ConsoleInput (void)
 		if (len == sizeof(text))
 			len = 0;
 	}
-
-	return NULL;
-#else
-	return NULL;
 #endif
+
+	if (telnetport)
+	{
+		if (!iosock_ready || !connected)
+			return NULL;		// the select didn't say it was ready
+		iosock_ready = false;
+		do
+		{
+			switch (recv (iosock, text + len, 1, 0))
+			{
+				case 0:
+					len = connected = authenticated = 0;
+					closesocket (iosock);
+					iosock = 0;
+					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
+					return NULL;
+				case 1: 
+					if (text[len] == 8)
+					{
+						if(len > 0) --len;
+					}
+					else
+						++len;
+					break;
+				default:
+					if (errno != EAGAIN && errno != ENOENT && errno != EBADF) // demand for M$ WIN 2K telnet support
+					{
+						len = connected = authenticated = 0;
+						closesocket (iosock);
+						iosock = 0;
+						SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(errno)));
+					}
+					return NULL;
+			}// switch
+		}// do
+		while (len < sizeof(text) - 1 && text[len - 1] != '\n' && text[len - 1] != '\r' && text[len - 1] != 0);
+
+		if (len == 0)
+			return NULL;
+
+		text[len] = 0;
+
+		if (text[len - 1] == '\r' || text[len - 1] == '\n')
+			text[len - 1] = 0;
+
+		if (text[0] == 0)
+		{
+			len = 0;
+			return NULL;
+		}
+
+		if (!authenticated)
+		{
+			len = strlen(t = Cvar_VariableString ("telnet_password"));
+			if (len && (authenticated = (!strncmp(text, t, min(sizeof(text), len + 1)))))
+			{
+				cur_time_auth = Sys_DoubleTime ();
+				SV_Write_Log(TELNET_LOG, 1, "Authenticated: yes\n");
+				len = 0;
+				return "status";
+			}
+			else
+			{
+				if (strlen(text) == 1 && text[0] == 4)
+				{
+					len = connected = authenticated = 0;
+					closesocket (iosock);
+					iosock = 0;
+					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
+				}
+				else
+					SV_Write_Log(TELNET_LOG, 1, "Authenticated: no\n");
+				len = 0;
+				return NULL;
+			}
+		}
+
+		if (strlen(text) == 1 && text[0] == 4)
+		{
+			len = connected = authenticated = 0;
+			closesocket (iosock);
+			iosock = 0;
+			SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
+			len = 0;
+			return NULL;
+		}
+		len = 0;
+		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
+		return text;
+	}
+	return NULL;
 }
 
 
@@ -346,12 +440,36 @@ void Sys_Printf (char *fmt, ...)
 #else
 	va_list argptr;
 	char tmp[MAXCMDBUF];
+	char msg[8];
+	char *p;
 
 	va_start (argptr,fmt);
-	vsprintf(tmp, fmt, argptr);
+	vsnprintf(tmp, MAXCMDBUF, fmt, argptr);
 	va_end (argptr);
 
 	ConsoleAddText(tmp);
+
+	if (telnetport)
+	{
+		if (!(connected && authenticated))
+			return;
+		for (p = (unsigned char *)tmp; *p; p++)
+		{
+			if ((*p > 254 || *p < 32) && *p != 10 && *p != 13 && *p != 9)
+			{
+				snprintf (msg, sizeof (msg), "[%02x]", *p);
+				send (iosock, msg, strlen (msg), 0);
+			}
+			else
+			{
+				send (iosock, p, 1, 0);
+				if (*p == '\n')
+					send (iosock, "\r", 1, 0);
+					// demand for M$ WIN 2K telnet support
+			}
+		}
+		SV_Write_Log(TELNET_LOG, 3, tmp);
+	}
 #endif
 }
 
@@ -451,8 +569,8 @@ int Sys_Script(char *path, char *args)
 	GetCurrentDirectory(sizeof(curdir), curdir);
 	
 	
-	sprintf(cmdline, "%s\\sh.exe %s.qws %s", curdir, path, args);
-	strcat(curdir,va("\\%s", com_gamedir+2));
+	snprintf(cmdline, sizeof(cmdline), "%s\\sh.exe %s.qws %s", curdir, path, args);
+	strlcat(curdir, va("\\%s", com_gamedir+2), MAX_OSPATH);
 
 	return CreateProcess (NULL, cmdline, NULL, NULL,
 		FALSE, 0/*DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
@@ -578,11 +696,15 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	struct timeval	timeout;
 	fd_set			fdset;
 	int				sleep_msec;
-	int t;
-	extern int sv_port;
 	
-	// get the command line parameters
+//Added by VVD {
+	int		j, tempsock;
+	struct	sockaddr_in remoteaddr, remoteaddr_temp;
+	int		sockaddr_len = sizeof(struct sockaddr_in);
+	double	cur_time_not_auth, not_auth_timeout_value, auth_timeout_value;
+//Added by VVD }
 
+	// get the command line parameters
 	argv[0] = "";
 	parms.argc = 1;
 
@@ -619,13 +741,13 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 
 	parms.memsize = 16*1024*1024;
 
-	if ((t = COM_CheckParm ("-heapsize")) != 0 &&
-		t + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024;
+	j = COM_CheckParm ("-heapsize");
+	if (j && j + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
 
-	if ((t = COM_CheckParm ("-mem")) != 0 &&
-		t + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024 * 1024;
+	j = COM_CheckParm ("-mem");
+	if (j && j + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
 	parms.membase = Q_Malloc (parms.memsize);
 
@@ -637,6 +759,14 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	if (minimized)
 		UpdateNotifyIconMessage(va("mvdsv:%d", sv_port));
 
+// Added by VVD {
+	if (telnetport)
+	{
+		iosock = 0;
+		j = max(net_serversocket, net_telnetsocket);
+	}
+// Added by VVD }
+
 // run one frame immediately for first heartbeat
 	SV_Frame (0.1);		
 
@@ -647,6 +777,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 
 	while(1)
 	{
+		//SV_Write_Log(TELNET_LOG, 1, svs.info);
 		// get messeges sent to windows
 		if( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) )
         {
@@ -679,11 +810,76 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	// be printed until the next event.
 
 		FD_ZERO(&fdset);
+// Added by VVD {
+		if (telnetport)
+		{
+			if (connected)
+			{
+				if ((tempsock =
+				accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
+				{
+//					if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+						send (tempsock, "Console busy by another user.\n", 31, 0);
+					closesocket (tempsock);
+					SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
+						inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
+				}
+				not_auth_timeout_value = Cvar_VariableValue("not_auth_timeout");
+				auth_timeout_value = Cvar_VariableValue("auth_timeout");
+				if ((!authenticated && not_auth_timeout_value &&
+					Sys_DoubleTime () - cur_time_not_auth > not_auth_timeout_value) ||
+					(authenticated && auth_timeout_value &&
+					Sys_DoubleTime () - cur_time_auth > auth_timeout_value))
+				{
+					connected = 0;
+					send (iosock, "Time for authentication finished.\n", 34, 0);
+					closesocket (iosock);
+					iosock = 0;
+					SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+				}
+				else
+					FD_SET(iosock, &fdset);
+			}
+			else
+			{
+				if ((iosock =
+				accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
+				{
+//					if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+//					{
+						connected = 1;
+						FD_SET(iosock, &fdset);
+						cur_time_not_auth = Sys_DoubleTime ();
+						SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+						send (iosock, "# ", 2, 0);
+/*					}
+					else
+					{
+						closesocket (iosock);
+						iosock = 0;
+						SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+					}
+*/
+				}
+			}
+			FD_SET(net_telnetsocket, &fdset);
+		}
+// Added by VVD }
 		FD_SET(net_serversocket, &fdset);
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100;
-		if (select (net_serversocket+1, &fdset, NULL, NULL, &timeout) == -1)
-			continue;
+		if (telnetport) //Added by VVD
+		{
+			if (select (max(iosock, j) + 1, &fdset, NULL, NULL, &timeout) == -1)
+				continue;
+			if (connected)
+				iosock_ready = FD_ISSET(iosock, &fdset);
+		}
+		else
+		{
+			if (select (net_serversocket+1, &fdset, NULL, NULL, &timeout) == -1)
+				continue;
+		}
 
 	// find time passed since last cycle
 		newtime = Sys_DoubleTime ();

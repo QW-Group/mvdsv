@@ -274,9 +274,9 @@ void Cmd_StuffCmds_f (void)
 	{
 		if (!com_argv[i])
 			continue;		// NEXTSTEP nulls out -NXHost
-		strcat (text,com_argv[i]);
+		strlcat (text, com_argv[i], s + 1);
 		if (i != com_argc-1)
-			strcat (text, " ");
+			strlcat (text, " ", s + 1);
 	}
 	
 // pull out the commands
@@ -295,8 +295,8 @@ void Cmd_StuffCmds_f (void)
 			c = text[j];
 			text[j] = 0;
 			
-			strcat (build, text+i);
-			strcat (build, "\n");
+			strlcat (build, text + i, s + 1);
+			strlcat (build, "\n", s + 1);
 			text[j] = c;
 			i = j-1;
 		}
@@ -443,7 +443,7 @@ char *CopyString (char *in)
 	char	*out;
 	
 	out = Z_Malloc (strlen(in)+1);
-	strcpy (out, in);
+	strlcpy (out, in, strlen(in) + 1);
 	return out;
 }
 
@@ -503,15 +503,15 @@ void Cmd_Alias_f (void)
 		a->hash_next = cmd_alias_hash[key];
 		cmd_alias_hash[key] = a;
 	}
-	strcpy (a->name, s);
+	strlcpy (a->name, s, MAX_ALIAS_NAME);
 
 // copy the rest of the command line
 	cmd[0] = 0;		// start out with a null string
 	for (i=2 ; i<c ; i++)
 	{
 		if (i > 2)
-			strcat (cmd, " ");
-		strcat (cmd, Cmd_Argv(i));
+			strlcat (cmd, " ", sizeof(cmd));
+		strlcat (cmd, Cmd_Argv(i), sizeof(cmd));
 	}
 	
 	a->value = CopyString (cmd);
@@ -672,7 +672,7 @@ Parses the given string into command line tokens.
 void Cmd_TokenizeString (char *text)
 {
 	int			idx;
-	static char	argv_buf[1024];
+	static char	argv_buf[MAX_MSGLEN + MAX_ARGS];
 	
 	idx = 0;
 		
@@ -703,10 +703,10 @@ void Cmd_TokenizeString (char *text)
 		if (!text)
 			return;
 
-		if (cmd_argc < MAX_ARGS)
+		if (cmd_argc < MAX_ARGS && sizeof(argv_buf) - 1 > idx)
 		{
 			cmd_argv[cmd_argc] = argv_buf + idx;
-			strcpy (cmd_argv[cmd_argc], com_token);
+			strlcpy (cmd_argv[cmd_argc], com_token, sizeof(argv_buf) - idx);
 			idx += strlen(com_token) + 1;
 			cmd_argc++;
 		}
@@ -932,7 +932,7 @@ void Cmd_ExpandString (char *data, char *dest)
 				if (len + strlen(str) >= 1024-1)
 					break;
 
-				strcpy(&dest[len], str);
+				strlcpy(dest + len, str, 1024 - len);
 				len += strlen(str);
 				i = name_length;
 				while (buf[i])
@@ -944,7 +944,7 @@ void Cmd_ExpandString (char *data, char *dest)
 				dest[len++] = '$';
 				if (len + strlen(buf) >= 1024-1)
 					break;
-				strcpy (&dest[len], buf);
+				strlcpy (dest + len, buf, 1024 - len);
 				len += strlen(buf);
 			}
 		}
@@ -1102,8 +1102,8 @@ void Cmd_If_f (void)
 			if (!Q_strcasecmp(Cmd_Argv(i), "else"))
 				break;
 			if (buf[0])
-				strcat (buf, " ");
-			strcat (buf, Cmd_Argv(i));
+				strlcat (buf, " ", sizeof(buf));
+			strlcat (buf, Cmd_Argv(i), sizeof(buf));
 		}
 	}
 	else
@@ -1118,8 +1118,8 @@ void Cmd_If_f (void)
 		
 		for (i++ ; i < c ; i++) {
 			if (buf[0])
-				strcat (buf, " ");
-			strcat (buf, Cmd_Argv(i));
+				strlcat (buf, " ", sizeof(buf));
+			strlcat (buf, Cmd_Argv(i), sizeof(buf));
 		}
 	}
 

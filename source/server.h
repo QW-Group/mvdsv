@@ -49,7 +49,7 @@ typedef struct
 } packet_t;
 
 #define MAX_DELAYED_PACKETS 100
-
+#define MAP_NAME_LEN 64
 typedef struct
 {
 //	qboolean	active;				// false when server is going down
@@ -67,7 +67,7 @@ typedef struct
 	unsigned	model_player_checksum;
 	unsigned	eyes_player_checksum;
 	
-	char		name[64];			// map name
+	char		name[MAP_NAME_LEN];			// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	struct model_s 	*worldmodel;
 	char		*model_precache[MAX_MODELS];	// NULL terminated
@@ -144,7 +144,8 @@ typedef struct
 
 #define MAX_BACK_BUFFERS	4
 #define MAX_STUFFTEXT		256
-
+#define	CLIENT_LOGIN_LEN	16
+#define	CLIENT_NAME_LEN		32
 typedef struct client_s
 {
 	sv_client_state_t	state;
@@ -172,7 +173,7 @@ typedef struct client_s
 	float			entgravity;			// localized ent gravity
 
 	edict_t			*edict;				// EDICT_NUM(clientnum+1)
-	char			name[32];			// for printing to other people
+	char			name[CLIENT_NAME_LEN];			// for printing to other people
 	char			team[32];
 										// extracted from userinfo
 	int				messagelevel;		// for filtering printed messages
@@ -221,7 +222,7 @@ typedef struct client_s
 	netadr_t		snap_from;
 	qboolean		remote_snap;
 
-	char			login[16];
+	char			login[CLIENT_LOGIN_LEN];
 	int				logged;
 
 	int				spawncount;			// for tracking map changes during downloading
@@ -472,15 +473,12 @@ extern	client_t	*host_client;
 
 extern	edict_t		*sv_player;
 
-extern	char		localmodels[MAX_MODELS][5];	// inline model names for precache
+#define	MODEL_NAME_LEN	5
+extern	char		localmodels[MAX_MODELS][MODEL_NAME_LEN];	// inline model names for precache
 
 extern	char		localinfo[MAX_LOCALINFO_STRING+1];
 
 extern	int			host_hunklevel;
-extern	FILE		*sv_logfile;
-extern	FILE		*sv_fraglogfile;
-extern	FILE		*sv_errorlogfile;
-extern	FILE		*sv_rconlogfile;
 
 extern	qboolean	sv_error;
 

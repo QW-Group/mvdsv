@@ -27,7 +27,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: cl_slist.c,v 1.1.1.5 2004/10/18 17:44:26 vvd0 Exp $
+	$Id: cl_slist.c,v 1.1.1.6 2004/10/18 18:10:50 vvd0 Exp $
 */
 
 #include "quakedef.h"
@@ -176,7 +176,7 @@ void SList_Load ()	 // This could get messy
 		if ((start = gettokstart(line,1,' ')) != NULL) {
 			len = gettoklen(line,1,' ');
 			addr = Q_Malloc (len + 1);
-			Q_strncpyz (addr, line, len+1);
+			strlcpy (addr, line, len + 1);
 			if ((start = gettokstart(line,2,' '))) {
 				SList_Set (serv, addr, start);
 			}

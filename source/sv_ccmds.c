@@ -20,14 +20,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 #include <time.h>
+#ifdef _WIN32
+#include <Winsock2.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#endif
 
 qboolean	sv_allow_cheats;
 
 int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
-extern cvar_t cl_warncmd;
-	extern		redirect_t	sv_redirected;
-
+extern	cvar_t		cl_warncmd;
+extern	redirect_t	sv_redirected;
+log_t	logs[MAX_LOG];
 
 /*
 ===============================================================================
@@ -90,26 +99,69 @@ void SV_Quit_f (void)
 
 /*
 ============
+SV_Logfile
+============
+*/
+void SV_Logfile (int sv_log)
+{
+	extern int	sv_port;
+	char	name[MAX_OSPATH];
+	int		i;
+	if (logs[sv_log].sv_logfile)
+	{
+		Con_Printf (logs[sv_log].message_off);
+		fclose (logs[sv_log].sv_logfile);
+		logs[sv_log].sv_logfile = NULL;
+		logs[sv_log].log_level = 0;
+		return;
+	}
+	if (sv_log == FRAG_LOG)
+	{
+		for (i = 0; i < 1000; ++i)
+		{
+			snprintf (name, MAX_OSPATH, "%s/%s%i.log", com_gamedir, logs[sv_log].file_name, i);
+			name[MAX_OSPATH - 1] = 0;
+			if (!(logs[sv_log].sv_logfile = fopen (name, "r")))
+			{	// can't read it, so create this one
+				if (!(logs[sv_log].sv_logfile = fopen (name, "w")))
+					i = 1000;	// give error
+				break;
+			}
+			fclose (logs[sv_log].sv_logfile);
+		}
+		if (i == 1000)
+		{
+			Con_Printf ("Can't open any logfiles.\n");
+			logs[sv_log].sv_logfile = NULL;
+			return;
+		}
+		Con_Printf ("Loging %s to %s.\n", logs[sv_log].message_on, name);
+		logs[sv_log].log_level = 1;
+	}
+	else
+	{
+		snprintf (name, MAX_OSPATH, /*"%s/ */"%s%i.log",
+					/* com_gamedir,*/ logs[sv_log].file_name, sv_port);
+		Con_Printf ("Loging %s to %s.\n", logs[sv_log].message_on, name);
+		if (!(logs[sv_log].sv_logfile = fopen (name, "a")))
+			Con_Printf ("failed.\n");
+		else
+			if (sv_log == TELNET_LOG)
+				logs[sv_log].log_level = Cvar_VariableValue("telnet_log_level");
+			else
+				logs[sv_log].log_level = 1;
+	}
+
+}
+
+/*
+============
 SV_Logfile_f
 ============
 */
 void SV_Logfile_f (void)
 {
-	char	name[MAX_OSPATH];
-
-	if (sv_logfile)
-	{
-		Con_Printf ("File logging off.\n");
-		fclose (sv_logfile);
-		sv_logfile = NULL;
-		return;
-	}
-
-	sprintf (name, "%s/qconsole.log", com_gamedir);
-	Con_Printf ("Logging text to %s.\n", name);
-	sv_logfile = fopen (name, "w");
-	if (!sv_logfile)
-		Con_Printf ("failed.\n");
+	SV_Logfile(CONSOLE_LOG);
 }
 
 /*
@@ -119,21 +171,7 @@ SV_ErrorLogfile_f
 */
 void SV_ErrorLogfile_f (void)
 {
-	char	name[MAX_OSPATH];
-
-	if (sv_errorlogfile)
-	{
-		Con_Printf ("Error logging off.\n");
-		fclose (sv_errorlogfile);
-		sv_errorlogfile = NULL;
-		return;
-	}
-
-	sprintf (name, "%s/qerror.log", com_gamedir);
-	Con_Printf ("Logging errors to %s.\n", name);
-	sv_errorlogfile = fopen (name, "a");
-	if (!sv_errorlogfile)
-		Con_Printf ("failed.\n");
+	SV_Logfile(ERROR_LOG);
 }
 
 /*
@@ -143,65 +181,27 @@ SV_RconLogfile_f
 */
 void SV_RconLogfile_f (void)
 {
-	char	name[MAX_OSPATH];
-
-	if (sv_rconlogfile)
-	{
-		Con_Printf ("Rcon logging off.\n");
-		fclose (sv_rconlogfile);
-		sv_rconlogfile = NULL;
-		return;
-	}
-
-	sprintf (name, "%s/rcon.log", com_gamedir);
-	Con_Printf ("Logging rcon attemps to %s.\n", name);
-	sv_rconlogfile = fopen (name, "a");
-	if (!sv_rconlogfile)
-		Con_Printf ("failed.\n");
+	SV_Logfile(RCON_LOG);
 }
-
-
 
 /*
 ============
-SV_Fraglogfile_f
+SV_RconLogfile_f
 ============
 */
-void SV_Fraglogfile_f (void)
+void SV_TelnetLogfile_f (void)
 {
-	char	name[MAX_OSPATH];
-	int		i;
+	SV_Logfile(TELNET_LOG);
+}
 
-	if (sv_fraglogfile)
-	{
-		Con_Printf ("Frag file logging off.\n");
-		fclose (sv_fraglogfile);
-		sv_fraglogfile = NULL;
-		return;
-	}
-
-	// find an unused name
-	for (i=0 ; i<1000 ; i++)
-	{
-		sprintf (name, "%s/frag_%i.log", com_gamedir, i);
-		sv_fraglogfile = fopen (name, "r");
-		if (!sv_fraglogfile)
-		{	// can't read it, so create this one
-			sv_fraglogfile = fopen (name, "w");
-			if (!sv_fraglogfile)
-				i=1000;	// give error
-			break;
-		}
-		fclose (sv_fraglogfile);
-	}
-	if (i==1000)
-	{
-		Con_Printf ("Can't open any logfiles.\n");
-		sv_fraglogfile = NULL;
-		return;
-	}
-
-	Con_Printf ("Logging frags to %s.\n", name);
+/*
+============
+SV_FragLogfile_f
+============
+*/
+void SV_FragLogfile_f (void)
+{
+	SV_Logfile(FRAG_LOG);
 }
 
 
@@ -388,14 +388,13 @@ void SV_Map (qboolean now)
 		SV_SendMessagesToAll ();
 
 		// -> scream
-		if (sv_fraglogfile != NULL)
+		if (Cvar_VariableValue("frag_log_type"))
 		{
 			t = time (NULL);
 			tblock = localtime (&t);
 			s = va("\\newmap\\%s\\\\\\\\%d-%d-%d %d:%d:%d\\\n",level, tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday, tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
-			SZ_Print (&svs.log[svs.logsequence&1], s);
-			fprintf (sv_fraglogfile, s);
-			fflush (sv_fraglogfile);
+			if (logs[FRAG_LOG].sv_logfile) SZ_Print (&svs.log[svs.logsequence&1], s);
+			SV_Write_Log(FRAG_LOG, 0, s);
 		}
 		// <-
 
@@ -414,10 +413,10 @@ void SV_Map (qboolean now)
 		return;
 	}
 
-	strcpy (level, Cmd_Argv(1));
+	strlcpy (level, Cmd_Argv(1), MAX_QPATH);
 
 	// check to make sure the level exists
-	sprintf (expanded, "maps/%s.bsp", level);
+	snprintf (expanded, MAX_QPATH, "maps/%s.bsp", level);
 
 	COM_FOpenFile (expanded, &f);
 	if (!f)
@@ -468,16 +467,16 @@ void SV_Kick_f (void)
 		if (cl->userid == uid)
 		{
 			if (c > 2) {
-				strcpy (reason, " (");
+				strlcpy (reason, " (", sizeof(reason));
 				for (j=2 ; j<c; j++) {
-					strncat (reason, Cmd_Argv(j), sizeof(reason)-4);
+					strlcat (reason, Cmd_Argv(j), sizeof(reason)-4);
 					if (j < c-1)
-						strncat (reason, " ", sizeof(reason)-4);
+						strlcat (reason, " ", sizeof(reason)-4);
 				}
 				if (strlen(reason) < 3)
 					reason[0] = '\0';
 				else
-					strncat (reason, ")", sizeof(reason));
+					strlcat (reason, ")", sizeof(reason));
 			}
 
 			saved_state = cl->state;
@@ -494,6 +493,27 @@ void SV_Kick_f (void)
 }
 
 
+/*
+================
+SV_Resolve
+================
+*/
+char *SV_Resolve(netadr_t addr)
+{
+	char		*s;
+#if defined (__linux__) || defined (_WIN32)
+	unsigned long ip;
+#else
+	in_addr_t ip;
+#endif
+	struct hostent *hp;
+
+	s = NET_BaseAdrToString(addr);
+	ip = inet_addr(s);
+	if (hp = gethostbyaddr((const char *)&ip, sizeof(ip), AF_INET))
+		s = hp->h_name;
+	return s;
+}
 /*
 ================
 SV_Status_f
@@ -528,7 +548,7 @@ void SV_Status_f (void)
 		// most remote clients are 40 columns
 		//           0123456789012345678901234567890123456789
 		Con_Printf ("name               userid frags\n");
-        Con_Printf ("  address          rate ping drop\n");
+		Con_Printf ("  address          rate ping drop\n");
 		Con_Printf ("  real ip\n");
 		Con_Printf ("  ---------------- ---- ---- -----\n");
 		for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
@@ -544,8 +564,9 @@ void SV_Status_f (void)
 			else			
 				Con_Printf("\n");
 
-			s = NET_BaseAdrToString ( cl->netchan.remote_address);
+			s = SV_Resolve(cl->netchan.remote_address);
 			Con_Printf ("  %-16.16s", s);
+
 			if (cl->state == cs_connected || cl->state == cs_preconnected)
 			{
 				Con_Printf ("CONNECTING\n");
@@ -576,8 +597,9 @@ void SV_Status_f (void)
 				continue;
 			Con_Printf ("%5i %3i ", (int)cl->edict->v.frags,  cl->userid);
 
-			s = NET_BaseAdrToString ( cl->netchan.remote_address);
+			s = SV_Resolve(cl->netchan.remote_address);
 			Con_Printf ("%s", s);
+
 			l = 16 - strlen(s);
 			for (j=0 ; j<l ; j++)
 				Con_Printf (" ");
@@ -623,17 +645,17 @@ void SV_Status_f (void)
 SV_ConSay_f
 ==================
 */
+#define	CONSOLE_SAY	"console: "
 void SV_ConSay_f(void)
 {
 	client_t *client;
 	int		j;
 	char	*p;
-	char	text[1024];
+	char	text[1024] = CONSOLE_SAY;
 
 	if (Cmd_Argc () < 2)
 		return;
 
-	strcpy (text, "console: ");
 	p = Cmd_Args();
 
 	if (*p == '"')
@@ -642,7 +664,7 @@ void SV_ConSay_f(void)
 		p[strlen(p)-1] = 0;
 	}
 
-	strcat(text, p);
+	strlcat(text, p, sizeof(text));
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
@@ -886,7 +908,7 @@ void SV_Floodprotmsg_f (void)
 		Con_Printf("Usage: floodprotmsg \"<message>\"\n");
 		return;
 	}
-	sprintf(fp_msg, "%s", Cmd_Argv(1));
+	snprintf(fp_msg, sizeof(fp_msg), "%s", Cmd_Argv(1));
 }
   
 /*
@@ -950,9 +972,9 @@ void SV_Snap (int uid)
 		return;
 	}
 
-	sprintf(pcxname, "%d-00.pcx", uid);
+	snprintf(pcxname, sizeof(pcxname), "%d-00.pcx", uid);
 
-	sprintf(checkname, "%s/snap", gamedirfile);
+	snprintf(checkname, MAX_OSPATH, "%s/snap", gamedirfile);
 	Sys_mkdir(gamedirfile);
 	Sys_mkdir(checkname);
 		
@@ -960,7 +982,7 @@ void SV_Snap (int uid)
 	{ 
 		pcxname[strlen(pcxname) - 6] = i/10 + '0'; 
 		pcxname[strlen(pcxname) - 5] = i%10 + '0'; 
-		sprintf (checkname, "%s/snap/%s", gamedirfile, pcxname);
+		snprintf (checkname, MAX_OSPATH, "%s/snap/%s", gamedirfile, pcxname);
 		if (Sys_FileTime(checkname) == -1)
 			break;	// file doesn't exist
 	} 
@@ -969,7 +991,7 @@ void SV_Snap (int uid)
 		Con_Printf ("Snap: Couldn't create a file, clean some out.\n"); 
 		return;
 	}
-	strcpy(cl->uploadfn, checkname);
+	strlcpy(cl->uploadfn, checkname, MAX_QPATH);
 
 	memcpy(&cl->snap_from, &net_from, sizeof(net_from));
 	if (sv_redirected != RD_NONE)
@@ -1027,17 +1049,56 @@ SV_InitOperatorCommands
 */
 void SV_InitOperatorCommands (void)
 {
+	int i;
 	if (COM_CheckParm ("-cheats"))
 	{
 		sv_allow_cheats = true;
 		Info_SetValueForStarKey (svs.info, "*cheats", "ON", MAX_SERVERINFO_STRING);
 	}
 
+	logs[CONSOLE_LOG].command		= "logfile";
+	logs[ERROR_LOG].command			= "logerrors";
+	logs[RCON_LOG].command			= "logrcon";
+	logs[TELNET_LOG].command		= "logtelnet";
+	logs[FRAG_LOG].command			= "fraglogfile";
+	
+	logs[CONSOLE_LOG].file_name		= "qconsole_";
+	logs[ERROR_LOG].file_name		= "qerror_";
+	logs[RCON_LOG].file_name		= "rcon_";
+	logs[TELNET_LOG].file_name		= "qtelnet_";
+	logs[FRAG_LOG].file_name		= "frag_";
+
+	logs[CONSOLE_LOG].message_off	= "File logging off.\n";
+	logs[ERROR_LOG].message_off		= "Error logging off.\n";
+	logs[RCON_LOG].message_off		= "Rcon logging off.\n";
+	logs[TELNET_LOG].message_off	= "Telnet logging off.\n";
+	logs[FRAG_LOG].message_off		= "Frag file logging off.\n";
+	
+	logs[CONSOLE_LOG].message_on	= "console";
+	logs[ERROR_LOG].message_on		= "errors";
+	logs[RCON_LOG].message_on		= "rcon";
+	logs[TELNET_LOG].message_on		= "telnet";
+	logs[FRAG_LOG].message_on		= "frags";
+
+	logs[CONSOLE_LOG].function		= SV_Logfile_f;
+	logs[ERROR_LOG].function		= SV_ErrorLogfile_f;
+	logs[RCON_LOG].function			= SV_RconLogfile_f;
+	logs[TELNET_LOG].function		= SV_TelnetLogfile_f;
+	logs[FRAG_LOG].function			= SV_FragLogfile_f;
+	
+	for (i = CONSOLE_LOG; i < MAX_LOG; ++i)
+	{
+		logs[i].sv_logfile = NULL;
+		logs[i].log_level = 0;
+		Cmd_AddCommand (logs[i].command, logs[i].function);
+	}
+/*
 	Cmd_AddCommand ("logfile", SV_Logfile_f);
 	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f);
 	Cmd_AddCommand ("logerrors", SV_ErrorLogfile_f);
 	Cmd_AddCommand ("logrcon", SV_RconLogfile_f);
-
+	Cmd_AddCommand ("logtelnet", SV_TelnetLogfile_f);
+*/
 	Cmd_AddCommand ("snap", SV_Snap_f);
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
 	Cmd_AddCommand ("kick", SV_Kick_f);

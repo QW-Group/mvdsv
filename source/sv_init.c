@@ -473,7 +473,7 @@ This is only called from the SV_Map_f() function.
 */
 void D_FlushCaches ();
 dfunction_t *ED_FindFunction (char *name);
-void Sys_TimeOfDay(date_t *date);
+void SV_TimeOfDay(date_t *date);
 
 void SV_SpawnServer (char *server)
 {
@@ -526,7 +526,7 @@ void SV_SpawnServer (char *server)
 	sv.signon.data = sv.signon_buffers[0];
 	sv.num_signon_buffers = 1;
 
-	strcpy (sv.name, server);
+	strlcpy (sv.name, server, MAP_NAME_LEN);
 
 	// load progs to get entity field count
 	// which determines how big each edict is
@@ -548,8 +548,8 @@ void SV_SpawnServer (char *server)
 
 	sv.time = sv.gametime = 1.0;
 	
-	strcpy (sv.name, server);
-	sprintf (sv.modelname,"maps/%s.bsp", server);
+	strlcpy (sv.name, server, MAP_NAME_LEN);
+	snprintf (sv.modelname, MAX_QPATH, "maps/%s.bsp", server);
 	sv.worldmodel = Mod_ForName (sv.modelname, true);
 	Load_SpecVisData(va("maps/%s.vis", server));
 	SV_CalcPHS ();
@@ -630,7 +630,7 @@ void SV_SpawnServer (char *server)
 	if ((f = ED_FindFunction ("timeofday")) != NULL) {
 		date_t date;
 
-		Sys_TimeOfDay(&date);
+		SV_TimeOfDay(&date);
 
 		G_FLOAT(OFS_PARM0) = (float)date.sec;
 		G_FLOAT(OFS_PARM1) = (float)date.min;

@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 #include <time.h>
 
-
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
 #define	RETURN_STRING(s) (((int *)pr_globals)[OFS_RETURN] = PR_SetString(s))
 
@@ -41,7 +40,7 @@ char *PF_VarString (int	first)
 	out[0] = 0;
 	for (i=first ; i<pr_argc ; i++)
 	{
-		strcat (out, G_STRING((OFS_PARM0+i*3)));
+		strlcat (out, G_STRING((OFS_PARM0+i*3)), sizeof(out));
 	}
 	return out;
 }
@@ -705,13 +704,13 @@ void PF_stuffcmd (void)
 	buf = cl->stufftext_buf;
 	if (strlen(buf) + strlen(str) >= MAX_STUFFTEXT)
 		PR_RunError ("stufftext buffer overflow");
-	strcat (buf, str);
+	strlcat (buf, str, MAX_STUFFTEXT);
 
 	for (i = strlen(buf); i >= 0; i--)
 	{
 		if (buf[i] == '\n')
 		{
-			if (!strcmp(buf, "disconnect\n"))
+			if (!strncmp(buf, "disconnect\n", MAX_STUFFTEXT))
 			{
 				// so long and thanks for all the fish
 				cl->drop = true;
@@ -824,7 +823,7 @@ void PF_argv (void)
 	if (num < 0 ) num = 0;
 	if (num > Cmd_Argc()-1) num = Cmd_Argc()-1;
 
-	sprintf (pr_string_temp, "%s", Cmd_Argv(num));
+	snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_Argv(num));
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 	PF_SetTempString();
 }
@@ -871,7 +870,7 @@ void PF_substr (void)
 	if ( len > l + 1)
 		len = l+1;
 
-	strncpy(pr_string_temp, s, len);
+	strlcpy(pr_string_temp, s, len);
 	pr_string_temp[len] = 0;
 
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
@@ -890,7 +889,7 @@ string strcat(string str1, string str2)
 void PF_strcat (void)
 {
 	
-	strcpy(pr_string_temp, PF_VarString(0));
+	strlcpy(pr_string_temp, PF_VarString(0), MAX_PR_STRING_SIZE);
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 
 	PF_SetTempString();
@@ -964,7 +963,7 @@ void PF_newstr (void)
 		size = (int) G_FLOAT(OFS_PARM1);
 
 	pr_newstrtbl[i] = (char*) Z_Malloc(size);
-	strcpy(pr_newstrtbl[i], s);
+	strlcpy(pr_newstrtbl[i], s, size);
 
 	G_INT(OFS_RETURN) = -(i+MAX_PRSTR);
 }
@@ -1030,7 +1029,7 @@ void PF_readcmd (void)
 
 	SV_BeginRedirect(RD_MOD);
 	Cbuf_Execute();
-	Q_strncpyz(output, outputbuf, 8000);
+	strlcpy(output, outputbuf, sizeof(output));
 	SV_EndRedirect();
 
 	if (old != RD_NONE)
@@ -1070,7 +1069,7 @@ void PF_redirectcmd (void)
 	SV_EndRedirect();
 }
 dfunction_t *ED_FindFunction (char *name);
-void Sys_TimeOfDay(date_t *date);
+void SV_TimeOfDay(date_t *date);
 void PF_calltimeofday (void)
 {
 	date_t date;
@@ -1078,7 +1077,7 @@ void PF_calltimeofday (void)
 
 	if ((f = ED_FindFunction ("timeofday")) != NULL) {
 
-		Sys_TimeOfDay(&date);
+		SV_TimeOfDay(&date);
 
 		G_FLOAT(OFS_PARM0) = (float)date.sec;
 		G_FLOAT(OFS_PARM1) = (float)date.min;
@@ -1136,7 +1135,7 @@ FIXME: check for null pointers first?
 
 void PF_strncpy (void)
 {
-	strncpy(G_STRING(OFS_PARM0), G_STRING(OFS_PARM1), (int) G_FLOAT(OFS_PARM2));
+	strlcpy(G_STRING(OFS_PARM0), G_STRING(OFS_PARM1), (int) G_FLOAT(OFS_PARM2));
 }
 
 
@@ -1241,7 +1240,7 @@ void PF_log(void)
 	char name[MAX_OSPATH], *text;
 	FILE *file;
 
-	sprintf(name,"%s/%s.log",com_gamedir, G_STRING(OFS_PARM0));
+	snprintf(name, MAX_OSPATH, "%s/%s.log", com_gamedir, G_STRING(OFS_PARM0));
 	text = PF_VarString(2);
 	PR_CleanText(text);
 
@@ -1370,9 +1369,9 @@ void PF_ftos (void)
 	v = G_FLOAT(OFS_PARM0);
 	
 	if (v == (int)v)
-		sprintf (pr_string_temp, "%d",(int)v);
+		snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%d",(int)v);
 	else
-		sprintf (pr_string_temp, "%5.1f",v);
+		snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%5.1f",v);
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 	PF_SetTempString();
 }
@@ -1386,7 +1385,7 @@ void PF_fabs (void)
 
 void PF_vtos (void)
 {
-	sprintf (pr_string_temp, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
+	snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
 
 	PF_SetTempString();
@@ -2146,18 +2145,15 @@ void PF_logfrag (void)
 	t = time (NULL);
 	tblock = localtime (&t);
 
-	s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
-			tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
-			tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
-
-
-	//s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
+	if (Cvar_VariableValue ("frag_log_type")) // need for old-style frag log file
+		s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name,svs.clients[e1-1].team, svs.clients[e2-1].team,
+				tblock->tm_year+1900, tblock->tm_mon+1, tblock->tm_mday,
+				tblock->tm_hour, tblock->tm_min, tblock->tm_sec);
+	else
+		s = va("\\%s\\%s\\\n",svs.clients[e1-1].name, svs.clients[e2-1].name);
 	// <-
 	SZ_Print (&svs.log[svs.logsequence&1], s);
-	if (sv_fraglogfile) {
-		fprintf (sv_fraglogfile, s);
-		fflush (sv_fraglogfile);
-	}
+	SV_Write_Log(FRAG_LOG, 1, s);
 }
 
 
@@ -2183,29 +2179,26 @@ void PF_infokey (void)
 	cl = &svs.clients[e1-1];
 
 	if (e1 == 0) {
-		if ((value = Info_ValueForKey (svs.info, key)) == NULL ||
-			!*value)
+		if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey(localinfo, key);
 	} else if (e1 <= MAX_CLIENTS) {
-		if (!strcmp(key, "ip"))
-			value = strcpy(ov, NET_BaseAdrToString (cl->netchan.remote_address));
-		else if (!strcmp(key, "realip"))
-			value = strcpy(ov, NET_BaseAdrToString (cl->realip));
-		else if (!strcmp(key, "download")) {
-			sprintf(ov, "%d", cl->download != NULL ? (int)(100*cl->downloadcount/cl->downloadsize) : -1);
-			value = ov;
-		} else if (!strcmp(key, "ping")) {
-			int ping = SV_CalcPing (cl);
-			sprintf(ov, "%d", ping);
-			value = ov;
-		} else if (!strcmp(key, "login"))
+		value = ov;
+		if (!strncmp(key, "ip", 3))
+			strlcpy(ov, NET_BaseAdrToString (cl->netchan.remote_address), sizeof(ov));
+		else if (!strncmp(key, "realip", 7))
+			strlcpy(ov, NET_BaseAdrToString (cl->realip), sizeof(ov));
+		else if (!strncmp(key, "download", 9))
+			snprintf(ov, sizeof(ov), "%d", cl->download != NULL ? (int)(100*cl->downloadcount/cl->downloadsize) : -1);
+		else if (!strncmp(key, "ping", 5))
+			snprintf(ov, sizeof(ov), "%d", SV_CalcPing (cl));
+		else if (!strncmp(key, "login", 6))
 			value = cl->login;
 		else
 			value = Info_ValueForKey (cl->userinfo, key);
 	} else
 		value = "";
 
-	strcpy(pr_string_temp, value);
+	strlcpy(pr_string_temp, value, MAX_PR_STRING_SIZE);
 	RETURN_STRING(pr_string_temp);
 	PF_SetTempString();
 }

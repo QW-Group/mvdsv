@@ -206,14 +206,14 @@ qboolean	CL_CheckOrDownloadFile (char *filename)
 		return false;
 	}
 
-	strcpy (cls.downloadname, filename);
+	strlcpy (cls.downloadname, filename, MAX_OSPATH);
 	Con_Printf ("Downloading %s...\n", cls.downloadname);
 
 	// download to a temp name, and only rename
 	// to the real name when done, so if interrupted
 	// a runt file wont be left
 	COM_StripExtension (cls.downloadname, cls.downloadtempname);
-	strcat (cls.downloadtempname, ".tmp");
+	strlcat (cls.downloadtempname, ".tmp", MAX_OSPATH);
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, va("download %s", cls.downloadname));
@@ -407,9 +407,9 @@ void CL_ParseDownload (void)
 	if (!cls.download)
 	{
 		if (strncmp(cls.downloadtempname,"skins/",6))
-			sprintf (name, "%s/%s", com_gamedir, cls.downloadtempname);
+			spnrintf (name, sizeof(name), "%s/%s", com_gamedir, cls.downloadtempname);
 		else
-			sprintf (name, "qw/%s", cls.downloadtempname);
+			spnrintf (name, sizeof(name), "qw/%s", cls.downloadtempname);
 
 		COM_CreatePath (name);
 
@@ -457,11 +457,11 @@ void CL_ParseDownload (void)
 		// rename the temp file to it's final name
 		if (strcmp(cls.downloadtempname, cls.downloadname)) {
 			if (strncmp(cls.downloadtempname,"skins/",6)) {
-				sprintf (oldn, "%s/%s", com_gamedir, cls.downloadtempname);
-				sprintf (newn, "%s/%s", com_gamedir, cls.downloadname);
+				snprintf (oldn, MAX_OSPATH, "%s/%s", com_gamedir, cls.downloadtempname);
+				snprintf (newn, MAX_OSPATH, "%s/%s", com_gamedir, cls.downloadname);
 			} else {
-				sprintf (oldn, "qw/%s", cls.downloadtempname);
-				sprintf (newn, "qw/%s", cls.downloadname);
+				snprintf (oldn, MAX_OSPATH, "qw/%s", cls.downloadtempname);
+				snprintf (newn, MAX_OSPATH, "qw/%s", cls.downloadname);
 			}
 			r = rename (oldn, newn);
 			if (r)
@@ -620,20 +620,20 @@ void CL_ParseServerData (void)
 	//if it exists
 	if (cflag) {
 		int cl_warncmd_val = cl_warncmd.value;
-		// FIXME: _snprintf is Win32 only
-		_snprintf(fn, sizeof(fn), "%s/%s", com_gamedir, "config.cfg");
+		// FIXME: _snprintf is Win32 only - FIXED: common.h
+		snprintf(fn, sizeof(fn), "%s/%s", com_gamedir, "config.cfg");
 		if ((f = fopen(fn, "r")) != NULL) {
 			fclose(f);
 			Cbuf_AddText ("cl_warncmd 0\n");
 			Cbuf_AddText ("exec config.cfg\n");
 		}
-		_snprintf(fn, sizeof(fn), "%s/%s", com_gamedir, "frontend.cfg");
+		snprintf(fn, sizeof(fn), "%s/%s", com_gamedir, "frontend.cfg");
 		if ((f = fopen(fn, "r")) != NULL) {
 			fclose(f);
 			Cbuf_AddText ("cl_warncmd 0\n");
 			Cbuf_AddText ("exec frontend.cfg\n");
 		}
-		_snprintf(fn,sizeof(fn), "cl_warncmd %d\n", cl_warncmd_val);
+		snprintf(fn,sizeof(fn), "cl_warncmd %d\n", cl_warncmd_val);
 		Cbuf_AddText(fn);
 	}
 
@@ -654,7 +654,7 @@ void CL_ParseServerData (void)
 
 	// get the full level name
 	str = MSG_ReadString ();
-	Q_strncpyz (cl.levelname, str, sizeof(cl.levelname));
+	strlcpy (cl.levelname, str, sizeof(cl.levelname));
 
 	// get the movevars
 	movevars.gravity			= MSG_ReadFloat();
@@ -705,7 +705,7 @@ void CL_ParseSoundlist (void)
 		numsounds++;
 		if (numsounds == MAX_SOUNDS)
 			Host_EndGame ("Server sent too many sound_precache");
-		strcpy (cl.sound_name[numsounds], str);
+		strlcpy (cl.sound_name[numsounds], str, MAX_QPATH);
 	}
 
 	n = MSG_ReadByte();
@@ -744,27 +744,27 @@ void CL_ParseModellist (void)
 		nummodels++;
 		if (nummodels==MAX_MODELS)
 			Host_EndGame ("Server sent too many model_precache");
-		strcpy (cl.model_name[nummodels], str);
+		strlcpy (cl.model_name[nummodels], str, MAX_QPATH);
 
-		if (!strcmp(cl.model_name[nummodels],"progs/spike.mdl"))
+		if (!strncmp(cl.model_name[nummodels], "progs/spike.mdl", MAX_QPATH))
 			cl_spikeindex = nummodels;
-		if (!strcmp(cl.model_name[nummodels],"progs/player.mdl"))
+		if (!strncmp(cl.model_name[nummodels], "progs/player.mdl", MAX_QPATH))
 			cl_playerindex = nummodels;
-		if (!strcmp(cl.model_name[nummodels],"progs/flag.mdl"))
+		if (!strncmp(cl.model_name[nummodels], "progs/flag.mdl", MAX_QPATH))
 			cl_flagindex = nummodels;
 
 // Tonik -->
-		else if (!strcmp(cl.model_name[nummodels],"progs/h_player.mdl"))
+		else if (!strncmp(cl.model_name[nummodels], "progs/h_player.mdl", MAX_QPATH))
 			cl_h_playerindex = nummodels;
-		else if (!strcmp(cl.model_name[nummodels],"progs/gib1.mdl"))
+		else if (!strncmp(cl.model_name[nummodels], "progs/gib1.mdl", MAX_QPATH))
 			cl_gib1index = nummodels;
-		else if (!strcmp(cl.model_name[nummodels],"progs/gib2.mdl"))
+		else if (!strncmp(cl.model_name[nummodels], "progs/gib2.mdl", MAX_QPATH))
 			cl_gib2index = nummodels;
-		else if (!strcmp(cl.model_name[nummodels],"progs/gib3.mdl"))
+		else if (!strncmp(cl.model_name[nummodels], "progs/gib3.mdl", MAX_QPATH))
 			cl_gib3index = nummodels;
-		else if (!strcmp(cl.model_name[nummodels],"progs/missile.mdl"))
+		else if (!strncmp(cl.model_name[nummodels], "progs/missile.mdl", MAX_QPATH))
 			cl_rocketindex = nummodels;
-		else if (!strcmp(cl.model_name[nummodels],"progs/grenade.mdl"))
+		else if (!strncmp(cl.model_name[nummodels], "progs/grenade.mdl", MAX_QPATH))
 			cl_grenadeindex = nummodels;
 // <-- Tonik
 	}
@@ -1002,12 +1002,12 @@ void CL_NewTranslation (int slot)
 	} else
 		team = cl.players[cl.playernum].team;
 
-	//strcpy (s, cl.players[cl.playernum].team);
+	//strlcpy (s, cl.players[cl.playernum].team, sizeof(s));
 	teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
 
 	if ( !cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_COLOR) ) {
 		if (cl_teamtopcolor >= 0 && teamplay && team != NULL &&
-			!strcmp(player->team, team))
+			!strncmp(player->team, team, MAX_INFO_STRING))
 		{
 			player->topcolor = cl_teamtopcolor;
 			player->bottomcolor = cl_teambottomcolor;
@@ -1042,7 +1042,7 @@ void CL_NewTranslation (int slot)
 	if (player->spectator)
 		return;
 
-	strcpy(s, Info_ValueForKey(player->userinfo, "skin"));
+	strlcpy(s, Info_ValueForKey(player->userinfo, "skin"), sizeof(s));
 	COM_StripExtension(s, s);
 	if (player->skin && !stricmp(s, player->skin->name))
 		player->skin = NULL;
@@ -1124,10 +1124,10 @@ CL_ProcessUserInfo
 */
 void CL_ProcessUserInfo (int slot, player_info_t *player)
 {
-	Q_strncpyz (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
+	strlcpy (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
 	player->real_topcolor = atoi(Info_ValueForKey (player->userinfo, "topcolor"));
 	player->real_bottomcolor = atoi(Info_ValueForKey (player->userinfo, "bottomcolor"));
-	strcpy (player->team, Info_ValueForKey (player->userinfo, "team"));
+	strlcpy (player->team, Info_ValueForKey (player->userinfo, "team"), MAX_INFO_STRING);
 
 	if (Info_ValueForKey (player->userinfo, "*spectator")[0])
 		player->spectator = true;
@@ -1139,17 +1139,17 @@ void CL_ProcessUserInfo (int slot, player_info_t *player)
 
 	Sbar_Changed ();
 	if (slot == cl.playernum && (cl_teamtopcolor >= 0 || cl_enemytopcolor >= 0) &&
-		strcmp(player->team, player->_team))
+		strncmp(player->team, player->_team, MAX_INFO_STRING))
 	{
 		int i;
-		//strcpy (cl_playerteam, Info_ValueForKey(player->userinfo, "team"));
+		//strlcpy (cl_playerteam, Info_ValueForKey(player->userinfo, "team"), MAX_INFO_STRING);
 		for (i=0 ; i < MAX_CLIENTS ; i++)
 			CL_NewTranslation (i);
 	}
 	else
 		CL_NewTranslation (slot);
 
-	strcpy (player->_team, player->team);
+	strlcpy (player->_team, player->team, MAX_INFO_STRING);
 }
 
 /*
@@ -1168,7 +1168,7 @@ void CL_UpdateUserinfo (void)
 
 	player = &cl.players[slot];
 	player->userid = MSG_ReadLong ();
-	Q_strncpyz (player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
+	strlcpy (player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
 
 	CL_ProcessUserInfo (slot, player);
 }
@@ -1191,8 +1191,8 @@ void CL_SetInfo (void)
 
 	player = &cl.players[slot];
 
-	Q_strncpyz (key, MSG_ReadString(), sizeof(key));
-	Q_strncpyz (value, MSG_ReadString(), sizeof(value));
+	strlcpy (key, MSG_ReadString(), sizeof(key));
+	strlcpy (value, MSG_ReadString(), sizeof(value));
 
 	Con_DPrintf("SETINFO %s: %s=%s\n", player->name, key, value);
 
@@ -1247,8 +1247,8 @@ void CL_ParseServerInfoChange (void)
 	char key[MAX_INFO_STRING];
 	char value[MAX_INFO_STRING];
 
-	Q_strncpyz (key, MSG_ReadString(), sizeof(key));
-	Q_strncpyz (value, MSG_ReadString(), sizeof(value));
+	strlcpy (key, MSG_ReadString(), sizeof(key));
+	strlcpy (value, MSG_ReadString(), sizeof(value));
 
 	Con_DPrintf("SERVERINFO: %s=%s\n", key, value);
 
@@ -1283,7 +1283,7 @@ void CL_ParsePrint (void)
 		len = p - cl.sprint_buf + 1;
 		memcpy(str, cl.sprint_buf, len);
 		str[len] = '\0';
-		strcpy (cl.sprint_buf, p+1);
+		strlcpy (cl.sprint_buf, p + 1, SPRINT_BUF_LEN);
 		
 		if (level == PRINT_CHAT)
 		{
@@ -1551,7 +1551,7 @@ void CL_ParseServerMessage (void)
 			i = MSG_ReadByte ();
 			if (i >= MAX_LIGHTSTYLES)
 				Host_EndGame ("svc_lightstyle > MAX_LIGHTSTYLES");
-			strncpy (cl_lightstyle[i].map,  MSG_ReadString(), MAX_STYLESTRING);
+			strlcpy (cl_lightstyle[i].map,  MSG_ReadString(), MAX_STYLESTRING);
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
 			

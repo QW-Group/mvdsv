@@ -122,14 +122,14 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
-// FIXME: make a buffer size safe vsprintf?
+// FIXME: make a buffer size safe vs<n>printf? - FIXED.
 void Con_Printf (char *fmt, ...)
 {
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 	
 	va_start (argptr,fmt);
-	vsprintf (msg,fmt,argptr);
+	vsnprintf (msg, MAXPRINTMSG, fmt, argptr);
 	va_end (argptr);
 
 	// add to redirected message
@@ -137,17 +137,16 @@ void Con_Printf (char *fmt, ...)
 	{
 		if (strlen (msg) + strlen(outputbuf) > /*sizeof(outputbuf) - 1*/ MAX_MSGLEN - 10)
 			SV_FlushRedirect ();
-		strcat (outputbuf, msg);
+		strlcat (outputbuf, msg, sizeof(outputbuf));
 		return;
 	}
 
 	Sys_Printf ("%s", msg);	// also echo to debugging console
-	if (sv_logfile)
-		fprintf (sv_logfile, "%s", msg);
+	SV_Write_Log(CONSOLE_LOG, 1, msg);
 
 	// dumb error message to log file if 
-	if (sv_error && sv_errorlogfile)
-		fprintf(sv_errorlogfile, "%s", msg);
+	if (sv_error)
+		SV_Write_Log(ERROR_LOG, 1, msg);
 }
 
 /*
@@ -166,7 +165,7 @@ void Con_DPrintf (char *fmt, ...)
 		return;
 
 	va_start (argptr,fmt);
-	vsprintf (msg,fmt,argptr);
+	vsnprintf (msg, MAXPRINTMSG, fmt, argptr);
 	va_end (argptr);
 	
 	Con_Printf ("%s", msg);
@@ -204,7 +203,7 @@ void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...)
 		return;
 
 	va_start (argptr,fmt);
-	vsprintf (string, fmt,argptr);
+	vsnprintf (string, sizeof(string), fmt, argptr);
 	va_end (argptr);
 
 	if (sv.demorecording) {
@@ -227,7 +226,7 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...)
 		return;
 
 	va_start (argptr,fmt);
-	vsprintf (string, fmt,argptr);
+	vsnprintf (string, sizeof(string), fmt, argptr);
 	va_end (argptr);
 
 	SV_PrintToClient(cl, level, string);
@@ -249,7 +248,7 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 	int			i;
 
 	va_start (argptr,fmt);
-	vsprintf (string, fmt,argptr);
+	vsnprintf (string, sizeof(string), fmt, argptr);
 	va_end (argptr);
 
 	Sys_Printf ("%s", string);	// print to the console
@@ -287,7 +286,7 @@ void SV_BroadcastCommand (char *fmt, ...)
 	if (!sv.state)
 		return;
 	va_start (argptr,fmt);
-	vsprintf (string, fmt,argptr);
+	vsnprintf (string, sizeof(string), fmt, argptr);
 	va_end (argptr);
 
 	MSG_WriteByte (&sv.reliable_datagram, svc_stufftext);

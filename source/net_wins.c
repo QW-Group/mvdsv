@@ -28,6 +28,7 @@ netadr_t	net_from;
 sizebuf_t	net_message;
 int			net_clientsocket;
 int			net_serversocket;
+int			net_telnetsocket;
 
 #define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
 byte		net_message_buffer[MAX_UDP_PACKET];
@@ -78,7 +79,7 @@ char	*NET_AdrToString (netadr_t a)
 	static	char	s[64];
 
 
-	sprintf (s, "%i.%i.%i.%i:%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3], ntohs(a.port));
+	snprintf (s, sizeof(s), "%i.%i.%i.%i:%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3], ntohs(a.port));
 
 	return s;
 }
@@ -87,7 +88,7 @@ char	*NET_BaseAdrToString (netadr_t a)
 {
 	static	char	s[64];
 	
-	sprintf (s, "%i.%i.%i.%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3]);
+	snprintf (s, sizeof(s), "%i.%i.%i.%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3]);
 
 	return s;
 }
@@ -114,7 +115,7 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 	
 	sadr.sin_port = 0;
 
-	strcpy (copy, s);
+	strlcpy (copy, s, sizeof(copy));
 	// strip off a trailing :port if present
 	for (colon = copy ; *colon ; colon++)
 		if (*colon == ':')
@@ -261,7 +262,7 @@ void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 
 //=============================================================================
 
-int UDP_OpenSocket (int *port, qboolean crash)
+int UDP_OpenSocket (int *port/*, qboolean crash*/)
 {
 	int newsocket;
 	struct sockaddr_in address;
@@ -269,10 +270,10 @@ int UDP_OpenSocket (int *port, qboolean crash)
 	int i;
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-		Sys_Error ("UDP_OpenSocket: socket:", strerror(errno));
+		Sys_Error ("UDP_OpenSocket: socket: %s", strerror(errno));
 
 	if (ioctlsocket (newsocket, FIONBIO, &_true) == -1)
-		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO:", strerror(errno));
+		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
 
 	address.sin_family = AF_INET;
 //ZOID -- check for interface binding option
@@ -309,6 +310,57 @@ int UDP_OpenSocket (int *port, qboolean crash)
 	return newsocket;
 }
 
+int TCP_OpenSocket (int *port)
+{
+	int newsocket;
+	struct sockaddr_in address;
+	unsigned long _true = true;
+	int i;
+
+	if ((newsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+		Sys_Error ("TCP_OpenSocket: socket: %s", strerror(errno));
+
+	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEADDR, (char*)&_true, sizeof(_true)))
+		Sys_Error ("TCP_OpenSocket: socket: %s", strerror(errno));
+
+	if (ioctlsocket (newsocket, FIONBIO, &_true) == -1)
+		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
+
+	address.sin_family = AF_INET;
+//ZOID -- check for interface binding option
+	if ((i = COM_CheckParm("-ipt")) && i + 1 < com_argc) {
+		address.sin_addr.s_addr = inet_addr(com_argv[i + 1]);
+		Con_Printf("Binding telnet service to IP Interface Address of %s\n",
+				inet_ntoa(address.sin_addr));
+	} else
+		address.sin_addr.s_addr = INADDR_ANY;
+
+	address.sin_port = htons((short)*port);
+
+	if (COM_CheckParm("-telnetport")) {
+		if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
+		{
+			Sys_Error ("TCP_OpenSocket: bind: %s", strerror(errno));
+		}
+	} else {
+		// try any port
+		int i;
+
+		for (i = 0; i < 100; i++, (*port)++) {
+			address.sin_port = htons((short)*port);
+			if( bind (newsocket, (void *)&address, sizeof(address)) != -1)
+				break;
+		}
+		if (i == 100)
+			Sys_Error ("TCP_OpenSocket: bind: %s", strerror(errno));
+	}
+
+	if (listen (newsocket, 1))
+		Sys_Error ("TCP_OpenSocket: listen: %s", strerror(errno));
+
+	return newsocket;
+}
+
 void NET_GetLocalAddress (int net_socket)	// FIXME
 {
 	char	buff[512];
@@ -334,28 +386,24 @@ NET_Init
 ====================
 */
 int __serverport;	// so we can open it later
-int NET_Init (int clientport, int serverport)
+int NET_Init (int clientport, int serverport, int telnetport)
 {
-	WORD	wVersionRequested; 
-	int		r;
-
-	wVersionRequested = MAKEWORD(1, 1); 
-
-	r = WSAStartup (MAKEWORD(2, 0), &winsockdata);
-	//r = WSAStartup (MAKEWORD(1, 1), &winsockdata);
-
-	if (r)
-		Sys_Error ("Winsock initialization failed.");
-
 	// 
 	// open the single socket to be used for all communications
 	//
-//	net_socket = UDP_OpenSocket (port);
+	if (telnetport)
+	{
+		net_telnetsocket = TCP_OpenSocket (&telnetport);
+		Con_Printf("TCP Initialized\n");
+		return telnetport;
+	}
+	// Why we need version 2.0?
+	if (WSAStartup (MAKEWORD(2, 0), &winsockdata))
+		Sys_Error ("Winsock initialization failed.");
 	if (clientport)
-		net_clientsocket = UDP_OpenSocket (&clientport, true);
-
-	if (serverport)
-		net_serversocket = UDP_OpenSocket (&serverport, false);
+		net_clientsocket = UDP_OpenSocket (&clientport/*, true*/);
+	else
+		net_serversocket = UDP_OpenSocket (&serverport/*, false*/);
 
 #if 0//ndef SERVERONLY
 	{
@@ -374,14 +422,13 @@ int NET_Init (int clientport, int serverport)
 	//
 	if (clientport)
 		NET_GetLocalAddress (net_clientsocket);
-	else if (serverport)
+	else
 		NET_GetLocalAddress (net_serversocket);
 
 	Con_Printf("UDP Initialized\n");
 
 	if (clientport)
 		return clientport;
-
 	return serverport;
 }
 
@@ -392,10 +439,18 @@ NET_Shutdown
 */
 void	NET_Shutdown (void)
 {
+	extern int	iosock;
+	extern int	telnetport;
 	if (net_clientsocket)
 		closesocket (net_clientsocket);
 	if (net_serversocket)
 		closesocket (net_serversocket);
+	if (telnetport)
+	{
+		if (iosock)
+			closesocket(iosock);
+		closesocket (net_telnetsocket);
+	}
 	WSACleanup ();
 }
 

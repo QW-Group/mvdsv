@@ -93,7 +93,7 @@ void R_ReadPointFile_f (void)
 	char	name[MAX_OSPATH];
 	extern cvar_t	cl_mapname;
 	
-	sprintf (name, "maps/%s.pts", cl_mapname.string);
+	snprintf (name, MAX_OSPATH, "maps/%s.pts", cl_mapname.string);
 
 	COM_FOpenFile (name, &f);
 	if (!f)

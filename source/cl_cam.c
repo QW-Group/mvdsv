@@ -143,7 +143,7 @@ void Cam_Lock(int playernum)
 {
 	char st[40];
 
-	sprintf(st, "ptrack %i", playernum);
+	snprintf(st, sizeof(st), "ptrack %i", playernum);
 	if (cls.demoplayback2) {
 		memcpy(cl.stats, cl.players[playernum].stats, sizeof(cl.stats));
 	}

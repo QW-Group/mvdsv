@@ -154,7 +154,7 @@ for a few moments
 */
 void SCR_CenterPrint (char *str)
 {
-	Q_strncpyz (scr_centerstring, str, sizeof(scr_centerstring));
+	strlcpy (scr_centerstring, str, sizeof(scr_centerstring));
 	scr_centertime_off = scr_centertime.value;
 	scr_centertime_start = cl.time;
 
@@ -493,7 +493,7 @@ void SCR_DrawFPS (void)
 		lastframetime = t;
 	}
 
-	sprintf(st, "%3d FPS", lastfps);
+	snprintf(st, sizeof(st), "%3d FPS", lastfps);
 	x = vid.width - strlen(st) * 8 - 8;
 	y = vid.height - sb_lines - 8;
 //	Draw_TileClear(x, y, strlen(st) * 8, 8);
@@ -532,7 +532,7 @@ void SCR_DrawSpeed (void)
 
 	if (display_speed >= 0)
 	{
-		sprintf(st, "%3d", (int)display_speed);
+		snprintf(st, sizeof(st), "%3d", (int)display_speed);
 		x = vid.width - strlen(st) * 8 - 8;
 		y = 8;
 	//	Draw_TileClear(x, y, strlen(st) * 8, 8);
@@ -578,7 +578,7 @@ void SCR_DrawClock (void)
 		minutes = fmod (time / 60, 10);
 		tens_seconds = fmod (time / 10, 6);
 		seconds = fmod (time, 10);
-		sprintf (str, "%i%i:%i%i:%i%i", tens_hours, hours, tens_minutes, minutes,
+		snprintf (str, sizeof(str), "%i%i:%i%i:%i%i", tens_hours, hours, tens_minutes, minutes,
 			tens_seconds, seconds);
 	}
 
@@ -737,7 +737,7 @@ void SCR_ScreenShot_f (void)
 	int				i, c, temp;
 
 	if (Cmd_Argc() == 2) {
-		Q_strncpyz (pcxname, Cmd_Argv(1), sizeof(pcxname));
+		strlcpy (pcxname, Cmd_Argv(1), sizeof(pcxname));
 		COM_ForceExtension (pcxname, ".tga");
 	}
 	else
@@ -751,7 +751,7 @@ void SCR_ScreenShot_f (void)
 		{ 
 			pcxname[5] = i/10 + '0'; 
 			pcxname[6] = i%10 + '0'; 
-			sprintf (checkname, "%s/%s", com_gamedir, pcxname);
+			snprintf (checkname, MAX_OSPATH, "%s/%s", com_gamedir, pcxname);
 			if (Sys_FileTime(checkname) == -1)
 				break;  // file doesn't exist
 		} 
@@ -1025,10 +1025,10 @@ void SCR_RSShot_f (void)
 	st[strlen(st) - 1] = 0;
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, h - 1, w);
 
-	Q_strncpyz (st, cls.servername, sizeof(st));
+	strlcpy (st, cls.servername, sizeof(st));
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, h - 11, w);
 
-	Q_strncpyz (st, name.string, sizeof(st));
+	strlcpy (st, name.string, sizeof(st));
 	SCR_DrawStringToSnap (st, newbuf, w - strlen(st)*8, h - 21, w);
 
 	WritePCXfile (pcxname, newbuf, w, h, w, host_basepal, true);

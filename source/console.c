@@ -365,15 +365,14 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
-// FIXME: make a buffer size safe vsprintf?
+// FIXME: make a buffer size safe vs<n>printf? - FIXED.
 void Con_Printf (char *fmt, ...)
 {
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 	
 	va_start (argptr,fmt);
-	_vsnprintf (msg,MAXPRINTMSG,fmt,argptr);
-	msg[MAXPRINTMSG-1] = 0;
+	vsnprintf (msg,MAXPRINTMSG,fmt,argptr);
 	va_end (argptr);
 	
 // also echo to debugging console
@@ -423,7 +422,7 @@ void Con_DPrintf (char *fmt, ...)
 		return;			// don't confuse non-developers with techie stuff...
 
 	va_start (argptr,fmt);
-	vsprintf (msg,fmt,argptr);
+	vsnprintf (msg, MAXPRINTMSG, fmt, argptr);
 	va_end (argptr);
 	
 	Con_Printf ("%s", msg);
@@ -455,7 +454,8 @@ void Con_DrawInput (void)
 	if (key_dest != key_console && cls.state == ca_active)
 		return;		// don't draw anything (always draw if not active)
 
-	text = strcpy (temp, key_lines[edit_line]);
+	strlcpy (temp, key_lines[edit_line], MAXCMDLINE);
+	text = temp;
 
 // fill out remainder with spaces
 	for (i=strlen(text) ; i < MAXCMDLINE ; i++)
@@ -533,7 +533,8 @@ void Con_DrawNotify (void)
 
 		// FIXME: clean this up
 
-		s = strcpy (temp, chat_buffer);
+		strlcpy (temp, chat_buffer, MAXCMDLINE + 1);
+		s = temp;
 
 		// add the cursor frame
 		if ( (int)(noscale_realtime*con_cursorspeed) & 1 ) {
@@ -628,11 +629,11 @@ void Con_DrawConsole (int lines)
 		i = con_linewidth/3;
 		if (strlen(text) > i) {
 			y = x - i - 13;
-			Q_strncpyz (dlbar, text, i+1);
-			strcat(dlbar, "...");
+			strlcpy (dlbar, text, i+1);
+			strlcat(dlbar, "...", sizeof(dlbar));
 		} else
-			strcpy(dlbar, text);
-		strcat(dlbar, ": ");
+			strlcpy(dlbar, text, sizeof(dlbar));
+		strlcat(dlbar, ": ", sizeof(dlbar));
 		i = strlen(dlbar);
 		dlbar[i++] = '\x80';
 		// where's the dot go?
@@ -648,8 +649,9 @@ void Con_DrawConsole (int lines)
 				dlbar[i++] = '\x81';
 		dlbar[i++] = '\x82';
 		dlbar[i] = 0;
-
-		sprintf(dlbar + strlen(dlbar), " %02d%%(%dkb/s)", cls.downloadpercent, cls.downloadrate);
+		i = strlen(dlbar);
+		snprintf(dlbar + i, sizeof(dlbar) - i,
+			" %02d%%(%dkb/s)", cls.downloadpercent, cls.downloadrate);
 
 		// draw it
 		y = con_vislines-22 + 8;
@@ -713,7 +715,7 @@ void Con_SafePrintf (char *fmt, ...)
 	int			temp;
 		
 	va_start (argptr,fmt);
-	vsprintf (msg,fmt,argptr);
+	vsnprintf (msg, sizeof(msg), fmt, argptr);
 	va_end (argptr);
 	
 	temp = scr_disabled_for_loading;

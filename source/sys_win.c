@@ -64,7 +64,7 @@ void Sys_DebugLog(char *file, char *fmt, ...)
     int fd;
     
     va_start(argptr, fmt);
-    vsprintf(data, fmt, argptr);
+    vsnprintf(data, sizeof(data), fmt, argptr);
     va_end(argptr);
     fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0666);
     write(fd, data, strlen(data));
@@ -194,7 +194,7 @@ void Sys_Error (char *error, ...)
 	Host_Shutdown ();
 
 	va_start (argptr, error);
-	vsprintf (text, error, argptr);
+	vsnprintf (text, sizeof(text), error, argptr);
 	va_end (argptr);
 
 	MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
@@ -317,7 +317,7 @@ char *Sys_ConsoleInput (void)
 									clipText = GlobalLock(th);
 									if (clipText) {
 										textCopied = Q_Malloc (GlobalSize(th)+1);
-										strcpy(textCopied, clipText);
+										strlcpy(textCopied, clipText, GlobalSize(th)+1);
 /* Substitutes a NULL for every token */strtok(textCopied, "\n\r\b");
 										i = strlen(textCopied);
 										if (i+len>=256)
@@ -325,7 +325,7 @@ char *Sys_ConsoleInput (void)
 										if (i>0) {
 											textCopied[i]=0;
 											text[len]=0;
-											strcat(text, textCopied);
+											strlcat(text, textCopied, sizeof(text));
 											len+=dummy;
 											WriteFile(houtput, textCopied, i, &dummy, NULL);
 										}

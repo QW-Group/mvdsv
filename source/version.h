@@ -2,8 +2,8 @@
 
 #define GLQUAKE_VERSION 1.00
 #define	QW_VERSION		2.40
-#define QWE_VERSION	"0.172 Beta"
-#define QWE_VERNUM 0.172
+#define QWE_VERSION	"0.1722 Beta"
+#define QWE_VERNUM 0.1722
 #define LINUX_VERSION 0.98
 
 #define RELEASE_VERSION

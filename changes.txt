@@ -1,4 +1,124 @@
 ----
+QWEX v0.1722b Beta DEVELOP
+[client] and [server]
+- replace all:
+      sprintf ->  snprintf
+     vsprintf -> vsnprintf
+      strcpy  ->  strlcpy
+      strcat  ->  strlcat
+  partial:
+      strcmp  ->  strncmp
+      strstr  ->  strnstr
+  and some overflow fixes (switching from luny)
+- now all log files (qconsole.log, qerror.log, rcon.log) are put into QUAKE_DIR/OLDFILELOGNAME_PORT.log
+  instead of QUAKE_DIR/GAME_DIR/OLDFILELOGNAME.log (with the exception of frag_NNNN.log)
+[server]
+- change: command status now shows the client's IP and DNS name
+- new cvar:
+    frag_log_type n
+      0 - old style log (  qwsv - v0.165)
+      1 - new style log (v0.168 - v0.172)
+      default: 0
+- add possibility for server-management via telnet:  
+  new command line options:
+    -ipt IP - use the specified IP address for remote connection
+    -telnetport port - use the specified tcp port for remote connection
+      if port = 0 then server works like without telnet extension - console messages are printed on stdout
+      default: use the same value as in -port PORT
+  new cvars:
+    telnet_password password - password for authentication on connect
+      default: default: no password is set by default, so no telnet-connection will be allowed
+    not_auth_timeout n - if no password is sent (telnet_password) in "n" seconds the server refuses connection
+      If set to 0, no timeout will occur
+      default: 20
+    auth_timeout n - the server will close the connection "n" seconds after the authentication is completed
+      If set to 0, no timeout will occur
+      default: 3600 (1 hour)
+    telnet_log_level n, logging level of the telnet connections (in file QUAKE_DIR/qtelnet_PORT.log)
+      0 - no log
+      1 - log connects and disconnects to telnetport
+      2 - same as 1 and all commands typed in console by user
+      3 - same as 2 and all messages written on console by every authenticated user
+      default: 0
+  new commands:
+    logtelnet - on/off telnet console logging
+
+    Example: 
+    [user@host:~]$ cd QUAKE_DIR
+    [user@host:QUAKE_DIR]$ cat > ktpro/telnet.cfg
+    telnet_password my_C00L_password
+    not_auth_timeout 20
+    auth_timeout 0
+    telnet_log_level 3
+    logtelnet
+    frag_log_type 0
+    <Ctrl+D>
+    [user@host:QUAKE_DIR]$ ./mvdsv -port 28000 -telnetport 28000 +gamedir ktpro +exec telnet.cfg &
+
+  To use management of the server via telnet:
+  1. run telnet client (win32: "telnet.exe", unix: "telnet")
+    1.1. win32: type command "set LOCAL_ECHO" if you want to see that you type in console
+  2. type command "open host telnetport"
+  3. type password (telnet_password) and press <Enter>
+  4. now you may type commands to server.
+  After successful authentication the server automatically executes the "status" command.
+
+  Example:
+  [user@host:~]$ telnet
+  telnet> open localhost 28000
+  Trying 127.0.0.1...
+  Connected to localhost.
+  Escape character is '^]'.
+  # not_correct_password
+  status
+  my_C00L_password
+  net address                 : 10.0.0.2:28000
+  cpu utilization (overall)   :   0%
+  cpu utilization (recording) :   0%
+  avg response time           : 0 ms
+  packets/frame               :  0.00 (33)
+  frags id  address         name            rate ping drop  real ip
+  ----- --- --------------- --------------- ---- ---- ----- ---------------
+
+  say test
+  console: test
+  test
+  Unknown command "test"
+  quit                              
+  Shutting down.                    
+  Connection closed by foreign host.
+  [1]+  Done                    ./mvdsv -port 28000 -telnetport 28000 +gamedir ktpro +exec telnet.cfg
+  [user@host:~]$ cd QUAKE_DIR
+  [user@host:QUAKE_DIR]$ cat qtelnet_28000.log
+  [Wed Dec 31, 09:53:01 2003].[1] ============================================
+  [Wed Dec 31, 09:53:01 2003].[1] mvdsv 0.1722 Beta started
+  [Wed Dec 31, 09:53:09 2003].[1] Accept connection from: 127.0.0.1
+  [Wed Dec 31, 09:53:10 2003].[1] Authenticated: no
+  [Wed Dec 31, 09:53:12 2003].[1] Authenticated: no
+  [Wed Dec 31, 09:53:19 2003].[1] Authenticated: yes
+  [Wed Dec 31, 09:53:19 2003].[2] status
+  [Wed Dec 31, 09:53:19 2003].[3] net address                 : 10.0.0.2:28000
+  [Wed Dec 31, 09:53:19 2003].[3] cpu utilization (overall)   :   0%
+  [Wed Dec 31, 09:53:19 2003].[3] cpu utilization (recording) :   0%
+  [Wed Dec 31, 09:53:19 2003].[3] avg response time           : 0 ms
+  [Wed Dec 31, 09:53:19 2003].[3] packets/frame               :  0.00 (33)
+  [Wed Dec 31, 09:53:19 2003].[3] frags id  address         name            rate ping drop  real ip
+  [Wed Dec 31, 09:53:19 2003].[3] ----- --- --------------- --------------- ---- ---- ----- ---------------
+  [Wed Dec 31, 09:53:19 2003].[3] 
+  [Wed Dec 31, 09:53:22 2003].[2] say test
+  [Wed Dec 31, 09:53:22 2003].[3] console: test
+  [Wed Dec 31, 09:53:23 2003].[2] test
+  [Wed Dec 31, 09:53:23 2003].[3] Unknown command "test"
+  [Wed Dec 31, 09:53:30 2003].[2] quit
+  [Wed Dec 31, 09:53:30 2003].[3] Shutting down.
+  [Wed Dec 31, 09:53:30 2003].[1] Server shutdown.
+
+  Limitations: the telnet-feature can be used by only one user at a time.
+
+Note: VVD patches.
+Thanks: Scorp for 1st version of telnet patch (for QuakeForge 0.2.99beta5).
+
+----
 QWEX v0.172b Beta DEVELOP
 [server]
 - bugfix: A serious overflow bug in "download" function fixed

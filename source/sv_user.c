@@ -685,7 +685,7 @@ void OutofBandPrintf(netadr_t where, char *fmt, ...)
 	send[3] = 0xff;
 	send[4] = A2C_PRINT;
 	va_start (argptr, fmt);
-	vsprintf (send+5, fmt, argptr);
+	vsnprintf (send + 5, sizeof(send) - 5, fmt, argptr);
 	va_end (argptr);
 
 	NET_SendPacket (net_serversocket, strlen(send)+1, send, where);
@@ -814,8 +814,7 @@ void SV_BeginDownload_f(void)
 	}
 
 	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0]) {
-		_snprintf(n,sizeof(n), "%s/%s", sv_demoDir.string, name + 6);
-		n[sizeof(n)-1] = 0;
+		snprintf(n,sizeof(n), "%s/%s", sv_demoDir.string, name + 6);
 		name = n;
 	} else if (!strncmp(name, "demonum/", 8)) {
 		int num;
@@ -839,8 +838,7 @@ void SV_BeginDownload_f(void)
 			return;
 		}
 		Con_Printf("downloading demos/%s\n",name);
-		_snprintf(n, sizeof(n), "download demos/%s\n", name);
-		n[sizeof(n)-1] = 0;
+		snprintf(n, sizeof(n), "download demos/%s\n", name);
 
 		ClientReliableWrite_Begin (host_client, svc_stufftext,strlen(n) + 2);
 		ClientReliableWrite_String (host_client, n);
@@ -928,8 +926,8 @@ void SV_Say (qboolean team)
 
 	}
 
-	strcpy(text, p);
-	strcat(text, "\n");
+	strlcpy(text,    p, sizeof(text));
+	strlcat(text, "\n", sizeof(text));
 
 	if (!host_client->logged)
 	{
@@ -955,11 +953,11 @@ void SV_Say (qboolean team)
 #endif
 
 	if (host_client->spectator && (!sv_spectalk.value || team))
-		strcpy(text, va("[SPEC] %s: %s", host_client->name, text));
+		strlcpy(text, va("[SPEC] %s: %s", host_client->name, text), sizeof(text));
 	else if (team)
-		strcpy(text, va("(%s): %s", host_client->name, text));
+		strlcpy(text, va("(%s): %s", host_client->name, text), sizeof(text));
 	else {
-		strcpy(text, va("%s: %s", host_client->name, text));
+		strlcpy(text, va("%s: %s", host_client->name, text), sizeof(text));
 	}
 
 	if (fp_messages) {
@@ -1147,9 +1145,9 @@ void SV_Pause_f (void)
 	}
 
 	if (!sv.paused)
-		sprintf (st, "%s paused the game\n", host_client->name);
+		snprintf (st, sizeof(st), "%s paused the game\n", host_client->name);
 	else
-		sprintf (st, "%s unpaused the game\n", host_client->name);
+		snprintf (st, sizeof(st), "%s unpaused the game\n", host_client->name);
 
 	SV_TogglePause(st);
 }
@@ -1306,12 +1304,12 @@ void SV_SetInfo_f (void)
 	if (strstr(Cmd_Argv(1), "\\") || strstr(Cmd_Argv(2), "\\"))
 		return;		// illegal char
 
-	strcpy(oldval, Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)));
+	strlcpy(oldval, Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)), MAX_INFO_STRING);
 
 	Info_SetValueForKey (host_client->userinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_INFO_STRING);
 // name is extracted below in ExtractFromUserInfo
-//	Q_strncpyz (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
-//		, sizeof(host_client->name));
+//	strlcpy (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
+//		, CLIENT_NAME_LEN);
 //	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 //	host_client->sendinfo = true;
 
