@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.1 2005/02/05 16:08:54 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.2 2005/02/21 15:19:05 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -71,7 +71,7 @@ void PR2_RunError(char *error, ...)
 
 void PR2_CheckEmptyString(char *s)
 {
-	if (s[0] <= ' ')
+	if (!s || s[0] <= ' ')
 		PR2_RunError("Bad string");
 }
 
@@ -92,6 +92,11 @@ void PF2_GetEntityToken(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 void PF2_DPrint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	Con_Printf("%s", VM_POINTER(base,mask,stack[0].string));
+}
+
+void PF2_conprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	Sys_Printf("%s", VM_POINTER(base,mask,stack[0].string));
 }
 
 void PF2_Error(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
@@ -232,6 +237,8 @@ void PF2_setmodel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	
 	e = EDICT_NUM(stack[0]._int);
 	m = VM_POINTER(base,mask,stack[1].string);
+	if(!m)
+		m = "";
 	// check to see if model was properly precached
 	for (i = 0, check = sv.model_precache; *check; i++, check++)
 		if (!strcmp(*check, m))
@@ -351,6 +358,8 @@ void PF2_ambientsound(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*r
 	pos[2] = stack[2]._float;
 
 	samp 		= VM_POINTER(base,mask,stack[3].string);
+	if( !samp )
+		samp = "";
 	vol 		= stack[4]._float;
 	attenuation 	= stack[5]._float;
 	
@@ -651,6 +660,9 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 		PR2_RunError("Parm 0 not a client");
 	
 	str = VM_POINTER(base,mask,stack[1].string);
+	if( !str )
+		PR2_RunError("PF2_stuffcmd: NULL pointer");
+
 
 	cl = &svs.clients[entnum - 1];
 	buf = cl->stufftext_buf;
@@ -696,6 +708,97 @@ void PF2_localcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	Cbuf_AddText(VM_POINTER(base,mask,stack[0].string));
 }
 
+void PF2_executecmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	int old_other, old_self; // mod_consolecmd will be executed, so we need to store this
+
+	old_self = pr_global_struct->self;
+	old_other = pr_global_struct->other;
+
+	Cbuf_Execute();
+
+	pr_global_struct->self = old_self;
+	pr_global_struct->other = old_other;
+}
+
+/*
+=================
+PF2_readcmd
+
+void readmcmd (string str,string buff, int sizeofbuff)
+=================
+*/
+
+void PF2_readcmd (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	char		*str;
+	extern char outputbuf[];
+	char		*buf;
+	int 		sizebuff;
+	extern 	redirect_t sv_redirected;
+	redirect_t old;
+
+	str = VM_POINTER(base,mask,stack[0].string);
+	buf = VM_POINTER(base,mask,stack[1].string);
+	sizebuff = stack[2]._int;
+
+	Cbuf_Execute();
+	Cbuf_AddText (str);
+	
+	old = sv_redirected;
+
+	if (old != RD_NONE)
+		SV_EndRedirect();
+
+	SV_BeginRedirect(RD_MOD);
+	Cbuf_Execute();
+	
+	strlcpy(buf, outputbuf, sizebuff);
+	
+	SV_EndRedirect();
+
+	if (old != RD_NONE)
+		SV_BeginRedirect(old);
+
+}
+
+/*
+=================
+PF2_redirectcmd
+
+void redirectcmd (entity to, string str)
+=================
+*/
+
+void PF2_redirectcmd (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	char		*str;
+	int 		entnum;
+//	redirect_t old;
+
+	extern redirect_t sv_redirected;
+
+	str = VM_POINTER(base,mask,stack[1].string);
+	if ( sv_redirected )
+	{
+		Cbuf_AddText (str);
+		Cbuf_Execute();
+		return;
+	}
+
+	entnum = NUM_FOR_EDICT(VM_POINTER(base,mask,stack[0]._int));
+
+	if (entnum < 1 || entnum > MAX_CLIENTS)
+		PR2_RunError ("Parm 0 not a client");
+
+	
+	SV_BeginRedirect( RD_MOD + entnum );
+	Cbuf_AddText (str);
+	Cbuf_Execute();
+	SV_EndRedirect();
+
+}
+
 /*
 =================
 PF2_cvar
@@ -727,9 +830,8 @@ void PF2_cvar_string(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	if( ( buff_off + buffsize ) &(~mask))
 		return;
 
-    strlcpy(VM_POINTER(base,mask,buff_off),
-		Cvar_VariableString(VM_POINTER(base,mask,stack[0].string)),
-		buffsize);
+	strlcpy(VM_POINTER(base,mask,buff_off),
+		Cvar_VariableString(VM_POINTER(base,mask,stack[0].string)), buffsize);
 }
 
 /*
@@ -937,7 +1039,7 @@ void PF2_nextent(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 	while (1)
 	{
 		i++;
-		if (i == sv.num_edicts)
+		if (i >= sv.num_edicts)
 		{
                         retval->_int = 0;
 			return;
@@ -949,6 +1051,48 @@ void PF2_nextent(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 			return;
 		}
 	}
+}
+
+ /*
+ =============
+PF2_find
+
+entity find(start,fieldoff,str)
+=============
+*/
+void PF2_Find (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	int		e;
+	int 		fofs;
+	char*		str,*t;
+	edict_t	*ed;
+
+	e    = NUM_FOR_EDICT(VM_POINTER(base,mask,stack[0]._int));
+	fofs = stack[1]._int;
+		
+	str = VM_POINTER(base,mask,stack[2].string);
+
+	if(!str)
+		PR2_RunError ("PF2_Find: bad search string");
+
+	//Con_Printf("%s\n",str);
+	for (e++ ; e < sv.num_edicts ; e++)
+	{
+		ed = EDICT_NUM(e);
+		if (ed->free)
+			continue;
+		t= VM_POINTER(base,mask,*(int*)((char *) ed + fofs));
+		if (!t)
+			continue;
+		if (!strcmp(t,str))
+		{
+		    retval->_int = POINTER_TO_VM(base,mask,ed);
+			return;
+		}
+	
+	}
+	retval->_int = 0;
+        return;
 }
 
 /*
@@ -1363,6 +1507,11 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 		{
 			int ping = SV_CalcPing(&svs.clients[e1 - 1]);
 			sprintf(ov, "%d", ping);
+			value = ov;
+		}else
+		if (!strcmp(key, "*userid"))
+		{
+			sprintf(ov, "%d", svs.clients[e1 - 1].userid);
 			value = ov;
 		}
 		else
@@ -1875,6 +2024,34 @@ void PF2_Map_Extension(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*
 
 	retval->_int = -1;
 }
+////////////////////
+//
+// timewaster functions
+//
+////////////////////
+void PF2_strcmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+  retval->_int=  strcmp( VM_POINTER(base,mask,stack[0].string),
+  			  VM_POINTER(base,mask,stack[1].string));
+}
+
+void PF2_strncmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+  retval->_int=  strncmp( VM_POINTER(base,mask,stack[0].string),
+  			  VM_POINTER(base,mask,stack[1].string),stack[2]._int);
+}
+
+void PF2_stricmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+  retval->_int=  strcasecmp( VM_POINTER(base,mask,stack[0].string),
+  			  VM_POINTER(base,mask,stack[1].string));
+}
+
+void PF2_strnicmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+  retval->_int=  strncasecmp( VM_POINTER(base,mask,stack[0].string),
+  			  VM_POINTER(base,mask,stack[1].string),stack[2]._int);
+}
 
 //===========================================================================
 // SysCalls
@@ -1954,7 +2131,17 @@ pr2_trapcall_t pr2_API[]=
 	PF2_FS_GetFileList,
 	PF2_cvar_set_float,
 	PF2_cvar_string,
-	PF2_Map_Extension
+	PF2_Map_Extension,
+	PF2_Map_Extension,
+	PF2_strcmp,
+	PF2_strncmp,
+	PF2_stricmp,
+	PF2_strnicmp,
+	PF2_Find,
+	PF2_executecmd,
+	PF2_conprint,
+	PF2_readcmd,
+	PF2_redirectcmd
 };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 

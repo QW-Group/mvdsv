@@ -17,11 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.h,v 1.1 2005/02/05 16:08:54 vvd0 Exp $
+ *  $Id: pr2_vm.h,v 1.2 2005/02/21 15:19:11 vvd0 Exp $
  */
 
 #ifndef __PR2_VM_H__
 #define __PR2_VM_H__
+
+//#define SAFE_QVM
+#define QVM_RUNAWAY_PROTECTION
+//#define QVM_DATA_PROTECTION
+#define QVM_PROFILE
 
 #ifdef _WIN32
 #define EXPORT_FN __cdecl
@@ -35,6 +40,7 @@
 #define MAX_CYCLES	 100000
 
 #define VM_POINTER(base,mask,x)	 ((x)?(void*)((char *)base+((x)&mask)):NULL)
+#define POINTER_TO_VM(base,mask,x)	 ((x)?(int)((char *)(x) - (char*)base)&mask:0)
 
 
 typedef union pr2val_s
