@@ -43,6 +43,8 @@ static int		demo_size;
 cvar_t			sv_demoPrefix = {"sv_demoPrefix", ""};
 cvar_t			sv_demoSuffix = {"sv_demoSuffix", ""};
 cvar_t			sv_onrecordfinish = {"sv_onRecordFinish", ""};
+cvar_t			sv_ondemoremove = {"sv_onDemoRemove", ""};
+cvar_t			sv_demotxt = {"sv_demotxt", "1"};
 
 void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
 size_t (*dwrite) ( const void *buffer, size_t size, size_t count, void *stream);
@@ -570,6 +572,8 @@ void Demo_Init (void)
 	Cvar_RegisterVariable (&sv_demoPrefix);
 	Cvar_RegisterVariable (&sv_demoSuffix);
 	Cvar_RegisterVariable (&sv_onrecordfinish);
+	Cvar_RegisterVariable (&sv_ondemoremove);
+	Cvar_RegisterVariable (&sv_demotxt);
 
 	p = COM_CheckParm ("-democache");
 	if (p)
@@ -632,14 +636,19 @@ void SV_Stop (int reason)
 		Con_Printf ("Not recording a demo.\n");
 		return;
 	}
-	
+
 	if (reason == 2)
 	{
+		char path[MAX_OSPATH];
 		// stop and remove
 		if (demo.disk)
 			fclose(demo.file);
 
-		Sys_remove(demo.namelong);
+		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, demo.name);
+		Sys_remove(path);
+
+		strcpy(path + strlen(path) - 3, "txt");
+		Sys_remove(path);
 
 		demo.file = NULL;
 		sv.demorecording = false;
@@ -679,8 +688,23 @@ void SV_Stop (int reason)
 
 	if (sv_onrecordfinish.string[0])
 	{
-		Cmd_TokenizeString(va("blah %s \"%s/%s\"", sv_onrecordfinish.string, sv_demoDir.string, serverdemo.string));
+		extern redirect_t sv_redirected;
+		int old = sv_redirected;
+		char path[MAX_OSPATH];
+		char *p;
+
+		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
+			*p = 0; // strip parameters
+
+		strcpy(path, demo.name);
+		strcpy(path + strlen(demo.name) - 3, "txt");
+
+		sv_redirected = RD_NONE; // onrecord script is called always from the console
+		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" \"%s\" %s", sv_onrecordfinish.string, demo.path, serverdemo.string, path, p != NULL ? p+1 : ""));
+		if (p) *p = ' ';
 		SV_Script_f();
+
+		sv_redirected = old;
 	}
 	
 	Cvar_SetROM(&serverdemo, "");
@@ -765,16 +789,120 @@ void SV_WriteSetDemoMessage (void)
 		fflush (demo.file);
 }
 
-static void SV_Record (void)
+static char *SV_PrintTeams(void)
+{
+	char *teams[MAX_CLIENTS], *p;
+	int	id = 0, i, j, numcl = 0, numt = 0;
+	client_t *clients[MAX_CLIENTS];
+	char buf[2048] = {0};
+	extern cvar_t teamplay;
+	extern char chartbl2[];
+
+	// count teams and players
+	for (i=0; i < MAX_CLIENTS; i++)
+	{
+		if (svs.clients[i].state != cs_spawned)
+			continue;
+		if (svs.clients[i].spectator)
+			continue;
+
+		clients[numcl++] = &svs.clients[i];
+		for (j = 0; j < numt; j++)
+			if (!strcmp(svs.clients[i].team, teams[j]))
+				break;
+		if (j != numt)
+			continue;
+
+		teams[numt++] = svs.clients[i].team;
+	}
+
+	// create output
+	
+	if (numcl == 2) // duel
+	{
+		sprintf(buf, "team1 %s\nteam2 %s\n", clients[0]->name, clients[1]->name);
+	} else if (!teamplay.value) // ffa
+	{ 
+		sprintf(buf, "players:\n");
+		for (i = 0; i < numcl; i++)
+			sprintf(buf+strlen(buf), "  %s\n", clients[i]->name);
+	} else { // teamplay
+		for (j = 0; j < numt; j++) {
+			sprintf(buf + strlen(buf), "team %s:\n", teams[j]);
+			for (i = 0; i < numcl; i++)
+				if (!strcmp(clients[i]->team, teams[j]))
+					sprintf(buf + strlen(buf), "  %s\n", clients[i]->name);
+		}
+	}
+
+	if (!numcl)
+		return "\n";
+	for (p = buf; *p; p++) *p = chartbl2[(byte)*p];
+	return va("%s",buf);
+}
+
+static void SV_Record (char *name)
 {
 	sizebuf_t	buf;
 	char	buf_data[MAX_MSGLEN];
 	int n, i;
-	char *s, info[MAX_INFO_STRING];
+	char *s, info[MAX_INFO_STRING], path[MAX_OSPATH];
 	
 	client_t *player;
 	char *gamedir;
 	int seq = 1;
+
+	memset(&demo, 0, sizeof(demo));
+	for (i = 0; i < UPDATE_BACKUP; i++)
+		demo.recorder.frames[i].entities.entities = demo_entities[i];
+	
+	DemoBuffer_Init(&demo.dbuffer, demo.buffer, sizeof(demo.buffer));
+	DemoSetMsgBuf(NULL, &demo.frames[0].buf);
+
+	demo.datagram.maxsize = sizeof(demo.datagram_data);
+	demo.datagram.data = demo.datagram_data;
+
+	demo.file = fopen (name, "wb");
+	if (!demo.file)
+	{
+		Con_Printf ("ERROR: couldn't open %s\n", name);
+		return;
+	}
+
+	SV_InitRecord();
+
+	s = name + strlen(name);
+	while (*s != '/') s--;
+	Q_strncpyz(demo.name, s+1, sizeof(demo.name));
+	Q_strncpyz(demo.path, sv_demoDir.string, sizeof(demo.path));
+	
+	if (!*demo.path)
+		strcpy(demo.path, ".");
+
+	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", demo.disk ? "disk" : "memory", demo.name);
+	Cvar_SetROM(&serverdemo, demo.name);
+
+	strcpy(path, name);
+	strcpy(path + strlen(path)-3, "txt");
+
+	if (sv_demotxt.value) {
+		FILE *f;
+
+		f = fopen (path, "w+t");
+		if (f != NULL)
+		{
+			char buf[2000];
+			date_t date;
+
+			Sys_TimeOfDay(&date);
+
+			sprintf(buf, "date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n%s",date.str, sv.name, (int)teamplay.value, (int)deathmatch.value, (int)timelimit.value, SV_PrintTeams());
+			fwrite(buf, strlen(buf),1,f);
+			fflush(f);
+			fclose(f);
+		}
+	} else 
+		Sys_remove(path);
 
 	sv.demorecording = true;
 	demo.pingtime = demo.time = sv.time;
@@ -1107,34 +1235,8 @@ void SV_Record_f (void)
 //
 	COM_ForceExtension (name, ".mvd");
 
-	memset(&demo, 0, sizeof(demo));
-	for (i = 0; i < UPDATE_BACKUP; i++)
-		demo.recorder.frames[i].entities.entities = demo_entities[i];
-
-	DemoBuffer_Init(&demo.dbuffer, demo.buffer, sizeof(demo.buffer));
-	DemoSetMsgBuf(NULL, &demo.frames[0].buf);
 	
-	demo.datagram.maxsize = sizeof(demo.datagram_data);
-	demo.datagram.data = demo.datagram_data;
-
-	demo.file = fopen (name, "wb");
-	if (!demo.file)
-	{
-		Con_Printf ("ERROR: couldn't open.\n");
-		return;
-	}
-
-	SV_InitRecord();
-
-	Q_strncpyz(demo.namelong, name, sizeof(demo.namelong));
-
-	s = name + strlen(name);
-	while (*s != '/') s--;
-	Q_strncpyz(demo.name, s+1, sizeof(demo.name));
-
-	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", demo.disk ? "disk" : "memory", demo.name);
-	Cvar_SetROM(&serverdemo, demo.name);
-	SV_Record ();
+	SV_Record (name);
 }
 
 /*
@@ -1282,37 +1384,8 @@ void SV_EasyRecord_f (void)
 		} while (f);
 	}
 
-//
-// open the demo file
-//
-	memset(&demo, 0, sizeof(demo));
-	for (i = 0; i < UPDATE_BACKUP; i++)
-		demo.recorder.frames[i].entities.entities = demo_entities[i];
-	
-	DemoBuffer_Init(&demo.dbuffer, demo.buffer, sizeof(demo.buffer));
-	DemoSetMsgBuf(NULL, &demo.frames[0].buf);
 
-	demo.datagram.maxsize = sizeof(demo.datagram_data);
-	demo.datagram.data = demo.datagram_data;
-
-	demo.file = fopen (name2, "wb");
-	if (!demo.file)
-	{
-		Con_Printf ("ERROR: couldn't open %s\n", name2);
-		return;
-	}
-
-	SV_InitRecord();
-
-	Q_strncpyz(demo.namelong, name2, sizeof(demo.namelong));
-
-	s = name2 + strlen(name2);
-	while (*s != '/') s--;
-	Q_strncpyz(demo.name, s+1, sizeof(demo.name));
-
-	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", demo.disk ? "disk" : "memory", demo.name);
-	Cvar_SetROM(&serverdemo, demo.name);
-	SV_Record ();
+	SV_Record (name2);
 }
 
 void SV_DemoList_f (void)
@@ -1378,6 +1451,28 @@ char *SV_DemoNum(int num)
 	return NULL;
 }
 
+char *SV_DemoName2Txt(char *name)
+{
+	char s[MAX_OSPATH];
+
+	if (!name)
+		return NULL;
+
+	strcpy(s, name);
+
+	if (strstr(s, ".mvd.gz") != NULL)
+		strcpy(s + strlen(s) - 6, "txt");
+	else
+		strcpy(s + strlen(s) - 3, "txt");
+
+	return va("%s", s);
+}
+
+char *SV_DemoTxTNum(int num)
+{
+	SV_DemoName2Txt(SV_DemoNum(num));
+}
+
 void SV_DemoRemove_f (void)
 {
 	char name[MAX_DEMO_NAME], *ptr;
@@ -1414,6 +1509,8 @@ void SV_DemoRemove_f (void)
 					Con_Printf("removing %s...\n", list->name);
 					i++;
 				}
+		
+				Sys_remove(SV_DemoName2Txt(path));
 			}
 		}
 
@@ -1434,10 +1531,24 @@ void SV_DemoRemove_f (void)
 	if (sv.demorecording && !strcmp(name, demo.name))
 		SV_Stop_f();
 
-	if (!Sys_remove(path))
+	if (!Sys_remove(path)) {
 		Con_Printf("demo %s succesfully removed\n", name);
-	else 
+
+		if (*sv_ondemoremove.string)
+		{
+			extern redirect_t sv_redirected;
+			int old = sv_redirected;
+
+			sv_redirected = RD_NONE; // this script is called always from the console
+			Cmd_TokenizeString(va("script %s \"%s\" \"%s\"", sv_ondemoremove.string, sv_demoDir.string, name));
+			SV_Script_f();
+
+			sv_redirected = old;
+		}
+	} else 
 		Con_Printf("unable to remove demo %s\n", name);
+
+	Sys_remove(SV_DemoName2Txt(path));
 }
 
 void SV_DemoRemoveNum_f (void)
@@ -1466,10 +1577,147 @@ void SV_DemoRemoveNum_f (void)
 			SV_Stop_f();
 
 		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
-		if (!Sys_remove(path))
+		if (!Sys_remove(path)) {
 			Con_Printf("demo %s succesfully removed\n", name);
-		else 
+			if (*sv_ondemoremove.string)
+			{
+				extern redirect_t sv_redirected;
+				int old = sv_redirected;
+
+				sv_redirected = RD_NONE; // this script is called always from the console
+				Cmd_TokenizeString(va("script %s \"%s\" \"%s\"", sv_ondemoremove.string, sv_demoDir.string, name));
+				SV_Script_f();
+
+				sv_redirected = old;
+			}
+		} else 
 			Con_Printf("unable to remove demo %s\n", name);
+
+		Sys_remove(SV_DemoName2Txt(path));
 	} else
 		Con_Printf("invalid demo num\n");
+}
+
+void SV_DemoInfoAdd_f (void)
+{
+	char *name, *args, path[MAX_OSPATH];
+	FILE *f;
+
+	if (Cmd_Argc() < 3) {
+		Con_Printf("usage:demoInfoAdd <demonum> <info string>\n<demonum> = * for currently recorded demo\n");
+		return;
+	}
+
+	if (!strcmp(Cmd_Argv(1), "*"))
+	{
+		if (!sv.demorecording) {
+			Con_Printf("Not recording demo!\n");
+			return;
+		}
+
+		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
+	} else {
+		name = SV_DemoTxTNum(atoi(Cmd_Argv(1)));
+
+		if (!name) {
+			Con_Printf("invalid demo num\n");
+			return;
+		}
+
+		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+	}
+
+	if ((f = fopen(path, "a+t")) == NULL)
+	{
+		Con_Printf("faild to open the file\n");
+		return;
+	}
+
+	// skip demonum
+	args = Cmd_Args();
+	while (*args > 32) args++;
+	while (*args && *args <= 32) args++;
+
+	fwrite(args, strlen(args), 1, f);
+	fwrite("\n", 1, 1, f);
+	fflush(f);
+	fclose(f);
+}
+
+void SV_DemoInfoRemove_f (void)
+{
+	char *name, path[MAX_OSPATH];
+
+	if (Cmd_Argc() < 2) {
+		Con_Printf("usage:demoInfoRemove <demonum>\n<demonum> = * for currently recorded demo\n");
+		return;
+	}
+
+	if (!strcmp(Cmd_Argv(1), "*"))
+	{
+		if (!sv.demorecording) {
+			Con_Printf("Not recording demo!\n");
+			return;
+		}
+
+		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
+	} else {
+		name = SV_DemoTxTNum(atoi(Cmd_Argv(1)));
+
+		if (!name) {
+			Con_Printf("invalid demo num\n");
+			return;
+		}
+
+		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+	}
+
+	if (Sys_remove(path))
+		Con_Printf("failed to remove the file\n");
+	else Con_Printf("file removed\n");
+}
+
+void SV_DemoInfo_f (void)
+{
+	char buf[64];
+	FILE *f = NULL;
+	char *name, path[MAX_OSPATH];
+
+	if (Cmd_Argc() < 2) {
+		Con_Printf("usage:demoinfo <demonum>\n<demonum> = * for currently recorded demo\n");
+		return;
+	}
+
+	if (!strcmp(Cmd_Argv(1), "*"))
+	{
+		if (!sv.demorecording) {
+			Con_Printf("Not recording demo!\n");
+			return;
+		}
+
+		sprintf(path, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
+	} else {
+		name = SV_DemoTxTNum(atoi(Cmd_Argv(1)));
+
+		if (!name) {
+			Con_Printf("invalid demo num\n");
+			return;
+		}
+
+		sprintf(path, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+	}
+
+	if ((f = fopen(path, "rt")) == NULL)
+	{
+		Con_Printf("(empty)\n");
+		return;
+	}
+
+	while (!feof(f))
+	{
+		buf[fread (buf, 1, sizeof(buf)-1, f)] = 0;
+		Con_Printf("%s", buf);
+	}
+
+	fclose(f);
 }

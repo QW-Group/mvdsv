@@ -208,7 +208,6 @@ nextdemomessage:
 		{
 			olddemotime = nextdemotime;
 			if (cls.demoplayback2) {
-				Con_Printf("here\n");
 				cls.netchan.incoming_sequence++;
 				cls.netchan.incoming_acknowledged++;
 				cls.netchan.frame_latency = 0;

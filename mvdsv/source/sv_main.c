@@ -85,6 +85,11 @@ cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
 qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value);
 cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
 
+cvar_t	sv_getrealip = {"sv_getrealip", "1"};
+cvar_t	sv_minping = {"sv_minping", "0"};
+cvar_t	sv_serverip = {"sv_serverip", ""};
+cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
+
 //
 // game rules mirrored in svs.info
 //
@@ -787,7 +792,6 @@ void SVC_DirectConnect (void)
 	*newcl = temp;
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
-	
 
 	Netchan_OutOfBandPrint (net_serversocket, adr, "%c", S2C_CONNECTION );
 
@@ -1232,9 +1236,16 @@ SV_AddIP_f
 void SV_AddIP_f (void)
 {
 	int		i;
+	ipfilter_t f;
+
+	if (!StringToFilter (Cmd_Argv(1), &f)) {
+		Con_Printf ("Bad filter address: %s\n", Cmd_Argv(1));
+		return;
+	}
 	
 	for (i=0 ; i<numipfilters ; i++)
-		if (ipfilters[i].compare == 0xffffffff)
+		if (ipfilters[i].compare == 0xffffffff || (ipfilters[i].mask == f.mask
+		&& ipfilters[i].compare == f.compare))
 			break;		// free spot
 	if (i == numipfilters)
 	{
@@ -1246,11 +1257,7 @@ void SV_AddIP_f (void)
 		numipfilters++;
 	}
 	
-	if (!StringToFilter (Cmd_Argv(1), &ipfilters[i]))
-	{
-		Con_Printf ("Bad filter address: %s\n", Cmd_Argv(1));
-		ipfilters[i].compare = 0xffffffff;
-	}
+	ipfilters[i] = f;
 }
 
 /*
@@ -1411,7 +1418,8 @@ int SV_VIPbyPass (char *pass)
 char *DecodeArgs(char *args)
 {
 	static char string[1024];
-	char *p, key[32], *s, *value;
+	char *p, key[32], *s, *value, ch;
+	extern char chartbl2[256];// defined in pr_cmds.c
 
 	string[0] = 0;
 	p = string;
@@ -1426,9 +1434,10 @@ char *DecodeArgs(char *args)
 			*p++ = '\"';
 			if (*args)
 				args++;
-		} else if (*args == '@')
+		} else if (*args == '@' || *args == '$')
 		{
 			// get the key and read value from localinfo
+			ch = *args;
 			s = key;
 			args++;
 			while (*args > 32)
@@ -1439,8 +1448,13 @@ char *DecodeArgs(char *args)
 				value = Info_ValueForKey(localinfo, key);
 
 			*p++ = '\"';
-			if (value) while (*value)
-				*p++ = *value++;
+			if (ch == '$') {
+				if (value) while (*value)
+					*p++ = chartbl2[(byte)*value++];
+			} else {
+				if (value) while (*value)
+					*p++ = *value++;
+			}
 			*p++ = '\"';
 		} else while (*args > 32)
 			*p++ = *args++;
@@ -1456,6 +1470,7 @@ void SV_Script_f (void)
 	char *path, *p;
 	char args[1024];
 	int i;
+	extern redirect_t sv_redirected;
 
 	if (Cmd_Argc() < 2) {
 		Con_Printf("usage: script <path> [<args>]\n");
@@ -1464,14 +1479,15 @@ void SV_Script_f (void)
 
 	path = Cmd_Argv(1);
 
-	if (path[0] == '.' && path[1] == '.')
-		path += 2;
+	if (!strncmp(path, "../", 3) || !strncmp(path, "..\\", 3))
+		path += 3;
 
-	if (strstr(path,"/..")) {
+	if (strstr(path,"../") || strstr(path,"..\\")) {
 		Con_Printf("invalid path\n");
 		return;
 	}
 
+	path = Cmd_Argv(1);
 	
 	p = Cmd_Args();
 	while (*p > 32)
@@ -1480,20 +1496,12 @@ void SV_Script_f (void)
 		p++;
 
 	p = DecodeArgs(p);
-	
-	/*args[0] = 0;
-	for (i = 2; i < Cmd_Argc(); i++)
-		sprintf(args + strlen(args), "\"%s\" ", Cmd_Argv(i));
-	*/
 
-#ifdef _WIN32
-	if (!Sys_Script(path, p))
-		Con_Printf("Couldn't run script %s.bat\n", Cmd_Argv(1));
-	else
-		Con_Printf("Runnig %s.bat\n", Cmd_Argv(1));
-#else
-	Sys_Script(path, p);
-#endif
+	if (sv_redirected != RD_MOD)
+		Sys_Printf("Running %s.qws\n", path);
+
+	Sys_Script(path, va("%d %s",sv_redirected, p));
+
 }
 
 //============================================================================
@@ -1506,7 +1514,10 @@ SV_ReadPackets
 void SV_ReadPackets (void)
 {
 	int			i;
+	unsigned	seq;
 	client_t	*cl;
+	packet_t	*pack, tmp;
+	double		time;
 	qboolean	good;
 	int			qport;
 
@@ -1530,7 +1541,7 @@ void SV_ReadPackets (void)
 		// stupid address translating routers
 		MSG_BeginReading ();
 		MSG_ReadLong ();		// sequence number
-		MSG_ReadLong ();		// sequence number
+		seq = MSG_ReadLong () & ~(1<<31);		// sequence number
 		qport = MSG_ReadShort () & 0xffff;
 
 		// check for packets from connected clients
@@ -1547,6 +1558,20 @@ void SV_ReadPackets (void)
 				Con_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
 				cl->netchan.remote_address.port = net_from.port;
 			}
+
+			if (svs.num_packets == MAX_DELAYED_PACKETS) // packet has to be dropped..
+				break;
+
+			pack = &svs.packets[svs.num_packets];
+
+			svs.num_packets++;
+
+			pack->time = realtime;
+			pack->num = i;
+			SZ_Clear(&pack->sb);
+			SZ_Write(&pack->sb, net_message.data, net_message.cursize);
+			break;
+
 			if (Netchan_Process(&cl->netchan))
 			{	// this is a valid, sequenced packet, so process it
 				svs.stats.packets++;
@@ -1565,6 +1590,55 @@ void SV_ReadPackets (void)
 		//	Con_Printf ("%s:sequenced packet without connection\n"
 		// ,NET_AdrToString(net_from));
 	}
+}
+
+/*
+=================
+SV_ReadDelayedPackets
+=================
+*/
+void SV_ReadDelayedPackets (void)
+{
+	int			i, j, num = 0;
+	client_t	*cl;
+	packet_t	*pack;
+
+	for (i = 0, pack = svs.packets; i < svs.num_packets;)
+	{
+		if (realtime < pack->time + svs.clients[pack->num].delay) {
+			i++;
+			pack++;
+			continue;
+		}
+
+		num++;
+
+		SZ_Clear(&net_message);
+		SZ_Write(&net_message, pack->sb.data, pack->sb.cursize);
+		cl = &svs.clients[pack->num];
+		net_from = cl->netchan.remote_address;
+
+		if (Netchan_Process(&cl->netchan))
+		{	// this is a valid, sequenced packet, so process it
+			svs.stats.packets++;
+			cl->send_message = true;	// reply at end of frame
+			if (cl->state != cs_zombie)
+				SV_ExecuteClientMessage (cl);
+		}
+
+		for (j = i+1; j < svs.num_packets; j++) {
+			SZ_Clear(&svs.packets[j-1].sb);
+			SZ_Write(&svs.packets[j-1].sb, svs.packets[j].sb.data, svs.packets[j].sb.cursize);
+			svs.packets[j-1].num = svs.packets[j].num;
+			svs.packets[j-1].time = svs.packets[j].time;
+		}
+
+		svs.num_packets--;
+		//i = 0;
+		//pack = svs.packets;
+	}
+
+	//svs.num_packets -= num;
 }
 
 /*
@@ -1641,12 +1715,21 @@ void SV_GetConsoleCommands (void)
 SV_BoundRate
 ===================
 */
-int SV_BoundRate (int rate)
+int SV_BoundRate (qboolean dl, int rate)
 {
 	if (!rate)
 		rate = 2500;
-	if (sv_maxrate.value && rate > sv_maxrate.value)
-		rate = sv_maxrate.value;
+	if (dl)
+	{
+		if (!sv_maxdownloadrate.value && sv_maxrate.value && rate > sv_maxrate.value)
+			rate = sv_maxrate.value;
+
+		if (sv_maxdownloadrate.value && rate > sv_maxdownloadrate.value)
+			rate = sv_maxdownloadrate.value;
+	} else
+		if (sv_maxrate.value && rate > sv_maxrate.value)
+			rate = sv_maxrate.value;
+
 	if (rate < 500)
 		rate = 500;
 	if (rate > 100000)
@@ -1666,7 +1749,7 @@ SV_CheckVars
 void SV_CheckVars (void)
 {
 	static char pw[MAX_INFO_STRING]="", spw[MAX_INFO_STRING]="", vspw[MAX_INFO_STRING]="";
-	static float old_maxrate = 0;
+	static float old_maxrate = 0, old_maxdlrate = 0;
 	int			v;
 
 // check password and spectator_password
@@ -1696,20 +1779,27 @@ void SV_CheckVars (void)
 	}
 
 // check sv_maxrate
-	if (sv_maxrate.value != old_maxrate) {
+	if (sv_maxrate.value != old_maxrate || sv_maxdownloadrate.value != old_maxdlrate ) {
 		client_t	*cl;
 		int			i;
 		char		*val;
 
 		old_maxrate = sv_maxrate.value;
+		old_maxdlrate = sv_maxdownloadrate.value;
 
 		for (i=0, cl = svs.clients ; i<MAX_CLIENTS ; i++, cl++)
 		{
 			if (cl->state < cs_preconnected)
 				continue;
 
-			val = Info_ValueForKey (cl->userinfo, "rate");
-			cl->netchan.rate = 1.0 / SV_BoundRate (atoi(val));
+			if (cl->download) {
+				val = Info_ValueForKey (cl->userinfo, "drate");
+				if (!*val)
+					val = Info_ValueForKey (cl->userinfo, "rate");
+			} else
+				val = Info_ValueForKey (cl->userinfo, "rate");
+
+			cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, atoi(val));
 		}
 	}
 }
@@ -1801,6 +1891,10 @@ void SV_Frame (double time)
 
 // get packets
 	SV_ReadPackets ();
+
+// check delayed packets
+	SV_ReadDelayedPackets ();
+
 // move autonomous things around if enough time has passed
 	if (!sv.paused)
 		SV_Physics ();
@@ -1845,6 +1939,9 @@ void SV_DemoList_f (void);
 void SV_DemoRemove_f (void);
 void SV_DemoRemoveNum_f (void);
 void SV_Cancel_f (void);
+void SV_DemoInfoAdd_f (void);
+void SV_DemoInfoRemove_f (void);
+void SV_DemoInfo_f (void);
 
 void SV_InitLocal (void)
 {
@@ -1866,7 +1963,11 @@ void SV_InitLocal (void)
 
 	SV_InitOperatorCommands	();
 	SV_UserInit ();
-	
+
+	Cvar_RegisterVariable (&sv_getrealip);
+	Cvar_RegisterVariable (&sv_maxdownloadrate);
+	Cvar_RegisterVariable (&sv_minping);
+	Cvar_RegisterVariable (&sv_serverip);
 	Cvar_RegisterVariable (&sv_cpserver);
 	Cvar_RegisterVariable (&rcon_password);
 	Cvar_RegisterVariable (&password);
@@ -1947,6 +2048,9 @@ void SV_InitLocal (void)
 	Cmd_AddCommand ("rmdemo", SV_DemoRemove_f);
 	Cmd_AddCommand ("rmdemonum", SV_DemoRemoveNum_f);
 	Cmd_AddCommand ("script", SV_Script_f);
+	Cmd_AddCommand ("demoInfoAdd", SV_DemoInfoAdd_f);
+	Cmd_AddCommand ("demoInfoRemove", SV_DemoInfoRemove_f);
+	Cmd_AddCommand ("demoInfo", SV_DemoInfo_f);
 
 	for (i=0 ; i<MAX_MODELS ; i++)
 		sprintf (localmodels[i], "*%i", i);
@@ -1965,6 +2069,13 @@ void SV_InitLocal (void)
 	svs.log[1].maxsize = sizeof(svs.log_buf[1]);
 	svs.log[1].cursize = 0;
 	svs.log[1].allowoverflow = true;
+
+	for (i = 0; i < MAX_DELAYED_PACKETS; i++) {
+		svs.packets[i].sb.data = svs.packets[i].buf;
+		svs.packets[i].sb.maxsize = sizeof(svs.packets[i].buf);
+	}
+
+	svs.num_packets = 0;
 }
 
 
@@ -2149,8 +2260,13 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 	Q_strncpyz (cl->team, Info_ValueForKey (cl->userinfo, "team"), sizeof(cl->team));
 
 	// rate
-	val = Info_ValueForKey (cl->userinfo, "rate");
-	cl->netchan.rate = 1.0 / SV_BoundRate (atoi(val));
+	if (cl->download) {
+		val = Info_ValueForKey (cl->userinfo, "drate");
+		if (!atoi(val))
+			val = Info_ValueForKey (cl->userinfo, "rate");
+	} else
+		val = Info_ValueForKey (cl->userinfo, "rate");
+	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, atoi(val));
 
 	// message level
 	val = Info_ValueForKey (cl->userinfo, "msg");

@@ -406,12 +406,12 @@ int Sys_Script(char *path, char *args)
 	si.wShowWindow = SW_SHOWMINNOACTIVE;
 
 	GetCurrentDirectory(sizeof(curdir), curdir);
+	
+	sprintf(cmdline, "%s\\sh.exe %s.qws %s", curdir, path, args);
 	strcat(curdir,va("\\%s", com_gamedir+2));
 
-	sprintf(cmdline, "%s\\%s.bat %s", curdir, path, args);
-
 	return CreateProcess (NULL, cmdline, NULL, NULL,
-		FALSE, DETACHED_PROCESS/*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
+		FALSE, DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
 }
 /*
 ==================

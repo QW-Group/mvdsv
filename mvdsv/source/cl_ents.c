@@ -833,7 +833,6 @@ void CL_ParsePlayerinfo (void)
 		flags = MSG_ReadShort ();
 		state->flags = TranslateFlags(flags);
 
-		Con_Printf("p:%d %d\n", cl.parsecount, num);
 		state->messagenum = cl.parsecount;
 		state->command.msec = 0;
 

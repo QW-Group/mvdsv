@@ -61,25 +61,30 @@ void SV_New_f (void)
 	char		*gamedir;
 	int			playernum;
 	extern cvar_t sv_login;
+	extern cvar_t sv_serverip;
+	extern cvar_t sv_getrealip;
 
 	if (host_client->state == cs_spawned)
 		return;
 
-	if (!host_client->connection_started)
+	if (!host_client->connection_started || host_client->state == cs_connected)
 		host_client->connection_started = realtime;
 
+	host_client->spawncount = svs.spawncount;
 	// do not proceed if realip is unknown
-	if (host_client->realip.ip[0] == 0)
+	if (host_client->state == cs_preconnected && host_client->realip.ip[0] == 0 && sv_getrealip.value)
 	{
+		host_client->state = cs_preconnected;
 		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message, va("packet %s \"ip %d %d\"\ncmd new\n", NET_AdrToString(net_local_adr), host_client - svs.clients, host_client->realip_num));
+		MSG_WriteString (&host_client->netchan.message, va("packet %s \"ip %d %d\"\ncmd new\n", 
+			sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr), host_client - svs.clients, host_client->realip_num));
 		if (realtime - host_client->connection_started > 5)
 		{
-			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nfaild to validate client's IP\n\n", A2C_PRINT);
-			SV_DropClient (host_client);
-		}
-
-		return;
+			host_client->state = cs_connected;
+			//Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nfaild to validate client's IP\n\n", A2C_PRINT);
+			//SV_DropClient (host_client);
+		} else
+			return;
 	}
 	
 	// rip_vip means that client can be connected if he has VIP for he's real ip
@@ -113,86 +118,17 @@ void SV_New_f (void)
 
 		Info_SetValueForStarKey (host_client->userinfo, "*VIP", host_client->vip ? va("%d", host_client->vip) : "", MAX_INFO_STRING);
 
-		if (!SV_Login(host_client))
-			return;
-
 		// now we are connected
 		host_client->state = cs_connected;
 	}
+
+	if (!SV_Login(host_client))
+		return;
 
 	if (!host_client->logged && sv_login.value)
 		return; // not so fast;
 
 // send the info about the new client to all connected clients
-//	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
-//	host_client->sendinfo = true;
-
-	gamedir = Info_ValueForKey (svs.info, "*gamedir");
-	if (!gamedir[0])
-		gamedir = "qw";
-
-//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
-//spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
-		host_client->num_backbuf = 0;
-		SZ_Clear(&host_client->netchan.message);
-	}
-
-	// send the serverdata
-	MSG_WriteByte (&host_client->netchan.message, svc_serverdata);
-	MSG_WriteLong (&host_client->netchan.message, PROTOCOL_VERSION);
-	MSG_WriteLong (&host_client->netchan.message, svs.spawncount);
-	MSG_WriteString (&host_client->netchan.message, gamedir);
-
-	playernum = NUM_FOR_EDICT(host_client->edict)-1;
-	if (host_client->spectator)
-		playernum |= 128;
-	MSG_WriteByte (&host_client->netchan.message, playernum);
-
-	// send full levelname
-	MSG_WriteString (&host_client->netchan.message, PR_GetString(sv.edicts->v.message));
-
-	// send the movevars
-	MSG_WriteFloat(&host_client->netchan.message, movevars.gravity);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.stopspeed);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.maxspeed);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.spectatormaxspeed);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.accelerate);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.airaccelerate);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.wateraccelerate);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.friction);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.waterfriction);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.entgravity);
-
-	// send music
-	MSG_WriteByte (&host_client->netchan.message, svc_cdtrack);
-	MSG_WriteByte (&host_client->netchan.message, sv.edicts->v.sounds);
-
-	// send server info string
-	MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-	MSG_WriteString (&host_client->netchan.message, va("fullserverinfo \"%s\"\n", svs.info) );
-}
-
-void SV_New2_f (void)
-{
-	char		*gamedir;
-	int			playernum;
-	extern cvar_t sv_login;
-
-	if (host_client->state == cs_spawned)
-		return;
-
-	if (host_client->realip.ip[0] == 0)
-		return; // don't cheat!
-
-	if (!host_client->logged && sv_login.value)
-		return; // not so fast;
-
-	host_client->state = cs_connected;
-	//host_client->connection_started = realtime;
-
-	// send the info about the new client to all connected clients
 //	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 //	host_client->sendinfo = true;
 
@@ -335,7 +271,8 @@ void SV_Modellist_f (void)
 //spawns.  These functions are written to not overflow
 	if (host_client->num_backbuf) {
 		Con_Printf("WARNING %s: [SV_Modellist] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
-		host_client->num_backbuf = 0;
+		host_client->num_backbuf = 1;
+
 		SZ_Clear(&host_client->netchan.message);
 	}
 
@@ -626,17 +563,19 @@ void SV_Begin_f (void)
 
 	//check he's not cheating
 
-	if ( !*Info_ValueForKey (host_client->userinfo, "pmodel") ||
-		 !*Info_ValueForKey (host_client->userinfo, "pmodel"))
-	{
-		SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: missing player/eyes model checksum\n", host_client->name);
-	} else {
-		pmodel = atoi(Info_ValueForKey (host_client->userinfo, "pmodel"));
-		emodel = atoi(Info_ValueForKey (host_client->userinfo, "emodel"));
+	if (!host_client->spectator) {
+		if ( !*Info_ValueForKey (host_client->userinfo, "pmodel") ||
+			 !*Info_ValueForKey (host_client->userinfo, "pmodel"))
+		{
+			SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: missing player/eyes model checksum\n", host_client->name);
+		} else {
+			pmodel = atoi(Info_ValueForKey (host_client->userinfo, "pmodel"));
+			emodel = atoi(Info_ValueForKey (host_client->userinfo, "emodel"));
 
-		if (pmodel != sv.model_player_checksum ||
-			emodel != sv.eyes_player_checksum)
-			SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: non standard player/eyes model detected\n", host_client->name);
+			if (pmodel != sv.model_player_checksum ||
+				emodel != sv.eyes_player_checksum)
+				SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: non standard player/eyes model detected\n", host_client->name);
+		}
 	}
 
 	sv.paused &= ~2;	// FIXME!!!		-- Tonik
@@ -673,16 +612,35 @@ SV_NextDownload_f
 void SV_NextDownload_f (void)
 {
 	byte	buffer[1024];
-	int		r;
+	int		r, tmp;
 	int		percent;
 	int		size;
+	double	clear, frametime;
 
 	if (!host_client->download)
 		return;
 
-	r = host_client->downloadsize - host_client->downloadcount;
-	if (r > 768)
-		r = 768;
+	tmp = host_client->downloadsize - host_client->downloadcount;
+
+	if ((clear = host_client->netchan.cleartime) < realtime)
+		clear = realtime;
+
+	frametime = max(0.05, min(0, host_client->netchan.frame_rate));
+	//Sys_Printf("rate:%f\n", host_client->netchan.frame_rate);
+
+	r = (int)((realtime + frametime - host_client->netchan.cleartime)/host_client->netchan.rate);
+	if (r <= 10)
+		r = 10;
+	if (r > 1000)
+		r = 1000;
+
+	// don't send too much if already buffering
+	if (host_client->num_backbuf)
+		r = 10;
+
+	if (r > tmp)
+		r = tmp;
+
 	r = fread (buffer, 1, r, host_client->download);
 	ClientReliableWrite_Begin (host_client, svc_download, 6+r);
 	ClientReliableWrite_Short (host_client, r);
@@ -700,6 +658,15 @@ void SV_NextDownload_f (void)
 
 	fclose (host_client->download);
 	host_client->download = NULL;
+
+	// if map changed tell the client to reconnect
+	if (host_client->spawncount != svs.spawncount)
+	{
+		char *str = "changing\nreconnect\n";
+
+		ClientReliableWrite_Begin (host_client, svc_stufftext, strlen(str)+2);
+		ClientReliableWrite_String (host_client, str);
+	}
 
 }
 
@@ -797,7 +764,7 @@ SV_BeginDownload_f
 */
 void SV_BeginDownload_f(void)
 {
-	char	*name, n[MAX_OSPATH];
+	char	*name, n[MAX_OSPATH], *val;
 	extern	cvar_t	allow_download;
 	extern	cvar_t	allow_download_skins;
 	extern	cvar_t	allow_download_models;
@@ -806,6 +773,7 @@ void SV_BeginDownload_f(void)
 	extern	cvar_t	allow_download_demos;
 	extern	cvar_t	sv_demoDir;
 	extern	int		file_from_pak; // ZOID did file come from pak?
+	extern	cvar_t sv_maxdownloadrate;
 
 	name = Cmd_Argv(1);
 // hacked by zoid to allow more conrol over download
@@ -838,6 +806,8 @@ void SV_BeginDownload_f(void)
 	if (host_client->download) {
 		fclose (host_client->download);
 		host_client->download = NULL;
+		val = Info_ValueForKey (host_client->userinfo, "rate");
+		host_client->netchan.rate = 1.0/SV_BoundRate(false, atoi(val));
 	}
 
 	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0]) {
@@ -901,6 +871,10 @@ void SV_BeginDownload_f(void)
 		ClientReliableWrite_Byte (host_client, 0);
 		return;
 	}
+
+	val = Info_ValueForKey (host_client->userinfo, "drate");
+	if (atoi(val))
+		host_client->netchan.rate = 1.0/SV_BoundRate(true, atoi(val));
 
 	SV_NextDownload_f ();
 	Sys_Printf ("Downloading %s to %s\n", name, host_client->name);
@@ -1090,7 +1064,7 @@ void SV_Pings_f (void)
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
-		if (client->state != cs_spawned)
+		if (!(client->state == cs_spawned || (client->state == cs_connected && client->spawncount != svs.spawncount )) )
 			continue;
 
 		ClientReliableWrite_Begin (host_client, svc_updateping, 4);
@@ -1252,7 +1226,7 @@ void SV_Rate_f (void)
 		return;
 	}
 	
-	rate = SV_BoundRate (atoi(Cmd_Argv(1)));
+	rate = SV_BoundRate (host_client->download != NULL, atoi(Cmd_Argv(1)));
 
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
 	host_client->netchan.rate = 1.0/rate;
@@ -1367,6 +1341,7 @@ void SV_NoSnap_f(void)
 }
 
 void SV_DemoList_f (void);
+void SV_DemoInfo_f(void);
 
 typedef struct
 {
@@ -1407,6 +1382,7 @@ ucmd_t ucmds[] =
 	{"snap", SV_NoSnap_f},
 	{"stopdownload", SV_StopDownload_f},
 	{"demolist", SV_DemoList_f},
+	{"demoinfo", SV_DemoInfo_f},
 	
 	{NULL, NULL}
 };
@@ -1808,10 +1784,23 @@ void SV_ExecuteClientMessage (client_t *cl)
 	int		checksumIndex;
 	byte	checksum, calculatedChecksum;
 	int		seq_hash;
+	extern cvar_t sv_minping;
 
 	// calc ping time
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
 	frame->ping_time = realtime - frame->senttime;
+
+	if (frame->ping_time*1000 > sv_minping.value) {
+		cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
+		if (cl->delay < 0)
+			cl->delay = 0;
+	} else if (frame->ping_time*1000 < sv_minping.value) {
+		cl->delay += 0.001;//-0.5*(frame->ping_time - sv_minping.value*0.001);
+		if (cl->delay > 300)
+			cl->delay = 300;
+	}
+
+
 
 	// make sure the reply sequence number matches the incoming
 	// sequence number 
@@ -1872,6 +1861,13 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 			// read loss percentage
 			cl->lossage = MSG_ReadByte();
+
+			if (cl->state < cs_spawned && cl->download != NULL) {
+				if (cl->downloadsize)
+					cl->lossage = cl->downloadcount*100/cl->downloadsize;
+				else
+					cl->lossage = 100;
+			}
 
 			MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
 			MSG_ReadDeltaUsercmd (&oldest, &oldcmd);

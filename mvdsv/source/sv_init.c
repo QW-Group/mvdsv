@@ -295,6 +295,7 @@ void SV_SpawnServer (char *server)
 	Con_DPrintf ("SpawnServer: %s\n",server);
 	
 	SV_SaveSpawnparms ();
+	SV_LoadAccounts();
 
 	svs.spawncount++;		// any partially connected client will be
 							// restarted
@@ -304,8 +305,6 @@ void SV_SpawnServer (char *server)
 
 	Mod_ClearAll ();
 	Hunk_FreeToLowMark (host_hunklevel);
-
-	//Sys_Sleep(100);
 
 	if (coop.value)
 		Cvar_Set (&deathmatch, "0");
@@ -343,13 +342,10 @@ void SV_SpawnServer (char *server)
 	// which determines how big each edict is
 	PR_LoadProgs ();
 
-	//Sys_Sleep(100);
 	// allocate edicts
 
 	sv.edicts = Hunk_AllocName (MAX_EDICTS*pr_edict_size, "edicts");
 
-	//Sys_Sleep(100);
-	
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS+1;
 	for (i=0 ; i<MAX_CLIENTS ; i++)

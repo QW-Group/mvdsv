@@ -932,8 +932,6 @@ void Host_Frame (double time)
 	{
 		player_state_t *self, *oldself;
 
-		Con_Printf("%d, %d\n", cl.parsecount, cls.netchan.incoming_acknowledged);
-
 		self = &cl.frames[cl.parsecount & UPDATE_MASK].playerstate[cl.playernum];
 		oldself = &cl.frames[(cls.netchan.outgoing_sequence-1) & UPDATE_MASK].playerstate[cl.playernum];
 		self->messagenum = cl.parsecount;
