@@ -328,18 +328,18 @@ qboolean Netchan_Process (netchan_t *chan)
 {
 	unsigned		sequence, sequence_ack;
 	unsigned		reliable_ack, reliable_message;
-#if defined(SERVERONLY) || defined(QW_BOTH)
+#if defined(SERVERONLY)
 	int			qport;
 #endif
 
 	if (
 #ifndef SERVERONLY
-			!cls.demoplayback && 
+			!cls.demoplayback &&
 #endif
 			!NET_CompareAdr (net_from, chan->remote_address))
 		return false;
 	
-// get sequence numbers		
+// get sequence numbers
 	MSG_BeginReading ();
 	sequence = MSG_ReadLong ();
 	sequence_ack = MSG_ReadLong ();
@@ -347,9 +347,6 @@ qboolean Netchan_Process (netchan_t *chan)
 	// read the qport if we are a server
 #ifdef SERVERONLY
 	qport = MSG_ReadShort ();
-#elif defined(QW_BOTH)
-	if (chan->net_socket == net_serversocket)
-		qport = MSG_ReadShort ();
 #endif
 
 	reliable_message = sequence >> 31;

@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: surf8.s,v 1.1.1.2 2004/09/28 18:56:56 vvd0 Exp $
+	$Id: surf8.s,v 1.1.1.3 2004/10/13 18:54:52 vvd0 Exp $
 */
 // surf8.s
 // x86 assembly-language 8 bpp surface block drawing code.

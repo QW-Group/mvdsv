@@ -115,6 +115,7 @@ explosion_t *CL_AllocExplosion (void)
 CL_ParseBeam
 =================
 */
+extern cvar_t cl_chasecam;
 void CL_ParseBeam (model_t *m)
 {
 	int		ent;
@@ -132,8 +133,11 @@ void CL_ParseBeam (model_t *m)
 	end[1] = MSG_ReadCoord ();
 	end[2] = MSG_ReadCoord ();
 
-	if (ent == cl.playernum+1)
+	if (ent == cl.playernum+1 || (cl.spectator && ent == Cam_TrackNum()+1 && cl_chasecam.value))
+	{
+		//VectorCopy (cl.frames[cl.parsecount & UPDATE_MASK].playerstate[ent - 1].origin, start);
 		VectorCopy (end, playerbeam_end);	// for cl_trueLightning
+	}
 
 // override any beam with the same entity
 	for (i=0, b=cl_beams ; i< MAX_BEAMS ; i++, b++)
@@ -375,7 +379,7 @@ entity_t *CL_NewTempEntity (void)
 CL_UpdateBeams
 =================
 */
-void vectoangles (v, ang);
+void vectoangles(vec3_t vec, vec3_t ang);
 
 void CL_UpdateBeams (void)
 {
@@ -394,7 +398,7 @@ void CL_UpdateBeams (void)
 			continue;
 
 	// if coming from the player, update the start position
-		if (b->entity == cl.playernum+1)	// entity 0 is the world
+		if (b->entity == cl.playernum+1 || (cl.spectator && b->entity == Cam_TrackNum()+1 && cl_chasecam.value))	// entity 0 is the world
 		{
 			VectorCopy (cl.simorg, b->start);
 			b->start[2] += cl.crouch;

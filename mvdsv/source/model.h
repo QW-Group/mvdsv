@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "modelgen.h"
 #include "spritegn.h"
+#include "bspfile.h"
 
 /*
 
@@ -299,6 +300,9 @@ typedef struct {
 
 typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 
+// some models are special
+typedef enum {MOD_NORMAL, MOD_PLAYER, MOD_EYES, MOD_FLAME, MOD_THUNDERBOLT} modhint_t;
+
 #define	EF_ROCKET	1			// leave a trail
 #define	EF_GRENADE	2			// leave a trail
 #define	EF_GIB		4			// leave a trail
@@ -312,6 +316,8 @@ typedef struct model_s
 {
 	char		name[MAX_QPATH];
 	qboolean	needload;		// bmodels and sprites don't cache normally
+
+	modhint_t	modhint;
 
 	modtype_t	type;
 	int			numframes;

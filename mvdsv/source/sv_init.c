@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 server_static_t	svs;				// persistent server info
 server_t		sv;					// local server
+demo_t			demo;				// server demo struct
 
 char	localmodels[MAX_MODELS][5];	// inline model names for precache
 
@@ -190,10 +191,6 @@ void SV_CalcPHS (void)
 	byte	*scan;
 	int		count, vcount;
 
-#ifdef QW_BOTH
-//	if (dedicated)
-	if (false)
-#endif
 	Con_Printf ("Building PHS...\n");
 
 	num = sv.worldmodel->numleafs;
@@ -253,10 +250,6 @@ void SV_CalcPHS (void)
 				count++;
 	}
 
-#ifdef QW_BOTH
-//	if (dedicated)
-	if (false)
-#endif
 	Con_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n"
 		, vcount/num, count/num, num);
 }
@@ -302,9 +295,6 @@ void SV_SpawnServer (char *server)
 	sv.state = ss_dead;
 	sv.paused = false;
 
-#ifdef QW_BOTH
-	D_FlushCaches ();
-#endif
 	Mod_ClearAll ();
 	Hunk_FreeToLowMark (host_hunklevel);
 
@@ -345,6 +335,7 @@ void SV_SpawnServer (char *server)
 	PR_LoadProgs ();
 
 	// allocate edicts
+
 	sv.edicts = Hunk_AllocName (MAX_EDICTS*pr_edict_size, "edicts");
 	
 	// leave slots at start for clients only
@@ -367,6 +358,7 @@ void SV_SpawnServer (char *server)
 	//
 	// clear physics interaction links
 	//
+
 	SV_ClearWorld ();
 	
 	sv.sound_precache[0] = pr_strings;
@@ -399,7 +391,7 @@ void SV_SpawnServer (char *server)
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
-	pr_global_struct->mapname = PR_SetString(sv.name);
+	pr_global_struct->mapname = /*sv.name - pr_strings;//*/PR_SetString(sv.name);
 	// serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
 	

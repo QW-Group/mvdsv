@@ -27,6 +27,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // returns the file size
 // return -1 if file is not present
 // the file should be in BINARY mode for stupid OSs that care
+#define MAX_DIRFILES 1000
+#define MAX_DEMO_NAME 64
+
+typedef struct
+{
+	char	name[MAX_DEMO_NAME];
+	int		size;
+} dir_t;
+
 int Sys_FileOpenRead (char *path, int *hndl);
 
 int Sys_FileOpenWrite (char *path);
@@ -36,6 +45,8 @@ int Sys_FileRead (int handle, void *dest, int count);
 int Sys_FileWrite (int handle, void *data, int count);
 int	Sys_FileTime (char *path);
 void Sys_mkdir (char *path);
+int Sys_remove (char *path);
+dir_t *Sys_listdir (char *path, char *ext);
 
 //
 // memory protection

@@ -21,9 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "sbar.h"
-#ifdef QW_BOTH
-#include "server.h"
-#endif
+
 
 
 int			sb_updates;		// if >= vid.numpages, no update needed
@@ -944,13 +942,6 @@ void Sbar_TeamOverlay (void)
 // request new ping times every two second
 	teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
 
-#ifdef QW_BOTH
-	// FIXME
-	// check number of connections instead?
-	if (cl.gametype == GAME_COOP && sv.state != ss_dead
-		&& !coop.value)
-		return;
-#endif
 
 	if (!teamplay) {
 		Sbar_DeathmatchOverlay(0);
@@ -1050,14 +1041,6 @@ void Sbar_DeathmatchOverlay (int start)
 	int				teamplay;
 	char			team[5];
 	int				skip = 10;
-
-#ifdef QW_BOTH
-	// FIXME
-	// check number of connections instead?
-	if (cl.gametype == GAME_COOP && sv.state != ss_dead
-		&& !coop.value)
-		return;
-#endif
 
 	if (largegame)
 		skip = 8;

@@ -20,14 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "version.h"
 
-#ifdef QW_BOTH
-#include "quakedef.h"
-#include "keys.h"
-#include "server.h"
-#include "pmove.h"
-#else
 #include "qwsvdef.h"
-#endif
 
 quakeparms_t host_parms;
 
@@ -35,11 +28,10 @@ qboolean	host_initialized;		// true if into command execution (compatability)
 
 double		sv_frametime;
 
-#ifndef	QW_BOTH
+
 double		realtime;				// without any filtering or bounding
 
 int			host_hunklevel;
-#endif
 
 int			current_skill;			// for entity spawnflags checking
 
@@ -47,28 +39,22 @@ netadr_t	master_adr[MAX_MASTERS];	// address of group servers
 
 client_t	*host_client;			// current client
 
-#ifdef QW_BOTH
-cvar_t	sv_mintic = {"sv_mintic","0"};		//
-#else										//
+
 cvar_t	sv_mintic = {"sv_mintic","0.03"};	// bound the size of the
-#endif										// physics time tic 
+
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	//
 
-#ifndef QW_BOTH
+
 cvar_t	developer = {"developer","0"};		// show extra messages
-#endif
 
 cvar_t	timeout = {"timeout","65"};		// seconds without any message
 cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 											// after disconnect
 
-#ifndef QW_BOTH
+
 cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
-#else
-extern cvar_t rcon_password;
-extern cvar_t password;
-#endif
+
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 
 cvar_t	allow_download = {"allow_download", "1"};
@@ -84,6 +70,10 @@ cvar_t	sv_phs = {"sv_phs", "1"};
 cvar_t	pausable = {"pausable", "1"};
 
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
+cvar_t	sv_multiPOVlevel = {"sv_multiPOVlevel", "0"};
+cvar_t	sv_demofps = {"sv_demofps", "20"};
+cvar_t	sv_demoPings = {"sv_demopings", "3"};
+cvar_t	sv_demoNoVis = {"sv_demonovis", "1"};
 
 //
 // game rules mirrored in svs.info
@@ -97,6 +87,7 @@ cvar_t	maxspectators = {"maxspectators","8",CVAR_SERVERINFO};
 cvar_t	deathmatch = {"deathmatch","1",CVAR_SERVERINFO};			// 0, 1, or 2
 cvar_t	spawn = {"spawn","0",CVAR_SERVERINFO};
 cvar_t	watervis = {"watervis","0",CVAR_SERVERINFO};
+cvar_t	serverdemo = {"serverdemo","",CVAR_SERVERINFO | CVAR_ROM};
 // not mirrored
 cvar_t	skill = {"skill", "1"};
 cvar_t	coop = {"coop", "0"};
@@ -115,37 +106,6 @@ qboolean ServerPaused(void)
 {
 	return sv.paused;
 }
-
-
-#ifdef QW_BOTH
-/*
-=================
-SV_ShutdownServer
-=================
-*/
-void SV_ShutdownServer (void)
-{
-	Master_Shutdown ();
-	if (sv_logfile)
-	{
-		fclose (sv_logfile);
-		sv_logfile = NULL;
-	}
-	if (sv_fraglogfile)
-	{
-		fclose (sv_fraglogfile);
-		sv_logfile = NULL;
-	}
-
-	SV_FinalMessage ("");
-
-	memset (&sv, 0, sizeof(sv));
-	sv.state = ss_dead;
-
-	memset (svs.clients, 0, sizeof(svs.clients));
-	//memset (svs.challenges, 0, sizeof(svs.challenges));
-}
-#endif
 
 
 /*
@@ -168,6 +128,9 @@ void SV_Shutdown (void)
 		fclose (sv_fraglogfile);
 		sv_logfile = NULL;
 	}
+	if (sv.demorecording)
+		SV_Stop_f();
+
 	NET_Shutdown ();
 }
 
@@ -198,14 +161,9 @@ void SV_Error (char *error, ...)
 
 	SV_FinalMessage (va("server crashed: %s\n", string));
 
-#ifdef QW_BOTH
-	inerror = false;
-	Host_EndGame ("SV_Error");
-#else
 	SV_Shutdown ();
 
 	Sys_Error ("SV_Error: %s\n",string);
-#endif
 }
 
 /*
@@ -797,6 +755,7 @@ void SVC_RemoteCommand (void)
 {
 	int		i;
 	char	remaining[1024];
+	char	*hide, *p;
 
 
 	if (!Rcon_Validate ()) {
@@ -808,6 +767,12 @@ void SVC_RemoteCommand (void)
 		Con_Printf ("Bad rcon_password.\n");
 
 	} else {
+		hide = net_message.data + 9;
+		p = rcon_password.string;
+		while (*p) {
+			p++;
+			*hide++ = '*';
+		}
 
 		Con_Printf ("Rcon from %s:\n%s\n"
 			, NET_AdrToString (net_from), net_message.data+4);
@@ -1271,8 +1236,8 @@ int SV_BoundRate (int rate)
 		rate = sv_maxrate.value;
 	if (rate < 500)
 		rate = 500;
-	if (rate > 10000)
-		rate = 10000;
+	if (rate > 20000)
+		rate = 20000;
 
 	return rate;
 }
@@ -1284,10 +1249,14 @@ SV_CheckVars
 
 ===================
 */
+
+void SV_CheckMultiPOV(void);
+
 void SV_CheckVars (void)
 {
 	static char pw[MAX_INFO_STRING]="", spw[MAX_INFO_STRING]="";
 	static float old_maxrate = 0;
+	static float old_tp = 0, old_multiPOVlevel = 0;
 	int			v;
 
 // check password and spectator_password
@@ -1329,6 +1298,22 @@ void SV_CheckVars (void)
 			cl->netchan.rate = 1.0 / SV_BoundRate (atoi(val));
 		}
 	}
+
+	if (sv_multiPOVlevel.value < 0.0) {
+		Cvar_SetValue(&sv_multiPOVlevel, 0.0);
+	}
+
+	if (sv_multiPOVlevel.value > 3.0) {
+		Cvar_SetValue(&sv_multiPOVlevel, 3.0);
+	}
+
+	if (!old_tp != !teamplay.value || old_multiPOVlevel != sv_multiPOVlevel.value)
+	{
+		old_tp = teamplay.value;
+		old_multiPOVlevel = sv_multiPOVlevel.value;
+
+		SV_CheckMultiPOV();
+	}
 }
 
 
@@ -1343,7 +1328,7 @@ void SV_Frame (double time)
 	static double	start, end;
 
 #if 0	// disabled for now
-//#ifdef QW_BOTH
+
 	if (sv.state != ss_active || cls.state != ca_active || (int)maxclients.value > 1 || key_dest == key_game)
 	{
 		sv.paused &= ~2;
@@ -1365,9 +1350,8 @@ void SV_Frame (double time)
 // decide the simulation time
 	if (!sv.paused)
 	{
-#ifndef QW_BOTH
+
 		realtime += time;
-#endif
 		sv.time += time;
 	}
 
@@ -1384,18 +1368,19 @@ void SV_Frame (double time)
 // get packets
 	SV_ReadPackets ();
 
-#ifndef QW_BOTH
+
 // check for commands typed to the host
 	SV_GetConsoleCommands ();
 	
 // process console commands
 	Cbuf_Execute ();
-#endif
 
 	SV_CheckVars ();
 
 // send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
+
+	SV_SendDemoMessage();
 
 // send a heartbeat to the master if needed
 	Master_Heartbeat ();
@@ -1420,6 +1405,12 @@ void SV_Frame (double time)
 SV_InitLocal
 ===============
 */
+void SV_Record_f (void);
+void SV_EasyRecord_f (void);
+void SV_DemoList_f (void);
+void SV_DemoRemove_f (void);
+void SV_DemoRemoveNum_f (void);
+
 void SV_InitLocal (void)
 {
 	int		i;
@@ -1435,16 +1426,14 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_waterfriction;
 	extern	cvar_t	sv_nailhack;
 
-#ifndef QW_BOTH
+
 	Cvar_Init ();
-#endif
+
 	SV_InitOperatorCommands	();
 	SV_UserInit ();
 	
-#ifndef QW_BOTH
 	Cvar_RegisterVariable (&rcon_password);
 	Cvar_RegisterVariable (&password);
-#endif
 	Cvar_RegisterVariable (&spectator_password);
 
 	Cvar_RegisterVariable (&sv_nailhack);
@@ -1465,10 +1454,9 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&deathmatch);
 	Cvar_RegisterVariable (&spawn);
 	Cvar_RegisterVariable (&watervis);
+	Cvar_RegisterVariable (&serverdemo);
 
-#ifndef QW_BOTH
 	Cvar_RegisterVariable (&developer);
-#endif
 
 	Cvar_RegisterVariable (&timeout);
 	Cvar_RegisterVariable (&zombietime);
@@ -1501,16 +1489,26 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&pausable);
 
 	Cvar_RegisterVariable (&sv_maxrate);
+	Cvar_RegisterVariable (&sv_multiPOVlevel);
+	Cvar_RegisterVariable (&sv_demofps);
+	Cvar_RegisterVariable (&sv_demoPings);
+	Cvar_RegisterVariable (&sv_demoNoVis);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
 	Cmd_AddCommand ("listip", SV_ListIP_f);
 	Cmd_AddCommand ("writeip", SV_WriteIP_f);
+	Cmd_AddCommand ("record", SV_Record_f);
+	Cmd_AddCommand ("easyrecord", SV_EasyRecord_f);
+	Cmd_AddCommand ("stop", SV_Stop_f);
+	Cmd_AddCommand ("demolist", SV_DemoList_f);
+	Cmd_AddCommand ("rmdemo", SV_DemoRemove_f);
+	Cmd_AddCommand ("rmdemonum", SV_DemoRemoveNum_f);
 
 	for (i=0 ; i<MAX_MODELS ; i++)
 		sprintf (localmodels[i], "*%i", i);
 
-	Info_SetValueForStarKey (svs.info, "*z_version", Z_VERSION, MAX_SERVERINFO_STRING);
+	Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*version", va("%4.2f", QW_VERSION), MAX_SERVERINFO_STRING);
 	
 	// init fraglog stuff
@@ -1595,6 +1593,185 @@ void Master_Shutdown (void)
 		}
 }
 
+
+/*
+=================
+SV_SetMultiPOV
+
+Set which additional POVs will be sent to clients
+=================
+*/
+#ifndef min
+#define max(a,b)    (((a) > (b)) ? (a) : (b))
+#define min(a,b)    (((a) < (b)) ? (a) : (b))
+#endif
+
+#define MPOV_NONE	0
+#define MPOV_TEAM	1
+#define MPOV_ENEMY	2
+#define MPOV_ALL	3
+
+char *mpov_names[] = {
+	"none",
+	"team",
+	"enemy",
+	"all"
+};
+
+void SV_SetMultiPOV(client_t *cl)
+{
+	char *val, team[32], team2[32];
+	int	num, i, level;
+	client_t *client;
+
+	val = Info_ValueForKey (cl->userinfo, "multipov");
+	if (!strcmp(val, "all")) {
+		cl->multipov = MPOV_ALL;
+	} else if (!strcmp(val, "team")) {
+		cl->multipov = MPOV_TEAM;
+	} else if (!strcmp(val, "enemy")) {
+		cl->multipov = MPOV_ENEMY;
+	} else cl->multipov = MPOV_NONE;
+
+	if (cl->multipov > (int) sv_multiPOVlevel.value)
+	{
+		cl->multipov = (int) sv_multiPOVlevel.value;
+		Info_SetValueForKey (cl->userinfo, "multipov", mpov_names[cl->multipov], MAX_INFO_STRING);
+		MSG_WriteByte (&cl->netchan.message, svc_stufftext);
+		MSG_WriteString (&cl->netchan.message, va("setinfo multipov %s\n", mpov_names[cl->multipov] ) );
+
+		if (cl->state == cs_spawned) {
+			if (!cl->multipov) {
+				SV_ClientPrintf (cl, PRINT_HIGH, "multipov feature is disabled on this server\n");
+				return;
+			}
+
+			SV_ClientPrintf (cl, PRINT_HIGH, "multipov \"%s\" not allowed\nyour multipov setting has been changed to \"%s\"", val, mpov_names[cl->multipov]);
+		}
+	}
+
+	// Decide client team, spectators uses tracking player team
+	strcpy(team,Info_ValueForKey (cl->userinfo, "team"));
+	if (cl->spec_track > 0 && cl->spec_track <= MAX_CLIENTS) {
+		strcpy(team, Info_ValueForKey (svs.clients[cl->spec_track - 1].userinfo, "team"));
+	} else if (cl->spectator) team[0] = 0;
+
+	cl->teamPOVs; // it will be build from scratch
+	num = cl - svs.clients;
+
+	for (i=0, client=svs.clients ; i<MAX_CLIENTS ; i++,client++)
+	{
+		if (i == num)
+			continue;
+
+		if (client->state != cs_spawned)
+			continue;
+
+		// decide client team, spectators uses tracking player team
+		strcpy(team2,Info_ValueForKey (client->userinfo, "team"));
+
+		if (client->spec_track > 0 && client->spec_track <= MAX_CLIENTS) {
+			strcpy(team2, Info_ValueForKey (svs.clients[client->spec_track - 1].userinfo, "team"));
+		} else if (client->spectator) team2[0] = 0;
+
+		if (!client->spectator && !strcmp(team, team2)) {
+			cl->teamPOVs |= 1 << i;
+		}
+		
+		if (!cl->spectator && !strcmp(team, team2)) {
+			client->teamPOVs |= 1 << num;
+			continue;
+		}
+
+		client->teamPOVs &= ~(1 << num);
+		
+	}
+
+	level = min(sv_multiPOVlevel.value, cl->multipov);
+
+	if (!level) {
+		cl->POVs = 0;
+		return;
+	}
+
+	if (level == MPOV_ALL) {
+		cl->POVs = ~0;
+		return;
+	}
+
+	if (!teamplay.value) {
+		if (level == MPOV_TEAM) {
+			cl->POVs = 0;
+			return;
+		} 
+
+		cl->POVs = ~0;
+		return;
+	}
+
+	if (level == MPOV_TEAM) {
+		cl->POVs = cl->teamPOVs;
+		return;
+	}
+
+	cl->POVs = ~cl->teamPOVs;
+}
+
+/*
+====================
+SV_CheckMultiPOV
+
+Either sv_multiPOVlevel or teamplay cvar changed so fix multipov settings
+====================
+*/
+
+void SV_CheckMultiPOV(void)
+{
+	client_t *client;
+	int i, level;
+
+	level = (int) sv_multiPOVlevel.value;
+
+	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++)
+	{
+		if (client->state != cs_spawned)
+			continue;
+
+		if (client->multipov > level) {
+			SV_SetMultiPOV(client);
+			continue;
+		}
+
+		if (!level) {
+			client->POVs = 0;
+			continue;
+		}
+
+		if (level == MPOV_ALL) {
+			client->POVs = ~0;
+			continue;
+		}
+
+		if (!teamplay.value) {
+			if (level == MPOV_TEAM) {
+				client->POVs = 0;
+				continue;
+			} 
+
+			client->POVs = ~0;
+			continue;
+		}
+
+		if (level == MPOV_TEAM) {
+			client->POVs = client->teamPOVs;
+			continue;
+		}
+
+		client->POVs = ~client->teamPOVs;
+	}
+}
+
+
 /*
 =================
 SV_ExtractFromUserinfo
@@ -1603,6 +1780,7 @@ Pull specific info from a newly changed userinfo string
 into a more C freindly form.
 =================
 */
+
 void SV_ExtractFromUserinfo (client_t *cl)
 {
 	char	*val, *p, *q;
@@ -1611,7 +1789,6 @@ void SV_ExtractFromUserinfo (client_t *cl)
 	int		dupc = 1;
 	char	newname[80];
 	extern cvar_t	sv_maxrate;
-
 
 	// name for C code
 	val = Info_ValueForKey (cl->userinfo, "name");
@@ -1704,6 +1881,7 @@ void SV_ExtractFromUserinfo (client_t *cl)
 		cl->messagelevel = atoi(val);
 	}
 
+	SV_SetMultiPOV(cl);
 }
 
 
@@ -1779,12 +1957,12 @@ void SV_Init (quakeparms_t *parms)
 	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));	
 
 #ifdef RELEASE_VERSION
-	Con_Printf ("\nServer Version %s\n\n", Z_VERSION);
+	Con_Printf ("\nServer Version %s\n\n", QWE_VERSION);
 #else
-	Con_Printf ("\nServer Version %s (Build %04d)\n\n", Z_VERSION, build_number());
+	Con_Printf ("\nServer Version %s (Build %04d)\n\n", QWE_VERSION, build_number());
 #endif
 
-	Con_Printf ("For help on ZQuake, go to http://zquake.da.ru/\n\n");
+	Con_Printf ("QWExtended Project home page: http://http://www.wsb.poznan.pl/~pawel/q/q/qwex/\n\n");
 
 	Con_Printf ("======== QuakeWorld Initialized ========\n");
 	

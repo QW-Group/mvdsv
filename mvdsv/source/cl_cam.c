@@ -40,6 +40,7 @@ static int oldbuttons;
 
 // track high fragger
 cvar_t cl_hightrack = {"cl_hightrack", "0" };
+cvar_t cl_track_validonly = {"cl_track_validonly", "0" };
 
 cvar_t cl_chasecam = {"cl_chasecam", "0"};
 
@@ -51,6 +52,8 @@ vec3_t cam_viewangles;
 double cam_lastviewtime;
 
 int spec_track = 0; // player# of who we are tracking
+int	ideal_track = 0;
+float	last_lock = 0;
 int autocam = CAM_NONE;
 
 void vectoangles(vec3_t vec, vec3_t ang)
@@ -108,6 +111,14 @@ qboolean Cam_DrawPlayer(int playernum)
 	return true;
 }
 
+int Cam_TrackNum(void)
+{
+	if (!autocam)
+		return -1;
+	return spec_track;
+}
+void TP_FixTeamSets(void);
+
 void Cam_Unlock(void)
 {
 	if (autocam) {
@@ -116,6 +127,7 @@ void Cam_Unlock(void)
 		autocam = CAM_NONE;
 		locked = false;
 		Sbar_Changed();
+		TP_FixTeamSets();
 	}
 }
 
@@ -124,12 +136,18 @@ void Cam_Lock(int playernum)
 	char st[40];
 
 	sprintf(st, "ptrack %i", playernum);
+	if (cls.demoplayback2) {
+		memcpy(cl.stats, cl.players[playernum].stats, sizeof(cl.stats));
+	}
+
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, st);
 	spec_track = playernum;
+	last_lock = realtime;
 	cam_forceview = true;
 	locked = false;
 	Sbar_Changed();
+	TP_FixTeamSets();
 }
 
 pmtrace_t Cam_DoTrace(vec3_t vec1, vec3_t vec2)
@@ -302,7 +320,10 @@ static void Cam_CheckHighTarget(void)
 	}
 	if (j >= 0) {
 		if (!locked || cl.players[j].frags > cl.players[spec_track].frags)
+		{
 			Cam_Lock(j);
+			ideal_track = spec_track;
+		}
 	} else
 		Cam_Unlock();
 }
@@ -337,6 +358,25 @@ void Cam_Track(usercmd_t *cmd)
 	}
 
 	frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
+	if (autocam && cls.demoplayback2 && cl_track_validonly.value)
+	{
+		if (ideal_track != spec_track && realtime - last_lock > 1 && frame->playerstate[ideal_track].messagenum == cl.parsecount)
+			Cam_Lock(ideal_track);
+
+		if (frame->playerstate[spec_track].messagenum != cl.parsecount)
+		{
+			int i;
+
+			for (i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (frame->playerstate[i].messagenum == cl.parsecount)
+					break;
+			}
+			if (i < MAX_CLIENTS)
+				Cam_Lock(i);
+		}
+	}
+
 	player = frame->playerstate + spec_track;
 	self = frame->playerstate + cl.playernum;
 
@@ -520,8 +560,9 @@ void Cam_FinishMove(usercmd_t *cmd)
 	}
 
 	if (locked) {
-		if ((cmd->buttons & BUTTON_JUMP) && (oldbuttons & BUTTON_JUMP))
+		if ((cmd->buttons & BUTTON_JUMP) && (oldbuttons & BUTTON_JUMP)) {
 			return;		// don't pogo stick
+		}
 
 		if (!(cmd->buttons & BUTTON_JUMP)) {
 			oldbuttons &= ~BUTTON_JUMP;
@@ -533,23 +574,26 @@ void Cam_FinishMove(usercmd_t *cmd)
 //	Con_Printf("Selecting track target...\n");
 
 	if (locked && autocam)
-		end = (spec_track + 1) % MAX_CLIENTS;
+		end = (ideal_track + 1) % MAX_CLIENTS;
 	else
-		end = spec_track;
+		end = ideal_track;
 	i = end;
 	do {
 		s = &cl.players[i];
 		if (s->name[0] && !s->spectator) {
 			Cam_Lock(i);
+			Con_Printf("tracking %s\n", s->name);
+			ideal_track = i;
 			return;
 		}
 		i = (i + 1) % MAX_CLIENTS;
 	} while (i != end);
 	// stay on same guy?
-	i = spec_track;
+	i = ideal_track;
 	s = &cl.players[i];
 	if (s->name[0] && !s->spectator) {
 		Cam_Lock(i);
+		ideal_track = i;
 		return;
 	}
 	Con_Printf("No target found ...\n");
@@ -560,12 +604,14 @@ void Cam_Reset(void)
 {
 	autocam = CAM_NONE;
 	spec_track = 0;
+	ideal_track = 0;
 }
 
 void CL_InitCam(void)
 {
 	Cvar_RegisterVariable (&cl_hightrack);
 	Cvar_RegisterVariable (&cl_chasecam);
+	Cvar_RegisterVariable (&cl_track_validonly);
 //	Cvar_RegisterVariable (&cl_camera_maxpitch);
 //	Cvar_RegisterVariable (&cl_camera_maxyaw);
 }

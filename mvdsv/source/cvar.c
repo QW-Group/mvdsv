@@ -25,10 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #endif
 
-#ifdef QW_BOTH
-#include "server.h"
-#endif
-
 static cvar_t	*cvar_hash[32];
 static cvar_t	*cvar_vars;
 static char		*cvar_null_string = "";
@@ -135,7 +131,10 @@ char *Cvar_CompleteVariable (char *partial)
 
 #ifdef SERVERONLY
 void SV_SendServerInfoChange(char *key, char *value);
+#else
+void TP_FixTeamSets();
 #endif
+
 
 /*
 ============
@@ -167,7 +166,7 @@ void Cvar_Set (cvar_t *var, char *value)
 	strcpy (var->string, value);
 	var->value = Q_atof (var->string);
 
-#if defined(SERVERONLY) || defined(QW_BOTH)
+#if defined(SERVERONLY)
 	if (var->flags & CVAR_SERVERINFO)
 	{
 		if (strcmp(var->string, Info_ValueForKey (svs.info, var->name)))
@@ -188,6 +187,8 @@ void Cvar_Set (cvar_t *var, char *value)
 			SZ_Print (&cls.netchan.message, va("setinfo \"%s\" \"%s\"\n", var->name, var->string));
 		}
 	}
+	if (var == &cl_teamskin || var == &cl_enemyskin)
+		TP_FixTeamSets();
 #endif
 }
 

@@ -17,6 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+
 // disable data conversion warnings
 
 #pragma warning(disable : 4244)     // MIPS
@@ -54,10 +55,12 @@ extern	int		texture_mode;
 
 extern	float	gldepthmin, gldepthmax;
 
+#define MAX_GLTEXTURES 1024
+
 void GL_Upload32 (unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha);
-void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
+void GL_Upload8 (byte *data, int width, int height,  qboolean mipmap, qboolean alpha, qboolean brighten);
 void GL_Upload8_EXT (byte *data, int width, int height,  qboolean mipmap, qboolean alpha);
-int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha);
+int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, qboolean brighten);
 int GL_FindTexture (char *identifier);
 
 typedef struct
@@ -98,34 +101,6 @@ void R_TimeRefresh_f (void);
 void R_ReadPointFile_f (void);
 texture_t *R_TextureAnimation (texture_t *base);
 
-typedef struct surfcache_s
-{
-	struct surfcache_s	*next;
-	struct surfcache_s 	**owner;		// NULL is an empty chunk of memory
-	int					lightadj[MAXLIGHTMAPS]; // checked for strobe flush
-	int					dlight;
-	int					size;		// including header
-	unsigned			width;
-	unsigned			height;		// DEBUG only needed for debug
-	float				mipscale;
-	struct texture_s	*texture;	// checked for animating textures
-	byte				data[4];	// width*height elements
-} surfcache_t;
-
-
-typedef struct
-{
-	pixel_t		*surfdat;	// destination for generated surface
-	int			rowbytes;	// destination logical width in bytes
-	msurface_t	*surf;		// description for surface to generate
-	fixed8_t	lightadj[MAXLIGHTMAPS];
-							// adjust for lightmap levels for dynamic lighting
-	texture_t	*texture;	// corrected for animating textures
-	int			surfmip;	// mipmapped ratio of surface texels / world pixels
-	int			surfwidth;	// in mipmapped texels
-	int			surfheight;	// in mipmapped texels
-} drawsurf_t;
-
 
 typedef enum {
 	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
@@ -153,7 +128,7 @@ extern	entity_t	r_worldentity;
 extern	qboolean	r_cache_thrash;		// compatability
 extern	vec3_t		modelorg, r_entorigin;
 extern	entity_t	*currententity;
-extern	int			r_visframecount;	// ??? what difs?
+extern	int			r_visframecount;
 extern	int			r_framecount;
 extern	mplane_t	frustum[4];
 extern	int		c_brush_polys, c_alias_polys;
@@ -172,6 +147,7 @@ extern	vec3_t	r_origin;
 //
 extern	refdef_t	r_refdef;
 extern	mleaf_t		*r_viewleaf, *r_oldviewleaf;
+extern	mleaf_t		*r_viewleaf2, *r_oldviewleaf2;	// for watervis hack
 extern	texture_t	*r_notexture_mip;
 extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
@@ -188,8 +164,8 @@ extern	cvar_t	r_norefresh;
 extern	cvar_t	r_drawentities;
 extern	cvar_t	r_drawworld;
 extern	cvar_t	r_drawviewmodel;
+extern	cvar_t	r_drawflame;
 extern	cvar_t	r_speeds;
-extern	cvar_t	r_waterwarp;
 extern	cvar_t	r_fullbright;
 extern	cvar_t	r_lightmap;
 extern	cvar_t	r_shadows;
@@ -198,6 +174,8 @@ extern	cvar_t	r_wateralpha;
 extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
 extern	cvar_t	r_netgraph;
+extern	cvar_t	r_watervishack;
+extern	cvar_t	r_fullbrightSkins;
 
 extern	cvar_t	gl_clear;
 extern	cvar_t	gl_cull;
@@ -211,6 +189,11 @@ extern	cvar_t	gl_reporttjunctions;
 extern	cvar_t	gl_flashblend;
 extern	cvar_t	gl_nocolors;
 extern	cvar_t	gl_finish;
+extern	cvar_t	gl_fb_depthhack;
+extern	cvar_t	gl_fb_bmodels;
+extern	cvar_t	gl_fb_models;
+extern	cvar_t	gl_contrast;
+extern	cvar_t	gl_gamma;
 
 extern	int		gl_lightmap_format;
 extern	int		gl_solid_format;
@@ -234,14 +217,14 @@ void R_TranslatePlayerSkin (int playernum);
 void GL_Bind (int texnum);
 
 // Multitexture
-#define    TEXTURE0_SGIS				0x835E
-#define    TEXTURE1_SGIS				0x835F
+#define	TEXTURE0_ARB 			0x84C0
+#define	TEXTURE1_ARB 			0x84C1
 
 #ifdef _WIN32
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
-extern lpMTexFUNC qglMTexCoord2fSGIS;
-extern lpSelTexFUNC qglSelectTextureSGIS;
+extern lpMTexFUNC qglMultiTexCoord2f;
+extern lpSelTexFUNC qglActiveTexture;
 #endif
 
 extern qboolean gl_mtexable;
@@ -261,7 +244,6 @@ void R_DrawSkyChain (msurface_t *s);
 //
 // gl_draw.c
 //
-int GL_LoadPicTexture (qpic_t *pic);
 void GL_Set2D (void);
 
 //
@@ -269,6 +251,8 @@ void GL_Set2D (void);
 //
 qboolean R_CullBox (vec3_t mins, vec3_t maxs);
 void R_RotateForEntity (entity_t *e);
+void R_PolyBlend (void);
+void R_BrightenScreen (void);
 
 //
 // gl_rlight.c

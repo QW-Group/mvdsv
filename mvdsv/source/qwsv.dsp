@@ -1,5 +1,5 @@
 # Microsoft Developer Studio Project File - Name="qwsv" - Package Owner=<4>
-# Microsoft Developer Studio Generated Build File, Format Version 6.00
+# Microsoft Developer Studio Generated Build File, Format Version 5.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
@@ -22,7 +22,6 @@ CFG=qwsv - Win32 Release
 !MESSAGE 
 
 # Begin Project
-# PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
 CPP=cl.exe
@@ -37,20 +36,20 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\Release"
-# PROP Intermediate_Dir ".\Release"
+# PROP Output_Dir ".\SRelease"
+# PROP Intermediate_Dir ".\SRelease"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /GX /O2 /I "." /I "..\client" /D "NDEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /FR /YX /FD /c
+# ADD CPP /nologo /GX /Od /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
+# ADD BSC32 /nologo /o".\SRelease/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /machine:I386
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /machine:I386 /out:"d:/quake/mvdsv.exe"
 # SUBTRACT LINK32 /profile
 
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
@@ -62,20 +61,20 @@ LINK32=link.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir ".\Debug"
-# PROP Intermediate_Dir ".\Debug"
+# PROP Output_Dir ".\SDebug"
+# PROP Intermediate_Dir ".\SDebug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /GX /ZI /Od /I "." /I "..\client" /D "_DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /FR /YX /FD /c
+# ADD CPP /nologo /W3 /GX /Od /D "_DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /D "id386" /FR /Fp".\SDebug/mvdsv.pch" /YX /FD /ZI /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
+# ADD BSC32 /nologo /o".\SDebug/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386
-# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /map /debug /machine:I386
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /map /debug /machine:I386 /out:".\SDebug/mvdsv.exe"
 # SUBTRACT LINK32 /profile
 
 !ENDIF 
@@ -89,51 +88,43 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
 # Begin Source File
 
-SOURCE=..\client\cmd.c
+SOURCE=.\cmd.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\common.c
+SOURCE=.\common.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\crc.c
+SOURCE=.\crc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\cvar.c
+SOURCE=.\cvar.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\mathlib.c
+SOURCE=.\mathlib.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\md4.c
+SOURCE=.\mdfour.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\model.c
+SOURCE=.\net_chan.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\quake\v2\client\net.h
+SOURCE=.\net_wins.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\net_chan.c
+SOURCE=.\pmove.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\net_wins.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\client\pmove.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\client\pmovetst.c
+SOURCE=.\pmovetst.c
 # End Source File
 # Begin Source File
 
@@ -153,6 +144,10 @@ SOURCE=.\sv_ccmds.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\sv_demo.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\sv_ents.c
 # End Source File
 # Begin Source File
@@ -162,6 +157,10 @@ SOURCE=.\sv_init.c
 # Begin Source File
 
 SOURCE=.\sv_main.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\sv_model.c
 # End Source File
 # Begin Source File
 
@@ -181,11 +180,15 @@ SOURCE=.\sv_send.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\sv_sys_win.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\sv_user.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sys_win.c
+SOURCE=.\version.c
 # End Source File
 # Begin Source File
 
@@ -193,7 +196,7 @@ SOURCE=.\world.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\zone.c
+SOURCE=.\zone.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -201,79 +204,79 @@ SOURCE=..\client\zone.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl;fi;fd"
 # Begin Source File
 
-SOURCE=..\client\bothdefs.h
+SOURCE=.\bothdefs.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\bspfile.h
+SOURCE=.\bspfile.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\cdaudio.h
+SOURCE=.\cdaudio.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\client.h
+SOURCE=.\client.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\cmd.h
+SOURCE=.\cmd.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\common.h
+SOURCE=.\common.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\console.h
+SOURCE=.\console.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\crc.h
+SOURCE=.\crc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\cvar.h
+SOURCE=.\cvar.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\d_iface.h
+SOURCE=.\d_iface.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\draw.h
+SOURCE=.\draw.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\input.h
+SOURCE=.\input.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\keys.h
+SOURCE=.\keys.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\mathlib.h
+SOURCE=.\mathlib.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\menu.h
+SOURCE=.\menu.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\model.h
+SOURCE=.\model.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\modelgen.h
+SOURCE=.\modelgen.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\net.h
+SOURCE=.\net.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\pmove.h
+SOURCE=.\pmove.h
 # End Source File
 # Begin Source File
 
@@ -289,11 +292,11 @@ SOURCE=.\progs.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\protocol.h
+SOURCE=.\protocol.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\quakedef.h
+SOURCE=.\quakedef.h
 # End Source File
 # Begin Source File
 
@@ -301,15 +304,15 @@ SOURCE=.\qwsvdef.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\render.h
+SOURCE=.\render.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\sbar.h
+SOURCE=.\sbar.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\screen.h
+SOURCE=.\screen.h
 # End Source File
 # Begin Source File
 
@@ -317,15 +320,11 @@ SOURCE=.\server.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\sound.h
+SOURCE=.\sound.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\spritegn.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\client\sys.h
+SOURCE=.\spritegn.h
 # End Source File
 # Begin Source File
 
@@ -333,19 +332,27 @@ SOURCE=.\sys.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\vid.h
+SOURCE=.\sys.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\view.h
+SOURCE=.\version.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\wad.h
+SOURCE=.\vid.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\winquake.h
+SOURCE=.\view.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\wad.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\winquake.h
 # End Source File
 # Begin Source File
 
@@ -353,12 +360,70 @@ SOURCE=.\world.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\client\zone.h
+SOURCE=.\zone.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
+# End Group
+# Begin Group "Asm Files"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\math.s
+
+!IF  "$(CFG)" == "qwsv - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
+
+# Begin Custom Build
+OutDir=.\.\SDebug
+InputPath=.\math.s
+InputName=math
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
+           $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\worlda.s
+
+!IF  "$(CFG)" == "qwsv - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
+
+# Begin Custom Build
+OutDir=.\.\SDebug
+InputPath=.\worlda.s
+InputName=worlda
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi\
+           $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
 # End Group
 # End Target
 # End Project

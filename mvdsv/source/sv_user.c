@@ -25,13 +25,9 @@ edict_t	*sv_player;
 
 usercmd_t	cmd;
 
-#ifdef QW_BOTH
-cvar_t	sv_rollspeed = {"sv_rollspeed", "200"};
-cvar_t	sv_rollangle = {"sv_rollangle", "2.0"};
-#else
 cvar_t	sv_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	sv_rollangle = {"cl_rollangle", "2.0"};
-#endif
+
 cvar_t	sv_spectalk = {"sv_spectalk", "1"};
 
 cvar_t	sv_mapcheck	= {"sv_mapcheck", "1"};
@@ -479,11 +475,6 @@ void SV_Begin_f (void)
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 		PR_ExecuteProgram (pr_global_struct->ClientConnect);
 
-//#ifdef QW_BOTH		// FIXME!!!
-//		if (sv.loadgame)
-//			memcpy (host_client->spawn_parms, spawn_parms, sizeof(spawn_parms));
-//#endif
-
 		// actually spawn the player
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -734,6 +725,18 @@ void SV_BeginDownload_f(void)
 	Sys_Printf ("Downloading %s to %s\n", name, host_client->name);
 }
 
+/*
+==================
+SV_BeginDownload_f
+==================
+*/
+void SV_StopDownload_f(void)
+{
+	if (host_client->download) {
+		fclose (host_client->download);
+		host_client->download = NULL;
+	}
+}
 //=============================================================================
 
 /*
@@ -741,10 +744,15 @@ void SV_BeginDownload_f(void)
 SV_Say
 ==================
 */
+
+extern func_t ChatMessage;
+
+void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
+
 void SV_Say (qboolean team)
 {
 	client_t *client;
-	int		j, tmp;
+	int		j, tmp, cls = 0;
 	char	*p;
 	char	text[2048];
 	char	t1[32] = "";
@@ -752,6 +760,29 @@ void SV_Say (qboolean team)
 
 	if (Cmd_Argc () < 2)
 		return;
+
+#if 0
+	char *st;
+	p = Cmd_Args();
+
+	if (*p == '"')
+	{
+		p++;
+		p[strlen(p)-1] = 0;
+	}
+
+	if (team) st = "1";
+	else st = "0";
+
+	Info_SetValueForKey (localinfo, "chat", p, MAX_LOCALINFO_STRING);
+	Info_SetValueForKey (localinfo, "chatteam", st, MAX_LOCALINFO_STRING);
+	pr_global_struct->time = sv.time;
+	pr_global_struct->self = EDICT_TO_PROG(sv_player);
+	PR_ExecuteProgram (ChatMessage);
+	Info_SetValueForKey (localinfo, "chat", "", MAX_LOCALINFO_STRING);
+	Info_SetValueForKey (localinfo, "chatteam", "", MAX_LOCALINFO_STRING);
+	return;
+#endif
 
 	if (team)
 		Q_strncpyz (t1, Info_ValueForKey (host_client->userinfo, "team"), sizeof(t1));
@@ -824,8 +855,24 @@ void SV_Say (qboolean team)
 					continue;	// on different teams
 			}
 		}
-		SV_ClientPrintf(client, PRINT_CHAT, "%s", text);
+
+		cls |= 1 << j;
+		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
 	}
+
+	if (!sv.demorecording || !cls)
+		return;
+
+	// non-team messages should be seen allways, even if not tracking any player
+	if (!team && ((host_client->spectator && sv_spectalk.value) || !host_client->spectator))
+	{
+		DemoReliableWrite_Begin (dem_all, 0, strlen(text)+3);
+	} else 
+		DemoReliableWrite_Begin (dem_multiple, cls, strlen(text)+3);
+
+	MSG_WriteByte (&demo.buf, svc_print);
+	MSG_WriteByte (&demo.buf, PRINT_CHAT);
+	MSG_WriteString (&demo.buf, text);
 }
 
 
@@ -1129,6 +1176,24 @@ void SV_NoSnap_f(void)
 	}
 }
 
+void SV_POVlist_f(void)
+{
+	client_t *cl;
+	int i;
+
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+	{
+		if (cl->state != cs_spawned)
+			continue;
+
+		if (host_client->POVs & (1 << i)) {
+			Con_Printf("%s\n", cl->name);
+		}
+	}
+}
+
+void SV_DemoList_f (void);
+
 typedef struct
 {
 	char	*name;
@@ -1166,6 +1231,9 @@ ucmd_t ucmds[] =
 	{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
 
 	{"snap", SV_NoSnap_f},
+	{"povlist", SV_POVlist_f},
+	{"stopdownload", SV_StopDownload_f},
+	{"demolist", SV_DemoList_f},
 	
 	{NULL, NULL}
 };
@@ -1389,7 +1457,7 @@ void SV_RunCmd (usercmd_t *ucmd)
 
 	cmd = *ucmd;
 
-	// chop up very long commands
+	// chop up very long command
 	if (cmd.msec > 50)
 	{
 		oldmsec = ucmd->msec;

@@ -44,9 +44,6 @@ typedef struct
 	double		lastchecktime;		// for monster ai 
 
 	qboolean	paused;				// are we paused?
-#ifdef QW_BOTH
-	qboolean	loadgame;			// handle connections specially
-#endif
 
 	//check player/eyes models for hacks
 	unsigned	model_player_checksum;
@@ -91,8 +88,19 @@ typedef struct
 	int			num_signon_buffers;
 	int			signon_buffer_size[MAX_SIGNON_BUFFERS];
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
+
+	qboolean	demorecording;
 } server_t;
 
+typedef struct
+{
+	vec3_t	origin;
+	vec3_t	angles;
+	int		weaponframe;
+	int		skinnum;
+	int		model;
+	int		effects;
+}	demoinfo_t;
 
 #define	NUM_SPAWN_PARMS			16
 
@@ -115,7 +123,7 @@ typedef struct
 	packet_entities_t	entities;
 } client_frame_t;
 
-#define MAX_BACK_BUFFERS	4
+#define MAX_BACK_BUFFERS	8
 #define MAX_STUFFTEXT		256
 
 typedef struct client_s
@@ -123,6 +131,9 @@ typedef struct client_s
 	sv_client_state_t	state;
 
 	int				spectator;			// non-interactive
+	int				multipov;			// for multipov demo recording
+	int				POVs;
+	int				teamPOVs;
 
 	qboolean		sendinfo;			// at end of frame, send info to all
 										// this prevents malicious multiple broadcasts
@@ -190,6 +201,8 @@ typedef struct client_s
 	char			uploadfn[MAX_QPATH];
 	netadr_t		snap_from;
 	qboolean		remote_snap;
+	demoinfo_t		demoinfo;
+
  
 //===== NETWORK ============
 	int				chokecount;
@@ -202,6 +215,24 @@ typedef struct client_s
 // timing out if no valid messages are received for timeout.value seconds
 // getting kicked off by the server operator
 // a program error, like an overflowed reliable buffer
+
+typedef struct
+{
+	FILE		*file;
+	sizebuf_t	buf;
+	byte		buf_data[10*MAX_MSGLEN]; // heh?
+	int			bufsize, *cursize;
+	sizebuf_t	datagram;
+	byte		datagram_data[MAX_DATAGRAM];
+	int			lastto, curto;
+	int			lasttype, curtype;
+	double		time, pingtime;
+	int			stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
+	client_t	recorder;
+	qboolean	fixangle[MAX_CLIENTS];
+	vec3_t		angles[MAX_CLIENTS];
+	char		name[MAX_QPATH];
+} demo_t;
 
 //=============================================================================
 
@@ -330,6 +361,7 @@ extern	int		current_skill;
 
 extern	cvar_t	spawn;
 extern	cvar_t	teamplay;
+extern	cvar_t	serverdemo;
 extern	cvar_t	deathmatch;
 extern	cvar_t	fraglimit;
 extern	cvar_t	timelimit;
@@ -338,6 +370,7 @@ extern	cvar_t	coop;
 
 extern	server_static_t	svs;				// persistant server info
 extern	server_t		sv;					// local server
+extern	demo_t			demo;				// server demo struct
 
 extern	client_t	*host_client;
 
@@ -370,7 +403,7 @@ void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 qboolean SV_CheckBottom (edict_t *ent);
 qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
 
-void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
+void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg, qboolean fordemo);
 
 void SV_MoveToGoal (void);
 
@@ -420,9 +453,11 @@ void SV_Multicast (vec3_t origin, int to);
 void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
     float attenuation);
 void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...);
+void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_BroadcastPrintf (int level, char *fmt, ...);
 void SV_BroadcastCommand (char *fmt, ...);
 void SV_SendClientMessages (void);
+void SV_SendDemoMessage(void);
 void SV_SendMessagesToAll (void);
 void SV_FindModelNumbers (void);
 
@@ -444,7 +479,7 @@ void SV_SendServerInfoChange (char *key, char *value);
 //
 // sv_ents.c
 //
-void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg);
+void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder);
 
 //
 // sv_nchan.c
@@ -463,3 +498,10 @@ void ClientReliableWrite_Short(client_t *cl, int c);
 void ClientReliableWrite_String(client_t *cl, char *s);
 void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 
+//
+// sv_demo.c
+//
+void SV_DemoPings (void);
+void SV_DemoWriteToDisk(int type, int to);
+void DemoReliableWrite_Begin(int type, int to, int size);
+void SV_Stop_f (void);

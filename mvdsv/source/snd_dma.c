@@ -492,6 +492,7 @@ void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float 
 	if (!sc)
 	{
 		target_chan->sfx = NULL;
+		Con_Printf("couldnt load\n");
 		return;		// couldn't load the sound's data
 	}
 

@@ -1022,11 +1022,11 @@ ok:
 	if (!strncmp(buf, " f_version\n", 11) || !strncmp(buf, " z_version\n", 11))
 	{
 #ifdef RELEASE_VERSION
-		Cbuf_AddText (va("say ZQuake version %s "
-			QW_PLATFORM ":" QW_RENDERER "\n", Z_VERSION));
+		Cbuf_AddText (va("say QWExtended Client version %s "
+			QW_PLATFORM ":" QW_RENDERER "\n", QWE_VERSION));
 #else
-		Cbuf_AddText (va("say ZQuake version %s (Build %04d) "
-			QW_PLATFORM ":" QW_RENDERER "\n", Z_VERSION, build_number()));
+		Cbuf_AddText (va("say QWExtended Client version %s (Build %04d) "
+			QW_PLATFORM ":" QW_RENDERER "\n", QWE_VERSION, build_number()));
 #endif
 		vars.f_version_reply_time = realtime;
 	}
@@ -1214,6 +1214,16 @@ void TP_EnemyColor_f (void)
 
 //===================================================================
 
+void TP_FixTeamSets(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		Skin_Find(&cl.players[i]);
+		CL_NewTranslation(i);
+	}
+}
+
 void TP_NewMap ()
 {
 	static char last_map[MAX_QPATH] = {'\0'};
@@ -1226,7 +1236,7 @@ void TP_NewMap ()
 	if (strcmp(mapname, last_map))
 	{	// map name has changed
 		loc_numentries = 0;	// clear loc file
-		if (cl_loadlocs.value && !cls.demoplayback) {
+		if (cl_loadlocs.value && !cls.demoplayback ) {
 			char locname[MAX_OSPATH];
 			_snprintf (locname, MAX_OSPATH, "%s.loc", mapname);
 			TP_LoadLocFile (locname, true);

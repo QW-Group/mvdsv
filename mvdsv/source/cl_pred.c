@@ -73,7 +73,7 @@ void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, 
 	{
 		player_state_t	temp;
 		usercmd_t	split;
-
+		
 		split = *u;
 		split.msec /= 2;
 
@@ -181,12 +181,13 @@ void CL_CalcCrouch (void)
 CL_PredictMove
 ==============
 */
-void CL_PredictMove (void)
+void CL_PredictMove (qboolean nopred)
 {
 	int			i;
 	float		f;
 	frame_t		*from, *to = NULL;
 	int			oldphysent;
+	extern float nextdemotime;
 
 	if (cl_pushlatency.value > 0)
 		Cvar_Set (&cl_pushlatency, "0");
@@ -224,7 +225,7 @@ void CL_PredictMove (void)
 		TP_ExecTrigger ("f_spawn");
 	}
 
-	if (cl_nopred.value)
+	if (cl_nopred.value || nopred)
 	{
 		VectorCopy (from->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (from->playerstate[cl.playernum].origin, cl.simorg);

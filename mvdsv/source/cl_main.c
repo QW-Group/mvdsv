@@ -34,10 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <netinet/in.h>
 #endif
 
-#ifdef QW_BOTH
-#include "server.h"
-#endif
-
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
@@ -287,16 +283,9 @@ void CL_ClearState (void)
 	S_StopAllSounds (true);
 
 	Con_DPrintf ("Clearing memory\n");
-#ifdef QW_BOTH
-	if (sv.state == ss_dead) // connecting to a remote server
-	{
-#endif
 	D_FlushCaches ();
 	Mod_ClearAll ();
 	Hunk_FreeToLowMark (host_hunklevel);
-#ifdef QW_BOTH
-	}
-#endif
 
 	CL_ClearTEnts ();
 	memset (cl_baselines, 0, sizeof(cl_baselines));
@@ -356,13 +345,7 @@ void CL_Disconnect (void)
 
 		cls.state = ca_disconnected;
 
-#ifdef QW_BOTH
-		// if running a local server, shut it down
-		if (sv.state != ss_dead)
-			SV_ShutdownServer();
-#endif
-
-		cls.demoplayback = cls.demorecording = cls.timedemo = false;
+		cls.demoplayback2 = cls.demoplayback = cls.demorecording = cls.timedemo = false;
 	}
 	Cam_Reset();
 
@@ -579,14 +562,18 @@ void CL_ConnectionlessPacket (void)
 	Con_Printf ("unknown:  %c\n", c);
 }
 
-
 /*
 =================
 CL_ReadPackets
 =================
 */
+void CL_InitInterpolation(float cur, float old);
 void CL_ReadPackets (void)
 {
+	extern	float nextdemotime, olddemotime;
+	qboolean change = false;
+	static float old;
+
 //	while (NET_GetPacket ())
 	while (CL_GetMessage())
 	{
@@ -599,7 +586,7 @@ void CL_ReadPackets (void)
 			continue;
 		}
 
-		if (net_message.cursize < 8)
+		if (net_message.cursize < 8 && !cls.demoplayback2)
 		{
 			Con_Printf ("%s: Runt packet\n",NET_AdrToString(net_from));
 			continue;
@@ -608,15 +595,20 @@ void CL_ReadPackets (void)
 		//
 		// packet from server
 		//
-		if (!cls.demoplayback && 
+		if (!cls.demoplayback &&
 			!NET_CompareAdr (net_from, cls.netchan.remote_address))
 		{
 			Con_DPrintf ("%s:sequenced packet without connection\n"
 				,NET_AdrToString(net_from));
 			continue;
 		}
-		if (!Netchan_Process(&cls.netchan))
-			continue;		// wasn't accepted for some reason
+		if (!cls.demoplayback2) {
+			if (!Netchan_Process(&cls.netchan))
+				continue;		// wasn't accepted for some reason
+		} else {
+			MSG_BeginReading ();
+		}
+			
 		CL_ParseServerMessage ();
 
 //		if (cls.demoplayback && cls.state >= ca_active && !CL_DemoBehind())
@@ -659,7 +651,7 @@ void CL_Init (void)
 	Info_SetValueForKey (cls.userinfo, "msg", "1", MAX_INFO_STRING);
 
 #ifndef RELEASE_VERSION
-	Info_SetValueForStarKey (cls.userinfo, "*z_ver", Z_VERSION, MAX_INFO_STRING);
+	Info_SetValueForStarKey (cls.userinfo, "*qwe_ver", QWE_VERSION, MAX_INFO_STRING);
 #endif
 
 	CL_InitInput ();
@@ -864,6 +856,9 @@ void Host_Frame (double time)
 	int			pass1, pass2, pass3;
 	float fps;
 	float scale;
+	static float		old;
+	static int			oldparse;
+	extern	float nextdemotime, olddemotime;
 
 	if (setjmp (host_abort) )
 		return;			// something bad happened, or the server disconnected
@@ -887,11 +882,6 @@ void Host_Frame (double time)
 	if (cl_maxfps.value)
 		fps = max(30.0, min(cl_maxfps.value, 72.0));
 	else
-#ifdef QW_BOTH
-		if (sv.state != ss_dead)
-			fps = 72.0;
-		else
-#endif
 		fps = max(30.0, min(rate.value/80.0, 72.0));
 
 	if (!cls.demoplayback && realtime - oldrealtime < 1.0/fps)
@@ -915,13 +905,31 @@ void Host_Frame (double time)
 	// process console commands
 	Cbuf_Execute ();
 
-#ifdef QW_BOTH
-	if (sv.state == ss_active)
-		SV_Frame(host_frametime);
-#endif
-
 	// fetch results from server
 	CL_ReadPackets ();
+
+
+	if (cls.demoplayback2)
+	{
+		player_state_t *self, *oldself;
+		self = &cl.frames[cl.parsecount & UPDATE_MASK].playerstate[cl.playernum];
+		oldself = &cl.frames[(cls.netchan.outgoing_sequence-1) & UPDATE_MASK].playerstate[cl.playernum];
+		self->messagenum = cl.parsecount;
+		VectorCopy(oldself->origin, self->origin);
+		VectorCopy(oldself->velocity, self->velocity);
+		VectorCopy(oldself->viewangles, self->viewangles);
+
+		if (old != nextdemotime) // FIXME: use oldparcecount != cl.parsecount?
+		{
+			old = nextdemotime;
+			CL_InitInterpolation(nextdemotime, olddemotime);
+		}
+
+		CL_ParseClientdata();
+		
+		cls.netchan.outgoing_sequence = cl.parsecount+1;
+		CL_Interpolate();
+	}
 
 	// process stuffed commands
 	Cbuf_ExecuteEx (&cbuf_svc);
@@ -939,7 +947,7 @@ void Host_Frame (double time)
 		CL_SetUpPlayerPrediction(false);
 		
 		// do client side motion prediction
-		CL_PredictMove ();
+		CL_PredictMove (false);
 		
 		// Set up prediction for other players
 		CL_SetUpPlayerPrediction(true);
@@ -1025,29 +1033,10 @@ void Host_Init (quakeparms_t *parms)
 
 	COM_Init ();
 
-#ifdef QW_BOTH
-	PR_Init ();
-	SV_InitLocal ();	// register server cvars and commands
-#endif
-
 	Host_FixupModelNames();
 	
-#ifdef QW_BOTH
-	{
-		int	port, p;
-	
-		port = PORT_SERVER;
-		p = COM_CheckParm ("-port");
-		if (p && p < com_argc)
-		{
-			port = atoi(com_argv[p+1]);
-			//Con_Printf ("Port: %i\n", port);
-		}
-		NET_Init (PORT_CLIENT, port);
-	}
-#else
 	NET_Init (PORT_CLIENT, 0);
-#endif
+
 	Netchan_Init ();
 
 	W_LoadWadFile ("gfx.wad");
@@ -1110,9 +1099,9 @@ void Host_Init (quakeparms_t *parms)
 	host_initialized = true;
 
 #ifdef RELEASE_VERSION
-	Con_Printf ("\nClient Version %s\n\n", Z_VERSION);
+	Con_Printf ("\nClient Version %s\n\n", QWE_VERSION);
 #else
-	Con_Printf ("\nClient Version %s (Build %04d)\n\n", Z_VERSION, build_number());
+	Con_Printf ("\nClient Version %s (Build %04d)\n\n", QWE_VERSION, build_number());
 #endif
 
 	Con_Printf ("€ QuakeWorld Initialized ‚\n");	

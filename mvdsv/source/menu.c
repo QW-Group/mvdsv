@@ -23,9 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "sound.h"
 #include "version.h"
-#ifdef QW_BOTH
-#include "server.h"
-#endif
 
 void (*vid_menudrawfn)(void);
 void (*vid_menukeyfn)(int key);
@@ -1196,105 +1193,6 @@ void M_Quit_Key (int key)
 //=============================================================================
 /* SINGLE PLAYER MENU */
 
-#ifdef QW_BOTH
-int	m_singleplayer_cursor;
-#define	SINGLEPLAYER_ITEMS	3
-
-extern	cvar_t	maxclients;
-
-void M_Menu_SinglePlayer_f (void)
-{
-	key_dest = key_menu;
-	m_state = m_singleplayer;
-//	m_entersound = true;
-	S_LocalSound ("misc/menu1.wav");
-}
-
-
-void M_SinglePlayer_Draw (void)
-{
-	int		f;
-	qpic_t	*p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/sp_menu.lmp") );
-
-	f = (int)(realtime * 10)%6;
-
-	M_DrawTransPic (54, 32 + m_singleplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
-}
-
-
-void M_SinglePlayer_Key (int key)
-{
-	switch (key)
-	{
-	case K_ESCAPE:
-		M_Menu_Main_f ();
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		if (++m_singleplayer_cursor >= SINGLEPLAYER_ITEMS)
-			m_singleplayer_cursor = 0;
-		break;
-
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		if (--m_singleplayer_cursor < 0)
-			m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
-		break;
-
-	case K_HOME:
-	case K_PGUP:
-		S_LocalSound ("misc/menu1.wav");
-		m_singleplayer_cursor = 0;
-		break;
-
-	case K_END:
-	case K_PGDN:
-		S_LocalSound ("misc/menu1.wav");
-		m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-//		m_entersound = true;
-//		S_LocalSound ("misc/menu1.wav");
-
-		switch (m_singleplayer_cursor)
-		{
-		case 0:
-			if (sv.state != ss_dead)
-				if (!SCR_ModalMessage("Are you sure you want to\nstart a new game?\n"))
-					break;
-			key_dest = key_game;
-			Cvar_Set (&maxclients, "1");
-//			Cvar_Set (&maxspectators, "0");
-			Cvar_Set (&teamplay, "0");
-			Cvar_Set (&timelimit, "0");
-			Cvar_Set (&deathmatch, "0");
-			Cvar_Set (&coop, "0");
-			if (sv.state != ss_dead)
-				Cbuf_AddText ("disconnect\n");
-			Cbuf_AddText ("gamedir single\n");	// FIXME
-			Cbuf_AddText ("map start\n");
-			break;
-
-		case 1:
-			M_Menu_Load_f ();
-			break;
-
-		case 2:
-			M_Menu_Save_f ();
-			break;
-		}
-	}
-}
-
-#else	// QW_BOTH
-
 void M_Menu_SinglePlayer_f (void)
 {
 	m_state = m_singleplayer;
@@ -1319,7 +1217,7 @@ void M_SinglePlayer_Key (key)
 	if (key == K_ESCAPE || key == K_ENTER)
 		m_state = m_main;
 }
-#endif	// !QW_BOTH
+
 
 
 //=============================================================================
@@ -1401,10 +1299,12 @@ void M_Load_Draw (void)
 // line cursor
 	M_DrawCharacter (8, 32 + load_cursor*8, 12+((int)(realtime*4)&1));
 */
+	/*
 
 	M_DrawTextBox (60, 10*8, 23, 4);	
 	M_PrintWhite (80, 12*8, "Savegames are not yet");
 	M_PrintWhite (88, 13*8, "supported by ZQuake");
+	*/
 }
 
 
@@ -1423,9 +1323,11 @@ void M_Save_Draw (void)
 	M_DrawCharacter (8, 32 + load_cursor*8, 12+((int)(realtime*4)&1));
 */
 
+	/*
 	M_DrawTextBox (60, 10*8, 23, 4);	
 	M_PrintWhite (80, 12*8, "Savegames are not yet");
 	M_PrintWhite (88, 13*8, "supported by ZQuake");
+	*/
 }
 
 
@@ -1457,11 +1359,8 @@ void M_Save_Key (int k)
 /* MULTIPLAYER MENU */
 
 int	m_multiplayer_cursor;
-#ifdef QW_BOTH
-#define	MULTIPLAYER_ITEMS	4
-#else
 #define	MULTIPLAYER_ITEMS	3
-#endif
+
 
 void M_Menu_MultiPlayer_f (void)
 {
@@ -1481,9 +1380,6 @@ void M_MultiPlayer_Draw (void)
 	M_Print (80, 40, "favorite servers");
 	M_Print (80, 48, "player setup");
 	M_Print (80, 56, "demos");
-#ifdef QW_BOTH
-	M_Print (80, 64, "new game");
-#endif
 
 // cursor
 	M_DrawCharacter (64, 40 + m_multiplayer_cursor*8, 12+((int)(realtime*4)&1));
@@ -1538,11 +1434,6 @@ void M_MultiPlayer_Key (int key)
 			M_Menu_Demos_f ();
 			break;
 
-#ifdef QW_BOTH
-		case 3:
-			M_Menu_GameOptions_f ();
-			break;
-#endif
 		}
 	}
 }
@@ -1552,7 +1443,7 @@ void M_MultiPlayer_Key (int key)
 /* DEMOS MENU */
 
 #define MAX_DEMO_NAME 64
-#define MAX_DEMO_FILES 64
+#define MAX_DEMO_FILES 1000
 #define MAXLINES 19	  // maximum number of files visible on screen
 
 typedef struct direntry_s {
@@ -1609,7 +1500,7 @@ static void ReadDir (void)
 		{
 			i = strlen(fd.cFileName);
 			if (i < 5 || (Q_strcasecmp(fd.cFileName+i-4, ".qwd")
-				&& Q_strcasecmp(fd.cFileName+i-4, ".qwz")))
+				&& Q_strcasecmp(fd.cFileName+i-4, ".qwz") && Q_strcasecmp(fd.cFileName+i-4, ".mvd")))
 				continue;
 			type = 0;
 			size = fd.nFileSizeLow;
@@ -1816,375 +1707,6 @@ void M_Demos_Key (int k)
 
 //=============================================================================
 /* GAME OPTIONS MENU */
-
-#ifdef QW_BOTH
-
-typedef struct
-{
-	char	*name;
-	char	*description;
-} level_t;
-
-level_t		levels[] =
-{
-	{"start", "Entrance"},	// 0
-
-	{"e1m1", "Slipgate Complex"},				// 1
-	{"e1m2", "Castle of the Damned"},
-	{"e1m3", "The Necropolis"},
-	{"e1m4", "The Grisly Grotto"},
-	{"e1m5", "Gloom Keep"},
-	{"e1m6", "The Door To Chthon"},
-	{"e1m7", "The House of Chthon"},
-	{"e1m8", "Ziggurat Vertigo"},
-
-	{"e2m1", "The Installation"},				// 9
-	{"e2m2", "Ogre Citadel"},
-	{"e2m3", "Crypt of Decay"},
-	{"e2m4", "The Ebon Fortress"},
-	{"e2m5", "The Wizard's Manse"},
-	{"e2m6", "The Dismal Oubliette"},
-	{"e2m7", "Underearth"},
-
-	{"e3m1", "Termination Central"},			// 16
-	{"e3m2", "The Vaults of Zin"},
-	{"e3m3", "The Tomb of Terror"},
-	{"e3m4", "Satan's Dark Delight"},
-	{"e3m5", "Wind Tunnels"},
-	{"e3m6", "Chambers of Torment"},
-	{"e3m7", "The Haunted Halls"},
-
-	{"e4m1", "The Sewage System"},				// 23
-	{"e4m2", "The Tower of Despair"},
-	{"e4m3", "The Elder God Shrine"},
-	{"e4m4", "The Palace of Hate"},
-	{"e4m5", "Hell's Atrium"},
-	{"e4m6", "The Pain Maze"},
-	{"e4m7", "Azure Agony"},
-	{"e4m8", "The Nameless City"},
-
-	{"end", "Shub-Niggurath's Pit"},			// 31
-
-	{"dm1", "Place of Two Deaths"},				// 32
-	{"dm2", "Claustrophobopolis"},
-	{"dm3", "The Abandoned Base"},
-	{"dm4", "The Bad Place"},
-	{"dm5", "The Cistern"},
-	{"dm6", "The Dark Zone"}
-};
-
-typedef struct
-{
-	char	*description;
-	int		firstLevel;
-	int		levels;
-} episode_t;
-
-episode_t	episodes[] =
-{
-	{"Welcome to Quake", 0, 1},
-	{"Doomed Dimension", 1, 8},
-	{"Realm of Black Magic", 9, 7},
-	{"Netherworld", 16, 7},
-	{"The Elder World", 23, 8},
-	{"Final Level", 31, 1},
-	{"Deathmatch Arena", 32, 6}
-};
-
-extern cvar_t maxclients, maxspectators;
-
-int	startepisode;
-int	startlevel;
-int _maxclients, _maxspectators;
-int _deathmatch, _teamplay, _skill, _coop;
-int _fraglimit, _timelimit;
-
-void M_Menu_GameOptions_f (void)
-{
-	key_dest = key_menu;
-	m_state = m_gameoptions;
-	m_entersound = true;
-
-	// 16 and 8 are not really limits --- just sane values
-	// for these variables...
-	_maxclients = min(16, (int)maxclients.value);
-	if (_maxclients < 2) _maxclients = 8;
-	_maxspectators = max(0, min((int)maxspectators.value, 8));
-
-	_deathmatch = max (0, min((int)deathmatch.value, 5));
-	_teamplay = max (0, min((int)teamplay.value, 2));
-	_skill = max (0, min((int)skill.value, 3));
-	_fraglimit = max (0, min((int)fraglimit.value, 100));
-	_timelimit = max (0, min((int)timelimit.value, 60));
-}
-
-
-int gameoptions_cursor_table[] = {40, 56, 64, 72, 80, 96, 104, 120, 128};
-#define	NUM_GAMEOPTIONS	9
-int		gameoptions_cursor;
-
-void M_GameOptions_Draw (void)
-{
-	qpic_t	*p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-
-	M_DrawTextBox (152, 32, 10, 1);
-	M_Print (160, 40, "begin game");
-
-	M_Print (0, 56, "        game type");
-	if (!_deathmatch)
-		M_Print (160, 56, "cooperative");
-	else
-		M_Print (160, 56, va("deathmatch %i", _deathmatch));
-
-	M_Print (0, 64, "         teamplay");
-	{
-		char *msg;
-
-		switch(_teamplay)
-		{
-			default: msg = "Off"; break;
-			case 1: msg = "No Friendly Fire"; break;
-			case 2: msg = "Friendly Fire"; break;
-		}
-		M_Print (160, 64, msg);
-	}
-
-	if (_deathmatch == 0)
-	{
-		M_Print (0, 72, "            skill");
-		switch (_skill)
-		{
-		case 0:  M_Print (160, 72, "Easy"); break;
-		case 1:  M_Print (160, 72, "Normal"); break;
-		case 2:  M_Print (160, 72, "Hard"); break;
-		default: M_Print (160, 72, "Nightmare");
-		}
-	}
-	else
-	{
-		M_Print (0, 72, "        fraglimit");
-		if (_fraglimit == 0)
-			M_Print (160, 72, "none");
-		else
-			M_Print (160, 72, va("%i frags", _fraglimit));
-		
-		M_Print (0, 80, "        timelimit");
-		if (_timelimit == 0)
-			M_Print (160, 80, "none");
-		else
-			M_Print (160, 80, va("%i minutes", _timelimit));
-	}
-	M_Print (0, 96, "       maxclients");
-	M_Print (160, 96, va("%i", _maxclients) );
-	
-	M_Print (0, 104, "       maxspect.");
-	M_Print (160, 104, va("%i", _maxspectators) );
-
-	M_Print (0, 120, "         Episode");
-    M_Print (160, 120, episodes[startepisode].description);
-
-	M_Print (0, 128, "           Level");
-    M_Print (160, 128, levels[episodes[startepisode].firstLevel + startlevel].description);
-	M_Print (160, 136, levels[episodes[startepisode].firstLevel + startlevel].name);
-
-// line cursor
-	M_DrawCharacter (144, gameoptions_cursor_table[gameoptions_cursor], 12+((int)(realtime*4)&1));
-}
-
-
-void M_NetStart_Change (int dir)
-{
-	int count;
-	extern cvar_t	registered;
-
-	switch (gameoptions_cursor)
-	{
-	case 1:
-		_deathmatch += dir;
-		if (_deathmatch < 0) _deathmatch = 5;
-		else if (_deathmatch > 5) _deathmatch = 0;
-		break;
-
-	case 2:
-		_teamplay += dir;
-		if (_teamplay < 0) _teamplay = 2;
-		else if (_teamplay > 2) _teamplay = 0;
-		break;
-
-	case 3:
-		if (_deathmatch == 0)
-		{
-			_skill += dir;
-			if (_skill < 0) _skill = 3;
-			else if (_skill > 3) _skill = 0;
-		}
-		else
-		{
-			_fraglimit += dir*10;
-			if (_fraglimit < 0) _fraglimit = 100;
-			else if (_fraglimit > 100) _fraglimit = 0;
-		}
-		break;
-
-	case 4:
-		_timelimit += dir*5;
-		if (_timelimit < 0) _timelimit = 60;
-		else if (_timelimit > 60) _timelimit = 0;
-		break;
-
-	case 5:
-		_maxclients += dir;
-		if (_maxclients > 16)
-			_maxclients = 2;
-		else if (_maxclients < 2)
-			_maxclients = 16;
-		break;
-
-	case 6:
-		_maxspectators += dir;
-		if (_maxspectators > 8)
-			_maxspectators = 0;
-		else if (_maxspectators < 0)
-			_maxspectators = 8;
-		break;
-
-	case 7:
-		startepisode += dir;
-		if (registered.value)
-			count = 7;
-		else
-			count = 2;
-
-		if (startepisode < 0)
-			startepisode = count - 1;
-
-		if (startepisode >= count)
-			startepisode = 0;
-
-		startlevel = 0;
-		break;
-
-	case 8:
-		startlevel += dir;
-		count = episodes[startepisode].levels;
-
-		if (startlevel < 0)
-			startlevel = count - 1;
-
-		if (startlevel >= count)
-			startlevel = 0;
-		break;
-	}
-}
-
-void M_GameOptions_Key (int key)
-{
-	char *p;
-
-	switch (key)
-	{
-	case K_ESCAPE:
-//		M_Menu_Net_f ();
-		M_Menu_MultiPlayer_f ();
-		break;
-
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		gameoptions_cursor--;
-		if (!_deathmatch && gameoptions_cursor == 4)
-			gameoptions_cursor--;
-		if (gameoptions_cursor < 0)
-			gameoptions_cursor = NUM_GAMEOPTIONS-1;
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		gameoptions_cursor++;
-		if (!_deathmatch && gameoptions_cursor == 4)
-			gameoptions_cursor++;
-		if (gameoptions_cursor >= NUM_GAMEOPTIONS)
-			gameoptions_cursor = 0;
-		break;
-
-	case K_HOME:
-		S_LocalSound ("misc/menu1.wav");
-		gameoptions_cursor = 0;
-		break;
-
-	case K_END:
-		S_LocalSound ("misc/menu1.wav");
-		gameoptions_cursor = NUM_GAMEOPTIONS-1;
-		break;
-
-	case K_LEFTARROW:
-		if (gameoptions_cursor == 0)
-			break;
-		S_LocalSound ("misc/menu3.wav");
-		M_NetStart_Change (-1);
-		break;
-
-	case K_RIGHTARROW:
-		if (gameoptions_cursor == 0)
-			break;
-		S_LocalSound ("misc/menu3.wav");
-		M_NetStart_Change (1);
-		break;
-
-	case K_ENTER:
-		S_LocalSound ("misc/menu2.wav");
-//		if (gameoptions_cursor == 0)
-		{
-			key_dest = key_game;
-
-			// Kill the server, unless we continue playing 
-			// deathmatch on another level
-			if (!_deathmatch || !deathmatch.value)
-				Cbuf_AddText ("disconnect\n");
-
-			if (_deathmatch == 0)
-			{
-				_coop = 1;
-				_timelimit = 0;
-				_fraglimit = 0;
-			}
-			else
-				_coop = 0;
-
-			Cvar_Set (&deathmatch, va("%i", _deathmatch));
-			Cvar_Set (&skill, va("%i", _skill));
-			Cvar_Set (&coop, va("%i", _coop));
-			Cvar_Set (&fraglimit, va("%i", _fraglimit));
-			Cvar_Set (&timelimit, va("%i", _timelimit));
-			Cvar_Set (&teamplay, va("%i", _teamplay));
-			Cvar_Set (&maxclients, va("%i", _maxclients));
-			Cvar_Set (&maxspectators, va("%i", _maxspectators));
-
-			// FIXME...
-			if (_deathmatch)
-			{
-				p = Info_ValueForKey (svs.info, "*gamedir");
-				if (p && !strcmp(p, "single"))
-				{
-					Cbuf_AddText ("gamedir qw\n");
-				}
-			}
-			else
-				Cbuf_AddText ("gamedir single\n");
-
-			Cbuf_AddText ( va ("map %s\n", levels[episodes[startepisode].firstLevel + startlevel].name) );
-
-			return;
-		}
-
-//		M_NetStart_Change (1);
-		break;
-	}
-}
-#endif	// QW_BOTH
 
 
 //=============================================================================
@@ -2753,11 +2275,6 @@ void M_Init (void)
 	Cmd_AddCommand ("togglemenu", M_ToggleMenu_f);
 
 	Cmd_AddCommand ("menu_main", M_Menu_Main_f);
-#ifdef QW_BOTH
-	Cmd_AddCommand ("menu_singleplayer", M_Menu_SinglePlayer_f);
-	Cmd_AddCommand ("menu_load", M_Menu_Load_f);
-	Cmd_AddCommand ("menu_save", M_Menu_Save_f);
-#endif
 	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
 	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
 	Cmd_AddCommand ("menu_demos", M_Menu_Demos_f);
@@ -2869,12 +2386,6 @@ void M_Draw (void)
 //		M_LanConfig_Draw ();
 		break;
 
-#ifdef QW_BOTH
-	case m_gameoptions:
-		M_GameOptions_Draw ();
-		break;
-#endif
-
 	case m_search:
 //		M_Search_Draw ();
 		break;
@@ -2975,12 +2486,6 @@ void M_Keydown (int key)
 	case m_lanconfig:
 //		M_LanConfig_Key (key);
 		return;
-
-#ifdef QW_BOTH
-	case m_gameoptions:
-		M_GameOptions_Key (key);
-		return;
-#endif
 
 	case m_search:
 //		M_Search_Key (key);

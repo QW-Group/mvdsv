@@ -36,7 +36,7 @@ typedef struct
 } pmtrace_t;
 
 
-#define	MAX_PHYSENTS	32
+#define	MAX_PHYSENTS	64	//32
 typedef struct
 {
 	vec3_t	origin;

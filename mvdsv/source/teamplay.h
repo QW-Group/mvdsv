@@ -59,6 +59,7 @@ char *TP_ParseMacroString(char *string);
 void TP_NewMap ();
 void TP_CheckVersionRequest(char *s);
 int TP_CategorizeMessage (char *s);
+void TP_FixTeamSets();
 
 void TP_Init ();
 

@@ -1,0 +1,138 @@
+--------------------Configuration: qwsv - Win32 Release--------------------
+Begining build with project "D:\projekty\zq\source\zqwsv.dsp", at root.
+Active configuration is Win32 (x86) Console Application (based on Win32 (x86) Console Application)
+
+Project's tools are:
+			"32-bit C/C++ Compiler for 80x86" with flags "/nologo /ML /GX /Od /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /Fr".\SRelease/" /Fp".\SRelease/mvdsv.pch" /YX /Fo".\SRelease/" /Fd".\SRelease/" /FD /c "
+			"Win32 Resource Compiler" with flags "/l 0x409 /d "NDEBUG" "
+			"Browser Database Maker" with flags "/nologo /o".\SRelease/mvdsv.bsc" "
+			"COFF Linker for 80x86" with flags "wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /incremental:no /pdb:".\SRelease/mvdsv.pdb" /machine:I386 /out:".\SRelease\mvdsv.exe" "
+			"Custom Build" with flags ""
+			"<Component 0xa>" with flags ""
+
+Creating temp file "C:\WINDOWS\TEMP\RSP10B4.TMP" with contents </nologo /ML /GX /Od /D "DEBUG" /D "SERVERONLY" /D "WIN32" /D "_CONSOLE" /Fr".\SRelease/" /Fp".\SRelease/mvdsv.pch" /YX /Fo".\SRelease/" /Fd".\SRelease/" /FD /c 
+"D:\projekty\zq\source\cmd.c"
+"D:\projekty\zq\source\common.c"
+"D:\projekty\zq\source\crc.c"
+"D:\projekty\zq\source\cvar.c"
+"D:\projekty\zq\source\mathlib.c"
+"D:\projekty\zq\source\mdfour.c"
+"D:\projekty\zq\source\net_chan.c"
+"D:\projekty\zq\source\net_wins.c"
+"D:\projekty\zq\source\pmove.c"
+"D:\projekty\zq\source\pmovetst.c"
+"D:\projekty\zq\source\pr_cmds.c"
+"D:\projekty\zq\source\pr_edict.c"
+"D:\projekty\zq\source\pr_exec.c"
+"D:\projekty\zq\source\sv_ccmds.c"
+"D:\projekty\zq\source\sv_demo.c"
+"D:\projekty\zq\source\sv_ents.c"
+"D:\projekty\zq\source\sv_init.c"
+"D:\projekty\zq\source\sv_main.c"
+"D:\projekty\zq\source\sv_model.c"
+"D:\projekty\zq\source\sv_move.c"
+"D:\projekty\zq\source\sv_nchan.c"
+"D:\projekty\zq\source\sv_phys.c"
+"D:\projekty\zq\source\sv_send.c"
+"D:\projekty\zq\source\sv_sys_win.c"
+"D:\projekty\zq\source\sv_user.c"
+"D:\projekty\zq\source\version.c"
+"D:\projekty\zq\source\world.c"
+"D:\projekty\zq\source\zone.c"
+>
+Creating command line "cl.exe @C:\WINDOWS\TEMP\RSP10B4.TMP" 
+Creating temp file "C:\WINDOWS\TEMP\RSP10B5.TMP" with contents <wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:console /incremental:no /pdb:".\SRelease/mvdsv.pdb" /machine:I386 /out:".\SRelease\mvdsv.exe" 
+.\SRelease\cmd.obj
+.\SRelease\common.obj
+.\SRelease\crc.obj
+.\SRelease\cvar.obj
+.\SRelease\mathlib.obj
+.\SRelease\mdfour.obj
+.\SRelease\net_chan.obj
+.\SRelease\net_wins.obj
+.\SRelease\pmove.obj
+.\SRelease\pmovetst.obj
+.\SRelease\pr_cmds.obj
+.\SRelease\pr_edict.obj
+.\SRelease\pr_exec.obj
+.\SRelease\sv_ccmds.obj
+.\SRelease\sv_demo.obj
+.\SRelease\sv_ents.obj
+.\SRelease\sv_init.obj
+.\SRelease\sv_main.obj
+.\SRelease\sv_model.obj
+.\SRelease\sv_move.obj
+.\SRelease\sv_nchan.obj
+.\SRelease\sv_phys.obj
+.\SRelease\sv_send.obj
+.\SRelease\sv_sys_win.obj
+.\SRelease\sv_user.obj
+.\SRelease\version.obj
+.\SRelease\world.obj
+.\SRelease\zone.obj>
+Creating command line "link.exe @C:\WINDOWS\TEMP\RSP10B5.TMP" 
+Compiling...
+cmd.c
+common.c
+crc.c
+cvar.c
+mathlib.c
+mdfour.c
+net_chan.c
+net_wins.c
+pmove.c
+pmovetst.c
+pr_cmds.c
+pr_edict.c
+pr_exec.c
+sv_ccmds.c
+sv_demo.c
+sv_ents.c
+sv_init.c
+sv_main.c
+sv_model.c
+sv_move.c
+sv_nchan.c
+sv_phys.c
+sv_send.c
+sv_sys_win.c
+sv_user.c
+version.c
+world.c
+zone.c
+Linking...
+Creating temp file "C:\WINDOWS\TEMP\RSP1390.TMP" with contents </nologo /o".\SRelease/mvdsv.bsc" 
+.\SRelease\cmd.sbr
+.\SRelease\common.sbr
+.\SRelease\crc.sbr
+.\SRelease\cvar.sbr
+.\SRelease\mathlib.sbr
+.\SRelease\mdfour.sbr
+.\SRelease\net_chan.sbr
+.\SRelease\net_wins.sbr
+.\SRelease\pmove.sbr
+.\SRelease\pmovetst.sbr
+.\SRelease\pr_cmds.sbr
+.\SRelease\pr_edict.sbr
+.\SRelease\pr_exec.sbr
+.\SRelease\sv_ccmds.sbr
+.\SRelease\sv_demo.sbr
+.\SRelease\sv_ents.sbr
+.\SRelease\sv_init.sbr
+.\SRelease\sv_main.sbr
+.\SRelease\sv_model.sbr
+.\SRelease\sv_move.sbr
+.\SRelease\sv_nchan.sbr
+.\SRelease\sv_phys.sbr
+.\SRelease\sv_send.sbr
+.\SRelease\sv_sys_win.sbr
+.\SRelease\sv_user.sbr
+.\SRelease\version.sbr
+.\SRelease\world.sbr
+.\SRelease\zone.sbr>
+Creating command line "bscmake.exe @C:\WINDOWS\TEMP\RSP1390.TMP" 
+Creating browse info file...
+
+
+
+mvdsv.exe - 0 error(s), 0 warning(s)

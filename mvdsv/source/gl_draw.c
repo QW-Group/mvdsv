@@ -454,7 +454,7 @@ void Draw_Init (void)
 	SwapPic (cb);
 
 //	sprintf (ver, "%4.2f", QW_VERSION);
-	strcpy (ver, Z_VERSION);
+	strcpy (ver, QWE_VERSION);
 	dest = cb->data + 320 + 320*186 - 11 - 8*strlen(ver);
 	for (x=0 ; x<strlen(ver) ; x++)
 		Draw_CharToConback (ver[x], dest+(x<<3));
@@ -834,11 +834,7 @@ void Draw_ConsoleBackground (int lines)
 		sprintf (ver, "LinuxGL (%4.2f) QuakeWorld", LINUX_VERSION);
 #else
 //		sprintf (ver, "GL (%4.2f) QuakeWorld", GLQUAKE_VERSION);
-#ifdef QW_BOTH
-		sprintf (ver, "GL (%4.2f) ZQuake", GLQUAKE_VERSION);
-#else
-		sprintf (ver, "GL (%4.2f) ZQuake client", GLQUAKE_VERSION);
-#endif
+		sprintf (ver, "GL (%4.2f) QWExtended client", GLQUAKE_VERSION);
 #endif
 		x = vid.conwidth - (strlen(ver)*8 + 11) - (vid.conwidth*8/320)*7;
 		for (i=0 ; i<strlen(ver) ; i++)

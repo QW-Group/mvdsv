@@ -73,6 +73,6 @@ CL_Version_f
 void CL_Version_f (void)
 {
 	Con_Printf ("QW version %4.2f\n", QW_VERSION);
-	Con_Printf ("ZQuake version %s (Build %04d)\n", Z_VERSION, build_number());
+	Con_Printf ("QWExtended version %s (Build %04d)\n", QWE_VERSION, build_number());
 	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 }
