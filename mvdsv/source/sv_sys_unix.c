@@ -138,9 +138,13 @@ Sys_listdir
 
 dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
+	return Sys_listdir2 (path, ext, ext, sort_type);
+}
+dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
+{
 	static file_t list[MAX_DIRFILES];
 	dir_t	dir;
-	int	i, extsize;
+	int	i, extsize1, extsize2;
 	char	pathname[MAX_OSPATH];
 	DIR	*d;
 	DIR	*testdir; //bliP: list dir
@@ -150,8 +154,9 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
 	dir.files = list;
-	extsize = strlen(ext);
-	all = !strncmp(ext, ".*", 3);
+	extsize1 = strlen(ext1);
+	extsize2 = strlen(ext2);
+	all = !strncmp(ext1, ".*", 3) || !strncmp(ext2, ".*", 3);
 
 	if (!(d = opendir(path)))
 		return dir;
@@ -159,8 +164,11 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	{
 		if (!strcmp(oneentry->d_name, ".") || !strcmp(oneentry->d_name, ".."))
 			continue;
-		if (( (i = strlen(oneentry->d_name)) < extsize ?
-		      1 : strcasecmp(oneentry->d_name + i - extsize, ext)
+		if (( (i = strlen(oneentry->d_name)) < extsize1 ?
+		      1 : strcasecmp(oneentry->d_name + i - extsize1, ext1)
+		    ) &&
+		    ( (i = strlen(oneentry->d_name)) < extsize2 ?
+		      1 : strcasecmp(oneentry->d_name + i - extsize2, ext2)
 		    ) && !all
 		   )
 				continue;

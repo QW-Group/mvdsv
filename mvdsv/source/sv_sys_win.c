@@ -98,19 +98,25 @@ Sys_listdir
 
 dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
+	return Sys_listdir2 (path, ext, ext, sort_type);
+}
+dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
+{
 	static file_t	list[MAX_DIRFILES];
 	dir_t	dir;
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
-	int		i, extsize;
+	int		i, extsize1, extsize2;
+	char	pathname[MAX_DEMO_NAME];
 	qboolean all;
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
 
-	extsize = strlen(ext);
+	extsize1 = strlen(ext1);
+	extsize2 = strlen(ext2);
 	dir.files = list;
-	all = !strncmp(ext, ".*", 3);
+	all = !strncmp(ext1, ".*", 3) || !strncmp(ext2, ".*", 3);
 
 	if ((h = FindFirstFile (va("%s/*.*", path), &fd)) == INVALID_HANDLE_VALUE)
 		return dir;
@@ -118,8 +124,11 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	do {
 		if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
 			continue;
-		if (( (i = strlen(fd.cFileName)) < extsize ?
-		      1 : strcasecmp(fd.cFileName + i - extsize, ext)
+		if (( (i = strlen(fd.cFileName)) < extsize1 ?
+		      1 : strcasecmp(fd.cFileName + i - extsize1, ext1)
+		    ) &&
+		    ( (i = strlen(fd.cFileName)) < extsize2 ?
+		      1 : strcasecmp(fd.cFileName + i - extsize2, ext2)
 		    ) && !all
 		   )
 				continue;
@@ -134,7 +143,8 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		else
 		{
 			list[dir.numfiles].isdir = false;
-			list[dir.numfiles].time = Sys_FileTime(va("%s/%s", path, fd.cFileName));
+			snprintf(pathname, sizeof(pathname), "%s/%s", path, fd.cFileName);
+			list[dir.numfiles].time = Sys_FileTime(pathname);
 			dir.size += (list[dir.numfiles].size = fd.nFileSizeLow);
 		}
 		strlcpy (list[dir.numfiles].name, fd.cFileName, sizeof(list[0].name));

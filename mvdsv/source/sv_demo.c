@@ -1567,7 +1567,7 @@ void SV_DemoList_f (void)
 	int		i,j,show;
 
 	Con_Printf("content of %s/%s/*.mvd\n", com_gamedir,sv_demoDir.string);
-	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".mvd", SORT_BY_DATE);
+	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])
 	{
@@ -1609,7 +1609,7 @@ char *SV_DemoNum(int num)
 	if (num <= 0)
 		return NULL;
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
+	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
 	if (num > dir.numfiles)
 		return NULL;
 
@@ -1684,7 +1684,7 @@ void SV_DemoRemove_f (void)
 		// remove all demos with specified token
 		ptr++;
 
-		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
+		dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
 		list = dir.files;
 		for (i = 0;list->name[0]; list++)
 		{
@@ -1934,7 +1934,7 @@ void SV_LastScores_f (void)
 	if (sv.demorecording && demos > MAXDEMOS)
 		Con_Printf("<numlastdemos> was decreased to %i: demo recording in progress.\n", demos = MAXDEMOS);
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", SORT_BY_DATE);
+	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
 
 	if (!dir.numfiles)
 	{

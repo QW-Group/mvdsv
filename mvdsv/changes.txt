@@ -1,4 +1,23 @@
 ----
+MVDSV v0.176 build 1787 (2004.11.11)
+[server]
+- bugfix: didn't display *.mvd.gz files by cmd dlist and cmd demolist commands
+- added message "Download stopped." if file downloading was stoped by cmd stopdownload
+- bugfix: removed packet loss if file downloading was stoped by cmd stopdownload
+- added command cmd stopdl - work same as cmd stopdownload
+- added message "Download completed." after file download was completed by commands download,
+  cmd download or cmd dl
+- bugfix: added check for buffer overflow in demo-writing
+(Thanks to SD-Angel)
+[win32]
+- bugfix: incorrect file sorting by date in Sys_listdir function
+[unix]
+- file ./build was replaced to ./configure
+- merged and optimized Makefile-s for mvdsv and qwdtools
+- bugfix: fixed Makefile.FreeBSD for making for Darwin/Mac OS X
+
+
+----
 MVDSV v0.175 build 1773
 - changed all WIN32 and WINDOWS defines to _WIN32
 - win32 projects cleaned up
@@ -6,7 +25,7 @@ MVDSV v0.175 build 1773
   LITTLE/BIG ENDIAN changed to staticaly (removed variable qboolean bigendien)
 [server]
 - bugfix from 0.174b: crashed when server demo record started
-- added darwin/Mac OS X targets (by Baalz)
+- added Darwin/Mac OS X targets (by Baalz)
 - extension in cvar sv_specprint <flags>, <flags> is sum of:
     1 - single print to a specific client to the center of the screen (centerprint)
     2 - single print to a specific client (sprint)
@@ -20,7 +39,7 @@ MVDSV v0.175 build 1773
 [unix]
 - added determination of gcc version in FreeBSD in Makefile
 [qwdtools]
-- added *nix (FreeBSD, Linux and darwin/Mac OS X) targets (by hexum and VVD)
+- added *nix (FreeBSD, Linux and Darwin/Mac OS X) targets (by hexum and VVD)
 
 
 ----

@@ -914,10 +914,6 @@ void SV_SendClientMessages (void)
 	}
 }
 
-#ifndef max
-#define max(a,b)    (((a) > (b)) ? (a) : (b))
-#define min(a,b)    (((a) < (b)) ? (a) : (b))
-#endif
 void DemoSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
 void SV_SendDemoMessage(void)
 {
@@ -944,13 +940,7 @@ void SV_SendDemoMessage(void)
 		}
 	}
 
-
-	if (!sv_demofps.value)
-		min_fps = 20.0;
-	else
-		min_fps = sv_demofps.value;
-
-	min_fps = max(4, min_fps);
+	min_fps = max(4, sv_demofps.value ? sv_demofps.value : 20.0);
 
 	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
 		return;
@@ -970,12 +960,6 @@ void SV_SendDemoMessage(void)
 		return;
 	}
 
-	msg.data = buf;
-	msg.maxsize = sizeof(buf);
-	msg.cursize = 0;
-	msg.allowoverflow = true;
-	msg.overflowed = false;
-	
 	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
 	{
 		if (c->state != cs_spawned)
@@ -1025,17 +1009,40 @@ void SV_SendDemoMessage(void)
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
+
+	msg.data = buf;
+	msg.maxsize = sizeof(buf);
 	msg.cursize = 0;
+	msg.allowoverflow = true;
+	msg.overflowed = false;
+	
 	if (!demo.recorder.delta_sequence)
 		demo.recorder.delta_sequence = -1;
+
 	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
+
 	DemoWrite_Begin(dem_all, 0, msg.cursize);
-	SZ_Write ((sizebuf_t*)demo.dbuf, msg.data, msg.cursize);
+
+	if (msg.overflowed)
+	{
+		Con_Printf("WARNING: msg overflowed in SV_SendDemoMessage\n");
+		SZ_Clear(&msg); // Not needed?
+	}
+	else
+	{
+		DemoWrite_Begin(dem_all, 0, msg.cursize);
+		SZ_Write((sizebuf_t*)demo.dbuf, msg.data, msg.cursize);
+	}
+
 	// copy the accumulated multicast datagram
 	// for this client out to the message
 	if (demo.datagram.cursize) {
-		DemoWrite_Begin(dem_all, 0, demo.datagram.cursize);
-		SZ_Write ((sizebuf_t*)demo.dbuf, demo.datagram.data, demo.datagram.cursize);
+		if (demo.datagram.overflowed)
+			Con_Printf("WARNING: demo.datagram overflowed in SV_SendDemoMessage\n");
+		else {
+			DemoWrite_Begin(dem_all, 0, demo.datagram.cursize);
+			SZ_Write ((sizebuf_t*)demo.dbuf, demo.datagram.data, demo.datagram.cursize);
+		}
 		SZ_Clear (&demo.datagram);
 	}
 

@@ -685,8 +685,7 @@ void SV_NextDownload_f (void)
 	ClientReliableWrite_Begin (host_client, svc_download, 6+r);
 	ClientReliableWrite_Short (host_client, r);
 	host_client->downloadcount += r;
-	size = host_client->downloadsize;
-	if (!size)
+	if (!(size = host_client->downloadsize))
 		size = 1;
 	percent = host_client->downloadcount*100/size;
 	ClientReliableWrite_Byte (host_client, percent);
@@ -699,6 +698,7 @@ void SV_NextDownload_f (void)
 	fclose (host_client->download);
 	host_client->download = NULL;
 	host_client->file_percent = 0; //bliP: file percent
+	Con_Printf("Download completed.\n");
 
 	// if map changed tell the client to reconnect
 	if (host_client->spawncount != svs.spawncount)
@@ -925,7 +925,7 @@ void SV_BeginDownload_f(void)
 			ClientReliableWrite_Byte (host_client, 0);
 			return;
 		}
-		Con_Printf("downloading demos/%s\n",name);
+		//Con_Printf("downloading demos/%s\n",name);
 		snprintf(n, sizeof(n), "download demos/%s\n", name);
 
 		ClientReliableWrite_Begin (host_client, svc_stufftext,strlen(n) + 2);
@@ -997,9 +997,16 @@ SV_StopDownload_f
 */
 void SV_StopDownload_f(void)
 {
-	if (host_client->download) {
+	if (host_client->download)
+	{
+		host_client->downloadcount = host_client->downloadsize;
 		fclose (host_client->download);
 		host_client->download = NULL;
+		host_client->file_percent = 0; //bliP: file percent
+		ClientReliableWrite_Begin (host_client, svc_download, 6);
+		ClientReliableWrite_Short (host_client, 0);
+		ClientReliableWrite_Byte (host_client, 100);
+		Con_Printf ("Download stopped.\n");
 	}
 }
 //=============================================================================
@@ -1675,6 +1682,7 @@ ucmd_t ucmds[] =
 
 	{"snap", SV_NoSnap_f},
 	{"stopdownload", SV_StopDownload_f},
+	{"stopdl", SV_StopDownload_f},
 	{"demolist", SV_DemoList_f},
 	{"demoinfo", SV_DemoInfo_f},
 	{"lastscores", SV_LastScores_f},
@@ -2120,11 +2128,11 @@ void SV_ExecuteClientMessage (client_t *cl)
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
 	frame->ping_time = realtime - frame->senttime;
 
-	if (frame->ping_time*995 > sv_minping.value) {
+	if (frame->ping_time*999 > sv_minping.value) {
 		cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
 		if (cl->delay < 0)
 			cl->delay = 0;
-	} else if (frame->ping_time*1005 < sv_minping.value) {
+	} else if (frame->ping_time*1001 < sv_minping.value) {
 		cl->delay += 0.001;//-0.5*(frame->ping_time - sv_minping.value*0.001);
 		if (cl->delay > 300)
 			cl->delay = 300;
