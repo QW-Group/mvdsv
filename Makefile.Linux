@@ -35,7 +35,7 @@ BUILD_RELEASE_DIR=release$(ARCH)$(GLIBC)
 SERVER_DIR=$(MAINDIR)/source
 
 CC=gcc
-BASE_CFLAGS=-Wall -I$(SERVER_DIR)
+BASE_CFLAGS=-Wall -I$(SERVER_DIR) -pipe
 DEBUG_CFLAGS=$(BASE_CFLAGS) -g
 RELEASE_CFLAGS=$(BASE_CFLAGS) -ffast-math -funroll-loops \
 	-fomit-frame-pointer -fexpensive-optimizations
@@ -46,6 +46,9 @@ DO_SERVER_CC=$(CC) -DSERVERONLY $(CFLAGS) -o $@ -c $<
 
 DO_AS=$(CC) $(CFLAGS) -DELF -x assembler-with-cpp -o $@ -c $<
 
+GCC2=-malign-loops=2 -malign-jumps=2 -malign-functions=2
+GCC3=-falign-loops=2 -falign-jumps=2 -falign-functions=2
+
 #############################################################################
 # SETUP AND BUILD
 #############################################################################
@@ -55,9 +58,15 @@ nothing-specified:
 	@echo "Use ./build script to build mvdsv"
 	@echo ""
 
-linux:
-	$(MAKE) build_release OPTIMIZATION_FLAGS="$(ASM) $(RELEASE_CFLAGS) -m486 -O6 -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+linux-gcc2:
+	$(MAKE) linux GCC="$(GCC2)"
+
+linux-gcc3:
+	$(MAKE) linux GCC="$(GCC3)"
 	
+linux:
+	$(MAKE) build_release OPTIMIZATION_FLAGS="$(ASM) $(RELEASE_CFLAGS) -O6 $(GCC)"
+
 build_debug:
 	@-mkdir $(BUILD_DEBUG_DIR)
 	$(MAKE) build_sv BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS) $(ASM)"
