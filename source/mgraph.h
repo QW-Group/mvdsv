@@ -6,7 +6,7 @@
 *							All rights reserved.
 *
 * Filename:		$Workfile:   mgraph.h  $
-* Version:		$Revision: 1.1.1.1 $
+* Version:		$Revision: 1.1.1.2 $
 *
 * Language:		ANSI C
 * Environment:	IBM PC (MS DOS)
@@ -24,7 +24,7 @@
 *				automatically for compatibility with older versions of the
 *				MGL.
 *
-* $Date: 2004/10/18 18:30:16 $ $Author: vvd0 $
+* $Date: 2004/11/11 16:35:16 $ $Author: vvd0 $
 *
 ****************************************************************************/
 

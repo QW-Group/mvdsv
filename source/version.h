@@ -34,8 +34,8 @@
 #endif
 
 #define	QW_VERSION		2.40
-#define QWE_VERSION		"0.175"
-#define QWE_VERNUM		0.175
+#define QWE_VERSION		"0.176"
+#define QWE_VERNUM		0.176
 #define SERVER_NAME		"MVDSV"
 #define PROJECT_NAME		SERVER_NAME
 /*"QWExtended"*/

@@ -27,7 +27,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: cl_slist.c,v 1.1.1.6 2004/10/18 18:10:50 vvd0 Exp $
+	$Id: cl_slist.c,v 1.1.1.7 2004/11/11 16:34:54 vvd0 Exp $
 */
 
 #include "quakedef.h"

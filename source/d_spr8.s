@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: d_spr8.s,v 1.1.1.4 2004/10/18 17:44:27 vvd0 Exp $
+	$Id: d_spr8.s,v 1.1.1.5 2004/11/11 16:35:00 vvd0 Exp $
 */
 // d_spr8.s
 // x86 assembly-language horizontal 8-bpp transparent span-drawing code.
