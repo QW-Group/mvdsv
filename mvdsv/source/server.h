@@ -300,7 +300,7 @@ typedef struct
 	demobuf_t	*dbuf;
 	dbuffer_t	dbuffer;
 	sizebuf_t	datagram;
-	byte		datagram_data[MAX_DATAGRAM];
+	byte		datagram_data[MSG_BUF_SIZE];
 	int			lastto;
 	int			lasttype;
 	double		time, pingtime;

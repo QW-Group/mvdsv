@@ -34,17 +34,16 @@ int			telnetport;
 int			telnet_iosock;
 int			telnet_connected;
 
-#define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
-byte		net_message_buffer[MAX_UDP_PACKET];
+byte		net_message_buffer[MSG_BUF_SIZE];
 
 WSADATA		winsockdata;
 
 // Tonik -->
 #define	 PORT_LOOPBACK 65535
 int			loop_c2s_messageLength;
-char		loop_c2s_message[MAX_UDP_PACKET];
+char		loop_c2s_message[MSG_BUF_SIZE];
 int			loop_s2c_messageLength;
-char		loop_s2c_message[MAX_UDP_PACKET];
+char		loop_s2c_message[MSG_BUF_SIZE];
 // <-- Tonik
 
 //=============================================================================
@@ -149,26 +148,21 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 
 qboolean NET_GetPacket (int net_socket)
 {
-	int 	ret;
-	struct sockaddr_in	from;
-	int		fromlen;
-	unsigned long _true = 1;
+	static int	ret;
+	static struct sockaddr_in	from;
+	static int	fromlen;
+//	unsigned long _true = 1;
 
 // Tonik -->
-	if (net_socket == net_clientsocket && loop_s2c_messageLength > 0)
+	if (loop_c2s_messageLength > 0)
 	{
-		memcpy (net_message_buffer, loop_s2c_message, loop_s2c_messageLength);
-		net_message.cursize = loop_s2c_messageLength;
-		loop_s2c_messageLength = 0;
-		memset (&from, 0, sizeof(from));
-		from.sin_port = PORT_LOOPBACK;
-		SockadrToNetadr (&from, &net_from);
-		return net_message.cursize;
-	}
-
-	if (net_socket == net_serversocket && loop_c2s_messageLength > 0)
-	{
-//		Con_DPrintf ("NET_GetPacket: c2s\n");
+/*		switch (net_socket)
+		{
+		case net_serversocket:
+//			Con_DPrintf ("NET_GetPacket: c2s\n");
+		case net_clientsocket:
+		}
+*/
 		memcpy (net_message_buffer, loop_c2s_message, loop_c2s_messageLength);
 		net_message.cursize = loop_c2s_messageLength;
 		loop_c2s_messageLength = 0;
@@ -217,8 +211,7 @@ qboolean NET_GetPacket (int net_socket)
 
 void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 {
-	int ret;
-	struct sockaddr_in	addr;
+	static struct sockaddr_in	addr;
 
 // Tonik -->
 	if (*(int *)&to.ip == 0 && to.port == 65535)	// Loopback
@@ -246,8 +239,7 @@ void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 	NetadrToSockadr (&to, &addr);
 
 //#ifdef SERVERONLY
-	ret = sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr) );
-	if (ret == -1)
+	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr)))
 	{
 		int err = WSAGetLastError();
 

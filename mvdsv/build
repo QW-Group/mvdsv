@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ "_$1" = _freebsd-gcc2 ]; then
+	cd source
+	make -DGCC2 && strip ../mvdsv
+elif [ "_$1" = _freebsd-gcc3 ]; then
+	cd source
+	make -DGCC3 && strip ../mvdsv
+elif [ "_$1" = _linux ]; then
+	make linux && strip mvdsv
+else
+echo ""
+echo "You must specify the system which you want to compile for:"
+echo ""
+echo "./build linux             Linux"
+echo "./build freebsd-gcc2      FreeBSD gcc 2.x"
+echo "./build freebsd-gcc3      FreeBSD gcc 3.x"
+echo ""
+fi

@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // common.c -- misc functions used in client and server
 
 #include <ctype.h>
+#include <limits.h>
 
 #ifdef SERVERONLY 
 #include "qwsvdef.h"
@@ -231,76 +232,99 @@ float Q_atof (char *str)
 	return val*sign;
 }
 
+#ifdef _WIN32
+int snprintf(char *buffer, size_t count, char const *format, ...)
+{
+	int ret;
+	va_list argptr;
+	if (!count) return 0;
+	va_start(argptr, format);
+	ret = _vsnprintf(buffer, count, format, argptr);
+	buffer[count - 1] = 0;
+	va_end(argptr);
+	return ret;
+}
+int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
+{
+	extern int huy;
+	int ret;
+	if (!count) return 0;
+	ret = _vsnprintf(buffer, count, format, argptr);
+	buffer[count - 1] = 0;
+	return ret;
+}
+#endif
+
 #if defined(__linux__) || defined(_WIN32)
 size_t strlcpy(char *dst, char *src, size_t siz)
 {
-        register char *d = dst;
-        register const char *s = src;
-        register size_t n = siz;
+	register char *d = dst;
+	register const char *s = src;
+	register size_t n = siz;
 
-        /* Copy as many bytes as will fit */
-        if (n != 0 && --n != 0) {
-                do {
-                        if ((*d++ = *s++) == 0)
-                                break;
-                } while (--n != 0);
-        }
+	/* Copy as many bytes as will fit */
+	if (n != 0 && --n != 0) {
+		do {
+			if ((*d++ = *s++) == 0)
+				break;
+		} while (--n != 0);
+	}
 
-        /* Not enough room in dst, add NUL and traverse rest of src */
-        if (n == 0) {
-                if (siz != 0)
-                        *d = '\0';              /* NUL-terminate dst */
-                while (*s++)
-                        ;
-        }
+		/* Not enough room in dst, add NUL and traverse rest of src */
+	if (n == 0) {
+		if (siz != 0)
+			*d = '\0';		/* NUL-terminate dst */
+		while (*s++)
+			;
+	}
 
-        return(s - src - 1);    /* count does not include NUL */
+	return(s - src - 1);	/* count does not include NUL */
 }
 
 size_t strlcat(char *dst, char *src, size_t siz)
 {
-        register char *d = dst;
-        register const char *s = src;
-        register size_t n = siz;
-        size_t dlen;
+	register char *d = dst;
+	register const char *s = src;
+	register size_t n = siz;
+	size_t dlen;
 
-        /* Find the end of dst and adjust bytes left but don't go past end */
-        while (n-- != 0 && *d != '\0')
-                d++;
-        dlen = d - dst;
-        n = siz - dlen;
+	/* Find the end of dst and adjust bytes left but don't go past end */
+	while (n-- != 0 && *d != '\0')
+		d++;
+	dlen = d - dst;
+	n = siz - dlen;
 
-        if (n == 0)
-                return(dlen + strlen(s));
-        while (*s != '\0') {
-                if (n != 1) {
-                        *d++ = *s;
-                        n--;
-                }
-                s++;
-        }
-        *d = '\0';
+	if (n == 0)
+		return(dlen + strlen(s));
+	while (*s != '\0') {
+		if (n != 1) {
+			*d++ = *s;
+			n--;
+		}
+		s++;
+	}
+	*d = '\0';
 
-        return(dlen + (s - src));       /* count does not include NUL */
+	return(dlen + (s - src));       /* count does not include NUL */
 }
 char *strnstr(char *s, char *find, size_t slen)
 {
-        char c, sc;
-        size_t len;
+	char c, sc;
+	size_t len;
 
-        if ((c = *find++) != '\0') {
-                len = strlen(find);
-                do {
-                        do {
-                                if ((sc = *s++) == '\0' || slen-- < 1)
-                                        return (NULL);
-                        } while (sc != c);
-                        if (len > slen)
-                                return (NULL);
-                } while (strncmp(s, find, len) != 0);
-                s--;
-        }
-        return ((char *)s);
+	if ((c = *find++) != '\0') {
+		len = strlen(find);
+		do {
+			do {
+				if ((sc = *s++) == '\0' || slen-- < 1)
+					return (NULL);
+			} while (sc != c);
+			if (len > slen)
+				return (NULL);
+		} while (strncmp(s, find, len) != 0);
+		s--;
+	}
+	return ((char *)s);
 }
 #endif
 
@@ -1143,7 +1167,7 @@ char	*va(char *format, ...)
 	
 	index = (index + 1)&3;
 	va_start (argptr, format);
-	vsnprintf (string[index], sizeof(string[index]), format, argptr);
+	vsnprintf (string[index], sizeof(string[0]), format, argptr);
 	va_end (argptr);
 
 	return string[index];
@@ -1409,7 +1433,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 		}
 		else
 		{		
-			snprintf (netpath, sizeof(netpath), "%s/%s",search->filename, filename);
+			snprintf (netpath, sizeof(netpath), "%s/%s", search->filename, filename);
 			
 			findtime = Sys_FileTime (netpath);
 			if (findtime == -1)
@@ -1992,9 +2016,9 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 		return;
 	}
 
-	if (strlen(key) > 63 || strlen(value) > 63)
+	if (strlen(key) >= MAX_KEY_STRING || strlen(value) >= MAX_KEY_STRING)
 	{
-		Con_Printf ("Keys and values must be < 64 characters.\n");
+		Con_Printf ("Keys and values must be < %d characters.\n", MAX_KEY_STRING);
 		return;
 	}
 
@@ -2002,9 +2026,9 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 	if (*(v = Info_ValueForKey(s, key))) {
 		// key exists, make sure we have enough room for new value, if we don't,
 		// don't change it!
-		if (strlen(value) - strlen(v) + strlen(s) > maxsize) {
-			Con_Printf ("Info string length exceeded (change: key = %s, old value = %s, new value = %s, strlen info = %d, maxsize = %d)\n",
-						key, v, value, strlen(s), maxsize);
+		if (strlen(value) - strlen(v) + strlen(s) >= maxsize) {
+			Con_Printf ("Info string length exceeded (change: key = '%s', old value = '%s', new value = '%s', strlen info = '%d', maxsize = '%d')\nFull info string: '%s'\n",
+						key, v, value, strlen(s), maxsize, s);
 			return;
 		}
 	}
@@ -2014,10 +2038,10 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 
 	snprintf (_new, sizeof(_new), "\\%s\\%s", key, value);
 
-	if (strlen(_new) + strlen(s) > maxsize)
+	if (strlen(_new) + strlen(s) >= maxsize)
 	{
-		Con_Printf ("Info string length exceeded (add: key = %s, value = %s, strlen info = %d, maxsize = %d)\n",
-					key, value, strlen(s), maxsize);
+		Con_Printf ("Info string length exceeded (add: key = '%s', value = '%s', strlen info = '%d', maxsize = '%d')\nFull info string: '%s'\n",
+					key, value, strlen(s), maxsize, s);
 		return;
 	}
 

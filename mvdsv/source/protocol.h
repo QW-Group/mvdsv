@@ -282,8 +282,8 @@ typedef struct
 
 #ifdef SERVERONLY
 
-#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
-#define MAX_DEMO_PACKET_ENTITIES 196 
+#define	MAX_PACKET_ENTITIES	300	// doesn't count nails
+#define MAX_DEMO_PACKET_ENTITIES 300
 typedef struct
 {
 	int		num_entities;
@@ -292,7 +292,7 @@ typedef struct
 
 #else
 
-#define	MAX_PACKET_ENTITIES	196	// doesn't count nails
+#define	MAX_PACKET_ENTITIES	300	// doesn't count nails
 typedef struct
 {
 	int		num_entities;

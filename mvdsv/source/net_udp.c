@@ -55,8 +55,7 @@ int		telnetport;
 int		telnet_iosock;
 int		telnet_connected;
 
-#define	MAX_UDP_PACKET	8192
-byte		net_message_buffer[MAX_UDP_PACKET];
+byte		net_message_buffer[MSG_BUF_SIZE];
 
 int gethostname (char *, int);
 int close (int);
@@ -164,9 +163,9 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 
 qboolean NET_GetPacket (int dummy)
 {
-	int 	ret;
+	static int		ret;
 	struct sockaddr_in	from;
-	int		fromlen;
+	static int		fromlen;
 
 	fromlen = sizeof(from);
 	ret = recvfrom (net_serversocket, net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
@@ -189,13 +188,11 @@ qboolean NET_GetPacket (int dummy)
 
 void NET_SendPacket (int dummy, int length, void *data, netadr_t to)
 {
-	int ret;
-	struct sockaddr_in	addr;
+	static struct sockaddr_in	addr;
 
 	NetadrToSockadr (&to, &addr);
 
-	ret = sendto (net_serversocket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr) );
-	if (ret == -1) {
+	if (-1 == sendto (net_serversocket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr))) {
 		if (errno == EWOULDBLOCK)
 			return;
 		if (errno == ECONNREFUSED)

@@ -56,12 +56,15 @@ cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
 cvar_t	telnet_password = {"telnet_password", ""}; // password for login via telnet
-cvar_t	telnet_log_level = {"telnet_log_level", "0"}; // loging level telnet console
+cvar_t	telnet_log_level = {"telnet_log_level", "0"}; // logging level telnet console
 
 cvar_t	frag_log_type = {"frag_log_type", "0"};
 //	frag log type:
 //		0 - old style (  qwsv - v0.165)
-//		1 - new style (v0.168 - v0.171)
+//		1 - new style (v0.168 - v0.172)
+
+cvar_t	qconsole_log_say = {"qconsole_log_say", "0"};
+// logging "say" and "say_team" messages to the qconsole_PORT.log file
 
 cvar_t	not_auth_timeout = {"not_auth_timeout", "20"};
 // if no password is sent (telnet_password) in "n" seconds the server refuses connection
@@ -71,7 +74,7 @@ cvar_t	auth_timeout = {"auth_timeout", "3600"};
 // the server will close the connection "n" seconds after the authentication is completed
 // If set to 0, no timeout will occur
 
-cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status output, 0 - don't
+cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status command, 0 - don't use
 
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
@@ -127,7 +130,7 @@ cvar_t	serverdemo = {"serverdemo","",CVAR_SERVERINFO | CVAR_ROM};
 cvar_t	skill = {"skill", "1"};
 cvar_t	coop = {"coop", "0"};
 
-cvar_t	version = {"version", "QWExtended " QWE_VERSION, CVAR_ROM};
+cvar_t	version = {"version", full_version, CVAR_ROM};
 
 cvar_t	hostname = {"hostname","unnamed",CVAR_SERVERINFO};
 
@@ -874,7 +877,7 @@ int Rcon_Validate (void)
 	if (!strlen (rcon_password.string))
 		return 0;
 
-	if (strcmp (Cmd_Argv(1), rcon_password.string) )
+	if (strcmp (Cmd_Argv(1), rcon_password.string))
 		return 0;
 
 	return 1;
@@ -917,7 +920,6 @@ void SVC_RemoteCommand (void)
 
 		SV_Write_Log(RCON_LOG, 1, va("Rcon from %s: %s\n",
 							NET_AdrToString (net_from), net_message.data+4));
-
 		Con_Printf ("Rcon from %s:\n%s\n"
 			, NET_AdrToString (net_from), net_message.data+4);
 
@@ -967,7 +969,7 @@ void SVC_IP(void)
 	client->realip = net_from;
 
 	// if banned drop
-	if (SV_FilterPacket())
+	if (SV_FilterPacket()/* && !client->vip*/)
 		SV_DropClient(client);
 
 }
@@ -1996,10 +1998,10 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&telnet_password);
 	Cvar_RegisterVariable (&telnet_log_level);
 	Cvar_RegisterVariable (&frag_log_type);
+	Cvar_RegisterVariable (&qconsole_log_say);
 	Cvar_RegisterVariable (&not_auth_timeout);
 	Cvar_RegisterVariable (&auth_timeout);
 	Cvar_RegisterVariable (&sv_use_dns);
-//	logs[TELNET_LOG].log_level = Cvar_VariableValue("telnet_log_level");
 //Added by VVD }
 	Cvar_RegisterVariable (&spectator_password);
 	Cvar_RegisterVariable (&vip_password);
@@ -2025,6 +2027,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&spawn);
 	Cvar_RegisterVariable (&watervis);
 	Cvar_RegisterVariable (&serverdemo);
+	snprintf(full_version, sizeof(FULL_VERSION), FULL_VERSION, build_number());
 	Cvar_RegisterVariable (&version);
 
 	Cvar_RegisterVariable (&developer);
@@ -2211,7 +2214,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 		// trim user name
 		strlcpy (newname, val, sizeof(newname));
 
-		for (p = newname; (*p == ' ' || *p == '\r' || *p == '\n') && *p; p++)
+		for (p = newname; (*p == ' ' || *p == '\r' || *p == '\n' || *p == (char)160) && *p; p++)
 			;
 
 		if (p != newname && !*p) {
@@ -2225,7 +2228,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 			;
 			*q = 0;
 		}
-		for (p = newname + strlen(newname) - 1; p != newname && (*p == ' ' || *p == '\r' || *p == '\n') ; p--)
+		for (p = newname + strlen(newname) - 1; p != newname && (*p == ' ' || *p == '\r' || *p == '\n' || *p == (char)160) ; p--)
 			;
 		p[1] = 0;
 
@@ -2319,6 +2322,7 @@ void SV_InitNet (void)
 	int	p;
 
 	sv_port = PORT_SERVER;
+	telnetport = 0;
 
 	p = COM_CheckParm ("-port");
 	if (p && p + 1 < com_argc)
@@ -2335,7 +2339,7 @@ void SV_InitNet (void)
 		Con_Printf ("Telnet port: %i\n", p);
 	}
 	else
-		p = sv_port;
+		p = 0/*sv_port*/;
 	if (p)
 		telnetport = NET_Init (0, 0, p);
 
@@ -2394,16 +2398,18 @@ void SV_Init (quakeparms_t *parms)
 
 	host_initialized = true;
 	
-	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
+//	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));	
 
-#ifdef RELEASE_VERSION
+/*#ifdef RELEASE_VERSION
 	Con_Printf ("\nServer Version %s\n\n", QWE_VERSION);
 #else
-	Con_Printf ("\nServer Version %s (Build %04d)\n\n", QWE_VERSION, build_number());
+	Con_Printf ("\nServer Version %s, build %d\n\n", QWE_VERSION, build_number());
 #endif
+*/
+	Version_f();
 
-	Con_Printf ("QWExtended Project home page: http://qwex.n3.net/\n\n");
+	Con_Printf (PROJECT_NAME " Project home page: http://ktpro.does.it/\n\n");
 
 	Con_Printf ("======== QuakeWorld Initialized ========\n");
 	
@@ -2484,3 +2490,19 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 	fflush(logs[sv_log].sv_logfile);
 	return;
 }
+
+/*
+============
+Sys_compare_by functions for sort files in list
+============
+*/
+int Sys_compare_by_date(const void *a, const void *b)
+{
+	return (int)(((file_t *)a)->time - ((file_t *)b)->time);
+}
+
+int Sys_compare_by_name(const void *a, const void *b)
+{
+	return strncmp(((file_t *)a)->name, ((file_t *)b)->name, MAX_DEMO_NAME);
+}
+
