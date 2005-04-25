@@ -2275,15 +2275,16 @@ void SV_ExecuteClientMessage (client_t *cl)
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
 	frame->ping_time = realtime - frame->senttime;
 
-	if (frame->ping_time*999 > sv_minping.value) {
-		cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
-		if (cl->delay < 0)
-			cl->delay = 0;
-	} else if (frame->ping_time*1001 < sv_minping.value) {
-		cl->delay += 0.001;//-0.5*(frame->ping_time - sv_minping.value*0.001);
-		if (cl->delay > 300)
-			cl->delay = 300;
-	}
+	if (!cl->spectator)
+		if (frame->ping_time * 1000 > sv_minping.value) {
+			cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
+			if (cl->delay < 0)
+				cl->delay = 0;
+		} else if (frame->ping_time * 1000 < sv_minping.value) {
+			cl->delay += 0.001;//-0.5*(frame->ping_time - sv_minping.value*0.001);
+			if (cl->delay > 300)
+				cl->delay = 300;
+		}
 
 
 
@@ -2345,11 +2346,10 @@ void SV_ExecuteClientMessage (client_t *cl)
 			checksum = (byte)MSG_ReadByte ();
 
 			// read loss percentage
-      //bliP: file percent ->
+		//bliP: file percent ->
 			cl->lossage = MSG_ReadByte();
-      if (cl->file_percent) {
-        cl->lossage = cl->file_percent;
-      }
+			if (cl->file_percent)
+				cl->lossage = cl->file_percent;
 
 			/*if (cl->state < cs_spawned && cl->download != NULL) {
 				if (cl->downloadsize)
@@ -2357,7 +2357,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 				else
 					cl->lossage = 100;
 			}*/
-      //<-
+		//<-
 
 			MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
 			MSG_ReadDeltaUsercmd (&oldest, &oldcmd);

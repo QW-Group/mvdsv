@@ -661,11 +661,11 @@ void SV_UpdateClientStats (client_t *client)
 SV_SendClientDatagram
 =======================
 */
-qboolean SV_SendClientDatagram (client_t *client)
+void SV_SendClientDatagram (client_t *client, int client_num)
 {
 	byte		buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
-
+//	packet_t	*pack;
 
 	msg.data = buf;
 	msg.maxsize = sizeof(buf);
@@ -684,7 +684,6 @@ qboolean SV_SendClientDatagram (client_t *client)
 		Netchan_Transmit (&client->netchan, msg.cursize, buf);
 	}
 	*/
-
 	
 	// add the client specific data to the datagram
 	SV_WriteClientdataToMessage (client, &msg);
@@ -714,9 +713,49 @@ qboolean SV_SendClientDatagram (client_t *client)
 
 	// send the datagram
 	Netchan_Transmit (&client->netchan, msg.cursize, buf);
-
-	return true;
+/*	if (svs.num_packets_out < MAX_DELAYED_PACKETS)
+	{
+		pack = &svs.packets_out[svs.num_packets_out++];
+		pack->time = realtime;
+		pack->num  = client_num;
+		SZ_Clear(&pack->sb);
+		SZ_Write(&pack->sb, buf, msg.cursize);
+	}
+	else
+		Sys_Printf("svs.num_packets_out == MAX_DELAYED_PACKETS\n");
+*/
 }
+
+/*
+=======================
+SV_SendDelayedClientDatagram
+=======================
+*/
+/*void SV_SendDelayedClientMessages ()
+{
+	int		i, j;
+	packet_t	*pack;
+	client_t	*cl;
+
+	for (i = 0, pack = svs.packets_out; i < svs.num_packets_out; )
+	{
+		cl = &svs.clients[pack->num];
+		if (realtime < pack->time + cl->delay) {
+			i++;
+			pack++;
+			continue;
+		}
+		Netchan_Transmit (&cl->netchan, pack->sb.cursize, pack->sb.data);
+		for (j = i + 1; j < svs.num_packets_out; j++) {
+			SZ_Clear(&svs.packets_out[j - 1].sb);
+			SZ_Write(&svs.packets_out[j - 1].sb, svs.packets_out[j].sb.data,
+				svs.packets_out[j].sb.cursize);
+			svs.packets_out[j - 1].time = svs.packets_out[j].time;
+			svs.packets_out[j - 1].num  = svs.packets_out[j].num;
+		}
+		svs.num_packets_out--;
+	}
+}*/
 
 /*
 =======================
@@ -923,7 +962,7 @@ void SV_SendClientMessages (void)
 		}
 
 		if (c->state == cs_spawned)
-			SV_SendClientDatagram (c);
+			SV_SendClientDatagram (c, i);
 		else
 			Netchan_Transmit (&c->netchan, 0, NULL);	// just update reliable
 			
