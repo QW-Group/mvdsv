@@ -1319,9 +1319,9 @@ void SV_Record_f (void)
 
 	strlcpy(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))),
 			sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
-	strlcat(newname, sv_demoSuffix.string, MAX_DEMO_NAME);
+	strlcat(newname, sv_demoSuffix.string, sizeof(newname));
   
-	snprintf (name, MAX_OSPATH+MAX_DEMO_NAME, "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
+	snprintf (name, sizeof(name), "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
 
 	if (sv.demorecording)
 		SV_Stop_f();
@@ -1454,7 +1454,7 @@ int	Dem_CountTeamPlayers (char *t)
 void SV_EasyRecord_f (void)
 {
 	int		c;
-	char	name[1024];
+	char	name[MAX_DEMO_NAME];
 	char	name2[MAX_OSPATH*7]; // scream
 	//char	name2[MAX_OSPATH*2];
 	int		i;
@@ -1474,36 +1474,6 @@ void SV_EasyRecord_f (void)
 		return;
 
 	// -> scream
-	/*if (c == 2)
-		strlcpy (name, Cmd_Argv(1), sizeof(name));
-		
-	else { 
-		// guess game type and write demo name
-		i = Dem_CountPlayers();
-		if (teamplay.value && i > 2)
-		{
-			// Teamplay
-			snprintf (name, sizeof(name), "team_%s_vs_%s_%s",
-				Dem_Team(1),
-				Dem_Team(2),
-				sv.name);
-		} else {
-			if (i == 2) {
-				// Duel
-				snprintf (name, sizeof(name), "duel_%s_vs_%s_%s",
-					Dem_PlayerName(1),
-					Dem_PlayerName(2),
-					sv.name);
-			} else {
-				// FFA
-				snprintf (name, sizeof(name), "ffa_%s(%d)",
-					sv.name,
-					i);
-			}
-		}
-	}
-
-	*/
 	if (c == 2)
 		strlcpy (name, Cmd_Argv(1), sizeof(name));
 	else
@@ -1539,7 +1509,7 @@ void SV_EasyRecord_f (void)
 
 // Make sure the filename doesn't contain illegal characters
 	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)),
-			MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
+			sizeof(name) - strlen(sv_demoSuffix.string) - 7);
 	strlcat(name, sv_demoSuffix.string, sizeof(name));
 	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
 // find a filename that doesn't exist yet
@@ -1571,7 +1541,7 @@ void SV_DemoList_f (void)
 	float	f;
 	int		i,j,show;
 
-	Con_Printf("content of %s/%s/*.mvd\n", com_gamedir,sv_demoDir.string);
+	Con_Printf("content of %s/%s/*.mvd[.gz]\n", com_gamedir,sv_demoDir.string);
 	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])

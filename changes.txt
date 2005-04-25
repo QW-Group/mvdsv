@@ -1,5 +1,5 @@
 ----
-MVDSV v0.179 Beta DEVELOP build 19?? (2005.03.??)
+MVDSV v0.179 build 1952 (2005.04.25)
 [server]
 - new cvar sys_restart_on_error (use with caution)
   0 - quit on error (old style)
@@ -65,7 +65,7 @@ MVDSV v0.176 build 1787 (2004.11.11)
 
 
 ----
-MVDSV v0.175 build 1773
+MVDSV v0.175 build 1773 (2004.10.28)
 - changed all WIN32 and WINDOWS defines to _WIN32
 - win32 projects cleaned up
 - check define LITTLE_ENDIAN changed to check define __BIG_ENDIAN__ and dynamical determination of
@@ -90,7 +90,7 @@ MVDSV v0.175 build 1773
 
 
 ----
-MVDSV v0.174 Beta DEVELOP build 1742
+MVDSV v0.174 Beta DEVELOP build 1742 (2004.09.27)
 - Project was reorganized: MVDSV (MultiView Demos SerVer) is now synonym to QWEX (QuakeWorld Extended).
   Consist of mvdsv (server), qwdplayer gl/soft (client - for testing purposes only) and qwdtools
   (demo convertion tool).
@@ -138,7 +138,7 @@ MVDSV v0.174 Beta DEVELOP build 1742
 - prevented extra packets being sent to invalid addresses (for example: 127.0.0.1),
   and boosted connect times by 5 (changed to 3) seconds on improperly/non-configured servers
 - fixed intermittent non-solid FrikBot behaviour inherited (from ZQuake)
-- increased MAX_BACK_BUFFERS from 4 to 16 (EXPERIMENTAL)
+- MAX_BACK_BUFFERS increased from 4 to 16 (EXPERIMENTAL)
 - new cvar sv_rconlim - limit of rcon requests per second
 - bugfix: occur packets lost if sv_minping > real client's ping
 - new cvar sys_select_timeout - timeout in micro seconds for function select in main loop
@@ -158,7 +158,7 @@ MVDSV v0.174 Beta DEVELOP build 1742
 
 
 ----
-QWEX v0.173 build 1683
+QWEX v0.173 build 1683 (2004.07.30)
 [server]
 - QC:
   TeamFortress map voting: (by bliP)
@@ -173,7 +173,7 @@ QWEX v0.173 build 1683
 
 
 ----
-QWEX v0.1728 build 1675
+QWEX v0.1728 build 1675 (2004.07.22)
 [server]
 - win32: bugfix: used NT function for parse command line did not work in win9x/ME -
   changed to another function
@@ -235,7 +235,7 @@ QWEX v0.1728 build 1675
 
 
 ----
-QWEX v0.1727 Beta DEVELOP build 1667
+QWEX v0.1727 Beta DEVELOP build 1667 (2004.07.14)
 [server]
 - bugfix: linux server cpu usage bug
 - bugfix: sg hit effects, blood, etc disappearing in certain situations
@@ -244,7 +244,7 @@ QWEX v0.1727 Beta DEVELOP build 1667
 
 
 ----
-QWEX v0.1727 Beta DEVELOP build 1666
+QWEX v0.1727 Beta DEVELOP build 1666 (2004.07.13)
 [server]
 - new cvar master_rcon_password
   Similar to rcon_password but can use these extra commands:
@@ -404,7 +404,7 @@ QWEX v0.1726 (no release)
 
 
 ----
-QWEX v0.1725 build 1501
+QWEX v0.1725 build 1501 (2004.01.30)
 [server]
 - change MAX_PACKET_ENTITIES form 300 down to 64
 (Thanks to Fuh)
@@ -415,7 +415,7 @@ Note: Bugfix only release.
 
 
 ----
-QWEX v0.1724 build 1500
+QWEX v0.1724 build 1500 (2004.01.29)
 [server]
 - changed the MAX_DEMO_PACKET_ENTITIES limit from 196 to 300 to fix entities not being recorded
   sometimes (especially in TF). Clients should be updated to support this new limit, because in
@@ -448,7 +448,7 @@ QWEX v0.1724 build 1500
 
 
 ----
-QWEX v0.1723 Beta
+QWEX v0.1723 Beta build 1476 (2004.01.05)
 [server]
 - new cvar:
     sv_use_dns n
@@ -468,7 +468,7 @@ QWEX v0.1723 Beta
 
  
 ----
-QWEX v0.1722 Beta
+QWEX v0.1722 Beta build 1473 (2004.01.02)
 [client] and [server]
 - replaced all:
       sprintf ->  snprintf
@@ -590,13 +590,13 @@ Thanks: Scorp for 1st version of telnet patch (for QuakeForge 0.2.99beta5).
 
 
 ----
-QWEX v0.172b Beta DEVELOP
+QWEX v0.172b Beta DEVELOP build 1448 (2003.12.08)
 [server]
 - bugfix: A serious overflow bug in "download" function fixed
 
 
 ----
-QWEX v0.171b Beta DEVELOP
+QWEX v0.171b Beta DEVELOP build 1375 (2003.09.26)
 [server]
 - new MOD function forcedemoframe(float now)
   now = 1 writes demo frame exaclty at the time the function is executed
@@ -604,7 +604,7 @@ QWEX v0.171b Beta DEVELOP
 
 
 ----
-QWEX v0.170b Beta DEVELOP
+QWEX v0.170b Beta DEVELOP build 1250 (2003.05.24)
 [server]
 - just minor changes:
   all star keys from userinfo are visible to clients
@@ -612,7 +612,7 @@ QWEX v0.170b Beta DEVELOP
 
 
 ----
-QWEX v0.169 Beta DEVELOP
+QWEX v0.169 Beta DEVELOP build 1079 (2002.12.04)
 [server]
 - commands admin and judge unbanned (be sure to use fixed ktpro!)
 - bug with wrong names for tmp recording fixed
@@ -637,11 +637,11 @@ QWEX v0.168 Beta DEVELOP
 
 
 ----
-QWEX v0.165 Beta DEVELOP
+QWEX v0.165 Beta DEVELOP build 872 (2002.05.11)
 [server]
 - windows version is now a win32 application (nice window instead of msdos console)
 - win32: param -noerrormsgbox will exit program after an error w/o showing error message box
-  usefull if run run server in the loop.
+  usefull if run server in the loop.
 - win32: param -minimize starts server minimized to system tray
 - few minor changes/bugfixes
 
@@ -765,14 +765,14 @@ QWEX v0.159 Beta DEVELOP
   
 
 ----
-QWEX v0.153 Beta DEVELOP
+QWEX v0.153 Beta DEVELOP build 781 (2002.02.09)
 [server]
 - just some changes :)
 ----
 
 
 ----
-QWEX v0.151 Beta DEVELOP
+QWEX v0.151 Beta DEVELOP build 752 (2002.01.11)
 ----
 [server]
 - some changes to VIPs
@@ -849,6 +849,9 @@ changes over QWE v0.142 Beta
   to adjust rotation speed, and distance, use cvars cl_matrixcam_speed and cl_matrixcam_dist
 
 
+changes over QWE v0.14 Beta build 647 (2001.09.28)
+
+
 changes over QWE v0.13 Beta
 [server]
 - svc_disconnect message is now written correctly at the end of the demo
@@ -892,7 +895,7 @@ changes over QWE v0.13 Beta
 
 changes over QWE v0.12 Beta
 [server]
-- MAX_PACKE_ENTITIES increased again (128->196)
+- MAX_PACKET_ENTITIES increased again (128->196)
 - rebuild DemoReliableWrite_Begin, warnings/overflows etc shouldn't happen anymore
 - demo messages will never be greater than MAX_MSGLEN (there were problems with playbacking)
 - MAX_BACK_BUFFERS increased from 8 to 16 (ctf players had problems with connecting

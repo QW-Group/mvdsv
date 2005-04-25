@@ -43,7 +43,7 @@ typedef struct
 	byte		buf[MAX_MSGLEN];
 } packet_t;
 
-#define MAX_DELAYED_PACKETS 100
+#define MAX_DELAYED_PACKETS 512
 #define MAP_NAME_LEN 64
 typedef struct
 {
@@ -392,6 +392,8 @@ typedef struct
 
 	packet_t		packets[MAX_DELAYED_PACKETS];
 	int				num_packets;
+//	packet_t		packets_out[MAX_DELAYED_PACKETS];
+//	int				num_packets_out;
 } server_static_t;
 
 //=============================================================================
@@ -610,6 +612,7 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_BroadcastPrintf (int level, char *fmt, ...);
 void SV_BroadcastCommand (char *fmt, ...);
 void SV_SendClientMessages (void);
+//void SV_SendDelayedClientMessages (void);
 void SV_SendDemoMessage(void);
 void SV_SendMessagesToAll (void);
 void SV_FindModelNumbers (void);

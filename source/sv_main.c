@@ -1079,7 +1079,7 @@ qboolean rcon_bandlim()
 	if (realtime - lticks > 1.0)
 	{
 		if (lpackets > sv_rconlim.value)
-			Sys_Printf("WARNING: Limiting rcon tstamp response from %d to %4f rcon pequests per second from %s\n",
+			Sys_Printf("WARNING: Limiting rcon response from %d to %4f rcon pequests per second from %s\n",
 					lpackets, sv_rconlim.value, NET_AdrToString(net_from));
 		lticks = realtime;
 		lpackets = 0;
@@ -1954,16 +1954,16 @@ void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 {
 	int     i;
-  double  time;
+	double  time;
 
-  time = 0.0;
+	time = 0.0;
 
 	// search for existing penalty filter of same type
 	for (i = 0; i < numpenfilters; i++) {
 		if (type == penfilters[i].type && SV_IPCompare (cl->realip.ip, penfilters[i].ip)) {
-      time = penfilters[i].time;
-      SV_RemoveIPFilter (i);
-      return time;
+			time = penfilters[i].time;
+			SV_RemoveIPFilter (i);
+			return time;
 		}
 	}
 	return time;
@@ -2010,7 +2010,7 @@ void SV_ReadPackets (void)
 		qport = MSG_ReadShort () & 0xffff;
 
 		// check for packets from connected clients
-		for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		{
 			if (cl->state == cs_free)
 				continue;
@@ -2025,11 +2025,12 @@ void SV_ReadPackets (void)
 			}
 
 			if (svs.num_packets == MAX_DELAYED_PACKETS) // packet has to be dropped..
+			{
+				Sys_Printf("svs.num_packets == MAX_DELAYED_PACKETS\n");
 				break;
+			}
 
-			pack = &svs.packets[svs.num_packets];
-
-			svs.num_packets++;
+			pack = &svs.packets[svs.num_packets++];
 
 			pack->time = realtime;
 			pack->num = i;
@@ -2037,7 +2038,7 @@ void SV_ReadPackets (void)
 			SZ_Write(&pack->sb, net_message.data, net_message.cursize);
 			break;
 
-			if (Netchan_Process(&cl->netchan))
+/*			if (Netchan_Process(&cl->netchan))
 			{	// this is a valid, sequenced packet, so process it
 				svs.stats.packets++;
 				good = true;
@@ -2046,10 +2047,11 @@ void SV_ReadPackets (void)
 					SV_ExecuteClientMessage (cl);
 			}
 			break;
+*/
 		}
 		
-		if (i != MAX_CLIENTS)
-			continue;
+//		if (i != MAX_CLIENTS)
+//			continue;
 	
 		// packet is not from a known client
 		//	Con_Printf ("%s:sequenced packet without connection\n"
@@ -2064,23 +2066,23 @@ SV_ReadDelayedPackets
 */
 void SV_ReadDelayedPackets (void)
 {
-	int			i, j, num = 0;
+	int			i, j/*, num = 0*/;
 	client_t	*cl;
 	packet_t	*pack;
 
-	for (i = 0, pack = svs.packets; i < svs.num_packets;)
+	for (i = 0, pack = svs.packets; i < svs.num_packets; )
 	{
-		if (realtime < pack->time + svs.clients[pack->num].delay) {
+		cl = &svs.clients[pack->num];
+		if (realtime < pack->time + cl->delay) {
 			i++;
 			pack++;
 			continue;
 		}
 
-		num++;
+		//num++;
 
 		SZ_Clear(&net_message);
 		SZ_Write(&net_message, pack->sb.data, pack->sb.cursize);
-		cl = &svs.clients[pack->num];
 		net_from = cl->netchan.remote_address;
 
 		if (Netchan_Process(&cl->netchan))
@@ -2091,11 +2093,11 @@ void SV_ReadDelayedPackets (void)
 				SV_ExecuteClientMessage (cl);
 		}
 
-		for (j = i+1; j < svs.num_packets; j++) {
-			SZ_Clear(&svs.packets[j-1].sb);
-			SZ_Write(&svs.packets[j-1].sb, svs.packets[j].sb.data, svs.packets[j].sb.cursize);
-			svs.packets[j-1].num = svs.packets[j].num;
-			svs.packets[j-1].time = svs.packets[j].time;
+		for (j = i + 1; j < svs.num_packets; j++) {
+			SZ_Clear(&svs.packets[j - 1].sb);
+			SZ_Write(&svs.packets[j - 1].sb, svs.packets[j].sb.data, svs.packets[j].sb.cursize);
+			svs.packets[j - 1].num = svs.packets[j].num;
+			svs.packets[j - 1].time = svs.packets[j].time;
 		}
 
 		svs.num_packets--;
@@ -2375,6 +2377,9 @@ void SV_Frame (double time)
 // send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
 
+// check delayed messages back to the clients that had packets read this frame
+//	SV_SendDelayedClientMessages ();
+
 	demo_start = Sys_DoubleTime ();
 	SV_SendDemoMessage();
 	demo_end = Sys_DoubleTime ();
@@ -2598,9 +2603,12 @@ void SV_InitLocal (void)
 	for (i = 0; i < MAX_DELAYED_PACKETS; i++) {
 		svs.packets[i].sb.data = svs.packets[i].buf;
 		svs.packets[i].sb.maxsize = sizeof(svs.packets[i].buf);
+//		svs.packets_out[i].sb.data = svs.packets_out[i].buf;
+//		svs.packets_out[i].sb.maxsize = sizeof(svs.packets_out[i].buf);
 	}
 
 	svs.num_packets = 0;
+//	svs.num_packets_out = 0;
 }
 
 
