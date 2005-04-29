@@ -615,8 +615,6 @@ void Cmd_UnAliasAll_f (void)
 =============================================================================
 */
 
-#define	MAX_ARGS		80
-
 static	int			cmd_argc;
 static	char		*cmd_argv[MAX_ARGS];
 static	char		*cmd_null_string = "";

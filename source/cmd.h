@@ -154,3 +154,5 @@ typedef struct cmd_alias_s
 qboolean Cmd_DeleteAlias (char *name);	// return true if successful
 cmd_alias_t *Cmd_FindAlias (char *name); // returns NULL on failure
 char *Cmd_AliasString (char *name); // returns NULL on failure
+
+#define	MAX_ARGS		80
