@@ -1,5 +1,5 @@
 #
-# QuakeWorld/MVDSV makefile for Linux
+# QuakeWorld/MVDSV makefile for Linux and SunOS
 #
 # GNU Make required
 #
@@ -8,10 +8,9 @@
 
 USE_ASM=-Did386
 
-ifneq (,$(findstring alpha,$(shell uname -m)))
-ARCH=axp
-else
-ARCH=i386
+#ifneq (,$(shell uname -m | grep -E i[3-9]?86))
+ifneq (,$(findstring 86,$(shell uname -m)))
+#ARCH=i386
 ASM=$(USE_ASM)
 endif
 
@@ -20,12 +19,12 @@ SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 CC=gcc
-BASE_CFLAGS=-Wall -pipe -DUSE_PR2 -ldl
+BASE_CFLAGS=-Wall -pipe -DUSE_PR2
 #DEBUG_CFLAGS=$(BASE_CFLAGS) -g
 RELEASE_CFLAGS=$(BASE_CFLAGS) -O9 -ffast-math -funroll-loops \
 	-fomit-frame-pointer -fexpensive-optimizations
 
-GCC=0
+GCC=$(shell gcc -dumpversion | tr -d 'a-z-' | head -c1)
 
 ifeq ($(GCC),2)
 GCC=-malign-loops=2 -malign-jumps=2 -malign-functions=2
@@ -40,6 +39,15 @@ endif
 CFLAGS=$(ASM) $(RELEASE_CFLAGS) -DSERVERONLY $(GCC) -I$(SV_DIR)
 
 LDFLAGS=-lm
+ifeq ($(UNAME),Linux)
+LDFLAGS+=-ldl
+else
+ifeq ($(UNAME),SunOS)
+# NEED TESTING!!!
+LDFLAGS+=-lsocket
+LDFLAGS+=-lnsl
+endif
+endif
 
 #############################################################################
 # SERVER

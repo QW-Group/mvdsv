@@ -9,13 +9,14 @@ fi
 case ${UNAME} in
 FreeBSD | Darwin)
 	echo "${UNAME} system - use FreeBSD Makefile."
-	sed s/UNAME=0/UNAME=$UNAME/ Makefile.FreeBSD > Makefile
+	echo UNAME=${UNAME} > Makefile
+	cat Makefile.FreeBSD >> Makefile
 	echo "Configuration completed."
         ;;
-Linux)
+Linux | SunOS)
 	echo "${UNAME} system - use Linux Makefile."
-	GCC=`gcc -dumpversion | tr -d 'a-z-' | head -c1`
-	sed s/GCC=0/GCC=$GCC/ Makefile.Linux > Makefile
+	echo UNAME=${UNAME} > Makefile
+	cat Makefile.Linux >> Makefile
 	echo "Configuration completed."
 	;;
 *)
@@ -26,6 +27,7 @@ Linux)
 	echo "./configure FreeBSD               FreeBSD"
 	echo "./configure Darwin                Darwin/Mac OS X"
 	echo "./configure Linux                 Linux"
+	echo "./configure SunOS                 SunOS"
 	echo "or"
 	echo "./configure                       for auto configure"
 	echo ""
