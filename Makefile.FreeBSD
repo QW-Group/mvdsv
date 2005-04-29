@@ -19,15 +19,15 @@ QWDTOOLS_DIR=${MAINDIR}/source/qwdtools
 DO_CFLAGS =	${CFLAGS} -funsigned-char -DSERVERONLY -DUSE_PR2
 WITH_OPTIMIZED_CFLAGS = YES
 
+USE_ASM=-Did386
 .if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
-DO_CFLAGS +=	-Did386
+ASM=${USE_ASM}
+DO_CFLAGS +=	${ASM}
 .endif
 
 .if defined(WITH_OPTIMIZED_CFLAGS)
 
 DO_CFLAGS +=	-O9 -pipe -s -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations
-
-UNAME=0
 
 . if ${UNAME} == FreeBSD
 # Get __FreeBSD_version
@@ -97,7 +97,7 @@ SV_OBJS = \
 		${SV_DIR}/world.o \
 		${SV_DIR}/zone.o
 
-.if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
+.if ${USE_ASM} == ${ASM}
 SV_AS_OBJS = \
 		${SV_DIR}/math.o \
 		${SV_DIR}/sys_x86.o \
