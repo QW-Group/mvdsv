@@ -1,6 +1,19 @@
 ----
 MVDSV v0.179 build 1952 (2005.04.25)
 [server]
+- bugfix ktpro 'cmd dl' with more then 1 demo in list (for example: 'cmd dl 1 2 3'):
+  cancel download of a big demos (depend on download speed) after few seconds,
+  big demo downloaded completely only if it is 1st in list, all small demos downloaded completely
+    new cvar sv_use_internal_cmd_dl:
+      0 - use mod dl-function (if mod have not dl function, then used internal dl-function)
+      1 - use internal dl-function
+      default: 1
+(Thanks to [iBh]123)
+- bugfix from QWSV 2.33: calculate negative percentage of file while downloading
+  if size of downloaded part is > 0x10000000b / 100 (~= 20.5Mb):
+  (signed int32)20.5Mb * 100 => signed overflow => negative value
+- added Linux on non-ix86 and SunOS on SPARC and ix86 targets
+(Thanks to DyB|Tuna, Creep aka Bog and UnKnoWn)
 - new cvar sys_restart_on_error (use with caution)
   0 - quit on error (old style)
   1 - restart instead quit on server error (SV_Error)
