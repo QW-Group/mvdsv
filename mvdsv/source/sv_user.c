@@ -31,6 +31,8 @@ cvar_t	sv_rollangle = {"cl_rollangle", "2.0"};
 cvar_t	sv_spectalk = {"sv_spectalk", "1"};
 cvar_t	sv_mapcheck	= {"sv_mapcheck", "1"};
 
+cvar_t	sv_use_internal_cmd_dl = {"sv_use_internal_cmd_dl", "1"};
+
 extern	vec3_t	player_mins;
 
 extern int	fp_messages, fp_persecond, fp_secondsdead;
@@ -716,6 +718,46 @@ void SV_Begin_f (void)
 
 //=============================================================================
 
+int	demonum[MAX_ARGS];
+
+/*
+==================
+SV_DownloadNextFile_f
+==================
+*/
+qboolean SV_DownloadNextFile (void)
+{
+	int	num;
+	char	*name, n[MAX_OSPATH];
+	if (!demonum[0])
+		return false;
+	if (demonum[0] == 1)
+	{
+		Con_Printf(Q_redtext("All demos downloaded.\n"));
+		demonum[0] = 0;
+		return false;
+	}
+	demonum[0]--;
+        num = demonum[demonum[0]];
+	if (num == 0)
+	{
+		Con_Printf(Q_redtext("Incorrect demo number.\n"));
+		return SV_DownloadNextFile();
+	}
+	if (!(name = SV_DemoNum(num)))
+	{
+		Con_Printf(Q_yelltext(va("Demo number %d not found.\n", num)));
+		return SV_DownloadNextFile();
+	}
+	//Con_Printf("downloading demos/%s\n",name);
+	snprintf(n, sizeof(n), "download demos/%s\n", name);
+
+	ClientReliableWrite_Begin (host_client, svc_stufftext, strlen(n) + 2);
+	ClientReliableWrite_String (host_client, n);
+
+	return true;
+}
+
 /*
 ==================
 SV_NextDownload_f
@@ -759,7 +801,7 @@ void SV_NextDownload_f (void)
 	host_client->downloadcount += r;
 	if (!(size = host_client->downloadsize))
 		size = 1;
-	percent = host_client->downloadcount*100/size;
+	percent = (host_client->downloadcount * 100.) / size;
 	ClientReliableWrite_Byte (host_client, percent);
 	ClientReliableWrite_SZ (host_client, buffer, r);
 	host_client->file_percent = percent; //bliP: file percent
@@ -770,7 +812,9 @@ void SV_NextDownload_f (void)
 	fclose (host_client->download);
 	host_client->download = NULL;
 	host_client->file_percent = 0; //bliP: file percent
-	Con_Printf("Download completed.\n");
+	Con_Printf(Q_redtext("Download completed.\n"));
+	if (SV_DownloadNextFile())
+		return;
 
 	// if map changed tell the client to reconnect
 	if (host_client->spawncount != svs.spawncount)
@@ -990,7 +1034,7 @@ void SV_BeginDownload_f(void)
 		name = SV_DemoNum(num);
 		if (!name)
 		{
-			Con_Printf("demo num %d not found\n", num);
+			Con_Printf(Q_yelltext(va("Demo number %d not found.\n", num)));
 
 			ClientReliableWrite_Begin (host_client, svc_download, 4);
 			ClientReliableWrite_Short (host_client, -1);
@@ -1073,6 +1117,29 @@ void SV_BeginDownload_f(void)
 				name, (float)host_client->downloadsize / 1024,
 				(float)host_client->downloadsize / 1024 / 1024);
 //<-
+}
+
+/*
+==================
+SV_DemoDownload_f
+==================
+*/
+void SV_ExecutePRCommand (void);
+void SV_DemoDownload_f(void)
+{
+	int		i;
+	if (!sv_use_internal_cmd_dl.value)
+		if (SV_ExecutePRCommand())
+			return;
+	if (Cmd_Argc() < 2)
+	{
+		Con_Printf("usage: cmd dl demonum1 [demonum2 ... demonumN]\n");
+		return;
+	}
+	demonum[0] = Cmd_Argc();
+	for (i = 1; i < demonum[0]; i++)
+		demonum[demonum[0] - i] = Q_atoi(Cmd_Argv(i));
+	SV_DownloadNextFile();
 }
 
 /*
@@ -1784,6 +1851,7 @@ ucmd_t ucmds[] =
 
 	{"download", SV_BeginDownload_f},
 	{"nextdl", SV_NextDownload_f},
+	{"dl", SV_DemoDownload_f},
 
 	{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
 
@@ -1826,19 +1894,31 @@ void SV_ExecuteUserCommand (char *s)
 		}
 
 	if (!u->name)
-#ifdef USE_PR2
-		if ( sv_vm )
-		{
-			pr_global_struct->time = sv.time;
-			pr_global_struct->self = EDICT_TO_PROG(sv_player);
-			if (!PR2_ClientCmd())
-				Con_Printf("Bad user command: %s\n", Cmd_Argv(0));
-		}
-		else
-#endif
-			if (!PR_UserCmd())
-				Con_Printf ("Bad user command: %s\n", Cmd_Argv(0));
+		SV_ExecutePRCommand();
+
 	SV_EndRedirect ();
+}
+qboolean SV_ExecutePRCommand (void)
+{
+#ifdef USE_PR2
+	if ( sv_vm )
+	{
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		if (!PR2_ClientCmd())
+		{
+			Con_Printf("Bad user command: %s\n", Cmd_Argv(0));
+			return false;
+		}
+	}
+	else
+#endif
+		if (!PR_UserCmd())
+		{
+			Con_Printf ("Bad user command: %s\n", Cmd_Argv(0));
+			return false;
+		}
+	return true;
 }
 
 /*
@@ -2439,4 +2519,5 @@ void SV_UserInit (void)
 	Cvar_RegisterVariable (&sv_rollangle);
 	Cvar_RegisterVariable (&sv_spectalk);
 	Cvar_RegisterVariable (&sv_mapcheck);
+	Cvar_RegisterVariable (&sv_use_internal_cmd_dl);
 }
