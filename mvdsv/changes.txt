@@ -1,6 +1,11 @@
 ----
-MVDSV v0.179 build 1952 (2005.04.25)
+MVDSV v0.179 build 1959 (2005.05.03)
 [server]
+TODO: cvar sv_demoExtList ".mvd .mvd.gz .mvd.bz2 .mvd.rar .mvd.zip"
+- new 'cmd maps' - show maps list from localinfo 1000 - 1999
+  (supported only by ktpro 1.63 build 42795 and newer)
+  ktpro's command 'maps' can show only 1st 150 maps from list
+(Thanks to JSS)
 - bugfix ktpro 'cmd dl' with more then 1 demo in list (for example: 'cmd dl 1 2 3'):
   cancel download of a big demos (depend on download speed) after few seconds,
   big demo downloaded completely only if it is 1st in list, all small demos downloaded completely
@@ -8,12 +13,17 @@ MVDSV v0.179 build 1952 (2005.04.25)
       0 - use mod dl-function (if mod have not dl function, then used internal dl-function)
       1 - use internal dl-function
       default: 1
+  'cmd dl <N dots>' - download the Nth to last recorded demo, and can to add dots sequence in list,
+  also can to add negative values - 'cmd dl -N' - download the Nth to last recorded demo
+  (for example: 'cmd dl 1 ... 4 . -6 .. 22 ........');
+  'download demonum/N' fully work same as 'cmd dl N'
+  (N - posive or negative integer value or any quantity of dots)
 (Thanks to [iBh]123)
-- bugfix from QWSV 2.33: calculate negative percentage of file while downloading
+- bugfix from Id Software's QWSV: calculate negative percentage of file while downloading
   if size of downloaded part is > 0x10000000b / 100 (~= 20.5Mb):
   (signed int32)20.5Mb * 100 => signed overflow => negative value
 - added Linux on non-ix86 and SunOS on SPARC and ix86 targets
-(Thanks to DyB|Tuna, Creep aka Bog and UnKnoWn)
+(Thanks to DyB|Tuna, Creeping Death aka Bog and UnKnoWn)
 - new cvar sys_restart_on_error (use with caution)
   0 - quit on error (old style)
   1 - restart instead quit on server error (SV_Error)
@@ -155,8 +165,10 @@ MVDSV v0.174 Beta DEVELOP build 1742 (2004.09.27)
 - new cvar sv_rconlim - limit of rcon requests per second
 - bugfix: occur packets lost if sv_minping > real client's ping
 - new cvar sys_select_timeout - timeout in micro seconds for function select in main loop
-- bugfix: buffer overrun condition when handling quoted strings in COM_Parse (thanks to hexum)
-- bugfix: make check for pwd.cfg case insensitive in SV_BeginDownload_f (thanks to hexum)
+- bugfix: buffer overrun condition when handling quoted strings in COM_Parse
+(Thanks to hexum)
+- bugfix: make check for pwd.cfg case insensitive in SV_BeginDownload_f
+(Thanks to hexum)
 - new cvar sv_logdir <dir> - directory to store logs in (by bliP)
 - new cvar sv_demoClearOld <number of files> (by bliP)
   if the demo directory is out of space (sv_demoMaxDirSize), this will delete X number of files
@@ -455,7 +467,7 @@ QWEX v0.1724 build 1500 (2004.01.29)
   "^" excluded from list of allowed characters in demo name
 - cmd dlist output sorted chronologically now: top demo = oldest, bottom demo = most recent
 - new command:
-  check_maps - checks available maps in id1/maps and qw/maps and writes localinfo 1000-2000
+  check_maps - checks available maps in id1/maps and qw/maps and writes localinfo 1000 - 1999
   accordingly: first maps from id/maps are added (maps are sorted by name), then maps from qw/maps
   are added (sorted by name as well and only added if they weren't already added from id1/maps)
 
@@ -862,7 +874,7 @@ changes over QWE v0.142 Beta
   to adjust rotation speed, and distance, use cvars cl_matrixcam_speed and cl_matrixcam_dist
 
 
-changes over QWE v0.14 Beta build 647 (2001.09.28)
+QWE v0.14 Beta build 647 (2001.09.28)
 
 
 changes over QWE v0.13 Beta
@@ -925,7 +937,7 @@ changes over QWE v0.12 Beta
 - errors while converting demos due to msg overflow fixed
 
 
-changes over QWE v0.11 Beta
+changes over QWE v0.11 Beta build 628 (2001.09.09)
 
 [server]
 - new cvar: version
@@ -974,6 +986,9 @@ changes over QWE v0.11 Beta
 - increased MAX_PACKET_ENTITIES from 64 to 128
 - increased maximum size of packet. (some qizmo demos with voice coused problems)
 
+
+QWE v0.?? build 0 (1999.12.21)
+Project started.
 
 ---
 HighlandeR & VVD

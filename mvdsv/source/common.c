@@ -2107,7 +2107,7 @@ void Info_Print (char *s)
 		}
 		else
 			*o = 0;
-		Con_Printf ("%s", key);
+		Con_Printf ("%s ", key);
 
 		if (!*s)
 		{

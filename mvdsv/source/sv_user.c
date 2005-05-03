@@ -1020,16 +1020,24 @@ void SV_BeginDownload_f(void)
 	}
 	else if (!strncmp(name, "demonum/", 8))
 	{
-		int num;
-
+		int	num;
 		if ((num = atoi(name + 8)) == 0 && name[8] != '0')
 		{
-			Con_Printf("usage: download demonum/nun\n");
+			char	*num_s = name + 8;
+			int	num_s_len = strlen(num_s);
+			for (num = 0; -num < num_s_len; num--)
+			if (num_s[-num] != '.')
+			{
+				Con_Printf("usage: download demonum/nun\n"
+					"if num is negative then download the Nth to last recorded demo, "
+					"also can type any quantity of dots and "
+					"where N dots is the Nth to last recorded demo\n");
 			
-			ClientReliableWrite_Begin (host_client, svc_download, 4);
-			ClientReliableWrite_Short (host_client, -1);
-			ClientReliableWrite_Byte (host_client, 0);
-			return;
+				ClientReliableWrite_Begin (host_client, svc_download, 4);
+				ClientReliableWrite_Short (host_client, -1);
+				ClientReliableWrite_Byte (host_client, 0);
+				return;
+			}
 		}
 		name = SV_DemoNum(num);
 		if (!name)
@@ -1124,21 +1132,60 @@ void SV_BeginDownload_f(void)
 SV_DemoDownload_f
 ==================
 */
-void SV_ExecutePRCommand (void);
+qboolean SV_ExecutePRCommand (void);
 void SV_DemoDownload_f(void)
 {
-	int		i;
+	int		i, num, cmd_argv_i_len;
+	char		*cmd_argv_i;
+	extern cvar_t	sv_demoDir;
+
 	if (!sv_use_internal_cmd_dl.value)
 		if (SV_ExecutePRCommand())
 			return;
+
 	if (Cmd_Argc() < 2)
 	{
-		Con_Printf("usage: cmd dl demonum1 [demonum2 ... demonumN]\n");
+		Con_Printf("usage: cmd dl [\\] # [# [#]]\n"
+			   "where \"#\" it is demonum from demo list and "
+			   "\"\\\" clear download queue\n"
+			   "you can also use cmd dl ., .. or any quantity of dots "
+			   "where . is the last recorded demo, "
+			   ".. is the second to last recorded demo"
+			   "and where N dots is the Nth to last recorded demo\n");
 		return;
 	}
+
+	if (!strcmp(Cmd_Argv(1), "\\"))
+	{
+		if (demonum[0])
+		{
+			Con_Printf(Q_redtext("Download queue cleared.\n"));
+			demonum[0] = 0;
+		}
+		else
+			Con_Printf(Q_redtext("Download queue empty.\n"));
+		return;
+	}
+
+	if (demonum[0])
+	{
+		Con_Printf(Q_redtext("Download queue already exists.\n"));
+		return;
+	}
+
 	demonum[0] = Cmd_Argc();
 	for (i = 1; i < demonum[0]; i++)
-		demonum[demonum[0] - i] = Q_atoi(Cmd_Argv(i));
+	{
+		cmd_argv_i = Cmd_Argv(i);
+		cmd_argv_i_len = strlen(cmd_argv_i);
+		for (num = 0; -num < cmd_argv_i_len; num--)
+			if (cmd_argv_i[-num] != '.')
+			{
+				num = Q_atoi(cmd_argv_i);
+				break;
+			}
+		demonum[demonum[0] - i] = num;
+	}
 	SV_DownloadNextFile();
 }
 
@@ -1814,7 +1861,45 @@ void SV_MinPing_f (void)
 	}
 }
 
-void SV_DemoList_f (void);
+/*
+==============
+SV_ShowMapsList_f
+==============
+*/
+void SV_Check_ktpro(void);
+void SV_ShowMapsList_f(void)
+{
+	char	*value, *key;
+	int	i, j, len, i_mod_2 = 1;
+
+	SV_Check_ktpro();
+
+	Con_Printf("Vote for maps by typing the mapname, for example \"%s\"\n\n---%s\n",
+			Q_redtext("ztndm3"), Q_redtext("list of custom maps"));
+	
+	for (i = LOCALINFO_MAPS_LIST_START; i <= LOCALINFO_MAPS_LIST_END; i++)
+	{
+		key = va("%d", i);
+		value = Info_ValueForKey(localinfo, key);
+		if (*value)
+		{
+			
+			if (!(i_mod_2 = i % 2))
+			{
+				if ((len = 19 - strlen(value)) < 1)
+					len = 1;
+				for (j = 0; j < len; j++)
+					strlcat(value, " ", MAX_KEY_STRING);
+			}
+			Con_Printf("%s%s", value, i_mod_2 ? "\n" : "");
+		}
+		else
+			break;
+	}
+	Con_Printf("%s---%s\n", i_mod_2 ? "" : "\n", Q_redtext("end of list"));
+}
+
+void SV_DemoList_f(void);
 void SV_DemoInfo_f(void);
 void SV_LastScores_f(void);
 
@@ -1867,6 +1952,7 @@ ucmd_t ucmds[] =
 	{"demoinfo", SV_DemoInfo_f},
 	{"lastscores", SV_LastScores_f},
 	{"minping", SV_MinPing_f},
+	{"maps", SV_ShowMapsList_f},
 	
 	{NULL, NULL}
 };

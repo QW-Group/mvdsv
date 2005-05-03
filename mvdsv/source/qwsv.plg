@@ -6,13 +6,13 @@
 --------------------Configuration: qwsv - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "E:\Temp\RSP29.tmp" with contents
+Creating temporary file "E:\Temp\RSP52.tmp" with contents
 [
 /nologo /G6 /ML /W3 /O2 /Op /Ob2 /D "SERVERONLY" /D "id386" /D "NDEBUG" /D "USE_PR2" /Fr".\SRelease/" /Fp".\SRelease/mvdsv.pch" /YX /Fo".\SRelease/" /Fd".\SRelease/" /FD /c 
 "D:\Quake\Projects\mvdsv\mvdsv\source\sv_user.c"
 ]
-Creating command line "cl.exe @E:\Temp\RSP29.tmp" 
-Creating temporary file "E:\Temp\RSP2A.tmp" with contents
+Creating command line "cl.exe @E:\Temp\RSP52.tmp" 
+Creating temporary file "E:\Temp\RSP53.tmp" with contents
 [
 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /incremental:no /pdb:".\SRelease/mvdsv-current.pdb" /machine:I386 /out:"..\mvdsv-current.exe" 
 .\SRelease\cmd.obj
@@ -54,7 +54,7 @@ wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:window
 .\SRelease\math.obj
 .\SRelease\worlda.obj
 ]
-Creating command line "link.exe @E:\Temp\RSP2A.tmp"
+Creating command line "link.exe @E:\Temp\RSP53.tmp"
 <h3>Output Window</h3>
 Compiling...
 sv_user.c
