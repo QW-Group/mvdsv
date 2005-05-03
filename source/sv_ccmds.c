@@ -1209,13 +1209,39 @@ void SV_Status_f (void)
 	Con_Printf ("\n");
 }
 
+
+/*
+==================
+SV_Check_ktpro
+==================
+*/
+void SV_Check_ktpro(void)
+{
+	float	k_version;
+	char	*k_version_s;
+	int	k_build;
+	char	*k_build_s;
+
+	if ((k_version = Q_atof(k_version_s = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION))) <
+		LOCALINFO_MAPS_KTPRO_VERSION ||
+	    (k_build   = Q_atoi(k_build_s   = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD)))   <
+		LOCALINFO_MAPS_KTPRO_BUILD)
+	{
+		Con_Printf("WARNING: Storing maps list in LOCALINFO supported only by ktpro version "
+				LOCALINFO_MAPS_KTPRO_VERSION_S " build %i and newer.\n",
+				LOCALINFO_MAPS_KTPRO_BUILD);
+		if (k_version && k_build)
+			Con_Printf("Current running ktpro version %s build %s.\n",
+					k_version_s, k_build_s);
+		else
+			Con_Printf("Current running non ktpro mod.\n");
+	}
+}
 /*
 ==================
 SV_Check_maps_f
 ==================
 */
-#define LOCALINFO_MAPS_LIST_START	1000
-#define LOCALINFO_MAPS_LIST_END		2000
 extern func_t localinfoChanged;
 void SV_Check_maps_f(void)
 {
@@ -1223,6 +1249,8 @@ void SV_Check_maps_f(void)
 	file_t *list;
 	int i, j, maps_id1;
 	char *s, *key;
+
+	SV_Check_ktpro();
 
 	d = Sys_listdir("id1/maps", ".bsp", SORT_BY_NAME);
 	list = d.files;

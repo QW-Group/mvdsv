@@ -462,6 +462,13 @@ typedef struct
 #define	MULTICAST_PHS_R			4
 #define	MULTICAST_PVS_R			5
 
+#define LOCALINFO_MAPS_LIST_START	1000
+#define LOCALINFO_MAPS_LIST_END		1999
+#define LOCALINFO_MAPS_KTPRO_VERSION	1.63
+#define LOCALINFO_MAPS_KTPRO_VERSION_S	"1.63"
+#define LOCALINFO_MAPS_KTPRO_BUILD	42795
+#define SERVERINFO_KTPRO_VERSION	"kmod"
+#define SERVERINFO_KTPRO_BUILD		"build"
 //============================================================================
 
 extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
@@ -681,4 +688,3 @@ qboolean SV_Login(client_t *cl);
 void SV_Logout(client_t *cl);
 void SV_ParseLogin(client_t *cl);
 void SV_LoginCheckTimeOut(client_t *cl);
-

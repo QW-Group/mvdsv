@@ -1541,13 +1541,12 @@ void SV_DemoList_f (void)
 	float	f;
 	int		i,j,show;
 
-	Con_Printf("content of %s/%s/*.mvd[.gz]\n", com_gamedir,sv_demoDir.string);
-	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
+	Con_Printf("content of %s/%s/*.mvd[.gz]\n", com_gamedir, sv_demoDir.string);
+	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string),
+			   ".mvd", ".mvd.gz", SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])
-	{
 		Con_Printf("no demos\n");
-	}
 
 	for (i = 1; list->name[0]; i++, list++)
 	{
@@ -1581,12 +1580,15 @@ char *SV_DemoNum(int num)
 	file_t	*list;
 	dir_t	dir;
 
-	if (num <= 0)
+	if (num == 0)
 		return NULL;
 
 	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
-	if (num > dir.numfiles)
+	if (num > dir.numfiles || -num > dir.numfiles)
 		return NULL;
+
+	if (num < 0)
+		num += dir.numfiles + 1;
 
 	list = dir.files;
 
