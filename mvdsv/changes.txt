@@ -1,7 +1,7 @@
 ----
 MVDSV v0.179 build 1959 (2005.05.03)
 [server]
-TODO: cvar sv_demoExtList ".mvd .mvd.gz .mvd.bz2 .mvd.rar .mvd.zip"
+- added support of halflife maps - BSP version 30 (from ezQuake)
 - new 'cmd maps' - show maps list from localinfo 1000 - 1999
   (supported only by ktpro 1.63 build 42795 and newer)
   ktpro's command 'maps' can show only 1st 150 maps from list
@@ -987,8 +987,16 @@ changes over QWE v0.11 Beta build 628 (2001.09.09)
 - increased maximum size of packet. (some qizmo demos with voice coused problems)
 
 
-QWE v0.?? build 0 (1999.12.21)
+QWE v0.?? build 526+ (2001.05.30+)
 Project started.
+
+ZQUAKE v0.12 build 526 (2001.05.30)
+
+QW v2.40 build 0 (1999.12.21)
+Q1source released under GPL.
+
+QW v2.33 (1996.10.24)
+Released last official version of QuakeWorld from Id Software.
 
 ---
 HighlandeR & VVD

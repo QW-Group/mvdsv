@@ -457,8 +457,9 @@ void Load_SpecVisData(char *visname)
 	}
 
 	i = LittleLong (header->version);
-	if (i != BSPVERSION) {
-		Sys_Printf ("Load_SpecVisData: %s has wrong version number (%i should be %i)", visname, i, BSPVERSION);
+	if (i != Q1_BSPVERSION && i != HL_BSPVERSION) {
+		Sys_Printf ("Load_SpecVisData: %s has wrong version number (%i should be %i or %i)",
+				visname, i, Q1_BSPVERSION, HL_BSPVERSION);
 		return;
 	}
 

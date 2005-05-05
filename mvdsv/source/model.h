@@ -384,6 +384,7 @@ typedef struct model_s
 	byte		*lightdata;
 	char		*entities;
 
+	int			bspversion;
 	unsigned	checksum;		// for world models only
 	unsigned	checksum2;		// for world models only
 
