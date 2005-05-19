@@ -1135,7 +1135,7 @@ varargs versions of all text functions.
 FIXME: make this buffer size safe someday
 ============
 */
-#define MAX_STRINGS 4
+#define MAX_STRINGS 16
 char	*va(char *format, ...)
 {
 	va_list		argptr;

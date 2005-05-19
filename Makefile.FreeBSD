@@ -16,7 +16,7 @@ MAINDIR!=	/bin/pwd
 SV_DIR=${MAINDIR}/source
 QWDTOOLS_DIR=${MAINDIR}/source/qwdtools
 
-DO_CFLAGS =	${CFLAGS} -funsigned-char -DSERVERONLY -DUSE_PR2
+DO_CFLAGS =	${CFLAGS} -funsigned-char -DSERVERONLY -DUSE_PR2 -DREGEX
 WITH_OPTIMIZED_CFLAGS = YES
 
 USE_ASM=-Did386
@@ -95,7 +95,10 @@ SV_OBJS = \
 		${SV_DIR}/sha1.o \
 		${SV_DIR}/version.o \
 		${SV_DIR}/world.o \
-		${SV_DIR}/zone.o
+		${SV_DIR}/zone.o \
+\
+		${SV_DIR}/pcre/chartables.o \
+		${SV_DIR}/pcre/pcre.o
 
 .if ${USE_ASM} == ${ASM}
 SV_AS_OBJS = \
@@ -139,4 +142,4 @@ qwdtools:	${QWDTOOLS_OBJS}
 		${CC} ${CFLAGS} ${LDFLAGS} -o qwdtools ${QWDTOOLS_OBJS}
 
 clean:
-		-rm -f ${SV_DIR}/*.o ${SV_DIR}/*.core ${QWDTOOLS_DIR}/*.o ${QWDTOOLS_DIR}/*.core
+		-rm -f ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${SV_DIR}/*.core ${QWDTOOLS_DIR}/*.o ${QWDTOOLS_DIR}/*.core

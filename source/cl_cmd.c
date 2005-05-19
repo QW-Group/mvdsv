@@ -65,8 +65,8 @@ void Cmd_ForwardToServer (void)
 void CL_ForwardToServer_f (void)
 {
 // Added by VVD {
-	char		*client_string, *server_string, client_time_str[9];
-	int		i, client_string_len, server_string_len;
+	char		*server_string, client_time_str[9];
+	int		i, server_string_len;
 	extern cvar_t	cl_crypt_rcon;
 	time_t		client_time;
 // Added by VVD }
@@ -102,42 +102,25 @@ void CL_ForwardToServer_f (void)
 			cls.downloadtype = dl_single;
 		}
 // Added by VVD {
-		if (cl_crypt_rcon.value && strcasecmp(Cmd_Argv(1), "techlogin") == 0)
+		if (cl_crypt_rcon.value && strcasecmp(Cmd_Argv(1), "techlogin") == 0 && Cmd_Argc() > 2)
 		{
 			time(&client_time);
 			for (i = 0; i < sizeof(client_time); ++i)
-			{
 				snprintf(client_time_str + i * 2, 8 * 2 + 1 - i * 2, "%02X",
 					(client_time >> (i * 8)) & 0xFF);
-//				Con_Printf("client_time_str = %s\n", client_time_str);
-			}
-			client_string_len = Cmd_Argc() + 8;
 
-			for (i = 1; i < Cmd_Argc(); ++i)
-				client_string_len += strlen(Cmd_Argv(i));
-			server_string_len = client_string_len - strlen(Cmd_Argv(2)) + DIGEST_SIZE * 2 + 8;
-			client_string = Q_Malloc(client_string_len);
-			server_string = Q_Malloc(server_string_len);
-			*client_string = *server_string = 0;
-			strlcat(client_string, Cmd_Argv(1), client_string_len);
-			strlcat(client_string, " ", client_string_len);
-			strlcat(client_string, Cmd_Argv(2), client_string_len);
-			strlcat(client_string, client_time_str, client_string_len);
-			strlcat(client_string, " ", client_string_len);
+			server_string_len = Cmd_Argc() + strlen(Cmd_Argv(1)) + DIGEST_SIZE * 2 + 16;
 			for (i = 3; i < Cmd_Argc(); ++i)
-			{
-				strlcat(client_string, Cmd_Argv(i), client_string_len);
-				strlcat(client_string, " ", client_string_len);
-			}
-			strlcpy(server_string, Cmd_Argv(1), server_string_len);
-			strlcat(server_string, " ", server_string_len);
-			strlcat(server_string, SHA1(client_string, client_string_len - 1), server_string_len);
-			strlcat(server_string, client_time_str, server_string_len);
-			strlcat(server_string, " ", server_string_len);
-//		Con_Printf("client_string = %s\nserver_string = %s\n", client_string, server_string);
-//		Con_Printf("server_string_len = %d, strlen(server_string) = %d\n", server_string_len, strlen(server_string));
-//		Con_Printf("client_string_len = %d, strlen(client_string) = %d\n", client_string_len, strlen(client_string));
-			Q_Free(client_string);
+				server_string_len += strlen(Cmd_Argv(i));
+			server_string = Q_Malloc(server_string_len);
+
+			SHA1_Init();
+			SHA1_Update(va("%s %s%s ", Cmd_Argv(1), Cmd_Argv(2), client_time_str));
+			for (i = 3; i < Cmd_Argc(); ++i)
+				SHA1_Update(va("%s ", Cmd_Argv(i)));
+
+			snprintf(server_string, server_string_len, "%s %s%s ",
+				Cmd_Argv(1), SHA1_Final(), client_time_str);
 			for (i = 3; i < Cmd_Argc(); ++i)
 			{
 				strlcat(server_string, Cmd_Argv(i), server_string_len);
@@ -267,7 +250,7 @@ an unconnected command.
 */
 void CL_Rcon_f (void)
 {
-	char	message[1024], *sha1, client_time_str[9];
+	char	message[1024], client_time_str[9];
 	int		i;
 	netadr_t	to;
 	extern cvar_t	rcon_password, rcon_address, cl_crypt_rcon;
@@ -279,46 +262,30 @@ void CL_Rcon_f (void)
 	message[3] = 255;
 	message[4] = 0;
 	strlcat (message, "rcon ", sizeof(message));
-	if (rcon_password.string[0])
-		strlcat (message, rcon_password.string, sizeof(message));
 
 // Added by VVD {
 	if (cl_crypt_rcon.value)
 	{
+		SHA1_Init();
+
 		time(&client_time);
 		for (i = 0; i < sizeof(client_time); ++i)
-		{
 			snprintf(client_time_str + i * 2, 8 * 2 + 1 - i * 2, "%02X",
 				(client_time >> (i * 8)) & 0xFF);
-//			Con_Printf("client_time_str = %s\n", client_time_str);
-		}
-		strlcat (message, client_time_str, sizeof(message));
-		strlcat (message, " ", sizeof(message));
+		SHA1_Update(va("rcon %s%s ", rcon_password.string, client_time_str));
 		for (i = 1; i < Cmd_Argc(); i++)
-		{
-			strlcat (message, Cmd_Argv(i), sizeof(message));
-			strlcat (message, " ", sizeof(message));
-		}
-		sha1 = SHA1(message + 4, strlen(message) - 4);
-		message[4] = 0;
-		strlcat (message, "rcon ", sizeof(message));
-		strlcat (message, sha1, sizeof(message));
+			SHA1_Update(va("%s ", Cmd_Argv(i)));
+		strlcat (message, SHA1_Final(), sizeof(message));
 		strlcat (message, client_time_str, sizeof(message));
-		strlcat (message, " ", sizeof(message));
-		for (i = 1; i < Cmd_Argc(); i++)
-		{
-			strlcat (message, Cmd_Argv(i), sizeof(message));
-			strlcat (message, " ", sizeof(message));
-		}
 	}
 	else
+		if (rcon_password.string[0])
+			strlcat (message, rcon_password.string, sizeof(message));
+	strlcat (message, " ", sizeof(message));
+	for (i = 1; i < Cmd_Argc(); i++)
 	{
+		strlcat (message, Cmd_Argv(i), sizeof(message));
 		strlcat (message, " ", sizeof(message));
-		for (i=1 ; i<Cmd_Argc() ; i++)
-		{
-			strlcat (message, Cmd_Argv(i), sizeof(message));
-			strlcat (message, " ", sizeof(message));
-		}
 	}
 // } Added by VVD
 	if (cls.state >= ca_connected)

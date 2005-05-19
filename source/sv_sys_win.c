@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <process.h>
 #include <sys/stat.h>
 
+#include "pcre/pcre.h"
+
 #include "qwsvdef.h"
 #include "sv_windows.h"
 
@@ -102,40 +104,55 @@ Sys_listdir
 
 dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
-	return Sys_listdir2 (path, ext, ext, sort_type);
-}
-dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
-{
 	static file_t	list[MAX_DIRFILES];
 	dir_t	dir;
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
-	int		i, extsize1, extsize2;
 	char	pathname[MAX_DEMO_NAME];
 	qboolean all;
+
+	int	r;
+	pcre	*preg;
+	const char	*errbuf;
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
 
-	extsize1 = strlen(ext1);
-	extsize2 = strlen(ext2);
 	dir.files = list;
-	all = !strncmp(ext1, ".*", 3) || !strncmp(ext2, ".*", 3);
+	all = !strncmp(ext, ".*", 3);
+	if (!all)
+		if (!(preg = pcre_compile(ext, PCRE_CASELESS, &errbuf, &r, NULL)))
+		{
+			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
+					ext, errbuf, r);
+			Q_Free(preg);
+			return dir;
+		}
 
-	if ((h = FindFirstFile (va("%s/*.*", path), &fd)) == INVALID_HANDLE_VALUE)
+	snprintf(pathname, sizeof(pathname), "%s/*.*", path);
+	if ((h = FindFirstFile (pathname , &fd)) == INVALID_HANDLE_VALUE)
+	{
+		Q_Free(preg);
 		return dir;
+	}
 
 	do {
-		if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
+		if (!strncmp(fd.cFileName, ".", 2) || !strncmp(fd.cFileName, "..", 3))
 			continue;
-		if (( (i = strlen(fd.cFileName)) < extsize1 ?
-		      1 : strcasecmp(fd.cFileName + i - extsize1, ext1)
-		    ) &&
-		    ( (i = strlen(fd.cFileName)) < extsize2 ?
-		      1 : strcasecmp(fd.cFileName + i - extsize2, ext2)
-		    ) && !all
-		   )
-				continue;
+		if (!all)
+		{
+			switch (r = pcre_exec(preg, NULL, fd.cFileName,
+						strlen(fd.cFileName), 0, 0, NULL, 0))
+			{
+				case 0: break;
+				case PCRE_ERROR_NOMATCH: continue;
+				default:
+					Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
+							ext, fd.cFileName, r);
+					Q_Free(preg);
+					return dir;
+			}
+		}
 
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) //bliP: list dir
 		{
@@ -159,6 +176,7 @@ dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
 	} while (FindNextFile(h, &fd));
 
 	FindClose (h);
+	Q_Free(preg);
 
 	switch (sort_type)
 	{
