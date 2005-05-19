@@ -1,6 +1,8 @@
 ----
 MVDSV v0.179 build 1976 (2005.05.19)
 [server]
+- bugfix: now if server can't write log or demo, then it close logfile and stop logging
+and cancel recording of current demo (#1057459)
 - build: define REGEX, for use external regex lib
   (for example: FreeBSD have regex functions in libc)
   else used integrated part of PCRE 5.0 library - http://www.pcre.org/

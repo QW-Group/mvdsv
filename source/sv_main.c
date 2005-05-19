@@ -3072,8 +3072,7 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 //VVD: Con_DPrintf to Sys_Printf ->
 		Sys_Printf("%s", error_msg);
 //<-
-		fclose(logs[sv_log].sv_logfile);
-		logs[sv_log].sv_logfile = NULL;
+		SV_Logfile(sv_log, false);
 	}
 	else
 	{
