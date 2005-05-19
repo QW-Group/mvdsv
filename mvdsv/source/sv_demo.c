@@ -282,6 +282,23 @@ void DemoWrite_Begin(byte type, int to, int size)
 
 /*
 ====================
+Q_fwrite
+====================
+*/
+Q_fwrite ( const void *buffer, size_t size, size_t count, void *stream)
+{
+	int processed = fwrite(buffer, size, count, stream);
+	if (count != processed)
+	{
+		SV_Cancel_f();
+		Con_Printf("Q_fwrite: can't write (try to check disk space).\n");
+		return processed < 0 ? 0 : processed;
+	}
+	return count;
+}
+
+/*
+====================
 SV_WriteDemoMessage
 
 Dumps the current net message, prefixed by the length and view angles
@@ -345,7 +362,7 @@ void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 		fflush (demo.file);
 	else if ((for_write = min(demo.size - demo_size, svs.demomemsize)) > demo_max_size)
 	{
-		fwrite(svs.demomem, for_write, 1, demo.file);
+		Q_fwrite(svs.demomem, for_write, 1, demo.file);
 		demo_size = demo.size;
 		demo.mfile = svs.demomem;
 		fflush(demo.file);
@@ -613,7 +630,7 @@ qboolean SV_InitRecord(void)
 {
 	if (!USACACHE)
 	{
-		dwrite = (void *)&fwrite;
+		dwrite = (void *)&Q_fwrite;
 		demo.dest = demo.file;
 		demo.disk = true;
 	} else 
