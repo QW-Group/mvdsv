@@ -65,6 +65,7 @@ cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
 cvar_t	master_rcon_password = {"master_rcon_password", ""};	//bliP: password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
+cvar_t	sv_hashpasswords = {"sv_hashpasswords", "1"}; // 0 - plain passwords; 1 - hashed passwords
 cvar_t	telnet_password = {"telnet_password", ""}; // password for login via telnet
 cvar_t	not_auth_timeout = {"not_auth_timeout", "20"};
 // if no password is sent (telnet_password) in "n" seconds the server refuses connection
@@ -2445,6 +2446,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&rcon_password);
 	Cvar_RegisterVariable (&master_rcon_password); //bliP: init
 	Cvar_RegisterVariable (&password);
+	Cvar_RegisterVariable (&sv_hashpasswords);
 //Added by VVD {
 	Cvar_RegisterVariable (&sv_crypt_rcon);
 	Cvar_RegisterVariable (&sv_timestamplen);

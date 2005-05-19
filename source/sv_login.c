@@ -20,10 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 #include "winquake.h"
+#include "sha1.h"
 
 #define MAX_ACCOUNTS 1000
 #define MAX_FAILURES 10
-#define MAX_LOGINNAME 16
+#define MAX_LOGINNAME (DIGEST_SIZE * 2 + 1)
 #define ACC_FILE "accounts"
 #define ACC_DIR "users"
 
@@ -198,6 +199,7 @@ void SV_CreateAccount_f(void)
 	int i, spot, c;
 	ipfilter_t adr;
 	use_t use;
+	extern sv_hashpasswords;
 
 	if (Cmd_Argc() < 2)
 	{
@@ -262,9 +264,11 @@ void SV_CreateAccount_f(void)
 	num_accounts++;
 	strlcpy(accounts[spot].login, Cmd_Argv(1), MAX_LOGINNAME);
 	if (Cmd_Argc() == 3)
-		strlcpy(accounts[spot].pass, Cmd_Argv(2), MAX_LOGINNAME);
+		i = 2;
 	else
-		strlcpy(accounts[spot].pass, Cmd_Argv(1), MAX_LOGINNAME);
+		i = 1;
+	strlcpy(accounts[spot].pass, sv_hashpasswords.value ?
+		SHA1(Cmd_Argv(i), strlen(Cmd_Argv(i))) : Cmd_Argv(i), MAX_LOGINNAME);
 
 	accounts[spot].state = a_ok;
 	accounts[spot].use = use;
@@ -426,7 +430,8 @@ values <= 0 indicates a failure
 int checklogin(char *log, char *pass, int num, int use)
 {
 	int i,c;
-
+	extern sv_hashpasswords;
+	
 	for (i = 0, c = 0; c < num_accounts; i++)
 	{
 		if (accounts[i].state == a_free)
@@ -441,7 +446,10 @@ int checklogin(char *log, char *pass, int num, int use)
 			if (accounts[i].state == a_blocked)
 				return -2;
 
-			if (use == use_ip || !strcasecmp(pass, accounts[i].pass)) {
+			if (use == use_ip ||
+			(!sv_hashpasswords.value && !strcasecmp(pass, accounts[i].pass)) ||
+			( sv_hashpasswords.value && !strcasecmp(SHA1(pass, strlen(pass)),
+								accounts[i].pass))) {
 				accounts[i].failures = 0;
 				accounts[i].inuse++;
 				return i+1;
