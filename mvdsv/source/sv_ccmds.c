@@ -545,6 +545,7 @@ void SV_ListFiles_f (void)
 
 	if (	!strncmp(dirname, "../", 3) || strstr(dirname, "/../") || *dirname == '/'
 	||	( (i = strlen(dirname)) < 3 ? 0 : !strncmp(dirname + i - 3, "/..", 4) )
+	||	!strncmp(dirname, "..", 3)
 #ifdef _WIN32
 	||	( dirname[1] == ':' && (*dirname >= 'a' && *dirname <= 'z' ||
 					*dirname >= 'A' && *dirname <= 'Z')
@@ -1252,7 +1253,7 @@ void SV_Check_maps_f(void)
 
 	SV_Check_ktpro();
 
-	d = Sys_listdir("id1/maps", ".bsp", SORT_BY_NAME);
+	d = Sys_listdir("id1/maps", ".bsp$", SORT_BY_NAME);
 	list = d.files;
 	for (i = LOCALINFO_MAPS_LIST_START; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++)
 	{
@@ -1275,7 +1276,7 @@ void SV_Check_maps_f(void)
 	}
 	maps_id1 = i - 1;
 
-	d = Sys_listdir("qw/maps", ".bsp", SORT_BY_NAME);
+	d = Sys_listdir("qw/maps", ".bsp$", SORT_BY_NAME);
 	list = d.files;
 	for (; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++)
 	{

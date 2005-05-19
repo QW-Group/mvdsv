@@ -47,6 +47,7 @@ cvar_t			sv_demoSuffix = {"sv_demoSuffix", ""};
 cvar_t			sv_onrecordfinish = {"sv_onRecordFinish", ""};
 cvar_t			sv_ondemoremove = {"sv_onDemoRemove", ""};
 cvar_t			sv_demotxt = {"sv_demotxt", "1"};
+cvar_t			sv_demoRegexp = {"sv_demoRegexp", "\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
 void SV_WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
 size_t (*dwrite) ( const void *buffer, size_t size, size_t count, void *stream);
@@ -577,6 +578,7 @@ void Demo_Init (void)
 	Cvar_RegisterVariable (&sv_ondemoremove);
 	Cvar_RegisterVariable (&sv_demotxt);
 	Cvar_RegisterVariable (&sv_demoExtraNames);
+	Cvar_RegisterVariable (&sv_demoRegexp);
 
 
 	p = COM_CheckParm ("-democache");
@@ -1539,11 +1541,11 @@ void SV_DemoList_f (void)
 	dir_t	dir;
 	file_t	*list;
 	float	f;
-	int		i,j,show;
+	int		i,j;
 
-	Con_Printf("content of %s/%s/*.mvd[.gz]\n", com_gamedir, sv_demoDir.string);
-	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string),
-			   ".mvd", ".mvd.gz", SORT_BY_DATE);
+	Con_Printf("content of %s/%s/%s\n", com_gamedir, sv_demoDir.string, sv_demoRegexp.string);
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+			   sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])
 		Con_Printf("no demos\n");
@@ -1553,9 +1555,7 @@ void SV_DemoList_f (void)
 		for (j = 1; j < Cmd_Argc(); j++)
 			if (strstr(list->name, Cmd_Argv(j)) == NULL)
 				break;
-		show = Cmd_Argc() == j;
-
-		if (show) {
+		if (Cmd_Argc() == j) {
 			if (sv.demorecording && !strcmp(list->name, demo.name))
 				Con_Printf("*%d: %s %dk\n", i, list->name, demo.size/1024);
 			else
@@ -1583,7 +1583,9 @@ char *SV_DemoNum(int num)
 	if (num == 0)
 		return NULL;
 
-	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+			   sv_demoRegexp.string, SORT_BY_DATE);
+
 	if (num > dir.numfiles || -num > dir.numfiles)
 		return NULL;
 
@@ -1661,7 +1663,9 @@ void SV_DemoRemove_f (void)
 		// remove all demos with specified token
 		ptr++;
 
-		dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
+		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+				   sv_demoRegexp.string, SORT_BY_DATE);
+
 		list = dir.files;
 		for (i = 0;list->name[0]; list++)
 		{
@@ -1911,7 +1915,8 @@ void SV_LastScores_f (void)
 	if (sv.demorecording && demos > MAXDEMOS)
 		Con_Printf("<numlastdemos> was decreased to %i: demo recording in progress.\n", demos = MAXDEMOS);
 
-	dir = Sys_listdir2(va("%s/%s", com_gamedir, sv_demoDir.string), ".mvd", ".mvd.gz", SORT_BY_DATE);
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+			   sv_demoRegexp.string, SORT_BY_DATE);
 
 	if (!dir.numfiles)
 	{

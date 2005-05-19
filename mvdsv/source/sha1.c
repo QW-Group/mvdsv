@@ -159,3 +159,25 @@ char *SHA1(char *string, int len)
 		snprintf(ret + i, DIGEST_SIZE * 2 + 1 - i, "%02X", *d);
 	return ret;
 }
+
+SHA1_CTX	context;
+void SHA1_Init(void)
+{
+	SHA1Init(&context);
+}
+void SHA1_Update(unsigned char *string)
+{
+	SHA1Update(&context, string, strlen(string));
+}
+char *SHA1_Final(void)
+{
+	unsigned char	digest[DIGEST_SIZE];
+	static char	ret[DIGEST_SIZE * 2 + 1];
+	unsigned char	*d = digest;
+	int		i;
+
+	SHA1Final(digest, &context);
+	for (i = 0; i < DIGEST_SIZE * 2; i += 2, d++)
+		snprintf(ret + i, DIGEST_SIZE * 2 + 1 - i, "%02X", *d);
+	return ret;
+}

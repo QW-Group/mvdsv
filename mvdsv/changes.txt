@@ -1,6 +1,16 @@
 ----
-MVDSV v0.179 build 1959 (2005.05.03)
+MVDSV v0.179 build 1976 (2005.05.19)
 [server]
+- build: define REGEX, for use external regex lib
+  (for example: FreeBSD have regex functions in libc)
+  else used integrated part of PCRE 5.0 library - http://www.pcre.org/
+(Thanks to BorisU)
+- new cvar sv_demoRegexp - all files meet the conditions regexp accepted as demos (for listing)
+  default: "\.mvd(\.(gz|bz2|rar|zip))?$"
+- give back from EXPEREMENTAL changes in 0.178b:
+  'added drop client if no empty slots after "server is full" message (EXPERIMENTAL)'
+- ATTENTION: default value of sv_crypt_rcon now is 1;
+  use clients with rcon password ecryption support (ezQauke, qwdplayer) or set to 0 in server.cfg
 - added support of halflife maps - BSP version 30 (from ezQuake)
 - new 'cmd maps' - show maps list from localinfo 1000 - 1999
   (supported only by ktpro 1.63 build 42795 and newer)
@@ -51,6 +61,8 @@ MVDSV v0.178 Beta DEVELOP build 1897 (2005.03.01)
     sv_progsname
     sv_enableprofile
     command mod
+-progtype 0|1|2 - dat|native|qvm
+sv_progtype тоже самое
 (Thanks to SD-Angel, Disconnect)
 - new cvar pm_spawnjumpfix 0/1 - don't jump if used jump button for respawn
     0 - don't fix

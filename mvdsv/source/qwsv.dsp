@@ -88,6 +88,18 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
+# Begin Group "pcre.c"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\pcre\chartables.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\pcre\pcre.c
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=.\cmd.c
@@ -236,6 +248,22 @@ SOURCE=.\zone.c
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl;fi;fd"
+# Begin Group "pcre.h"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\pcre\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\pcre\internal.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\pcre\pcre.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE="C:\Program Files\Microsoft Visual Studio\VC98\Include\BASETSD.H"

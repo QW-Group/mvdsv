@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // returns the file size
 // return -1 if file is not present
 // the file should be in BINARY mode for stupid OSs that care
-#define MAX_DIRFILES 1000
+#define MAX_DIRFILES 4096
 #define MAX_DEMO_NAME 64
 
 typedef struct
@@ -61,7 +61,6 @@ void Sys_mkdir (char *path);
 int Sys_rmdir (char *path);
 int Sys_remove (char *path);
 dir_t Sys_listdir (char *path, char *ext, int sort_type);
-dir_t Sys_listdir2(char *path, char *ext1, char *ext2, int sort_type);
 int Sys_compare_by_date(const void *a, const void *b);
 int Sys_compare_by_name(const void *a, const void *b);
 #define SORT_NO			0

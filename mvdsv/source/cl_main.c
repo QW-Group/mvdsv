@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 cvar_t	rcon_password = {"rcon_password", ""};
 cvar_t	rcon_address = {"rcon_address", ""};
-cvar_t	cl_crypt_rcon = {"cl_crypt_rcon", "0"};
+cvar_t	cl_crypt_rcon = {"cl_crypt_rcon", "1"};
 
 cvar_t	cl_timeout = {"cl_timeout", "60"};
 

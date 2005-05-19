@@ -30,6 +30,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 #include <sys/time.h>
 #include <errno.h>
+
+#ifdef REGEX
+#include <regex.h>
+#else
+#include "pcre/pcre.h"
+#endif
+
 #else
 #include <sys/dir.h>
 #endif
@@ -144,41 +151,83 @@ Sys_listdir
 
 dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
-	return Sys_listdir2 (path, ext, ext, sort_type);
-}
-dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
-{
 	static file_t list[MAX_DIRFILES];
 	dir_t	dir;
-	int	i, extsize1, extsize2;
 	char	pathname[MAX_OSPATH];
 	DIR	*d;
 	DIR	*testdir; //bliP: list dir
 	struct dirent *oneentry;
 	qboolean all;
 
+	int	r;
+#ifdef REGEX
+	regex_t	preg;
+	char	errbuf[64];
+#else
+	pcre	*preg;
+	const char	*errbuf;
+#endif
+
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
 	dir.files = list;
-	extsize1 = strlen(ext1);
-	extsize2 = strlen(ext2);
-	all = !strncmp(ext1, ".*", 3) || !strncmp(ext2, ".*", 3);
+	all = !strncmp(ext, ".*", 3);
+	if (!all)
+#ifdef REGEX
+		if (r = regcomp(&preg, ext, REG_EXTENDED | REG_ICASE))
+		{
+			regerror(r, &preg, errbuf, sizeof(errbuf));
+			Con_Printf("Sys_listdir: regcomp(%s) error: %s\n", ext, errbuf);
+			return dir;
+		}
+#else
+		if (!(preg = pcre_compile(ext, PCRE_CASELESS, &errbuf, &r, NULL)))
+		{
+			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
+					ext, errbuf, r);
+			Q_Free(preg);
+			return dir;
+		}
+#endif
 
 	if (!(d = opendir(path)))
+	{
+#ifndef REGEX
+		Q_Free(preg);
+#endif
 		return dir;
+	}
 	while ((oneentry = readdir(d)))
 	{
-		if (!strcmp(oneentry->d_name, ".") || !strcmp(oneentry->d_name, ".."))
+		if (!strncmp(oneentry->d_name, ".", 2) || !strncmp(oneentry->d_name, "..", 3))
 			continue;
-		if (( (i = strlen(oneentry->d_name)) < extsize1 ?
-		      1 : strcasecmp(oneentry->d_name + i - extsize1, ext1)
-		    ) &&
-		    ( (i = strlen(oneentry->d_name)) < extsize2 ?
-		      1 : strcasecmp(oneentry->d_name + i - extsize2, ext2)
-		    ) && !all
-		   )
-				continue;
-
+		if (!all)
+		{
+#ifdef REGEX
+			switch (r = regexec(&preg, oneentry->d_name, 0, NULL, 0))
+			{
+				case 0: break;
+				case REG_NOMATCH: continue;
+				default:
+					regerror(r, &preg, errbuf, sizeof(errbuf));
+					Con_Printf("Sys_listdir: regexec(%s, %s) error: %s\n",
+							ext, oneentry->d_name, errbuf);
+					return dir;
+			}
+#else
+			switch (r = pcre_exec(preg, NULL, oneentry->d_name,
+						strlen(oneentry->d_name), 0, 0, NULL, 0))
+			{
+				case 0: break;
+				case PCRE_ERROR_NOMATCH: continue;
+				default:
+					Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
+							ext, oneentry->d_name, r);
+					Q_Free(preg);
+					return dir;
+			}
+#endif
+		}
 		snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
 		if ((testdir = opendir(pathname)))
 		{
@@ -199,8 +248,11 @@ dir_t Sys_listdir2 (char *path, char *ext1, char *ext2, int sort_type)
 		if (++dir.numfiles == MAX_DIRFILES - 1)
 			break;
 	}
-
 	closedir(d);
+#ifndef REGEX
+	Q_Free(preg);
+#endif
+
 	switch (sort_type)
 	{
 		case SORT_NO: break;

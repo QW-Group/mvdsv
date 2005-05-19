@@ -19,7 +19,7 @@ SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 CC=gcc
-BASE_CFLAGS=-Wall -pipe -DUSE_PR2
+BASE_CFLAGS=-Wall -pipe -DUSE_PR2 -DREGEX
 #DEBUG_CFLAGS=$(BASE_CFLAGS) -g
 RELEASE_CFLAGS=$(BASE_CFLAGS) -O9 -ffast-math -funroll-loops \
 	-fomit-frame-pointer -fexpensive-optimizations
@@ -90,7 +90,10 @@ SV_OBJS = \
 		$(SV_DIR)/sha1.o \
 		$(SV_DIR)/version.o \
 		$(SV_DIR)/world.o \
-		$(SV_DIR)/zone.o
+		$(SV_DIR)/zone.o \
+\
+		$(SV_DIR)/pcre/chartables.o \
+		$(SV_DIR)/pcre/pcre.o
 
 ifeq ($(USE_ASM),$(ASM))
 SV_AS_OBJS = \

@@ -72,7 +72,7 @@ cvar_t	not_auth_timeout = {"not_auth_timeout", "20"};
 cvar_t	auth_timeout = {"auth_timeout", "3600"};
 // the server will close the connection "n" seconds after the authentication is completed
 // If set to 0, no timeout will occur
-cvar_t	sv_crypt_rcon = {"sv_crypt_rcon", "0"}; // use SHA1 for encryption of rcon_password and using timestamps
+cvar_t	sv_crypt_rcon = {"sv_crypt_rcon", "1"}; // use SHA1 for encryption of rcon_password and using timestamps
 // Time in seconds during which in rcon command this encryption is valid (change only with master_rcon_password).
 cvar_t	sv_timestamplen = {"sv_timestamplen", "60"};
 cvar_t	sv_rconlim = {"sv_rconlim", "10"};	// rcon bandwith limit: requests per second
@@ -88,7 +88,8 @@ cvar_t	frag_log_type = {"frag_log_type", "0"};
 //		0 - old style (  qwsv - v0.165)
 //		1 - new style (v0.168 - v0.172)
 
-cvar_t	qconsole_log_say = {"qconsole_log_say", "0"};
+qboolean OnChange_qconsolelogsay_var (cvar_t *var, char *string);
+cvar_t	qconsole_log_say = {"qconsole_log_say", "0", 0, OnChange_qconsolelogsay_var};
 // logging "say" and "say_team" messages to the qconsole_PORT.log file
 
 cvar_t	sys_command_line = {"sys_command_line", NULL, CVAR_ROM};
@@ -913,7 +914,7 @@ void SVC_DirectConnect (void)
 			Netchan_OutOfBandPrint (net_serversocket, adr, "%c\nserver is full\n\n", A2C_PRINT);
 			userid--; //bliP: count users properly
 			newcl->rip_vip = 3; // added drop client after "server is full" message
-//			return;
+			return;
 		}
 	}
 
@@ -1097,8 +1098,8 @@ qboolean rcon_bandlim()
 //bliP: master rcon/logging ->
 int Rcon_Validate (char *client_string, char *password)
 {
-	char	*server_string, *sha1;
-	int		server_string_len, i;
+	char	*sha1;
+	int		i;
 	time_t	server_time, client_time = 0;
 	double	difftime_server_client;
 
@@ -1122,26 +1123,19 @@ int Rcon_Validate (char *client_string, char *password)
 		difftime_server_client = difftime(server_time, client_time);
 //		Sys_Printf("3) %f, %d, %d\n", difftime_server_client, client_time, server_time);
 
-		if ((difftime_server_client > sv_timestamplen.value ||
-		     difftime_server_client < -sv_timestamplen.value) &&
-		     !sv_timestamplen.value)
+		if (!sv_timestamplen.value)
+			if (difftime_server_client >  sv_timestamplen.value ||
+			    difftime_server_client < -sv_timestamplen.value)
 			return 0;
-		server_string_len = strlen(client_string) - strlen(Cmd_Argv(1)) + strlen(password) + 1 + 8;
-		server_string = Q_Malloc(server_string_len);
-		strlcpy(server_string, Cmd_Argv(0), server_string_len);
-		strlcat(server_string, " ", server_string_len);
-		strlcat(server_string, password, server_string_len);
-		strlcat(server_string, Cmd_Argv(1) + DIGEST_SIZE * 2, server_string_len);
-		strlcat(server_string, " ", server_string_len);
+		SHA1_Init();
+		SHA1_Update(va("%s %s%s ", Cmd_Argv(0), password, Cmd_Argv(1) + DIGEST_SIZE * 2));
 		for (i = 2; i < Cmd_Argc(); i++)
 		{
-			strlcat(server_string, Cmd_Argv(i), server_string_len);
-			strlcat(server_string, " ", server_string_len);
+			SHA1_Update(va("%s ", Cmd_Argv(i)));
 		}
-		sha1 = SHA1(server_string, server_string_len - 1);
+		sha1 = SHA1_Final();
 //Con_Printf("client_string = %s\nserver_string = %s\nsha1 = %s\n", client_string, server_string, sha1);
 //Con_Printf("server_string_len = %d, strlen(server_string) = %d\n", server_string_len, strlen(server_string));
-		Q_Free(server_string);
 		if (strncmp (Cmd_Argv(1), sha1, DIGEST_SIZE * 2))
 			return 0;
 	}
@@ -2852,6 +2846,11 @@ qboolean OnChange_telnetloglevel_var (cvar_t *var, char *value)
 	return false;	
 }
 //<-
+qboolean OnChange_qconsolelogsay_var (cvar_t *var, char *value)
+{
+	logs[CONSOLE_LOG].log_level = atoi(value);
+	return false;	
+}
 
 /*
 ====================
@@ -3037,6 +3036,7 @@ SV_Write_Log
 void SV_Write_Log(int sv_log, int level, char *msg)
 {
 	static date_t date;
+	char *log_msg, *error_msg;
 
 	if (!logs[sv_log].sv_logfile)
 		return;
@@ -3053,36 +3053,36 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 
 	if (sv_log == FRAG_LOG)
 	{
-		if (!fprintf(logs[sv_log].sv_logfile, "%s", msg))
-//bliP: Sys_Error to Con_DPrintf ->
-			Con_DPrintf("Can't write in %s log file: "/*%s/ */"%sN.log.\n",
-					/*com_gamedir,*/ logs[sv_log].message_on,
-					logs[sv_log].file_name);
-//<-
-		else
-			fflush(logs[sv_log].sv_logfile);
+		log_msg = msg;
+		error_msg = va("Can't write in %s log file: "/*%s/ */"%sN.log.\n",
+				/*com_gamedir,*/ logs[sv_log].message_on,
+				logs[sv_log].file_name);
 	}
 	else
 	{
-//bliP: logging
-		if (!fprintf(logs[sv_log].sv_logfile, "[%s].[%d] %s", date.str, level, msg))
-		{
-	//bliP: Sys_Error to Con_DPrintf, also, these logs aren't in com_gamedir ->
-			Con_DPrintf("Can't write in %s log file: "/*%s/ */"%s%i.log.\n",
-					/*com_gamedir,*/ logs[sv_log].message_on,
-					logs[sv_log].file_name, sv_port);
-	//<-
-		}
-		else
-		{
-			fflush(logs[sv_log].sv_logfile);
-			if (sv_maxlogsize.value &&
-			    (COM_FileLength(logs[sv_log].sv_logfile) > sv_maxlogsize.value))
-			{
-				SV_Logfile(sv_log, true);
-			}
-		}
+		log_msg = va("[%s].[%d] %s", date.str, level, msg);
+		error_msg = va("Can't write in %s log file: "/*%s/ */"%s%i.log.\n",
+				/*com_gamedir,*/ logs[sv_log].message_on,
+				logs[sv_log].file_name, sv_port);
+	}
+
+	if (!fprintf(logs[sv_log].sv_logfile, "%s", log_msg))
+	{
+//bliP: Sys_Error to Con_DPrintf, also, these logs aren't in com_gamedir ->
+//VVD: Con_DPrintf to Sys_Printf ->
+		Sys_Printf("%s", error_msg);
 //<-
+		fclose(logs[sv_log].sv_logfile);
+		logs[sv_log].sv_logfile = NULL;
+	}
+	else
+	{
+		fflush(logs[sv_log].sv_logfile);
+		if (sv_maxlogsize.value &&
+		    (COM_FileLength(logs[sv_log].sv_logfile) > sv_maxlogsize.value))
+		{
+			SV_Logfile(sv_log, true);
+		}
 	}
 }
 

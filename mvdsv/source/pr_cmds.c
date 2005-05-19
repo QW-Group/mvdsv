@@ -2233,7 +2233,8 @@ void PF_findmap (void)
   if (!strstr(map, ".bsp"))
     strlcat(map, ".bsp", sizeof(map));
 
-	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")), ".bsp", SORT_BY_NAME);
+	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")),
+				".bsp$", SORT_BY_NAME);
 	list = dir.files;
 
   i = 1;
@@ -2264,7 +2265,8 @@ void PF_findmapname (void)
 
 	id = G_FLOAT(OFS_PARM0);
 
-	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")), ".bsp", SORT_BY_NAME);
+	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")),
+				".bsp$", SORT_BY_NAME);
 	list = dir.files;
 
   i = 1;
@@ -2315,7 +2317,8 @@ void PF_listmaps (void)
 	}
 
 	client = &svs.clients[entnum-1];  
-  dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")), ".bsp", SORT_BY_NAME);
+	dir = Sys_listdir(va("%s/maps", Info_ValueForKey(svs.info, "*gamedir")),
+				".bsp$", SORT_BY_NAME);
 	list = dir.files;
   snprintf(tmp, sizeof(tmp), "%d", dir.numfiles);
   pad = strlen(tmp);

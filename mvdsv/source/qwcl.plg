@@ -6,114 +6,13 @@
 --------------------Configuration: qwcl - Win32 GLRelease--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "c:\Temp\RSP5F.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\GLRelease\sys_x86.spp .\sys_x86.s
-gas2masm < .\GLRelease\sys_x86.spp >.\GLRelease\sys_x86.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\sys_x86.obj /Zm /Zi             .\GLRelease\sys_x86.asm
-del .\GLRelease\sys_x86.spp
-]
-Creating command line "c:\Temp\RSP5F.bat"
-Creating temporary file "c:\Temp\RSP60.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\GLRelease\snd_mixa.spp .\snd_mixa.s
-gas2masm < .\GLRelease\snd_mixa.spp >.\GLRelease\snd_mixa.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\snd_mixa.obj /Zm /Zi             .\GLRelease\snd_mixa.asm
-del .\GLRelease\snd_mixa.spp
-]
-Creating command line "c:\Temp\RSP60.bat"
-Creating temporary file "c:\Temp\RSP61.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\GLRelease\math.spp .\math.s
-gas2masm < .\GLRelease\math.spp >.\GLRelease\math.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\math.obj /Zm /Zi             .\GLRelease\math.asm
-del .\GLRelease\math.spp
-]
-Creating command line "c:\Temp\RSP61.bat"
-Creating temporary file "c:\Temp\RSP62.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\GLRelease\cl_math.spp .\cl_math.s
-gas2masm < .\GLRelease\cl_math.spp >.\GLRelease\cl_math.asm
-ml /nologo /c /Cp /coff /Fo.\GLRelease\cl_math.obj /Zm /Zi             .\GLRelease\cl_math.asm
-del .\GLRelease\cl_math.spp
-]
-Creating command line "c:\Temp\RSP62.bat"
-Creating command line "rc.exe /l 0x409 /fo".\GLRelease/winquake.res" /d "NDEBUG" "H:\q\Projects\mvdsv\mvdsv_0.175\source\winquake.rc"" 
-Performing Custom Build Step on .\sys_x86.s
-sys_x86.s
- Assembling: .\GLRelease\sys_x86.asm
-Performing Custom Build Step on .\snd_mixa.s
-snd_mixa.s
- Assembling: .\GLRelease\snd_mixa.asm
-Performing Custom Build Step on .\math.s
-math.s
- Assembling: .\GLRelease\math.asm
-Performing Custom Build Step on .\cl_math.s
-cl_math.s
- Assembling: .\GLRelease\cl_math.asm
-Creating temporary file "c:\Temp\RSP63.tmp" with contents
+Creating temporary file "E:\Temp\RSP5B.tmp" with contents
 [
 /nologo /G6 /Zp4 /ML /W3 /GX /O1 /D "NDEBUG" /D "GLQUAKE" /D "id386" /Fp".\GLRelease/qwplayer.pch" /YX /Fo".\GLRelease/" /Fd".\GLRelease/" /FD /c 
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cd_win.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_cam.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_cmd.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_demo.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_ents.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_input.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_main.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_parse.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_pred.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_slist.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cl_tent.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cmd.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\common.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\console.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\crc.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\cvar.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_draw.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_mesh.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_model.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_ngraph.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_refrag.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_rlight.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_rmain.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_rmisc.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_rsurf.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_screen.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_test.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\gl_warp.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\in_win.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\keys.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\mathlib.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\mdfour.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\menu.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\net_chan.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\net_wins.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\nonintel.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\pmove.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\pmovetst.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\r_part.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\sbar.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\sha1.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\skin.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\snd_dma.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\snd_mem.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\snd_mix.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\snd_win.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\sys_win.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\teamplay.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\version.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\vid_wgl.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\view.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\wad.c"
-"H:\q\Projects\mvdsv\mvdsv_0.175\source\zone.c"
+"D:\Quake\Projects\mvdsv\mvdsv\source\cl_cmd.c"
 ]
-Creating command line "cl.exe @c:\Temp\RSP63.tmp" 
-Creating temporary file "c:\Temp\RSP64.tmp" with contents
+Creating command line "cl.exe @E:\Temp\RSP5B.tmp" 
+Creating temporary file "E:\Temp\RSP5C.tmp" with contents
 [
 comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /incremental:no /pdb:".\GLRelease/qwplayer-gl.pdb" /machine:I386 /out:"..\qwplayer-gl.exe" 
 .\GLRelease\cd_win.obj
@@ -175,63 +74,10 @@ comctl32.lib glu32.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.l
 .\GLRelease\snd_mixa.obj
 .\GLRelease\sys_x86.obj
 ]
-Creating command line "link.exe @c:\Temp\RSP64.tmp"
+Creating command line "link.exe @E:\Temp\RSP5C.tmp"
 <h3>Output Window</h3>
-Compiling resources...
 Compiling...
-cd_win.c
-cl_cam.c
 cl_cmd.c
-cl_demo.c
-cl_ents.c
-cl_input.c
-cl_main.c
-cl_parse.c
-cl_pred.c
-cl_slist.c
-cl_tent.c
-cmd.c
-common.c
-console.c
-crc.c
-cvar.c
-gl_draw.c
-gl_mesh.c
-gl_model.c
-gl_ngraph.c
-gl_refrag.c
-gl_rlight.c
-gl_rmain.c
-gl_rmisc.c
-gl_rsurf.c
-gl_screen.c
-gl_test.c
-gl_warp.c
-in_win.c
-keys.c
-mathlib.c
-mdfour.c
-menu.c
-net_chan.c
-net_wins.c
-nonintel.c
-pmove.c
-pmovetst.c
-r_part.c
-sbar.c
-sha1.c
-skin.c
-snd_dma.c
-snd_mem.c
-snd_mix.c
-snd_win.c
-sys_win.c
-teamplay.c
-version.c
-vid_wgl.c
-view.c
-wad.c
-zone.c
 Linking...
 
 
