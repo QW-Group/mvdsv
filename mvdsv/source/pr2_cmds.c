@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.3 2005/03/01 18:20:51 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.4 2005/05/20 17:15:30 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -32,8 +32,8 @@
 #include <sys/stat.h>
 #endif
 
-char *pr2_ent_data_ptr;
-vm_t* sv_vm = NULL;
+char	*pr2_ent_data_ptr;
+vm_t	*sv_vm = NULL;
 
 
 int PASSFLOAT(float x)
@@ -101,7 +101,9 @@ void PF2_conprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 
 void PF2_Error(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	SV_Error(VM_POINTER(base,mask,stack->string));
+	if (sv_vm->type == VM_BYTECODE)
+		QVM_StackTrace(sv_vm->hInst);
+	SV_Error(VM_POINTER(base, mask, stack->string));
 }
 
 void PF2_Spawn(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
@@ -2053,6 +2055,257 @@ void PF2_strnicmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
   			  VM_POINTER(base,mask,stack[1].string),stack[2]._int);
 }
 
+/////////Bot Functions
+extern cvar_t maxclients, maxspectators;
+extern int userid;
+void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
+{
+	client_t *cl, *newcl = NULL;
+	char   *name = VM_POINTER( base, mask, stack[0].string );
+	int     bottomcolor = stack[1]._int;
+	int     topcolor = stack[2]._int;
+	char   *skin = VM_POINTER( base, mask, stack[3].string );
+	int     edictnum;
+	int     clients, spectators, i;
+	extern char *shortinfotbl[];
+	char   *s;
+	edict_t *ent;
+	eval_t *val;
+	string_t savenetname;
+	int old_self;
+
+
+
+	// count up the clients and spectators
+	clients = 0;
+	spectators = 0;
+	for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
+	{
+		if ( cl->state == cs_free )
+			continue;
+		if ( cl->spectator )
+			spectators++;
+		else
+			clients++;
+	}
+
+	// if at server limits, refuse connection
+	if ( maxclients.value > MAX_CLIENTS )
+		Cvar_SetValue( &maxclients, MAX_CLIENTS );
+	if ( maxspectators.value > MAX_CLIENTS )
+		Cvar_SetValue( &maxspectators, MAX_CLIENTS );
+	if ( maxspectators.value + maxclients.value > MAX_CLIENTS )
+		Cvar_SetValue( &maxspectators, MAX_CLIENTS - maxspectators.value + maxclients.value );
+
+	if ( clients >= ( int ) maxclients.value )
+	{
+		retval->_int = 0;
+		return;
+	}
+	for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
+	{
+		if ( cl->state == cs_free )
+		{
+			newcl = cl;
+			break;
+		}
+	}
+	if ( !newcl )
+	{
+		retval->_int = 0;
+		return;
+	}
+	Q_snprintfz( newcl->userinfo, sizeof( newcl->userinfo ),
+		     "\\name\\%s\\topcolor\\%d\\bottomcolor\\%d\\emodel\\6967\\pmodel\\13845\\skin\\%s\\*bot\\1",
+		     name, topcolor, bottomcolor, skin );
+
+	newcl->state = cs_spawned;
+	newcl->userid = ++userid;
+	newcl->datagram.allowoverflow = true;
+	newcl->datagram.data = newcl->datagram_buf;
+	newcl->datagram.maxsize = sizeof( newcl->datagram_buf );
+	newcl->spectator = 0;
+	newcl->isBot = 1;
+
+
+	edictnum = ( newcl - svs.clients ) + 1;
+	ent = EDICT_NUM( edictnum );
+	savenetname = ent->v.netname;
+
+	memset( &ent->v, 0, pr_edict_size - sizeof( edict_t ) + sizeof( entvars_t ) );
+	ent->v.netname = savenetname;
+	newcl->entgravity = 1.0;
+	val = PR2_GetEdictFieldValue( ent, "gravity" );
+	if ( val )
+		val->_float = 1.0;
+	host_client->maxspeed = sv_maxspeed.value;
+	val = PR2_GetEdictFieldValue( ent, "maxspeed" );
+	if ( val )
+		val->_float = sv_maxspeed.value;
+
+
+	newcl->edict = ent;
+	ent->v.colormap = edictnum;
+	val = PR2_GetEdictFieldValue( ent, "isBot" );
+	if( val )
+	       val->_int = 1;
+
+	newcl->name = PR2_GetString( ent->v.netname );
+	memset( newcl->stats, 0, sizeof( host_client->stats ) );
+	SZ_Clear( &newcl->netchan.message );
+	newcl->netchan.drop_count = 0;
+	newcl->netchan.incoming_sequence = 1;
+
+	SV_ExtractFromUserinfo( newcl, true );
+
+	for ( i = 0; shortinfotbl[i] != NULL; i++ )
+	{
+		s = Info_ValueForKey( newcl->userinfo, shortinfotbl[i] );
+		Info_SetValueForStarKey( newcl->userinfoshort, shortinfotbl[i], s, MAX_INFO_STRING );
+	}
+	// move star keys to infoshort
+	Info_CopyStarKeys( newcl->userinfo, newcl->userinfoshort );
+
+	newcl->disable_updates_stop = -1.0;	// Vladis
+
+
+	SV_FullClientUpdate( newcl, &sv.reliable_datagram );
+	retval->_int = edictnum;
+
+
+	old_self = pr_global_struct->self;
+	pr_global_struct->time = sv.time;
+	pr_global_struct->self = EDICT_TO_PROG(newcl->edict);
+
+	PR2_GameClientConnect(0);
+	PR2_GamePutClientInServer(0);
+
+	pr_global_struct->self = old_self;
+
+}
+
+void RemoveBot(client_t *cl)
+{
+
+        if( !cl->isBot )
+                return;
+
+        pr_global_struct->self = EDICT_TO_PROG(cl->edict);
+       	if ( sv_vm )
+       		PR2_GameClientDisconnect(0);
+
+	cl->old_frags = 0;
+	cl->edict->v.frags = 0;
+	cl->name[0] = 0;
+	cl->state = cs_free;
+	memset( cl->userinfo, 0, sizeof( cl->userinfo ) );
+	memset( cl->userinfoshort, 0, sizeof( cl->userinfoshort ) );
+	SV_FullClientUpdate( cl, &sv.reliable_datagram );
+	cl->isBot = 0;
+
+
+}
+
+void PF2_Remove_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
+{
+	client_t *cl;
+    int old_self;
+	
+	int     entnum = stack[0]._int;
+
+	if ( entnum < 1 || entnum > MAX_CLIENTS )
+	{
+		Con_Printf( "tried to remove a non-botclient %d \n", entnum );
+		return;
+	}
+	cl = &svs.clients[entnum - 1];
+	if ( !cl->isBot )
+	{
+		Con_Printf( "tried to remove a non-botclient %d \n", entnum );
+		return;
+	}
+	old_self = pr_global_struct->self; //save self
+
+	pr_global_struct->self = entnum;
+	RemoveBot(cl);
+	pr_global_struct->self = old_self;
+
+}
+
+void PF2_SetBotUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
+{
+	client_t *cl;
+	int     entnum = stack[0]._int;
+	char   *key = VM_POINTER( base, mask, stack[1].string );
+	char   *value = VM_POINTER( base, mask, stack[2].string );
+	int     i;
+	extern char *shortinfotbl[];
+
+	if ( entnum < 1 || entnum > MAX_CLIENTS )
+	{
+		Con_Printf( "tried to change userinfo a non-botclient %d \n", entnum );
+		return;
+	}
+	cl = &svs.clients[entnum - 1];
+	if ( !cl->isBot )
+	{
+		Con_Printf( "tried to change userinfo a non-botclient %d \n", entnum );
+		return;
+	}
+	Info_SetValueForKey( cl->userinfo, key, value, MAX_INFO_STRING );
+	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
+
+	for ( i = 0; shortinfotbl[i] != NULL; i++ )
+		if ( key[0] == '_' || !strcmp( key, shortinfotbl[i] ) )
+		{
+			char   *new = Info_ValueForKey( cl->userinfo, key );
+
+			Info_SetValueForKey( cl->userinfoshort, key, new, MAX_INFO_STRING );
+
+			i = cl - svs.clients;
+			MSG_WriteByte( &sv.reliable_datagram, svc_setinfo );
+			MSG_WriteByte( &sv.reliable_datagram, i );
+			MSG_WriteString( &sv.reliable_datagram, key );
+			MSG_WriteString( &sv.reliable_datagram, new );
+			break;
+		}
+
+
+}
+
+void PF2_SetBotCMD( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
+{
+	client_t *cl;
+	int     entnum = stack[0]._int;
+
+	if ( entnum < 1 || entnum > MAX_CLIENTS )
+	{
+		Con_Printf( "tried to set cmd a non-botclient %d \n", entnum );
+		return;
+	}
+	cl = &svs.clients[entnum - 1];
+	if ( !cl->isBot )
+	{
+		Con_Printf( "tried to set cmd a non-botclient %d \n", entnum );
+		return;
+	}
+	cl->botcmd.msec = stack[1]._int;
+	cl->botcmd.angles[0] = stack[2]._float;
+	cl->botcmd.angles[1] = stack[3]._float;
+	cl->botcmd.angles[2] = stack[4]._float;
+	cl->botcmd.forwardmove = stack[5]._int;
+	cl->botcmd.sidemove = stack[6]._int;
+	cl->botcmd.upmove = stack[7]._int;
+	cl->botcmd.buttons = stack[8]._int;
+	cl->botcmd.impulse = stack[9]._int;
+	if ( cl->edict->v.fixangle)
+	{
+	     VectorCopy(cl->edict->v.angles, cl->botcmd.angles);
+	     cl->botcmd.angles[PITCH] *= -3;
+	     cl->edict->v.fixangle = 0;
+	}
+}
+
 //===========================================================================
 // SysCalls
 //===========================================================================
@@ -2140,7 +2393,11 @@ pr2_trapcall_t pr2_API[]=
 	PF2_executecmd,
 	PF2_conprint,
 	PF2_readcmd,
-	PF2_redirectcmd
+	PF2_redirectcmd,
+	PF2_Add_Bot,
+	PF2_Remove_Bot,
+	PF2_SetBotUserInfo,
+	PF2_SetBotCMD
 };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 

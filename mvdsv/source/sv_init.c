@@ -511,8 +511,19 @@ void SV_SpawnServer (char *server)
         memset(savenames, 0, sizeof(savenames));
        	for (i = 0; i < MAX_CLIENTS; i++)
         {
-            if (svs.clients[i].name)
-            	strlcpy(savenames[i], svs.clients[i].name, CLIENT_NAME_LEN);
+		if( sv_vm && svs.clients[i].isBot ) // remove bot clients
+		{
+			svs.clients[i].old_frags = 0;
+			svs.clients[i].edict->v.frags = 0;
+			svs.clients[i].name[0] = 0;
+			svs.clients[i].state = cs_free;
+			memset(svs.clients[i].userinfo, 0, sizeof(svs.clients[i].userinfo));
+			memset(svs.clients[i].userinfoshort, 0, sizeof(svs.clients[i].userinfoshort));
+			SV_FullClientUpdate(&svs.clients[i], &sv.reliable_datagram);
+			svs.clients[i].isBot = 0;
+		}
+		if (svs.clients[i].name)
+			strlcpy(savenames[i], svs.clients[i].name, CLIENT_NAME_LEN);
         }
         if ( sv_vm )
         	PR2_GameShutDown();

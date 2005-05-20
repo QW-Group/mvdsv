@@ -292,6 +292,9 @@ or unwillingly.  This is NOT called if the entire server is quiting
 or crashing.
 =====================
 */
+#ifdef USE_PR2
+void RemoveBot(client_t *cl);
+#endif
 void SV_DropClient (client_t *drop)
 {
 //bliP: cuff, mute ->
@@ -305,6 +308,13 @@ void SV_DropClient (client_t *drop)
 //<-
 
 	// add the disconnect
+#ifdef USE_PR2
+	if( drop->isBot )
+	{
+		RemoveBot(drop);
+		return;  
+	}
+#endif
 	MSG_WriteByte (&drop->netchan.message, svc_disconnect);
 
 	if (drop->state == cs_spawned) {
@@ -389,6 +399,10 @@ int SV_CalcPing (client_t *cl)
 
 	ping = 0;
 	count = 0;
+#ifdef USE_PR2
+	if( cl->isBot )
+		return sv_mintic.value * 1000;
+#endif
 	for (frame = cl->frames, i=0 ; i<UPDATE_BACKUP ; i++, frame++)
 	{
 		if (frame->ping_time > 0)
@@ -701,11 +715,14 @@ int SV_VIPbyPass (char *pass);
 
 #ifdef USE_PR2
 extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
+int	userid;
 #endif
 void SVC_DirectConnect (void)
 {
 	char		userinfo[1024];
+#ifndef USE_PR2
 	static		int	userid;
+#endif
 	netadr_t	adr;
 	int			i;
 	client_t	*cl, *newcl;
@@ -1229,6 +1246,10 @@ void SVC_RemoteCommand (char *client_string)
 	{
 		if (cl->state == cs_free)
 			continue;
+#ifdef USE_PR2
+			if (cl->isBot)
+				continue;
+#endif
 		if (!NET_CompareBaseAdr(net_from, cl->netchan.remote_address))
 			continue;
 		if (cl->netchan.remote_address.port != net_from.port)
@@ -2127,6 +2148,10 @@ void SV_CheckTimeouts (void)
 
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
+#ifdef USE_PR2
+		if( cl->isBot ) 
+			continue;
+#endif
 		if (cl->state >= cs_preconnected /*|| cl->state == cs_spawned*/) {
 			if (!cl->spectator)
 				nclients++;

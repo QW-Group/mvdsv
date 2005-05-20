@@ -1,6 +1,8 @@
 ----
 MVDSV v0.179 Beta DEVELOP build 1979 (2005.05.22)
 [server]
+- qvm engine updated to version 7
+(Thanks to SD-Angel)
 - key *qvm was moved from serverinfo to localinfo
 - keep hashed passwords in the 'accounts' file (RFE #1198101)
 (by hdworak)

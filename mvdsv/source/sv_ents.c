@@ -396,6 +396,10 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 			VectorCopy(ent->v.origin, dcl->info.origin);
 			VectorCopy(ent->v.angles, dcl->info.angles);
 			dcl->info.angles[0] *= -3;
+#ifdef USE_PR2
+			if( cl->isBot )
+				VectorCopy(ent->v.v_angle, dcl->info.angles);
+#endif
 			dcl->info.angles[2] = 0; // no roll angle
 
 			if (ent->v.health <= 0)
