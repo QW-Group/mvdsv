@@ -957,11 +957,20 @@ SV_Physics
 
 ================
 */
+#ifdef USE_PR2
+void SV_PreRunCmd(void);
+void SV_RunCmd(usercmd_t *ucmd);
+void SV_PostRunCmd(void);
+#endif
 void SV_Physics (void)
 {
 	int		i;
 	edict_t	*ent;
 	static double	old_time;
+#ifdef USE_PR2
+	client_t *cl,*savehc;
+	edict_t	*savesvpl;
+#endif
 
 // don't bother running a frame if sys_ticrate seconds haven't passed
 
@@ -1016,6 +1025,35 @@ void SV_Physics (void)
 	
 	if (pr_global_struct->force_retouch)
 		pr_global_struct->force_retouch--;	
+
+#ifdef USE_PR2
+        savesvpl = sv_player;
+        savehc = host_client;
+        for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
+        {
+		if ( cl->state == cs_free )
+			continue;
+		if ( !cl->isBot )
+		       continue;
+
+                host_client = cl;
+                sv_player = cl->edict;
+
+		SV_PreRunCmd();
+		SV_RunCmd (&cl->botcmd);
+		SV_PostRunCmd();
+
+		cl->lastcmd = cl->botcmd;
+		cl->lastcmd.buttons = 0; 
+
+		memset(&cl->botcmd,0,sizeof(cl->botcmd));
+
+         	cl->localtime = sv.time;
+        	cl->delta_sequence = -1;	// no delta unless requested
+        }
+        sv_player = savesvpl;
+        host_client = savehc;
+#endif
 }
 
 void SV_SetMoveVars(void)

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.h,v 1.2 2005/02/21 15:19:11 vvd0 Exp $
+ *  $Id: pr2_vm.h,v 1.3 2005/05/20 17:15:30 vvd0 Exp $
  */
 
 #ifndef __PR2_VM_H__
@@ -39,7 +39,7 @@
 #define MAX_vmMain_Call  100
 #define MAX_CYCLES	 100000
 
-#define VM_POINTER(base,mask,x)	 ((x)?(void*)((char *)base+((x)&mask)):NULL)
+##define VM_POINTER(base,mask,x)	 ((void*)((char *)base+((x)&mask)))
 #define POINTER_TO_VM(base,mask,x)	 ((x)?(int)((char *)(x) - (char*)base)&mask:0)
 
 

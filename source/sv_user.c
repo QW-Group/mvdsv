@@ -1713,6 +1713,17 @@ void SV_SetInfo_f (void)
 
 	strlcpy(oldval, Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)), MAX_INFO_STRING);
 
+#ifdef USE_PR2
+        if(sv_vm)
+        {
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+
+		if( PR2_UserInfoChanged() )
+			return;
+        }
+#endif
+
 	Info_SetValueForKey (host_client->userinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_INFO_STRING);
 // name is extracted below in ExtractFromUserInfo
 //	strlcpy (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
@@ -1757,17 +1768,6 @@ void SV_SetInfo_f (void)
 		}
 	}
 //<-
-
-#ifdef USE_PR2
-        if(sv_vm)
-        {
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = EDICT_TO_PROG(sv_player);
-
-		if( PR2_UserInfoChanged() )
-			return;
-        }
-#endif
 
 	// process any changed values
 	SV_ExtractFromUserinfo (host_client, !strcmp(Cmd_Argv(1), "name"));

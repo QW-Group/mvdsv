@@ -937,6 +937,15 @@ void SV_SendClientMessages (void)
 			}
 		}
 
+#ifdef USE_PR2
+                if(c->isBot)
+                {
+			SZ_Clear (&c->netchan.message);
+			SZ_Clear (&c->datagram);
+			c->num_backbuf = 0;
+			continue;
+                }
+#endif
 		// if the reliable message overflowed,
 		// drop the client
 		if (c->netchan.message.overflowed)
