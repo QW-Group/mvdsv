@@ -285,6 +285,7 @@ void DemoWrite_Begin(byte type, int to, int size)
 Q_fwrite
 ====================
 */
+void SV_Cancel_f(void);
 Q_fwrite ( const void *buffer, size_t size, size_t count, void *stream)
 {
 	int processed = fwrite(buffer, size, count, stream);

@@ -564,7 +564,7 @@ void SV_SpawnServer (char *server)
 	// and allocate edicts
 #ifdef USE_PR2
 	sv.time = 1.0;
-	sv_vm = VM_Load(sv_vm, sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex); 
+	sv_vm = VM_Load(sv_vm, sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
 	if ( sv_vm )
 		PR2_InitProg();
 	else

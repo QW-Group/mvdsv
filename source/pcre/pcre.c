@@ -5774,8 +5774,8 @@ while ((t = *data++) != XCL_END)
 
 return negated;   /* char did not match */
 }
-#endif
 #endif // } commented by VVD
+#endif
 
 
 /***************************************************************************

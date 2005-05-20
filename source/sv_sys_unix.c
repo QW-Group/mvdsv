@@ -178,6 +178,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		{
 			regerror(r, &preg, errbuf, sizeof(errbuf));
 			Con_Printf("Sys_listdir: regcomp(%s) error: %s\n", ext, errbuf);
+			regfree(&preg);
 			return dir;
 		}
 #else
@@ -192,7 +193,9 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 
 	if (!(d = opendir(path)))
 	{
-#ifndef REGEX
+#ifdef REGEX
+		regfree(&preg);
+#else
 		Q_Free(preg);
 #endif
 		return dir;
@@ -212,6 +215,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 					regerror(r, &preg, errbuf, sizeof(errbuf));
 					Con_Printf("Sys_listdir: regexec(%s, %s) error: %s\n",
 							ext, oneentry->d_name, errbuf);
+					regfree(&preg);
 					return dir;
 			}
 #else
@@ -249,7 +253,9 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 			break;
 	}
 	closedir(d);
-#ifndef REGEX
+#ifdef REGEX
+	regfree(&preg);
+#else
 	Q_Free(preg);
 #endif
 

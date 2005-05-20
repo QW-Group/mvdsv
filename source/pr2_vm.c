@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.2 2005/02/21 15:19:11 vvd0 Exp $
+ *  $Id: pr2_vm.c,v 1.3 2005/05/20 14:57:53 vvd0 Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -194,7 +194,8 @@ qboolean VM_LoadNative( vm_t * vm )
 	}
 	dllEntry( vm->syscall );
 
-	Info_SetValueForStarKey( svs.info, "*qvm", DLEXT, MAX_SERVERINFO_STRING );
+//	Info_SetValueForStarKey( svs.info, "*qvm", DLEXT, MAX_SERVERINFO_STRING );
+	Info_SetValueForStarKey( localinfo, "*qvm", DLEXT, MAX_LOCALINFO_STRING );
 	Info_SetValueForStarKey( svs.info, "*progs", DLEXT, MAX_SERVERINFO_STRING );
 	vm->type = VM_NATIVE;
 	return true;

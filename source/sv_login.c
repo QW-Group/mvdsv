@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ACC_DIR "users"
 
 cvar_t	sv_login = {"sv_login", "0"};	// if enabled, login required
+extern cvar_t sv_hashpasswords;
 
 typedef enum {a_free, a_ok, a_blocked} acc_state_t;
 typedef enum {use_log, use_ip} use_t;
@@ -199,7 +200,6 @@ void SV_CreateAccount_f(void)
 	int i, spot, c;
 	ipfilter_t adr;
 	use_t use;
-	extern sv_hashpasswords;
 
 	if (Cmd_Argc() < 2)
 	{
@@ -268,7 +268,7 @@ void SV_CreateAccount_f(void)
 	else
 		i = 1;
 	strlcpy(accounts[spot].pass, sv_hashpasswords.value ?
-		SHA1(Cmd_Argv(i), strlen(Cmd_Argv(i))) : Cmd_Argv(i), MAX_LOGINNAME);
+		SHA1(Cmd_Argv(i)) : Cmd_Argv(i), MAX_LOGINNAME);
 
 	accounts[spot].state = a_ok;
 	accounts[spot].use = use;
@@ -430,7 +430,6 @@ values <= 0 indicates a failure
 int checklogin(char *log, char *pass, int num, int use)
 {
 	int i,c;
-	extern sv_hashpasswords;
 	
 	for (i = 0, c = 0; c < num_accounts; i++)
 	{
@@ -447,9 +446,8 @@ int checklogin(char *log, char *pass, int num, int use)
 				return -2;
 
 			if (use == use_ip ||
-			(!sv_hashpasswords.value && !strcasecmp(pass, accounts[i].pass)) ||
-			( sv_hashpasswords.value && !strcasecmp(SHA1(pass, strlen(pass)),
-								accounts[i].pass))) {
+			(!sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
+			( sv_hashpasswords.value && !strcasecmp(SHA1(pass),	accounts[i].pass))) {
 				accounts[i].failures = 0;
 				accounts[i].inuse++;
 				return i+1;
