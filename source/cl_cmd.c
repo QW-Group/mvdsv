@@ -217,7 +217,7 @@ void CL_Packet_f (void)
 	}
 
 	if (adr.port == 0)
-		adr.port = BigShort (27500);
+		adr.port = BigShort (PORT_SERVER);
 
 	in = Cmd_Argv(2);
 	out = send+4;
@@ -266,12 +266,11 @@ void CL_Rcon_f (void)
 // Added by VVD {
 	if (cl_crypt_rcon.value)
 	{
-		SHA1_Init();
-
 		time(&client_time);
 		for (i = 0; i < sizeof(client_time); ++i)
 			snprintf(client_time_str + i * 2, 8 * 2 + 1 - i * 2, "%02X",
 				(client_time >> (i * 8)) & 0xFF);
+		SHA1_Init();
 		SHA1_Update(va("rcon %s%s ", rcon_password.string, client_time_str));
 		for (i = 1; i < Cmd_Argc(); i++)
 			SHA1_Update(va("%s ", Cmd_Argv(i)));
@@ -288,6 +287,7 @@ void CL_Rcon_f (void)
 		strlcat (message, " ", sizeof(message));
 	}
 // } Added by VVD
+
 	if (cls.state >= ca_connected)
 		to = cls.netchan.remote_address;
 	else
@@ -301,7 +301,7 @@ void CL_Rcon_f (void)
 		}
 		NET_StringToAdr (rcon_address.string, &to);
 		if (to.port == 0)
-			to.port = BigShort (27500);
+			to.port = BigShort (PORT_SERVER);
 	}
 	NET_SendPacket (net_clientsocket, strlen(message)+1, message, to);
 }
@@ -665,7 +665,7 @@ void Cmd_Ping_f (void)
 	}
 
 	if (adr.port == 0)
-		adr.port = BigShort (27500);
+		adr.port = BigShort (PORT_SERVER);
 
 
 	data[0] = 0xff;

@@ -190,7 +190,7 @@ void CL_SendConnectPacket (void)
 	}
 
 	if (adr.port == 0)
-		adr.port = BigShort (27500);
+		adr.port = BigShort (PORT_SERVER);
 	t2 = Sys_DoubleTime ();
 
 	connect_time = realtime+t2-t1;	// for retransmit requests
@@ -233,7 +233,7 @@ void CL_CheckForResend (void)
 	t2 = Sys_DoubleTime ();
 
 	if (adr.port == 0)
-		adr.port = BigShort (27500);
+		adr.port = BigShort (PORT_SERVER);
 
 	connect_time = realtime+t2-t1;	// for retransmit requests
 
