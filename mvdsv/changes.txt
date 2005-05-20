@@ -1,6 +1,7 @@
 ----
-MVDSV v0.179 build 1976 (2005.05.19)
+MVDSV v0.179 Beta DEVELOP build 1979 (2005.05.22)
 [server]
+- key *qvm was moved from serverinfo to localinfo
 - keep hashed passwords in the 'accounts' file (RFE #1198101)
 (by hdworak)
 - bugfix: now if server can't write log or demo, then it close logfile and stop logging
@@ -59,14 +60,17 @@ MVDSV v0.178 Beta DEVELOP build 1897 (2005.03.01)
 - bugfix from 0.1727 build 1666: "spectator 2" bug - allow to connect as spectator if all
   slots for spectators is already in use
 - added support of qvm version 6 (non-qc) mods from qw262 (EXPERIMENTAL):
-  new command line option -progtype
+  new command line option -progtype:
+    0 - 'dat' - QW native
+    1 - 'so' or 'dll' - OS native (most performance)
+    2 - 'qvm' - Q3 style
+    default: 0
   new cvars:
-    sv_progtype
-    sv_progsname
-    sv_enableprofile
-    command mod
--progtype 0|1|2 - dat|native|qvm
-sv_progtype тоже самое
+    sv_progtype - same as command line option -progtype
+    sv_progsname - name of mod file without extention
+      default: qwprogs
+    sv_enableprofile - enable profiling of qvm mods
+  new command mod - send GAME_CONSOLE_COMMAND command to qvm mod
 (Thanks to SD-Angel, Disconnect)
 - new cvar pm_spawnjumpfix 0/1 - don't jump if used jump button for respawn
     0 - don't fix

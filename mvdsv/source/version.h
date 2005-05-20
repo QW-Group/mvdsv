@@ -25,16 +25,8 @@
 #define QW_PLATFORM_SHORT	"(d)"
 #endif
 
-#define LINUX_VERSION		0.98
-#define GLQUAKE_VERSION		1.00
-#ifdef GLQUAKE
-#define QW_RENDERER		"GL"
-#else
-#define QW_RENDERER		"Soft"
-#endif
-
 #define	QW_VERSION		2.40
-#define QWE_VERSION		"0.179"
+#define QWE_VERSION		"0.179 beta"
 #define QWE_VERNUM		0.179
 #define SERVER_NAME		"MVDSV"
 #define PROJECT_NAME		SERVER_NAME
@@ -42,6 +34,14 @@
 #define FULL_VERSION		SERVER_NAME " " QWE_VERSION " " QW_PLATFORM_SHORT ", build %d"
 #define BUILD_DATE		"Build date: " __DATE__ ", " __TIME__
 #define SIZEOF_FULL_VERSION	(sizeof(FULL_VERSION) + sizeof(BUILD_DATE) + sizeof(int) * 3)
+
+#define LINUX_VERSION		QWE_VERNUM
+#define GLQUAKE_VERSION		QWE_VERNUM
+#ifdef GLQUAKE
+#define QW_RENDERER		"GL"
+#else
+#define QW_RENDERER		"Soft"
+#endif
 
 #define RELEASE_VERSION
 
