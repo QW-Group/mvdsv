@@ -125,6 +125,7 @@ void SV_Restart_f (void)
 SV_Logfile
 ============
 */
+char *parse_mod_string(char *str);
 void SV_Logfile (int sv_log, qboolean newlog)
 {
 	extern int	sv_port;
@@ -143,7 +144,7 @@ void SV_Logfile (int sv_log, qboolean newlog)
 		}
 //<-
 	}
-	if (sv_log == FRAG_LOG)
+	if (sv_log == FRAG_LOG || sv_log == MOD_FRAG_LOG)
 	{
 		for (i = 0; i < 1000; ++i)
 		{
@@ -265,6 +266,15 @@ void SV_PlayerLogfile_f (void)
 }
 //<-
 
+/*
+============
+SV_FragLogfile_f
+============
+*/
+void SV_ModFragLogfile_f (void)
+{
+	SV_Logfile(MOD_FRAG_LOG, false);
+}
 
 /*
 ==================
@@ -1767,6 +1777,7 @@ void SV_InitOperatorCommands (void)
 	logs[TELNET_LOG].command		= "logtelnet";
 	logs[FRAG_LOG].command			= "fraglogfile";
 	logs[PLAYER_LOG].command		= "logplayers"; //bliP: player logging
+	logs[MOD_FRAG_LOG].command		= "modfraglogfile";
 	
 	logs[CONSOLE_LOG].file_name	= "qconsole_";
 	logs[ERROR_LOG].file_name		= "qerror_";
@@ -1774,6 +1785,7 @@ void SV_InitOperatorCommands (void)
 	logs[TELNET_LOG].file_name	= "qtelnet_";
 	logs[FRAG_LOG].file_name		= "frag_";
 	logs[PLAYER_LOG].file_name  = "player_"; //bliP: player logging
+	logs[MOD_FRAG_LOG].file_name		= "modfrag_";
 
 	logs[CONSOLE_LOG].message_off	= "File logging off.\n";
 	logs[ERROR_LOG].message_off		= "Error logging off.\n";
@@ -1781,6 +1793,7 @@ void SV_InitOperatorCommands (void)
 	logs[TELNET_LOG].message_off	= "Telnet logging off.\n";
 	logs[FRAG_LOG].message_off		= "Frag file logging off.\n";
 	logs[PLAYER_LOG].message_off	= "Player logging off.\n"; //bliP: player logging
+	logs[MOD_FRAG_LOG].message_off		= "Mod frag file logging off.\n";
 	
 	logs[CONSOLE_LOG].message_on	= "console";
 	logs[ERROR_LOG].message_on		= "errors";
@@ -1788,6 +1801,7 @@ void SV_InitOperatorCommands (void)
 	logs[TELNET_LOG].message_on		= "telnet";
 	logs[FRAG_LOG].message_on	  	= "frags";
 	logs[PLAYER_LOG].message_on		= "players"; //bliP: player logging
+	logs[MOD_FRAG_LOG].message_on	  	= "modfrags";
 
 	logs[CONSOLE_LOG].function	= SV_Logfile_f;
 	logs[ERROR_LOG].function		= SV_ErrorLogfile_f;
@@ -1795,6 +1809,7 @@ void SV_InitOperatorCommands (void)
 	logs[TELNET_LOG].function		= SV_TelnetLogfile_f;
 	logs[FRAG_LOG].function			= SV_FragLogfile_f;
 	logs[PLAYER_LOG].function		= SV_PlayerLogfile_f; //bliP: player logging
+	logs[MOD_FRAG_LOG].function		= SV_ModFragLogfile_f;
 	
 	for (i = 0; i < MAX_LOG; ++i)
 	{

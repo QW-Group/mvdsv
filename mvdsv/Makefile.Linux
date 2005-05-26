@@ -69,6 +69,7 @@ SV_OBJS = \
 		$(SV_DIR)/sv_init.o \
 		$(SV_DIR)/sv_login.o \
 		$(SV_DIR)/sv_main.o \
+		$(SV_DIR)/sv_mod_frags.o \
 		$(SV_DIR)/sv_model.o \
 		$(SV_DIR)/sv_move.o \
 		$(SV_DIR)/sv_nchan.o \

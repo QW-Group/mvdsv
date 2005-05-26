@@ -3,7 +3,7 @@
 #define _LOG
 #include <time.h>
 enum {	MIN_LOG = 0, CONSOLE_LOG = 0, ERROR_LOG,  RCON_LOG,
-	TELNET_LOG,  FRAG_LOG,        PLAYER_LOG, MAX_LOG};
+	TELNET_LOG,  FRAG_LOG,        PLAYER_LOG, MOD_FRAG_LOG, MAX_LOG};
 
 typedef struct log_s {
 	FILE		*sv_logfile;

@@ -2127,6 +2127,37 @@ void Info_Print (char *s)
 	}
 }
 
+#ifdef SERVERONLY
+void Info_CopyStarKeys (char *from, char *to)
+{
+	char	key[512];
+	char	value[512];
+	char	*o;
+
+	if (*from == '\\')
+		from++;
+
+	while (*from) {
+		o = key;
+		while (*from && *from != '\\')
+			*o++ = *from++;
+
+		*o = 0;
+
+		o = value;
+		from++;
+		while (*from && *from != '\\')
+			*o++ = *from++;
+		*o = 0;
+
+		if (*from)
+			from++;
+		if (key[0] == '*')
+			Info_SetValueForStarKey (to, key, value, MAX_INFO_STRING);
+	}
+}
+#endif
+
 static byte chktbl[1024 + 4] = {
 0x78,0xd2,0x94,0xe3,0x41,0xec,0xd6,0xd5,0xcb,0xfc,0xdb,0x8a,0x4b,0xcc,0x85,0x01,
 0x23,0xd2,0xe5,0xf2,0x29,0xa7,0x45,0x94,0x4a,0x62,0xe3,0xa5,0x6f,0x3f,0xe1,0x7a,

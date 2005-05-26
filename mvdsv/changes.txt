@@ -1,6 +1,11 @@
 ----
 MVDSV v0.179 Beta DEVELOP build 1979 (2005.05.22)
 [server]
+- new command modfraglogfile - turn on/off parsing mod messages for frags and logging in
+  modfrag_N.log file with any additional info (weapon and etc.) for composition
+  more detailed statistics (EXPERIMENTAL)
+  (because we have no sources of ktpro :-()
+(by kreon and VVD, idea by gLAd)
 - qvm engine updated to version 7
 (Thanks to SD-Angel)
 - key *qvm was moved from serverinfo to localinfo
