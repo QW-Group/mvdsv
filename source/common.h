@@ -221,6 +221,7 @@ void Info_RemovePrefixedKeys (char *start, char prefix);
 void Info_SetValueForKey (char *s, char *key, char *value, int maxsize);
 void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize);
 void Info_Print (char *s);
+void Info_CopyStarKeys (char *from, char *to);
 
 unsigned Com_BlockChecksum (void *buffer, int length);
 void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);

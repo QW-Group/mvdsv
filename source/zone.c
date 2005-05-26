@@ -61,7 +61,7 @@ void *Q_Malloc (size_t size)
 
 	p = malloc(size);
 	if (!p)
-		Sys_Error ("Not enough memory free; check disk space");
+		Sys_Error ("Not enough memory free");
 
 	return p;
 }

@@ -241,10 +241,11 @@ SV_BroadcastPrintf
 Sends text to all active clients
 =================
 */
+char *parse_mod_string(char *str);
 void SV_BroadcastPrintf (int level, char *fmt, ...)
 {
 	va_list		argptr;
-	char		string[1024];
+	char		string[1024], *fraglog;
 	client_t	*cl;
 	int			i;
 
@@ -270,6 +271,17 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
 	}
+
+	SV_Write_Log(MOD_FRAG_LOG, 1, "=== SV_BroadcastPrintf ===\n");
+	SV_Write_Log(MOD_FRAG_LOG, 1, va("%d\n===>", time(NULL)));
+	SV_Write_Log(MOD_FRAG_LOG, 1, string);
+	SV_Write_Log(MOD_FRAG_LOG, 1, "<===\n");
+	if (fraglog = parse_mod_string(string))
+	{
+		SV_Write_Log(MOD_FRAG_LOG, 1, fraglog);
+		Q_Free(fraglog);
+	}
+	SV_Write_Log(MOD_FRAG_LOG, 1, "==========================\n\n");
 }
 
 /*

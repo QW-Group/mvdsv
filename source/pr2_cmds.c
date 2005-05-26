@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.4 2005/05/20 17:15:30 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.5 2005/05/26 14:46:17 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -2115,7 +2115,7 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 		retval->_int = 0;
 		return;
 	}
-	Q_snprintfz( newcl->userinfo, sizeof( newcl->userinfo ),
+	snprintf( newcl->userinfo, sizeof( newcl->userinfo ),
 		     "\\name\\%s\\topcolor\\%d\\bottomcolor\\%d\\emodel\\6967\\pmodel\\13845\\skin\\%s\\*bot\\1",
 		     name, topcolor, bottomcolor, skin );
 

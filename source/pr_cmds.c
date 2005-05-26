@@ -207,7 +207,7 @@ void PF_bprint (void)
 {
 	char		*s;
 	int			level;
-	
+
 	level = G_FLOAT(OFS_PARM0);
 
 	s = PF_VarString(1);
@@ -2203,6 +2203,10 @@ void PF_logfrag (void)
 // <-
 	SZ_Print (&svs.log[svs.logsequence&1], s);
 	SV_Write_Log(FRAG_LOG, 1, s);
+	SV_Write_Log(MOD_FRAG_LOG, 1, "==== PF_logfrag ====\n");
+	SV_Write_Log(MOD_FRAG_LOG, 1, va("%d\n", time(NULL)));
+	SV_Write_Log(MOD_FRAG_LOG, 1, s);
+	SV_Write_Log(MOD_FRAG_LOG, 1, "====================\n\n");
 }
 
 //bliP: map voting ->

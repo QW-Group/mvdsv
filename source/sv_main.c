@@ -3065,7 +3065,7 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 	static date_t date;
 	char *log_msg, *error_msg;
 
-	if (!logs[sv_log].sv_logfile)
+	if (!(logs[sv_log].sv_logfile && *msg))
 		return;
 
 //bliP: moved telnet bit to on cvar change ->
@@ -3078,24 +3078,25 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 
 	SV_TimeOfDay(&date);
 
-	if (sv_log == FRAG_LOG)
+	switch (sv_log)
 	{
-		log_msg = msg;
+	case FRAG_LOG:
+	case MOD_FRAG_LOG:
+		log_msg = msg; // these logs aren't in com_gamedir
 		error_msg = va("Can't write in %s log file: "/*%s/ */"%sN.log.\n",
 				/*com_gamedir,*/ logs[sv_log].message_on,
 				logs[sv_log].file_name);
-	}
-	else
-	{
+		break;
+	default:
 		log_msg = va("[%s].[%d] %s", date.str, level, msg);
 		error_msg = va("Can't write in %s log file: "/*%s/ */"%s%i.log.\n",
 				/*com_gamedir,*/ logs[sv_log].message_on,
 				logs[sv_log].file_name, sv_port);
 	}
 
-	if (!fprintf(logs[sv_log].sv_logfile, "%s", log_msg))
+	if (fprintf(logs[sv_log].sv_logfile, "%s", log_msg) < 0)
 	{
-//bliP: Sys_Error to Con_DPrintf, also, these logs aren't in com_gamedir ->
+//bliP: Sys_Error to Con_DPrintf ->
 //VVD: Con_DPrintf to Sys_Printf ->
 		Sys_Printf("%s", error_msg);
 //<-
