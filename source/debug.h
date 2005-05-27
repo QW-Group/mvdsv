@@ -4,14 +4,15 @@
 *                           All rights reserved.
 *
 * Filename:     $Workfile:   debug.h  $
-* Version:      $Revision: 1.1.1.3 $
+* Version:      $Revision: 1.2 $
 *
 * Language:     ANSI C
 * Environment:  any
 *
 * Description:  General header file for operating system portable code.
 *
-* $Date: 2004/11/18 19:09:17 $ $Author: vvd0 $
+* $Date: 2005/05/27 15:09:48 $ $Author: vvd0 $
+* $Id: debug.h,v 1.2 2005/05/27 15:09:48 vvd0 Exp $
 *
 ****************************************************************************/
 

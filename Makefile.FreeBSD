@@ -10,6 +10,8 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
+#	$Id: Makefile.FreeBSD,v 1.8 2005/05/27 15:09:45 vvd0 Exp $
+#
 
 CC=gcc
 MAINDIR!=	/bin/pwd

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+	$Id: asm_i386.h,v 1.2 2005/05/27 15:09:46 vvd0 Exp $
 */
 
 #ifndef __ASM_I386__

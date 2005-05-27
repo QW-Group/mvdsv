@@ -6,7 +6,7 @@
 *							All rights reserved.
 *
 * Filename:		$Workfile:   mglwin.h  $
-* Version:		$Revision: 1.1.1.3 $
+* Version:		$Revision: 1.2 $
 *
 * Language:		ANSI C
 * Environment:	IBM PC (MS DOS)
@@ -16,7 +16,8 @@
 *				binding only targets Win32 applications, so cannot be used
 *				for 16 bit Windows development.
 *
-* $Date: 2004/11/18 19:09:34 $ $Author: vvd0 $
+* $Date: 2005/05/27 15:09:50 $ $Author: vvd0 $
+* $Id: mglwin.h,v 1.2 2005/05/27 15:09:50 vvd0 Exp $
 *
 ****************************************************************************/
 

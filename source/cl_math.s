@@ -22,6 +22,8 @@
 		Free Software Foundation, Inc.
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
+
+	$Id: cl_math.s,v 1.2 2005/05/27 15:09:47 vvd0 Exp $
 */
 
 #include "asm_i386.h"
