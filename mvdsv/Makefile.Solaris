@@ -5,6 +5,8 @@
 #
 # GNU Make required
 #
+#	$Id: Makefile.Solaris,v 1.2 2005/05/27 15:09:45 vvd0 Exp $
+#
 
 ifneq (,$(findstring i86pc,$(shell uname -m)))
 ARCH=i386

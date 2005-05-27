@@ -1,5 +1,8 @@
+
+$Id: changes.txt,v 1.16 2005/05/27 15:09:45 vvd0 Exp $
+
 ----
-MVDSV v0.179 Beta DEVELOP build 1979 (2005.05.22)
+MVDSV v0.179 Beta DEVELOP build 1984 (2005.05.27)
 [server]
 - new command modfraglogfile - turn on/off parsing mod messages for frags and logging in
   modfrag_N.log file with any additional info (weapon and etc.) for composition
