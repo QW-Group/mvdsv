@@ -6,61 +6,13 @@
 --------------------Configuration: qwsv - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "E:\Temp\RSP20.bat" with contents
-[
-@echo off
-cl /nologo /EP > .\SRelease\worlda.spp .\worlda.s
-gas2masm < .\SRelease\worlda.spp >.\SRelease\worlda.asm
-ml /nologo /c /Cp /coff /Fo.\SRelease\worlda.obj /Zm /Zi                 .\SRelease\worlda.asm
-del .\SRelease\worlda.spp
-]
-Creating command line "E:\Temp\RSP20.bat"
-Creating command line "rc.exe /l 0x409 /fo".\SRelease/winquake.res" /d "NDEBUG" "D:\Quake\Projects\mvdsv\mvdsv\source\winquake.rc"" 
-Performing Custom Build Step on .\worlda.s
-worlda.s
- Assembling: .\SRelease\worlda.asm
-Creating temporary file "E:\Temp\RSP21.tmp" with contents
+Creating temporary file "E:\Temp\RSP11.tmp" with contents
 [
 /nologo /G6 /ML /W3 /O2 /Op /Ob2 /D "SERVERONLY" /D "id386" /D "NDEBUG" /D "USE_PR2" /Fr".\SRelease/" /Fp".\SRelease/mvdsv.pch" /YX /Fo".\SRelease/" /Fd".\SRelease/" /FD /c 
-"D:\Quake\Projects\mvdsv\mvdsv\source\cmd.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\common.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\crc.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\cvar.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\mathlib.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\mdfour.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\net_chan.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\net_wins.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pmove.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pmovetst.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pr2_cmds.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pr2_edict.c"
 "D:\Quake\Projects\mvdsv\mvdsv\source\pr2_exec.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pr2_vm.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pr_cmds.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pr_edict.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\pr_exec.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sha1.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_ccmds.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_demo.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_ents.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_init.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_login.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_main.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_mod_frags.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_model.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_move.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_nchan.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_phys.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_send.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_sys_win.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_user.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\sv_windows.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\version.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\world.c"
-"D:\Quake\Projects\mvdsv\mvdsv\source\zone.c"
 ]
-Creating command line "cl.exe @E:\Temp\RSP21.tmp" 
-Creating temporary file "E:\Temp\RSP22.tmp" with contents
+Creating command line "cl.exe @E:\Temp\RSP11.tmp" 
+Creating temporary file "E:\Temp\RSP12.tmp" with contents
 [
 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /version:0.179 /subsystem:windows /incremental:no /pdb:".\SRelease/mvdsv-current.pdb" /machine:I386 /out:"..\mvdsv-current.exe" 
 .\SRelease\chartables.obj
@@ -105,48 +57,12 @@ wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /version:0.179 /s
 .\SRelease\math.obj
 .\SRelease\worlda.obj
 ]
-Creating command line "link.exe @E:\Temp\RSP22.tmp"
+Creating command line "link.exe @E:\Temp\RSP12.tmp"
 <h3>Output Window</h3>
-Compiling resources...
 Compiling...
-cmd.c
-common.c
-crc.c
-cvar.c
-mathlib.c
-mdfour.c
-net_chan.c
-net_wins.c
-pmove.c
-pmovetst.c
-pr2_cmds.c
-pr2_edict.c
 pr2_exec.c
-pr2_vm.c
-pr_cmds.c
-pr_edict.c
-pr_exec.c
-sha1.c
-sv_ccmds.c
-sv_demo.c
-sv_ents.c
-sv_init.c
-sv_login.c
-sv_main.c
-sv_mod_frags.c
-sv_model.c
-sv_move.c
-sv_nchan.c
-sv_phys.c
-sv_send.c
-sv_sys_win.c
-sv_user.c
-sv_windows.c
-version.c
-world.c
-zone.c
 Linking...
-Creating temporary file "E:\Temp\RSP24.tmp" with contents
+Creating temporary file "E:\Temp\RSP14.tmp" with contents
 [
 /nologo /o".\SRelease/mvdsv.bsc" 
 .\SRelease\chartables.sbr
@@ -187,7 +103,7 @@ Creating temporary file "E:\Temp\RSP24.tmp" with contents
 .\SRelease\version.sbr
 .\SRelease\world.sbr
 .\SRelease\zone.sbr]
-Creating command line "bscmake.exe @E:\Temp\RSP24.tmp"
+Creating command line "bscmake.exe @E:\Temp\RSP14.tmp"
 Creating browse info file...
 <h3>Output Window</h3>
 

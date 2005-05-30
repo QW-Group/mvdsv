@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.2 2005/02/21 15:19:11 vvd0 Exp $
+ *  $Id: pr2_exec.c,v 1.3 2005/05/30 16:41:00 vvd0 Exp $
  */
 
 #include <stdarg.h>
@@ -277,8 +277,32 @@ void PR2_GameShutDown()
 //===========================================================================
 void PR2_GameConsoleCommand(void)
 {
+	int     old_other, old_self;	
+	client_t	*cl;
+	int			i;
+
         if( sv_vm )
+	{
+        	old_self = pr_global_struct->self;
+        	old_other = pr_global_struct->other;
+        	pr_global_struct->other = 0; //sv_cmd = SV_CMD_CONSOLE;
+        	pr_global_struct->self = 0;
+
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+			if (!cl->state)
+				continue;
+			if ( cl->isBot )
+				continue;
+
+			if (NET_CompareAdr(cl->netchan.remote_address, net_from)){
+				pr_global_struct->self = EDICT_TO_PROG(cl->edict);
+				break;
+			}
+		}
 		VM_Call(sv_vm, GAME_CONSOLE_COMMAND, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        	pr_global_struct->self = old_self;
+        	pr_global_struct->other = old_other;
+	}
 }
 
 #endif /* USE_PR2 */

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.5 2005/05/26 14:46:17 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.6 2005/05/30 16:41:00 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -60,7 +60,7 @@ void PR2_RunError(char *error, ...)
 	vsprintf(string, error, argptr);
 	va_end(argptr);
 
-//	sv_error = true;
+	sv_error = true;
 	if( sv_vm->type == VM_BYTECODE )
 		QVM_StackTrace( sv_vm->hInst );
 
@@ -91,19 +91,17 @@ void PF2_GetEntityToken(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 
 void PF2_DPrint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Con_Printf("%s", VM_POINTER(base,mask,stack[0].string));
+	Con_DPrintf("%s", VM_POINTER(base,mask,stack[0].string));
 }
 
 void PF2_conprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Sys_Printf("%s", VM_POINTER(base,mask,stack[0].string));
+	Con_Printf("%s", VM_POINTER(base,mask,stack[0].string));
 }
 
 void PF2_Error(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	if (sv_vm->type == VM_BYTECODE)
-		QVM_StackTrace(sv_vm->hInst);
-	SV_Error(VM_POINTER(base, mask, stack->string));
+	PR2_RunError(VM_POINTER(base, mask, stack->string));
 }
 
 void PF2_Spawn(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
@@ -1077,7 +1075,6 @@ void PF2_Find (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 	if(!str)
 		PR2_RunError ("PF2_Find: bad search string");
 
-	//Con_Printf("%s\n",str);
 	for (e++ ; e < sv.num_edicts ; e++)
 	{
 		ed = EDICT_NUM(e);
