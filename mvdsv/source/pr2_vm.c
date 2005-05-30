@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.3 2005/05/20 14:57:53 vvd0 Exp $
+ *  $Id: pr2_vm.c,v 1.4 2005/05/30 16:41:00 vvd0 Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -325,7 +325,8 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 		return false;
 
 // add qvm crc to the serverinfo
-	Info_SetValueForStarKey( svs.info, "*qvm", "QVM", MAX_SERVERINFO_STRING );
+	Info_SetValueForStarKey( localinfo, "*qvm", "QVM", MAX_LOCALINFO_STRING );
+//	Info_SetValueForStarKey( svs.info, "*qvm", "QVM", MAX_SERVERINFO_STRING );
 
 	snprintf( num, sizeof(num), "%i", CRC_Block( ( byte * ) buff, com_filesize ) );
 	Info_SetValueForStarKey( svs.info, "*progs", num, MAX_SERVERINFO_STRING );
@@ -573,6 +574,24 @@ void  QVM_StackTrace( qvm_t * qvm )
 	}
 }
 
+void QVM_RunError( qvm_t * qvm, char *error, ... )
+{
+	va_list argptr;
+	char    string[1024];
+
+	va_start( argptr, error );
+	vsprintf( string, error, argptr );
+	va_end( argptr );
+
+	sv_error = true;
+
+	QVM_StackTrace( qvm );
+
+	Con_Printf( "%s\n", string );
+
+	SV_Error( "QVM Program error" );
+}
+
 int trap_Call( qvm_t * qvm, int apinum )
 {
 	int     ret;
@@ -615,10 +634,8 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		qvm->LP = qvm->len_ds - sizeof(int);
 	}
 	if ( qvm->reenter++ > MAX_vmMain_Call )
-	{
-	        QVM_StackTrace( qvm );
-		Sys_Error( "QVM_Exec MAX_vmMain_Call reached" );
-	}
+	        QVM_RunError( qvm, "QVM_Exec MAX_vmMain_Call reached");
+
 	qvm->PC = 0;
 	qvm->SP = 0;
 	qvm->LP -= 14 * sizeof(int);
@@ -646,39 +663,23 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 	{
 #ifdef SAFE_QVM
 		if ( qvm->PC >= qvm->len_cs || qvm->PC < 0 )
-		{
-			QVM_StackTrace( qvm );
-			Sys_Error( "QVM PC out of range, %8d\n", qvm->PC );
-		}
-
+			QVM_RunError( qvm, "QVM PC out of range, %8d\n", qvm->PC );
 
 		if ( qvm->SP < 0 )
-		{
-			QVM_StackTrace( qvm );
-			Sys_Error( "QVM opStack underflow at %8x", qvm->PC );
-		}
+			QVM_RunError( qvm, "QVM opStack underflow at %8x", qvm->PC );
+
 		if ( qvm->SP > OPSTACKSIZE )
-		{
-			QVM_StackTrace( qvm );
-			Sys_Error( "QVM opStack overflow at %8x", qvm->PC );
-		}
+			QVM_RunError( qvm, "QVM opStack overflow at %8x", qvm->PC );
+
 		if ( qvm->LP < qvm->len_ds - qvm->len_ss )
-		{
-			QVM_StackTrace( qvm );
-			Sys_Error( "QVM Stack overflow at %8x", qvm->PC );
-		}
+			QVM_RunError( qvm, "QVM Stack overflow at %8x", qvm->PC );
+
 		if ( qvm->LP >= qvm->len_ds )
-		{
-			QVM_StackTrace( qvm );
-			Sys_Error( "QVM Stack underflow at %8x", qvm->PC );
-		}
+			QVM_RunError( qvm, "QVM Stack underflow at %8x", qvm->PC );
 #endif
 #ifdef QVM_RUNAWAY_PROTECTION
 		if(cycles[cycles_p]++ > MAX_CYCLES)
-		{
-			QVM_StackTrace( qvm );
-			Sys_Error( "QVM runaway loop error", qvm->PC );
-		}
+			QVM_RunError( qvm, "QVM runaway loop error", qvm->PC );
 #endif
 #ifdef QVM_PROFILE
                 if(sv_enableprofile.value)
@@ -688,16 +689,14 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		switch ( op.opcode )
 		{
 		case OP_UNDEF:
-		        QVM_StackTrace( qvm );
-			Sys_Error( "OP_UNDEF\n" );
+			QVM_RunError( qvm, "OP_UNDEF\n" );
 			break;
 
 		case OP_IGNORE:
 			break;
 
 		case OP_BREAK:
-		        QVM_StackTrace( qvm );
-			Sys_Error( "OP_BREAK\n" );
+			QVM_RunError( qvm, "OP_BREAK\n" );
 			break;
 
 		case OP_ENTER:
@@ -712,10 +711,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			STACK_INT( 1 ) = op.parm._int;
 #ifdef QVM_RUNAWAY_PROTECTION
 			if(++cycles_p >= MAX_PROC_CALL)
-			{
-		        	QVM_StackTrace( qvm );
-				Sys_Error( "MAX_PROC_CALL reached\n" );
-			}
+				QVM_RunError( qvm, "MAX_PROC_CALL reached\n" );
 			cycles[cycles_p] = 0;
 #endif
 			break;
@@ -724,10 +720,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			qvm->LP += op.parm._int;
 #ifdef PARANOID
          		if ( qvm->LP >= qvm->len_ds )
-         		{
-         			QVM_StackTrace( qvm );
-         			Sys_Error( "QVM Stack underflow on leave at %8x", qvm->PC );
-         		}
+         			QVM_RunError( qvm, "QVM Stack underflow on leave at %8x", qvm->PC );
 #endif
 			qvm->PC = STACK_INT( 0 );
 #ifdef QVM_PROFILE
@@ -883,10 +876,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
-			{
-				QVM_StackTrace( qvm );
-				Sys_Error( "data load 1 out of range %8x\n", ivar );
-			}
+				QVM_RunError( qvm, "data load 1 out of range %8x\n", ivar );
 			opStack[qvm->SP]._int = *( char * ) ( qvm->ds + ivar );
 #else
                         opStack[qvm->SP]._int = *( char * ) ( qvm->ds + (ivar&qvm->ds_mask) );
@@ -897,10 +887,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			ivar = opStack[qvm->SP]._int;
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
-			{
-				QVM_StackTrace( qvm );
-				Sys_Error( "data load 2 out of range %8x\n", ivar );
-			}
+				QVM_RunError( qvm, "data load 2 out of range %8x\n", ivar );
 			opStack[qvm->SP]._int = *( short * ) ( qvm->ds + ivar );
 #else
 			opStack[qvm->SP]._int = *( short * ) ( qvm->ds + (ivar&qvm->ds_mask) );
@@ -911,10 +898,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			ivar = opStack[qvm->SP]._int;
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
-			{
-				QVM_StackTrace( qvm );
-				Sys_Error( "data load 4 out of range %8x\n", ivar );
-			}
+				QVM_RunError( qvm, "data load 4 out of range %8x\n", ivar );
 			opStack[qvm->SP]._int = *( int * ) ( qvm->ds + ivar );
 #else
 			opStack[qvm->SP]._int = *( int * ) ( qvm->ds + (ivar&qvm->ds_mask) );
@@ -924,10 +908,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			ivar = opStack[qvm->SP - 1]._int;
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
-			{
-				QVM_StackTrace( qvm );
-				Sys_Error( "data store 1 out of range %8x\n", ivar );
-			}
+				QVM_RunError( qvm, "data store 1 out of range %8x\n", ivar );
 			*( char * ) ( qvm->ds + ivar ) = opStack[qvm->SP]._int & 0xff;
 #else
 			*( char * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP]._int & 0xff;
@@ -938,10 +919,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			ivar = opStack[qvm->SP - 1]._int;
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
-			{
-				QVM_StackTrace( qvm );
-				Sys_Error( "data store 2 out of range %8x\n", ivar );
-			}
+				QVM_RunError( qvm, "data store 2 out of range %8x\n", ivar );
 			*( short * ) ( qvm->ds + ivar ) = opStack[qvm->SP]._int & 0xffff;
 #else
 			*( short * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP]._int & 0xffff;
@@ -953,10 +931,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			ivar = opStack[qvm->SP - 1]._int;
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
-			{
-				QVM_StackTrace( qvm );
-				Sys_Error( "data store 4 out of range %8x\n", ivar );
-			}
+				QVM_RunError( qvm, "data store 4 out of range %8x\n", ivar );
 			*( int * ) ( qvm->ds + ivar ) = opStack[qvm->SP]._int;
 #else
 			*( int * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP]._int;
@@ -968,11 +943,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		        ivar = qvm->LP + op.parm._int;
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
-			{
-				QVM_StackTrace( qvm );
-				Sys_Error( "arg out of range %8x\n", ivar );
-			}
-		        
+				QVM_RunError( qvm, "arg out of range %8x\n", ivar );
 			*( int * ) ( qvm->ds + ivar ) = opStack[qvm->SP--]._int;
 #else
 			*( int * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP--]._int;
@@ -989,11 +960,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				if ( (off1 & (~qvm->ds_mask) ) || (off2 & (~qvm->ds_mask) )
 					|| ((off1 + len) & (~qvm->ds_mask) )
 					|| ((off2 + len) & (~qvm->ds_mask) ))
-				{
-					QVM_StackTrace( qvm );
-					Sys_Error( "block copy out of range %8x\n", ivar );
-				}
-
+					QVM_RunError( qvm, "block copy out of range %8x\n", ivar );
 				memmove( qvm->ds + off1, qvm->ds + off2, len );
 #else
 				memmove( qvm->ds + (off1 & qvm->ds_mask), qvm->ds + (off2 & qvm->ds_mask), len );
@@ -1003,11 +970,17 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			break;
 //integer arifmetic
 		case OP_SEX8:
-			opStack[qvm->SP]._int = *( char * ) ( opStack + qvm->SP );
+		        if( opStack[qvm->SP]._int & 0x80 )
+		                opStack[qvm->SP]._int |=0xFFFFFF00;
+		        else
+		                opStack[qvm->SP]._int &=0x000000FF;
 			break;
 
 		case OP_SEX16:
-			opStack[qvm->SP]._int = *( short * ) ( opStack + qvm->SP );
+		        if( opStack[qvm->SP]._int & 0x8000 )
+		                opStack[qvm->SP]._int |=0xFFFF0000;
+		        else
+		                opStack[qvm->SP]._int &=0x0000FFFF;
 			break;
 
 		case OP_NEGI:
@@ -1120,6 +1093,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			opStack[qvm->SP]._int = opStack[qvm->SP]._float;
 			break;
 		default:
+			QVM_RunError( qvm, "invalid opcode %2.2x at off=%8x\n", op.opcode, qvm->PC - 1 );
 		        QVM_StackTrace( qvm );
 			Sys_Error( "invalid opcode %2.2x at off=%8x\n", op.opcode, qvm->PC - 1 );
 		}
