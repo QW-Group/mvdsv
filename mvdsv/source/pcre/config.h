@@ -15,10 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: config.h,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: config.h,v 1.3 2005/07/05 13:25:40 vvd0 Exp $
 */
 
-#ifndef REGEX
 /* On Unix systems config.in is converted by configure into config.h. PCRE is
 written in Standard C, but there are a few non-standard things it can cope
 with, allowing it to run on SunOS4 and other "close to standard" systems.
@@ -125,4 +124,3 @@ Makefile (use --disable-stack-for-recursion). */
 /* #define NO_RECURSE */
 
 /* End */
-#endif

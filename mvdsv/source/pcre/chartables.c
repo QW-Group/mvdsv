@@ -15,10 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: chartables.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: chartables.c,v 1.3 2005/07/05 13:25:40 vvd0 Exp $
 */
 
-#ifndef REGEX
 /*************************************************
 *      Perl-Compatible Regular Expressions       *
 *************************************************/
@@ -202,4 +201,3 @@ print, punct, and cntrl. Other classes are built from combinations. */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};/* 248-255 */
 
 /* End of chartables.c */
-#endif
