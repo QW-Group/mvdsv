@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ccmds.c,v 1.5 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.6 2005/07/05 12:50:28 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -40,7 +40,6 @@ char fp_msg[255] = { 0 };
 extern	cvar_t		cl_warncmd;
 extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
 extern	redirect_t	sv_redirected;
-log_t	logs[MAX_LOG];
 
 /*
 ===============================================================================
@@ -126,7 +125,6 @@ void SV_Restart_f (void)
 SV_Logfile
 ============
 */
-char *parse_mod_string(char *str);
 void SV_Logfile (int sv_log, qboolean newlog)
 {
 	extern int	sv_port;
@@ -269,13 +267,24 @@ void SV_PlayerLogfile_f (void)
 
 /*
 ============
-SV_FragLogfile_f
+SV_ModFragLogfile_f
 ============
 */
 void SV_ModFragLogfile_f (void)
 {
 	SV_Logfile(MOD_FRAG_LOG, false);
 }
+
+log_t	logs[MAX_LOG] =
+{
+ {NULL, "logfile",        "qconsole_", "File logging off.\n",          "console",  SV_Logfile_f, 0},
+ {NULL, "logerrors",      "qerror_",   "Error logging off.\n",         "errors",   SV_ErrorLogfile_f, 0},
+ {NULL, "logrcon",        "rcon_",     "Rcon logging off.\n",          "rcon",     SV_RconLogfile_f, 0},
+ {NULL, "logtelnet",      "qtelnet_",  "Telnet logging off.\n",        "telnet",   SV_TelnetLogfile_f, 0},
+ {NULL, "fraglogfile",    "frag_",     "Frag file logging off.\n",     "frags",    SV_FragLogfile_f, 0},
+ {NULL, "logplayers",     "player_",   "Player logging off.\n",        "players",  SV_PlayerLogfile_f, 0},//bliP: player logging
+ {NULL, "modfraglogfile", "modfrag_",  "Mod frag file logging off.\n", "modfrags", SV_ModFragLogfile_f, 0}
+};
 
 /*
 ==================
@@ -849,7 +858,7 @@ void SV_Kick_f (void)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked%s\n", cl->name, reason);
 			cl->state = saved_state;
 			SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game%s\n", reason);
-      SV_LogPlayer(cl, va("kick%s\n", reason), 1); //bliP: logging
+			SV_LogPlayer(cl, va("kick%s\n", reason), 1); //bliP: logging
 			SV_DropClient (cl); 
 			return;
 		}
@@ -1772,59 +1781,8 @@ void SV_InitOperatorCommands (void)
 		Info_SetValueForStarKey (svs.info, "*cheats", "ON", MAX_SERVERINFO_STRING);
 	}
 
-	logs[CONSOLE_LOG].command		= "logfile";
-	logs[ERROR_LOG].command			= "logerrors";
-	logs[RCON_LOG].command			= "logrcon";
-	logs[TELNET_LOG].command		= "logtelnet";
-	logs[FRAG_LOG].command			= "fraglogfile";
-	logs[PLAYER_LOG].command		= "logplayers"; //bliP: player logging
-	logs[MOD_FRAG_LOG].command		= "modfraglogfile";
-	
-	logs[CONSOLE_LOG].file_name	= "qconsole_";
-	logs[ERROR_LOG].file_name		= "qerror_";
-	logs[RCON_LOG].file_name		= "rcon_";
-	logs[TELNET_LOG].file_name	= "qtelnet_";
-	logs[FRAG_LOG].file_name		= "frag_";
-	logs[PLAYER_LOG].file_name  = "player_"; //bliP: player logging
-	logs[MOD_FRAG_LOG].file_name		= "modfrag_";
-
-	logs[CONSOLE_LOG].message_off	= "File logging off.\n";
-	logs[ERROR_LOG].message_off		= "Error logging off.\n";
-	logs[RCON_LOG].message_off		= "Rcon logging off.\n";
-	logs[TELNET_LOG].message_off	= "Telnet logging off.\n";
-	logs[FRAG_LOG].message_off		= "Frag file logging off.\n";
-	logs[PLAYER_LOG].message_off	= "Player logging off.\n"; //bliP: player logging
-	logs[MOD_FRAG_LOG].message_off		= "Mod frag file logging off.\n";
-	
-	logs[CONSOLE_LOG].message_on	= "console";
-	logs[ERROR_LOG].message_on		= "errors";
-	logs[RCON_LOG].message_on		= "rcon";
-	logs[TELNET_LOG].message_on		= "telnet";
-	logs[FRAG_LOG].message_on	  	= "frags";
-	logs[PLAYER_LOG].message_on		= "players"; //bliP: player logging
-	logs[MOD_FRAG_LOG].message_on	  	= "modfrags";
-
-	logs[CONSOLE_LOG].function	= SV_Logfile_f;
-	logs[ERROR_LOG].function		= SV_ErrorLogfile_f;
-	logs[RCON_LOG].function			= SV_RconLogfile_f;
-	logs[TELNET_LOG].function		= SV_TelnetLogfile_f;
-	logs[FRAG_LOG].function			= SV_FragLogfile_f;
-	logs[PLAYER_LOG].function		= SV_PlayerLogfile_f; //bliP: player logging
-	logs[MOD_FRAG_LOG].function		= SV_ModFragLogfile_f;
-	
 	for (i = 0; i < MAX_LOG; ++i)
-	{
-		logs[i].sv_logfile = NULL;
-		logs[i].log_level = 0;
 		Cmd_AddCommand (logs[i].command, logs[i].function);
-	}
-/*
-	Cmd_AddCommand ("logfile", SV_Logfile_f);
-	Cmd_AddCommand ("fraglogfile", SV_Fraglogfile_f);
-	Cmd_AddCommand ("logerrors", SV_ErrorLogfile_f);
-	Cmd_AddCommand ("logrcon", SV_RconLogfile_f);
-	Cmd_AddCommand ("logtelnet", SV_TelnetLogfile_f);
-*/
 
 	Cmd_AddCommand ("nslookup", SV_Nslookup_f);
 	Cmd_AddCommand ("check_maps", SV_Check_maps_f);

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.5 2005/05/27 15:09:51 vvd0 Exp $
+	$Id: pr_cmds.c,v 1.6 2005/07/05 12:50:26 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1290,7 +1290,7 @@ void PF_log(void)
 	{
 		Sys_Printf("coldn't open log file %s\n", name);
 	} else {
-		fprintf (file, text);
+		fprintf (file, "%s", text);
 		fflush (file);
 		fclose(file);
 	}
@@ -2204,10 +2204,10 @@ void PF_logfrag (void)
 // <-
 	SZ_Print (&svs.log[svs.logsequence&1], s);
 	SV_Write_Log(FRAG_LOG, 1, s);
-	SV_Write_Log(MOD_FRAG_LOG, 1, "==== PF_logfrag ====\n");
-	SV_Write_Log(MOD_FRAG_LOG, 1, va("%d\n", time(NULL)));
-	SV_Write_Log(MOD_FRAG_LOG, 1, s);
-	SV_Write_Log(MOD_FRAG_LOG, 1, "====================\n\n");
+//	SV_Write_Log(MOD_FRAG_LOG, 1, "\n==== PF_logfrag ===={\n");
+//	SV_Write_Log(MOD_FRAG_LOG, 1, va("%d\n", time(NULL)));
+//	SV_Write_Log(MOD_FRAG_LOG, 1, s);
+//	SV_Write_Log(MOD_FRAG_LOG, 1, "}====================\n");
 }
 
 //bliP: map voting ->

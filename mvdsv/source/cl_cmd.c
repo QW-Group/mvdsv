@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_cmd.c,v 1.4 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_cmd.c,v 1.5 2005/07/05 12:50:26 vvd0 Exp $
 */
 
 #include "quakedef.h"
@@ -116,9 +116,18 @@ void CL_ForwardToServer_f (void)
 			server_string = Q_Malloc(server_string_len);
 
 			SHA1_Init();
-			SHA1_Update(va("%s %s%s ", Cmd_Argv(1), Cmd_Argv(2), client_time_str));
+//			SHA1_Update(va("%s %s%s ", Cmd_Argv(1), Cmd_Argv(2), client_time_str));
+			SHA1_Update(Cmd_Argv(1));
+			SHA1_Update(" ");
+			SHA1_Update(Cmd_Argv(2));
+			SHA1_Update(client_time_str);
+			SHA1_Update(" ");
 			for (i = 3; i < Cmd_Argc(); ++i)
-				SHA1_Update(va("%s ", Cmd_Argv(i)));
+			{
+//				SHA1_Update(va("%s ", Cmd_Argv(i)));
+				SHA1_Update(Cmd_Argv(i));
+				SHA1_Update(" ");
+			}
 
 			snprintf(server_string, server_string_len, "%s %s%s ",
 				Cmd_Argv(1), SHA1_Final(), client_time_str);
@@ -272,9 +281,17 @@ void CL_Rcon_f (void)
 			snprintf(client_time_str + i * 2, 8 * 2 + 1 - i * 2, "%02X",
 				(client_time >> (i * 8)) & 0xFF);
 		SHA1_Init();
-		SHA1_Update(va("rcon %s%s ", rcon_password.string, client_time_str));
+//		SHA1_Update(va("rcon %s%s ", rcon_password.string, client_time_str));
+		SHA1_Update("rcon ");
+		SHA1_Update(rcon_password.string);
+		SHA1_Update(client_time_str);
+		SHA1_Update(" ");
 		for (i = 1; i < Cmd_Argc(); i++)
-			SHA1_Update(va("%s ", Cmd_Argv(i)));
+		{
+//			SHA1_Update(va("%s ", Cmd_Argv(i)));
+			SHA1_Update(Cmd_Argv(i));
+			SHA1_Update(" ");
+		}
 		strlcat (message, SHA1_Final(), sizeof(message));
 		strlcat (message, client_time_str, sizeof(message));
 	}

@@ -16,14 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.12 2005/05/27 15:09:54 vvd0 Exp $
+	$Id: sv_main.c,v 1.13 2005/07/05 12:50:28 vvd0 Exp $
 */
 
 #include "version.h"
-
 #include "qwsvdef.h"
-
-#include "sha1.h"
 
 quakeparms_t host_parms;
 
@@ -157,6 +154,10 @@ cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 cvar_t	sv_default_name = {"sv_default_name", "unnamed"};
+
+qboolean sv_mod_msg_file_OnChange(cvar_t *cvar, char *value);
+cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", 0, sv_mod_msg_file_OnChange};
+
 //
 // game rules mirrored in svs.info
 //
@@ -1117,7 +1118,7 @@ qboolean rcon_bandlim()
 //bliP: master rcon/logging ->
 int Rcon_Validate (char *client_string, char *password)
 {
-	char	*sha1;
+//	char	*sha1;
 	int		i;
 	time_t	server_time, client_time = 0;
 	double	difftime_server_client;
@@ -1147,21 +1148,27 @@ int Rcon_Validate (char *client_string, char *password)
 			    difftime_server_client < -sv_timestamplen.value)
 			return 0;
 		SHA1_Init();
-		SHA1_Update(va("%s %s%s ", Cmd_Argv(0), password, Cmd_Argv(1) + DIGEST_SIZE * 2));
+		SHA1_Update(Cmd_Argv(0));
+		SHA1_Update(" ");
+		SHA1_Update(password);
+		SHA1_Update(Cmd_Argv(1) + DIGEST_SIZE * 2);
+		SHA1_Update(" ");
+//		SHA1_Update(va("%s %s%s ", Cmd_Argv(0), password, Cmd_Argv(1) + DIGEST_SIZE * 2));
 		for (i = 2; i < Cmd_Argc(); i++)
 		{
-			SHA1_Update(va("%s ", Cmd_Argv(i)));
+//			SHA1_Update(va("%s ", Cmd_Argv(i)));
+			SHA1_Update(Cmd_Argv(i));
+			SHA1_Update(" ");
 		}
-		sha1 = SHA1_Final();
+//		sha1 = SHA1_Final();
 //Con_Printf("client_string = %s\nserver_string = %s\nsha1 = %s\n", client_string, server_string, sha1);
 //Con_Printf("server_string_len = %d, strlen(server_string) = %d\n", server_string_len, strlen(server_string));
-		if (strncmp (Cmd_Argv(1), sha1, DIGEST_SIZE * 2))
+		if (strncmp (Cmd_Argv(1), SHA1_Final(), DIGEST_SIZE * 2))
 			return 0;
 	}
 	else
 		if (strcmp (Cmd_Argv(1), password))
 			return 0;
-
 	return 1;
 }
 
@@ -1248,8 +1255,8 @@ void SVC_RemoteCommand (char *client_string)
 		if (cl->state == cs_free)
 			continue;
 #ifdef USE_PR2
-			if (cl->isBot)
-				continue;
+		if (cl->isBot)
+			continue;
 #endif
 		if (!NET_CompareBaseAdr(net_from, cl->netchan.remote_address))
 			continue;
@@ -2583,6 +2590,7 @@ void SV_InitLocal (void)
 
 	Cvar_RegisterVariable (&sv_loadentfiles);
 	Cvar_RegisterVariable (&sv_default_name);
+	Cvar_RegisterVariable (&sv_mod_msg_file);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);

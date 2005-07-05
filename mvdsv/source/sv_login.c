@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_login.c,v 1.4 2005/05/27 15:09:54 vvd0 Exp $
+	$Id: sv_login.c,v 1.5 2005/07/05 12:50:28 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -448,7 +448,7 @@ int checklogin(char *log, char *pass, int num, int use)
 
 			if (use == use_ip ||
 			(!sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
-			( sv_hashpasswords.value && !strcasecmp(SHA1(pass),	accounts[i].pass))) {
+			( sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass))) {
 				accounts[i].failures = 0;
 				accounts[i].inuse++;
 				return i+1;
