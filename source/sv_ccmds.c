@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ccmds.c,v 1.6 2005/07/05 12:50:28 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.7 2005/07/05 13:03:49 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -137,7 +137,7 @@ void SV_Logfile (int sv_log, qboolean newlog)
 		fclose (logs[sv_log].sv_logfile);
 		logs[sv_log].sv_logfile = NULL;
 		if (!newlog) {
-			Con_Printf (logs[sv_log].message_off);
+			Con_Printf ("%s", logs[sv_log].message_off);
 	  		logs[sv_log].log_level = 0;
 		  	return;
 		}
