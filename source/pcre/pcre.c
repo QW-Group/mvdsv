@@ -15,10 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pcre.c,v 1.3 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: pcre.c,v 1.4 2005/07/05 13:25:40 vvd0 Exp $
 */
 
-#ifndef REGEX
 /*************************************************
 *      Perl-Compatible Regular Expressions       *
 *************************************************/
@@ -575,13 +574,11 @@ pcretest.c. It defines a function called print_internals(). */
 #define STRING(a)  # a
 #define XSTRING(s) STRING(s)
 
-#if 0 // commented by VVD {
 EXPORT const char *
 pcre_version(void)
 {
 return XSTRING(PCRE_MAJOR) "." XSTRING(PCRE_MINOR) " " XSTRING(PCRE_DATE);
 }
-#endif // } commented by VVD
 
 
 
@@ -692,7 +689,6 @@ Returns:        number of capturing subpatterns
                 or negative values on error
 */
 
-#if 0 // commented by VVD {
 EXPORT int
 pcre_info(const pcre *argument_re, int *optptr, int *first_byte)
 {
@@ -710,7 +706,6 @@ if (first_byte != NULL)
      ((re->options & PCRE_STARTLINE) != 0)? -1 : -2;
 return re->top_bracket;
 }
-#endif // } commented by VVD
 
 
 
@@ -730,7 +725,6 @@ Arguments:
 Returns:           0 if data returned, negative on error
 */
 
-#if 0 // commented by VVD {
 EXPORT int
 pcre_fullinfo(const pcre *argument_re, const pcre_extra *extra_data, int what,
   void *where)
@@ -815,7 +809,6 @@ switch (what)
 
 return 0;
 }
-#endif // } commented by VVD
 
 
 
@@ -833,7 +826,6 @@ Arguments:
 Returns:           0 if data returned, negative on error
 */
 
-#if 0 // commented by VVD {
 EXPORT int
 pcre_config(int what, void *where)
 {
@@ -884,7 +876,6 @@ switch (what)
 
 return 0;
 }
-#endif // } commented by VVD
 
 
 
@@ -905,7 +896,6 @@ Arguments:
 Returns:     nothing
 */
 
-#if 0 // commented by VVD {
 static void
 pchars(const uschar *p, int length, BOOL is_subject, match_data *md)
 {
@@ -914,7 +904,6 @@ if (is_subject && length > md->end_subject - p) length = md->end_subject - p;
 while (length-- > 0)
   if (isprint(c = *(p++))) printf("%c", c); else printf("\\x%02x", c);
 }
-#endif // } commented by VVD
 #endif
 
 
@@ -5736,7 +5725,6 @@ Arguments:
 Returns:      TRUE if character matches, else FALSE
 */
 
-#if 0 // commented by VVD {
 static BOOL
 match_xclass(int c, const uschar *data)
 {
@@ -5794,7 +5782,6 @@ while ((t = *data++) != XCL_END)
 
 return negated;   /* char did not match */
 }
-#endif // } commented by VVD
 #endif
 
 
@@ -9232,4 +9219,3 @@ else
 }
 
 /* End of pcre.c */
-#endif

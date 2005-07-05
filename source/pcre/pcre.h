@@ -15,10 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pcre.h,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: pcre.h,v 1.3 2005/07/05 13:25:40 vvd0 Exp $
 */
 
-#ifndef REGEX
 /*************************************************
 *       Perl-Compatible Regular Expressions      *
 *************************************************/
@@ -230,16 +229,13 @@ extern int   pcre_callout(pcre_callout_block *);
 
 extern pcre *pcre_compile(const char *, int, const char **,
               int *, const unsigned char *);
-#if 0 // commented by VVD {
 extern int  pcre_config(int, void *);
 extern int  pcre_copy_named_substring(const pcre *, const char *,
               int *, int, const char *, char *, int);
 extern int  pcre_copy_substring(const char *, int *, int, int,
               char *, int);
-#endif // } commented by VVD
 extern int  pcre_exec(const pcre *, const pcre_extra *,
               const char *, int, int, int, int *, int);
-#if 0 // commented by VVD {
 extern void pcre_free_substring(const char *);
 extern void pcre_free_substring_list(const char **);
 extern int  pcre_fullinfo(const pcre *, const pcre_extra *, int,
@@ -255,11 +251,9 @@ extern int  pcre_info(const pcre *, int *, int *);
 extern const unsigned char *pcre_maketables(void);
 extern pcre_extra *pcre_study(const pcre *, int, const char **);
 extern const char *pcre_version(void);
-#endif // } commented by VVD
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #endif /* End of pcre.h */
-#endif
