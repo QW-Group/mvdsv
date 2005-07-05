@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.6 2005/05/27 15:09:54 vvd0 Exp $
+	$Id: sv_send.c,v 1.7 2005/07/05 12:50:28 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -242,11 +242,13 @@ SV_BroadcastPrintf
 Sends text to all active clients
 =================
 */
+extern	log_t	logs[];
 char *parse_mod_string(char *str);
 void SV_BroadcastPrintf (int level, char *fmt, ...)
 {
 	va_list		argptr;
 	char		string[1024], *fraglog;
+	static char	string2[1024] = {0};
 	client_t	*cl;
 	int			i;
 
@@ -273,16 +275,29 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
 	}
 
-	SV_Write_Log(MOD_FRAG_LOG, 1, "=== SV_BroadcastPrintf ===\n");
-	SV_Write_Log(MOD_FRAG_LOG, 1, va("%d\n===>", time(NULL)));
-	SV_Write_Log(MOD_FRAG_LOG, 1, string);
-	SV_Write_Log(MOD_FRAG_LOG, 1, "<===\n");
-	if (fraglog = parse_mod_string(string))
+//	SV_Write_Log(MOD_FRAG_LOG, 1, "=== SV_BroadcastPrintf ===\n");
+//	SV_Write_Log(MOD_FRAG_LOG, 1, va("%d\n===>", time(NULL)));
+//	SV_Write_Log(MOD_FRAG_LOG, 1, string);
+//	SV_Write_Log(MOD_FRAG_LOG, 1, "<===\n");
+	if (string[0] && logs[MOD_FRAG_LOG].sv_logfile)
 	{
-		SV_Write_Log(MOD_FRAG_LOG, 1, fraglog);
-		Q_Free(fraglog);
+		if (string[strlen(string) - 1] == '\n')
+		{
+			strlcat(string2, string, sizeof(string2));
+//			SV_Write_Log(MOD_FRAG_LOG, 1, "=== SV_BroadcastPrintf ==={\n");
+//			SV_Write_Log(MOD_FRAG_LOG, 1, string2);
+//			SV_Write_Log(MOD_FRAG_LOG, 1, "}==========================\n");
+			if (fraglog = parse_mod_string(string2))
+			{
+				SV_Write_Log(MOD_FRAG_LOG, 1, fraglog);
+				Q_Free(fraglog);
+			}
+			string2[0] = 0;
+		}
+		else
+			strlcat(string2, string, sizeof(string2));
 	}
-	SV_Write_Log(MOD_FRAG_LOG, 1, "==========================\n\n");
+//	SV_Write_Log(MOD_FRAG_LOG, 1, "==========================\n\n");
 }
 
 /*

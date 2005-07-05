@@ -11,12 +11,13 @@ Test Vectors (from FIPS PUB 180-1)
 A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
 
-	$Id: sha1.h,v 1.4 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: sha1.h,v 1.5 2005/07/05 12:50:28 vvd0 Exp $
 */
 
 /* #define LITTLE_ENDIAN * This should be #define'd if true. */
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
-
+#ifndef _SHA1
+#define _SHA1
 typedef struct {
     unsigned long state[5];
     unsigned long count[2];
@@ -55,3 +56,4 @@ char *SHA1(char *string);
 void SHA1_Init(void);
 void SHA1_Update(unsigned char* data);
 char *SHA1_Final(void);
+#endif //_SHA1

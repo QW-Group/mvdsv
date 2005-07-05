@@ -16,9 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.4 2005/05/27 15:09:48 vvd0 Exp $
+	$Id: common.h,v 1.5 2005/07/05 12:50:26 vvd0 Exp $
 */
 // common.h  -- general definitions
+
+#ifndef _COMMON
+#define _COMMON
+
 #include "bothdefs.h"
 
 typedef unsigned char 		byte;
@@ -228,3 +232,4 @@ unsigned Com_BlockChecksum (void *buffer, int length);
 void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);
 byte	COM_BlockSequenceCheckByte (byte *base, int length, int sequence, unsigned mapchecksum);
 byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
+#endif //_COMMON

@@ -1,8 +1,8 @@
 
-$Id: changes.txt,v 1.17 2005/05/30 16:40:54 vvd0 Exp $
+$Id: changes.txt,v 1.18 2005/07/05 12:50:25 vvd0 Exp $
 
 ----
-MVDSV v0.179 Beta DEVELOP build 1987 (2005.05.30)
+MVDSV v0.179 Beta DEVELOP build 2021 (2005.07.03)
 [server]
 - new command modfraglogfile - turn on/off parsing mod messages for frags and logging in
   modfrag_N.log file with any additional info (weapon and etc.) for composition
@@ -12,11 +12,14 @@ MVDSV v0.179 Beta DEVELOP build 1987 (2005.05.30)
 - qvm engine updated to version 7
 (Thanks to SD-Angel)
 - key *qvm was moved from serverinfo to localinfo
-- keep hashed passwords in the 'accounts' file (RFE #1198101)
+- new cvar sv_hashpasswords - keep hashed passwords in the 'accounts' file (RFE #1198101)
+  0 - plain passwords
+  1 - hashed passwords (sha1)
+  default: 1
 (by hdworak)
 - bugfix: now if server can't write log or demo, then it close logfile and stop logging
 and cancel recording of current demo (bug #1057459)
-- build: define REGEX, for use external regex lib
+- build: define REGEX, for use external regex lib for listing demos
   (for example: FreeBSD have regex functions in libc)
   else used integrated part of PCRE 5.0 library - http://www.pcre.org/
 (Thanks to BorisU)
@@ -25,7 +28,7 @@ and cancel recording of current demo (bug #1057459)
 - give back from EXPEREMENTAL changes in 0.178b:
   'added drop client if no empty slots after "server is full" message (EXPERIMENTAL)'
 - ATTENTION: default value of sv_crypt_rcon now is 1;
-  use clients with rcon password ecryption support (ezQauke, qwdplayer) or set to 0 in server.cfg
+  use clients with rcon password encryption support (ezQauke, qwdplayer) or set to 0 in server.cfg
 - added support of halflife maps - BSP version 30 (from ezQuake)
 - new 'cmd maps' - show maps list from localinfo 1000 - 1999
   (supported only by ktpro 1.63 build 42795 and newer)
@@ -34,16 +37,16 @@ and cancel recording of current demo (bug #1057459)
 - bugfix ktpro 'cmd dl' with more then 1 demo in list (for example: 'cmd dl 1 2 3'):
   cancel download of a big demos (depend on download speed) after few seconds,
   big demo downloaded completely only if it is 1st in list, all small demos downloaded completely
-    new cvar sv_use_internal_cmd_dl:
-      0 - use mod dl-function (if mod have not dl function, then used internal dl-function)
-      1 - use internal dl-function
-      default: 1
+(Thanks to [iBh]123)
+- new cvar sv_use_internal_cmd_dl:
+    0 - use mod dl-function (if mod have not dl function, then used internal dl-function)
+    1 - use internal dl-function
+    default: 1
   'cmd dl <N dots>' - download the Nth to last recorded demo, and can to add dots sequence in list,
   also can to add negative values - 'cmd dl -N' - download the Nth to last recorded demo
   (for example: 'cmd dl 1 ... 4 . -6 .. 22 ........');
   'download demonum/N' fully work same as 'cmd dl N'
   (N - posive or negative integer value or any quantity of dots)
-(Thanks to [iBh]123)
 - bugfix from Id Software's QWSV: calculate negative percentage of file while downloading
   if size of downloaded part is > 0x10000000b / 100 (~= 20.5Mb):
   (signed int32)20.5Mb * 100 => signed overflow => negative value

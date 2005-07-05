@@ -16,9 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.3 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: qwsvdef.h,v 1.4 2005/07/05 12:50:28 vvd0 Exp $
 */
 // qwsvdef.h -- primary header for server
+
+#ifndef _QWSVDEF
+#define _QWSVDEF
 
 #define	QUAKE_GAME			// as opposed to utilities
 
@@ -59,6 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "crc.h"
+#include "sha1.h"
 
 #include "server.h"
 #include "world.h"
@@ -121,3 +125,4 @@ void SV_Init (quakeparms_t *parms);
 void Con_Printf (char *fmt, ...);
 void Con_DPrintf (char *fmt, ...);
 
+#endif //_QWSVDEF
