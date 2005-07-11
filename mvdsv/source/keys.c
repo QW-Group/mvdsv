@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: keys.c,v 1.3 2005/05/27 15:09:50 vvd0 Exp $
+	$Id: keys.c,v 1.4 2005/07/11 13:52:34 vvd0 Exp $
 */
 
 #include "quakedef.h"
@@ -233,7 +233,7 @@ void CompleteCommand (void)
 	if (cmd)
 	{
 		key_lines[edit_line][1] = '/';
-		strcpy (key_lines[edit_line]+2, cmd);
+		strlcpy (key_lines[edit_line] + 2, cmd, MAXCMDLINE);
 		key_linepos = strlen(cmd)+2;
 		key_lines[edit_line][key_linepos] = ' ';
 		key_linepos++;

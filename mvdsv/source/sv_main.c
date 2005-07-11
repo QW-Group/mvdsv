@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.13 2005/07/05 12:50:28 vvd0 Exp $
+	$Id: sv_main.c,v 1.14 2005/07/11 13:52:38 vvd0 Exp $
 */
 
 #include "version.h"
@@ -179,6 +179,9 @@ cvar_t	coop = {"coop", "0"};
 cvar_t	version = {"version", full_version, CVAR_ROM};
 
 cvar_t	hostname = {"hostname","unnamed",CVAR_SERVERINFO};
+
+cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
+cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login" 
 
 log_t	logs[MAX_LOG];
 
@@ -2591,6 +2594,8 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_loadentfiles);
 	Cvar_RegisterVariable (&sv_default_name);
 	Cvar_RegisterVariable (&sv_mod_msg_file);
+	Cvar_RegisterVariable (&sv_forcenick); 
+	Cvar_RegisterVariable (&sv_registrationinfo); 
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);

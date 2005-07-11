@@ -10,7 +10,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.9 2005/07/05 12:50:25 vvd0 Exp $
+#	$Id: Makefile.FreeBSD,v 1.10 2005/07/11 13:52:30 vvd0 Exp $
 #
 
 CC=gcc
@@ -102,6 +102,7 @@ SV_OBJS = \
 		${SV_DIR}/zone.o \
 \
 		${SV_DIR}/pcre/chartables.o \
+		${SV_DIR}/pcre/get.o \
 		${SV_DIR}/pcre/pcre.o
 
 .if ${USE_ASM} == ${ASM}

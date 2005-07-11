@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.9 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: sv_user.c,v 1.10 2005/07/11 13:52:38 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1690,6 +1690,7 @@ char *shortinfotbl[] =
 
 void SV_SetInfo_f (void)
 {
+	extern cvar_t sv_forcenick, sv_login;
 	int i, saved_state;
 	char oldval[MAX_INFO_STRING];
 
@@ -1736,13 +1737,33 @@ void SV_SetInfo_f (void)
 	if (!strcmp(Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)), oldval))
 		return; // key hasn't changed
 
-//bliP: mute ->
-	if (!strcmp(Cmd_Argv(1), "name") && (realtime < host_client->lockedtill))
+	if (!strcmp(Cmd_Argv(1), "name"))
 	{
-		SV_ClientPrintf(host_client, PRINT_CHAT, "You can't change your name while you're muted\n");
-		return;
-	}
+//bliP: mute ->
+		if (realtime < host_client->lockedtill)
+		{
+			SV_ClientPrintf(host_client, PRINT_CHAT,
+					"You can't change your name while you're muted\n");
+			return;
+		}
 //<-
+//VVD: forcenick ->
+		if (sv_forcenick.value && sv_login.value && host_client->login) {
+			SV_ClientPrintf(host_client, PRINT_CHAT,
+					"You can't change your name while logged in on this server.\n");
+			Info_SetValueForKey (host_client->userinfo, "name",
+						host_client->login, MAX_INFO_STRING);
+			strlcpy (host_client->name, host_client->login, CLIENT_NAME_LEN);
+			MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
+			MSG_WriteString (&host_client->netchan.message,
+					va("name %s\n", host_client->login));
+			MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
+			MSG_WriteString (&host_client->netchan.message,
+					va("setinfo name %s\n", host_client->login));
+			return;
+		} 
+//<-
+	}
 
 //bliP: kick top ->
 	if (sv_kicktop.value && !strcmp(Cmd_Argv(1), "topcolor"))

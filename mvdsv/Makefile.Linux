@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.8 2005/07/05 12:50:25 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.9 2005/07/11 13:52:30 vvd0 Exp $
 #
 
 USE_ASM=-Did386
@@ -97,6 +97,7 @@ SV_OBJS = \
 		$(SV_DIR)/zone.o \
 \
 		$(SV_DIR)/pcre/chartables.o \
+		$(SV_DIR)/pcre/get.o \
 		$(SV_DIR)/pcre/pcre.o
 
 ifeq ($(USE_ASM),$(ASM))

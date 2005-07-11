@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_login.c,v 1.5 2005/07/05 12:50:28 vvd0 Exp $
+	$Id: sv_login.c,v 1.6 2005/07/11 13:52:38 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -495,6 +495,8 @@ called on connect after cmd new is issued
 
 qboolean SV_Login(client_t *cl)
 {
+	extern cvar_t sv_registrationinfo;
+	char info[256];
 	char *ip;
 
 	// is sv_login is disabled, login is not necessery
@@ -528,6 +530,13 @@ qboolean SV_Login(client_t *cl)
 	cl->logged = false;
 	cl->login[0] = 0;
 
+	if (sv_registrationinfo.string[0]) {
+		strlcpy (info, sv_registrationinfo.string, 254);
+		strlcat (info, "\n", 255);
+		MSG_WriteByte (&cl->netchan.message, svc_print);
+		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
+		MSG_WriteString (&cl->netchan.message, info);
+	}
 	MSG_WriteByte (&cl->netchan.message, svc_print);
 	MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
 	MSG_WriteString (&cl->netchan.message, "Enter your login and password:\n");
@@ -546,6 +555,7 @@ void SV_Logout(client_t *cl)
 
 void SV_ParseLogin(client_t *cl)
 {
+	extern cvar_t sv_forcenick;
 	char *log, *pass;
 
 	if (Cmd_Argc() > 2) {
@@ -609,6 +619,17 @@ void SV_ParseLogin(client_t *cl)
 		MSG_WriteByte (&cl->netchan.message, svc_print);
 		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
 		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log));
+
+//VVD: forcenick ->
+		if (sv_forcenick.value && cl->login) {
+			Info_SetValueForKey (cl->userinfo, "name", cl->login, MAX_INFO_STRING);
+			strlcpy (cl->name, cl->login, CLIENT_NAME_LEN);
+			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
+			MSG_WriteString (&cl->netchan.message, va("name %s\n", cl->login));
+			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
+			MSG_WriteString (&cl->netchan.message, va("setinfo name %s\n", cl->login));
+		}
+//<-
 
 		MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 		MSG_WriteString (&cl->netchan.message, "cmd new\n");

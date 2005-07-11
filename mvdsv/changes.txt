@@ -1,9 +1,17 @@
 
-$Id: changes.txt,v 1.19 2005/07/05 13:04:42 vvd0 Exp $
+$Id: changes.txt,v 1.20 2005/07/11 13:52:30 vvd0 Exp $
 
 ----
-MVDSV v0.179 Beta DEVELOP build 2021 (2005.07.03)
+MVDSV v0.179 Beta DEVELOP build 2029 (2005.07.11)
 [server]
+- new cvar sv_registrationinfo - text shown before "enter login" (RFE #1198104)
+(by hdworak)
+- new cvar sv_forcenick - if the player has logged in ('accounts' file),
+  force his nick to match the login and forbid changing nickname (RFE #1198108)
+  0 - don't force
+  1 - as login
+  default: 0
+(by hdworak)
 - bugfix: format string vulnerabilities (by droogie)
 - new command modfraglogfile - turn on/off parsing mod messages for frags and logging in
   modfrag_N.log file with any additional info (weapon and etc.) for composition
