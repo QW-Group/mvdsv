@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.21 2005/07/15 15:53:20 vvd0 Exp $
+$Id: changes.txt,v 1.22 2005/07/15 16:59:32 vvd0 Exp $
 
 ----
 MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
@@ -17,8 +17,8 @@ MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
 (by hdworak)
 - bugfix: format string vulnerabilities (by droogie)
 - new command modfraglogfile - turn on/off parsing mod messages for frags and logging in
-  modfrag_N.log file with any additional info (weapon and etc.) for composition
-  more detailed statistics (EXPERIMENTAL)
+  modfrag_N.log file with additional info (weapon and etc.) to create more detailed statistics
+  (EXPERIMENTAL)
   (because we have no sources of ktpro :-()
 (by kreon and VVD, idea by gLAd)
 - qvm engine updated to version 7
@@ -29,18 +29,19 @@ MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
   1 - hashed passwords (sha1)
   default: 1
 (by hdworak)
-- bugfix: now if server can't write log or demo, then it close logfile and stop logging
-and cancel recording of current demo (bug #1057459)
-- build: define REGEX, for use external regex lib for listing demos
-  (for example: FreeBSD have regex functions in libc)
-  else used integrated part of PCRE 5.0 library - http://www.pcre.org/
+- bugfix: now, if the server can't write any more data to the log or demo (for example because
+  of insufficient disk space), it will close the logfile and stop logging and cancel the
+  recording of the current demo (bug #1057459)
+- build: define REGEX, to use external regex lib for listing demos
+  (for example: FreeBSD has regex functions in libc)
+  otherwise use integrated part of PCRE 5.0 library - http://www.pcre.org/
 (Thanks to BorisU)
 - new cvar sv_demoRegexp - all files meet the conditions regexp accepted as demos (for listing)
   default: "\.mvd(\.(gz|bz2|rar|zip))?$"
 - give back from EXPEREMENTAL changes in 0.178b:
   'added drop client if no empty slots after "server is full" message (EXPERIMENTAL)'
 - ATTENTION: default value of sv_crypt_rcon now is 1;
-  use clients with rcon password encryption support (ezQauke, qwdplayer) or set to 0 in server.cfg
+  use clients with rcon password encryption support (ezQuake, qwdplayer) or set to 0 in server.cfg
 - added support of halflife maps - BSP version 30 (from ezQuake)
 - new 'cmd maps' - show maps list from localinfo 1000 - 1999
   (supported only by ktpro 1.63 build 42795 and newer)
