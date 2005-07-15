@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_sys_unix.c,v 1.6 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.7 2005/07/15 16:12:18 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -195,10 +195,11 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 
 	if (!(d = opendir(path)))
 	{
+		if (!all) 
 #ifdef REGEX
-		regfree(&preg);
+			regfree(&preg);
 #else
-		Q_Free(preg);
+			Q_Free(preg);
 #endif
 		return dir;
 	}
@@ -255,10 +256,11 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 			break;
 	}
 	closedir(d);
+	if (!all) 
 #ifdef REGEX
-	regfree(&preg);
+		regfree(&preg);
 #else
-	Q_Free(preg);
+		Q_Free(preg);
 #endif
 
 	switch (sort_type)
