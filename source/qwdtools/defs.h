@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: defs.h,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: defs.h,v 1.3 2005/07/15 15:52:55 vvd0 Exp $
 */
 
 #ifdef _WIN32
@@ -89,9 +89,9 @@ typedef vec_t vec3_t[3];
 
 #define JOB_TODO	(O_MARGE | O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
 
-
-#include "protocol.h"
-#include "bothdefs.h"
+#undef SERVERONLY
+#include "../protocol.h"
+#include "../bothdefs.h"
 #include "tools.h"
 #include "world.h"
 

@@ -10,7 +10,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.10 2005/07/11 13:52:30 vvd0 Exp $
+#	$Id: Makefile.FreeBSD,v 1.11 2005/07/15 15:53:20 vvd0 Exp $
 #
 
 CC=gcc
@@ -132,7 +132,7 @@ QWDTOOLS_OBJS = \
 #############################################################################
 
 .c.o:
-		${CC} ${DO_CFLAGS} -I${SV_DIR} -c $< -o $*.o
+		${CC} ${DO_CFLAGS} -c $< -o $*.o
 
 .s.o:
 		${CC} ${DO_CFLAGS} -DELF -x assembler-with-cpp -c $< -o $*.o
@@ -147,4 +147,4 @@ qwdtools:	${QWDTOOLS_OBJS}
 		${CC} ${CFLAGS} ${LDFLAGS} -o qwdtools ${QWDTOOLS_OBJS}
 
 clean:
-		-rm -f ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${SV_DIR}/*.core ${QWDTOOLS_DIR}/*.o ${QWDTOOLS_DIR}/*.core
+		-rm -f ${SV_DIR}/*.core ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${QWDTOOLS_DIR}/*.o

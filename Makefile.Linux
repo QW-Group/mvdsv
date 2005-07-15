@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.9 2005/07/11 13:52:30 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.10 2005/07/15 15:53:20 vvd0 Exp $
 #
 
 USE_ASM=-Did386
@@ -39,7 +39,7 @@ GCC=
 endif
 endif
 
-CFLAGS=$(ASM) $(RELEASE_CFLAGS) -DSERVERONLY $(GCC) -I$(SV_DIR)
+CFLAGS=$(ASM) $(RELEASE_CFLAGS) -DSERVERONLY $(GCC)
 
 LDFLAGS=-lm
 ifeq ($(UNAME),Linux)
@@ -142,4 +142,4 @@ qwdtools : $(QWDTOOLS_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
 
 clean : 
-	-rm -f $(SV_DIR)/*.o $(SV_DIR)/core $(QWDTOOLS_DIR)/*.o $(QWDTOOLS_DIR)/core
+	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o
