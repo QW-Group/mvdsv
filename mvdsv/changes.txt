@@ -1,8 +1,11 @@
 
-$Id: changes.txt,v 1.20 2005/07/11 13:52:30 vvd0 Exp $
+$Id: changes.txt,v 1.21 2005/07/15 15:53:20 vvd0 Exp $
 
 ----
-MVDSV v0.179 Beta DEVELOP build 2029 (2005.07.11)
+MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
+[unix qwdtools]
+- bugfix from 0.176: crashed - bug was in Makefile
+(Thanks to Disconnect)
 [server]
 - new cvar sv_registrationinfo - text shown before "enter login" (RFE #1198104)
 (by hdworak)
