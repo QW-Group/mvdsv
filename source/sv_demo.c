@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.8 2005/05/27 15:09:54 vvd0 Exp $
+	$Id: sv_demo.c,v 1.9 2005/07/15 16:12:17 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -287,7 +287,7 @@ Q_fwrite
 ====================
 */
 void SV_Cancel_f(void);
-Q_fwrite ( const void *buffer, size_t size, size_t count, void *stream)
+int Q_fwrite (const void *buffer, size_t size, size_t count, void *stream)
 {
 	int processed = fwrite(buffer, size, count, stream);
 	if (count != processed)
@@ -720,7 +720,7 @@ void SV_Stop (int reason)
 	if (sv_demotxt.value) {
 		FILE *f;
 		char *text;
-		if (f = fopen (path, "w+t"))
+		if ((f = fopen (path, "w+t")))
 		{
 			text = SV_PrintTeams();
 			fwrite(text, strlen(text), 1, f);
@@ -972,7 +972,7 @@ static void SV_Record (char *name)
 
 	if (sv_demotxt.value) {
 		FILE *f;
-		if (f = fopen (path, "w+t"))
+		if ((f = fopen (path, "w+t")))
 		{
 			text = SV_PrintTeams();
 			fwrite(text, strlen(text), 1, f);

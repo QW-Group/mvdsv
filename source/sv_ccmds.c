@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ccmds.c,v 1.7 2005/07/05 13:03:49 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.8 2005/07/15 16:12:17 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1243,10 +1243,10 @@ void SV_Check_ktpro(void)
 	int	k_build;
 	char	*k_build_s;
 
-	if ((k_version = Q_atof(k_version_s = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION))) <
-		LOCALINFO_MAPS_KTPRO_VERSION ||
-	    (k_build   = Q_atoi(k_build_s   = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD)))   <
-		LOCALINFO_MAPS_KTPRO_BUILD)
+	k_version = Q_atof(k_version_s = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION));
+	k_build   = Q_atoi(k_build_s   = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD));
+	if (k_version < LOCALINFO_MAPS_KTPRO_VERSION ||
+	    k_build   <	LOCALINFO_MAPS_KTPRO_BUILD)
 	{
 		Con_Printf("WARNING: Storing maps list in LOCALINFO supported only by ktpro version "
 				LOCALINFO_MAPS_KTPRO_VERSION_S " build %i and newer.\n",

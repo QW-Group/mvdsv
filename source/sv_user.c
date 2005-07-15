@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.10 2005/07/11 13:52:38 vvd0 Exp $
+	$Id: sv_user.c,v 1.11 2005/07/15 16:12:18 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1138,7 +1138,6 @@ void SV_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
 	char		*cmd_argv_i;
-	extern cvar_t	sv_demoDir;
 
 	if (!sv_use_internal_cmd_dl.value)
 		if (SV_ExecutePRCommand())
@@ -2464,6 +2463,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 	frame->ping_time = realtime - frame->senttime;
 
 	if (!cl->spectator)
+	{
 		if (frame->ping_time * 1000 > sv_minping.value) {
 			cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
 			if (cl->delay < 0)
@@ -2473,8 +2473,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			if (cl->delay > 300)
 				cl->delay = 300;
 		}
-
-
+	}
 
 	// make sure the reply sequence number matches the incoming
 	// sequence number 
