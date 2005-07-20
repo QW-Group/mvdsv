@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.22 2005/07/15 16:59:32 vvd0 Exp $
+$Id: changes.txt,v 1.23 2005/07/20 16:18:06 vvd0 Exp $
 
 ----
 MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
@@ -69,7 +69,7 @@ MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
   0 - quit on error (old style)
   1 - restart instead quit on server error (SV_Error)
   default: 0
-- bugfix: 'cmd mmode player N' cause server crash if 'N' >= 0x10000000, signed int32 => negative
+- bugfix: cmd mmode could be abused to crash servers
 (Thanks to zip)
 
 
