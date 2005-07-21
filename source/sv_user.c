@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.12 2005/07/21 11:41:22 vvd0 Exp $
+	$Id: sv_user.c,v 1.13 2005/07/21 17:05:09 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -609,8 +609,6 @@ void SV_Begin_f (void)
 	if (host_client->state == cs_spawned)
 		return; // don't begin again
 
-	host_client->state = cs_spawned;
-	
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
@@ -618,6 +616,8 @@ void SV_Begin_f (void)
 		SV_New_f ();
 		return;
 	}
+
+	host_client->state = cs_spawned;
 
 	if (host_client->spectator)
 	{
