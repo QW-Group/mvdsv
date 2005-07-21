@@ -1,5 +1,12 @@
 
-$Id: changes.txt,v 1.23 2005/07/20 16:18:06 vvd0 Exp $
+$Id: changes.txt,v 1.24 2005/07/21 11:41:19 vvd0 Exp $
+
+----
+MVDSV v0.180 Beta DEVELOP build 20?? (2005.07.??)
+[unix]
+- bugfix from 0.179b: crashes while printing red text in some places
+(Thanks to Oppy)
+
 
 ----
 MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)

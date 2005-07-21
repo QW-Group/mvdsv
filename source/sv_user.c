@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.11 2005/07/15 16:12:18 vvd0 Exp $
+	$Id: sv_user.c,v 1.12 2005/07/21 11:41:22 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -719,7 +719,8 @@ void SV_Begin_f (void)
 
 //=============================================================================
 
-int	demonum[MAX_ARGS];
+static int demonum[MAX_ARGS];
+static qboolean demolist = false;
 
 /*
 ==================
@@ -730,19 +731,25 @@ qboolean SV_DownloadNextFile (void)
 {
 	int	num;
 	char	*name, n[MAX_OSPATH];
+	unsigned char	all_demos_downloaded[]	= "All demos downloaded.\n",
+					incorrect_demo_number[]	= "Incorrect demo number.\n";
 	if (!demonum[0])
 		return false;
 	if (demonum[0] == 1)
 	{
-		Con_Printf(Q_redtext("All demos downloaded.\n"));
+		if (demolist)
+		{
+			Con_Printf(Q_redtext(all_demos_downloaded));
+			demolist = false;
+		}
 		demonum[0] = 0;
 		return false;
 	}
 	demonum[0]--;
-        num = demonum[demonum[0]];
+	num = demonum[demonum[0]];
 	if (num == 0)
 	{
-		Con_Printf(Q_redtext("Incorrect demo number.\n"));
+		Con_Printf(Q_redtext(incorrect_demo_number));
 		return SV_DownloadNextFile();
 	}
 	if (!(name = SV_DemoNum(num)))
@@ -771,6 +778,7 @@ void SV_NextDownload_f (void)
 	int		percent;
 	int		size;
 	double	clear, frametime;
+	unsigned char download_completed[] = "Download completed.\n";
 
 	if (!host_client->download)
 		return;
@@ -813,7 +821,9 @@ void SV_NextDownload_f (void)
 	fclose (host_client->download);
 	host_client->download = NULL;
 	host_client->file_percent = 0; //bliP: file percent
-	Con_Printf(Q_redtext("Download completed.\n"));
+
+	Con_Printf(Q_redtext(download_completed));
+
 	if (SV_DownloadNextFile())
 		return;
 
@@ -1138,6 +1148,9 @@ void SV_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
 	char		*cmd_argv_i;
+	unsigned char	download_queue_cleared[]		= "Download queue cleared.\n",
+					download_queue_empty[]			= "Download queue empty.\n",
+					download_queue_already_exists[]	= "Download queue already exists.\n";
 
 	if (!sv_use_internal_cmd_dl.value)
 		if (SV_ExecutePRCommand())
@@ -1159,21 +1172,21 @@ void SV_DemoDownload_f(void)
 	{
 		if (demonum[0])
 		{
-			Con_Printf(Q_redtext("Download queue cleared.\n"));
+			Con_Printf(Q_redtext(download_queue_cleared));
 			demonum[0] = 0;
 		}
 		else
-			Con_Printf(Q_redtext("Download queue empty.\n"));
+			Con_Printf(Q_redtext(download_queue_empty));
 		return;
 	}
 
 	if (demonum[0])
 	{
-		Con_Printf(Q_redtext("Download queue already exists.\n"));
+		Con_Printf(Q_redtext(download_queue_already_exists));
 		return;
 	}
 
-	demonum[0] = Cmd_Argc();
+	demolist = ((demonum[0] = Cmd_Argc()) > 2);
 	for (i = 1; i < demonum[0]; i++)
 	{
 		cmd_argv_i = Cmd_Argv(i);
@@ -1892,11 +1905,14 @@ void SV_ShowMapsList_f(void)
 {
 	char	*value, *key;
 	int	i, j, len, i_mod_2 = 1;
+	unsigned char	ztndm3[]			  = "ztndm3",
+					list_of_custom_maps[] = "list of custom maps",
+					end_of_list[]		  = "end of list";
 
 	SV_Check_ktpro();
 
 	Con_Printf("Vote for maps by typing the mapname, for example \"%s\"\n\n---%s\n",
-			Q_redtext("ztndm3"), Q_redtext("list of custom maps"));
+			Q_redtext(ztndm3), Q_redtext(list_of_custom_maps));
 	
 	for (i = LOCALINFO_MAPS_LIST_START; i <= LOCALINFO_MAPS_LIST_END; i++)
 	{
@@ -1917,7 +1933,7 @@ void SV_ShowMapsList_f(void)
 		else
 			break;
 	}
-	Con_Printf("%s---%s\n", i_mod_2 ? "" : "\n", Q_redtext("end of list"));
+	Con_Printf("%s---%s\n", i_mod_2 ? "" : "\n", Q_redtext(end_of_list));
 }
 
 void SV_DemoList_f(void);
