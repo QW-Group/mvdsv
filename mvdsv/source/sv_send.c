@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.7 2005/07/05 12:50:28 vvd0 Exp $
+	$Id: sv_send.c,v 1.8 2005/07/21 17:04:30 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -262,7 +262,7 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 	{
 		if (level < cl->messagelevel)
 			continue;
-		if (!cl->state)
+		if (cl->state < cs_connected)
 			continue;
 
 		SV_PrintToClient(cl, level, string);
@@ -1178,7 +1178,7 @@ void SV_SendMessagesToAll (void)
 	client_t	*c;
 
 	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
-		if (c->state)		// FIXME: should this only send to active?
+		if (c->state >= cs_connected)		// FIXME: should this only send to active?
 			c->send_message = true;
 	
 	SV_SendClientMessages ();
