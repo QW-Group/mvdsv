@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.13 2005/07/21 17:05:09 disconn3ct Exp $
+	$Id: sv_user.c,v 1.14 2005/07/22 13:37:03 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1209,6 +1209,7 @@ SV_StopDownload_f
 */
 void SV_StopDownload_f(void)
 {
+	unsigned char	download_stopped[] = "Download stopped.\n";
 	if (host_client->download)
 	{
 		host_client->downloadcount = host_client->downloadsize;
@@ -1218,7 +1219,7 @@ void SV_StopDownload_f(void)
 		ClientReliableWrite_Begin (host_client, svc_download, 6);
 		ClientReliableWrite_Short (host_client, 0);
 		ClientReliableWrite_Byte (host_client, 100);
-		Con_Printf ("Download stopped.\n");
+		Con_Printf (Q_redtext(download_stopped));
 	}
 }
 //=============================================================================

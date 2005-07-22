@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /GB /Zp4 /Ze /W3 /GX- /O1 /Ob0 /Gy /I "." /D "NDEBUG" /D "_CONSOLE" /FD /c
+# ADD CPP /nologo /Zp4 /W3 /O1 /Ob0 /I "." /D "NDEBUG" /D "_CONSOLE" /FD /c
 # SUBTRACT CPP /Fr /YX
 # ADD BASE RSC /l 0x415 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
@@ -128,7 +128,15 @@ SOURCE=.\tools.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl;fi;fd"
 # Begin Source File
 
+SOURCE=..\bothdefs.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\defs.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\protocol.h
 # End Source File
 # Begin Source File
 
@@ -136,7 +144,7 @@ SOURCE=.\tools.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\version.h
+SOURCE=..\version.h
 # End Source File
 # Begin Source File
 

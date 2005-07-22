@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.14 2005/07/11 13:52:38 vvd0 Exp $
+	$Id: sv_main.c,v 1.15 2005/07/22 13:37:02 vvd0 Exp $
 */
 
 #include "version.h"
@@ -2456,7 +2456,6 @@ void SV_InitLocal (void)
 	int		i, len;
 	extern	cvar_t	sv_maxvelocity;
 	extern	cvar_t	sv_gravity;
-	extern	cvar_t	sv_aim;
 	extern	cvar_t	sv_stopspeed;
 	extern	cvar_t	sv_spectatormaxspeed;
 	extern	cvar_t	sv_accelerate;
@@ -2556,8 +2555,6 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_friction);
 	Cvar_RegisterVariable (&sv_bunnyspeedcap);
 	Cvar_RegisterVariable (&sv_waterfriction);
-
-	Cvar_RegisterVariable (&sv_aim);
 
 	Cvar_RegisterVariable (&filterban);
 	
