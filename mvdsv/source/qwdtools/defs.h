@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: defs.h,v 1.3 2005/07/15 15:52:55 vvd0 Exp $
+	$Id: defs.h,v 1.4 2005/07/22 13:37:03 vvd0 Exp $
 */
 
 #ifdef _WIN32
@@ -44,11 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fcntl.h>
 
 #define INI_FILE	"qwdtools.ini"
-
-#ifndef min
-#define max(a,b) ((a) > (b) ? (a) : (b))
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
 
 typedef enum {false, true} qboolean;
 
@@ -92,6 +87,7 @@ typedef vec_t vec3_t[3];
 #undef SERVERONLY
 #include "../protocol.h"
 #include "../bothdefs.h"
+#include "../version.h"
 #include "tools.h"
 #include "world.h"
 

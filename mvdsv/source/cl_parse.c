@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_parse.c,v 1.2 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_parse.c,v 1.3 2005/07/22 13:37:01 vvd0 Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -669,7 +669,8 @@ void CL_ParseServerData (void)
 	protover = MSG_ReadLong ();
 	if (protover != PROTOCOL_VERSION && 
 		!(cls.demoplayback && (protover == 26 || protover == 27 || protover == 28)))
-		Host_EndGame ("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck http://www.quakeworld.net,\nhttp://mvdsv.sourceforge.net,\nhttp://ezquake.sourceforge.net", protover, PROTOCOL_VERSION);
+		Host_EndGame ("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck " PROJECT_URL ",\nhttp://ezquake.sourceforge.net", protover, PROTOCOL_VERSION);
+//http://www.quakeworld.net,\n
 
 	cl.servercount = MSG_ReadLong ();
 

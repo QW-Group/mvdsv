@@ -15,15 +15,19 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: init.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: init.c,v 1.3 2005/07/22 13:37:03 vvd0 Exp $
 */
 
 #include "defs.h"
-#include "version.h"
 
 #define DEFAULT_FPS 20
 #define DEBUG_FILE	"debug.txt"
 #define LOG_FILE	"log.txt"
+#ifdef _WIN32
+#define BINARY_NAME "qwdtools.exe"
+#else
+#define BINARY_NAME "qwdtools"
+#endif
 
 extern int com_argc;
 extern char *com_argv[MAX_NUM_ARGVS];
@@ -31,9 +35,9 @@ extern char *com_argv[MAX_NUM_ARGVS];
 
 void Help (void)
 {
-	Sys_Printf("usage: qwdtools.exe [-options] demoname1 demoname2 ...\n"
+	Sys_Printf("usage: " BINARY_NAME " [-options] demoname1 demoname2 ...\n"
 			   "example:\n"
-			   "qwdtools.exe -c -o * -od out mydemo.qwd\nwill convert demo 'mydemo.qwd' to 'out/mydemo.mvd'\n\n");
+			   BINARY_NAME " -c -o * -od out mydemo.qwd\nwill convert demo 'mydemo.qwd' to 'out/mydemo.mvd'\n\n");
 
 	Sys_Printf("available options: (argument in [] is optional)\n");
 	Sys_Printf("-bd path               changes current directory\n");

@@ -274,19 +274,6 @@ SOURCE=.\pcre\pcre.h
 # End Group
 # Begin Source File
 
-SOURCE="C:\Program Files\Microsoft Visual Studio\VC98\Include\BASETSD.H"
-
-!IF  "$(CFG)" == "qwsv - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=.\bothdefs.h
 # End Source File
 # Begin Source File

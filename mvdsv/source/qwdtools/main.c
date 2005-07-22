@@ -15,11 +15,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: main.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: main.c,v 1.3 2005/07/22 13:37:03 vvd0 Exp $
 */
 
 #include "defs.h"
-#include "version.h"
 #ifdef _WIN32
 #include <malloc.h>
 #include <float.h>
@@ -1141,9 +1140,9 @@ int main (int argc, char **argv)
 	World_Init();
 
 //	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
-	Sys_Printf( VERSION " (c) 2001-2003 Bartlomiej Rychtarski\n");
-	Sys_Printf("Unix port by David (hexum) Balcom and VVD, 2004\n");
-	Sys_Printf("http://mvdsv.sorceforge.net\n\n");
+	Sys_Printf(QWDTOOLS_NAME " version " QWE_VERSION " (c) 2001-2003 Bartlomiej Rychtarski\n");
+	Sys_Printf("Unix port by David (hexum) Balcom and VVD, 2004, 2005\n");
+	Sys_Printf("Part of the " PROJECT_NAME " project: " PROJECT_URL "\n\n");
 
 	Tools_Init();
 
