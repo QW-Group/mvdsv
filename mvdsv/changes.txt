@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.26 2005/07/22 14:02:02 vvd0 Exp $
+$Id: changes.txt,v 1.27 2005/07/22 17:44:30 vvd0 Exp $
 
 ----
 MVDSV v0.18 build 2040 (2005.07.22)
@@ -7,8 +7,8 @@ MVDSV v0.18 build 2040 (2005.07.22)
 [server]
 - removed cvar sv_aim (by Disconnect)
 - only set the client to cs_spawned state AFTER we've verfied his spawncount
-(by Discinnect from ZQuake)
-- don't send to zombies (by Discinnect from ZQuake)
+(by Disconnect from ZQuake)
+- don't send to zombies (by Disconnect from ZQuake)
 [unix]
 - bugfix from 0.179b: crashes while printing red text in some places
 (Thanks to Oppy)
