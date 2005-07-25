@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.27 2005/07/22 17:44:30 vvd0 Exp $
+$Id: changes.txt,v 1.28 2005/07/25 17:48:50 vvd0 Exp $
 
 ----
 MVDSV v0.18 build 2040 (2005.07.22)
@@ -72,7 +72,7 @@ MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
   also can to add negative values - 'cmd dl -N' - download the Nth to last recorded demo
   (for example: 'cmd dl 1 ... 4 . -6 .. 22 ........');
   'download demonum/N' fully work same as 'cmd dl N'
-  (N - posive or negative integer value or any quantity of dots)
+  (N - positive or negative integer value or any quantity of dots)
 - bugfix from Id Software's QWSV: calculate negative percentage of file while downloading
   if size of downloaded part is > 0x10000000b / 100 (~= 20.5Mb):
   (signed int32)20.5Mb * 100 => signed overflow => negative value
