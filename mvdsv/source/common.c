@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.c,v 1.7 2005/05/27 15:09:48 vvd0 Exp $
+	$Id: common.c,v 1.8 2005/07/25 12:23:44 vvd0 Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -968,7 +968,8 @@ char *COM_Parse (char *data)
 		return NULL;
 
 // skip whitespace
-skipwhite:
+while (true)
+{
 	while ( (c = *data) == ' ' || c == '\t' || c == '\r' || c == '\n')
 		data++;
 
@@ -980,9 +981,9 @@ skipwhite:
 	{
 		while (*data && *data != '\n')
 			data++;
-		goto skipwhite;
-	}
-
+	} else
+		break;
+}
 
 // handle quoted strings specially
 	if (c == '\"')
