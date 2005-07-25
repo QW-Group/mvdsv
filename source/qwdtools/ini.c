@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: ini.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: ini.c,v 1.3 2005/07/25 12:23:46 vvd0 Exp $
 */
 
 #include "defs.h"
@@ -44,6 +44,8 @@ char *Parse (char *data, qboolean newline)
 
 // skip whitespace
 skipwhite:
+while (true)
+{
 	while ( (c = *data) == ' ' || c == '\t' || (newline && (c == '\r' || c == '\n')))
 		data++;
 
@@ -55,9 +57,9 @@ skipwhite:
 	{
 		while (*data && *data != '\n')
 			data++;
-		goto skipwhite;
-	}
-
+	} else
+		break;
+}
 
 // handle quoted strings specially
 	if (c == '\"')
