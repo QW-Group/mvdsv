@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.7 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: server.h,v 1.8 2005/07/29 17:58:04 vvd0 Exp $
 */
 // server.h
 
@@ -210,6 +210,11 @@ typedef struct client_s
 	FILE			*download;			// file being downloaded
 	int				downloadsize;		// total bytes
 	int				downloadcount;		// bytes sent
+// demo download list for internal cmd dl function
+//Added by VVD {
+	int				demonum[MAX_ARGS];
+	qboolean		demolist;
+// } Added by VVD
 
 	int				spec_track;			// entnum of player tracking
 

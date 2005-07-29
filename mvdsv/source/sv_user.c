@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.14 2005/07/22 13:37:03 vvd0 Exp $
+	$Id: sv_user.c,v 1.15 2005/07/29 17:58:04 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -719,9 +719,6 @@ void SV_Begin_f (void)
 
 //=============================================================================
 
-static int demonum[MAX_ARGS];
-static qboolean demolist = false;
-
 /*
 ==================
 SV_DownloadNextFile_f
@@ -733,20 +730,22 @@ qboolean SV_DownloadNextFile (void)
 	char	*name, n[MAX_OSPATH];
 	unsigned char	all_demos_downloaded[]	= "All demos downloaded.\n",
 					incorrect_demo_number[]	= "Incorrect demo number.\n";
-	if (!demonum[0])
-		return false;
-	if (demonum[0] == 1)
+
+	switch (host_client->demonum[0])
 	{
-		if (demolist)
+	case 1:
+		if (host_client->demolist)
 		{
 			Con_Printf(Q_redtext(all_demos_downloaded));
-			demolist = false;
+			host_client->demolist = false;
 		}
-		demonum[0] = 0;
+		host_client->demonum[0] = 0;
+	case 0:
 		return false;
+	default:;
 	}
-	demonum[0]--;
-	num = demonum[demonum[0]];
+
+	num = host_client->demonum[--(host_client->demonum[0])];
 	if (num == 0)
 	{
 		Con_Printf(Q_redtext(incorrect_demo_number));
@@ -1170,24 +1169,24 @@ void SV_DemoDownload_f(void)
 
 	if (!strcmp(Cmd_Argv(1), "\\"))
 	{
-		if (demonum[0])
+		if (host_client->demonum[0])
 		{
 			Con_Printf(Q_redtext(download_queue_cleared));
-			demonum[0] = 0;
+			host_client->demonum[0] = 0;
 		}
 		else
 			Con_Printf(Q_redtext(download_queue_empty));
 		return;
 	}
 
-	if (demonum[0])
+	if (host_client->demonum[0])
 	{
 		Con_Printf(Q_redtext(download_queue_already_exists));
 		return;
 	}
 
-	demolist = ((demonum[0] = Cmd_Argc()) > 2);
-	for (i = 1; i < demonum[0]; i++)
+	host_client->demolist = ((host_client->demonum[0] = Cmd_Argc()) > 2);
+	for (i = 1; i < host_client->demonum[0]; i++)
 	{
 		cmd_argv_i = Cmd_Argv(i);
 		cmd_argv_i_len = strlen(cmd_argv_i);
@@ -1197,7 +1196,7 @@ void SV_DemoDownload_f(void)
 				num = Q_atoi(cmd_argv_i);
 				break;
 			}
-		demonum[demonum[0] - i] = num;
+		host_client->demonum[host_client->demonum[0] - i] = num;
 	}
 	SV_DownloadNextFile();
 }
