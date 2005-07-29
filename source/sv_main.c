@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.15 2005/07/22 13:37:02 vvd0 Exp $
+	$Id: sv_main.c,v 1.16 2005/07/29 17:58:04 vvd0 Exp $
 */
 
 #include "version.h"
@@ -880,6 +880,15 @@ void SVC_DirectConnect (void)
 			//SV_DropClient (cl);
 			*cl = *newcl;
 			newcl = cl;
+
+			cl->download = NULL;
+			cl->file_percent = 0;
+// demo download list for internal cmd dl function
+//Added by VVD {
+			cl->demonum[0] = 0;
+			cl->demolist = false;
+// } Added by VVD
+
 			gotnewcl = true;
 			break;
 //<-
@@ -2720,13 +2729,40 @@ Pull specific info from a newly changed userinfo string
 into a more C freindly form.
 =================
 */
+// Added by VVD {
+// ktpro crash if absolute value of userinfo keys "ls" or/and "lw" is to large
+void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qboolean warning_msg)
+{
+	if (warning_msg)
+		SV_ClientPrintf (cl, PRINT_HIGH, "WARNING: You can't set setinfo %s %s %i.\n",
+						key, limit > 0 ? ">" : "<", limit);
+
+	Info_SetValueForKey (cl->userinfo, key, va("%i", limit), MAX_INFO_STRING);
+
+	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
+	MSG_WriteString (&cl->netchan.message, va("setinfo %s %i", key, limit));
+}
+
+void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
+{
+	char *value_c = Info_ValueForKey (cl->userinfo, key);
+	int value = Q_atoi(value_c);
+
+	if (value > limit)
+		SV_SetUserInfoKeyLimit (key, limit, cl, true);
+	else if (value < -limit)
+		SV_SetUserInfoKeyLimit (key, -limit, cl, true);
+	else if (strcmp(value_c, va("%i", value)))
+		SV_SetUserInfoKeyLimit (key, value, cl, false);
+}
+// } Added by VVD
 
 extern func_t UserInfo_Changed;
 
 void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 {
 	char	*val, *p, *q;
-	int		i;
+	int		i, limit;
 	client_t	*client;
 	int		dupc = 1;
 	char	newname[80];
@@ -2834,22 +2870,28 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 	// rate
 	if (cl->download) {
 		val = Info_ValueForKey (cl->userinfo, "drate");
-		if (!atoi(val))
+		if (!Q_atoi(val))
 			val = Info_ValueForKey (cl->userinfo, "rate");
 	} else
 		val = Info_ValueForKey (cl->userinfo, "rate");
-	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, atoi(val));
+	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(val));
 
 	// message level
 	val = Info_ValueForKey (cl->userinfo, "msg");
 	if (strlen(val))
-		cl->messagelevel = atoi(val);
+		cl->messagelevel = Q_atoi(val);
 
 //bliP: spectator print ->
 	val = Info_ValueForKey(cl->userinfo, "sp");
 	if (strlen(val))
-		cl->spec_print = atoi(val);
+		cl->spec_print = Q_atoi(val);
 //<-
+// Added by VVD {
+// ktpro crash if absolute value of userinfo keys "ls" or/and "lw" is to large
+	limit = 63;
+    SV_CheckUserInfoKeyLimit("lw", limit, cl);
+    SV_CheckUserInfoKeyLimit("ls", limit, cl);
+// } Added by VVD
 }
 
 

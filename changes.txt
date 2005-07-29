@@ -1,5 +1,13 @@
 
-$Id: changes.txt,v 1.28 2005/07/25 17:48:50 vvd0 Exp $
+$Id: changes.txt,v 1.29 2005/07/29 17:58:01 vvd0 Exp $
+
+----
+MVDSV v0.19 build 2050 (2005.08.01)
+[server]
+- bugfix ktpro: posibility to crash ktpro from client
+- bugfix from 0.179b: internal 'cmd dl' function used one queue for all players -
+  made self queue for each player
+
 
 ----
 MVDSV v0.18 build 2040 (2005.07.22)
