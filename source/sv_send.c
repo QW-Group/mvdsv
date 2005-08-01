@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.8 2005/07/21 17:04:30 disconn3ct Exp $
+	$Id: sv_send.c,v 1.9 2005/08/01 16:31:46 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -287,7 +287,7 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 //			SV_Write_Log(MOD_FRAG_LOG, 1, "=== SV_BroadcastPrintf ==={\n");
 //			SV_Write_Log(MOD_FRAG_LOG, 1, string2);
 //			SV_Write_Log(MOD_FRAG_LOG, 1, "}==========================\n");
-			if (fraglog = parse_mod_string(string2))
+			if ((fraglog = parse_mod_string(string2)))
 			{
 				SV_Write_Log(MOD_FRAG_LOG, 1, fraglog);
 				Q_Free(fraglog);
