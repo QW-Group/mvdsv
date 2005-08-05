@@ -1,10 +1,18 @@
 
-$Id: changes.txt,v 1.29 2005/07/29 17:58:01 vvd0 Exp $
+$Id: changes.txt,v 1.30 2005/08/05 12:38:34 vvd0 Exp $
+
+----
+MVDSV v0.20 build 20?? (2005.08.??)
+[server]
+- bugfix from 0.160b: pause with sv_minping > 0 cause all players disconnected
+(Thaks to Siberex)
+
 
 ----
 MVDSV v0.19 build 2050 (2005.08.01)
 [server]
 - bugfix ktpro: posibility to crash ktpro from client
+(Thaks to MoosemaN)
 - bugfix from 0.179b: internal 'cmd dl' function used one queue for all players -
   made self queue for each player
 

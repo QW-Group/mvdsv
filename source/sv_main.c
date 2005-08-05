@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.16 2005/07/29 17:58:04 vvd0 Exp $
+	$Id: sv_main.c,v 1.17 2005/08/05 12:38:37 vvd0 Exp $
 */
 
 #include "version.h"
@@ -2109,7 +2109,7 @@ void SV_ReadDelayedPackets (void)
 	for (i = 0, pack = svs.packets; i < svs.num_packets; )
 	{
 		cl = &svs.clients[pack->num];
-		if (realtime < pack->time + cl->delay) {
+		if (realtime < pack->time + cl->delay && !ServerPaused()) {
 			i++;
 			pack++;
 			continue;

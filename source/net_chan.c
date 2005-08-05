@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net_chan.c,v 1.3 2005/05/27 15:09:50 vvd0 Exp $
+	$Id: net_chan.c,v 1.4 2005/08/05 12:38:37 vvd0 Exp $
 */
 
 #include <stdlib.h>
@@ -213,10 +213,6 @@ qboolean Netchan_CanReliable (netchan_t *chan)
 		return false;			// waiting for ack
 	return Netchan_CanPacket (chan);
 }
-
-#ifdef SERVERONLY
-qboolean ServerPaused(void);
-#endif
 
 /*
 ===============
