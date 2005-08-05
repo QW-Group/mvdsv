@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.15 2005/07/29 17:58:04 vvd0 Exp $
+	$Id: sv_user.c,v 1.16 2005/08/05 12:38:38 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2478,7 +2478,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
 	frame->ping_time = realtime - frame->senttime;
 
-	if (!cl->spectator)
+	if (!cl->spectator && !ServerPaused())
 	{
 		if (frame->ping_time * 1000 > sv_minping.value) {
 			cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
