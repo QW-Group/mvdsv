@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: quakedef.h,v 1.4 2005/08/05 12:38:37 vvd0 Exp $
+	$Id: quakedef.h,v 1.5 2005/08/08 15:04:11 vvd0 Exp $
 */
 // quakedef.h -- primary header for client
 
@@ -81,6 +81,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "glquake.h"
 #endif
 
+#ifdef SERVERONLY
+#include "server.h"
+#endif
+
 //=============================================================================
 
 // the host system specifies the base of the directory tree, the
@@ -134,10 +138,6 @@ void Host_Frame (double time);
 void Host_Quit_f (void);
 void Host_ClientCommands (char *fmt, ...);
 void Host_ShutdownServer (qboolean crash);
-
-#ifdef SERVERONLY
-qboolean ServerPaused(void);
-#endif
 
 extern qboolean		msg_suppress_1;		// suppresses resolution and cache size console output
 										//  an fullscreen DIB focus gain/loss

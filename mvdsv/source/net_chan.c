@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net_chan.c,v 1.4 2005/08/05 12:38:37 vvd0 Exp $
+	$Id: net_chan.c,v 1.5 2005/08/08 15:04:11 vvd0 Exp $
 */
 
 #include <stdlib.h>
@@ -311,7 +311,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	else
 		chan->cleartime += send.cursize*chan->rate;
 #ifdef SERVERONLY
-	if (ServerPaused())
+	if (sv.paused)
 		chan->cleartime = realtime;
 #endif
 
