@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.8 2005/07/29 17:58:04 vvd0 Exp $
+	$Id: server.h,v 1.9 2005/08/08 14:57:35 vvd0 Exp $
 */
 // server.h
 
@@ -138,7 +138,7 @@ typedef struct
 	packet_entities_t	entities;
 } client_frame_t;
 
-#define MAX_BACK_BUFFERS	16
+#define MAX_BACK_BUFFERS	128
 #define MAX_STUFFTEXT		256
 #define	CLIENT_LOGIN_LEN	16
 #define	CLIENT_NAME_LEN		32
@@ -477,6 +477,9 @@ typedef struct
 #define LOCALINFO_MAPS_KTPRO_BUILD	42795
 #define SERVERINFO_KTPRO_VERSION	"kmod"
 #define SERVERINFO_KTPRO_BUILD		"build"
+
+#define MAX_REDIRECTMESSAGES	128
+#define OUTPUTBUF_SIZE			8000
 //============================================================================
 
 extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
@@ -696,3 +699,5 @@ qboolean SV_Login(client_t *cl);
 void SV_Logout(client_t *cl);
 void SV_ParseLogin(client_t *cl);
 void SV_LoginCheckTimeOut(client_t *cl);
+
+qboolean GameStarted(void);
