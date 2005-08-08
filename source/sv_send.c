@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.9 2005/08/01 16:31:46 vvd0 Exp $
+	$Id: sv_send.c,v 1.10 2005/08/08 14:57:36 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -35,8 +35,7 @@ Con_Printf redirection
 =============================================================================
 */
 
-#define MAX_REDIRECTMESSAGES 4
-char	outputbuf[8000];
+char	outputbuf[OUTPUTBUF_SIZE];
 
 redirect_t	sv_redirected;
 static int	sv_redirectbufcount;
@@ -50,7 +49,7 @@ SV_FlushRedirect
 */
 void SV_FlushRedirect (void)
 {
-	char	send[8000+6];
+	char	send[OUTPUTBUF_SIZE + 6];
 
 	if (sv_redirected == RD_PACKET)
 	{

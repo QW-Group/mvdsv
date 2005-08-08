@@ -1,9 +1,14 @@
 
-$Id: changes.txt,v 1.30 2005/08/05 12:38:34 vvd0 Exp $
+$Id: changes.txt,v 1.31 2005/08/08 14:57:24 vvd0 Exp $
 
 ----
-MVDSV v0.20 build 20?? (2005.08.??)
+MVDSV v0.19-CVS build 20?? (2005.08.??)
 [server]
+- 'cmd dlist' and 'cmd demolist' can show about 4000 demos in list now, but if serverinfo key
+  status is not "Standby" or demo recording is in progress then showing only last 100 demos;
+  was made some additional changes:
+  - MAX_BACK_BUFFERS increased from 16 to 128 (EXPERIMENTAL)
+  - MAX_REDIRECTMESSAGES increased from 4 to 128 (EXPERIMENTAL)
 - bugfix from 0.160b: pause with sv_minping > 0 cause all players disconnected
 (Thaks to Siberex)
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.9 2005/07/15 16:12:17 vvd0 Exp $
+	$Id: sv_demo.c,v 1.10 2005/08/08 14:57:35 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1560,7 +1560,7 @@ void SV_DemoList_f (void)
 	dir_t	dir;
 	file_t	*list;
 	float	f;
-	int		i,j;
+	int		i = 0, j;
 
 	Con_Printf("content of %s/%s/%s\n", com_gamedir, sv_demoDir.string, sv_demoRegexp.string);
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
@@ -1569,16 +1569,21 @@ void SV_DemoList_f (void)
 	if (!list->name[0])
 		Con_Printf("no demos\n");
 
-	for (i = 1; list->name[0]; i++, list++)
+	if (GameStarted() && dir.numfiles > 100)
+	{
+		i = dir.numfiles - 100;
+		list = &dir.files[i];
+	}
+	for ( ; list->name[0]; list++)
 	{
 		for (j = 1; j < Cmd_Argc(); j++)
 			if (strstr(list->name, Cmd_Argv(j)) == NULL)
 				break;
 		if (Cmd_Argc() == j) {
 			if (sv.demorecording && !strcmp(list->name, demo.name))
-				Con_Printf("*%d: %s %dk\n", i, list->name, demo.size/1024);
+				Con_Printf("*%d: %s %dk\n", ++i, list->name, demo.size/1024);
 			else
-				Con_Printf("%d: %s %dk\n", i, list->name, list->size/1024);
+				Con_Printf("%d: %s %dk\n", ++i, list->name, list->size/1024);
 		}
 	}
 

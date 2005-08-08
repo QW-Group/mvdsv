@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.7 2005/07/22 13:37:01 vvd0 Exp $
+	$Id: pr_cmds.c,v 1.8 2005/08/08 14:57:32 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1067,7 +1067,7 @@ string readmcmd (string str)
 void PF_readcmd (void)
 {
 	char *s;
-	static char output[8000];
+	static char output[OUTPUTBUF_SIZE];
 	extern char outputbuf[];
 	extern redirect_t sv_redirected;
 	redirect_t old;
