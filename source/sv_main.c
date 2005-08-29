@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.18 2005/08/08 14:57:36 vvd0 Exp $
+	$Id: sv_main.c,v 1.19 2005/08/29 15:46:21 vvd0 Exp $
 */
 
 #include "version.h"
@@ -2738,7 +2738,7 @@ void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qboolean warnin
 	Info_SetValueForKey (cl->userinfo, key, va("%i", limit), MAX_INFO_STRING);
 
 	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
-	MSG_WriteString (&cl->netchan.message, va("setinfo %s %i", key, limit));
+	MSG_WriteString (&cl->netchan.message, va("setinfo \"%s\" \"%i\"\n", key, limit));
 }
 
 void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
@@ -2750,7 +2750,7 @@ void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
 		SV_SetUserInfoKeyLimit (key, limit, cl, true);
 	else if (value < -limit)
 		SV_SetUserInfoKeyLimit (key, -limit, cl, true);
-	else if (strcmp(value_c, va("%i", value)))
+	else if (strcmp(value_c, va("%i", value)) && *value_c)
 		SV_SetUserInfoKeyLimit (key, value, cl, false);
 }
 // } Added by VVD
