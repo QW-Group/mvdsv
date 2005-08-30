@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.10 2005/08/08 14:57:36 vvd0 Exp $
+	$Id: sv_send.c,v 1.11 2005/08/30 01:14:09 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -791,7 +791,7 @@ SV_UpdateToReliableMessages
 */
 void SV_UpdateToReliableMessages (void)
 {
-	int			i, j, cls;
+	int i, j, cls;
 	client_t *client;
 	eval_t *val;
 	edict_t *ent;
@@ -808,7 +808,10 @@ void SV_UpdateToReliableMessages (void)
 			host_client->sendinfo = false;
 			SV_FullClientUpdate (host_client, &sv.reliable_datagram);
 		}
-		if (host_client->old_frags != host_client->edict->v.frags)
+
+		ent = host_client->edict;
+
+		if (host_client->old_frags != (int)ent->v.frags)
 		{
 			cls = 0;
 			for (j=0, client = svs.clients ; j<MAX_CLIENTS ; j++, client++)
@@ -817,22 +820,20 @@ void SV_UpdateToReliableMessages (void)
 					continue;
 				ClientReliableWrite_Begin(client, svc_updatefrags, 4);
 				ClientReliableWrite_Byte(client, i);
-				ClientReliableWrite_Short(client, host_client->edict->v.frags);
+				ClientReliableWrite_Short(client, ent->v.frags);
 			}
 			
 			if (sv.demorecording) {
 				DemoWrite_Begin(dem_all, 0, 4);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatefrags);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, i);
-				MSG_WriteShort((sizebuf_t*)demo.dbuf, host_client->edict->v.frags);
+				MSG_WriteShort((sizebuf_t*)demo.dbuf, ent->v.frags);
 			}
 
-			host_client->old_frags = host_client->edict->v.frags;
+			host_client->old_frags = ent->v.frags;
 		}
 
 		// maxspeed/entgravity changes
-		ent = host_client->edict;
-
 		val =
 #ifdef USE_PR2
 			PR2_GetEdictFieldValue(ent, "gravity");
