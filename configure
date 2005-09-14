@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#	$Id: configure,v 1.3 2005/05/27 15:06:05 vvd0 Exp $
+#	$Id: configure,v 1.4 2005/09/14 14:20:02 vvd0 Exp $
 #
 
 if [ x$1 != x ]; then
@@ -27,7 +27,7 @@ UNAME=`uname`
 fi
 
 case ${UNAME} in
-FreeBSD | Darwin)
+FreeBSD | Darwin | OpenBSD)
 	echo "${UNAME} system - use FreeBSD Makefile."
 	echo UNAME=${UNAME} > Makefile
 	cat Makefile.FreeBSD >> Makefile
@@ -45,6 +45,7 @@ Linux | SunOS)
 	echo "You must specify the system which you want to compile for:"
 	echo ""
 	echo "./configure FreeBSD               FreeBSD"
+	echo "./configure OpenBSD               OpenBSD"
 	echo "./configure Darwin                Darwin/Mac OS X"
 	echo "./configure Linux                 Linux"
 	echo "./configure SunOS                 SunOS"
