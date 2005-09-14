@@ -1,9 +1,12 @@
 
-$Id: changes.txt,v 1.32 2005/08/29 15:46:21 vvd0 Exp $
+$Id: changes.txt,v 1.33 2005/09/14 14:20:02 vvd0 Exp $
 
 ----
-MVDSV v0.19-CVS build 20?? (2005.08.??)
+MVDSV v0.19-CVS build 2??? (2005.09.??)
 [server]
+- added OpenBSD targets (by Claymore and VVD)
+- fix for gratuitous frag updates when v.frags is fractional (from ZQuake by Disconnect)
+(Thanks to Spike)
 - bugfix from 0.19: fullserverinfo was not sent to client if there was lw or ls userinfo keys
 - 'cmd dlist' and 'cmd demolist' can show about 4000 demos in list now, but if serverinfo key
   status is not "Standby" or demo recording is in progress then showing only last 100 demos;

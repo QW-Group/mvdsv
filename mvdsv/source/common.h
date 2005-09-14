@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.5 2005/07/05 12:50:26 vvd0 Exp $
+	$Id: common.h,v 1.6 2005/09/14 14:20:03 vvd0 Exp $
 */
 // common.h  -- general definitions
 
@@ -159,6 +159,8 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 #if defined(__linux__) || defined(_WIN32)
 size_t	strlcpy (char *dst, char *src, size_t siz);
 size_t	strlcat (char *dst, char *src, size_t siz);
+#endif
+#if defined(__linux__) || defined(_WIN32) || defined(__OpenBSD__)
 char	*strnstr (char *s, char *find, size_t slen);
 char	*strcasestr(const char *s, const char *find);
 #endif

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.8 2005/08/08 14:57:37 vvd0 Exp $
+	$Id: version.h,v 1.9 2005/09/14 14:20:03 vvd0 Exp $
 */
 // version.h
 
@@ -28,6 +28,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define QW_PLATFORM			"FreeBSD"
 #define QW_PLATFORM_SHORT	"(f)"
 #endif
+
+/*Claymore added this stuff ---> */
+#ifdef __OpenBSD__
+#define QW_PLATFORM			"OpenBSD"
+#define QW_PLATFORM_SHORT	"(o)"
+#endif
+/* <---  */
 
 #ifdef __linux__
 #define QW_PLATFORM			"Linux"
