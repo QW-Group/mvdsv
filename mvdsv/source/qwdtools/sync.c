@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sync.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: sync.c,v 1.3 2005/09/14 17:21:34 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -308,7 +308,7 @@ qboolean Synchronize (void)
 	int i, j, bad;
 	info_t *p;
 	source_t *dem1, *dem2;
-	float prevdesync, before, after, diff, desync, f, newdesync, x, y, mindiff = 0, m, sr, c, sr2, sec2, test, test2;
+	float prevdesync, before, after = 0.0, diff, desync = 0.0, f, newdesync = 0.0, x, y, mindiff = 0.0, m, sr = 0.0, c, sr2 = 0.0, sec2, test = 0.0, test2 = 0.0;
 	byte buf[15*MAX_MSGLEN];
 	qboolean done;
 

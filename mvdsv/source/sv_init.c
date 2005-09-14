@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.7 2005/05/27 15:09:54 vvd0 Exp $
+	$Id: sv_init.c,v 1.8 2005/09/14 17:20:57 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -686,7 +686,7 @@ void SV_SpawnServer (char *server)
 
 	entitystring = NULL;
 	if (sv_loadentfiles.value)
-		entitystring = COM_LoadHunkFile (va("maps/%s.ent", sv.name));
+		entitystring = (char *) COM_LoadHunkFile (va("maps/%s.ent", sv.name));
 	
 	if (entitystring)
 	{

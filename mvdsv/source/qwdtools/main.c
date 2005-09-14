@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: main.c,v 1.3 2005/07/22 13:37:03 vvd0 Exp $
+	$Id: main.c,v 1.4 2005/09/14 17:21:34 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -556,9 +556,6 @@ void CheckSpectator (void)
 
 void ReadPackets (void)
 {
-	qboolean change = false;
-	static float old;
-
 	// if it's not a time to read packet from this demofile, return
 	if (world.time && from->worldtime > world.time) {
 		return;
@@ -629,7 +626,7 @@ void ReadPackets (void)
 
 	if (sworld.from->file != stdin)
 	{
-		int p, i;
+		int p = 0, i;
 		long c;
 
 		for (i = 0, c = 0; i < sworld.fromcount; i++)
@@ -861,7 +858,6 @@ qboolean Synchronize (void);
 void MainLoop(void)
 {
 	frame_t	*fframe, *tframe, *pframe;
-	int		oldvalid = 0;
 	float	acc_time = 0, acc_ctime = 0;
 	int		acc_count = 0;
 	int		acc_count_o = 0;

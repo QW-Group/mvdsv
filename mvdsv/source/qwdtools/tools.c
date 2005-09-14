@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: tools.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: tools.c,v 1.3 2005/09/14 17:21:34 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -399,7 +399,6 @@ float MSG_ReadAngle16 (void)
 void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 {
 	int bits;
-	extern int stat_size;
 
 	memcpy (move, from, sizeof(*move));
 

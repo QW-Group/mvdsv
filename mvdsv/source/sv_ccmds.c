@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ccmds.c,v 1.8 2005/07/15 16:12:17 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.9 2005/09/14 17:20:57 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1269,7 +1269,7 @@ void SV_Check_maps_f(void)
 	dir_t d;
 	file_t *list;
 	int i, j, maps_id1;
-	char *s, *key;
+	char *s=NULL, *key;
 
 	SV_Check_ktpro();
 

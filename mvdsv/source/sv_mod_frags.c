@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_mod_frags.c,v 1.3 2005/07/15 16:12:18 vvd0 Exp $
+	$Id: sv_mod_frags.c,v 1.4 2005/09/14 17:20:57 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -109,13 +109,13 @@ qboolean sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
     return false;
 }
 
-char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
+const char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
 {
     pcre *reg;
     int *ovector[32];
-    char *errbuf;
+    const char *errbuf;
     int erroffset = 0;
-    char **buf = NULL;
+    const char **buf = NULL;
     int stringcount;
 
     if (!(reg = pcre_compile(qwm_str, 0, &errbuf, &erroffset, 0))) {
@@ -135,7 +135,7 @@ char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
 // main function        
 char *parse_mod_string(char *str)
 {
-    char **buf;
+    const char **buf;
     int i, str_len = strlen(str);
     char *ret = NULL;
     for (i = 0; qwmsg[i]; i++)
