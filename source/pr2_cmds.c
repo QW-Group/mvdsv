@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.7 2005/07/05 12:50:26 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.8 2005/09/14 17:20:57 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -2011,7 +2011,6 @@ void PF2_FS_GetFileList(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 extern int pr2_numAPI;
 void PF2_Map_Extension(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	int nameoff = stack[0]._int;
 	int mapto	= stack[1]._int;
 
 		if( mapto <  pr2_numAPI)

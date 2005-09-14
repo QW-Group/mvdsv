@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.c,v 1.3 2005/05/27 15:09:50 vvd0 Exp $
+	$Id: pmove.c,v 1.4 2005/09/14 17:20:57 disconn3ct Exp $
 */
 
 #include "quakedef.h"
@@ -443,7 +443,7 @@ void PM_AirAccelerate (vec3_t wishdir, float wishspeed, float accel)
 {
 	int			i;
 	float		addspeed, accelspeed, currentspeed, wishspd = wishspeed;
-	float		originalspeed, newspeed, speedcap;
+	float		originalspeed = 0.0, newspeed, speedcap;
 		
 	if (pmove.dead)
 		return;
