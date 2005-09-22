@@ -1,9 +1,19 @@
 
-$Id: changes.txt,v 1.33 2005/09/14 14:20:02 vvd0 Exp $
+$Id: changes.txt,v 1.34 2005/09/22 12:49:14 vvd0 Exp $
 
 ----
-MVDSV v0.19-CVS build 2??? (2005.09.??)
+MVDSV v0.19-CVS build 21?? (2005.09.??)
 [server]
+- build: removed define REGEX - can't build only with external regex lib
+- new cmd dlistr, cmd dlistregex, cmd demolistr, cmd demolistregex -
+  same as demolist, but use parameters as regex
+- new commands:
+    lastscores - same as cmd lastscores, but in server console
+    dlist - same as demolist
+    dlistr, demolistr, dlistregex, demolistregex - same as cmd dlistr
+- new connectionless commands:
+    dlist, demolist - same as cmd dlist (packet IP:PORT dlist)
+    dlistr, demolistr, dlistregex, demolistregex - same as cmd dlistr
 - added OpenBSD targets (by Claymore and VVD)
 - fix for gratuitous frag updates when v.frags is fractional (from ZQuake by Disconnect)
 (Thanks to Spike)
