@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.10 2005/08/08 14:57:35 vvd0 Exp $
+	$Id: sv_demo.c,v 1.11 2005/09/22 12:49:14 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
 #include "winquake.h"
+#include "pcre/pcre.h"
 
 #define MIN_DEMO_MEMORY 0x100000
 #define USACACHE (sv_demoUseCache.value && svs.demomemsize)
@@ -1555,12 +1556,16 @@ void SV_EasyRecord_f (void)
 	SV_Record (name2);
 }
 
-void SV_DemoList_f (void)
+void SV_DemoList (qboolean use_regex)
 {
 	dir_t	dir;
 	file_t	*list;
 	float	f;
 	int		i = 0, j;
+
+	int	r;
+	pcre	*preg;
+	const char	*errbuf;
 
 	Con_Printf("content of %s/%s/%s\n", com_gamedir, sv_demoDir.string, sv_demoRegexp.string);
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
@@ -1574,16 +1579,45 @@ void SV_DemoList_f (void)
 		i = dir.numfiles - 100;
 		list = &dir.files[i];
 	}
-	for ( ; list->name[0]; list++)
+
+	for (++i; list->name[0]; list++, i++)
 	{
 		for (j = 1; j < Cmd_Argc(); j++)
-			if (strstr(list->name, Cmd_Argv(j)) == NULL)
+		{
+			if (use_regex)
+			{
+				if (!(preg = pcre_compile(Q_normalizetext(Cmd_Argv(j)), PCRE_CASELESS, &errbuf, &r, NULL)))
+				{
+					Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
+							Cmd_Argv(j), errbuf, r);
+					Q_Free(preg);
+					break;
+				}
+				switch (r = pcre_exec(preg, NULL, list->name,
+							strlen(list->name), 0, 0, NULL, 0))
+				{
+					case 0:
+						Q_Free(preg);
+						continue;
+					case PCRE_ERROR_NOMATCH:
+						break;
+					default:
+						Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
+								Cmd_Argv(j), list->name, r);
+				}
+				Q_Free(preg);
 				break;
+			}
+			else
+				if (strstr(list->name, Cmd_Argv(j)) == NULL)
+					break;
+		}
+
 		if (Cmd_Argc() == j) {
 			if (sv.demorecording && !strcmp(list->name, demo.name))
-				Con_Printf("*%d: %s %dk\n", ++i, list->name, demo.size/1024);
+				Con_Printf("*%d: %s %dk\n", i, list->name, demo.size/1024);
 			else
-				Con_Printf("%d: %s %dk\n", ++i, list->name, list->size/1024);
+				Con_Printf("%d: %s %dk\n", i, list->name, list->size/1024);
 		}
 	}
 
@@ -1597,6 +1631,16 @@ void SV_DemoList_f (void)
 			f = 0;
 		Con_Printf("space available: %.1fMB\n", f);
 	}
+}
+
+void SV_DemoList_f (void)
+{
+	SV_DemoList (false);
+}
+
+void SV_DemoListRegex_f (void)
+{
+	SV_DemoList (true);
 }
 
 char *SV_DemoNum(int num)

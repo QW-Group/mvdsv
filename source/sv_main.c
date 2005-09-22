@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.19 2005/08/29 15:46:21 vvd0 Exp $
+	$Id: sv_main.c,v 1.20 2005/09/22 12:49:14 vvd0 Exp $
 */
 
 #include "version.h"
@@ -562,6 +562,27 @@ void SVC_LastScores (void)
 {
 	SV_BeginRedirect (RD_PACKET);
 	SV_LastScores_f ();
+	SV_EndRedirect ();
+}
+
+/*
+===================
+SVC_DemoList
+SVC_DemoListRegex
+===================
+*/
+void SV_DemoList_f (void);
+void SVC_DemoList (void)
+{
+	SV_BeginRedirect (RD_PACKET);
+	SV_DemoList_f ();
+	SV_EndRedirect ();
+}
+void SV_DemoListRegex_f (void);
+void SVC_DemoListRegex (void)
+{
+	SV_BeginRedirect (RD_PACKET);
+	SV_DemoListRegex_f ();
 	SV_EndRedirect ();
 }
 
@@ -1390,6 +1411,7 @@ Clients that are in the game can still send
 connectionless packets.
 =================
 */
+
 void SV_ConnectionlessPacket (void)
 {
 	char	*s;
@@ -1422,6 +1444,18 @@ void SV_ConnectionlessPacket (void)
 		SVC_GetChallenge ();
 	else if (!strcmp(c,"lastscores"))
 		SVC_LastScores ();
+	else if (!strcmp(c,"dlist"))
+		SVC_DemoList ();
+	else if (!strcmp(c,"dlistr"))
+		SVC_DemoListRegex ();
+	else if (!strcmp(c,"dlistregex"))
+		SVC_DemoListRegex ();
+	else if (!strcmp(c,"demolist"))
+		SVC_DemoList ();
+	else if (!strcmp(c,"demolistr"))
+		SVC_DemoListRegex ();
+	else if (!strcmp(c,"demolistregex"))
+		SVC_DemoListRegex ();
 	else
 		Con_Printf ("bad connectionless packet from %s:\n%s\n"
 		, NET_AdrToString (net_from), s);
@@ -2450,7 +2484,8 @@ SV_InitLocal
 */
 void SV_Record_f (void);
 void SV_EasyRecord_f (void);
-void SV_DemoList_f (void);
+//void SV_DemoList_f (void);
+//void SV_DemoListRegex_f (void);
 void SV_DemoRemove_f (void);
 void SV_DemoRemoveNum_f (void);
 void SV_Cancel_f (void);
@@ -2613,7 +2648,13 @@ void SV_InitLocal (void)
 	Cmd_AddCommand ("easyrecord", SV_EasyRecord_f);
 	Cmd_AddCommand ("stop", SV_Stop_f);
 	Cmd_AddCommand ("cancel", SV_Cancel_f);
+	Cmd_AddCommand ("lastscores", SV_LastScores_f);
+	Cmd_AddCommand ("dlist", SV_DemoList_f);
+	Cmd_AddCommand ("dlistr", SV_DemoListRegex_f);
+	Cmd_AddCommand ("dlistregex", SV_DemoListRegex_f);
 	Cmd_AddCommand ("demolist", SV_DemoList_f);
+	Cmd_AddCommand ("demolistr", SV_DemoListRegex_f);
+	Cmd_AddCommand ("demolistregex", SV_DemoListRegex_f);
 	Cmd_AddCommand ("rmdemo", SV_DemoRemove_f);
 	Cmd_AddCommand ("rmdemonum", SV_DemoRemoveNum_f);
 	Cmd_AddCommand ("script", SV_Script_f);

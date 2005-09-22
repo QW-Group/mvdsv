@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.17 2005/08/08 14:57:36 vvd0 Exp $
+	$Id: sv_user.c,v 1.18 2005/09/22 12:49:14 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1937,6 +1937,7 @@ void SV_ShowMapsList_f(void)
 }
 
 void SV_DemoList_f(void);
+void SV_DemoListRegex_f(void);
 void SV_DemoInfo_f(void);
 void SV_LastScores_f(void);
 
@@ -1985,7 +1986,12 @@ ucmd_t ucmds[] =
 	{"snap", SV_NoSnap_f},
 	{"stopdownload", SV_StopDownload_f},
 	{"stopdl", SV_StopDownload_f},
+//	{"dlist", SV_DemoList_f},
+	{"dlistr", SV_DemoListRegex_f},
+	{"dlistregex", SV_DemoListRegex_f},
 	{"demolist", SV_DemoList_f},
+	{"demolistr", SV_DemoListRegex_f},
+	{"demolistregex", SV_DemoListRegex_f},
 	{"demoinfo", SV_DemoInfo_f},
 	{"lastscores", SV_LastScores_f},
 	{"minping", SV_MinPing_f},

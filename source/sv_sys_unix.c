@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_sys_unix.c,v 1.7 2005/07/15 16:12:18 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.8 2005/09/22 12:49:14 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -162,28 +162,14 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	qboolean all;
 
 	int	r;
-#ifdef REGEX
-	regex_t	preg;
-	char	errbuf[64];
-#else
 	pcre	*preg;
 	const char	*errbuf;
-#endif
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
 	dir.files = list;
 	all = !strncmp(ext, ".*", 3);
 	if (!all)
-#ifdef REGEX
-		if (r = regcomp(&preg, ext, REG_EXTENDED | REG_ICASE))
-		{
-			regerror(r, &preg, errbuf, sizeof(errbuf));
-			Con_Printf("Sys_listdir: regcomp(%s) error: %s\n", ext, errbuf);
-			regfree(&preg);
-			return dir;
-		}
-#else
 		if (!(preg = pcre_compile(ext, PCRE_CASELESS, &errbuf, &r, NULL)))
 		{
 			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
@@ -191,16 +177,11 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 			Q_Free(preg);
 			return dir;
 		}
-#endif
 
 	if (!(d = opendir(path)))
 	{
 		if (!all) 
-#ifdef REGEX
-			regfree(&preg);
-#else
 			Q_Free(preg);
-#endif
 		return dir;
 	}
 	while ((oneentry = readdir(d)))
@@ -209,19 +190,6 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 			continue;
 		if (!all)
 		{
-#ifdef REGEX
-			switch (r = regexec(&preg, oneentry->d_name, 0, NULL, 0))
-			{
-				case 0: break;
-				case REG_NOMATCH: continue;
-				default:
-					regerror(r, &preg, errbuf, sizeof(errbuf));
-					Con_Printf("Sys_listdir: regexec(%s, %s) error: %s\n",
-							ext, oneentry->d_name, errbuf);
-					regfree(&preg);
-					return dir;
-			}
-#else
 			switch (r = pcre_exec(preg, NULL, oneentry->d_name,
 						strlen(oneentry->d_name), 0, 0, NULL, 0))
 			{
@@ -233,7 +201,6 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 					Q_Free(preg);
 					return dir;
 			}
-#endif
 		}
 		snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
 		if ((testdir = opendir(pathname)))
@@ -257,11 +224,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	}
 	closedir(d);
 	if (!all) 
-#ifdef REGEX
-		regfree(&preg);
-#else
 		Q_Free(preg);
-#endif
 
 	switch (sort_type)
 	{
