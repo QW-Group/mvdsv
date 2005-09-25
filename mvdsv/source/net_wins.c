@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net_wins.c,v 1.2 2005/05/27 15:09:50 vvd0 Exp $
+	$Id: net_wins.c,v 1.3 2005/09/25 21:32:17 disconn3ct Exp $
 */
 // net_wins.c
 

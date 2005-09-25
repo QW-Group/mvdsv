@@ -16,18 +16,40 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.2 2005/05/27 15:09:50 vvd0 Exp $
+	$Id: net.h,v 1.3 2005/09/25 21:32:17 disconn3ct Exp $
 */
 // net.h -- quake's interface to the networking layer
 
 #define	PORT_ANY	-1
 
+typedef enum {NA_INVALID, NA_LOOPBACK, NA_IP, NA_IPV6, NA_IPX, NA_BROADCAST_IP, NA_BROADCAST_IP6, NA_BROADCAST_IPX} netadrtype_t;
+
+typedef enum {NS_CLIENT, NS_SERVER} netsrc_t;
+
 typedef struct
 {
-	byte	ip[4];
+	netadrtype_t	type;
+
+	union {
+		byte	ip[4];
+		byte	ip6[16];
+		byte	ipx[10];
+	};
+
 	unsigned short	port;
-	unsigned short	pad;
 } netadr_t;
+
+struct sockaddr_qstorage
+{
+	short dontusesa_family;
+	unsigned char dontusesa_pad[6];
+#if defined(_MSC_VER) || defined(MINGW)
+	__int64 sa_align;
+#else
+	int sa_align[2];
+#endif
+	unsigned char sa_pad2[112];
+};
 
 extern	netadr_t	net_local_adr;
 extern	netadr_t	net_from;		// address of who sent the packet
@@ -119,3 +141,4 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int net_socket);
 qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
+void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a);
