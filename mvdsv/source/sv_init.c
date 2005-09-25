@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.8 2005/09/14 17:20:57 disconn3ct Exp $
+	$Id: sv_init.c,v 1.9 2005/09/25 22:21:51 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -489,7 +489,6 @@ This is only called from the SV_Map_f() function.
 */
 void D_FlushCaches ();
 dfunction_t *ED_FindFunction (char *name);
-void SV_TimeOfDay(date_t *date);
 
 void SV_SpawnServer (char *server)
 {

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.21 2005/09/25 21:32:17 disconn3ct Exp $
+	$Id: sv_main.c,v 1.22 2005/09/25 22:21:51 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -124,28 +124,10 @@ cvar_t  sv_logdir = {"sv_logdir", ".", 0, OnChange_logdir_var};
 cvar_t  sv_speedcheck = {"sv_speedcheck", "0"};
 //<-
 //<-
-
 cvar_t	sv_highchars = {"sv_highchars", "1"};
-
 cvar_t	sv_phs = {"sv_phs", "1"};
-
 cvar_t	pausable = {"pausable", "1"};
-
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
-
-cvar_t	sv_demofps = {"sv_demofps", "20"};
-cvar_t	sv_demoPings = {"sv_demopings", "3"};
-cvar_t	sv_demoNoVis = {"sv_demonovis", "1"};
-cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
-cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
-cvar_t	sv_demoMaxSize  = {"sv_demoMaxSize", "20480"};
-cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
-cvar_t	sv_demoClearOld = {"sv_demoClearOld", "0"}; //bliP: 24/9 clear old demos
-cvar_t	sv_demoExtraNames = {"sv_demoExtraNames", "0"};
-
-qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value);
-cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
-
 cvar_t	sv_getrealip = {"sv_getrealip", "1"};
 cvar_t	sv_minping = {"sv_minping", "0"};
 cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
@@ -218,7 +200,7 @@ void SV_Shutdown (void)
 		}
 	}
 	if (sv.demorecording)
-		SV_Stop_f();
+		SV_MVDStop_f();
 
 	NET_Shutdown ();
 }
@@ -2482,13 +2464,13 @@ void SV_Frame (double time)
 SV_InitLocal
 ===============
 */
-void SV_Record_f (void);
-void SV_EasyRecord_f (void);
+void SV_MVD_Record_f (void);
+void SV_MVDEasyRecord_f (void);
 //void SV_DemoList_f (void);
 //void SV_DemoListRegex_f (void);
 void SV_DemoRemove_f (void);
 void SV_DemoRemoveNum_f (void);
-void SV_Cancel_f (void);
+void SV_MVD_Cancel_f (void);
 void SV_DemoInfoAdd_f (void);
 void SV_DemoInfoRemove_f (void);
 void SV_DemoInfo_f (void);
@@ -2646,10 +2628,10 @@ void SV_InitLocal (void)
 	Cmd_AddCommand ("vip_removeip", SV_RemoveIPVIP_f);
 	Cmd_AddCommand ("vip_listip", SV_ListIPVIP_f);
 	Cmd_AddCommand ("vip_writeip", SV_WriteIPVIP_f);
-	Cmd_AddCommand ("record", SV_Record_f);
-	Cmd_AddCommand ("easyrecord", SV_EasyRecord_f);
-	Cmd_AddCommand ("stop", SV_Stop_f);
-	Cmd_AddCommand ("cancel", SV_Cancel_f);
+	Cmd_AddCommand ("record", SV_MVD_Record_f);
+	Cmd_AddCommand ("easyrecord", SV_MVDEasyRecord_f);
+	Cmd_AddCommand ("stop", SV_MVDStop_f);
+	Cmd_AddCommand ("cancel", SV_MVD_Cancel_f);
 	Cmd_AddCommand ("lastscores", SV_LastScores_f);
 	Cmd_AddCommand ("dlist", SV_DemoList_f);
 	Cmd_AddCommand ("dlistr", SV_DemoListRegex_f);
@@ -3055,7 +3037,7 @@ void SV_Init (quakeparms_t *parms)
 	Sys_Init ();
 	Pmove_Init ();
 
-	Demo_Init ();
+	MVD_Init ();
 	Login_Init ();
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");

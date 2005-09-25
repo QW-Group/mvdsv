@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.12 2005/09/25 21:32:17 disconn3ct Exp $
+	$Id: sv_send.c,v 1.13 2005/09/25 22:21:51 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1006,7 +1006,7 @@ void SV_SendClientMessages (void)
 	}
 }
 
-void DemoSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
+void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
 void SV_SendDemoMessage(void)
 {
 	int			i, j, cls = 0;
@@ -1018,7 +1018,6 @@ void SV_SendDemoMessage(void)
 	float		min_fps;
 	extern		cvar_t sv_demofps;
 	extern		cvar_t sv_demoPings;
-//	extern		cvar_t	sv_demoMaxSize;
 
 	if (!sv.demorecording)
 		return;
@@ -1027,7 +1026,7 @@ void SV_SendDemoMessage(void)
 	{
 		if (sv.time - demo.pingtime > sv_demoPings.value)
 		{
-			SV_DemoPings();
+			SV_MVDPings();
 			demo.pingtime = sv.time;
 		}
 	}
@@ -1147,11 +1146,11 @@ void SV_SendDemoMessage(void)
 
 	if (demo.parsecount - demo.lastwritten > 60) // that's a backup of 3sec in 20fps, should be enough
 	{
-		SV_DemoWritePackets(1);
+		SV_MVDWritePackets(1);
 	}
 
 	demo.parsecount++;
-	DemoSetMsgBuf(demo.dbuf,&demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf);
+	MVDSetMsgBuf(demo.dbuf,&demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf);
 }
 
 
