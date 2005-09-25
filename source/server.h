@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.9 2005/08/08 14:57:35 vvd0 Exp $
+	$Id: server.h,v 1.10 2005/09/25 21:32:17 disconn3ct Exp $
 */
 // server.h
 
@@ -317,8 +317,6 @@ typedef struct {
 
 typedef struct
 {
-	FILE		*file;
-
 	demobuf_t	*dbuf;
 	dbuffer_t	dbuffer;
 	sizebuf_t	datagram;
@@ -336,13 +334,11 @@ typedef struct
 	int			lastwritten;
 	demo_frame_t	frames[DEMO_FRAMES];
 	demoinfo_t	info[MAX_CLIENTS];
-	int			size;
-	qboolean	disk;
-	void		*dest;
-	byte		*mfile;
 	byte		buffer[20*MAX_MSGLEN];
 	int			bufsize;
 	int			forceFrame;
+
+	struct mvddest_s *dest;
 } demo_t;
 
 //=============================================================================

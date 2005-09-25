@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.11 2005/08/30 01:14:09 disconn3ct Exp $
+	$Id: sv_send.c,v 1.12 2005/09/25 21:32:17 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1018,7 +1018,7 @@ void SV_SendDemoMessage(void)
 	float		min_fps;
 	extern		cvar_t sv_demofps;
 	extern		cvar_t sv_demoPings;
-	extern		cvar_t	sv_demoMaxSize;
+//	extern		cvar_t	sv_demoMaxSize;
 
 	if (!sv.demorecording)
 		return;
@@ -1051,6 +1051,12 @@ void SV_SendDemoMessage(void)
 		SZ_Clear (&demo.datagram);
 		return;
 	}
+
+	msg.data = buf;
+	msg.maxsize = sizeof(buf);
+	msg.cursize = 0;
+	msg.allowoverflow = true;
+	msg.overflowed = false;
 
 	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
 	{
@@ -1107,16 +1113,9 @@ void SV_SendDemoMessage(void)
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
-
-	msg.data = buf;
-	msg.maxsize = sizeof(buf);
 	msg.cursize = 0;
-	msg.allowoverflow = true;
-	msg.overflowed = false;
-	
 	if (!demo.recorder.delta_sequence)
 		demo.recorder.delta_sequence = -1;
-
 	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
 
 	if (msg.overflowed)
@@ -1153,9 +1152,6 @@ void SV_SendDemoMessage(void)
 
 	demo.parsecount++;
 	DemoSetMsgBuf(demo.dbuf,&demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf);
-
-	if (sv_demoMaxSize.value && demo.size > sv_demoMaxSize.value*1024)
-		SV_Stop(1);
 }
 
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.20 2005/09/22 12:49:14 vvd0 Exp $
+	$Id: sv_main.c,v 1.21 2005/09/25 21:32:17 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -2507,6 +2507,7 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_waterfriction;
 	extern	cvar_t	sv_bunnyspeedcap;
 	extern	cvar_t	sv_nailhack;
+	extern	cvar_t	mvd_streamport;
 
 
 	Cvar_Init ();
@@ -2634,7 +2635,8 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_default_name);
 	Cvar_RegisterVariable (&sv_mod_msg_file);
 	Cvar_RegisterVariable (&sv_forcenick); 
-	Cvar_RegisterVariable (&sv_registrationinfo); 
+	Cvar_RegisterVariable (&sv_registrationinfo);
+	Cvar_RegisterVariable (&mvd_streamport);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
@@ -2661,6 +2663,7 @@ void SV_InitLocal (void)
 	Cmd_AddCommand ("demoInfoAdd", SV_DemoInfoAdd_f);
 	Cmd_AddCommand ("demoInfoRemove", SV_DemoInfoRemove_f);
 	Cmd_AddCommand ("demoInfo", SV_DemoInfo_f);
+
 
 	for (i=0 ; i<MAX_MODELS ; i++)
 		snprintf (localmodels[i], MODEL_NAME_LEN, "*%i", i);
