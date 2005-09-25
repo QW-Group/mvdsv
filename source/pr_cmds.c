@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.8 2005/08/08 14:57:32 vvd0 Exp $
+	$Id: pr_cmds.c,v 1.9 2005/09/25 22:21:51 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1123,7 +1123,6 @@ void PF_redirectcmd (void)
 	SV_EndRedirect();
 }
 dfunction_t *ED_FindFunction (char *name);
-void SV_TimeOfDay(date_t *date);
 void PF_calltimeofday (void)
 {
 	date_t date;

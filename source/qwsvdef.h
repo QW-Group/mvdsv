@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.4 2005/07/05 12:50:28 vvd0 Exp $
+	$Id: qwsvdef.h,v 1.5 2005/09/25 22:21:51 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -104,6 +104,7 @@ typedef struct
 	int year;
 	char str[128];
 } date_t;
+void SV_TimeOfDay(date_t *date);
 
 //
 // host

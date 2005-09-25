@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.10 2005/09/25 21:32:17 disconn3ct Exp $
+	$Id: server.h,v 1.11 2005/09/25 22:21:51 disconn3ct Exp $
 */
 // server.h
 
@@ -586,6 +586,7 @@ void SV_CleanIPList (void);
 
 qboolean SV_FilterPacket (void);
 void SV_SendBan (void);
+qboolean GameStarted(void);
 //<-
 
 
@@ -671,14 +672,23 @@ void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 //
 // sv_demo.c
 //
-void SV_DemoPings (void);
-void SV_DemoWriteToDisk(int type, int to, float time);
+void SV_MVDPings (void);
+void SV_MVDWriteToDisk(int type, int to, float time);
 void DemoWrite_Begin(byte type, int to, int size);
-void SV_Stop (int reason);
-void SV_Stop_f (void);
-void SV_DemoWritePackets (int num);
-void Demo_Init (void);
+void SV_MVDStop (int reason);
+void SV_MVDStop_f (void);
+void SV_MVDWritePackets (int num);
+void MVD_Init (void);
 char *SV_DemoNum(int num);
+
+extern demo_t	demo;				// server demo struct
+
+extern cvar_t	sv_demofps;
+extern cvar_t	sv_demoPings;
+extern cvar_t	sv_demoNoVis;
+extern cvar_t	sv_demoUseCache;
+extern cvar_t	sv_demoMaxSize;
+extern cvar_t	sv_demoMaxDirSize;
 
 
 //
@@ -695,5 +705,3 @@ qboolean SV_Login(client_t *cl);
 void SV_Logout(client_t *cl);
 void SV_ParseLogin(client_t *cl);
 void SV_LoginCheckTimeOut(client_t *cl);
-
-qboolean GameStarted(void);

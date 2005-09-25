@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ccmds.c,v 1.9 2005/09/14 17:20:57 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.10 2005/09/25 22:21:51 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -434,8 +434,6 @@ map <mapname>
 command from the console or progs.
 ======================
 */
-void SV_TimeOfDay(date_t *date);
-
 void SV_Map (qboolean now)
 {
 	static char	level[MAX_QPATH];
@@ -467,7 +465,7 @@ void SV_Map (qboolean now)
 		fclose (f);
 
 		if (sv.demorecording)
-			SV_Stop_f();
+			SV_MVDStop_f();
 
 		SV_BroadcastCommand ("changing\n");
 		SV_SendMessagesToAll ();
