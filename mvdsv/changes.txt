@@ -1,9 +1,10 @@
 
-$Id: changes.txt,v 1.34 2005/09/22 12:49:14 vvd0 Exp $
+$Id: changes.txt,v 1.35 2005/09/25 22:29:38 disconn3ct Exp $
 
 ----
 MVDSV v0.19-CVS build 21?? (2005.09.??)
 [server]
+- initial FTE's QTV (FTV) support (from FTE by disconnect)
 - build: removed define REGEX - can't build only with external regex lib
 - new cmd dlistr, cmd dlistregex, cmd demolistr, cmd demolistregex -
   same as demolist, but use parameters as regex
@@ -15,7 +16,7 @@ MVDSV v0.19-CVS build 21?? (2005.09.??)
     dlist, demolist - same as cmd dlist (packet IP:PORT dlist)
     dlistr, demolistr, dlistregex, demolistregex - same as cmd dlistr
 - added OpenBSD targets (by Claymore and VVD)
-- fix for gratuitous frag updates when v.frags is fractional (from ZQuake by Disconnect)
+- fix for gratuitous frag updates when v.frags is fractional (from ZQuake by disconnect)
 (Thanks to Spike)
 - bugfix from 0.19: fullserverinfo was not sent to client if there was lw or ls userinfo keys
 - 'cmd dlist' and 'cmd demolist' can show about 4000 demos in list now, but if serverinfo key
@@ -40,10 +41,10 @@ MVDSV v0.19 build 2050 (2005.08.01)
 MVDSV v0.18 build 2040 (2005.07.22)
 - project cleaned up
 [server]
-- removed cvar sv_aim (by Disconnect)
+- removed cvar sv_aim (by disconnect)
 - only set the client to cs_spawned state AFTER we've verified his spawncount
-(by Disconnect from ZQuake)
-- don't send to zombies (by Disconnect from ZQuake)
+(by disconnect from ZQuake)
+- don't send to zombies (by disconnect from ZQuake)
 [unix]
 - bugfix from 0.179b: crashes while printing red text in some places
 (Thanks to Oppy)
@@ -53,7 +54,7 @@ MVDSV v0.18 build 2040 (2005.07.22)
 MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
 [unix qwdtools]
 - bugfix from 0.176: crashed - bug was in Makefile
-(Thanks to Disconnect)
+(Thanks to disconnect)
 [server]
 - new cvar sv_registrationinfo - text shown before "enter login" (RFE #1198104)
 (by hdworak)
@@ -145,7 +146,7 @@ MVDSV v0.178 Beta DEVELOP build 1897 (2005.03.01)
       default: qwprogs
     sv_enableprofile - enable profiling of qvm mods
   new command mod - send GAME_CONSOLE_COMMAND command to qvm mod
-(Thanks to SD-Angel, Disconnect)
+(Thanks to SD-Angel, disconnect)
 - new cvar pm_spawnjumpfix 0/1 - don't jump if used jump button for respawn
     0 - don't fix
     1 - fix (like in ktpro by default)
@@ -477,7 +478,7 @@ QWEX v0.1727 Beta DEVELOP build 1666 (2004.07.13)
 QWEX v0.1726 (no release)
 [server]
 - bugfix: console logging (qconsole_PORT.log) only with qconsole_log_say 1
-- bugfix: can't download files where the name contains 2 or more dots (".") in a row ("Disconnect"'s bug)
+- bugfix: can't download files where the name contains 2 or more dots (".") in a row ("disconnect"'s bug)
 - bugfix: low entity speed if bad connection (high ping and packet loss) ("luny"'s bug, thanks for testing)
 - some spelling fixes
 - new command:
