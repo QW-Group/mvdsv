@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.18 2005/09/22 12:49:14 vvd0 Exp $
+	$Id: sv_user.c,v 1.19 2005/09/26 15:21:21 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -751,7 +751,7 @@ qboolean SV_DownloadNextFile (void)
 		Con_Printf(Q_redtext(incorrect_demo_number));
 		return SV_DownloadNextFile();
 	}
-	if (!(name = SV_DemoNum(num)))
+	if (!(name = SV_MVDNum(num)))
 	{
 		Con_Printf(Q_yelltext(va("Demo number %d not found.\n", num)));
 		return SV_DownloadNextFile();
@@ -1049,7 +1049,7 @@ void SV_BeginDownload_f(void)
 				return;
 			}
 		}
-		name = SV_DemoNum(num);
+		name = SV_MVDNum(num);
 		if (!name)
 		{
 			Con_Printf(Q_yelltext(va("Demo number %d not found.\n", num)));
@@ -1352,15 +1352,15 @@ void SV_Say (qboolean team)
 		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
 	}
 
-	if (!sv.demorecording || !cls)
+	if (!sv.mvdrecording || !cls)
 		return;
 
 	// non-team messages should be seen allways, even if not tracking any player
 	if (!team && ((host_client->spectator && sv_spectalk.value) || !host_client->spectator))
 	{
-		DemoWrite_Begin (dem_all, 0, strlen(text)+3);
+		MVDWrite_Begin (dem_all, 0, strlen(text)+3);
 	} else 
-		DemoWrite_Begin (dem_multiple, cls, strlen(text)+3);
+		MVDWrite_Begin (dem_multiple, cls, strlen(text)+3);
 
 	MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
 	MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
@@ -1938,7 +1938,7 @@ void SV_ShowMapsList_f(void)
 
 void SV_DemoList_f(void);
 void SV_DemoListRegex_f(void);
-void SV_DemoInfo_f(void);
+void SV_MVDInfo_f(void);
 void SV_LastScores_f(void);
 
 typedef struct
@@ -1992,7 +1992,7 @@ ucmd_t ucmds[] =
 	{"demolist", SV_DemoList_f},
 	{"demolistr", SV_DemoListRegex_f},
 	{"demolistregex", SV_DemoListRegex_f},
-	{"demoinfo", SV_DemoInfo_f},
+	{"demoinfo", SV_MVDInfo_f},
 	{"lastscores", SV_LastScores_f},
 	{"minping", SV_MinPing_f},
 	{"maps", SV_ShowMapsList_f},

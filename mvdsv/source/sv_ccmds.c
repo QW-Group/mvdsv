@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ccmds.c,v 1.10 2005/09/25 22:21:51 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.11 2005/09/26 15:21:21 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -464,7 +464,7 @@ void SV_Map (qboolean now)
 		}
 		fclose (f);
 
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 			SV_MVDStop_f();
 
 		SV_BroadcastCommand ("changing\n");
@@ -1370,8 +1370,8 @@ void SV_ConSay_f(void)
 		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
 	}
 
-	if (sv.demorecording) {
-		DemoWrite_Begin (dem_all, 0, strlen(text)+3);
+	if (sv.mvdrecording) {
+		MVDWrite_Begin (dem_all, 0, strlen(text)+3);
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, text);

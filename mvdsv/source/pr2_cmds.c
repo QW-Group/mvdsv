@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.8 2005/09/14 17:20:57 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.9 2005/09/26 15:21:21 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -329,9 +329,9 @@ void PF2_centerprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	ClientReliableWrite_Begin(cl, svc_centerprint, 2 + strlen(s));
 	ClientReliableWrite_String(cl, s);
 
-	if (sv.demorecording)
+	if (sv.mvdrecording)
 	{
-		DemoWrite_Begin(dem_single, entnum - 1, 2 + strlen(s));
+		MVDWrite_Begin(dem_single, entnum - 1, 2 + strlen(s));
 		MSG_WriteByte((sizebuf_t *) demo.dbuf, svc_centerprint);
 		MSG_WriteString((sizebuf_t *) demo.dbuf, s);
 	}
@@ -683,9 +683,9 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 			}
 			ClientReliableWrite_Begin(cl, svc_stufftext, 2 + strlen(buf));
 			ClientReliableWrite_String(cl, buf);
-			if (sv.demorecording)
+			if (sv.mvdrecording)
 			{
-				DemoWrite_Begin(dem_single, cl - svs.clients, 2 + strlen(buf));
+				MVDWrite_Begin(dem_single, cl - svs.clients, 2 + strlen(buf));
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
 				MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
 			}
@@ -990,9 +990,9 @@ void PF2_lightstyle(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 			ClientReliableWrite_String(client, val);
 		}
 
-	if (sv.demorecording)
+	if (sv.mvdrecording)
 	{
-		DemoWrite_Begin(dem_all, 0, strlen(val) + 3);
+		MVDWrite_Begin(dem_all, 0, strlen(val) + 3);
 		MSG_WriteByte((sizebuf_t *) demo.dbuf, svc_lightstyle);
 		MSG_WriteChar((sizebuf_t *) demo.dbuf, style);
 		MSG_WriteString((sizebuf_t *) demo.dbuf, val);
@@ -1190,9 +1190,9 @@ void PF2_WriteByte(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1);
 		ClientReliableWrite_Byte(cl, data);
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 1);
+			MVDWrite_Begin(dem_single, cl - svs.clients, 1);
 			MSG_WriteByte((sizebuf_t *) demo.dbuf, data);
 		}
 	}
@@ -1210,9 +1210,9 @@ void PF2_WriteChar(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1);
 		ClientReliableWrite_Char(cl, data);
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 1);
+			MVDWrite_Begin(dem_single, cl - svs.clients, 1);
 			MSG_WriteByte((sizebuf_t *) demo.dbuf, data);
 		}
 	}
@@ -1230,9 +1230,9 @@ void PF2_WriteShort(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 2);
 		ClientReliableWrite_Short(cl, data);
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 2);
+			MVDWrite_Begin(dem_single, cl - svs.clients, 2);
 			MSG_WriteShort((sizebuf_t *) demo.dbuf, data);
 		}
 	}
@@ -1250,9 +1250,9 @@ void PF2_WriteLong(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 4);
 		ClientReliableWrite_Long(cl, data);
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 4);
+			MVDWrite_Begin(dem_single, cl - svs.clients, 4);
 			MSG_WriteLong((sizebuf_t *) demo.dbuf, data);
 		}
 	}
@@ -1270,9 +1270,9 @@ void PF2_WriteAngle(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1);
 		ClientReliableWrite_Angle(cl, data);
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 1);
+			MVDWrite_Begin(dem_single, cl - svs.clients, 1);
 			MSG_WriteByte((sizebuf_t *) demo.dbuf, data);
 		}
 	}
@@ -1290,9 +1290,9 @@ void PF2_WriteCoord(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 2);
 		ClientReliableWrite_Coord(cl, data);
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 2);
+			MVDWrite_Begin(dem_single, cl - svs.clients, 2);
 			MSG_WriteCoord((sizebuf_t *) demo.dbuf, data);
 		}
 	}
@@ -1310,9 +1310,9 @@ void PF2_WriteString(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 1 + strlen(data));
 		ClientReliableWrite_String(cl, data);
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 1 + strlen(data));
+			MVDWrite_Begin(dem_single, cl - svs.clients, 1 + strlen(data));
 			MSG_WriteString((sizebuf_t *) demo.dbuf, data);
 		}
 	}
@@ -1331,9 +1331,9 @@ void PF2_WriteEntity(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		client_t *cl = Write_GetClient();
 		ClientReliableCheckBlock(cl, 2);
 		ClientReliableWrite_Short(cl,data );//G_EDICTNUM(OFS_PARM1)
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
-			DemoWrite_Begin(dem_single, cl - svs.clients, 2);
+			MVDWrite_Begin(dem_single, cl - svs.clients, 2);
 			MSG_WriteShort((sizebuf_t *) demo.dbuf, data);
 		}
 	}
