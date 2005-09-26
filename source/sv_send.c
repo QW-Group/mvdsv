@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_send.c,v 1.13 2005/09/25 22:21:51 disconn3ct Exp $
+	$Id: sv_send.c,v 1.14 2005/09/26 15:21:21 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -207,9 +207,9 @@ void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...)
 	vsnprintf (string, sizeof(string), fmt, argptr);
 	va_end (argptr);
 
-	if (sv.demorecording) {
+	if (sv.mvdrecording) {
 
-		DemoWrite_Begin (dem_single, cl - svs.clients, strlen(string)+3);
+		MVDWrite_Begin (dem_single, cl - svs.clients, strlen(string)+3);
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
@@ -267,8 +267,8 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 		SV_PrintToClient(cl, level, string);
 	}
 
-	if (sv.demorecording) {
-		DemoWrite_Begin (dem_all, 0, strlen(string)+3);
+	if (sv.mvdrecording) {
+		MVDWrite_Begin (dem_all, 0, strlen(string)+3);
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
 		MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
 		MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
@@ -412,12 +412,12 @@ inrange:
 			SZ_Write (&client->datagram, sv.multicast.data, sv.multicast.cursize);
 	}
 
-	if (sv.demorecording)
+	if (sv.mvdrecording)
 	{
 		if (reliable)
 		{
-			//DemoWrite_Begin(dem_multiple, cls, sv.multicast.cursize);
-			DemoWrite_Begin(dem_all, 0, sv.multicast.cursize);
+			//MVDWrite_Begin(dem_multiple, cls, sv.multicast.cursize);
+			MVDWrite_Begin(dem_all, 0, sv.multicast.cursize);
 			SZ_Write((sizebuf_t*)demo.dbuf, sv.multicast.data, sv.multicast.cursize);
 		} else 
 			SZ_Write(&demo.datagram, sv.multicast.data, sv.multicast.cursize);
@@ -597,9 +597,9 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	}
 
 	// add this to server demo
-	if (sv.demorecording && msg->cursize)
+	if (sv.mvdrecording && msg->cursize)
 	{
-		DemoWrite_Begin(dem_single, clnum, msg->cursize);
+		MVDWrite_Begin(dem_single, clnum, msg->cursize);
 		SZ_Write((sizebuf_t*)demo.dbuf, msg->data, msg->cursize);
 	}
 
@@ -613,7 +613,7 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 		ent->v.fixangle = 0;
 		demo.fixangle[clnum] = true;
 
-		if (sv.demorecording)
+		if (sv.mvdrecording)
 		{
 			MSG_WriteByte (&demo.datagram, svc_setangle);
 			MSG_WriteByte (&demo.datagram, clnum);
@@ -823,8 +823,8 @@ void SV_UpdateToReliableMessages (void)
 				ClientReliableWrite_Short(client, ent->v.frags);
 			}
 			
-			if (sv.demorecording) {
-				DemoWrite_Begin(dem_all, 0, 4);
+			if (sv.mvdrecording) {
+				MVDWrite_Begin(dem_all, 0, 4);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatefrags);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, i);
 				MSG_WriteShort((sizebuf_t*)demo.dbuf, ent->v.frags);
@@ -844,9 +844,9 @@ void SV_UpdateToReliableMessages (void)
 			host_client->entgravity = val->_float;
 			ClientReliableWrite_Begin(host_client, svc_entgravity, 5);
 			ClientReliableWrite_Float(host_client, host_client->entgravity);
-			if (sv.demorecording)
+			if (sv.mvdrecording)
 			{
-				DemoWrite_Begin(dem_single, i, 5);
+				MVDWrite_Begin(dem_single, i, 5);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_entgravity);
 				MSG_WriteFloat((sizebuf_t*)demo.dbuf, host_client->entgravity);
 			}
@@ -861,9 +861,9 @@ void SV_UpdateToReliableMessages (void)
 			host_client->maxspeed = val->_float;
 			ClientReliableWrite_Begin(host_client, svc_maxspeed, 5);
 			ClientReliableWrite_Float(host_client, host_client->maxspeed);
-			if (sv.demorecording)
+			if (sv.mvdrecording)
 			{
-				DemoWrite_Begin(dem_single, i, 5);
+				MVDWrite_Begin(dem_single, i, 5);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_maxspeed);
 				MSG_WriteFloat((sizebuf_t*)demo.dbuf, host_client->maxspeed);
 			}
@@ -892,12 +892,12 @@ void SV_UpdateToReliableMessages (void)
 			, sv.datagram.cursize);
 	}
 
-	if (sv.demorecording && sv.reliable_datagram.cursize) {
-		DemoWrite_Begin(dem_all, 0, sv.reliable_datagram.cursize);
+	if (sv.mvdrecording && sv.reliable_datagram.cursize) {
+		MVDWrite_Begin(dem_all, 0, sv.reliable_datagram.cursize);
 		SZ_Write((sizebuf_t*)demo.dbuf, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
 	}
 		
-	if (sv.demorecording)
+	if (sv.mvdrecording)
 		SZ_Write(&demo.datagram, sv.datagram.data, sv.datagram.cursize); // FIZME: ???
 
 	SZ_Clear (&sv.reliable_datagram);
@@ -1019,7 +1019,7 @@ void SV_SendDemoMessage(void)
 	extern		cvar_t sv_demofps;
 	extern		cvar_t sv_demoPings;
 
-	if (!sv.demorecording)
+	if (!sv.mvdrecording)
 		return;
 
 	if (sv_demoPings.value)
@@ -1094,14 +1094,14 @@ void SV_SendDemoMessage(void)
 				demo.stats[i][j] = stats[j];
 				if (stats[j] >=0 && stats[j] <= 255)
 				{
-					DemoWrite_Begin(dem_stats, i, 3);
+					MVDWrite_Begin(dem_stats, i, 3);
 					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestat);
 					MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
 					MSG_WriteByte((sizebuf_t*)demo.dbuf, stats[j]);
 				}
 				else
 				{
-					DemoWrite_Begin(dem_stats, i, 6);
+					MVDWrite_Begin(dem_stats, i, 6);
 					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestatlong);
 					MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
 					MSG_WriteLong((sizebuf_t*)demo.dbuf, stats[j]);
@@ -1124,7 +1124,7 @@ void SV_SendDemoMessage(void)
 	}
 	else
 	{
-		DemoWrite_Begin(dem_all, 0, msg.cursize);
+		MVDWrite_Begin(dem_all, 0, msg.cursize);
 		SZ_Write((sizebuf_t*)demo.dbuf, msg.data, msg.cursize);
 	}
 
@@ -1134,7 +1134,7 @@ void SV_SendDemoMessage(void)
 		if (demo.datagram.overflowed)
 			Con_Printf("WARNING: demo.datagram overflowed in SV_SendDemoMessage\n");
 		else {
-			DemoWrite_Begin(dem_all, 0, demo.datagram.cursize);
+			MVDWrite_Begin(dem_all, 0, demo.datagram.cursize);
 			SZ_Write ((sizebuf_t*)demo.dbuf, demo.datagram.data, demo.datagram.cursize);
 		}
 		SZ_Clear (&demo.datagram);

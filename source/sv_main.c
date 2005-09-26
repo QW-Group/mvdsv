@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.22 2005/09/25 22:21:51 disconn3ct Exp $
+	$Id: sv_main.c,v 1.23 2005/09/26 15:21:21 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -176,7 +176,7 @@ void Master_Shutdown (void);
 
 qboolean GameStarted(void)
 {
-	return sv.demorecording || strncasecmp(Info_ValueForKey(svs.info, "status"), "Standby", 8);
+	return sv.mvdrecording || strncasecmp(Info_ValueForKey(svs.info, "status"), "Standby", 8);
 }
 /*
 ================
@@ -199,7 +199,7 @@ void SV_Shutdown (void)
 			logs[i].sv_logfile = NULL;
 		}
 	}
-	if (sv.demorecording)
+	if (sv.mvdrecording)
 		SV_MVDStop_f();
 
 	NET_Shutdown ();
@@ -2379,6 +2379,11 @@ void SV_Frame (double time)
 // toggle the log buffer if full
 	SV_CheckLog ();
 
+	{
+void SV_MVDStream_Poll(void);
+	SV_MVDStream_Poll();
+	}
+
 // check for commands typed to the host
 	SV_GetConsoleCommands ();
 	
@@ -2464,17 +2469,6 @@ void SV_Frame (double time)
 SV_InitLocal
 ===============
 */
-void SV_MVD_Record_f (void);
-void SV_MVDEasyRecord_f (void);
-//void SV_DemoList_f (void);
-//void SV_DemoListRegex_f (void);
-void SV_DemoRemove_f (void);
-void SV_DemoRemoveNum_f (void);
-void SV_MVD_Cancel_f (void);
-void SV_DemoInfoAdd_f (void);
-void SV_DemoInfoRemove_f (void);
-void SV_DemoInfo_f (void);
-
 void SV_InitLocal (void)
 {
 	int		i, len;
@@ -2489,7 +2483,6 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_waterfriction;
 	extern	cvar_t	sv_bunnyspeedcap;
 	extern	cvar_t	sv_nailhack;
-	extern	cvar_t	mvd_streamport;
 
 
 	Cvar_Init ();
@@ -2618,7 +2611,6 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_mod_msg_file);
 	Cvar_RegisterVariable (&sv_forcenick); 
 	Cvar_RegisterVariable (&sv_registrationinfo);
-	Cvar_RegisterVariable (&mvd_streamport);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
@@ -2628,23 +2620,6 @@ void SV_InitLocal (void)
 	Cmd_AddCommand ("vip_removeip", SV_RemoveIPVIP_f);
 	Cmd_AddCommand ("vip_listip", SV_ListIPVIP_f);
 	Cmd_AddCommand ("vip_writeip", SV_WriteIPVIP_f);
-	Cmd_AddCommand ("record", SV_MVD_Record_f);
-	Cmd_AddCommand ("easyrecord", SV_MVDEasyRecord_f);
-	Cmd_AddCommand ("stop", SV_MVDStop_f);
-	Cmd_AddCommand ("cancel", SV_MVD_Cancel_f);
-	Cmd_AddCommand ("lastscores", SV_LastScores_f);
-	Cmd_AddCommand ("dlist", SV_DemoList_f);
-	Cmd_AddCommand ("dlistr", SV_DemoListRegex_f);
-	Cmd_AddCommand ("dlistregex", SV_DemoListRegex_f);
-	Cmd_AddCommand ("demolist", SV_DemoList_f);
-	Cmd_AddCommand ("demolistr", SV_DemoListRegex_f);
-	Cmd_AddCommand ("demolistregex", SV_DemoListRegex_f);
-	Cmd_AddCommand ("rmdemo", SV_DemoRemove_f);
-	Cmd_AddCommand ("rmdemonum", SV_DemoRemoveNum_f);
-	Cmd_AddCommand ("script", SV_Script_f);
-	Cmd_AddCommand ("demoInfoAdd", SV_DemoInfoAdd_f);
-	Cmd_AddCommand ("demoInfoRemove", SV_DemoInfoRemove_f);
-	Cmd_AddCommand ("demoInfo", SV_DemoInfo_f);
 
 
 	for (i=0 ; i<MAX_MODELS ; i++)
@@ -3037,7 +3012,7 @@ void SV_Init (quakeparms_t *parms)
 	Sys_Init ();
 	Pmove_Init ();
 
-	MVD_Init ();
+	SV_MVDInit ();
 	Login_Init ();
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.11 2005/09/25 22:21:51 disconn3ct Exp $
+	$Id: server.h,v 1.12 2005/09/26 15:21:21 disconn3ct Exp $
 */
 // server.h
 
@@ -103,7 +103,7 @@ typedef struct
 	int			signon_buffer_size[MAX_SIGNON_BUFFERS];
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
-	qboolean	demorecording;
+	qboolean	mvdrecording;
 } server_t;
 
 typedef struct
@@ -674,12 +674,12 @@ void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
 //
 void SV_MVDPings (void);
 void SV_MVDWriteToDisk(int type, int to, float time);
-void DemoWrite_Begin(byte type, int to, int size);
+void MVDWrite_Begin(byte type, int to, int size);
+void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
 void SV_MVDStop (int reason);
 void SV_MVDStop_f (void);
 void SV_MVDWritePackets (int num);
 void MVD_Init (void);
-char *SV_DemoNum(int num);
 
 extern demo_t	demo;				// server demo struct
 
@@ -690,6 +690,8 @@ extern cvar_t	sv_demoUseCache;
 extern cvar_t	sv_demoMaxSize;
 extern cvar_t	sv_demoMaxDirSize;
 
+void SV_MVDInit (void);
+char *SV_MVDNum(int num);
 
 //
 // sv_login.c
