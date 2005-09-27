@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: tools.h,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: tools.h,v 1.3 2005/09/27 20:51:06 disconn3ct Exp $
 */
 
 typedef struct {
@@ -171,12 +171,12 @@ byte *LoadFile(char *path);
 
 #define DemoBuffer_Clear(b)	{(b)->start = (b)->end = (b)->last = 0;(b)->msgbuf = NULL;}
 
-void DemoBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg);
+void MVDBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg);
 void DemoBuffer_Set(dbuffer_t *dbuffer);
-void DemoSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur);
-void DemoWrite_Begin(byte type, int to, int size);
+void MVDSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur);
+void MVDWrite_Begin(byte type, int to, int size);
 void DemoWrite_Cat(sizebuf_t *buf);
-void DemoWriteToDisk(sizebuf_t *m, int type, int to, float time);
+void SV_MVDWriteToDisk(sizebuf_t *m, int type, int to, float time);
 void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
 
 vec_t Length(vec3_t v);

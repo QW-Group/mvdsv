@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: main.c,v 1.4 2005/09/14 17:21:34 disconn3ct Exp $
+	$Id: main.c,v 1.5 2005/09/27 20:51:06 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -339,7 +339,7 @@ void Dem_Stop(source_t *s)
 	// last demo closed, say bye
 	QWDToolsMsg();
 
-	DemoWrite_Begin(dem_all, 0, 2+strlen("EndOfDemo"));
+	MVDWrite_Begin(dem_all, 0, 2+strlen("EndOfDemo"));
 	MSG_WriteByte(msgbuf, svc_disconnect);
 	MSG_WriteString (msgbuf, "EndOfDemo");
 }
@@ -608,7 +608,7 @@ void ReadPackets (void)
 	CheckSpectator();
 
 	if (stats_msg.cursize) {
-		DemoWrite_Begin(dem_stats, To(), stats_msg.cursize);
+		MVDWrite_Begin(dem_stats, To(), stats_msg.cursize);
 		SZ_Write(msgbuf, stats_msg.data, stats_msg.cursize);
 		SZ_Clear(&stats_msg);
 	}
@@ -837,14 +837,14 @@ void Update_SignonStats(void)
 					wstats[j] = stats[j];
 					if (stats[j] >=0 && stats[j] <= 255)
 					{
-						DemoWrite_Begin(dem_stats, i, 3);
+						MVDWrite_Begin(dem_stats, i, 3);
 						MSG_WriteByte(msgbuf, svc_updatestat);
 						MSG_WriteByte(msgbuf, j);
 						MSG_WriteByte(msgbuf, stats[j]);
 					}
 					else
 					{
-						DemoWrite_Begin(dem_stats, i, 6);
+						MVDWrite_Begin(dem_stats, i, 6);
 						MSG_WriteByte(msgbuf, svc_updatestatlong);
 						MSG_WriteByte(msgbuf, j);
 						MSG_WriteLong(msgbuf, stats[j]);
@@ -909,7 +909,7 @@ void MainLoop(void)
 			DemoBuffer_Set(&sources[num].dbuffer);
 			if (sworld.options & O_MARGE)
 				Update_SignonStats();
-			DemoWriteToDisk(sources[num].dbuffer.msgbuf,0,0,0);
+			SV_MVDWriteToDisk(sources[num].dbuffer.msgbuf,0,0,0);
 
 			acc_time = acc_ctime = world.time = sources[num].worldtime;
 			world.signonloaded = true;
@@ -920,7 +920,7 @@ void MainLoop(void)
 	for (from = sources; from - sources < sworld.fromcount; from++) {
 		SZ_Clear(&from->frames[0].buf);
 		DemoBuffer_Clear(&from->dbuffer);
-		DemoSetMsgBuf(&from->dbuffer,&from->frames[0].buf);
+		MVDSetMsgBuf(&from->dbuffer,&from->frames[0].buf);
 	}
 
 	// set next frame time that's wished to get
@@ -1021,7 +1021,7 @@ void MainLoop(void)
 
 				world.parsecount++;
 				for (from = sources; from - sources < sworld.fromcount; from++) {
-					DemoSetMsgBuf(&from->dbuffer,&from->frames[world.parsecount&UPDATE_MASK].buf);
+					MVDSetMsgBuf(&from->dbuffer,&from->frames[world.parsecount&UPDATE_MASK].buf);
 				}
 			}
 		}
@@ -1049,7 +1049,7 @@ void QWDToolsMsg(void)
 				" from QWD by QWDTools\n"
 				"\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n");
 
-	DemoWrite_Begin(dem_all, 0, strlen(str) + 3);
+	MVDWrite_Begin(dem_all, 0, strlen(str) + 3);
 	MSG_WriteByte(msgbuf, svc_print);
 	MSG_WriteByte(msgbuf, PRINT_CHAT);
 	MSG_WriteString(msgbuf, str);
@@ -1079,11 +1079,11 @@ qboolean ClearWorld(void)
 	stats_msg.maxsize = sizeof(stats_buf);
 	stats_msg.data = stats_buf;
 
-	DemoBuffer_Init(&demo.dbuffer, demo.buffer, sizeof(demo.buffer), &world.frames[0].buf);
+	MVDBuffer_Init(&demo.dbuffer, demo.buffer, sizeof(demo.buffer), &world.frames[0].buf);
 
 	for (i = 0, from = sources; i < sworld.fromcount; i++, from++)
 	{
-		DemoBuffer_Init(&from->dbuffer, from->buffer, sizeof(from->buffer), &from->buf[0]);
+		MVDBuffer_Init(&from->dbuffer, from->buffer, sizeof(from->buffer), &from->buf[0]);
 
 		from->running = 1 << i;
 		from->lastframe = -1;

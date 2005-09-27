@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_send.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: dem_send.c,v 1.3 2005/09/27 20:51:06 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -509,8 +509,8 @@ void WritePackets(int num)
 				world.delta_sequence = world.lastwritten&255;
 		}
 
-		DemoWriteToDisk(&msg2, demo.lasttype,demo.lastto, frame->time); // this goes first to reduce demo size a bit
-		DemoWriteToDisk(&msg2, 0,0, frame->time); // now goes the rest
+		SV_MVDWriteToDisk(&msg2, demo.lasttype,demo.lastto, frame->time); // this goes first to reduce demo size a bit
+		SV_MVDWriteToDisk(&msg2, 0,0, frame->time); // now goes the rest
 		if (msg.cursize)
 			WriteDemoMessage(&msg, dem_all, 0, frame->time);
 

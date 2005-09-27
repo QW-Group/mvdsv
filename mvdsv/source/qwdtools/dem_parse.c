@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_parse.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: dem_parse.c,v 1.3 2005/09/27 20:51:06 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -150,7 +150,7 @@ void Dem_ParseDownload (void)
 	if (size > 0)
 		msg_readcount += size;
 
-	DemoWrite_Begin(from->type, from->to, msg_readcount - msg_startcount + 1);
+	MVDWrite_Begin(from->type, from->to, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf,svc_download);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 }
@@ -221,7 +221,7 @@ void Dem_ParseServerData (void)
 	strcpy(str2,MSG_ReadString ());
 	count += strlen(str2)+1;
 
-	DemoWrite_Begin(dem_all, 0, count + 40+1);
+	MVDWrite_Begin(dem_all, 0, count + 40+1);
 	MSG_WriteByte(msgbuf, svc_serverdata);
 	MSG_WriteLong(msgbuf, protover);
 	MSG_WriteLong(msgbuf, from->servercount);
@@ -281,7 +281,7 @@ void Dem_Parselist (byte type)
 
 	MSG_ReadByte();
 
-	DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount+1);
+	MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount+1);
 	MSG_WriteByte(msgbuf, type);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 }
@@ -348,7 +348,7 @@ void Dem_ParseStartSoundPacket(void)
 		} while (!found && j >= from->parsecount && j >= 0);
 	}
 
-	DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
+	MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf, svc_sound);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 }       
@@ -573,7 +573,7 @@ void Dem_ParsePrint (void)
 		destto = from->to;
 	}
 
-	DemoWrite_Begin(desttype, destto, msg_readcount - msg_startcount + 1);
+	MVDWrite_Begin(desttype, destto, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf, svc_print);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 }
@@ -609,7 +609,7 @@ void Dem_UpdateUserinfo (void)
 	else
 		player->spectator = false;
 
-	DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
+	MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf, svc_updateuserinfo);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 	strcpy(world.players[slot].name, player->name);
@@ -1110,20 +1110,20 @@ void Dem_ParseTEnt (void)
 	case TE_LIGHTNING1:
 	case TE_LIGHTNING2:
 	case TE_LIGHTNING3:
-		DemoWrite_Begin(dem_all, 0, 16);
+		MVDWrite_Begin(dem_all, 0, 16);
 		MSG_WriteByte(msgbuf, svc_temp_entity);
 		MSG_WriteByte(msgbuf, type);
 		MSG_Forward(msgbuf, msg_readcount, 14);
 		break;
 	case TE_GUNSHOT:
 	case TE_BLOOD:
-		DemoWrite_Begin(dem_all, 0, 9);
+		MVDWrite_Begin(dem_all, 0, 9);
 		MSG_WriteByte(msgbuf, svc_temp_entity);
 		MSG_WriteByte(msgbuf, type);
 		MSG_Forward(msgbuf, msg_readcount, 7);
 		break;
 	default:
-		DemoWrite_Begin(dem_all, 0, 8);
+		MVDWrite_Begin(dem_all, 0, 8);
 		MSG_WriteByte(msgbuf, svc_temp_entity);
 		MSG_WriteByte(msgbuf, type);
 		MSG_Forward(msgbuf, msg_readcount, 6);
@@ -1211,7 +1211,7 @@ void Dem_ParseDemoMessage (void)
 			return;
 			
 		case svc_nop:
-			DemoWrite_Begin(dem_all, 0, 1);
+			MVDWrite_Begin(dem_all, 0, 1);
 			MSG_WriteByte(msgbuf, cmd);
 			break;
 			
@@ -1226,7 +1226,7 @@ void Dem_ParseDemoMessage (void)
 		case svc_centerprint:
 			s = MSG_ReadString();
 
-			DemoWrite_Begin(from->type, To(), strlen(s)+2);
+			MVDWrite_Begin(from->type, To(), strlen(s)+2);
 			//Sys_Printf("%d, %d, %s\n", from->type, To(), s);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_WriteString(msgbuf, s);
@@ -1250,15 +1250,15 @@ void Dem_ParseDemoMessage (void)
 			}
 
 			if (!world.signonloaded)
-				DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
+				MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 			else
-				DemoWrite_Begin(from->type, from->to, msg_readcount - msg_startcount + 1);
+				MVDWrite_Begin(from->type, from->to, msg_readcount - msg_startcount + 1);
 			MSG_WriteByte(msgbuf, svc_stufftext);
 			MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 			break;
 			
 		case svc_damage:
-			DemoWrite_Begin(from->type, To(), 9);
+			MVDWrite_Begin(from->type, To(), 9);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 8);
 			break;
@@ -1268,7 +1268,7 @@ void Dem_ParseDemoMessage (void)
 			break;
 			
 		case svc_setangle:
-			DemoWrite_Begin(dem_all, 0, 5);
+			MVDWrite_Begin(dem_all, 0, 5);
 			MSG_WriteByte(msgbuf, cmd);
 			if (from->format == qwd) {
 				MSG_WriteByte(msgbuf, To());
@@ -1302,7 +1302,7 @@ void Dem_ParseDemoMessage (void)
 			strcpy (lightstyle[i].map,  MSG_ReadString());
 			lightstyle[i].length = strlen(lightstyle[i].map);
 
-			DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
+			MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 			break;
@@ -1312,31 +1312,31 @@ void Dem_ParseDemoMessage (void)
 			break;
 			
 		case svc_stopsound:
-			DemoWrite_Begin(dem_all, 0, 3);
+			MVDWrite_Begin(dem_all, 0, 3);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 2);
 			break;
 		
 		case svc_updatefrags:
-			DemoWrite_Begin(dem_all, 0, 4);
+			MVDWrite_Begin(dem_all, 0, 4);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 3);
 			break;			
 
 		case svc_updateping:
-			DemoWrite_Begin(dem_all, 0, 4);
+			MVDWrite_Begin(dem_all, 0, 4);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 3);
 			break;
 			
 		case svc_updatepl:
-			DemoWrite_Begin(dem_all, 0, 3);
+			MVDWrite_Begin(dem_all, 0, 3);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 2);
 			break;
 			
 		case svc_updateentertime:
-			DemoWrite_Begin(dem_all, 0, 6);
+			MVDWrite_Begin(dem_all, 0, 6);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 5);
 			break;
@@ -1346,12 +1346,12 @@ void Dem_ParseDemoMessage (void)
 			i = MSG_ReadShort ();
 			Dem_ParseBaseline (&baselines[i]);
 
-			DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
+			MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 			break;
 		case svc_spawnstatic:
-			DemoWrite_Begin(dem_all, 0, 14);
+			MVDWrite_Begin(dem_all, 0, 14);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 13);
 			break;			
@@ -1360,12 +1360,12 @@ void Dem_ParseDemoMessage (void)
 			break;
 
 		case svc_killedmonster:
-			DemoWrite_Begin(from->type, To(), 1);
+			MVDWrite_Begin(from->type, To(), 1);
 			MSG_WriteByte(msgbuf, cmd);
 			break;
 
 		case svc_foundsecret:
-			DemoWrite_Begin(from->type, To(), 1);
+			MVDWrite_Begin(from->type, To(), 1);
 			MSG_WriteByte(msgbuf, cmd);
 			break;
 
@@ -1378,7 +1378,7 @@ void Dem_ParseDemoMessage (void)
 
 			if (!world.signonstats)
 			{
-				DemoWrite_Begin(dem_stats, To(), 3);
+				MVDWrite_Begin(dem_stats, To(), 3);
 				MSG_WriteByte(msgbuf, cmd);
 				MSG_Forward(msgbuf, msg_readcount, 2);
 				break;
@@ -1390,7 +1390,7 @@ void Dem_ParseDemoMessage (void)
 
 				tmp = msgbuf;
 				msgbuf = &from->signon_stats;
-				DemoWrite_Begin(dem_stats, To(), 3);
+				MVDWrite_Begin(dem_stats, To(), 3);
 				MSG_WriteByte(msgbuf, cmd);
 				MSG_Forward(msgbuf, msg_readcount, 2);
 				msgbuf = tmp;
@@ -1416,7 +1416,7 @@ void Dem_ParseDemoMessage (void)
 			from->players[To()].stats[i]=j;
 
 
-			/*DemoWrite_Begin(dem_stats, To(), 3);
+			/*MVDWrite_Begin(dem_stats, To(), 3);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 2);
 			*/
@@ -1429,7 +1429,7 @@ void Dem_ParseDemoMessage (void)
 			}
 
 			if (!world.signonstats) { 
-				DemoWrite_Begin(dem_stats, To(), 6);
+				MVDWrite_Begin(dem_stats, To(), 6);
 				MSG_WriteByte(msgbuf, cmd);
 				MSG_Forward(msgbuf, msg_readcount, 5);
 				break;
@@ -1453,7 +1453,7 @@ void Dem_ParseDemoMessage (void)
 
 				tmp = msgbuf;
 				msgbuf = &from->signon_stats;
-				DemoWrite_Begin(dem_stats, To(), 6);
+				MVDWrite_Begin(dem_stats, To(), 6);
 				MSG_WriteByte(msgbuf, cmd);
 				MSG_Forward(msgbuf, msg_readcount, 5);
 				msgbuf = tmp;
@@ -1461,7 +1461,7 @@ void Dem_ParseDemoMessage (void)
 			}
 			*/
 			/*
-			DemoWrite_Begin(dem_stats, To(), 6);
+			MVDWrite_Begin(dem_stats, To(), 6);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_WriteByte(msgbuf, i);
 			MSG_WriteLong(msgbuf, j);
@@ -1470,19 +1470,19 @@ void Dem_ParseDemoMessage (void)
 			break;
 			
 		case svc_spawnstaticsound:
-			DemoWrite_Begin(dem_all, 0, 10);
+			MVDWrite_Begin(dem_all, 0, 10);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 9);
 			break;
 
 		case svc_cdtrack:
-			DemoWrite_Begin(dem_all, 0, 2);
+			MVDWrite_Begin(dem_all, 0, 2);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 1);
 			break;
 
 		case svc_intermission:
-			DemoWrite_Begin(dem_all, 0, 10);
+			MVDWrite_Begin(dem_all, 0, 10);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 9);
 			break;
@@ -1490,27 +1490,27 @@ void Dem_ParseDemoMessage (void)
 		case svc_finale:
 			s = MSG_ReadString();
 
-			DemoWrite_Begin(dem_all, 0, strlen(s)+2);
+			MVDWrite_Begin(dem_all, 0, strlen(s)+2);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_WriteString(msgbuf, s);
 			break;
 			
 		case svc_sellscreen:
-			DemoWrite_Begin(dem_all, 0, 1);
+			MVDWrite_Begin(dem_all, 0, 1);
 			MSG_WriteByte(msgbuf, cmd);
 			break;
 
 		case svc_smallkick:
-			DemoWrite_Begin(from->type, To(), 1);
+			MVDWrite_Begin(from->type, To(), 1);
 			MSG_WriteByte(msgbuf, cmd);
 			break;
 		case svc_bigkick:
-			DemoWrite_Begin(from->type, To(), 1);
+			MVDWrite_Begin(from->type, To(), 1);
 			MSG_WriteByte(msgbuf, cmd);
 			break;
 
 		case svc_muzzleflash:
-			DemoWrite_Begin(dem_all, 0, 3);
+			MVDWrite_Begin(dem_all, 0, 3);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 2);
 			break;
@@ -1526,7 +1526,7 @@ void Dem_ParseDemoMessage (void)
 			MSG_ReadString();
 			MSG_ReadString();
 
-			DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
+			MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 			break;
@@ -1537,7 +1537,7 @@ void Dem_ParseDemoMessage (void)
 			MSG_ReadString();
 			MSG_ReadString();
 
-			DemoWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
+			MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 			break;
@@ -1558,7 +1558,7 @@ void Dem_ParseDemoMessage (void)
 			break;
 
 		case svc_chokecount:		// some preceding packets were choked
-			DemoWrite_Begin(from->type, from->to, 2);
+			MVDWrite_Begin(from->type, from->to, 2);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 1);
 			break;
@@ -1580,19 +1580,19 @@ void Dem_ParseDemoMessage (void)
 			break;
 
 		case svc_maxspeed :
-			DemoWrite_Begin(dem_all, 0, 5);
+			MVDWrite_Begin(dem_all, 0, 5);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 4);
 			break;
 
 		case svc_entgravity :
-			DemoWrite_Begin(dem_all, 0, 5);
+			MVDWrite_Begin(dem_all, 0, 5);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 4);
 			break;
 
 		case svc_setpause:
-			DemoWrite_Begin(dem_all, 0, 2);
+			MVDWrite_Begin(dem_all, 0, 2);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 1);
 			break;
