@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_sys_unix.c,v 1.8 2005/09/22 12:49:14 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.9 2005/09/27 20:49:55 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -180,7 +180,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 
 	if (!(d = opendir(path)))
 	{
-		if (!all) 
+		if (!all)
 			Q_Free(preg);
 		return dir;
 	}
@@ -216,14 +216,14 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 			list[dir.numfiles].isdir = false;
 			list[dir.numfiles].time = Sys_FileTime(pathname);
 			dir.size += (list[dir.numfiles].size = Sys_FileSize(pathname));
-		} 
+		}
 		strlcpy (list[dir.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
 		if (++dir.numfiles == MAX_DIRFILES - 1)
 			break;
 	}
 	closedir(d);
-	if (!all) 
+	if (!all)
 		Q_Free(preg);
 
 	switch (sort_type)
