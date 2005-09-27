@@ -16,31 +16,46 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.14 2005/09/26 15:21:21 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.15 2005/09/27 20:49:55 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 #include "winquake.h"
 #include "pcre/pcre.h"
 
-// TODO: clean it
-#include <arpa/inet.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-
 #ifdef _WIN32
+
+#define EWOULDBLOCK	WSAEWOULDBLOCK
+#define EMSGSIZE	WSAEMSGSIZE
+#define ECONNRESET	WSAECONNRESET
+#define ECONNABORTED	WSAECONNABORTED
+#define ECONNREFUSED	WSAECONNREFUSED
+#define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
+
 #define qerrno WSAGetLastError()
 #else
 #define qerrno errno
-#endif
+
+
+
+
+
+
+#include <sys/ioctl.h>
+
+#include <errno.h>
+#include <arpa/inet.h>
+
+#include <unistd.h>
 
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET -1
-#endif
 
 #define closesocket close
 #define ioctlsocket ioctl
+
+#endif
+#endif
 
 #define demo_size_padding 0x1000
 
@@ -217,7 +232,6 @@ int DemoWrite(void *data, int len)	//broadcast to all proxies
 
 
 
-#define MIN_DEMO_MEMORY 0x100000
 #define MAXSIZE (demobuffer->end < demobuffer->last ? \
 				demobuffer->start - demobuffer->end : \
 				demobuffer->maxsize - demobuffer->end)
@@ -227,8 +241,7 @@ cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
 cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
 cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
 cvar_t	sv_demoClearOld = {"sv_demoClearOld", "0"}; //bliP: 24/9 clear old demos
-qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value);
-cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
+cvar_t	sv_demoDir = {"sv_demoDir", "demos"};
 cvar_t	sv_demofps = {"sv_demofps", "20"};
 cvar_t	sv_demoPings = {"sv_demopings", "3"};
 cvar_t	sv_demoNoVis = {"sv_demonovis", "1"};
@@ -241,7 +254,6 @@ cvar_t			sv_demoPrefix = {"sv_demoPrefix", ""};
 cvar_t			sv_demoSuffix = {"sv_demoSuffix", ""};
 cvar_t			sv_demotxt = {"sv_demotxt", "1"};
 
-static int		demo_max_size;
 cvar_t			sv_onrecordfinish = {"sv_onRecordFinish", ""};
 cvar_t			sv_ondemoremove = {"sv_onDemoRemove", ""};
 cvar_t			sv_demoRegexp = {"sv_demoRegexp", "\\.mvd(\\.(gz|bz2|rar|zip))?$"};
@@ -273,20 +285,6 @@ static void Check_DemoDir(void)
 	{
 		Cvar_SetROM(&sv_demoDir, "demos");
 	}
-}
-
-// only one .. is allowed (security)
-qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value)
-{
-	if (!value[0])
-		return true;
-
-	if (value[0] == '.' && value[1] == '.')
-		value += 2;
-	if (strstr(value,"/.."))
-		return true;
-
-	return false;
 }
 
 void SV_MVDPings (void)
@@ -762,8 +760,6 @@ void CleanName_Init ();
 
 void MVD_Init (void)
 {
-	int p, size = MIN_DEMO_MEMORY;
-
 	Cvar_RegisterVariable (&sv_demofps);
 	Cvar_RegisterVariable (&sv_demoPings);
 	Cvar_RegisterVariable (&sv_demoNoVis);
@@ -782,25 +778,6 @@ void MVD_Init (void)
 	Cvar_RegisterVariable (&sv_demoRegexp);
 
 
-	p = COM_CheckParm ("-democache");
-	if (p)
-	{
-		if (p < com_argc-1)
-			size = Q_atoi (com_argv[p+1]) * 1024;
-		else
-			Sys_Error ("Memory_Init: you must specify a size in KB after -democache");
-	}
-
-	if (size < MIN_DEMO_MEMORY)
-	{
-		Con_Printf("Minimum memory size for demo cache is %dk\n", MIN_DEMO_MEMORY / 1024);
-		size = MIN_DEMO_MEMORY;
-	}
-
-	svs.demomem = Hunk_AllocName ( size, "demo" );
-	svs.demomemsize = size;
-	demo_max_size = size - 0x80000;
-	Cvar_SetROM(&sv_demoCacheSize, va("%d", size/1024));
 	CleanName_Init();
 }
 
@@ -810,15 +787,13 @@ void MVD_Init (void)
 
 static char *SV_PrintTeams(void)
 {
-	char		*teams[MAX_CLIENTS], *p;
-	int		i, j, numcl = 0, numt = 0, scores;
-	client_t	*clients[MAX_CLIENTS];
-	char		buf[2048];
-	static char	lastscores[2048];
-	extern cvar_t	teamplay;
-	extern char	chartbl2[];
-	date_t		date;
-	SV_TimeOfDay(&date);
+	char *teams[MAX_CLIENTS];
+//	char *p;
+	int	i, j, numcl = 0, numt = 0;
+	client_t *clients[MAX_CLIENTS];
+	char buf[2048] = {0};
+	extern cvar_t teamplay;
+//	extern char chartbl2[];
 
 	// count teams and players
 	for (i=0; i < MAX_CLIENTS; i++)
@@ -830,76 +805,42 @@ static char *SV_PrintTeams(void)
 
 		clients[numcl++] = &svs.clients[i];
 		for (j = 0; j < numt; j++)
-			if (!strcmp(svs.clients[i].team, teams[j]))
+			if (!strcmp(Info_ValueForKey(svs.clients[i].userinfo, "team"), teams[j]))
 				break;
 		if (j != numt)
 			continue;
 
-		teams[numt++] = svs.clients[i].team;
+		teams[numt++] = Info_ValueForKey(svs.clients[i].userinfo, "team");
 	}
 
 	// create output
-	lastscores[0] = 0;
-	snprintf(buf, sizeof(buf),
-		"date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n",
-		date.str, sv.name, (int)teamplay.value, (int)deathmatch.value,
-		(int)timelimit.value);
+
 	if (numcl == 2) // duel
 	{
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-			"player1: %s (%i)\nplayer2: %s (%i)\n",
-			clients[0]->name, clients[0]->old_frags,
-			clients[1]->name, clients[1]->old_frags);
-		snprintf(lastscores, sizeof(lastscores), "duel: %s vs %s @ %s - %i:%i\n",
-			clients[0]->name, clients[1]->name, sv.name, 
-			clients[0]->old_frags, clients[1]->old_frags);
-	} else if (!teamplay.value) // ffa
-	{ 
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "players:\n");
-		snprintf(lastscores, sizeof(lastscores), "ffa:");
+		snprintf(buf, sizeof(buf), "team1 %s\nteam2 %s\n", clients[0]->name, clients[1]->name);
+	}
+	else if (!teamplay.value) // ffa
+	{
+		snprintf(buf, sizeof(buf), "players:\n");
 		for (i = 0; i < numcl; i++)
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
+	}
+	else
+	{ // teamplay
+		for (j = 0; j < numt; j++)
 		{
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-				"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
-			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-				"  %s(%i)", clients[i]->name, clients[i]->old_frags);
-		}
-		snprintf(lastscores + strlen(lastscores),
-			sizeof(lastscores) - strlen(lastscores), " @ %s\n", sv.name);
-	} else { // teamplay
-		snprintf(lastscores, sizeof(lastscores), "tp:");
-		for (j = 0; j < numt; j++) {
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-				"team[%i] %s:\n", j, teams[j]);
-			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-				"%s[", teams[j]);
-			scores = 0;
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "team %s:\n", teams[j]);
 			for (i = 0; i < numcl; i++)
-				if (!strcmp(clients[i]->team, teams[j]))
-				{
-					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-						"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
-					snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-						" %s(%i) ", clients[i]->name, clients[i]->old_frags);
-					scores += clients[i]->old_frags;
-				}
-			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-				"](%i)  ", scores);
-
+				if (!strcmp(Info_ValueForKey(clients[i]->userinfo, "team"), teams[j]))
+					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
 		}
-		snprintf(lastscores + strlen(lastscores),
-			sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.name);
 	}
 
-	for (p = buf; *p; p++) *p = chartbl2[(byte)*p];
-	for (p = lastscores; *p; p++) *p = chartbl2[(byte)*p];
-	strlcat(lastscores, buf, sizeof(lastscores));
-	return lastscores;
+	if (!numcl)
+		return "\n";
+//	for (p = buf; *p; p++) *p = chartbl2[(qbyte)*p];
+	return va("%s",buf);
 }
-//tp: team1[ player1_1(scores1_1) ... playerN_1(scoresN_1) ](scores1) ...
-//    teamM[ player1_M(scores1_M) ... playerK_M(scoresK_M) ](scoresM)  @ map
-//duel: player1 vs player2 @ map - scores1:scores2
-//ffa: player1(scores1) ... playerN(scoresN) @ map
 
 /*
 ====================
@@ -939,20 +880,20 @@ mvddest_t *SV_InitRecordFile (char *name)
 	}
 
 	Check_DemoDir();
-
+	
 	s = name + strlen(name);
 	while (*s != '/') s--;
-	strncasecmp(dst->name, s+1, sizeof(dst->name));
-	strncasecmp(dst->path, sv_demoDir.string, sizeof(dst->path));
+	strncpy(dst->name, s+1, sizeof(dst->name));
+	strncpy(dst->path, sv_demoDir.string, sizeof(dst->path));
 
 	if (!*demo.path)
-		strncasecmp(demo.path, ".", MAX_OSPATH);
+		strncpy(demo.path, ".", MAX_OSPATH);
 
-	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", name);
+	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
 	Cvar_SetROM(&serverdemo, demo.name);
 
-	strncasecmp(path, name, MAX_OSPATH);
-	strncasecmp(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+	strncpy(path, name, MAX_OSPATH);
+	strncpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 
 	if (sv_demotxt.value)
 	{
@@ -1017,7 +958,7 @@ void SV_MVDStop (int reason)
 		if (!demo.dest)
 			sv.mvdrecording = false;
 
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed.\n");
+		SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
 
 		Cvar_SetROM(&serverdemo, "");
 
@@ -1045,10 +986,9 @@ void SV_MVDStop (int reason)
 	else
 		SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
 
-// TODO: move it another place
-	/*if (sv_onrecordfinish.string[0])
+	if (sv_onrecordfinish.string[0])
 	{
-		extern char path[MAX_OSPATH];
+		char path[MAX_OSPATH];
 		extern redirect_t sv_redirected;
 		int old = sv_redirected;
 		char *p;
@@ -1065,7 +1005,7 @@ void SV_MVDStop (int reason)
 		SV_Script_f();
 
 		sv_redirected = old;
-	}*/
+	}
 	
 	Cvar_SetROM(&serverdemo, "");
 }
@@ -1309,14 +1249,20 @@ static qboolean SV_MVD_Record (mvddest_t *dest)
 
 	for (n = 0; n < sv.num_signon_buffers; n++)
 	{
+		if (buf.cursize+sv.signon_buffer_size[n] > MAX_MSGLEN/2)
+		{
+			SV_WriteRecordMVDMessage (&buf, seq++);
+			SZ_Clear (&buf);
+		}
 		SZ_Write (&buf, 
 			sv.signon_buffers[n],
 			sv.signon_buffer_size[n]);
+	}
 
-		if (buf.cursize > MAX_MSGLEN/2) {
-			SV_WriteRecordMVDMessage (&buf, seq++);
-			SZ_Clear (&buf); 
-		}
+	if (buf.cursize > MAX_MSGLEN/2)
+	{
+		SV_WriteRecordMVDMessage (&buf, seq++);
+		SZ_Clear (&buf);
 	}
 
 	MSG_WriteByte (&buf, svc_stufftext);
@@ -1376,7 +1322,7 @@ static qboolean SV_MVD_Record (mvddest_t *dest)
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va("skins\n") );
+	MSG_WriteString (&buf, "skins\n");
 
 	SV_WriteRecordMVDMessage (&buf, seq++);
 
@@ -1490,43 +1436,7 @@ char *SV_CleanName (unsigned char *name)
 	*++out = 0;
 	return text;
 }
-//bliP: 24/9 clear old demos ->
-/*
-====================
-SV_DirSizeCheck
 
-Deletes sv_demoClearOld files from demo dir if out of space
-====================
-*/
-int SV_DirSizeCheck (void)
-{
-	dir_t	dir;
-	file_t	*list;
-	int	i;
-
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
-	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
-	{
-		if (sv_demoClearOld.value <= 0)
-		{
-			Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
-			return 0;
-		}
-		list = dir.files;
-		i = sv_demoClearOld.value;
-		Con_Printf("clearing %d old files\n", i);
-		for (; list->name[0] && i > 0; list++)
-		{
-			if (list->isdir)
-				continue;
-			Sys_remove(va("%s/%s/%s", com_gamedir, sv_demoDir.string, list->name));
-			//Con_Printf("remove %d - %s/%s/%s\n", i, com_gamedir, sv_demoDir.string, list->name);
-			i--;
-		}
-	}
-	return 1;
-}
-//<-
 /*
 ====================
 SV_MVD_Record_f
@@ -1539,6 +1449,7 @@ void SV_MVD_Record_f (void)
 	int		c;
 	char	name[MAX_OSPATH+MAX_DEMO_NAME];
 	char	newname[MAX_DEMO_NAME];
+	dir_t	dir;
 
 	c = Cmd_Argc();
 	if (c != 2)
@@ -1547,35 +1458,34 @@ void SV_MVD_Record_f (void)
 		return;
 	}
 
-	if (sv.state != ss_active) {
+	if (sv.state != ss_active){
 		Con_Printf ("Not active yet.\n");
 		return;
 	}
 
 	Check_DemoDir();
 
-//bliP: 24/9 clear old demos
-	if (!SV_DirSizeCheck())
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_NO);
+	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
+	{
+		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
 		return;
-//<-
+	}
 
 	strlcpy(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))),
 			sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
 	strlcat(newname, sv_demoSuffix.string, sizeof(newname));
-  
+
 	snprintf (name, sizeof(name), "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
 
-	if (sv.mvdrecording)
-		SV_MVDStop_f();
 
+	COM_StripExtension(name, name);
+	COM_DefaultExtension(name, ".mvd");
+	COM_CreatePath(name);
 
-	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
-
-//
-// open the demo file
-//
-	COM_ForceExtension (name, ".mvd");
-	
+	//
+	// open the demo file and start recording
+	//
 	SV_MVD_Record (SV_InitRecordFile(name));
 }
 
@@ -1682,7 +1592,8 @@ int	Dem_CountTeamPlayers (char *t)
 	int	i, count;
 
 	count = 0;
-	for (i = 0; i < MAX_CLIENTS ; i++) {
+	for (i = 0; i < MAX_CLIENTS ; i++)
+	{
 		if (svs.clients[i].name[0] && !svs.clients[i].spectator)
 			if (strcmp(&svs.clients[i].team[0], t)==0)
 				count++;
@@ -1696,6 +1607,7 @@ int	Dem_CountTeamPlayers (char *t)
 void SV_MVDEasyRecord_f (void)
 {
 	int		c;
+	dir_t	dir;
 	char	name[MAX_DEMO_NAME];
 	char	name2[MAX_OSPATH*7]; // scream
 	//char	name2[MAX_OSPATH*2];
@@ -1711,17 +1623,18 @@ void SV_MVDEasyRecord_f (void)
 		return;
 	}
 
-	if (sv.mvdrecording)
-		SV_MVDStop_f();
-
-	if (!SV_DirSizeCheck()) //bliP: 24/9 clear old demos
+	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".*", SORT_NO);
+	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
+	{
+		Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
 		return;
+	}
 
 	// -> scream
-	if (c == 2)
+/*	if (c == 2)
 		strlcpy (name, Cmd_Argv(1), sizeof(name));
-	else
-	{
+
+	else {
 		i = Dem_CountPlayers();
 		if (teamplay.value >= 1 && i > 2)
 		{
@@ -1747,28 +1660,63 @@ void SV_MVDEasyRecord_f (void)
 				snprintf (name, sizeof(name), "ffa_%s(%d)", sv.name, i);
 			}
 		}
+	}*/
+
+
+	if (c == 2)
+		strlcpy (name, Cmd_Argv(1), sizeof(name));
+	else
+	{
+		i = Dem_CountPlayers();
+		if (teamplay.value >= 1 && i > 2)
+		{
+			// Teamplay
+			snprintf (name, sizeof(name), "%don%d_", Dem_CountTeamPlayers(Dem_Team(1)), Dem_CountTeamPlayers(Dem_Team(2)));
+			if (sv_demoExtraNames.value > 0)
+			{
+				strlcat (name, va("[%s]_%s_vs_[%s]_%s_%s",
+									Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)),
+									Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)),
+									sv.name), sizeof(name));
+			} else
+				strlcat (name, va("%s_vs_%s_%s", Dem_Team(1), Dem_Team(2), sv.name), sizeof(name));
+		} else {
+			if (i == 2) {
+				// Duel
+				snprintf (name, sizeof(name), "duel_%s_vs_%s_%s",
+					Dem_PlayerName(1),
+					Dem_PlayerName(2),
+					sv.name);
+			} else {
+				// FFA
+				snprintf (name, sizeof(name), "ffa_%s(%d)", sv.name, i);
+			}
+		}
 	}
 
 	// <-
 
 // Make sure the filename doesn't contain illegal characters
 	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)),
-			sizeof(name) - strlen(sv_demoSuffix.string) - 7);
+			MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
 	strlcat(name, sv_demoSuffix.string, sizeof(name));
 	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
 // find a filename that doesn't exist yet
 	strlcpy(name2, name, sizeof(name2));
 	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
-	COM_ForceExtension (name2, ".mvd");
+//	COM_StripExtension(name2, name2);
+	strcat (name2, ".mvd");
 	if ((f = fopen (name2, "rb")) == 0)
 		f = fopen(va("%s.gz", name2), "rb");
 	
-	if (f) {
+	if (f)
+	{
 		i = 1;
 		do {
 			fclose (f);
 			snprintf(name2, sizeof(name2), "%s_%02i", name, i);
-			COM_ForceExtension (name2, ".mvd");
+//			COM_StripExtension(name2, name2);
+			strcat (name2, ".mvd");
 			if ((f = fopen (name2, "rb")) == 0)
 				f = fopen(va("%s.gz", name2), "rb");
 			i++;
@@ -1871,7 +1819,7 @@ void SV_DemoList (qboolean use_regex)
 	dir_t	dir;
 	file_t	*list;
 	float	f;
-	int	i = 0,j,show;
+	int	i,j,show;
 
 	int	r;
 	pcre	*preg;
@@ -1893,7 +1841,7 @@ void SV_DemoList (qboolean use_regex)
 		list = &dir.files[i];
 	}
 
-	for (++i; list->name[0]; list++, i++)
+	for (i=1; list->name[0]; list++, i++)
 	{
 		for (j = 1; j < Cmd_Argc(); j++)
 		{
@@ -1988,42 +1936,26 @@ char *SV_MVDNum(int num)
 	return NULL;
 }
 
-char *SV_DemoName2Txt(char *name)
+char *SV_MVDName2Txt(char *name)
 {
-	char	s[MAX_OSPATH];
-	int	len;
+	char s[MAX_OSPATH];
 
 	if (!name)
 		return NULL;
 
 	strlcpy(s, name, MAX_OSPATH);
-	len = strlen(s) - 4;
-	if (len < 0)
-		return va("%s", s);
-	if (strcmp(&s[len], ".mvd"))
-	{
-		if (len < 3)
-			return va("%s", s);
-		len -= 3;
-		if (strcmp(&s[len], ".mvd.gz"))
-			return va("%s", s);
-	}
-	s[++len] = 't';
-	s[++len] = 'x';
-	s[++len] = 't';
-	s[++len] = '\0';
-/*	if (strstr(s, ".mvd.gz"))
+
+	if (strstr(s, ".mvd.gz") != NULL)
 		strlcpy(s + strlen(s) - 6, "txt", MAX_OSPATH - strlen(s) + 6);
-	else if (strstr(s, ".mvd"))
+	else
 		strlcpy(s + strlen(s) - 3, "txt", MAX_OSPATH - strlen(s) + 3);
-*/
 
 	return va("%s", s);
 }
 
 char *SV_MVDTxTNum(int num)
 {
-	return SV_DemoName2Txt(SV_MVDNum(num));
+	return SV_MVDName2Txt(SV_MVDNum(num));
 }
 
 void SV_MVDRemove_f (void)
@@ -2049,9 +1981,7 @@ void SV_MVDRemove_f (void)
 		// remove all demos with specified token
 		ptr++;
 
-		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
-				   sv_demoRegexp.string, SORT_BY_DATE);
-
+		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 		list = dir.files;
 		for (i = 0;list->name[0]; list++)
 		{
@@ -2062,18 +1992,22 @@ void SV_MVDRemove_f (void)
 
 				// stop recording first;
 				snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, list->name);
-				if (!Sys_remove(path)) {
+				if (!Sys_remove(path))
+				{
 					Con_Printf("removing %s...\n", list->name);
 					i++;
 				}
 		
-				Sys_remove(SV_DemoName2Txt(path));
+				Sys_remove(SV_MVDName2Txt(path));
 			}
 		}
 
-		if (i) {
+		if (i)
+		{
 			Con_Printf("%d demos removed\n", i);
-		} else {
+		}
+		else
+		{
 			Con_Printf("no matching found\n");
 		}
 
@@ -2102,10 +2036,11 @@ void SV_MVDRemove_f (void)
 
 			sv_redirected = old;
 		}
-	} else 
+	}
+	else 
 		Con_Printf("unable to remove demo %s\n", name);
 
-	Sys_remove(SV_DemoName2Txt(path));
+	Sys_remove(SV_MVDName2Txt(path));
 }
 
 void SV_MVDRemoveNum_f (void)
@@ -2151,11 +2086,13 @@ void SV_MVDRemoveNum_f (void)
 
 				sv_redirected = old;
 			}
-		} else 
+		}
+		else 
 			Con_Printf("unable to remove demo %s\n", name);
 
-		Sys_remove(SV_DemoName2Txt(path));
-	} else
+		Sys_remove(SV_MVDName2Txt(path));
+	}
+	else
 		Con_Printf("invalid demo num\n");
 }
 
@@ -2179,8 +2116,10 @@ void SV_MVDInfoAdd_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
-	} else {
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+	}
+	else
+	{
 		name = SV_MVDTxTNum(atoi(Cmd_Argv(1)));
 
 		if (!name)
@@ -2229,8 +2168,10 @@ void SV_MVDInfoRemove_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
-	} else {
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+	}
+	else
+	{
 		name = SV_MVDTxTNum(atoi(Cmd_Argv(1)));
 
 		if (!name)
@@ -2269,8 +2210,10 @@ void SV_MVDInfo_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_DemoName2Txt(demo.name));
-	} else {
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+	}
+	else
+	{
 		name = SV_MVDTxTNum(atoi(Cmd_Argv(1)));
 
 		if (!name)
@@ -2332,7 +2275,7 @@ void SV_LastScores_f (void)
 
 	for (i = dir.numfiles - demos; i < dir.numfiles; )
 	{
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, SV_DemoName2Txt(dir.files[i].name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, SV_MVDName2Txt(dir.files[i].name));
 
 		Con_Printf("%i. ", ++i);
 		if ((f = fopen(path, "rt")) == NULL)
@@ -2351,9 +2294,7 @@ void SV_LastScores_f (void)
 	}
 }
 
-// disconnect -->
 
-// <-- disconnect: FTV port
 
 void SV_MVDInit (void)
 {

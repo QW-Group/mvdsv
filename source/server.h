@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.12 2005/09/26 15:21:21 disconn3ct Exp $
+	$Id: server.h,v 1.13 2005/09/27 20:49:55 disconn3ct Exp $
 */
 // server.h
 
@@ -105,16 +105,6 @@ typedef struct
 
 	qboolean	mvdrecording;
 } server_t;
-
-typedef struct
-{
-	vec3_t	origin;
-	vec3_t	angles;
-	int		weaponframe;
-	int		skinnum;
-	int		model;
-	int		effects;
-}	demoinfo_t;
 
 #define	NUM_SPAWN_PARMS			16
 
@@ -269,6 +259,16 @@ typedef struct client_s
 
 typedef struct
 {
+	vec3_t	origin;
+	vec3_t	angles;
+	int		weaponframe;
+	int		skinnum;
+	int		model;
+	int		effects;
+}	demoinfo_t;
+
+typedef struct
+{
 	demoinfo_t	info;
 	float		sec;
 	int			parsecount;
@@ -340,6 +340,7 @@ typedef struct
 
 	struct mvddest_s *dest;
 } demo_t;
+
 
 //=============================================================================
 
