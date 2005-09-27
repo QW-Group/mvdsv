@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: tools.c,v 1.3 2005/09/14 17:21:34 disconn3ct Exp $
+	$Id: tools.c,v 1.4 2005/09/27 20:51:06 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -32,7 +32,8 @@ usercmd_t nullcmd; // guarenteed to be zero
 
 sizebuf_t			*msgbuf;
 dbuffer_t	*demobuffer;
-static int			header = (int)&((header_t*)0)->data;
+static int	header = (char *)&((header_t*)0)->data - (char *)NULL;
+
 
 /*
 ============================================================================
@@ -476,7 +477,7 @@ void SZ_Print (sizebuf_t *buf, char *data)
 		memcpy ((byte *)SZ_GetSpace(buf, len-1)-1,data,len); // write over trailing 0
 }
 
-void DemoBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg)
+void MVDBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg)
 {
 	demobuffer = dbuffer;
 
@@ -508,7 +509,7 @@ Sets the frame message buffer
 ==============
 */
 
-void DemoSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur)
+void MVDSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur)
 {
 	demobuffer = dbuffer;
 	// fix the maxsize of previous msg buffer,
@@ -525,7 +526,7 @@ void DemoSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur)
 
 /*
 ==============
-DemoWriteToDisk
+SV_MVDWriteToDisk
 
 Writes to disk a message meant for specifc client
 or all messages if type == 0
@@ -533,7 +534,7 @@ Message is cleared from demobuf after that
 ==============
 */
 
-void DemoWriteToDisk(sizebuf_t *buf, int type, int to, float time)
+void SV_MVDWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 {
 	int pos = 0;
 	header_t *p;
@@ -588,13 +589,13 @@ void DemoWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 
 /*
 ==============
-DemoSetBuf
+MVDSetBuf
 
 Sets position in the buf for writing to specific client
 ==============
 */
 
-static void DemoSetBuf(byte type, int to)
+static void MVDSetBuf(byte type, int to)
 {
 	header_t *p;
 	int pos = 0;
@@ -629,7 +630,7 @@ static void DemoSetBuf(byte type, int to)
 	msgbuf->h = p;
 }
 
-void DemoMoveBuf(void)
+void MVDMoveBuf(void)
 {
 	// set the last message mark to the previous frame (i/e begining of this one)
 	demobuffer->last = demobuffer->end - msgbuf->bufsize;
@@ -654,7 +655,7 @@ void DemoWrite_Cat(sizebuf_t *buf)
 
 		WritePackets(1);
 		if (move && demobuffer->start > msgbuf->bufsize + buf->cursize)
-			DemoMoveBuf();
+			MVDMoveBuf();
 	}
 
 	msgbuf->h = NULL;
@@ -669,7 +670,7 @@ void DemoWrite_Cat(sizebuf_t *buf)
 
 }
 
-void DemoWrite_Begin(byte type, int to, int size)
+void MVDWrite_Begin(byte type, int to, int size)
 {
 	byte *p;
 	qboolean move = false;
@@ -696,17 +697,17 @@ void DemoWrite_Begin(byte type, int to, int size)
 
 		WritePackets(1);
 		if (move && demobuffer->start > msgbuf->bufsize + header + size)
-			DemoMoveBuf();
+			MVDMoveBuf();
 	}
 
 	if (msgbuf->h == NULL || msgbuf->h->type != type || msgbuf->h->to != to || msgbuf->h->full) {
-		DemoSetBuf(type, to);
+		MVDSetBuf(type, to);
 	}
 
 	if (msgbuf->h->size + size > MAX_MSGLEN)
 	{
 		msgbuf->h->full = 1;
-		DemoSetBuf(type, to);
+		MVDSetBuf(type, to);
 	}
 
 	// we have to make room for new data
