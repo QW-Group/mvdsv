@@ -15,13 +15,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: marge.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+	$Id: marge.c,v 1.3 2005/09/29 07:36:10 disconn3ct Exp $
 */
 
 #include "defs.h"
 
 #define HEADER (int)&((header_t*)0)->data
-#define NextMsg(h) (byte*)(h) = (h)->data + (h)->size
+#define NextMsg(h) (h) = (h)->data + (h)->size
 #define Cpy(d,s) memcpy((d), (s), HEADER + (s)->size)
 #define Cmp(a,b) (((a)->source & (b)->source) == 0 && (a)->size == (b)->size && *(a)->data == *(b)->data && !memcmp((a)->data, (b)->data, (a)->size) && TypeCmp((a),(b)))
 
@@ -241,7 +241,7 @@ void CheckMsg(zn_t *zn1, zn_t *zn2, zn_t *znd)//header_t **d, source_t *who, int
 
 		// make room
 		memmove((byte*)t + size, t, (byte*)znd->end - (byte*)t);
-		(byte*)znd->end += size;
+		znd->end += size;
 
 		// copy
 		for (c = zn1->start; c != zn1->end; NextMsg(c), NextMsg(t)) 
@@ -318,14 +318,14 @@ void Marge (sizebuf_t *dest, int start, int end)
 			zn1.fin = true;//!m1->bufsize;
 			zn2.fin = !m2->bufsize;
 
-			(byte*)zn1.start = m1->data;
-			(byte*)zn1.end = m1->data + m1->bufsize;
-			(byte*)zn2.start = m2->data;
-			(byte*)zn2.end = m2->data;
+			zn1.start = m1->data;
+			zn1.end = m1->data + m1->bufsize;
+			zn2.start = m2->data;
+			zn2.end = m2->data;
 
-			(byte*)d = tmp.data;
-			(byte*)znd.start = tmp.data;
-			(byte*)znd.end = tmp.data;
+			d = tmp.data;
+			znd.start = tmp.data;
+			znd.end = tmp.data;
 
 			while (!zn2.fin)
 			{
