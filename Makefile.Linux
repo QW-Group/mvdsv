@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.12 2005/09/22 12:49:14 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.13 2005/09/29 07:33:46 disconn3ct Exp $
 #
 
 USE_ASM=-Did386
@@ -23,8 +23,7 @@ QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 CC=gcc
 BASE_CFLAGS=-Wall -pipe -DUSE_PR2 -funsigned-char
 #DEBUG_CFLAGS=$(BASE_CFLAGS) -g
-RELEASE_CFLAGS=$(BASE_CFLAGS) -O9 -ffast-math -funroll-loops \
-	-fomit-frame-pointer -fexpensive-optimizations
+RELEASE_CFLAGS=$(BASE_CFLAGS) -O9 -ffast-math -funroll-loops
 
 GCC=$(shell gcc -dumpversion | tr -d 'a-z-' | head -c1)
 
