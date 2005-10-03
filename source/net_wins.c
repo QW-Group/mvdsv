@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net_wins.c,v 1.4 2005/10/03 15:35:08 disconn3ct Exp $
+	$Id: net_wins.c,v 1.5 2005/10/03 21:23:29 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -60,20 +60,10 @@ void NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
 
 void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a)
 {
-	switch (((struct sockaddr*)s)->sa_family)
-	{
-	case AF_INET:
-		a->type = NA_IP;
-		*(int *)&a->ip = ((struct sockaddr_in *)s)->sin_addr.s_addr;
-		a->port = ((struct sockaddr_in *)s)->sin_port;
-		break;
-	case AF_UNSPEC:
-		memset(a, 0, sizeof(*a));
-		a->type = NA_INVALID;
-		break;
-	default:
-		Sys_Error("SockadrToNetadr: bad socket family");
-	}
+	a->type = NA_IP;
+	*(int *)&a->ip = ((struct sockaddr_in *)s)->sin_addr.s_addr;
+	a->port = ((struct sockaddr_in *)s)->sin_port;
+	return;
 }
 
 qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b)
@@ -201,14 +191,13 @@ qboolean NET_GetPacket (int net_socket)
 		net_message.cursize = loop_c2s_messageLength;
 		loop_c2s_messageLength = 0;
 		memset (&from, 0, sizeof(from));
-		from.sin_port = PORT_LOOPBACK;
+		((struct sockaddr_in *)&from)->sin_port = PORT_LOOPBACK;
 		SockadrToNetadr (&from, &net_from);
 		return net_message.cursize;
 	}
 // <-- Tonik
 
 	fromlen = sizeof(from);
-	//ioctlsocket (net_socket, FIONBIO, &_true);
 	ret = recvfrom (net_socket, (char *)net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
 	SockadrToNetadr (&from, &net_from);
 
