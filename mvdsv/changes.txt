@@ -1,9 +1,11 @@
 
-$Id: changes.txt,v 1.35 2005/09/25 22:29:38 disconn3ct Exp $
+$Id: changes.txt,v 1.36 2005/10/05 12:52:40 vvd0 Exp $
 
 ----
-MVDSV v0.19-CVS build 21?? (2005.09.??)
+MVDSV v0.19-CVS build 21?? (2005.10.??)
 [server]
+- Possibility to set non integer volume for sounds from mods
+(Thanks to ivan)
 - initial FTE's QTV (FTV) support (from FTE by disconnect)
 - build: removed define REGEX - can't build only with external regex lib
 - new cmd dlistr, cmd dlistregex, cmd demolistr, cmd demolistregex -

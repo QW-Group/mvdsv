@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.9 2005/09/26 15:21:21 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.10 2005/10/05 12:51:52 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -406,11 +406,11 @@ void PF2_sound(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 	edict_t 	*entity 	= EDICT_NUM(stack[0]._int);
 	int 		channel 	= stack[1]._int;
 	char 		*sample		= VM_POINTER(base,mask,stack[2].string);
-	int 		volume  	= stack[3]._int;
+	int 		volume  	= stack[3]._int * 255;
 	float 		attenuation	= stack[4]._float;
 	
 	
-	SV_StartSound(entity, channel, sample, volume * 255, attenuation);
+	SV_StartSound(entity, channel, sample, volume, attenuation);
 }
 
 /*
