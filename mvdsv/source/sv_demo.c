@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.15 2005/09/27 20:49:55 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.16 2005/10/10 15:08:34 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1122,8 +1122,8 @@ static qboolean SV_MVD_Record (mvddest_t *dest)
 
 		sv.mvdrecording = true;
 	}
-	else
-		SV_WriteRecordMVDMessage(&buf, dem_read);
+//	else
+//		SV_WriteRecordMVDMessage(&buf, dem_read);
 	demo.pingtime = demo.time = sv.time;
 
 	dest->nextdest = demo.dest;
