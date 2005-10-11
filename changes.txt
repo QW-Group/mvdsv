@@ -1,11 +1,13 @@
 
-$Id: changes.txt,v 1.36 2005/10/05 12:52:40 vvd0 Exp $
+$Id: changes.txt,v 1.37 2005/10/11 17:17:21 vvd0 Exp $
 
 ----
-MVDSV v0.19-CVS build 21?? (2005.10.??)
+MVDSV v0.19.01-CVS build 21?? (2005.10.??)
 [server]
+- Possibility to set small speed for objects on map
+(by ivan)
 - Possibility to set non integer volume for sounds from mods
-(Thanks to ivan)
+(by ivan)
 - initial FTE's QTV (FTV) support (from FTE by disconnect)
 - build: removed define REGEX - can't build only with external regex lib
 - new cmd dlistr, cmd dlistregex, cmd demolistr, cmd demolistregex -
