@@ -10,7 +10,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.13 2005/09/22 12:49:14 vvd0 Exp $
+#	$Id: Makefile.FreeBSD,v 1.14 2005/10/11 16:23:14 danfe Exp $
 #
 
 CC=gcc
@@ -28,34 +28,7 @@ DO_CFLAGS +=	${ASM}
 .endif
 
 .if defined(WITH_OPTIMIZED_CFLAGS)
-
 DO_CFLAGS +=	-O9 -pipe -s -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations
-
-. if ${UNAME} == FreeBSD
-# Get __FreeBSD_version
-.  if !defined(OSVERSION)
-.   if exists(/sbin/sysctl)
-OSVERSION!=	/sbin/sysctl -n kern.osreldate
-.   else
-OSVERSION!=	/usr/sbin/sysctl -n kern.osreldate
-.   endif
-.  endif
-. else
-.  if ${UNAME} == OpenBSD
-OSVERSION = 500034
-.  else
-OSVERSION = 500035
-.  endif
-. endif
-
-. if ${OSVERSION} < 500035
-#GCC 2
-DO_CFLAGS +=	-malign-loops=2 -malign-jumps=2 -malign-functions=2
-. else
-#GCC 3
-DO_CFLAGS +=	-falign-loops=2 -falign-jumps=2 -falign-functions=2
-. endif
-
 .endif
 
 LDFLAGS = -lm
