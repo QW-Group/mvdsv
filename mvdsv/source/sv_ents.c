@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.4 2005/05/27 15:09:54 vvd0 Exp $
+	$Id: sv_ents.c,v 1.5 2005/10/11 17:17:22 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -182,17 +182,13 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 {
 	int		bits;
 	int		i;
-	float	miss;
 
 // send an update
 	bits = 0;
 	
 	for (i=0 ; i<3 ; i++)
-	{
-		miss = to->origin[i] - from->origin[i];
-		if ( miss < -0.1 || miss > 0.1 )
+		if ( to->origin[i] != from->origin[i] )
 			bits |= U_ORIGIN1<<i;
-	}
 
 	if ( to->angles[0] != from->angles[0] )
 		bits |= U_ANGLE1;

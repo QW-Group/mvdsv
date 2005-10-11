@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_send.c,v 1.3 2005/09/27 20:51:06 disconn3ct Exp $
+	$Id: dem_send.c,v 1.4 2005/10/11 17:17:22 vvd0 Exp $
 */
 
 #include "defs.h"
@@ -145,7 +145,6 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 	player_state_t	*state;
 	demoinfo_t	demoinfo;
 	frame_t		*nextframe;
-	float miss;
 
 	state = frame->playerstate;
 	nextframe = &world.frames[(world.lastwritten+1)&UPDATE_MASK];
@@ -188,11 +187,9 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 			demoinfo.angles[2] = 0;
 		}
 
-		for (j=0; j < 3; j++) {
-			miss = world.demoinfo[i].origin[j] - demoinfo.origin[j];
-			if ( miss < -0.1 || miss > 0.1 )
+		for (j=0; j < 3; j++)
+			if ( world.demoinfo[i].origin[j] != demoinfo.origin[j] )
 					dflags |= DF_ORIGIN << j;
-		}
 
 		for (j=0; j < 3; j++)
 			if (world.demoinfo[i].angles[j] != demoinfo.angles[j])
@@ -261,17 +258,13 @@ void WriteDelta (entity_state_t *efrom, entity_state_t *to, sizebuf_t *msg, qboo
 {
 	int		bits;
 	int		i;
-	float	miss;
 
 // send an update
 	bits = 0;
 	
 	for (i=0 ; i<3 ; i++)
-	{
-		miss = to->origin[i] - efrom->origin[i];
-		if ( miss < -0.1 || miss > 0.1 )
+		if ( to->origin[i] != efrom->origin[i] )
 			bits |= U_ORIGIN1<<i;
-	}
 
 	if ( to->angles[0] != efrom->angles[0] )
 		bits |= U_ANGLE1;
