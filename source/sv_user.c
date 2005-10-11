@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.19 2005/09/26 15:21:21 disconn3ct Exp $
+	$Id: sv_user.c,v 1.20 2005/10/11 16:36:46 danfe Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -49,12 +49,12 @@ extern cvar_t	sv_speedcheck; //bliP: 24/9
 
 qboolean IsLocalIP(netadr_t a)
 {
-	return a.ip[0] == 10 || (a.ip[0] == 172 && (a.ip[1] & 0xF0) == 16)
-	   || (a.ip[0] == 192 && a.ip[1] == 168) || a.ip[0] >= 224;
+	return a.ip.ip[0] == 10 || (a.ip.ip[0] == 172 && (a.ip.ip[1] & 0xF0) == 16)
+	   || (a.ip.ip[0] == 192 && a.ip.ip[1] == 168) || a.ip.ip[0] >= 224;
 }
 qboolean IsInetIP(netadr_t a)
 {
-	return a.ip[0] != 127 && !IsLocalIP(a);
+	return a.ip.ip[0] != 127 && !IsLocalIP(a);
 }
 /*
 ============================================================
@@ -90,13 +90,13 @@ void SV_New_f (void)
 
 	host_client->spawncount = svs.spawncount;
 	// do not proceed if realip is unknown
-	if (host_client->state == cs_preconnected && host_client->realip.ip[0] == 0 && sv_getrealip.value)
+	if (host_client->state == cs_preconnected && host_client->realip.ip.ip[0] == 0 && sv_getrealip.value)
 	{
 		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr);
 
 		if (!((IsLocalIP(net_local_adr) && IsLocalIP(host_client->netchan.remote_address))  ||
 		      (IsInetIP (net_local_adr) && IsInetIP (host_client->netchan.remote_address))) &&
-		    host_client->netchan.remote_address.ip[0] != 127 && !sv_serverip.string[0])
+		    host_client->netchan.remote_address.ip.ip[0] != 127 && !sv_serverip.string[0])
 		{
 			Sys_Printf ("WARNING: Incorrect server ip address: %s\n"
 			"Set hostname in your operation system or set correctly sv_serverip cvar.\n",

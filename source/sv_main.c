@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.23 2005/09/26 15:21:21 disconn3ct Exp $
+	$Id: sv_main.c,v 1.24 2005/10/11 16:36:46 danfe Exp $
 */
 
 #include "version.h"
@@ -1371,7 +1371,7 @@ void SVC_IP(void)
 		return;
 
 	// don't override previously set ip
-	if (client->realip.ip[0])
+	if (client->realip.ip.ip[0])
 		return;
 
 	client->realip = net_from;
@@ -1798,7 +1798,7 @@ qboolean SV_FilterPacket (void)
 	int		i;
 	unsigned	in;
 	
-	in = *(unsigned *)net_from.ip;
+	in = *(unsigned *)net_from.ip.ip;
 
 	for (i=0 ; i<numipfilters ; i++)
 		if ( (in & ipfilters[i].mask) == ipfilters[i].compare)
@@ -1817,7 +1817,7 @@ int SV_VIPbyIP (netadr_t adr)
 	int		i;
 	unsigned	in;
 	
-	in = *(unsigned *)adr.ip;
+	in = *(unsigned *)adr.ip.ip;
 
 	for (i=0 ; i<numipvips ; i++)
 		if ( (in & ipvip[i].mask) == ipvip[i].compare)
@@ -1987,7 +1987,7 @@ void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 		return;
 
 	for (i = 0; i < numpenfilters; i++)
-		if (SV_IPCompare (penfilters[i].ip, cl->realip.ip)	&& penfilters[i].type == type) {
+		if (SV_IPCompare (penfilters[i].ip, cl->realip.ip.ip)	&& penfilters[i].type == type) {
 			return;
 		}
 
@@ -1995,7 +1995,7 @@ void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 		return;
 	}
 
-	SV_IPCopy (penfilters[numpenfilters].ip, cl->realip.ip);
+	SV_IPCopy (penfilters[numpenfilters].ip, cl->realip.ip.ip);
 	penfilters[numpenfilters].time = pentime;
 	penfilters[numpenfilters].type = type;
 	numpenfilters++;
@@ -2010,7 +2010,7 @@ double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 
 	// search for existing penalty filter of same type
 	for (i = 0; i < numpenfilters; i++) {
-		if (type == penfilters[i].type && SV_IPCompare (cl->realip.ip, penfilters[i].ip)) {
+		if (type == penfilters[i].type && SV_IPCompare (cl->realip.ip.ip, penfilters[i].ip)) {
 			time = penfilters[i].time;
 			SV_RemoveIPFilter (i);
 			return time;

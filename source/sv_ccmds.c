@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ccmds.c,v 1.11 2005/09/26 15:21:21 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.12 2005/10/11 16:36:46 danfe Exp $
 */
 
 #include "qwsvdef.h"
@@ -1182,7 +1182,7 @@ void SV_Status_f (void)
 				(int)cl->edict->v.frags, Q_yelltext(va("%d", cl->userid)), 
 				cl->spectator ? " (s)" : "", sv_use_dns.value ? SV_Resolve(s) : s);
 
-			if (cl->realip.ip[0])
+			if (cl->realip.ip.ip[0])
 				Con_Printf ("%-36s\n", NET_BaseAdrToString (cl->realip));
 
 			switch (cl->state)
@@ -1208,7 +1208,7 @@ void SV_Status_f (void)
 			Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, (int)SV_CalcPing(cl),
 				(int)cl->edict->v.frags, cl->userid,
 				sv_use_dns.value ? SV_Resolve(s) : s);
-			if (cl->realip.ip[0])
+			if (cl->realip.ip.ip[0])
 				Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
 			Con_Printf (cl->spectator ? "(s)\n" : "\n");
 
