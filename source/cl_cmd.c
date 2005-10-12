@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_cmd.c,v 1.6 2005/07/11 13:52:34 vvd0 Exp $
+	$Id: cl_cmd.c,v 1.7 2005/10/12 12:10:49 danfe Exp $
 */
 
 #include "quakedef.h"
@@ -360,7 +360,7 @@ void CL_Download_f (void)
 		fclose(cls.download);
 		cls.download = NULL;
 	}
-	
+
 
 	strlcpy(cls.downloadtempname, cls.downloadname, MAX_OSPATH);
 	cls.download = fopen (cls.downloadname, "wb");
@@ -463,14 +463,14 @@ void CL_Color_f (void)
 		top = atoi(Cmd_Argv(1));
 		bottom = atoi(Cmd_Argv(2));
 	}
-	
+
 	top &= 15;
 	if (top > 13)
 		top = 13;
 	bottom &= 15;
 	if (bottom > 13)
 		bottom = 13;
-	
+
 	snprintf (num, sizeof(num), "%i", top);
 	Cvar_Set (&topcolor, num);
 	snprintf (num, sizeof(num), "%i", bottom);
@@ -605,7 +605,7 @@ void CL_Serverinfo_f (void)
 		Info_Print (cl.serverinfo);
 	else
 		// so that it says we are not connected :)
-		Cmd_ForwardToServer();	
+		Cmd_ForwardToServer();
 }
 
 
@@ -636,7 +636,7 @@ void CL_WriteConfig_f (void)
 		Con_Printf ("Couldn't write %s.\n", name);
 		return;
 	}
-	
+
 	Key_WriteBindings (f);
 	Cvar_WriteVariables (f);
 
@@ -688,7 +688,7 @@ void Cmd_Ping_f (void)
 	data[3] = 0xff;
 	data[4] = A2A_PING;
 	data[5] = 0;
-		
+
 	NET_SendPacket (net_clientsocket, 6, &data, adr);
 	ping_time = realtime;
 }
@@ -803,7 +803,7 @@ void CL_FullServerinfo_f (void)
 
 	strlcpy (cl.serverinfo, Cmd_Argv(1), MAX_SERVERINFO_STRING);
 
-	
+
 	server_version = 0;
 
 	if ((p = Info_ValueForKey(cl.serverinfo, "*qwex_version")) && *p) {
@@ -821,7 +821,7 @@ void CL_FullServerinfo_f (void)
 			server_version = v;
 		}
 	}
-	
+
 
 	CL_ProcessServerInfo ();
 }

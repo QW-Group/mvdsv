@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_exec.c,v 1.3 2005/05/27 15:09:51 vvd0 Exp $
+	$Id: pr_exec.c,v 1.4 2005/10/12 12:10:49 danfe Exp $
 */
 
 #include "qwsvdef.h"
@@ -147,17 +147,17 @@ PR_PrintStatement
 void PR_PrintStatement (dstatement_t *s)
 {
 	int		i;
-	
+
 	if ( (unsigned)s->op < sizeof(pr_opnames)/sizeof(pr_opnames[0]))
 	{
 
 		Con_Printf ("%s ",  pr_opnames[s->op]);
-		
+
 		i = strlen(pr_opnames[s->op]);
 		for ( ; i<10 ; i++)
 			Con_Printf (" ");
 	}
-		
+
 	if (s->op == OP_IF || s->op == OP_IFNOT)
 		Con_Printf ("%sbranch %i",PR_GlobalString(s->a),s->b);
 	else if (s->op == OP_GOTO)
@@ -190,24 +190,24 @@ void PR_StackTrace (void)
 {
 	dfunction_t	*f;
 	int			i;
-	
+
 	if (pr_depth == 0)
 	{
 		Con_Printf ("<NO STACK>\n");
 		return;
 	}
-	
+
 	pr_stack[pr_depth].f = pr_xfunction;
 	for (i=pr_depth ; i>=0 ; i--)
 	{
 		f = pr_stack[i].f;
-		
+
 		if (!f)
 		{
 			Con_Printf ("<NO FUNCTION>\n");
 		}
 		else
-			Con_Printf ("%12s : %s\n", PR_GetString(f->s_file), PR_GetString(f->s_name));		
+			Con_Printf ("%12s : %s\n", PR_GetString(f->s_file), PR_GetString(f->s_name));
 	}
 }
 
@@ -224,8 +224,8 @@ void PR_Profile_f (void)
 	int			max;
 	int			num;
 	int			i;
-	
-	num = 0;	
+
+	num = 0;
 	do
 	{
 		max = 0;
@@ -272,7 +272,7 @@ void PR_RunError (char *error, ...)
 	PR_PrintStatement (pr_statements + pr_xstatement);
 	PR_StackTrace ();
 	Con_Printf ("%s\n", string);
-	
+
 	pr_depth = 0;		// dump the stack so SV_Error can shutdown functions
 
 	SV_Error ("Program error");
@@ -298,7 +298,7 @@ int PR_EnterFunction (dfunction_t *f)
 	int		i, j, c, o;
 
 	pr_stack[pr_depth].s = pr_xstatement;
-	pr_stack[pr_depth].f = pr_xfunction;	
+	pr_stack[pr_depth].f = pr_xfunction;
 	pr_depth++;
 	if (pr_depth >= MAX_STACK_DEPTH)
 		PR_RunError ("stack overflow");
@@ -378,7 +378,7 @@ void PR_ExecuteProgram (func_t fnum)
 			ED_Print (PROG_TO_EDICT(pr_global_struct->self));
 		SV_Error ("PR_ExecuteProgram: NULL function");
 	}
-	
+
 	f = &pr_functions[fnum];
 
 	runaway = 100000;
@@ -388,7 +388,7 @@ void PR_ExecuteProgram (func_t fnum)
 	exitdepth = pr_depth;
 
 	s = PR_EnterFunction (f);
-	
+
 while (1)
 {
 	s++;	// next statement
@@ -397,16 +397,16 @@ while (1)
 	a = (eval_t *)&pr_globals[st->a];
 	b = (eval_t *)&pr_globals[st->b];
 	c = (eval_t *)&pr_globals[st->c];
-	
+
 	if (--runaway == 0)
 		PR_RunError ("runaway loop error");
-		
+
 	pr_xfunction->profile++;
 	pr_xstatement = s;
-	
+
 	if (pr_trace)
 		PR_PrintStatement (st);
-		
+
 	switch (st->op)
 	{
 	case OP_ADD_F:
@@ -417,7 +417,7 @@ while (1)
 		c->vector[1] = a->vector[1] + b->vector[1];
 		c->vector[2] = a->vector[2] + b->vector[2];
 		break;
-		
+
 	case OP_SUB_F:
 		c->_float = a->_float - b->_float;
 		break;
@@ -449,16 +449,16 @@ while (1)
 	case OP_DIV_F:
 		c->_float = a->_float / b->_float;
 		break;
-	
+
 	case OP_BITAND:
 		c->_float = (int)a->_float & (int)b->_float;
 		break;
-	
+
 	case OP_BITOR:
 		c->_float = (int)a->_float | (int)b->_float;
 		break;
-	
-		
+
+
 	case OP_GE:
 		c->_float = a->_float >= b->_float;
 		break;
@@ -477,7 +477,7 @@ while (1)
 	case OP_OR:
 		c->_float = a->_float || b->_float;
 		break;
-		
+
 	case OP_NOT_F:
 		c->_float = !a->_float;
 		break;
@@ -544,7 +544,7 @@ while (1)
 		b->vector[1] = a->vector[1];
 		b->vector[2] = a->vector[2];
 		break;
-		
+
 	case OP_STOREP_F:
 	case OP_STOREP_ENT:
 	case OP_STOREP_FLD:		// integers
@@ -559,7 +559,7 @@ while (1)
 		ptr->vector[1] = a->vector[1];
 		ptr->vector[2] = a->vector[2];
 		break;
-		
+
 	case OP_ADDRESS:
 		ed = PROG_TO_EDICT(a->edict);
 #ifdef PARANOID
@@ -569,7 +569,7 @@ while (1)
 			PR_RunError ("assignment to world entity");
 		c->_int = (byte *)((int *)&ed->v + b->_int) - (byte *)sv.edicts;
 		break;
-		
+
 	case OP_LOAD_F:
 	case OP_LOAD_FLD:
 	case OP_LOAD_ENT:
@@ -599,23 +599,23 @@ while (1)
 		c->vector[1] = a->vector[1];
 		c->vector[2] = a->vector[2];
 		break;
-		
+
 //==================
 
 	case OP_IFNOT:
 		if (!a->_int)
 			s += st->b - 1;	// offset the s++
 		break;
-		
+
 	case OP_IF:
 		if (a->_int)
 			s += st->b - 1;	// offset the s++
 		break;
-		
+
 	case OP_GOTO:
 		s += st->a - 1;	// offset the s++
 		break;
-		
+
 	case OP_CALL0:
 	case OP_CALL1:
 	case OP_CALL2:
@@ -649,12 +649,12 @@ while (1)
 		pr_globals[OFS_RETURN] = pr_globals[st->a];
 		pr_globals[OFS_RETURN+1] = pr_globals[st->a+1];
 		pr_globals[OFS_RETURN+2] = pr_globals[st->a+2];
-	
+
 		s = PR_LeaveFunction ();
 		if (pr_depth == exitdepth)
 			return;		// all done
 		break;
-		
+
 	case OP_STATE:
 		ed = PROG_TO_EDICT(pr_global_struct->self);
 		ed->v.nextthink = pr_global_struct->time + 0.1;
@@ -664,7 +664,7 @@ while (1)
 		}
 		ed->v.think = b->function;
 		break;
-		
+
 	default:
 		PR_RunError ("Bad opcode %i", st->op);
 	}

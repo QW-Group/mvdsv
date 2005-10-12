@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_demo.c,v 1.2 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_demo.c,v 1.3 2005/10/12 12:10:49 danfe Exp $
 */
 
 #include "quakedef.h"
@@ -220,7 +220,7 @@ nextdemomessage:
 		nextdemotime = demotime;
 	}
 
-// decide if it is time to grab the next message		
+// decide if it is time to grab the next message
 	if (cls.timedemo) {
 		if (cls.td_lastframe < 0)
 			cls.td_lastframe = demotime;
@@ -267,10 +267,10 @@ nextdemomessage:
 	//prevtime = demotime;
 	if (cls.state < ca_demostart)
 		Host_Error ("CL_GetDemoMessage: cls.state != ca_active");
-	
+
 	// get the msg type
 	fread (&c, sizeof(c), 1, cls.demofile);
-	
+
 	switch (c&7) {
 	case dem_cmd :
 		// user sent input
@@ -305,7 +305,7 @@ readit:
 		// get the next message
 		fread (&net_message.cursize, 4, 1, cls.demofile);
 		net_message.cursize = LittleLong (net_message.cursize);
-		
+
 		if (net_message.cursize > net_message.maxsize)
 			Host_EndGame ("Demo message > MAX_UDP_PACKET");
 		r = fread (net_message.data, net_message.cursize, 1, cls.demofile);
@@ -318,11 +318,11 @@ readit:
 		if (cls.demoplayback2)
 		{
 			tracknum = Cam_TrackNum();
-		
+
 			if (cls.lasttype == dem_multiple) {
 				if (tracknum == -1)
 					goto nextdemomessage;
-	
+
 				if (!(cls.lastto & (1 << (tracknum))))
 					goto nextdemomessage;
 			} else if (cls.lasttype == dem_single)
@@ -355,7 +355,7 @@ readit:
 		cls.lastto = LittleLong(i);
 		cls.lasttype = dem_multiple;
 		goto readit;
-		
+
 	case dem_single:
 		cls.lastto = c>>3;
 		cls.lasttype = dem_single;
@@ -397,7 +397,7 @@ qboolean CL_GetMessage (void)
 		return false;
 
 	CL_WriteDemoMessage (&net_message);
-	
+
 	return true;
 }
 
@@ -652,7 +652,7 @@ static void CL_Record (void)
 		es = cl_baselines + i;
 
 		if (memcmp(es, &blankes, sizeof(blankes))) {
-			MSG_WriteByte (&buf,svc_spawnbaseline);		
+			MSG_WriteByte (&buf,svc_spawnbaseline);
 			MSG_WriteShort (&buf, i);
 
 			MSG_WriteByte (&buf, es->modelindex);
@@ -688,15 +688,15 @@ static void CL_Record (void)
 		MSG_WriteByte (&buf, svc_updatefrags);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteShort (&buf, player->frags);
-		
+
 		MSG_WriteByte (&buf, svc_updateping);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteShort (&buf, player->ping);
-		
+
 		MSG_WriteByte (&buf, svc_updatepl);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteByte (&buf, player->pl);
-		
+
 		MSG_WriteByte (&buf, svc_updateentertime);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteFloat (&buf, realtime - player->entertime); // stupid, stupid, stupid!
@@ -711,7 +711,7 @@ static void CL_Record (void)
 			SZ_Clear (&buf); 
 		}
 	}
-	
+
 // send all current light styles
 	for (i=0 ; i<MAX_LIGHTSTYLES ; i++)
 	{
@@ -989,7 +989,7 @@ static void CheckQizmoCompletion ()
 		StopQWZPlayback ();
 		return;
 	}
-	
+
 	if (ExitCode == STILL_ACTIVE)
 		return;
 
@@ -999,9 +999,9 @@ static void CheckQizmoCompletion ()
 		StopQWZPlayback ();
 		return;
 	}
-	
+
 	qwz_unpacking = false;
-	
+
 	cls.demofile = fopen (tempqwd_name, "rb");
 	if (!cls.demofile) {
 		Con_Printf ("Couldn't open %s\n", tempqwd_name);
@@ -1042,7 +1042,7 @@ void PlayQWZDemo (void)
 		Con_Printf ("Cannot unpack -- Qizmo still running!\n");
 		return;
 	}
-	
+
 	name = Cmd_Argv(1);
 
 	if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3))
@@ -1061,7 +1061,7 @@ void PlayQWZDemo (void)
 		return;
 	}
 	fclose (cls.demofile);
-	
+
 	strlcpy (tempqwd_name, qwz_name, sizeof(tempqwd_name) - 4);
 #if 0
 	// the right way
@@ -1085,18 +1085,18 @@ void PlayQWZDemo (void)
 		realtime = 0;
 		return;
 	}
-	
+
 	Con_Printf ("unpacking %s...\n", name);
-	
+
 	// start Qizmo to unpack the demo
 	memset (&si, 0, sizeof(si));
 	si.cb = sizeof(si);
 	si.wShowWindow = SW_HIDE;
 	si.dwFlags = STARTF_USESHOWWINDOW;
-	
+
 	strlcpy (cmdline, va("%s/%s/qizmo.exe -D %s", com_basedir,
 		qizmo_dir.string, qwz_name), sizeof(cmdline));
-	
+
 	if (!CreateProcess (NULL, cmdline, NULL, NULL,
 		FALSE, 0/* | HIGH_PRIORITY_CLASS*/,
 		NULL, va("%s/%s", com_basedir, qizmo_dir.string), &si, &pi))
@@ -1105,7 +1105,7 @@ void PlayQWZDemo (void)
 			com_basedir, qizmo_dir.string);
 		return;
 	}
-	
+
 	hQizmoProcess = pi.hProcess;
 	qwz_unpacking = true;
 	qwz_playback = true;
@@ -1145,7 +1145,7 @@ void CL_PlayDemo_f (void)
 // disconnect from server
 //
 	CL_Disconnect ();
-	
+
 //
 // open the demo file
 //
@@ -1205,9 +1205,9 @@ void CL_FinishTimeDemo (void)
 {
 	int		frames;
 	float	time;
-	
+
 	cls.timedemo = false;
-	
+
 // the first frame didn't count
 	frames = (host_framecount - cls.td_startframe) - 1;
 	time = Sys_DoubleTime() - cls.td_starttime;
@@ -1232,13 +1232,13 @@ void CL_TimeDemo_f (void)
 	}
 
 	CL_PlayDemo_f ();
-	
+
 	if (cls.state != ca_demostart)
 		return;
 
 // cls.td_starttime will be grabbed at the second frame of the demo, so
 // all the loading time doesn't get counted
-	
+
 	cls.timedemo = true;
 	cls.td_starttime = 0;
 	cls.td_startframe = host_framecount;

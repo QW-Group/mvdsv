@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.4 2005/05/27 15:09:51 vvd0 Exp $
+	$Id: progs.h,v 1.5 2005/10/12 12:10:49 danfe Exp $
 */
 
 #include "pr_comp.h"			// defs shared with qcc
@@ -30,19 +30,19 @@ typedef union eval_s
 	func_t			function;
 	int				_int;
 	int				edict;
-} eval_t;	
+} eval_t;
 
 #define	MAX_ENT_LEAFS	16
 typedef struct edict_s
 {
 	qboolean	free;
 	link_t		area;				// linked to a division node or leaf
-	
+
 	int			num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
 
 	entity_state_t	baseline;
-	
+
 	float		freetime;			// sv.time when the object was freed
 #ifdef USE_PR2
 	double		lastruntime;		// sv.time when SV_RunEntity was last

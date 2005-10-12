@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.10 2005/10/11 13:44:23 vvd0 Exp $
+	$Id: version.h,v 1.11 2005/10/12 12:10:50 danfe Exp $
 */
 // version.h
 

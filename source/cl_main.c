@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_main.c,v 1.4 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_main.c,v 1.5 2005/10/12 12:10:49 danfe Exp $
 */
 // cl_main.c  -- client main loop
 
@@ -262,9 +262,9 @@ void CL_Connect_f (void)
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf ("usage: connect <server>\n");
-		return;	
+		return;
 	}
-	
+
 	server = Cmd_Argv (1);
 
 	CL_Disconnect ();
@@ -300,7 +300,7 @@ void CL_ClearState (void)
 
 	SZ_Clear (&cls.netchan.message);
 
-// clear other arrays	
+// clear other arrays
 	memset (cl_efrags, 0, sizeof(cl_efrags));
 	memset (cl_dlights, 0, sizeof(cl_dlights));
 	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
@@ -334,7 +334,7 @@ void CL_Disconnect (void)
 
 // stop sounds (especially looping!)
 	S_StopAllSounds (true);
-	
+
 	if (cls.demoplayback)
 		CL_StopPlayback ();
 	else if (cls.state != ca_disconnected)
@@ -461,7 +461,7 @@ void CL_ConnectionlessPacket (void)
 		}
 		Netchan_Setup (&cls.netchan, net_from, cls.qport, net_clientsocket);
 		MSG_WriteChar (&cls.netchan.message, clc_stringcmd);
-		MSG_WriteString (&cls.netchan.message, "new");	
+		MSG_WriteString (&cls.netchan.message, "new");
 		cls.state = ca_connected;
 		Con_Printf ("Connected.\n");
 		allowremotecmd = false; // localid required now for remote cmds
@@ -542,7 +542,7 @@ void CL_ConnectionlessPacket (void)
 		data[3] = 0xff;
 		data[4] = A2A_ACK;
 		data[5] = 0;
-		
+
 		NET_SendPacket (net_clientsocket, 6, &data, net_from);
 		return;
 	}
@@ -616,7 +616,7 @@ void CL_ReadPackets (void)
 		} else {
 			MSG_BeginReading ();
 		}
-			
+
 		CL_ParseServerMessage ();
 
 //		if (cls.demoplayback && cls.state >= ca_active && !CL_DemoBehind())
@@ -633,7 +633,7 @@ void CL_ReadPackets (void)
 		CL_Disconnect ();
 		return;
 	}
-	
+
 }
 
 //=============================================================================
@@ -667,7 +667,7 @@ void CL_Init (void)
 	CL_InitPrediction ();
 	CL_InitCam ();
 	Pmove_Init ();
-	
+
 //
 // register our commands
 //
@@ -765,14 +765,14 @@ void Host_EndGame (char *message, ...)
 {
 	va_list		argptr;
 	char		string[1024];
-	
+
 	va_start (argptr,message);
 	vsnprintf (string, sizeof(string), message, argptr);
 	va_end (argptr);
 	Con_Printf ("\n===========================\n");
 	Con_Printf ("Host_EndGame: %s\n",string);
 	Con_Printf ("===========================\n\n");
-	
+
 	CL_Disconnect ();
 
 	longjmp (host_abort, 1);
@@ -790,16 +790,16 @@ void Host_Error (char *error, ...)
 	va_list		argptr;
 	char		string[1024];
 	static	qboolean inerror = false;
-	
+
 	if (inerror)
 		Sys_Error ("Host_Error: recursively entered");
 	inerror = true;
-	
+
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 	Con_Printf ("Host_Error: %s\n",string);
-	
+
 	CL_Disconnect ();
 	cls.demonum = -1;
 
@@ -829,7 +829,7 @@ void Host_WriteConfiguration (void)
 			Con_Printf ("Couldn't write config.cfg.\n");
 			return;
 		}
-		
+
 		Key_WriteBindings (f);
 		Cvar_WriteVariables (f);
 
@@ -948,7 +948,7 @@ void Host_Frame (double time)
 		}
 
 		CL_ParseClientdata();
-		
+
 		cls.netchan.outgoing_sequence = cl.parsecount+1;
 		CL_Interpolate();
 	}
@@ -967,13 +967,13 @@ void Host_Frame (double time)
 	{
 		// Set up prediction for other players
 		CL_SetUpPlayerPrediction(false);
-		
+
 		// do client side motion prediction
 		CL_PredictMove (false);
-		
+
 		// Set up prediction for other players
 		CL_SetUpPlayerPrediction(true);
-		
+
 		// build a refresh entity list
 		CL_EmitEntities ();
 	}
@@ -986,7 +986,7 @@ void Host_Frame (double time)
 
 	if (host_speeds.value)
 		time2 = Sys_DoubleTime ();
-		
+
 	// update audio
 	if (cls.state == ca_active)
 	{
@@ -995,7 +995,7 @@ void Host_Frame (double time)
 	}
 	else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
-	
+
 	CDAudio_Update();
 
 
@@ -1057,7 +1057,7 @@ void Host_Init (quakeparms_t *parms)
 	COM_Init ();
 
 	Host_FixupModelNames();
-	
+
 	NET_Init (PORT_CLIENT, 0, 0);
 
 	Netchan_Init ();
@@ -1065,15 +1065,15 @@ void Host_Init (quakeparms_t *parms)
 	W_LoadWadFile ("gfx.wad");
 
 	Key_Init ();
-	Con_Init ();	
-	M_Init ();	
+	Con_Init ();
+	M_Init ();
 	Mod_Init ();
-	
+
 	Sys_mkdir(va("%s/%s", com_basedir, "qw"));
 
 //	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megs RAM used.\n",parms->memsize/ (1024*1024.0));
-	
+
 	R_InitTextures ();
  
 	host_basepal = (byte *)COM_LoadHunkFile ("gfx/palette.lmp");
@@ -1091,7 +1091,7 @@ void Host_Init (quakeparms_t *parms)
 	R_Init ();
 
 //	S_Init ();		// S_Init is now done as part of VID. Sigh.
-	
+
 	cls.state = ca_disconnected;
 	Sbar_Init ();
 	CL_Init ();
@@ -1127,7 +1127,7 @@ void Host_Init (quakeparms_t *parms)
 	Con_Printf ("\nClient Version %s (Build %04d)\n\n", QWE_VERSION, build_number());
 #endif
 
-	Con_Printf ("€ QuakeWorld Initialized ‚\n");	
+	Con_Printf ("€ QuakeWorld Initialized ‚\n");
 }
 
 
@@ -1142,7 +1142,7 @@ to run quit through here before the final handoff to the sys code.
 void Host_Shutdown(void)
 {
 	static qboolean isdown = false;
-	
+
 	if (isdown)
 	{
 		printf ("recursive shutdown\n");

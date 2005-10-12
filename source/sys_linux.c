@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys_linux.c,v 1.2 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: sys_linux.c,v 1.3 2005/10/12 12:10:50 danfe Exp $
 */
 
 #include <unistd.h>
@@ -60,12 +60,12 @@ void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
 	char		text[1024];
-	
+
 	va_start (argptr,fmt);
 	vsnprintf (text, sizeof(text), fmt, argptr);
 	va_end (argptr);
 	fprintf(stderr, "%s", text);
-	
+
 	Con_Print (text);
 }
 
@@ -178,10 +178,10 @@ returns -1 if not present
 int	Sys_FileTime (char *path)
 {
 	struct	stat	buf;
-	
+
 	if (stat (path,&buf) == -1)
 		return -1;
-	
+
 	return buf.st_mtime;
 }
 
@@ -197,12 +197,12 @@ int Sys_FileOpenRead (char *path, int *handle)
 	int	h;
 	struct stat	fileinfo;
     
-	
+
 	h = open (path, O_RDONLY, 0666);
 	*handle = h;
 	if (h == -1)
 		return -1;
-	
+
 	if (fstat (h,&fileinfo) == -1)
 		Sys_Error ("Error fstating %s", path);
 
@@ -214,7 +214,7 @@ int Sys_FileOpenWrite (char *path)
 	int     handle;
 
 	umask (0);
-	
+
 	handle = open(path,O_RDWR | O_CREAT | O_TRUNC
 	, 0666);
 

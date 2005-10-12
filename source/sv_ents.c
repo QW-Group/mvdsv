@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.5 2005/10/11 17:17:22 vvd0 Exp $
+	$Id: sv_ents.c,v 1.6 2005/10/12 12:10:49 danfe Exp $
 */
 
 #include "qwsvdef.h"
@@ -55,7 +55,7 @@ void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
 			}
 			return;
 		}
-	
+
 		plane = node->plane;
 		d = DotProduct (org, plane->normal) - plane->dist;
 		if (d > 8)
@@ -185,32 +185,32 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 
 // send an update
 	bits = 0;
-	
+
 	for (i=0 ; i<3 ; i++)
 		if ( to->origin[i] != from->origin[i] )
 			bits |= U_ORIGIN1<<i;
 
 	if ( to->angles[0] != from->angles[0] )
 		bits |= U_ANGLE1;
-		
+
 	if ( to->angles[1] != from->angles[1] )
 		bits |= U_ANGLE2;
-		
+
 	if ( to->angles[2] != from->angles[2] )
 		bits |= U_ANGLE3;
-		
+
 	if ( to->colormap != from->colormap )
 		bits |= U_COLORMAP;
-		
+
 	if ( to->skinnum != from->skinnum )
 		bits |= U_SKIN;
-		
+
 	if ( to->frame != from->frame )
 		bits |= U_FRAME;
-	
+
 	if ( to->effects != from->effects )
 		bits |= U_EFFECTS;
-	
+
 	if ( to->modelindex != from->modelindex )
 		bits |= U_MODEL;
 
@@ -238,7 +238,7 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 	if (i & U_REMOVE)
 		Sys_Error ("U_REMOVE");
 	MSG_WriteShort (msg, i);
-	
+
 	if (bits & U_MOREBITS)
 		MSG_WriteByte (msg, bits&255);
 	if (bits & U_MODEL)
@@ -252,7 +252,7 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 	if (bits & U_EFFECTS)
 		MSG_WriteByte (msg, to->effects);
 	if (bits & U_ORIGIN1)
-		MSG_WriteCoord (msg, to->origin[0]);		
+		MSG_WriteCoord (msg, to->origin[0]);
 	if (bits & U_ANGLE1)
 		MSG_WriteAngle(msg, to->angles[0]);
 	if (bits & U_ORIGIN2)
@@ -373,7 +373,7 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 	int			pflags;
 	demo_frame_t *demo_frame;
 	demo_client_t *dcl;
-	
+
 	demo_frame = &demo.frames[demo.parsecount&DEMO_FRAMES_MASK];
 
 	for (j=0,cl=svs.clients, dcl = demo_frame->clients; j<MAX_CLIENTS ; j++,cl++, dcl++)
@@ -439,9 +439,9 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 			if (i == ent->num_leafs)
 				continue; // not visable
 		}
-		
+
 		pflags = PF_MSEC | PF_COMMAND;
-		
+
 		if (ent->v.modelindex != sv_playermodel)
 			pflags |= PF_MODEL;
 		for (i=0 ; i<3 ; i++)
@@ -477,7 +477,7 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 
 		for (i=0 ; i<3 ; i++)
 			MSG_WriteCoord (msg, ent->v.origin[i]);
-		
+
 		MSG_WriteByte (msg, ent->v.frame);
 
 		if (pflags & PF_MSEC)
@@ -487,7 +487,7 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 				msec = 255;
 			MSG_WriteByte (msg, msec);
 		}
-		
+
 		if (pflags & PF_COMMAND)
 		{
 			cmd = cl->lastcmd;
@@ -585,7 +585,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 
 	// send over the players in the PVS
 	SV_WritePlayersToClient (client, clent, pvs, msg);
-	
+
 	// put other visible entities into either a packet_entities or a nails message
 	pack = &frame->entities;
 	pack->num_entities = 0;
@@ -613,7 +613,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 			for (i=0 ; i < ent->num_leafs ; i++)
 				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i]&7) ))
 					break;
-				
+
 			if (i == ent->num_leafs)
 				continue;		// not visible
 		}

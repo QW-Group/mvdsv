@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_sys_win.c,v 1.5 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.6 2005/10/12 12:10:50 danfe Exp $
 */
 
 #include <conio.h>
@@ -58,10 +58,10 @@ Sys_FileTime
 int	Sys_FileTime (char *path)
 {
 	struct	_stat	buf;
-	
+
 	if (_stat (path,&buf) == -1)
 		return -1;
-	
+
 	return buf.st_mtime;
 }
 
@@ -275,7 +275,7 @@ double Sys_DoubleTime (void)
 		starttime = now;
 		return 0.0;
 	}
-	
+
 	if (now < starttime) // wrapped?
 		return (now / 1000.0) + (LONG_MAX - starttime / 1000.0);
 
@@ -303,7 +303,7 @@ double Sys_DoubleTime (void)
 	if (!starttime)
 		starttime = tstruct.time;
 	t = (tstruct.time-starttime) + tstruct.millitm*0.001;
-	
+
 	return t;
 }
 #endif
@@ -587,8 +587,8 @@ int Sys_Script(char *path, char *args)
 	si.wShowWindow = SW_SHOWMINNOACTIVE;
 
 	GetCurrentDirectory(sizeof(curdir), curdir);
-	
-	
+
+
 	snprintf(cmdline, sizeof(cmdline), "%s\\sh.exe %s.qws %s", curdir, path, args);
 	strlcat(curdir, va("\\%s", com_gamedir+2), MAX_OSPATH);
 
@@ -655,7 +655,7 @@ int main (int argc, char **argv)
 	SV_Init (&parms);
 
 // run one frame immediately for first heartbeat
-	SV_Frame (0.1);		
+	SV_Frame (0.1);
 
 //
 // main loop
@@ -687,8 +687,8 @@ int main (int argc, char **argv)
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 		oldtime = newtime;
-		
-		SV_Frame (time);				
+
+		SV_Frame (time);
 	}
 #else
 
@@ -779,7 +779,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	static struct		timeval	timeout;
 	static fd_set		fdset;
 	register int		sleep_msec;
-	
+
 //Added by VVD {
 	static int			j;
 	char				*_argv[MAX_NUM_ARGVS];
@@ -821,7 +821,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 				*lpCmdLine = 0;
 				lpCmdLine++;
 			}
-			
+
 		}
 	}
 
@@ -863,7 +863,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		UpdateNotifyIconMessage(va("mvdsv:%d", sv_port));
 
 // run one frame immediately for first heartbeat
-	SV_Frame (0.1);		
+	SV_Frame (0.1);
 
 //
 // main loop
@@ -931,8 +931,8 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 		oldtime = newtime;
-		
-		SV_Frame (time);				
+
+		SV_Frame (time);
 	}
 
 

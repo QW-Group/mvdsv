@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: skin.c,v 1.2 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: skin.c,v 1.3 2005/10/12 12:10:49 danfe Exp $
 */
 
 #include "quakedef.h"
@@ -75,13 +75,13 @@ void Skin_Find (player_info_t *sc)
 		int teamplay;
 
 		teamplay = atoi(Info_ValueForKey(cl.serverinfo, "teamplay"));
-		
+
 		if (cl_teamskin.string[0] && teamplay && team != NULL &&
 			!strcmp(sc->team, team))
 		{
 			strlcpy (name, cl_teamskin.string, sizeof(name));
 		}
-		
+
 		if (cl_enemyskin.string[0] && (!teamplay || team == NULL ||
 			strcmp(sc->team, team)))
 		{
@@ -183,7 +183,7 @@ byte *Skin_Cache (skin_t *skin)
 		Con_Printf ("Bad skin %s\n", name);
 		return NULL;
 	}
-	
+
 	out = Cache_Alloc (&skin->cache, 320*200, skin->name);
 	if (!out)
 		Sys_Error ("Skin_Cache: couldn't allocate");

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: vid_win.c,v 1.2 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: vid_win.c,v 1.3 2005/10/12 12:10:50 danfe Exp $
 */
 // vid_win.c -- Win32 video driver
 
@@ -223,7 +223,7 @@ void ClearAllStates (void)
 	extern void IN_ClearStates (void);
 	extern qboolean keydown[256];
 	int		i;
-	
+
 // send an up event for each key, to make sure the server clears them all
 	for (i=0 ; i<256 ; i++)
 	{
@@ -300,7 +300,7 @@ qboolean VID_AllocBuffers (int width, int height)
 
 	vid_surfcache = (byte *)d_pzbuffer +
 			width * height * sizeof (*d_pzbuffer);
-	
+
 	return true;
 }
 
@@ -1052,7 +1052,7 @@ int VID_NumModes (void)
 	return nummodes;
 }
 
-	
+
 /*
 =================
 VID_GetModePtr
@@ -1804,8 +1804,8 @@ void VID_LockBuffer (void)
 	else
 		screenwidth = vid.rowbytes;
 }
-		
-		
+
+
 void VID_UnlockBuffer (void)
 {
 	if (dibdc)
@@ -1973,7 +1973,7 @@ VID_DescribeMode_f
 void VID_DescribeMode_f (void)
 {
 	int		modenum;
-	
+
 	modenum = Q_atoi (Cmd_Argv(1));
 
 	Con_Printf ("%s\n", VID_GetExtModeDescription (modenum));
@@ -2820,7 +2820,7 @@ void VID_HandlePause (qboolean pause)
 #endif
 }
 
-			
+
 /*
 ===================================================================
 
@@ -2915,7 +2915,7 @@ LONG WINAPI MainWndProc (
 
 		case WM_SIZE:
 			Minimized = false;
-			
+
 			if (!(wParam & SIZE_RESTORED))
 			{
 				if (wParam & SIZE_MINIMIZED)
@@ -3129,7 +3129,7 @@ void VID_MenuDraw (void)
 
 	vid_wmodes = 3;
 	lnummodes = VID_NumModes ();
-	
+
 	for (i=3 ; i<lnummodes ; i++)
 	{
 		ptr = VID_GetModeDescriptionMemCheck (i);

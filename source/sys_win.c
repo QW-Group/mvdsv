@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys_win.c,v 1.2 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: sys_win.c,v 1.3 2005/10/12 12:10:50 danfe Exp $
 */
 // sys_win.h
 
@@ -86,7 +86,7 @@ int	Sys_FileTime (char *path)
 	int		t, retval;
 
 	t = VID_ForceUnlockedAndReturnState ();
-	
+
 	f = fopen(path, "rb");
 
 	if (f)
@@ -98,7 +98,7 @@ int	Sys_FileTime (char *path)
 	{
 		retval = -1;
 	}
-	
+
 	VID_ForceLockState (t);
 	return retval;
 }
@@ -154,7 +154,7 @@ void Sys_Init (void)
 		if (!qwclsemaphore)
 			Sys_Error ("QWCL is already running on this system");
 		CloseHandle (qwclsemaphore);
-		
+
 		qwclsemaphore = CreateSemaphore(
 			NULL,         /* Security attributes */
 			0,            /* Initial count       */
@@ -179,7 +179,7 @@ void Sys_Init (void)
 	{
 		Sys_Error ("QuakeWorld requires at least Win95 or NT 4.0");
 	}
-	
+
 	if (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
 		WinNT = true;
 	else
@@ -209,7 +209,7 @@ void Sys_Error (char *error, ...)
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-	
+
 	va_start (argptr,fmt);
 	vprintf (fmt, argptr);
 	va_end (argptr);
@@ -243,7 +243,7 @@ double Sys_DoubleTime (void)
 		starttime = now;
 		return 0.0;
 	}
-	
+
 	if (now < starttime) // wrapped?
 		return (now / 1000.0) + (LONG_MAX - starttime / 1000.0);
 
@@ -287,7 +287,7 @@ char *Sys_ConsoleInput (void)
 				switch (ch)
 				{
 					case '\r':
-						WriteFile(houtput, "\r\n", 2, &dummy, NULL);	
+						WriteFile(houtput, "\r\n", 2, &dummy, NULL);
 
 						if (len)
 						{
@@ -298,7 +298,7 @@ char *Sys_ConsoleInput (void)
 						break;
 
 					case '\b':
-						WriteFile(houtput, "\b \b", 3, &dummy, NULL);	
+						WriteFile(houtput, "\b \b", 3, &dummy, NULL);
 						if (len)
 						{
 							len--;
@@ -338,7 +338,7 @@ char *Sys_ConsoleInput (void)
 							}
 						} else if (ch >= ' ')
 						{
-							WriteFile(houtput, &ch, 1, &dummy, NULL);	
+							WriteFile(houtput, &ch, 1, &dummy, NULL);
 							text[len] = ch;
 							len = (len + 1) & 0xff;
 						}
@@ -456,7 +456,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 				*lpCmdLine = 0;
 				lpCmdLine++;
 			}
-			
+
 		}
 	}
 
