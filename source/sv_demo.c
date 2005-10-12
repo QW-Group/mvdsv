@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.17 2005/10/11 16:30:11 danfe Exp $
+	$Id: sv_demo.c,v 1.18 2005/10/12 18:36:05 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -88,7 +88,7 @@ void DestClose(mvddest_t *d, qboolean destroyfiles)
 	char path[MAX_OSPATH];
 
 	if (d->cache)
-		Z_Free(d->cache);
+		Q_Free(d->cache);
 	if (d->file)
 		fclose(d->file);
 	if (d->socket)
@@ -146,18 +146,21 @@ void DestFlush(qboolean compleate)
 			break;
 
 		case DEST_STREAM:
-			len = send(d->socket, d->cache, d->cacheused, 0);
-			if (len == 0) //client died
-				d->error = true;
-			else if (len > 0)	//error of some kind
+			if (d->cacheused)
 			{
-				d->cacheused -= len;
-				memmove(d->cache, d->cache+len, d->cacheused);
-			}
-			else
-			{	//error of some kind. would block or something
-				if (qerrno != EWOULDBLOCK)
+				len = send(d->socket, d->cache, d->cacheused, 0);
+				if (len == 0) //client died
 					d->error = true;
+				else if (len > 0)	//error of some kind
+				{
+					d->cacheused -= len;
+					memmove(d->cache, d->cache+len, d->cacheused);
+				}
+				else
+				{	//error of some kind. would block or something
+					if (qerrno != EWOULDBLOCK)
+						d->error = true;
+				}
 			}
 			break;
 
@@ -252,14 +255,15 @@ cvar_t	sv_demoMaxSize  = {"sv_demoMaxSize", "20480"};
 cvar_t	sv_demoExtraNames = {"sv_demoExtraNames", "0"};
 
 cvar_t	mvd_streamport = {"mvd_streamport", "0"};
+cvar_t	mvd_maxstreams = {"mvd_maxstreams", "1"};
 
-cvar_t			sv_demoPrefix = {"sv_demoPrefix", ""};
-cvar_t			sv_demoSuffix = {"sv_demoSuffix", ""};
-cvar_t			sv_demotxt = {"sv_demotxt", "1"};
+cvar_t	sv_demoPrefix = {"sv_demoPrefix", ""};
+cvar_t	sv_demoSuffix = {"sv_demoSuffix", ""};
+cvar_t	sv_demotxt = {"sv_demotxt", "1"};
 
-cvar_t			sv_onrecordfinish = {"sv_onRecordFinish", ""};
-cvar_t			sv_ondemoremove = {"sv_onDemoRemove", ""};
-cvar_t			sv_demoRegexp = {"sv_demoRegexp", "\\.mvd(\\.(gz|bz2|rar|zip))?$"};
+cvar_t	sv_onrecordfinish = {"sv_onRecordFinish", ""};
+cvar_t	sv_ondemoremove = {"sv_onDemoRemove", ""};
+cvar_t	sv_demoRegexp = {"sv_demoRegexp", "\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
 void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time);
 
@@ -879,7 +883,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 		dst->desttype = DEST_BUFFEREDFILE;
 		dst->file = file;
 		dst->maxcachesize = 0x81000;
-		dst->cache = Z_Malloc(dst->maxcachesize);
+		dst->cache = Q_Malloc(dst->maxcachesize);
 	}
 
 	Check_DemoDir();
@@ -932,7 +936,9 @@ mvddest_t *SV_InitStream(int socket)
 	dst->desttype = DEST_STREAM;
 	dst->socket = socket;
 	dst->maxcachesize = 0x8000;	//is this too small?
-	dst->cache = Z_Malloc(dst->maxcachesize);
+	dst->cache = Q_Malloc(dst->maxcachesize);
+
+	SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
 
 	return dst;
 }
@@ -1769,11 +1775,15 @@ void SV_MVDStream_Poll(void)
 {
 	static int listensocket=INVALID_SOCKET;
 	static int listenport;
+
 	int client;
 	netadr_t na;
 	struct sockaddr_qstorage addr;
 	int addrlen;
+	int count;
 	qboolean wanted;
+	mvddest_t *dest;
+
 	if (!sv.state || !mvd_streamport.value)
 		wanted = false;
 	else if (listenport && (int)mvd_streamport.value != listenport)	//easy way to switch... disable for a frame. :)
@@ -1804,10 +1814,33 @@ void SV_MVDStream_Poll(void)
 	if (client == INVALID_SOCKET)
 		return;
 
-	if (sv.mvdrecording)
-	{	//sorry
-		closesocket(client);
-		return;
+	if (mvd_maxstreams.value > 0)
+	{
+		count = 0;
+		for (dest = demo.dest; dest; dest = dest->nextdest)
+		{
+			if (dest->desttype == DEST_STREAM)
+			{
+				count++;
+			}
+		}
+
+		if (count > mvd_maxstreams.value)
+		{	//sorry
+			char *goawaymessage = "This server enforces a limit on the number of proxies connected at any one time. Please try again later\n";
+			char packetheader[6];
+			packetheader[0] = 1;
+			packetheader[1] = dem_all;
+			packetheader[2] = strlen(goawaymessage)+1;
+			packetheader[3] = 0;
+			packetheader[4] = 0;
+			packetheader[5] = 0;
+
+			send(client, packetheader, sizeof(packetheader), 0);
+			send(client, goawaymessage, strlen(goawaymessage)+1, 0);
+			closesocket(client);
+			return;
+		}
 	}
 
 	SockadrToNetadr(&addr, &na);
@@ -2322,5 +2355,6 @@ void SV_MVDInit (void)
 	Cmd_AddCommand ("demoInfo", SV_MVDInfo_f);
 
 	Cvar_RegisterVariable (&mvd_streamport);
+	Cvar_RegisterVariable (&mvd_maxstreams);
 
 }
