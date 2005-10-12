@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: defs.h,v 1.4 2005/07/22 13:37:03 vvd0 Exp $
+	$Id: defs.h,v 1.5 2005/10/12 12:14:37 danfe Exp $
 */
 
 #ifdef _WIN32
