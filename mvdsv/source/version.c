@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: version.c,v 1.2 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: version.c,v 1.3 2005/10/12 12:10:50 danfe Exp $
 */
 
 #include "quakedef.h"

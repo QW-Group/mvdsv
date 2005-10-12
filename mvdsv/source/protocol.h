@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.2 2005/05/27 15:09:51 vvd0 Exp $
+	$Id: protocol.h,v 1.3 2005/10/12 12:10:49 danfe Exp $
 */
 // protocol.h -- communications protocols
 
@@ -71,7 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	svc_stufftext		9	// [string] stuffed into client's console buffer
 								// the string should be \n terminated
 #define	svc_setangle		10	// [angle3] set the view angle to this absolute value
-	
+
 #define	svc_serverdata		11	// [long] protocol ...
 #define	svc_lightstyle		12	// [byte] [string]
 //define	svc_updatename		13	// [byte] [string]
@@ -81,11 +81,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //define	svc_updatecolors	17	// [byte] [byte] [byte]
 //define	svc_particle		18	// [vec3] <variable>
 #define	svc_damage			19
-	
+
 #define	svc_spawnstatic		20
 //	svc_spawnbinary		21
 #define	svc_spawnbaseline	22
-	
+
 #define	svc_temp_entity		23	// variable
 #define	svc_setpause		24	// [byte] on / off
 //	svc_signonnum		25	// [byte]  used for the signon sequence

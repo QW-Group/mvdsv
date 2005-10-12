@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.3 2005/07/05 12:50:26 vvd0 Exp $
+	$Id: bothdefs.h,v 1.4 2005/10/12 12:10:49 danfe Exp $
 */
 
 // defs common to client and server

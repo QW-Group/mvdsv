@@ -4,15 +4,15 @@
 *                           All rights reserved.
 *
 * Filename:     $Workfile:   debug.h  $
-* Version:      $Revision: 1.2 $
+* Version:      $Revision: 1.3 $
 *
 * Language:     ANSI C
 * Environment:  any
 *
 * Description:  General header file for operating system portable code.
 *
-* $Date: 2005/05/27 15:09:48 $ $Author: vvd0 $
-* $Id: debug.h,v 1.2 2005/05/27 15:09:48 vvd0 Exp $
+* $Date: 2005/10/12 12:10:49 $ $Author: danfe $
+* $Id: debug.h,v 1.3 2005/10/12 12:10:49 danfe Exp $
 *
 ****************************************************************************/
 
@@ -160,7 +160,7 @@ extern main();
  *  _VARAPI - Modifiers for variables; Watcom C++ mangles C++ globals
  */
 
-#define _PUBAPI	
+#define _PUBAPI
 #define _ASMAPI __cdecl
 
 #if defined(_MSC_VER) && defined(_WIN32) && !defined(__SC__)

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_pred.c,v 1.2 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_pred.c,v 1.3 2005/10/12 12:10:49 danfe Exp $
 */
 #include "quakedef.h"
 #include "winquake.h"
@@ -75,7 +75,7 @@ void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u, 
 	{
 		player_state_t	temp;
 		usercmd_t	split;
-		
+
 		split = *u;
 		split.msec /= 2;
 
@@ -278,7 +278,7 @@ void CL_PredictMove (qboolean nopred)
 			VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);
 			goto out;
 		}
-		
+
 	for (i=0 ; i<3 ; i++)
 	{
 		cl.simorg[i] = from->playerstate[cl.playernum].origin[i] 

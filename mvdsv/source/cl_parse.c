@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_parse.c,v 1.3 2005/07/22 13:37:01 vvd0 Exp $
+	$Id: cl_parse.c,v 1.4 2005/10/12 12:10:49 danfe Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -41,7 +41,7 @@ char *svc_strings[] =
 	"svc_stufftext",		// [string] stuffed into client's console buffer
 						// the string should be \n terminated
 	"svc_setangle",		// [vec3] set the view angle to this absolute value
-	
+
 	"svc_serverdata",		// [long] version ...
 	"svc_lightstyle",		// [byte] [string]
 	"svc_updatename",		// [byte] [string]
@@ -51,11 +51,11 @@ char *svc_strings[] =
 	"svc_updatecolors",	// [byte] [byte]
 	"svc_particle",		// [vec3] <variable>
 	"svc_damage",			// [byte] impact [byte] blood [vec3] from
-	
+
 	"svc_spawnstatic",
 	"OBSOLETE svc_spawnbinary",
 	"svc_spawnbaseline",
-	
+
 	"svc_temp_entity",		// <variable>
 	"svc_setpause",
 	"svc_signonnum",
@@ -272,7 +272,7 @@ void Model_NextDownload (void)
 	}
 
 	// all done
-	cl.worldmodel = cl.model_precache[1];	
+	cl.worldmodel = cl.model_precache[1];
 	R_NewMap ();
 	TP_NewMap ();
 	Hunk_Check ();		// make sure nothing is hurt
@@ -656,7 +656,7 @@ void CL_ParseServerData (void)
 	int protover;
 	extern cshift_t	cshift_empty;
 	extern float nextdemotime, olddemotime;
-	
+
 	Con_DPrintf ("Serverdata packet received.\n");
 //
 // wipe the client_state_t struct
@@ -874,7 +874,7 @@ CL_ParseBaseline
 void CL_ParseBaseline (entity_state_t *es)
 {
 	int			i;
-	
+
 	es->modelindex = MSG_ReadByte ();
 	es->frame = MSG_ReadByte ();
 	es->colormap = MSG_ReadByte();
@@ -903,7 +903,7 @@ void CL_ParseStatic (void)
 	entity_state_t	es;
 
 	CL_ParseBaseline (&es);
-		
+
 	i = cl.num_statics;
 	if (i >= MAX_STATIC_ENTITIES)
 		Host_EndGame ("Too many static entities");
@@ -918,7 +918,7 @@ void CL_ParseStatic (void)
 
 	VectorCopy (es.origin, ent->origin);
 	VectorCopy (es.angles, ent->angles);
-	
+
 	R_AddEfrags (ent);
 }
 
@@ -933,7 +933,7 @@ void CL_ParseStaticSound (void)
 	vec3_t		org;
 	int			sound_num, vol, atten;
 	int			i;
-	
+
 	for (i=0 ; i<3 ; i++)
 		org[i] = MSG_ReadCoord ();
 	sound_num = MSG_ReadByte ();
@@ -974,12 +974,12 @@ void CL_ParseStartSoundPacket(void)
 		volume = MSG_ReadByte ();
 	else
 		volume = DEFAULT_SOUND_PACKET_VOLUME;
-	
+
     if (channel & SND_ATTENUATION)
 		attenuation = MSG_ReadByte () / 64.0;
 	else
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
-	
+
 	sound_num = MSG_ReadByte ();
 
 	for (i=0 ; i<3 ; i++)
@@ -1048,7 +1048,7 @@ void CL_ParseClientdata (void)
 			cls.latency = latency;
 		else
 			cls.latency += 0.001;	// drift up, so correction are needed
-	}	
+	}
 }
 
 /*
@@ -1095,7 +1095,7 @@ void CL_NewTranslation (int slot)
 			player->topcolor = cl_teamtopcolor;
 			player->bottomcolor = cl_teambottomcolor;
 		}
-		
+
 		if (cl_enemytopcolor >= 0 && slot != cl.playernum &&
 			(!teamplay || team == NULL || strcmp(player->team, team)))
 		{
@@ -1154,7 +1154,7 @@ void CL_NewTranslation (int slot)
 			player->topcolor = cl_teamtopcolor;
 			player->bottomcolor = cl_teambottomcolor;
 		}
-		
+
 		if (cl_enemytopcolor >= 0 && slot != cl.playernum &&
 			(!teamplay || team == NULL || strcmp(player->team, team)))
 		{
@@ -1189,12 +1189,12 @@ void CL_NewTranslation (int slot)
 			else
 				for (j=0 ; j<16 ; j++)
 					dest[TOP_RANGE+j] = source[top+15-j];
-					
+
 			if (bottom < 128)
 				memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
 			else
 				for (j=0 ; j<16 ; j++)
-					dest[BOTTOM_RANGE+j] = source[bottom+15-j];		
+					dest[BOTTOM_RANGE+j] = source[bottom+15-j];
 		}
 	}
 }
@@ -1302,7 +1302,7 @@ void CL_ProcessServerInfo (void)
 
 	cl.fpd = Q_atof(Info_ValueForKey(cl.serverinfo, "fpd"));
 	teamplay = Q_atof(Info_ValueForKey(cl.serverinfo, "teamplay"));
-	
+
 	p = Info_ValueForKey(cl.serverinfo, "deathmatch");
 	if (*p)
 		cl.gametype = Q_atof(p) ? GAME_DEATHMATCH : GAME_COOP;
@@ -1367,7 +1367,7 @@ void CL_ParsePrint (void)
 		memcpy(str, cl.sprint_buf, len);
 		str[len] = '\0';
 		strlcpy (cl.sprint_buf, p + 1, SPRINT_BUF_LEN);
-		
+
 		if (level == PRINT_CHAT)
 		{
 			char *p;
@@ -1438,7 +1438,7 @@ void CL_SetStat (int stat, int value)
 	}
 
 	Sbar_Changed ();
-	
+
 	if (stat == STAT_ITEMS)
 	{	// set flash times
 		Sbar_Changed ();
@@ -1511,7 +1511,7 @@ void CL_MuzzleFlash (void)
 	dl = CL_AllocDlight (-i);
 	VectorCopy (pl->origin,  dl->origin);
 	AngleVectors (pl->viewangles, fv, rv, uv);
-		
+
 	VectorMA (dl->origin, 18, fv, dl->origin);
 	dl->radius = 200 + (rand()&31);
 	dl->minlight = 32;
@@ -1572,18 +1572,18 @@ void CL_ParseServerMessage (void)
 		}
 
 		SHOWNET(svc_strings[cmd]);
-	
+
 	// other commands
 		switch (cmd)
 		{
 		default:
 			Host_EndGame ("CL_ParseServerMessage: Illegible server message");
 			break;
-			
+
 		case svc_nop:
 //			Con_Printf ("svc_nop\n");
 			break;
-			
+
 		case svc_disconnect:
 			if (cls.state == ca_connected)
 				Host_EndGame ("Server disconnected\n"
@@ -1595,25 +1595,25 @@ void CL_ParseServerMessage (void)
 		case svc_print:
 			CL_ParsePrint ();
 			break;
-			
+
 		case svc_centerprint:
 			SCR_CenterPrint (MSG_ReadString ());
 			break;
-			
+
 		case svc_stufftext:
 			CL_ParseStufftext ();
 			break;
-			
+
 		case svc_damage:
 			V_ParseDamage ();
 			break;
-			
+
 		case svc_serverdata:
 			Cbuf_Execute ();		// make sure any stuffed commands are done
 			CL_ParseServerData ();
 			vid.recalc_refdef = true;	// leave full screen intermission
 			break;
-			
+
 		case svc_setangle:
 			if (cls.demoplayback2) {
 				j = MSG_ReadByte();
@@ -1630,7 +1630,7 @@ void CL_ParseServerMessage (void)
 			}
 //			cl.viewangles[PITCH] = cl.viewangles[ROLL] = 0;
 			break;
-			
+
 		case svc_lightstyle:
 			i = MSG_ReadByte ();
 			if (i >= MAX_LIGHTSTYLES)
@@ -1638,23 +1638,23 @@ void CL_ParseServerMessage (void)
 			strlcpy (cl_lightstyle[i].map,  MSG_ReadString(), MAX_STYLESTRING);
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
-			
+
 		case svc_sound:
 			CL_ParseStartSoundPacket();
 			break;
-			
+
 		case svc_stopsound:
 			i = MSG_ReadShort();
 			S_StopSound(i>>3, i&7);
 			break;
-		
+
 		case svc_updatefrags:
 			Sbar_Changed ();
 			i = MSG_ReadByte ();
 			if (i >= MAX_CLIENTS)
 				Host_EndGame ("CL_ParseServerMessage: svc_updatefrags > MAX_CLIENTS");
 			cl.players[i].frags = MSG_ReadShort ();
-			break;			
+			break;
 
 		case svc_updateping:
 			i = MSG_ReadByte ();
@@ -1662,14 +1662,14 @@ void CL_ParseServerMessage (void)
 				Host_EndGame ("CL_ParseServerMessage: svc_updateping > MAX_CLIENTS");
 			cl.players[i].ping = MSG_ReadShort ();
 			break;
-			
+
 		case svc_updatepl:
 			i = MSG_ReadByte ();
 			if (i >= MAX_CLIENTS)
 				Host_EndGame ("CL_ParseServerMessage: svc_updatepl > MAX_CLIENTS");
 			cl.players[i].pl = MSG_ReadByte ();
 			break;
-			
+
 		case svc_updateentertime:
 		// time is sent over as seconds ago
 			i = MSG_ReadByte ();
@@ -1678,14 +1678,14 @@ void CL_ParseServerMessage (void)
 			cl.players[i].entertime = realtime - MSG_ReadFloat ();
 			//Con_Printf("enter:%f, real:%f\n", realtime - cl.players[i].entertime, realtime);
 			break;
-			
+
 		case svc_spawnbaseline:
 			i = MSG_ReadShort ();
 			CL_ParseBaseline (&cl_baselines[i]);
 			break;
 		case svc_spawnstatic:
 			CL_ParseStatic ();
-			break;			
+			break;
 		case svc_temp_entity:
 			CL_ParseTEnt ();
 			break;
@@ -1710,7 +1710,7 @@ void CL_ParseServerMessage (void)
 			//stat_size += 11;
 			CL_SetStat (i, j);
 			break;
-			
+
 		case svc_spawnstaticsound:
 			CL_ParseStaticSound ();
 			break;
@@ -1725,7 +1725,7 @@ void CL_ParseServerMessage (void)
 			cl.completed_time = realtime;
 			vid.recalc_refdef = true;	// go to full screen
 			for (i=0 ; i<3 ; i++)
-				cl.simorg[i] = MSG_ReadCoord ();			
+				cl.simorg[i] = MSG_ReadCoord ();
 			for (i=0 ; i<3 ; i++)
 				cl.simangles[i] = MSG_ReadAngle ();
 			VectorCopy (vec3_origin, cl.simvel);
@@ -1736,9 +1736,9 @@ void CL_ParseServerMessage (void)
 			cl.intermission = 2;
 			cl.completed_time = realtime;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());			
+			SCR_CenterPrint (MSG_ReadString ());
 			break;
-			
+
 		case svc_sellscreen:
 			Cmd_ExecuteString ("help");
 			break;

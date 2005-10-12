@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_cam.c,v 1.2 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_cam.c,v 1.3 2005/10/12 12:10:49 danfe Exp $
 */
 /* ZOID
  *
@@ -63,7 +63,7 @@ void vectoangles(vec3_t vec, vec3_t ang)
 {
 	float	forward;
 	float	yaw, pitch;
-	
+
 	if (vec[1] == 0 && vec[0] == 0)
 	{
 		yaw = 0;
@@ -172,7 +172,7 @@ pmtrace_t Cam_DoTrace(vec3_t vec1, vec3_t vec2)
 	VectorCopy (vec1, pmove.origin);
 	return PM_PlayerMove(pmove.origin, vec2);
 }
-	
+
 // Returns distance or 9999 if invalid for some reason
 static float Cam_TryFlyby(player_state_t *self, player_state_t *player, vec3_t vec, qboolean checkvis)
 {
@@ -395,7 +395,7 @@ void Cam_Chase(usercmd_t *cmd, player_state_t *self, player_state_t *player)
 	float		camdist;
 
 	camdist = max(cl_matrixcam_dist.value, 5);
-	
+
 	cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 
 	AngleVectors(player->viewangles, forward, right, up);
@@ -417,7 +417,7 @@ void Cam_Chase(usercmd_t *cmd, player_state_t *self, player_state_t *player)
 	else
 		tooClose = false;
 }
-	
+
 // ZOID
 //
 // Take over the user controls and track a player.
@@ -431,7 +431,7 @@ void Cam_Track(usercmd_t *cmd)
 
 	if (!cl.spectator)
 		return;
-	
+
 	if (cl_hightrack.value && !locked)
 		Cam_CheckHighTarget();
 
@@ -478,7 +478,7 @@ void Cam_Track(usercmd_t *cmd)
 		}
 	} else
 		cam_lastviewtime = realtime;
-	
+
 	// couldn't track for some reason
 	if (!locked || !autocam)
 		return;

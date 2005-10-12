@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_login.c,v 1.7 2005/10/11 16:36:46 danfe Exp $
+	$Id: sv_login.c,v 1.8 2005/10/12 12:10:49 danfe Exp $
 */
 
 #include "qwsvdef.h"
@@ -431,7 +431,7 @@ values <= 0 indicates a failure
 int checklogin(char *log, char *pass, int num, int use)
 {
 	int i,c;
-	
+
 	for (i = 0, c = 0; c < num_accounts; i++)
 	{
 		if (accounts[i].state == a_free)
@@ -461,10 +461,10 @@ int checklogin(char *log, char *pass, int num, int use)
 			}
 
 			WriteAccounts();
-					
+
 			return 0;
 		}
-		
+
 		c++;
 	}
 
