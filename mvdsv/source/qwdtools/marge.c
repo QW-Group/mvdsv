@@ -15,13 +15,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: marge.c,v 1.3 2005/09/29 07:36:10 disconn3ct Exp $
+	$Id: marge.c,v 1.4 2005/10/13 19:38:57 danfe Exp $
 */
 
 #include "defs.h"
 
 #define HEADER (int)&((header_t*)0)->data
-#define NextMsg(h) (h) = (h)->data + (h)->size
+#define NextMsg(h) (h) = (void *)((h)->data + (h)->size)
 #define Cpy(d,s) memcpy((d), (s), HEADER + (s)->size)
 #define Cmp(a,b) (((a)->source & (b)->source) == 0 && (a)->size == (b)->size && *(a)->data == *(b)->data && !memcmp((a)->data, (b)->data, (a)->size) && TypeCmp((a),(b)))
 
@@ -318,14 +318,14 @@ void Marge (sizebuf_t *dest, int start, int end)
 			zn1.fin = true;//!m1->bufsize;
 			zn2.fin = !m2->bufsize;
 
-			zn1.start = m1->data;
-			zn1.end = m1->data + m1->bufsize;
-			zn2.start = m2->data;
-			zn2.end = m2->data;
+			zn1.start = (header_t *)m1->data;
+			zn1.end = (header_t *)(m1->data + m1->bufsize);
+			zn2.start = (header_t *)m2->data;
+			zn2.end = (header_t *)m2->data;
 
-			d = tmp.data;
-			znd.start = tmp.data;
-			znd.end = tmp.data;
+			d = (header_t *)tmp.data;
+			znd.start = (header_t *)tmp.data;
+			znd.end = (header_t *)tmp.data;
 
 			while (!zn2.fin)
 			{
