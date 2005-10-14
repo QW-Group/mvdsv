@@ -32,22 +32,22 @@ RSC=rc.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir ".\Release"
-# PROP BASE Intermediate_Dir ".\Release"
+# PROP BASE Output_Dir "Release"
+# PROP BASE Intermediate_Dir "Release"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\SRelease"
-# PROP Intermediate_Dir ".\SRelease"
+# PROP Output_Dir "SRelease"
+# PROP Intermediate_Dir "SRelease"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /YX /c
-# ADD CPP /nologo /G6 /W3 /O2 /Op /Ob2 /D "SERVERONLY" /D "id386" /D "NDEBUG" /D "USE_PR2" /Fr /Fp".\SRelease/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /W3 /O2 /Op /Ob2 /D "SERVERONLY" /D "id386" /D "NDEBUG" /D "USE_PR2" /Fr /Fp"SRelease/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o".\SRelease/mvdsv.bsc"
+# ADD BSC32 /nologo /o"SRelease/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
 # ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"..\mvdsv-current.exe"
@@ -57,23 +57,23 @@ LINK32=link.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir ".\Debug"
-# PROP BASE Intermediate_Dir ".\Debug"
+# PROP BASE Output_Dir "Debug"
+# PROP BASE Intermediate_Dir "Debug"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir ".\SDebug"
-# PROP Intermediate_Dir ".\SDebug"
+# PROP Output_Dir "SDebug"
+# PROP Intermediate_Dir "SDebug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "_DEBUG" /YX /c
-# ADD CPP /nologo /ML /W3 /GX /ZI /Od /D "SERVERONLY" /D "id386" /D "_DEBUG" /D "USE_PR2" /FAcs /FR /Fp".\SDebug/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /ML /W3 /GX /ZI /Od /D "SERVERONLY" /D "id386" /D "_DEBUG" /D "USE_PR2" /FAcs /FR /Fp"SDebug/mvdsv.pch" /YX /FD /c
 # SUBTRACT CPP /u
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x809 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o".\SDebug/mvdsv.bsc"
+# ADD BSC32 /nologo /o"SDebug/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386
 # ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /map /debug /machine:I386 /out:"..\mvdsv-debug.exe"
@@ -93,164 +93,164 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\pcre\chartables.c
+SOURCE=pcre\chartables.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pcre\get.c
+SOURCE=pcre\get.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pcre\pcre.c
+SOURCE=pcre\pcre.c
 # End Source File
 # End Group
 # Begin Source File
 
-SOURCE=.\cmd.c
+SOURCE=cmd.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\common.c
+SOURCE=common.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\crc.c
+SOURCE=crc.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cvar.c
+SOURCE=cvar.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\mathlib.c
+SOURCE=mathlib.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\mdfour.c
+SOURCE=mdfour.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\net_chan.c
+SOURCE=net_chan.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\net_wins.c
+SOURCE=net_wins.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pmove.c
+SOURCE=pmove.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pmovetst.c
+SOURCE=pmovetst.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr2_cmds.c
+SOURCE=pr2_cmds.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr2_edict.c
+SOURCE=pr2_edict.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr2_exec.c
+SOURCE=pr2_exec.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr2_vm.c
+SOURCE=pr2_vm.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr_cmds.c
+SOURCE=pr_cmds.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr_edict.c
+SOURCE=pr_edict.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr_exec.c
+SOURCE=pr_exec.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sha1.c
+SOURCE=sha1.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_ccmds.c
+SOURCE=sv_ccmds.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_demo.c
+SOURCE=sv_demo.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_ents.c
+SOURCE=sv_ents.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_init.c
+SOURCE=sv_init.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_login.c
+SOURCE=sv_login.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_main.c
+SOURCE=sv_main.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_mod_frags.c
+SOURCE=sv_mod_frags.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_model.c
+SOURCE=sv_model.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_move.c
+SOURCE=sv_move.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_nchan.c
+SOURCE=sv_nchan.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_phys.c
+SOURCE=sv_phys.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_send.c
+SOURCE=sv_send.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_sys_win.c
+SOURCE=sv_sys_win.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_user.c
+SOURCE=sv_user.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_windows.c
+SOURCE=sv_windows.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\version.c
+SOURCE=version.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\winquake.rc
+SOURCE=winquake.rc
 # End Source File
 # Begin Source File
 
-SOURCE=.\world.c
+SOURCE=world.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\zone.c
+SOURCE=zone.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -261,208 +261,208 @@ SOURCE=.\zone.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\pcre\config.h
+SOURCE=pcre\config.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pcre\internal.h
+SOURCE=pcre\internal.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pcre\pcre.h
+SOURCE=pcre\pcre.h
 # End Source File
 # End Group
 # Begin Source File
 
-SOURCE=.\bothdefs.h
+SOURCE=bothdefs.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\bspfile.h
+SOURCE=bspfile.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\cdaudio.h
+SOURCE=cdaudio.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\client.h
+SOURCE=client.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\cmd.h
+SOURCE=cmd.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\common.h
+SOURCE=common.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\console.h
+SOURCE=console.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\crc.h
+SOURCE=crc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\cvar.h
+SOURCE=cvar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_iface.h
+SOURCE=d_iface.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\draw.h
+SOURCE=draw.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\g_public.h
+SOURCE=g_public.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\input.h
+SOURCE=input.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\keys.h
+SOURCE=keys.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\log.h
+SOURCE=log.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\mathlib.h
+SOURCE=mathlib.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\mdfour.h
+SOURCE=mdfour.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\menu.h
+SOURCE=menu.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\model.h
+SOURCE=model.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\modelgen.h
+SOURCE=modelgen.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\net.h
+SOURCE=net.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pmove.h
+SOURCE=pmove.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr2.h
+SOURCE=pr2.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr2_vm.h
+SOURCE=pr2_vm.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pr_comp.h
+SOURCE=pr_comp.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\progdefs.h
+SOURCE=progdefs.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\progs.h
+SOURCE=progs.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\protocol.h
+SOURCE=protocol.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\quakedef.h
+SOURCE=quakedef.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\qwsvdef.h
+SOURCE=qwsvdef.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\render.h
+SOURCE=render.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sbar.h
+SOURCE=sbar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\screen.h
+SOURCE=screen.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\server.h
+SOURCE=server.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sha1.h
+SOURCE=sha1.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sound.h
+SOURCE=sound.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\spritegn.h
+SOURCE=spritegn.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_mod_frags.h
+SOURCE=sv_mod_frags.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_windows.h
+SOURCE=sv_windows.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sys.h
+SOURCE=sys.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\version.h
+SOURCE=version.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\vid.h
+SOURCE=vid.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\view.h
+SOURCE=view.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\wad.h
+SOURCE=wad.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\winquake.h
+SOURCE=winquake.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\world.h
+SOURCE=world.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\zone.h
+SOURCE=zone.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -470,7 +470,7 @@ SOURCE=.\zone.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\qwcl2.ico
+SOURCE=qwcl2.ico
 # End Source File
 # End Group
 # Begin Group "Asm Files"
@@ -478,20 +478,20 @@ SOURCE=.\qwcl2.ico
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\math.s
+SOURCE=math.s
 
 !IF  "$(CFG)" == "qwsv - Win32 Release"
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build
-OutDir=.\SRelease
-InputPath=.\math.s
+OutDir=SRelease
+InputPath=math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -499,14 +499,14 @@ InputName=math
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\SDebug
-InputPath=.\math.s
+OutDir=SDebug
+InputPath=math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -516,20 +516,20 @@ InputName=math
 # End Source File
 # Begin Source File
 
-SOURCE=.\worlda.s
+SOURCE=worlda.s
 
 !IF  "$(CFG)" == "qwsv - Win32 Release"
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build
-OutDir=.\SRelease
-InputPath=.\worlda.s
+OutDir=SRelease
+InputPath=worlda.s
 InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -537,14 +537,14 @@ InputName=worlda
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\SDebug
-InputPath=.\worlda.s
+OutDir=SDebug
+InputPath=worlda.s
 InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi                 $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build

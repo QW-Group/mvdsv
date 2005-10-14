@@ -37,8 +37,8 @@ RSC=rc.exe
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\Release"
-# PROP Intermediate_Dir ".\Release"
+# PROP Output_Dir "Release"
+# PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
@@ -88,39 +88,39 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
 # Begin Source File
 
-SOURCE=.\dem_parse.c
+SOURCE=dem_parse.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\dem_send.c
+SOURCE=dem_send.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\ini.c
+SOURCE=ini.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\init.c
+SOURCE=init.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\main.c
+SOURCE=main.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\marge.c
+SOURCE=marge.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\qwz.c
+SOURCE=qwz.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sync.c
+SOURCE=sync.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\tools.c
+SOURCE=tools.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -132,7 +132,7 @@ SOURCE=..\bothdefs.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\defs.h
+SOURCE=defs.h
 # End Source File
 # Begin Source File
 
@@ -140,7 +140,7 @@ SOURCE=..\protocol.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\tools.h
+SOURCE=tools.h
 # End Source File
 # Begin Source File
 
@@ -148,7 +148,7 @@ SOURCE=..\version.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\world.h
+SOURCE=world.h
 # End Source File
 # End Group
 # End Target

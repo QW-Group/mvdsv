@@ -1,12 +1,13 @@
 
-$Id: changes.txt,v 1.37 2005/10/11 17:17:21 vvd0 Exp $
+$Id: changes.txt,v 1.38 2005/10/14 13:19:32 vvd0 Exp $
 
 ----
 MVDSV v0.19.01-CVS build 21?? (2005.10.??)
+- added MSVC 7.1 solution/project file
 [server]
-- Possibility to set small speed for objects on map
+- added possibility to set small speed for objects on map
 (by ivan)
-- Possibility to set non integer volume for sounds from mods
+- added possibility to set non integer volume for sounds from mods
 (by ivan)
 - initial FTE's QTV (FTV) support (from FTE by disconnect)
 - build: removed define REGEX - can't build only with external regex lib
