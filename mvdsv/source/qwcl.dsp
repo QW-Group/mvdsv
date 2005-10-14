@@ -35,17 +35,17 @@ RSC=rc.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir ".\Release"
-# PROP BASE Intermediate_Dir ".\Release"
+# PROP BASE Output_Dir "Release"
+# PROP BASE Intermediate_Dir "Release"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\Release"
-# PROP Intermediate_Dir ".\Release"
+# PROP Output_Dir "Release"
+# PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /YX /c
-# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /D "NDEBUG" /D "id386" /Fp".\Release/qwplayer.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /D "NDEBUG" /D "id386" /Fp"Release/qwplayer.pch" /YX /FD /c
 # SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -53,7 +53,7 @@ RSC=rc.exe
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o".\Release/qwplayer.bsc"
+# ADD BSC32 /nologo /o"Release/qwplayer.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
 # ADD LINK32 mgllt.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /nodefaultlib:"libcmt" /out:"..\qwplayer.exe"
@@ -63,24 +63,24 @@ LINK32=link.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir ".\Debug"
-# PROP BASE Intermediate_Dir ".\Debug"
+# PROP BASE Output_Dir "Debug"
+# PROP BASE Intermediate_Dir "Debug"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir ".\Debug"
-# PROP Intermediate_Dir ".\Debug"
+# PROP Output_Dir "Debug"
+# PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "_DEBUG" /YX /c
-# ADD CPP /nologo /G5 /ML /W3 /GX /ZI /Od /D "_DEBUG" /D "id386" /FR /Fp".\Debug/qwplayerl.pch" /YX /FD /c
+# ADD CPP /nologo /G5 /ML /W3 /GX /ZI /Od /D "_DEBUG" /D "id386" /FR /Fp"Debug/qwplayerl.pch" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o".\Debug/qwplayer.bsc"
+# ADD BSC32 /nologo /o"Debug/qwplayer.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386
 # ADD LINK32 mgllt.lib dxguid.lib opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcmt" /out:"..\qwplayer-debug.exe"
@@ -90,24 +90,24 @@ LINK32=link.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir ".\GLDebug"
-# PROP BASE Intermediate_Dir ".\GLDebug"
+# PROP BASE Output_Dir "GLDebug"
+# PROP BASE Intermediate_Dir "GLDebug"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir ".\GLDebug"
-# PROP Intermediate_Dir ".\GLDebug"
+# PROP Output_Dir "GLDebug"
+# PROP Intermediate_Dir "GLDebug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /ML /Gm /GX /Zi /Od /D "_DEBUG" /FR /YX /c
-# ADD CPP /nologo /G5 /ML /W3 /GX /ZI /Od /D "_DEBUG" /D "GLQUAKE" /D "id386" /FR /Fp".\GLDebug/qwplayer.pch" /YX /FD /c
+# ADD CPP /nologo /G5 /ML /W3 /GX /ZI /Od /D "_DEBUG" /D "GLQUAKE" /D "id386" /FR /Fp"GLDebug/qwplayer.pch" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o".\GLDebug/qwplayer.bsc"
+# ADD BSC32 /nologo /o"GLDebug/qwplayer.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 opengl32.lib wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib winmm.lib /nologo /subsystem:windows /debug /machine:I386
 # SUBTRACT BASE LINK32 /nodefaultlib
@@ -118,17 +118,17 @@ LINK32=link.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir ".\GLRelease"
-# PROP BASE Intermediate_Dir ".\GLRelease"
+# PROP BASE Output_Dir "GLRelease"
+# PROP BASE Intermediate_Dir "GLRelease"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir ".\GLRelease"
-# PROP Intermediate_Dir ".\GLRelease"
+# PROP Output_Dir "GLRelease"
+# PROP Intermediate_Dir "GLRelease"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /G5 /GX /Zi /Od /D "NDEBUG" /D "GLQUAKE" /FR /YX /c
-# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /D "NDEBUG" /D "GLQUAKE" /D "id386" /Fp".\GLRelease/qwplayer.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /Zp4 /W3 /GX /O1 /D "NDEBUG" /D "GLQUAKE" /D "id386" /Fp"GLRelease/qwplayer.pch" /YX /FD /c
 # SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -136,7 +136,7 @@ LINK32=link.exe
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o".\GLRelease/qwplayer.bsc"
+# ADD BSC32 /nologo /o"GLRelease/qwplayer.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 winmm.lib wsock32.lib opengl32.lib glu32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"..\qwplayer-gl.exe"
 # SUBTRACT BASE LINK32 /nodefaultlib
@@ -156,91 +156,71 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
 # Begin Source File
 
-SOURCE=.\cd_win.c
+SOURCE=cd_win.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_cam.c
+SOURCE=cl_cam.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_cmd.c
+SOURCE=cl_cmd.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_demo.c
+SOURCE=cl_demo.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_ents.c
+SOURCE=cl_ents.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_input.c
+SOURCE=cl_input.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_main.c
+SOURCE=cl_main.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_parse.c
+SOURCE=cl_parse.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_pred.c
+SOURCE=cl_pred.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_slist.c
+SOURCE=cl_slist.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_tent.c
+SOURCE=cl_tent.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cmd.c
+SOURCE=cmd.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\common.c
+SOURCE=common.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\console.c
+SOURCE=console.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\crc.c
+SOURCE=crc.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\cvar.c
+SOURCE=cvar.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_edge.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-# PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\d_fill.c
+SOURCE=d_edge.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -260,7 +240,7 @@ SOURCE=.\d_fill.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_init.c
+SOURCE=d_fill.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -280,7 +260,7 @@ SOURCE=.\d_init.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_modech.c
+SOURCE=d_init.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -300,7 +280,7 @@ SOURCE=.\d_modech.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_part.c
+SOURCE=d_modech.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -320,7 +300,7 @@ SOURCE=.\d_part.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_polyse.c
+SOURCE=d_part.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -340,7 +320,7 @@ SOURCE=.\d_polyse.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_scan.c
+SOURCE=d_polyse.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -360,7 +340,7 @@ SOURCE=.\d_scan.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_sky.c
+SOURCE=d_scan.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -380,7 +360,7 @@ SOURCE=.\d_sky.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_sprite.c
+SOURCE=d_sky.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -400,7 +380,7 @@ SOURCE=.\d_sprite.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_surf.c
+SOURCE=d_sprite.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -420,7 +400,7 @@ SOURCE=.\d_surf.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_vars.c
+SOURCE=d_surf.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -440,7 +420,7 @@ SOURCE=.\d_vars.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_zpoint.c
+SOURCE=d_vars.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -460,7 +440,7 @@ SOURCE=.\d_zpoint.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\draw.c
+SOURCE=d_zpoint.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -480,255 +460,7 @@ SOURCE=.\draw.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\gl_draw.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_mesh.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_model.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_ngraph.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_refrag.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_rlight.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_rmain.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_rmisc.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_rsurf.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_screen.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_test.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\gl_warp.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\in_win.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\keys.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\mathlib.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\mdfour.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\menu.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\model.c
+SOURCE=draw.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -748,27 +480,255 @@ SOURCE=.\model.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\net_chan.c
+SOURCE=gl_draw.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
-SOURCE=.\net_wins.c
+SOURCE=gl_mesh.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
-SOURCE=.\nonintel.c
+SOURCE=gl_model.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
-SOURCE=.\pmove.c
+SOURCE=gl_ngraph.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
-SOURCE=.\pmovetst.c
+SOURCE=gl_refrag.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_aclip.c
+SOURCE=gl_rlight.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=gl_rmain.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=gl_rmisc.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=gl_rsurf.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=gl_screen.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=gl_test.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=gl_warp.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=in_win.c
+# End Source File
+# Begin Source File
+
+SOURCE=keys.c
+# End Source File
+# Begin Source File
+
+SOURCE=mathlib.c
+# End Source File
+# Begin Source File
+
+SOURCE=mdfour.c
+# End Source File
+# Begin Source File
+
+SOURCE=menu.c
+# End Source File
+# Begin Source File
+
+SOURCE=model.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -788,7 +748,27 @@ SOURCE=.\r_aclip.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_alias.c
+SOURCE=net_chan.c
+# End Source File
+# Begin Source File
+
+SOURCE=net_wins.c
+# End Source File
+# Begin Source File
+
+SOURCE=nonintel.c
+# End Source File
+# Begin Source File
+
+SOURCE=pmove.c
+# End Source File
+# Begin Source File
+
+SOURCE=pmovetst.c
+# End Source File
+# Begin Source File
+
+SOURCE=r_aclip.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -808,7 +788,7 @@ SOURCE=.\r_alias.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_bsp.c
+SOURCE=r_alias.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -828,7 +808,7 @@ SOURCE=.\r_bsp.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_draw.c
+SOURCE=r_bsp.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -848,7 +828,7 @@ SOURCE=.\r_draw.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_edge.c
+SOURCE=r_draw.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -868,7 +848,7 @@ SOURCE=.\r_edge.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_efrag.c
+SOURCE=r_edge.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -888,7 +868,7 @@ SOURCE=.\r_efrag.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_light.c
+SOURCE=r_efrag.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -908,7 +888,7 @@ SOURCE=.\r_light.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_main.c
+SOURCE=r_light.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -928,7 +908,7 @@ SOURCE=.\r_main.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_misc.c
+SOURCE=r_main.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -948,11 +928,7 @@ SOURCE=.\r_misc.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_part.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\r_sky.c
+SOURCE=r_misc.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -972,7 +948,11 @@ SOURCE=.\r_sky.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_sprite.c
+SOURCE=r_part.c
+# End Source File
+# Begin Source File
+
+SOURCE=r_sky.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -992,7 +972,7 @@ SOURCE=.\r_sprite.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_surf.c
+SOURCE=r_sprite.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -1012,7 +992,7 @@ SOURCE=.\r_surf.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_vars.c
+SOURCE=r_surf.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -1032,11 +1012,7 @@ SOURCE=.\r_vars.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sbar.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\screen.c
+SOURCE=r_vars.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -1056,62 +1032,11 @@ SOURCE=.\screen.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sha1.c
+SOURCE=sbar.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\skin.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\snd_dma.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\snd_mem.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\snd_mix.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\snd_win.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\sys_win.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\teamplay.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\version.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\vid_wgl.c
-
-!IF  "$(CFG)" == "qwcl - Win32 Release"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
-
-# PROP Exclude_From_Build 1
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
-
-!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\vid_win.c
+SOURCE=screen.c
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -1131,19 +1056,94 @@ SOURCE=.\vid_win.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\view.c
+SOURCE=sha1.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\wad.c
+SOURCE=skin.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\winquake.rc
+SOURCE=snd_dma.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\zone.c
+SOURCE=snd_mem.c
+# End Source File
+# Begin Source File
+
+SOURCE=snd_mix.c
+# End Source File
+# Begin Source File
+
+SOURCE=snd_win.c
+# End Source File
+# Begin Source File
+
+SOURCE=sys_win.c
+# End Source File
+# Begin Source File
+
+SOURCE=teamplay.c
+# End Source File
+# Begin Source File
+
+SOURCE=version.c
+# End Source File
+# Begin Source File
+
+SOURCE=vid_wgl.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=vid_win.c
+
+!IF  "$(CFG)" == "qwcl - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
+
+# PROP BASE Exclude_From_Build 1
+# PROP Exclude_From_Build 1
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=view.c
+# End Source File
+# Begin Source File
+
+SOURCE=wad.c
+# End Source File
+# Begin Source File
+
+SOURCE=winquake.rc
+# End Source File
+# Begin Source File
+
+SOURCE=zone.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -1151,59 +1151,59 @@ SOURCE=.\zone.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl;fi;fd"
 # Begin Source File
 
-SOURCE=.\adivtab.h
+SOURCE=adivtab.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\anorm_dots.h
+SOURCE=anorm_dots.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\anorms.h
+SOURCE=anorms.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\bothdefs.h
+SOURCE=bothdefs.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\bspfile.h
+SOURCE=bspfile.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\cdaudio.h
+SOURCE=cdaudio.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\cl_slist.h
+SOURCE=cl_slist.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\client.h
+SOURCE=client.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\cmd.h
+SOURCE=cmd.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\common.h
+SOURCE=common.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\console.h
+SOURCE=console.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\crc.h
+SOURCE=crc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\cvar.h
+SOURCE=cvar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_iface.h
+SOURCE=d_iface.h
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -1223,7 +1223,7 @@ SOURCE=.\d_iface.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_ifacea.h
+SOURCE=d_ifacea.h
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -1243,7 +1243,7 @@ SOURCE=.\d_ifacea.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_local.h
+SOURCE=d_local.h
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
@@ -1263,31 +1263,31 @@ SOURCE=.\d_local.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\debug.h
+SOURCE=debug.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\draw.h
+SOURCE=draw.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\gl_model.h
+SOURCE=gl_model.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\gl_warp_sin.h
+SOURCE=gl_warp_sin.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\glquake.h
+SOURCE=glquake.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\input.h
+SOURCE=input.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\keys.h
+SOURCE=keys.h
 # End Source File
 # Begin Source File
 
@@ -1295,103 +1295,103 @@ SOURCE=..\..\..\quake\v2\master\masterpr.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\mathlib.h
+SOURCE=mathlib.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\mdfour.h
+SOURCE=mdfour.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\menu.h
+SOURCE=menu.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\model.h
+SOURCE=model.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\modelgen.h
+SOURCE=modelgen.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\net.h
+SOURCE=net.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\pmove.h
+SOURCE=pmove.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\protocol.h
+SOURCE=protocol.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\quakedef.h
+SOURCE=quakedef.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_local.h
+SOURCE=r_local.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_shared.h
+SOURCE=r_shared.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\render.h
+SOURCE=render.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sbar.h
+SOURCE=sbar.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\screen.h
+SOURCE=screen.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sha1.h
+SOURCE=sha1.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sound.h
+SOURCE=sound.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\spritegn.h
+SOURCE=spritegn.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\sys.h
+SOURCE=sys.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\teamplay.h
+SOURCE=teamplay.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\version.h
+SOURCE=version.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\vid.h
+SOURCE=vid.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\view.h
+SOURCE=view.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\wad.h
+SOURCE=wad.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\winquake.h
+SOURCE=winquake.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\zone.h
+SOURCE=zone.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -1399,15 +1399,15 @@ SOURCE=.\zone.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\qe3.ico
+SOURCE=qe3.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\quakeworld.bmp
+SOURCE=quakeworld.bmp
 # End Source File
 # Begin Source File
 
-SOURCE=.\qwcl2.ico
+SOURCE=qwcl2.ico
 # End Source File
 # End Group
 # Begin Group "Asm Files"
@@ -1415,19 +1415,19 @@ SOURCE=.\qwcl2.ico
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\cl_math.s
+SOURCE=cl_math.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\cl_math.s
+OutDir=Release
+InputPath=cl_math.s
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1435,14 +1435,14 @@ InputName=cl_math
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\cl_math.s
+OutDir=Debug
+InputPath=cl_math.s
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1450,14 +1450,14 @@ InputName=cl_math
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
 
 # Begin Custom Build
-OutDir=.\GLDebug
-InputPath=.\cl_math.s
+OutDir=GLDebug
+InputPath=cl_math.s
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1465,14 +1465,14 @@ InputName=cl_math
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
 
 # Begin Custom Build
-OutDir=.\GLRelease
-InputPath=.\cl_math.s
+OutDir=GLRelease
+InputPath=cl_math.s
 InputName=cl_math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1482,19 +1482,19 @@ InputName=cl_math
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_draw.s
+SOURCE=d_draw.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\d_draw.s
+OutDir=Release
+InputPath=d_draw.s
 InputName=d_draw
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1502,14 +1502,14 @@ InputName=d_draw
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\d_draw.s
+OutDir=Debug
+InputPath=d_draw.s
 InputName=d_draw
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1528,19 +1528,19 @@ InputName=d_draw
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_draw16.s
+SOURCE=d_draw16.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\d_draw16.s
+OutDir=Release
+InputPath=d_draw16.s
 InputName=d_draw16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1548,14 +1548,14 @@ InputName=d_draw16
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\d_draw16.s
+OutDir=Debug
+InputPath=d_draw16.s
 InputName=d_draw16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1574,19 +1574,19 @@ InputName=d_draw16
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_parta.s
+SOURCE=d_parta.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\d_parta.s
+OutDir=Release
+InputPath=d_parta.s
 InputName=d_parta
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1594,14 +1594,14 @@ InputName=d_parta
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\d_parta.s
+OutDir=Debug
+InputPath=d_parta.s
 InputName=d_parta
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1620,19 +1620,19 @@ InputName=d_parta
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_polysa.s
+SOURCE=d_polysa.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\d_polysa.s
+OutDir=Release
+InputPath=d_polysa.s
 InputName=d_polysa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1640,14 +1640,14 @@ InputName=d_polysa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\d_polysa.s
+OutDir=Debug
+InputPath=d_polysa.s
 InputName=d_polysa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1666,19 +1666,19 @@ InputName=d_polysa
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_scana.s
+SOURCE=d_scana.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\d_scana.s
+OutDir=Release
+InputPath=d_scana.s
 InputName=d_scana
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1686,14 +1686,14 @@ InputName=d_scana
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\d_scana.s
+OutDir=Debug
+InputPath=d_scana.s
 InputName=d_scana
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1712,19 +1712,19 @@ InputName=d_scana
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_spr8.s
+SOURCE=d_spr8.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\d_spr8.s
+OutDir=Release
+InputPath=d_spr8.s
 InputName=d_spr8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1732,14 +1732,14 @@ InputName=d_spr8
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\d_spr8.s
+OutDir=Debug
+InputPath=d_spr8.s
 InputName=d_spr8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1758,19 +1758,19 @@ InputName=d_spr8
 # End Source File
 # Begin Source File
 
-SOURCE=.\d_varsa.s
+SOURCE=d_varsa.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\d_varsa.s
+OutDir=Release
+InputPath=d_varsa.s
 InputName=d_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1778,14 +1778,14 @@ InputName=d_varsa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\d_varsa.s
+OutDir=Debug
+InputPath=d_varsa.s
 InputName=d_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1804,19 +1804,19 @@ InputName=d_varsa
 # End Source File
 # Begin Source File
 
-SOURCE=.\math.s
+SOURCE=math.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\math.s
+OutDir=Release
+InputPath=math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1824,14 +1824,14 @@ InputName=math
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\math.s
+OutDir=Debug
+InputPath=math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1839,14 +1839,14 @@ InputName=math
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
 
 # Begin Custom Build
-OutDir=.\GLDebug
-InputPath=.\math.s
+OutDir=GLDebug
+InputPath=math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1854,14 +1854,14 @@ InputName=math
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
 
 # Begin Custom Build
-OutDir=.\GLRelease
-InputPath=.\math.s
+OutDir=GLRelease
+InputPath=math.s
 InputName=math
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1871,19 +1871,19 @@ InputName=math
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_aclipa.s
+SOURCE=r_aclipa.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\r_aclipa.s
+OutDir=Release
+InputPath=r_aclipa.s
 InputName=r_aclipa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1891,14 +1891,14 @@ InputName=r_aclipa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\r_aclipa.s
+OutDir=Debug
+InputPath=r_aclipa.s
 InputName=r_aclipa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1917,19 +1917,19 @@ InputName=r_aclipa
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_aliasa.s
+SOURCE=r_aliasa.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\r_aliasa.s
+OutDir=Release
+InputPath=r_aliasa.s
 InputName=r_aliasa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1937,14 +1937,14 @@ InputName=r_aliasa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\r_aliasa.s
+OutDir=Debug
+InputPath=r_aliasa.s
 InputName=r_aliasa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1963,19 +1963,19 @@ InputName=r_aliasa
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_drawa.s
+SOURCE=r_drawa.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\r_drawa.s
+OutDir=Release
+InputPath=r_drawa.s
 InputName=r_drawa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -1983,14 +1983,14 @@ InputName=r_drawa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\r_drawa.s
+OutDir=Debug
+InputPath=r_drawa.s
 InputName=r_drawa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2009,19 +2009,19 @@ InputName=r_drawa
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_edgea.s
+SOURCE=r_edgea.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\r_edgea.s
+OutDir=Release
+InputPath=r_edgea.s
 InputName=r_edgea
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2029,14 +2029,14 @@ InputName=r_edgea
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\r_edgea.s
+OutDir=Debug
+InputPath=r_edgea.s
 InputName=r_edgea
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2055,19 +2055,19 @@ InputName=r_edgea
 # End Source File
 # Begin Source File
 
-SOURCE=.\r_varsa.s
+SOURCE=r_varsa.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\r_varsa.s
+OutDir=Release
+InputPath=r_varsa.s
 InputName=r_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2075,14 +2075,14 @@ InputName=r_varsa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\r_varsa.s
+OutDir=Debug
+InputPath=r_varsa.s
 InputName=r_varsa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2101,19 +2101,19 @@ InputName=r_varsa
 # End Source File
 # Begin Source File
 
-SOURCE=.\snd_mixa.s
+SOURCE=snd_mixa.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\snd_mixa.s
+OutDir=Release
+InputPath=snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2121,14 +2121,14 @@ InputName=snd_mixa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\snd_mixa.s
+OutDir=Debug
+InputPath=snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2136,14 +2136,14 @@ InputName=snd_mixa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
 
 # Begin Custom Build
-OutDir=.\GLDebug
-InputPath=.\snd_mixa.s
+OutDir=GLDebug
+InputPath=snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2151,14 +2151,14 @@ InputName=snd_mixa
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
 
 # Begin Custom Build
-OutDir=.\GLRelease
-InputPath=.\snd_mixa.s
+OutDir=GLRelease
+InputPath=snd_mixa.s
 InputName=snd_mixa
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2168,19 +2168,19 @@ InputName=snd_mixa
 # End Source File
 # Begin Source File
 
-SOURCE=.\surf16.s
+SOURCE=surf16.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\surf16.s
+OutDir=Release
+InputPath=surf16.s
 InputName=surf16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2188,14 +2188,14 @@ InputName=surf16
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\surf16.s
+OutDir=Debug
+InputPath=surf16.s
 InputName=surf16
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2214,19 +2214,19 @@ InputName=surf16
 # End Source File
 # Begin Source File
 
-SOURCE=.\surf8.s
+SOURCE=surf8.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\surf8.s
+OutDir=Release
+InputPath=surf8.s
 InputName=surf8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2234,14 +2234,14 @@ InputName=surf8
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\surf8.s
+OutDir=Debug
+InputPath=surf8.s
 InputName=surf8
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2260,19 +2260,19 @@ InputName=surf8
 # End Source File
 # Begin Source File
 
-SOURCE=.\sys_x86.s
+SOURCE=sys_x86.s
 
 !IF  "$(CFG)" == "qwcl - Win32 Release"
 
 # Begin Custom Build
-OutDir=.\Release
-InputPath=.\sys_x86.s
+OutDir=Release
+InputPath=sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2280,14 +2280,14 @@ InputName=sys_x86
 !ELSEIF  "$(CFG)" == "qwcl - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\Debug
-InputPath=.\sys_x86.s
+OutDir=Debug
+InputPath=sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2295,14 +2295,14 @@ InputName=sys_x86
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLDebug"
 
 # Begin Custom Build
-OutDir=.\GLDebug
-InputPath=.\sys_x86.s
+OutDir=GLDebug
+InputPath=sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
@@ -2310,14 +2310,14 @@ InputName=sys_x86
 !ELSEIF  "$(CFG)" == "qwcl - Win32 GLRelease"
 
 # Begin Custom Build
-OutDir=.\GLRelease
-InputPath=.\sys_x86.s
+OutDir=GLRelease
+InputPath=sys_x86.s
 InputName=sys_x86
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
 	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi             $(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
 	del $(OUTDIR)\$(InputName).spp 
 	
 # End Custom Build
