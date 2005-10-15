@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net_udp.c,v 1.4 2005/10/11 16:36:46 danfe Exp $
+	$Id: net_udp.c,v 1.5 2005/10/15 21:30:33 disconn3ct Exp $
 */
 // net_main.c
 
@@ -74,36 +74,22 @@ void NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
 
 void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a)
 {
-	switch (((struct sockaddr*)s)->sa_family)
-	{
-	case AF_INET:
-		a->type = NA_IP;
-		*(int *)&a->ip = ((struct sockaddr_in *)s)->sin_addr.s_addr;
-		a->port = ((struct sockaddr_in *)s)->sin_port;
-		break;
-	case AF_UNSPEC:
-		memset(a, 0, sizeof(*a));
-		a->type = NA_INVALID;
-		break;
-	default:
-		Sys_Error("SockadrToNetadr: bad socket family");
-	}
+	a->type = NA_IP;
+	*(int *)&a->ip = ((struct sockaddr_in *)s)->sin_addr.s_addr;
+	a->port = ((struct sockaddr_in *)s)->sin_port;
+	return;
 }
 
 qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
-	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] &&
-	    a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3])
+	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] && a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3])
 		return true;
 	return false;
 }
 
-
 qboolean	NET_CompareAdr (netadr_t a, netadr_t b)
 {
-	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] &&
-	    a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3] &&
-	    a.port == b.port)
+	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] && a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3] && a.port == b.port)
 		return true;
 	return false;
 }
@@ -112,8 +98,7 @@ char	*NET_AdrToString (netadr_t a)
 {
 	static	char	s[64];
 	
-	snprintf (s, sizeof(s), "%i.%i.%i.%i:%i", a.ip.ip[0], a.ip.ip[1],
-	    a.ip.ip[2], a.ip.ip[3], ntohs(a.port));
+	snprintf (s, sizeof(s), "%i.%i.%i.%i:%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3], ntohs(a.port));
 
 	return s;
 }
@@ -122,8 +107,7 @@ char	*NET_BaseAdrToString (netadr_t a)
 {
 	static	char	s[64];
 	
-	snprintf (s, sizeof(s), "%i.%i.%i.%i", a.ip.ip[0], a.ip.ip[1],
-	    a.ip.ip[2], a.ip.ip[3]);
+	snprintf (s, sizeof(s), "%i.%i.%i.%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3]);
 
 	return s;
 }
@@ -151,7 +135,7 @@ qboolean	NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 
 		((struct sockaddr_in *)sadr)->sin_port = 0;
 
-		strcpy (copy, s);
+		strlcpy (copy, s, sizeof(copy));
 		// strip off a trailing :port if present
 		for (colon = copy ; *colon ; colon++)
 			if (*colon == ':')
@@ -201,9 +185,9 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a)
 
 qboolean NET_GetPacket (int dummy)
 {
-	static int		ret;
+	static int ret;
 	struct sockaddr_qstorage from;
-	static int		fromlen;
+	static int fromlen;
 
 	fromlen = sizeof(from);
 	ret = recvfrom (net_serversocket, net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
