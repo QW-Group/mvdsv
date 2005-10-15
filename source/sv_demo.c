@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.18 2005/10/12 18:36:05 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.19 2005/10/15 21:30:34 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -791,16 +791,18 @@ void MVD_Init (void)
 
 
 
-
+void SV_TimeOfDay(date_t *date);
 static char *SV_PrintTeams(void)
 {
-	char *teams[MAX_CLIENTS];
-//	char *p;
-	int	i, j, numcl = 0, numt = 0;
-	client_t *clients[MAX_CLIENTS];
-	char buf[2048] = {0};
-	extern cvar_t teamplay;
-//	extern char chartbl2[];
+	char		*teams[MAX_CLIENTS], *p;
+	int		i, j, numcl = 0, numt = 0, scores;
+	client_t	*clients[MAX_CLIENTS];
+	char		buf[2048];
+	static char	lastscores[2048];
+	extern cvar_t	teamplay;
+	extern char	chartbl2[];
+	date_t		date;
+	SV_TimeOfDay(&date);
 
 	// count teams and players
 	for (i=0; i < MAX_CLIENTS; i++)
@@ -812,41 +814,74 @@ static char *SV_PrintTeams(void)
 
 		clients[numcl++] = &svs.clients[i];
 		for (j = 0; j < numt; j++)
-			if (!strcmp(Info_ValueForKey(svs.clients[i].userinfo, "team"), teams[j]))
+			if (!strcmp(svs.clients[i].team, teams[j]))
 				break;
 		if (j != numt)
 			continue;
 
-		teams[numt++] = Info_ValueForKey(svs.clients[i].userinfo, "team");
+		teams[numt++] = svs.clients[i].team;
 	}
 
 	// create output
-
+	lastscores[0] = 0;
+	snprintf(buf, sizeof(buf),
+		"date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n",
+		date.str, sv.name, (int)teamplay.value, (int)deathmatch.value,
+		(int)timelimit.value);
 	if (numcl == 2) // duel
 	{
-		snprintf(buf, sizeof(buf), "team1 %s\nteam2 %s\n", clients[0]->name, clients[1]->name);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+			"player1: %s (%i)\nplayer2: %s (%i)\n",
+			clients[0]->name, clients[0]->old_frags,
+			clients[1]->name, clients[1]->old_frags);
+		snprintf(lastscores, sizeof(lastscores), "duel: %s vs %s @ %s - %i:%i\n",
+			clients[0]->name, clients[1]->name, sv.name, 
+			clients[0]->old_frags, clients[1]->old_frags);
 	}
 	else if (!teamplay.value) // ffa
 	{
-		snprintf(buf, sizeof(buf), "players:\n");
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "players:\n");
+		snprintf(lastscores, sizeof(lastscores), "ffa:");
 		for (i = 0; i < numcl; i++)
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
+		{
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+				"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
+			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+				"  %s(%i)", clients[i]->name, clients[i]->old_frags);
+		}
+		snprintf(lastscores + strlen(lastscores),
+			sizeof(lastscores) - strlen(lastscores), " @ %s\n", sv.name);
 	}
 	else
 	{ // teamplay
-		for (j = 0; j < numt; j++)
-		{
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "team %s:\n", teams[j]);
+		snprintf(lastscores, sizeof(lastscores), "tp:");
+		for (j = 0; j < numt; j++) {
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+				"team[%i] %s:\n", j, teams[j]);
+			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+				"%s[", teams[j]);
+			scores = 0;
 			for (i = 0; i < numcl; i++)
-				if (!strcmp(Info_ValueForKey(clients[i]->userinfo, "team"), teams[j]))
-					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "  %s\n", clients[i]->name);
+				if (!strcmp(clients[i]->team, teams[j]))
+				{
+					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+						"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
+					snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+						" %s(%i) ", clients[i]->name, clients[i]->old_frags);
+					scores += clients[i]->old_frags;
+				}
+			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
+				"](%i)  ", scores);
+
 		}
+		snprintf(lastscores + strlen(lastscores),
+			sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.name);
 	}
 
-	if (!numcl)
-		return "\n";
-//	for (p = buf; *p; p++) *p = chartbl2[(qbyte)*p];
-	return va("%s",buf);
+	for (p = buf; *p; p++) *p = chartbl2[(byte)*p];
+	for (p = lastscores; *p; p++) *p = chartbl2[(byte)*p];
+	strlcat(lastscores, buf, sizeof(lastscores));
+	return lastscores;
 }
 
 /*
@@ -905,17 +940,12 @@ mvddest_t *SV_InitRecordFile (char *name)
 	if (sv_demotxt.value)
 	{
 		FILE *f;
+		char *text;
 
-		f = fopen (path, "w+t");
-		if (f != NULL)
+		if ((f = fopen (path, "w+t")))
 		{
-			char buf[2000];
-			date_t date;
-
-			SV_TimeOfDay(&date);
-
-			snprintf(buf, sizeof(buf), "date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n%s",date.str, sv.name, (int)teamplay.value, (int)deathmatch.value, (int)timelimit.value, SV_PrintTeams());
-			fwrite(buf, strlen(buf),1,f);
+			text = SV_PrintTeams();
+			fwrite(text, strlen(text), 1, f);
 			fflush(f);
 			fclose(f);
 		}
@@ -1974,17 +2004,28 @@ char *SV_MVDNum(int num)
 
 char *SV_MVDName2Txt(char *name)
 {
-	char s[MAX_OSPATH];
+	char	s[MAX_OSPATH];
+	int	len;
 
 	if (!name)
 		return NULL;
 
 	strlcpy(s, name, MAX_OSPATH);
-
-	if (strstr(s, ".mvd.gz") != NULL)
-		strlcpy(s + strlen(s) - 6, "txt", MAX_OSPATH - strlen(s) + 6);
-	else
-		strlcpy(s + strlen(s) - 3, "txt", MAX_OSPATH - strlen(s) + 3);
+	len = strlen(s) - 4;
+	if (len < 0)
+		return va("%s", s);
+	if (strcmp(&s[len], ".mvd"))
+	{
+		if (len < 3)
+			return va("%s", s);
+		len -= 3;
+		if (strcmp(&s[len], ".mvd.gz"))
+			return va("%s", s);
+	}
+	s[++len] = 't';
+	s[++len] = 'x';
+	s[++len] = 't';
+	s[++len] = '\0';
 
 	return va("%s", s);
 }

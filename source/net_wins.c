@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net_wins.c,v 1.6 2005/10/11 17:46:36 vvd0 Exp $
+	$Id: net_wins.c,v 1.7 2005/10/15 21:30:33 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -121,7 +121,7 @@ qboolean	NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 
 		((struct sockaddr_in *)sadr)->sin_port = 0;
 
-		strcpy (copy, s);
+		strlcpy (copy, s, sizeof(copy));
 		// strip off a trailing :port if present
 		for (colon = copy ; *colon ; colon++)
 			if (*colon == ':')
@@ -174,18 +174,11 @@ qboolean NET_GetPacket (int net_socket)
 	static int	ret;
 	struct sockaddr_qstorage from;
 	static int	fromlen;
-//	unsigned long _true = 1;
+
 
 // Tonik -->
 	if (loop_c2s_messageLength > 0)
 	{
-/*		switch (net_socket)
-		{
-		case net_serversocket:
-//			Con_DPrintf ("NET_GetPacket: c2s\n");
-		case net_clientsocket:
-		}
-*/
 		memcpy (net_message_buffer, loop_c2s_message, loop_c2s_messageLength);
 		net_message.cursize = loop_c2s_messageLength;
 		loop_c2s_messageLength = 0;
@@ -284,7 +277,7 @@ int UDP_OpenSocket (int *port/*, qboolean crash*/)
 {
 	int newsocket;
 	struct sockaddr_in address;
-	unsigned long _true = true;
+ unsigned long _true = true;
 	int i;
 
 	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
