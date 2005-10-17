@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.c,v 1.11 2005/10/12 12:10:49 danfe Exp $
+	$Id: common.c,v 1.12 2005/10/17 16:17:57 vvd0 Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -309,7 +309,7 @@ size_t strlcat(char *dst, char *src, size_t siz)
 }
 #endif
 
-#if defined(__linux__) || defined(_WIN32) || defined(__OpenBSD__)
+#ifndef __FreeBSD__
 char *strnstr(char *s, char *find, size_t slen)
 {
 	char c, sc;

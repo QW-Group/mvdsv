@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: gl_model.h,v 1.2 2005/05/27 15:09:48 vvd0 Exp $
+	$Id: gl_model.h,v 1.3 2005/10/17 16:17:57 vvd0 Exp $
 */
 
 #ifndef __MODEL__
@@ -430,17 +430,17 @@ typedef struct model_s
 //
 	cache_user_t	cache;		// only access through Mod_Extradata
 
-} model_t;
+} qmodel_t;
 
 //============================================================================
 
 void	Mod_Init (void);
 void	Mod_ClearAll (void);
-model_t *Mod_ForName (char *name, qboolean crash);
-void	*Mod_Extradata (model_t *mod);	// handles caching
+qmodel_t *Mod_ForName (char *name, qboolean crash);
+void	*Mod_Extradata (qmodel_t *mod);	// handles caching
 void	Mod_TouchModel (char *name);
 
-mleaf_t *Mod_PointInLeaf (float *p, model_t *model);
-byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
+mleaf_t *Mod_PointInLeaf (float *p, qmodel_t *model);
+byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model);
 
 #endif	// __MODEL__

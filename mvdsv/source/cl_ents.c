@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_ents.c,v 1.2 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_ents.c,v 1.3 2005/10/17 16:17:57 vvd0 Exp $
 */
 // cl_ents.c -- entity parsing and management
 
@@ -456,7 +456,7 @@ void CL_LinkPacketEntities (void)
 	packet_entities_t	*pack;
 	entity_state_t		*s1, *s2;
 	float				f;
-	model_t				*model;
+	qmodel_t				*model;
 	vec3_t				old_origin;
 	float				autorotate;
 	int					i;

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.11 2005/10/12 12:10:49 danfe Exp $
+	$Id: pr_cmds.c,v 1.12 2005/10/17 16:17:57 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -167,7 +167,7 @@ void PF_setmodel (void)
 	edict_t	*e;
 	char	*m, **check;
 	int		i;
-	model_t	*mod;
+	qmodel_t	*mod;
 
 	e = G_EDICT(OFS_PARM0);
 	m = G_STRING(OFS_PARM1);

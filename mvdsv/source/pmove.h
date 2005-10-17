@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.h,v 1.3 2005/10/12 12:10:49 danfe Exp $
+	$Id: pmove.h,v 1.4 2005/10/17 16:17:57 vvd0 Exp $
 */
 
 typedef struct
@@ -41,7 +41,7 @@ typedef struct
 typedef struct
 {
 	vec3_t	origin;
-	model_t	*model;		// only for bsp models
+	qmodel_t	*model;		// only for bsp models
 	vec3_t	mins, maxs;	// only for non-bsp models
 	int		info;		// for client or server to identify
 } physent_t;

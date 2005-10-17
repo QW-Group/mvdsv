@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.11 2005/10/12 12:10:50 danfe Exp $
+	$Id: version.h,v 1.12 2005/10/17 16:17:58 vvd0 Exp $
 */
 // version.h
 
@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #ifdef sun
-#define QW_PLATFORM			"Sun"
+#define QW_PLATFORM			"SunOS"
 #define QW_PLATFORM_SHORT	"(s)"
 #endif
 

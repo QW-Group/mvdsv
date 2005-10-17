@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: world.c,v 1.4 2005/05/27 15:09:55 vvd0 Exp $
+	$Id: world.c,v 1.5 2005/10/17 16:17:58 vvd0 Exp $
 */
 // world.c -- world query functions
 
@@ -129,7 +129,7 @@ testing object's origin to get a point to use with the returned hull.
 */
 hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 {
-	model_t		*model;
+	qmodel_t		*model;
 	vec3_t		size;
 	vec3_t		hullmins, hullmaxs;
 	hull_t		*hull;

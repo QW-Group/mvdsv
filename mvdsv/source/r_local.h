@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: r_local.h,v 1.2 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: r_local.h,v 1.3 2005/10/17 16:17:58 vvd0 Exp $
 */
 // r_local.h -- private refresh defs
 
@@ -155,8 +155,8 @@ void R_GenSkyTile (void *pdest);
 void R_GenSkyTile16 (void *pdest);
 void R_Surf8Patch (void);
 void R_Surf16Patch (void);
-void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags);
-void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
+void R_DrawSubmodelPolygons (qmodel_t *pmodel, int clipflags);
+void R_DrawSolidClippedSubmodelPolygons (qmodel_t *pmodel);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
 surf_t *R_GetSurf (void);
@@ -181,7 +181,7 @@ extern int	c_faceclip;
 extern int	r_polycount;
 extern int	r_wholepolycount;
 
-extern	model_t		*cl_worldmodel;
+extern	qmodel_t		*cl_worldmodel;
 
 extern int		*pfrustum_indexes[4];
 
@@ -217,7 +217,7 @@ extern int			numbtofpolys;
 extern btofpoly_t	*pbtofpolys;
 
 void	R_InitTurb (void);
-void	R_ZDrawSubmodelPolys (model_t *clmodel);
+void	R_ZDrawSubmodelPolys (qmodel_t *clmodel);
 
 //=========================================================
 // Alias models

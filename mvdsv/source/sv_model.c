@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_model.c,v 1.4 2005/10/12 12:10:49 danfe Exp $
+	$Id: sv_model.c,v 1.5 2005/10/17 16:17:58 vvd0 Exp $
 */
 // models.c -- model loading and caching
 
@@ -25,19 +25,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
-model_t	*loadmodel;
+qmodel_t	*loadmodel;
 spec_worldmodel_t specworld;
 char	loadname[32];	// for hunk tags
 
-void Mod_LoadSpriteModel (model_t *mod, void *buffer);
-void Mod_LoadBrushModel (model_t *mod, void *buffer);
-void Mod_LoadAliasModel (model_t *mod, void *buffer);
-model_t *Mod_LoadModel (model_t *mod, qboolean crash);
+void Mod_LoadSpriteModel (qmodel_t *mod, void *buffer);
+void Mod_LoadBrushModel (qmodel_t *mod, void *buffer);
+void Mod_LoadAliasModel (qmodel_t *mod, void *buffer);
+qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash);
 
 byte	mod_novis[MAX_MAP_LEAFS/8];
 
 #define	MAX_MOD_KNOWN	256
-model_t	mod_known[MAX_MOD_KNOWN];
+qmodel_t	mod_known[MAX_MOD_KNOWN];
 int		mod_numknown;
 
 texture_t	r_notexture_mip;
@@ -59,7 +59,7 @@ void Mod_Init (void)
 Mod_PointInLeaf
 ===============
 */
-mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
+mleaf_t *Mod_PointInLeaf (vec3_t p, qmodel_t *model)
 {
 	mnode_t		*node;
 	float		d;
@@ -134,7 +134,7 @@ byte *Mod_DecompressVis (byte *in, int numleafs)
 	return decompressed;
 }
 
-byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model, qboolean spectator_vis)
+byte *Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model, qboolean spectator_vis)
 {
 	if (leaf == model->leafs)
 		return mod_novis;
@@ -151,7 +151,7 @@ Mod_ClearAll
 void Mod_ClearAll (void)
 {
 	int		i;
-	model_t	*mod;
+	qmodel_t	*mod;
 
 	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
 		if (mod->type != mod_alias)
@@ -164,10 +164,10 @@ Mod_FindName
 
 ==================
 */
-model_t *Mod_FindName (char *name)
+qmodel_t *Mod_FindName (char *name)
 {
 	int		i;
-	model_t	*mod;
+	qmodel_t	*mod;
 
 	if (!name[0])
 		SV_Error ("Mod_ForName: NULL name");
@@ -199,7 +199,7 @@ Mod_LoadModel
 Loads a model into the cache
 ==================
 */
-model_t *Mod_LoadModel (model_t *mod, qboolean crash)
+qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 {
 	void	*d;
 	unsigned *buf;
@@ -254,9 +254,9 @@ Mod_ForName
 Loads in a model for the given name
 ==================
 */
-model_t *Mod_ForName (char *name, qboolean crash)
+qmodel_t *Mod_ForName (char *name, qboolean crash)
 {
-	model_t	*mod;
+	qmodel_t	*mod;
 
 	mod = Mod_FindName (name);
 
@@ -1046,7 +1046,7 @@ void Mod_LoadPlanes (lump_t *l)
 Mod_LoadBrushModel
 =================
 */
-void Mod_LoadBrushModel (model_t *mod, void *buffer)
+void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 {
 	int			i, j;
 	dheader_t	*header;

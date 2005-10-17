@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: r_bsp.c,v 1.2 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: r_bsp.c,v 1.3 2005/10/17 16:17:58 vvd0 Exp $
 */
 // r_bsp.c
 
@@ -326,7 +326,7 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 R_DrawSolidClippedSubmodelPolygons
 ================
 */
-void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
+void R_DrawSolidClippedSubmodelPolygons (qmodel_t *pmodel)
 {
 	int			i, j, lindex;
 	vec_t		dot;
@@ -408,7 +408,7 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 R_DrawSubmodelPolygons
 ================
 */
-void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
+void R_DrawSubmodelPolygons (qmodel_t *pmodel, int clipflags)
 {
 	int			i;
 	vec_t		dot;
@@ -649,7 +649,7 @@ R_RenderWorld
 void R_RenderWorld (void)
 {
 	int			i;
-	model_t		*clmodel;
+	qmodel_t		*clmodel;
 	btofpoly_t	btofpolys[MAX_BTOFPOLYS];
 
 	pbtofpolys = btofpolys;

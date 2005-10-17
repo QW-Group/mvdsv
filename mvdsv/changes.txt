@@ -1,8 +1,9 @@
 
-$Id: changes.txt,v 1.38 2005/10/14 13:19:32 vvd0 Exp $
+$Id: changes.txt,v 1.39 2005/10/17 16:17:57 vvd0 Exp $
 
 ----
 MVDSV v0.19.01-CVS build 21?? (2005.10.??)
+- work on SunOS SPARC and ix86 targets now
 - added MSVC 7.1 solution/project file
 [server]
 - added possibility to set small speed for objects on map
