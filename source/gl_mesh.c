@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: gl_mesh.c,v 1.2 2005/05/27 15:09:48 vvd0 Exp $
+	$Id: gl_mesh.c,v 1.3 2005/10/17 16:17:57 vvd0 Exp $
 */
 // gl_mesh.c: triangle model functions
 
@@ -30,7 +30,7 @@ ALIAS MODEL DISPLAY LIST GENERATION
 =================================================================
 */
 
-model_t		*aliasmodel;
+qmodel_t		*aliasmodel;
 aliashdr_t	*paliashdr;
 
 qboolean	used[8192];
@@ -282,7 +282,7 @@ void BuildTris (void)
 GL_MakeAliasModelDisplayLists
 ================
 */
-void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
+void GL_MakeAliasModelDisplayLists (qmodel_t *m, aliashdr_t *hdr)
 {
 	int		i, j;
 	int			*cmds;

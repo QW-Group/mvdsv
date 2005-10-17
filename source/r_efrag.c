@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: r_efrag.c,v 1.2 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: r_efrag.c,v 1.3 2005/10/17 16:17:58 vvd0 Exp $
 */
 // r_efrag.c
 
@@ -202,7 +202,7 @@ R_AddEfrags
 */
 void R_AddEfrags (entity_t *ent)
 {
-	model_t		*entmodel;
+	qmodel_t		*entmodel;
 	int			i;
 		
 	if (!ent->model)
@@ -240,7 +240,7 @@ R_StoreEfrags
 void R_StoreEfrags (efrag_t **ppefrag)
 {
 	entity_t	*pent;
-	model_t		*model;
+	qmodel_t		*model;
 	efrag_t		*pefrag;
 	extern cvar_t	r_drawflame;
 

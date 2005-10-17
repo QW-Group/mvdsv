@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.19 2005/10/15 21:30:34 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.20 2005/10/17 16:17:58 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -35,11 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define qerrno WSAGetLastError()
 #else
 #define qerrno errno
-
-
-
-
-
 
 #include <sys/ioctl.h>
 

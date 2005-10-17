@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: r_draw.c,v 1.2 2005/05/27 15:09:53 vvd0 Exp $
+	$Id: r_draw.c,v 1.3 2005/10/17 16:17:58 vvd0 Exp $
 */
 
 // r_draw.c
@@ -880,7 +880,7 @@ void R_RenderPoly (msurface_t *fa, int clipflags)
 R_ZDrawSubmodelPolys
 ================
 */
-void R_ZDrawSubmodelPolys (model_t *pmodel)
+void R_ZDrawSubmodelPolys (qmodel_t *pmodel)
 {
 	int			i, numsurfaces;
 	msurface_t	*psurf;

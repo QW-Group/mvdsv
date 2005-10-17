@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_login.c,v 1.8 2005/10/12 12:10:49 danfe Exp $
+	$Id: sv_login.c,v 1.9 2005/10/17 16:17:58 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -33,7 +33,7 @@ cvar_t	sv_login = {"sv_login", "0"};	// if enabled, login required
 extern cvar_t sv_hashpasswords;
 
 typedef enum {a_free, a_ok, a_blocked} acc_state_t;
-typedef enum {use_log, use_ip} use_t;
+typedef enum {use_log, use_ip} quse_t;
 
 typedef struct
 {
@@ -43,7 +43,7 @@ typedef struct
 	int			inuse;
 	ipfilter_t	adress;
 	acc_state_t state;
-	use_t		use; 
+	quse_t		use; 
 } account_t;
 
 static account_t	accounts[MAX_ACCOUNTS];
@@ -200,7 +200,7 @@ void SV_CreateAccount_f(void)
 {
 	int i, spot, c;
 	ipfilter_t adr;
-	use_t use;
+	quse_t use;
 
 	if (Cmd_Argc() < 2)
 	{

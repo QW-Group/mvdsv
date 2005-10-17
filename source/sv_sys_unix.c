@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_sys_unix.c,v 1.9 2005/09/27 20:49:55 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.10 2005/10/17 16:17:58 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -33,11 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/time.h>
 #include <errno.h>
 
-#ifdef REGEX
-#include <regex.h>
-#else
 #include "pcre/pcre.h"
-#endif
 
 #else
 #include <sys/dir.h>
@@ -52,7 +48,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
+#ifndef sun
 #include <paths.h>
+#else
+#define _PATH_DEVNULL "/dev/null"
+#endif
 #include "version.h"
 // Added by VVD }
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: gl_rsurf.c,v 1.2 2005/05/27 15:09:49 vvd0 Exp $
+	$Id: gl_rsurf.c,v 1.3 2005/10/17 16:17:57 vvd0 Exp $
 */
 // r_surf.c: surface-related refresh code
 
@@ -1200,7 +1200,7 @@ void R_DrawBrushModel (entity_t *e)
 	msurface_t	*psurf;
 	float		dot;
 	mplane_t	*pplane;
-	model_t		*clmodel;
+	qmodel_t		*clmodel;
 	qboolean	rotated;
 
 	currententity = e;
@@ -1583,7 +1583,7 @@ int AllocBlock (int w, int h, int *x, int *y)
 
 
 mvertex_t	*r_pcurrentvertbase;
-model_t		*currentmodel;
+qmodel_t		*currentmodel;
 
 int	nColinElim;
 
@@ -1736,7 +1736,7 @@ with all the surfaces from all brush models
 void GL_BuildLightmaps (void)
 {
 	int		i, j;
-	model_t	*m;
+	qmodel_t	*m;
 
 	memset (allocated, 0, sizeof(allocated));
 

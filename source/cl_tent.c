@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cl_tent.c,v 1.2 2005/05/27 15:09:47 vvd0 Exp $
+	$Id: cl_tent.c,v 1.3 2005/10/17 16:17:57 vvd0 Exp $
 */
 // cl_tent.c -- client side temporary entities
 
@@ -43,7 +43,7 @@ typedef struct
 {
 	vec3_t	origin;
 	float	start;
-	model_t	*model;
+	qmodel_t	*model;
 } explosion_t;
 
 explosion_t	cl_explosions[MAX_EXPLOSIONS];
@@ -117,7 +117,7 @@ CL_ParseBeam
 =================
 */
 extern cvar_t cl_chasecam;
-void CL_ParseBeam (model_t *m)
+void CL_ParseBeam (qmodel_t *m)
 {
 	int		ent;
 	vec3_t	start, end;

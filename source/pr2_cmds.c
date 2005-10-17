@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.11 2005/10/05 18:20:32 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.12 2005/10/17 16:17:57 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -233,7 +233,7 @@ void PF2_setmodel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	char		*m;
 	char		**check;
 	int			i;
-	model_t		*mod;
+	qmodel_t		*mod;
 	
 	e = EDICT_NUM(stack[0]._int);
 	m = VM_POINTER(base,mask,stack[1].string);
