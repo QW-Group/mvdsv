@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.39 2005/10/17 16:17:57 vvd0 Exp $
+$Id: changes.txt,v 1.40 2005/10/19 16:27:50 disconn3ct Exp $
 
 ----
 MVDSV v0.19.01-CVS build 21?? (2005.10.??)
@@ -10,7 +10,11 @@ MVDSV v0.19.01-CVS build 21?? (2005.10.??)
 (by ivan)
 - added possibility to set non integer volume for sounds from mods
 (by ivan)
-- initial FTE's QTV (FTV) support (from FTE by disconnect)
+- added possibility to record multiple demos at same time (from FTE by disconnect)
+- FTE's QTV (FTV) support (from FTE by disconnect) :
+  - mvd_streamport - cvar, to control a port for MVD data streaming
+  - mvd_maxstreams - cvar, to control the maximum number of proxies to allow to connect 
+  directly to the server.
 - build: removed define REGEX - can't build only with external regex lib
 - new cmd dlistr, cmd dlistregex, cmd demolistr, cmd demolistregex -
   same as demolist, but use parameters as regex
