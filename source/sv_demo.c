@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_demo.c,v 1.20 2005/10/17 16:17:58 vvd0 Exp $
+	$Id: sv_demo.c,v 1.21 2005/10/19 16:20:51 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -242,7 +242,8 @@ cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
 cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
 cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
 cvar_t	sv_demoClearOld = {"sv_demoClearOld", "0"}; //bliP: 24/9 clear old demos
-cvar_t	sv_demoDir = {"sv_demoDir", "demos"};
+qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value);
+cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
 cvar_t	sv_demofps = {"sv_demofps", "20"};
 cvar_t	sv_demoPings = {"sv_demopings", "3"};
 cvar_t	sv_demoNoVis = {"sv_demonovis", "1"};
@@ -269,24 +270,18 @@ static int	header = (char *)&((header_t*)0)->data - (char *)NULL;
 entity_state_t demo_entities[UPDATE_MASK+1][MAX_DEMO_PACKET_ENTITIES];
 client_frame_t demo_frames[UPDATE_MASK+1];
 
-// only one .. is allowed (so we can get to the same dir as the quake exe)
-static void Check_DemoDir(void)
+// only one .. is allowed (security)
+qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value)
 {
-	char *value;
-
-	value = sv_demoDir.string;
 	if (!value[0])
-	{
-		Cvar_SetROM(&sv_demoDir, "demos");
-		return;
-	}
+		return true;
 
 	if (value[0] == '.' && value[1] == '.')
 		value += 2;
-	if (strstr(value,".."))
-	{
-		Cvar_SetROM(&sv_demoDir, "demos");
-	}
+	if (strstr(value,"/.."))
+		return true;
+
+	return false;
 }
 
 void SV_MVDPings (void)
@@ -916,8 +911,6 @@ mvddest_t *SV_InitRecordFile (char *name)
 		dst->cache = Q_Malloc(dst->maxcachesize);
 	}
 
-	Check_DemoDir();
-	
 	s = name + strlen(name);
 	while (*s != '/') s--;
 	strncpy(dst->name, s+1, sizeof(dst->name));
@@ -1471,6 +1464,44 @@ char *SV_CleanName (unsigned char *name)
 	return text;
 }
 
+//bliP: 24/9 clear old demos ->
+/*
+====================
+SV_DirSizeCheck
+
+Deletes sv_demoClearOld files from demo dir if out of space
+====================
+*/
+int SV_DirSizeCheck (void)
+{
+	dir_t	dir;
+	file_t	*list;
+	int	i;
+
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
+	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
+	{
+		if (sv_demoClearOld.value <= 0)
+		{
+			Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
+			return 0;
+		}
+		list = dir.files;
+		i = sv_demoClearOld.value;
+		Con_Printf("clearing %d old files\n", i);
+		for (; list->name[0] && i > 0; list++)
+		{
+			if (list->isdir)
+				continue;
+			Sys_remove(va("%s/%s/%s", com_gamedir, sv_demoDir.string, list->name));
+			//Con_Printf("remove %d - %s/%s/%s\n", i, com_gamedir, sv_demoDir.string, list->name);
+			i--;
+		}
+	}
+	return 1;
+}
+//<-
+
 /*
 ====================
 SV_MVD_Record_f
@@ -1492,12 +1523,16 @@ void SV_MVD_Record_f (void)
 		return;
 	}
 
-	if (sv.state != ss_active){
+	if (sv.state != ss_active)
+	{
 		Con_Printf ("Not active yet.\n");
 		return;
 	}
 
-	Check_DemoDir();
+//bliP: 24/9 clear old demos
+	if (!SV_DirSizeCheck())
+		return;
+//<-
 
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_NO);
 	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
@@ -1648,14 +1683,15 @@ void SV_MVDEasyRecord_f (void)
 	int		i;
 	FILE	*f;
 
-	Check_DemoDir();
-
 	c = Cmd_Argc();
 	if (c > 2)
 	{
 		Con_Printf ("easyrecord [demoname]\n");
 		return;
 	}
+
+	if (!SV_DirSizeCheck()) //bliP: 24/9 clear old demos
+		return;
 
 	dir = Sys_listdir(va("%s/%s", com_gamedir,sv_demoDir.string), ".*", SORT_NO);
 	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
@@ -1886,8 +1922,6 @@ void SV_DemoList (qboolean use_regex)
 	pcre	*preg;
 	const char	*errbuf;
 
-	Check_DemoDir();
-
 	Con_Printf("content of %s/%s/%s\n", com_gamedir, sv_demoDir.string, sv_demoRegexp.string);
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
@@ -1976,8 +2010,6 @@ char *SV_MVDNum(int num)
 	file_t	*list;
 	dir_t	dir;
 
-	Check_DemoDir();
-
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
 
@@ -2035,8 +2067,6 @@ void SV_MVDRemove_f (void)
 	char name[MAX_DEMO_NAME], *ptr;
 	char path[MAX_OSPATH];
 	int i;
-
-	Check_DemoDir();
 
 	if (Cmd_Argc() != 2)
 	{
@@ -2121,8 +2151,6 @@ void SV_MVDRemoveNum_f (void)
 	char	*val, *name;
 	char path[MAX_OSPATH];
 
-	Check_DemoDir();
-
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf("rmdemonum <#>\n");
@@ -2173,8 +2201,6 @@ void SV_MVDInfoAdd_f (void)
 	char *name, *args, path[MAX_OSPATH];
 	FILE *f;
 
-	Check_DemoDir();
-
 	if (Cmd_Argc() < 3) {
 		Con_Printf("usage:demoInfoAdd <demonum> <info string>\n<demonum> = * for currently recorded demo\n");
 		return;
@@ -2224,8 +2250,6 @@ void SV_MVDInfoRemove_f (void)
 {
 	char *name, path[MAX_OSPATH];
 
-	Check_DemoDir();
-
 	if (Cmd_Argc() < 2)
 	{
 		Con_Printf("usage:demoInfoRemove <demonum>\n<demonum> = * for currently recorded demo\n");
@@ -2265,8 +2289,6 @@ void SV_MVDInfo_f (void)
 	char buf[512];
 	FILE *f = NULL;
 	char *name, path[MAX_OSPATH];
-
-	Check_DemoDir();
 
 	if (Cmd_Argc() < 2)
 	{
