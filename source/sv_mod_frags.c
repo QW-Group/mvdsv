@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_mod_frags.c,v 1.4 2005/09/14 17:20:57 disconn3ct Exp $
+	$Id: sv_mod_frags.c,v 1.5 2005/10/23 11:38:52 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -155,7 +155,7 @@ char *parse_mod_string(char *str)
                 case 1:
                     str_len = strlen(buf[pl1]) + strlen(buf[pl2]) + strlen(qw_weapon[qwmsg[i]->id]) + 5 + 10;
                     ret = Q_Malloc(str_len);
-                    snprintf(ret, str_len, "%s\\%s\\%s\\%d\n", buf[pl1], buf[pl2], qw_weapon[qwmsg[i]->id], time(NULL));
+		    snprintf(ret, str_len, "%s\\%s\\%s\\%d\n", buf[pl1], buf[pl2], qw_weapon[qwmsg[i]->id], (int)time(NULL));
                     break;
                 default: ret = NULL;
                 }
@@ -163,7 +163,7 @@ char *parse_mod_string(char *str)
             case SYSTEM:
                 str_len = strlen(buf[1]) * 2 + strlen(qw_system[qwmsg[i]->id]) + 4 + 10;
                 ret = Q_Malloc(str_len);
-                snprintf(ret, str_len, "%s\\%s\\%d\n", buf[1], qw_system[qwmsg[i]->id], time(NULL));
+		snprintf(ret, str_len, "%s\\%s\\%d\n", buf[1], qw_system[qwmsg[i]->id], (int)time(NULL));
                 break;
             default: ret = NULL;
             }
