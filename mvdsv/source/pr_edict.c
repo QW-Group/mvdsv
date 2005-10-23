@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_edict.c,v 1.6 2005/10/12 12:10:49 danfe Exp $
+	$Id: pr_edict.c,v 1.7 2005/10/23 11:38:51 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -381,8 +381,7 @@ Returns a string with a description and the contents of a global,
 padded to 20 field width
 ============
 */
-char *PR_GlobalString (int ofs)
-{
+char *PR_GlobalString (int ofs) {
 	char	*s;
 	int		i;
 	ddef_t	*def;
@@ -392,7 +391,9 @@ char *PR_GlobalString (int ofs)
 	val = (void *)&pr_globals[ofs];
 	def = ED_GlobalAtOfs(ofs);
 	if (!def)
-		snprintf (line, sizeof(line), "%i(???)", ofs);
+	{
+		snprintf (line, sizeof(line), "%i(?""?""?)", ofs); // separate the ?'s to shut up gcc
+	}
 	else
 	{
 		s = PR_ValueString (def->type, val);
@@ -415,7 +416,7 @@ char *PR_GlobalStringNoContents (int ofs)
 
 	def = ED_GlobalAtOfs(ofs);
 	if (!def)
-		snprintf (line, sizeof(line), "%i(???)", ofs);
+		snprintf (line, sizeof(line), "%i(?""?""?)", ofs); // separate the ?'s to shut up gcc
 	else
 		snprintf (line, sizeof(line), "%i(%s)", ofs, PR_GetString(def->s_name));
 
