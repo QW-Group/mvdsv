@@ -1,8 +1,8 @@
 
-$Id: changes.txt,v 1.40 2005/10/19 16:27:50 disconn3ct Exp $
+$Id: changes.txt,v 1.41 2005/11/02 16:40:19 vvd0 Exp $
 
 ----
-MVDSV v0.19.01-CVS build 21?? (2005.10.??)
+MVDSV v0.19.01-CVS build 21?? (2005.11.??)
 - work on SunOS SPARC and ix86 targets now
 - added MSVC 7.1 solution/project file
 [server]
@@ -478,7 +478,7 @@ QWEX v0.1727 Beta DEVELOP build 1666 (2004.07.13)
 - new command localcommand (use only with master_rcon_password)
 - new command line option:
   -enablelocalcommand - enable "localcommand" command for executing commands on server
--new cvar sv_timestamplen
+- new cvar sv_timestamplen
   Time in seconds during which rcon command with encryption is valid (change only with master_rcon_password).
   0 - no time limit validation for rcon command
   default: 60
