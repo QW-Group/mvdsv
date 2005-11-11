@@ -20,7 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: g_public.h,v 1.3 2005/05/20 17:15:30 vvd0 Exp $
+ *  $Id: g_public.h,v 1.4 2005/11/11 22:32:04 disconn3ct Exp $
  */
 
 #ifndef __G_PUBLIC_H__
@@ -31,7 +31,7 @@
 //
 // g_public.h -- game module information visible to server
 
-#define	GAME_API_VERSION	7
+#define	GAME_API_VERSION	8
 
 
 //===============================================================
