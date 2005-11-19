@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.12 2005/10/17 16:17:57 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.13 2005/11/19 16:14:02 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -2436,7 +2436,7 @@ void PR2_InitProg()
 		SV_Error("PR2_InitProg gamedata == NULL");
 
 	gamedata = (gameData_t *)PR2_GetString((int)gamedata);
-	if (gamedata->APIversion < 2 || gamedata->APIversion > GAME_API_VERSION)
+	if (gamedata->APIversion < 8 || gamedata->APIversion > GAME_API_VERSION)
 		SV_Error("PR2_InitProg: Incorrect API version");
 
 	sv.edicts = (edict_t *)PR2_GetString((int)gamedata->ents);
