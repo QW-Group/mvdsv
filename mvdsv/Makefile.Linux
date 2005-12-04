@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.17 2005/10/25 15:19:34 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.18 2005/12/04 05:34:10 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -22,7 +22,7 @@ ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
 ifneq (,$(findstring 86,$(shell uname -m)))
 ASM=$(USE_ASM)
 endif
-CFLAGS=$(ASM) $(BASE_CFLAGS) -O9 -s -ffast-math -funroll-loops
+CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -s -ffast-math -funroll-loops
 else
 CFLAGS=$(BASE_CFLAGS)
 endif

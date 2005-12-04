@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.16 2005/10/25 15:19:34 vvd0 Exp $
+#	$Id: Makefile.FreeBSD,v 1.17 2005/12/04 05:34:10 disconn3ct Exp $
 #
 
 CC=gcc
@@ -21,7 +21,7 @@ WITH_OPTIMIZED_CFLAGS = YES
 
 USE_ASM=-Did386
 .if defined(WITH_OPTIMIZED_CFLAGS)
-DO_CFLAGS +=	-O9 -s -ffast-math -funroll-loops
+DO_CFLAGS +=	-O2 -s -ffast-math -funroll-loops
 . if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
 ASM=${USE_ASM}
 DO_CFLAGS +=	${ASM}
