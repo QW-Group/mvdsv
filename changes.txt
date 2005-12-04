@@ -1,8 +1,10 @@
 
-$Id: changes.txt,v 1.41 2005/11/02 16:40:19 vvd0 Exp $
+$Id: changes.txt,v 1.42 2005/12/04 07:53:48 disconn3ct Exp $
 
 ----
-MVDSV v0.19.01-CVS build 21?? (2005.11.??)
+MVDSV v0.19.01-CVS build 21?? (2005.12.??)
+- hardcore cleanup. Removed lot of client-onlt code (by Angel)
+- server-side flash for TeamFortress (oldgrens mode) (by Angel)
 - work on SunOS SPARC and ix86 targets now
 - added MSVC 7.1 solution/project file
 [server]
