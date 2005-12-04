@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: defs.h,v 1.6 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: defs.h,v 1.7 2005/12/04 07:52:39 disconn3ct Exp $
 */
 
 #ifdef _WIN32
@@ -48,7 +48,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef enum {false, true} qboolean;
 
 typedef unsigned char byte;
-#define _DEF_BYTE_
 
 typedef float vec_t;
 typedef vec_t vec3_t[3];
@@ -84,7 +83,6 @@ typedef vec_t vec3_t[3];
 
 #define JOB_TODO	(O_MARGE | O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
 
-#undef SERVERONLY
 #include "../protocol.h"
 #include "../bothdefs.h"
 #include "../version.h"
