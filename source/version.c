@@ -23,14 +23,10 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c,v 1.4 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: version.c,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
-#ifdef SERVERONLY
 #include "qwsvdef.h"
-#else
-#include "quakedef.h"
-#endif
 #include "version.h"
 
 // char *date = "Oct 24 1996";
@@ -81,11 +77,6 @@ Version_f
 void Version_f (void)
 {
 	Con_Printf ("QW version %4.2f\n", QW_VERSION);
-#ifdef SERVERONLY
 	Con_Printf ("%s\n", full_version);
 	Con_Printf (PROJECT_NAME " Project home page: http://mvdsv.sourceforge.net\n\n");
-#else
-	Con_Printf ("QWExtended version %s (Build %04d)\n", QWE_VERSION, build_number());
-	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-#endif
 }

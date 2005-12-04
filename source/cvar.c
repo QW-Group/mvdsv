@@ -16,19 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.4 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: cvar.c,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
-#ifdef SERVERONLY
 #include "qwsvdef.h"
-#else
-#include "quakedef.h"
-#endif
+
 
 static cvar_t	*cvar_hash[32];
 static cvar_t	*cvar_vars;
-static char		*cvar_null_string = "";
+static char	*cvar_null_string = "";
 
 
 /*
@@ -100,41 +97,7 @@ char *Cvar_VariableString (char *var_name)
 	return var->string;
 }
 
-
-/*
-============
-Cvar_CompleteVariable
-============
-*/
-char *Cvar_CompleteVariable (char *partial)
-{
-	cvar_t		*cvar;
-	int			len;
-
-	len = strlen(partial);
-
-	if (!len)
-		return NULL;
-
-	// check exact match
-	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
-		if (!strcasecmp (partial,cvar->name))
-			return cvar->name;
-
-	// check partial match
-	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
-		if (!strncasecmp (partial,cvar->name, len))
-			return cvar->name;
-
-	return NULL;
-}
-
-
-#ifdef SERVERONLY
 void SV_SendServerInfoChange(char *key, char *value);
-#else
-void TP_FixTeamSets();
-#endif
 
 
 /*
@@ -169,30 +132,15 @@ void Cvar_Set (cvar_t *var, char *value)
 	strlcpy (var->string, value, strlen(value) + 1);
 	var->value = Q_atof (var->string);
 
-#if defined(SERVERONLY)
 	if (var->flags & CVAR_SERVERINFO)
 	{
 		if (strcmp(var->string, Info_ValueForKey (svs.info, var->name)))
 		{
-			//			Con_Printf("var->name = %s, value = %s, var->string = %s\n", var->name, value, var->string);
+			// Con_Printf("var->name = %s, value = %s, var->string = %s\n", var->name, value, var->string);
 			Info_SetValueForKey (svs.info, var->name, var->string, MAX_SERVERINFO_STRING);
 			SV_SendServerInfoChange(var->name, var->string);
 		}
 	}
-
-#else
-	if (var->flags & CVAR_USERINFO)
-	{
-		Info_SetValueForKey (cls.userinfo, var->name, var->string, MAX_INFO_STRING);
-		if (cls.state >= ca_connected)
-		{
-			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-			SZ_Print (&cls.netchan.message, va("setinfo \"%s\" \"%s\"\n", var->name, var->string));
-		}
-	}
-	if (var == &cl_teamskin || var == &cl_enemyskin)
-		TP_FixTeamSets();
-#endif
 }
 
 /*
@@ -315,7 +263,7 @@ Handles variable inspection and changing from the console
 */
 qboolean Cvar_Command (void)
 {
-	int			i, c;
+	int		i, c;
 	cvar_t		*v;
 	char		string[1024];
 
@@ -343,25 +291,6 @@ qboolean Cvar_Command (void)
 	Cvar_Set (v, string);
 	return true;
 }
-
-
-/*
-============
-Cvar_WriteVariables
- 
-Writes lines containing "set variable value" for all variables
-with the archive flag set to true.
-============
-*/
-void Cvar_WriteVariables (FILE *f)
-{
-	cvar_t	*var;
-
-	for (var = cvar_vars ; var ; var = var->next)
-		if (var->flags & CVAR_ARCHIVE)
-			fprintf (f, "%s \"%s\"\n", var->name, var->string);
-}
-
 
 /*
 =============
@@ -496,7 +425,6 @@ qboolean Cvar_Delete (char *name)
 	Sys_Error ("Cvar list broken");
 	return false;	// shut up compiler
 }
-
 
 void Cvar_Set_f (void)
 {

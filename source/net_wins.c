@@ -16,15 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_wins.c,v 1.8 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: net_wins.c,v 1.9 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // net_wins.c
 
-#ifdef SERVERONLY
 #include "qwsvdef.h"
-#else
-#include "quakedef.h"
-#endif
 #include "winquake.h"
 
 netadr_t	net_local_adr;
@@ -259,7 +255,6 @@ void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 	// <-- Tonik
 	NetadrToSockadr (&to, &addr);
 
-	//#ifdef SERVERONLY
 	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr)))
 	{
 		int err = WSAGetLastError();
@@ -268,12 +263,7 @@ void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 		if (err == WSAEWOULDBLOCK)
 			return;
 
-#ifndef SERVERONLY
-		if (err == WSAEADDRNOTAVAIL)
-			Con_DPrintf("NET_SendPacket Warning: %i\n", err);
-		else
-#endif
-			Con_Printf ("NET_SendPacket ERROR: %i\n", errno);
+		Con_Printf ("NET_SendPacket ERROR: %i\n", errno);
 	}
 }
 

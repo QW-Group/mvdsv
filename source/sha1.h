@@ -11,7 +11,7 @@ Test Vectors (from FIPS PUB 180-1)
 A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
 
-	$Id: sha1.h,v 1.6 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: sha1.h,v 1.7 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
 /* #define LITTLE_ENDIAN * This should be #define'd if true. */

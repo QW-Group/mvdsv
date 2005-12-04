@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.6 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: progs.h,v 1.7 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
 #include "pr_comp.h"			// defs shared with qcc
@@ -24,12 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef union eval_s
 {
-	string_t		string;
-	float			_float;
-	float			vector[3];
-	func_t			function;
-	int				_int;
-	int				edict;
+	string_t	string;
+	float		_float;
+	float		vector[3];
+	func_t		function;
+	int		_int;
+	int		edict;
 } eval_t;
 
 #define	MAX_ENT_LEAFS	16
@@ -38,7 +38,7 @@ typedef struct edict_s
 	qboolean	free;
 	link_t		area;				// linked to a division node or leaf
 
-	int			num_leafs;
+	int		num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
 
 	entity_state_t	baseline;
@@ -55,18 +55,18 @@ typedef struct edict_s
 
 //============================================================================
 
-extern	dprograms_t		*progs;
-extern	dfunction_t		*pr_functions;
-extern	char			*pr_strings;
-extern	ddef_t			*pr_globaldefs;
-extern	ddef_t			*pr_fielddefs;
+extern	dprograms_t	*progs;
+extern	dfunction_t	*pr_functions;
+extern	char		*pr_strings;
+extern	ddef_t		*pr_globaldefs;
+extern	ddef_t		*pr_fielddefs;
 extern	dstatement_t	*pr_statements;
 extern	globalvars_t	*pr_global_struct;
-extern	float			*pr_globals;			// same as pr_global_struct
+extern	float		*pr_globals;	// same as pr_global_struct
 
-extern	int				pr_edict_size;	// in bytes
-extern	int				pr_teamfield;
-extern	cvar_t	sv_progsname; 
+extern	int		pr_edict_size;	// in bytes
+extern	int		pr_teamfield;
+extern	cvar_t		sv_progsname; 
 
 //============================================================================
 
@@ -128,7 +128,7 @@ extern int		pr_argc;
 
 extern	qboolean	pr_trace;
 extern	dfunction_t	*pr_xfunction;
-extern	int			pr_xstatement;
+extern	int		pr_xstatement;
 
 extern func_t SpectatorConnect;
 extern func_t SpectatorThink;

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.5 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: net.h,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // net.h -- quake's interface to the networking layer
 
@@ -57,17 +57,17 @@ extern	sizebuf_t	net_message;
 
 extern	cvar_t	hostname;
 
-extern	int		net_clientsocket;
-extern	int		net_serversocket;
-extern	int		net_telnetsocket;
-extern	int		telnetport;
-extern	int		sv_port;
-extern	int		telnet_iosock;
-extern	int		telnet_connected;
+extern	int	net_clientsocket;
+extern	int	net_serversocket;
+extern	int	net_telnetsocket;
+extern	int	telnetport;
+extern	int	sv_port;
+extern	int	telnet_iosock;
+extern	int	telnet_connected;
 extern	cvar_t	not_auth_timeout;
 extern	cvar_t	auth_timeout;
 
-int			NET_Init (int clientport, int serverport, int telnetport);
+int		NET_Init (int clientport, int serverport, int telnetport);
 void		NET_Shutdown (void);
 qboolean	NET_GetPacket (int net_socket);
 void		NET_SendPacket (int net_socket, int length, void *data, netadr_t to);
@@ -95,41 +95,41 @@ typedef struct
 	float		frame_latency;		// rolling average
 	float		frame_rate;
 
-	int			drop_count;			// dropped packets, cleared each level
-	int			good_count;			// cleared each level
+	int		drop_count;		// dropped packets, cleared each level
+	int		good_count;		// cleared each level
 
-	int			net_socket;		// Tonik
+	int		net_socket;		// Tonik
 	netadr_t	remote_address;
-	int			qport;
+	int		qport;
 
 // bandwidth estimator
-	double		cleartime;			// if realtime > nc->cleartime, free to go
-	double		rate;				// seconds / byte
+	double		cleartime;		// if realtime > nc->cleartime, free to go
+	double		rate;			// seconds / byte
 
 // sequencing variables
-	int			incoming_sequence;
-	int			incoming_acknowledged;
-	int			incoming_reliable_acknowledged;	// single bit
+	int		incoming_sequence;
+	int		incoming_acknowledged;
+	int		incoming_reliable_acknowledged;	// single bit
 
-	int			incoming_reliable_sequence;		// single bit, maintained local
+	int		incoming_reliable_sequence;		// single bit, maintained local
 
-	int			outgoing_sequence;
-	int			reliable_sequence;			// single bit
-	int			last_reliable_sequence;		// sequence number of last send
+	int		outgoing_sequence;
+	int		reliable_sequence;	// single bit
+	int		last_reliable_sequence;	// sequence number of last send
 
 // reliable staging and holding areas
 	sizebuf_t	message;		// writing buffer to send to server
 	byte		message_buf[MAX_MSGLEN];
 
-	int			reliable_length;
+	int		reliable_length;
 	byte		reliable_buf[MAX_MSGLEN];	// unacked reliable message
 
 // time and size data to calculate bandwidth
-	int			outgoing_size[MAX_LATENT];
+	int		outgoing_size[MAX_LATENT];
 	double		outgoing_time[MAX_LATENT];
 } netchan_t;
 
-extern	int	net_drop;		// packets dropped before this one
+extern int net_drop;		// packets dropped before this one
 
 void Netchan_Init (void);
 void Netchan_Transmit (netchan_t *chan, int length, byte *data);

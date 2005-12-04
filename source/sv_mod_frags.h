@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_mod_frags.h,v 1.4 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_mod_frags.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
 extern cvar_t	sv_mod_msg_file;
