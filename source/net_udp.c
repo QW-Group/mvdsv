@@ -1,26 +1,30 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: net_udp.c,v 1.5 2005/10/15 21:30:33 disconn3ct Exp $
+ 
+	$Id: net_udp.c,v 1.6 2005/12/04 05:37:44 disconn3ct Exp $
 */
 // net_main.c
 
+#ifdef SERVERONLY
+#include "qwsvdef.h"
+#else
 #include "quakedef.h"
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -80,33 +84,33 @@ void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a)
 	return;
 }
 
-qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b)
+qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
 	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] && a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3])
 		return true;
 	return false;
 }
 
-qboolean	NET_CompareAdr (netadr_t a, netadr_t b)
+qboolean NET_CompareAdr (netadr_t a, netadr_t b)
 {
 	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] && a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3] && a.port == b.port)
 		return true;
 	return false;
 }
 
-char	*NET_AdrToString (netadr_t a)
+char *NET_AdrToString (netadr_t a)
 {
 	static	char	s[64];
-	
+
 	snprintf (s, sizeof(s), "%i.%i.%i.%i:%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3], ntohs(a.port));
 
 	return s;
 }
 
-char	*NET_BaseAdrToString (netadr_t a)
+char *NET_BaseAdrToString (netadr_t a)
 {
 	static	char	s[64];
-	
+
 	snprintf (s, sizeof(s), "%i.%i.%i.%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3]);
 
 	return s;
@@ -115,14 +119,14 @@ char	*NET_BaseAdrToString (netadr_t a)
 /*
 =============
 NET_StringToAdr
-
+ 
 idnewt
 idnewt:28000
 192.246.40.70
 192.246.40.70:28000
 =============
 */
-qboolean	NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
+qboolean NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 {
 	struct hostent	*h;
 	char	*colon;
@@ -144,7 +148,7 @@ qboolean	NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 				((struct sockaddr_in *)sadr)->sin_port = htons((short)atoi(colon+1));
 			}
 
-		if (copy[0] >= '0' && copy[0] <= '9')	//this is the wrong way to test. a server name may start with a number.
+		if (copy[0] >= '0' && copy[0] <= '9') //this is the wrong way to test. a server name may start with a number.
 		{
 			*(int *)&((struct sockaddr_in *)sadr)->sin_addr = inet_addr(copy);
 		}
@@ -161,7 +165,7 @@ qboolean	NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 	return true;
 }
 
-qboolean	NET_StringToAdr (char *s, netadr_t *a)
+qboolean NET_StringToAdr (char *s, netadr_t *a)
 {
 	struct sockaddr_qstorage sadr;
 
@@ -191,7 +195,8 @@ qboolean NET_GetPacket (int dummy)
 
 	fromlen = sizeof(from);
 	ret = recvfrom (net_serversocket, net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
-	if (ret == -1) {
+	if (ret == -1)
+	{
 		if (errno == EWOULDBLOCK)
 			return false;
 		if (errno == ECONNREFUSED)
@@ -214,7 +219,8 @@ void NET_SendPacket (int dummy, int length, void *data, netadr_t to)
 
 	NetadrToSockadr (&to, &addr);
 
-	if (-1 == sendto (net_serversocket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr))) {
+	if (-1 == sendto (net_serversocket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr)))
+	{
 		if (errno == EWOULDBLOCK)
 			return;
 		if (errno == ECONNREFUSED)
@@ -239,14 +245,15 @@ int UDP_OpenSocket (int port)
 	if (ioctl (newsocket, FIONBIO, (char *)&_true) == -1)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
 	address.sin_family = AF_INET;
-//ZOID -- check for interface binding option
+	//ZOID -- check for interface binding option
 	i = COM_CheckParm("-ip");
 	if (i && i + 1 < com_argc)
 	{
 		address.sin_addr.s_addr = inet_addr(com_argv[i+1]);
 		Con_Printf("Binding to IP Interface Address of %s\n",
-				inet_ntoa(address.sin_addr));
-	} else
+		           inet_ntoa(address.sin_addr));
+	}
+	else
 		address.sin_addr.s_addr = INADDR_ANY;
 	if (port == PORT_ANY)
 		address.sin_port = 0;
@@ -278,14 +285,15 @@ int TCP_OpenSocket (int port)
 		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
 
 	address.sin_family = AF_INET;
-//ZOID -- check for interface binding option
+	//ZOID -- check for interface binding option
 	i = COM_CheckParm("-ipt");
 	if (i && i + 1 < com_argc)
 	{
 		address.sin_addr.s_addr = inet_addr(com_argv[i + 1]);
 		Con_Printf("Binding telnet service to IP Interface Address of %s\n",
-				inet_ntoa(address.sin_addr));
-	} else
+		           inet_ntoa(address.sin_addr));
+	}
+	else
 		address.sin_addr.s_addr = INADDR_ANY;
 
 	address.sin_port = htons((short)port);
@@ -327,21 +335,15 @@ int NET_Init (int port, int dummy, int telnetport)
 	if (dummy)
 		port = dummy;
 
-	//
 	// open the single socket to be used for all communications
-	//
 	if (port)
 	{
 		net_serversocket = UDP_OpenSocket (port);
-		//
 		// init the message buffer
-		//
 		net_message.maxsize = sizeof(net_message_buffer);
 		net_message.data = net_message_buffer;
 
-		//
 		// determine my name & address
-		//
 		NET_GetLocalAddress ();
 
 		Con_Printf("UDP Initialized\n");
@@ -360,7 +362,7 @@ int NET_Init (int port, int dummy, int telnetport)
 NET_Shutdown
 ====================
 */
-void	NET_Shutdown (void)
+void NET_Shutdown (void)
 {
 	close (net_serversocket);
 	if (telnetport)
@@ -370,4 +372,3 @@ void	NET_Shutdown (void)
 		close (net_telnetsocket);
 	}
 }
-

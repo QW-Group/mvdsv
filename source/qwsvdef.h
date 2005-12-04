@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.5 2005/09/25 22:21:51 disconn3ct Exp $
+	$Id: qwsvdef.h,v 1.6 2005/12/04 05:37:44 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -54,9 +54,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef GLQUAKE
 //FIXME: we don't need vid.h and render.h here
-#include "vid.h"
-#include "render.h"
-#include "gl_model.h"
+//#include "vid.h"
+//#include "render.h"
+//#include "gl_model.h"
 #else
 #include "model.h"
 #endif

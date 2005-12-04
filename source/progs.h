@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.5 2005/10/12 12:10:49 danfe Exp $
+	$Id: progs.h,v 1.6 2005/12/04 05:37:44 disconn3ct Exp $
 */
 
 #include "pr_comp.h"			// defs shared with qcc

@@ -1,21 +1,21 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: marge.c,v 1.4 2005/10/13 19:38:57 danfe Exp $
+ 
+	$Id: marge.c,v 1.5 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -60,7 +60,8 @@ void IntegrateMsgs(sizebuf_t *dest)
 				dest->bufsize -= HEADER;
 
 				t = (header_t *)((byte *)t + msg.bufsize);
-			} else
+			}
+			else
 				NextMsg(t);
 		}
 
@@ -75,14 +76,16 @@ void MoveFromDemoBuffer(source_t *who, int frame, int size)
 	who->frames[frame&UPDATE_MASK].buf.maxsize -= size;
 
 	who->dbuffer.start += size;
-	if (who->dbuffer.start == who->dbuffer.last) {
-			
-		if (who->dbuffer.start == who->dbuffer.end) {
+	if (who->dbuffer.start == who->dbuffer.last)
+	{
+
+		if (who->dbuffer.start == who->dbuffer.end)
+		{
 			who->dbuffer.end = 0; // demobuffer is empty
 			who->dbuffer.msgbuf->data = who->dbuffer.data;
 			who->dbuffer.msgbuf->bufsize = 0;
 		}
-			
+
 		// go back to begining of the buffer
 		who->dbuffer.last = who->dbuffer.end;
 		who->dbuffer.start = 0;
@@ -113,7 +116,8 @@ void Mrg(header_t *a, header_t *b, header_t *d, qboolean update)
 	{
 		desync_frames = b->frame - a->frame;
 		desync_source = b->source;
-	} else if (a->frame - b->frame > desync_frames)
+	}
+	else if (a->frame - b->frame > desync_frames)
 	{
 		desync_frames = a->frame - b->frame;
 		desync_source = a->source;
@@ -122,9 +126,11 @@ void Mrg(header_t *a, header_t *b, header_t *d, qboolean update)
 	d->frame = a->frame < b->frame ? a->frame : b->frame;
 	d->source = a->source | b->source;
 
-	switch (a->type) {
+	switch (a->type)
+	{
 	case dem_single:
-		switch (b->type) {
+		switch (b->type)
+		{
 		case dem_all:
 			(d)->type = dem_all;
 			(d)->to = 0;
@@ -146,7 +152,8 @@ void Mrg(header_t *a, header_t *b, header_t *d, qboolean update)
 		}
 		break;
 	case dem_multiple:
-		switch (b->type) {
+		switch (b->type)
+		{
 		case dem_all:
 			(d)->type = dem_all;
 			(d)->to = 0;
@@ -200,10 +207,12 @@ qboolean TypeCmp(header_t *a, header_t *b)
 	return false;
 }
 
-typedef struct {
+typedef struct
+{
 	header_t *start, *end;
 	int fin, size;
-} zn_t;
+}
+zn_t;
 
 void CpyPrev(source_t *who, header_t **d, int start, int end, int size)
 {
@@ -244,7 +253,7 @@ void CheckMsg(zn_t *zn1, zn_t *zn2, zn_t *znd)//header_t **d, source_t *who, int
 		znd->end += size;
 
 		// copy
-		for (c = zn1->start; c != zn1->end; NextMsg(c), NextMsg(t)) 
+		for (c = zn1->start; c != zn1->end; NextMsg(c), NextMsg(t))
 			Cpy(t, c);
 
 		Mrg(zn1->end, t, t, true);
@@ -259,12 +268,13 @@ void CheckMsg(zn_t *zn1, zn_t *zn2, zn_t *znd)//header_t **d, source_t *who, int
 		if (Cmp(zn1->end, t))
 			break;
 
-	if (t != zn2->end) {
+	if (t != zn2->end)
+	{
 
 		for (c = zn2->start; c != t; NextMsg(c), NextMsg(znd->end))
 			Cpy(znd->end, c);
 
-		for (c = zn1->start; c != zn1->end; NextMsg(c), NextMsg(znd->end)) 
+		for (c = zn1->start; c != zn1->end; NextMsg(c), NextMsg(znd->end))
 			Cpy(znd->end, c);
 
 		Mrg(zn1->end, t, znd->end, false);
@@ -275,7 +285,9 @@ void CheckMsg(zn_t *zn1, zn_t *zn2, zn_t *znd)//header_t **d, source_t *who, int
 
 		zn1->start = zn1->end;
 		zn2->start = t;
-	} else {
+	}
+	else
+	{
 		NextMsg(zn1->end);
 	}
 }
@@ -304,7 +316,7 @@ void Marge (sizebuf_t *dest, int start, int end)
 		memset(&tmp, 0, sizeof(tmp));
 		tmp.data = buffer;
 		tmp.maxsize = sizeof(buffer);
-	
+
 		for (who = sources; who - sources < sworld.fromcount; who++)
 		{
 			//Sys_Printf("marge: %d, %d\n", world.lastmarged, who - sources);
@@ -336,7 +348,9 @@ void Marge (sizebuf_t *dest, int start, int end)
 				if (t != zn1.end)
 				{
 					Mrg(zn2.end, t, t, true);
-				} else {
+				}
+				else
+				{
 					Cpy(zn1.end, zn2.end);
 					NextMsg(zn1.end);
 				}
@@ -378,13 +392,14 @@ void Marge (sizebuf_t *dest, int start, int end)
 			//Sys_Printf("move\n");
 
 			MoveFromDemoBuffer(who, world.lastmarged, m2->bufsize);
-		
+
 			tmp.bufsize = (byte*)znd.end - (byte*)znd.start;
 			//Sys_Printf("copy to world %d\n",tmp.bufsize);
 
 			SBCpy(&world.messages, &tmp);
 			//Sys_Printf("%d done %d\n", who - sources, world.messages.bufsize);
 #endif
+
 		}
 		//Sys_Printf("\n");
 	}
@@ -405,7 +420,8 @@ void Marge (sizebuf_t *dest, int start, int end)
 			num2 = n3;
 		}
 
-		if (t->frame > n2) {
+		if (t->frame > n2)
+		{
 			n2 = t->frame;
 			n3 = t->source;
 		}
@@ -413,11 +429,12 @@ void Marge (sizebuf_t *dest, int start, int end)
 		NextMsg(t);
 	}
 
-	if (world.messages.bufsize) {
+	if (world.messages.bufsize)
+	{
 		//Sys_Printf("\n");
 		//if (num > world.lastwritten) {
 		//	for (num = 0; num < sworld.fromcount; num++)
-		//		if (num2 
+		//		if (num2
 		//	Sys_Printf("%d\n", num - world.lastwritten);
 		if (d->frame <= world.lastwritten)
 			NextMsg(d);
@@ -460,7 +477,7 @@ void Marge (sizebuf_t *dest, int start, int end)
 	memset(&tmp, 0, sizeof(tmp));
 	tmp.data = buffer;
 	tmp.maxsize = sizeof(buffer);
-	
+
 	SBCpy(dest,&sources->frames[start&UPDATE_MASK].buf);
 
 	// mark place after this message as free
@@ -495,7 +512,7 @@ void Marge (sizebuf_t *dest, int start, int end)
 			zn1.fin = ((byte*)zn1.end - m1->data) == m1->bufsize;
 			zn2.fin = ((byte*)zn2.end - m2->data) == m2->bufsize;
 		}
-		
+
 		// mark place after this message as free
 		MoveFromDemoBuffer(who, start, (byte*)zn2.start - m2->data);
 
@@ -536,7 +553,7 @@ void Marge (sizebuf_t *dest, int start, int end)
 
 		if (!m2->bufsize)
 			zn2.start = zn2.end;
-		
+
 		// copy what's left
 		for (; zn1.start != zn1.end; NextMsg(zn1.start), NextMsg(d))
 			Cpy(d,zn1.start);
@@ -544,7 +561,7 @@ void Marge (sizebuf_t *dest, int start, int end)
 			Cpy(d,zn2.start);
 
 		MoveFromDemoBuffer(who, start, m2->bufsize);
-		
+
 		tmp.bufsize = (byte*)d - tmp.data;
 		SBCpy(dest, &tmp);
 	}

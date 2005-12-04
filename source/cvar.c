@@ -1,26 +1,26 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: cvar.c,v 1.3 2005/05/27 15:09:48 vvd0 Exp $
+ 
+	$Id: cvar.c,v 1.4 2005/12/04 05:37:44 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
-#ifdef SERVERONLY 
+#ifdef SERVERONLY
 #include "qwsvdef.h"
 #else
 #include "quakedef.h"
@@ -44,7 +44,7 @@ static int Key (char *name)
 
 	v = 0;
 	while ( (c = *name++) != 0 )
-//		v += *name;
+		//		v += *name;
 		v += c &~ 32;	// very lame, but works (case insensitivity)
 
 	return v % 32;
@@ -61,7 +61,7 @@ cvar_t *Cvar_FindVar (char *var_name)
 	int		key;
 
 	key = Key (var_name);
-	
+
 	for (var=cvar_hash[key] ; var ; var=var->hash_next)
 		if (!strcasecmp (var_name, var->name))
 			return var;
@@ -77,7 +77,7 @@ Cvar_VariableValue
 float Cvar_VariableValue (char *var_name)
 {
 	cvar_t	*var;
-	
+
 	var = Cvar_FindVar (var_name);
 	if (!var)
 		return 0;
@@ -93,7 +93,7 @@ Cvar_VariableString
 char *Cvar_VariableString (char *var_name)
 {
 	cvar_t *var;
-	
+
 	var = Cvar_FindVar (var_name);
 	if (!var)
 		return cvar_null_string;
@@ -110,12 +110,12 @@ char *Cvar_CompleteVariable (char *partial)
 {
 	cvar_t		*cvar;
 	int			len;
-	
+
 	len = strlen(partial);
-	
+
 	if (!len)
 		return NULL;
-		
+
 	// check exact match
 	for (cvar=cvar_vars ; cvar ; cvar=cvar->next)
 		if (!strcasecmp (partial,cvar->name))
@@ -152,9 +152,11 @@ void Cvar_Set (cvar_t *var, char *value)
 	if (var->flags & CVAR_ROM)
 		return;
 
-	if (var->OnChange && !changing) {
+	if (var->OnChange && !changing)
+	{
 		changing = true;
-		if (var->OnChange(var, value)) {
+		if (var->OnChange(var, value))
+		{
 			changing = false;
 			return;
 		}
@@ -162,7 +164,7 @@ void Cvar_Set (cvar_t *var, char *value)
 	}
 
 	Z_Free (var->string);	// free the old value string
-	
+
 	var->string = Z_Malloc (strlen(value)+1);
 	strlcpy (var->string, value, strlen(value) + 1);
 	var->value = Q_atof (var->string);
@@ -172,7 +174,7 @@ void Cvar_Set (cvar_t *var, char *value)
 	{
 		if (strcmp(var->string, Info_ValueForKey (svs.info, var->name)))
 		{
-//			Con_Printf("var->name = %s, value = %s, var->string = %s\n", var->name, value, var->string);
+			//			Con_Printf("var->name = %s, value = %s, var->string = %s\n", var->name, value, var->string);
 			Info_SetValueForKey (svs.info, var->name, var->string, MAX_SERVERINFO_STRING);
 			SV_SendServerInfoChange(var->name, var->string);
 		}
@@ -219,7 +221,7 @@ Cvar_SetByName
 void Cvar_SetByName (char *var_name, char *value)
 {
 	cvar_t	*var;
-	
+
 	var = Cvar_FindVar (var_name);
 	if (!var)
 	{	// there is an error in C code if this happens
@@ -239,7 +241,7 @@ void Cvar_SetValue (cvar_t *var, float value)
 {
 	char	val[32];
 	int	i;
-	
+
 	snprintf (val, sizeof(val), "%f", value);
 	for (i=strlen(val)-1 ; i>0 && val[i]=='0' ; i--)
 		val[i] = 0;
@@ -256,7 +258,7 @@ Cvar_SetValueByName
 void Cvar_SetValueByName (char *var_name, float value)
 {
 	char	val[32];
-	
+
 	sprintf (val, "%.8g",value);
 	Cvar_SetByName (var_name, val);
 }
@@ -265,7 +267,7 @@ void Cvar_SetValueByName (char *var_name, float value)
 /*
 ============
 Cvar_RegisterVariable
-
+ 
 Adds a freestanding variable to the variable list.
 ============
 */
@@ -274,32 +276,32 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	char	value[512];
 	int		key;
 
-// first check to see if it has already been defined
+	// first check to see if it has already been defined
 	if (Cvar_FindVar (variable->name))
 	{
 		Con_Printf ("Can't register variable %s, already defined\n", variable->name);
 		return;
 	}
-	
-// check for overlap with a command
+
+	// check for overlap with a command
 	if (Cmd_Exists (variable->name))
 	{
 		Con_Printf ("Cvar_RegisterVariable: %s is a command\n", variable->name);
 		return;
 	}
-		
-// link the variable in
+
+	// link the variable in
 	key = Key (variable->name);
 	variable->hash_next = cvar_hash[key];
 	cvar_hash[key] = variable;
 	variable->next = cvar_vars;
 	cvar_vars = variable;
 
-// copy the value off, because future sets will Z_Free it
+	// copy the value off, because future sets will Z_Free it
 	strlcpy (value, variable->string, sizeof(value));
-	variable->string = Z_Malloc (1);	
-	
-// set it through the function to be consistent
+	variable->string = Z_Malloc (1);
+
+	// set it through the function to be consistent
 	Cvar_SetROM (variable, value);
 }
 
@@ -307,7 +309,7 @@ void Cvar_RegisterVariable (cvar_t *variable)
 /*
 ============
 Cvar_Command
-
+ 
 Handles variable inspection and changing from the console
 ============
 */
@@ -317,12 +319,12 @@ qboolean Cvar_Command (void)
 	cvar_t		*v;
 	char		string[1024];
 
-// check variables
+	// check variables
 	v = Cvar_FindVar (Cmd_Argv(0));
 	if (!v)
 		return false;
-		
-// perform a variable print or set
+
+	// perform a variable print or set
 	c = Cmd_Argc();
 	if (c == 1)
 	{
@@ -346,7 +348,7 @@ qboolean Cvar_Command (void)
 /*
 ============
 Cvar_WriteVariables
-
+ 
 Writes lines containing "set variable value" for all variables
 with the archive flag set to true.
 ============
@@ -354,7 +356,7 @@ with the archive flag set to true.
 void Cvar_WriteVariables (FILE *f)
 {
 	cvar_t	*var;
-	
+
 	for (var = cvar_vars ; var ; var = var->next)
 		if (var->flags & CVAR_ARCHIVE)
 			fprintf (f, "%s \"%s\"\n", var->name, var->string);
@@ -400,10 +402,10 @@ void Cvar_CvarList_f (void)
 
 	for (var=cvar_vars, i=0 ; var ; var=var->next, i++)
 		Con_Printf("%c%c%c %s\n",
-			var->flags & CVAR_ARCHIVE ? '*' : ' ',
-			var->flags & CVAR_USERINFO ? 'u' : ' ',
-			var->flags & CVAR_SERVERINFO ? 's' : ' ',
-			var->name);
+		           var->flags & CVAR_ARCHIVE ? '*' : ' ',
+		           var->flags & CVAR_USERINFO ? 'u' : ' ',
+		           var->flags & CVAR_SERVERINFO ? 's' : ' ',
+		           var->name);
 
 	Con_Printf ("------------\n%d variables\n", i);
 }
@@ -456,7 +458,8 @@ qboolean Cvar_Delete (char *name)
 	prev = NULL;
 	for (var = cvar_hash[key] ; var ; var=var->hash_next)
 	{
-		if (!strcasecmp(var->name, name)) {
+		if (!strcasecmp(var->name, name))
+		{
 			// unlink from hash
 			if (prev)
 				prev->hash_next = var->next;
@@ -473,7 +476,8 @@ qboolean Cvar_Delete (char *name)
 	prev = NULL;
 	for (var = cvar_vars ; var ; var=var->next)
 	{
-		if (!strcasecmp(var->name, name)) {
+		if (!strcasecmp(var->name, name))
+		{
 			// unlink from cvar list
 			if (prev)
 				prev->next = var->next;
@@ -536,13 +540,15 @@ void Cvar_Inc_f (void)
 	float	delta;
 
 	c = Cmd_Argc();
-	if (c != 2 && c != 3) {
+	if (c != 2 && c != 3)
+	{
 		Con_Printf ("inc <cvar> [value]\n");
 		return;
 	}
 
 	var = Cvar_FindVar (Cmd_Argv(1));
-	if (!var) {
+	if (!var)
+	{
 		Con_Printf ("Unknown variable \"%s\"\n", Cmd_Argv(1));
 		return;
 	}

@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: sv_init.c,v 1.9 2005/09/25 22:21:51 disconn3ct Exp $
+ 
+	$Id: sv_init.c,v 1.10 2005/12/04 05:37:44 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -40,13 +40,13 @@ extern spec_worldmodel_t specworld;
 /*
 ================
 SV_ModelIndex
-
+ 
 ================
 */
 int SV_ModelIndex (char *name)
 {
 	int		i;
-	
+
 	if (!name || !name[0])
 		return 0;
 
@@ -61,7 +61,7 @@ int SV_ModelIndex (char *name)
 /*
 ================
 SV_FlushSignon
-
+ 
 Moves to the next signon buffer if needed
 ================
 */
@@ -82,7 +82,7 @@ void SV_FlushSignon (void)
 /*
 ================
 SV_CreateBaseline
-
+ 
 Entity baselines are used to compress the update messages
 to the clients -- only the fields that differ from the
 baseline will be transmitted
@@ -92,8 +92,8 @@ void SV_CreateBaseline (void)
 {
 	int			i;
 	edict_t			*svent;
-	int				entnum;	
-		
+	int				entnum;
+
 	for (entnum = 0; entnum < sv.num_edicts ; entnum++)
 	{
 		svent = EDICT_NUM(entnum);
@@ -104,9 +104,9 @@ void SV_CreateBaseline (void)
 		if (entnum > MAX_CLIENTS && !svent->v.modelindex)
 			continue;
 
-	//
-	// create entity baseline
-	//
+		//
+		// create entity baseline
+		//
 		VectorCopy (svent->v.origin, svent->baseline.origin);
 		VectorCopy (svent->v.angles, svent->baseline.angles);
 		svent->baseline.frame = svent->v.frame;
@@ -121,11 +121,11 @@ void SV_CreateBaseline (void)
 			svent->baseline.colormap = 0;
 			svent->baseline.modelindex = SV_ModelIndex(
 #ifdef USE_PR2
-				PR2_GetString(svent->v.model)
+			                                 PR2_GetString(svent->v.model)
 #else
-				PR_GetString(svent->v.model)
+											 PR_GetString(svent->v.model)
 #endif
-				);
+			                             );
 		}
 
 		//
@@ -137,7 +137,7 @@ void SV_CreateBaseline (void)
 		//
 		// add to the message
 		//
-		MSG_WriteByte (&sv.signon,svc_spawnbaseline);		
+		MSG_WriteByte (&sv.signon,svc_spawnbaseline);
 		MSG_WriteShort (&sv.signon,entnum);
 
 		MSG_WriteByte (&sv.signon, svent->baseline.modelindex);
@@ -156,7 +156,7 @@ void SV_CreateBaseline (void)
 /*
 ================
 SV_SaveSpawnparms
-
+ 
 Grabs the current state of the progs serverinfo flags 
 and each client for saving across the
 transition to another level
@@ -190,14 +190,14 @@ void SV_SaveSpawnparms (void)
 			PR_ExecuteProgram (pr_global_struct->SetChangeParms);
 		for (j=0 ; j<NUM_SPAWN_PARMS ; j++)
 			host_client->spawn_parms[j] = (&pr_global_struct->parm1)[j];
-		
+
 	}
 }
 
 /*
 ================
 SV_CalcPHS
-
+ 
 Expands the PVS and calculates the PHS
 (Potentially Hearable Set)
 ================
@@ -223,7 +223,7 @@ void SV_CalcPHS (void)
 	for (i=0 ; i<num ; i++, scan+=rowbytes)
 	{
 		memcpy (scan, Mod_LeafPVS(sv.worldmodel->leafs+i, sv.worldmodel, true),
-			rowbytes);
+		        rowbytes);
 		if (i == 0)
 			continue;
 		for (j=0 ; j<num ; j++)
@@ -271,7 +271,7 @@ void SV_CalcPHS (void)
 	}
 
 	Con_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n"
-		, vcount/num, count/num, num);
+	            , vcount/num, count/num, num);
 }
 
 unsigned SV_CheckModel(char *mdl)
@@ -291,7 +291,7 @@ unsigned SV_CheckModel(char *mdl)
 /*
 ================
 Load_SpecVisData
-
+ 
 Loads visibility data of the map for spectators
 ================
 */
@@ -299,10 +299,11 @@ Loads visibility data of the map for spectators
 typedef struct
 {
 	char		qvis[4];
-	int			version;	
+	int			version;
 	int			visleafs;
 	lump_t		lumps[4];
-} visheader_t;
+}
+visheader_t;
 
 #define VIS_LUMP_VISIBILITY 0
 #define VIS_LUMP_LEAFS		1
@@ -316,13 +317,13 @@ void VIS_LoadPlanes(lump_t *l, byte *base, char *allocname)
 	dplane_t 	*in;
 	int			count;
 	int			bits;
-	
+
 	in = (void *)(base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Sys_Printf("VIS_LoadPlanes: lol?\n");
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*2*sizeof(*out), allocname);	
-	
+	out = Hunk_AllocName ( count*2*sizeof(*out), allocname);
+
 	specworld.planes = out;
 	specworld.numplanes = count;
 
@@ -351,16 +352,18 @@ void VIS_LoadVisibility (lump_t *l, byte *base, char *allocname)
 		return;
 	}
 
-	specworld.visdata = Hunk_AllocName ( l->filelen, allocname);	
+	specworld.visdata = Hunk_AllocName ( l->filelen, allocname);
 	memcpy (specworld.visdata, base + l->fileofs, l->filelen);
 }
 
 void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
 {
-	struct vdleaf_s {
+	struct vdleaf_s
+	{
 		int contents;
 		int visofs;
-	} *in;
+	}
+	*in;
 	mleaf_t 	*out;
 	int			i, count, p;
 
@@ -368,7 +371,7 @@ void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
 	count = l->filelen / sizeof(*in);
 	if (l->filelen % sizeof(*in))
 		Sys_Printf("VIS_LoadLeafs: lol?\n");
-	out = Hunk_AllocName ( count*sizeof(*out), allocname);	
+	out = Hunk_AllocName ( count*sizeof(*out), allocname);
 
 	specworld.leafs = out;
 	specworld.numleafs = count;
@@ -382,7 +385,7 @@ void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
 			out->compressed_vis = NULL;
 		else
 			out->compressed_vis = specworld.visdata + p;
-	}	
+	}
 }
 
 void Mod_SetParent (mnode_t *node, mnode_t *parent);
@@ -396,7 +399,7 @@ void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
 	count = l->filelen / sizeof(*in);
 	if (l->filelen % sizeof(*in))
 		Sys_Printf("VIS_LoadNodes: lol?\n");
-	out = Hunk_AllocName ( count*sizeof(*out), allocname);	
+	out = Hunk_AllocName ( count*sizeof(*out), allocname);
 
 	specworld.nodes = out;
 	specworld.numnodes = count;
@@ -408,13 +411,13 @@ void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
 			out->minmaxs[j] = LittleShort (in->mins[j]);
 			out->minmaxs[3+j] = LittleShort (in->maxs[j]);
 		}
-	
+
 		p = LittleLong(in->planenum);
 		out->plane = specworld.planes + p;
 
 		out->firstsurface = LittleShort (in->firstface);
 		out->numsurfaces = LittleShort (in->numfaces);
-		
+
 		for (j=0 ; j<2 ; j++)
 		{
 			p = LittleShort (in->children[j]);
@@ -424,7 +427,7 @@ void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
 				out->children[j] = (mnode_t *)(specworld.leafs + (-1 - p));
 		}
 	}
-	
+
 	Mod_SetParent (specworld.nodes, NULL);	// sets nodes and leafs
 }
 
@@ -438,7 +441,8 @@ void Load_SpecVisData(char *visname)
 
 	memset(&specworld, 0, sizeof(specworld));
 
-	if ((!atoi(Info_ValueForKey (svs.info, "watervis")) && !atoi(Info_ValueForKey (svs.info, "spec_watervis"))) || (base = COM_LoadHunkFile (visname)) == NULL) {
+	if ((!atoi(Info_ValueForKey (svs.info, "watervis")) && !atoi(Info_ValueForKey (svs.info, "spec_watervis"))) || (base = COM_LoadHunkFile (visname)) == NULL)
+	{
 		specworld.visdata = sv.worldmodel->visdata;
 		specworld.nodes = sv.worldmodel->nodes;
 		specworld.planes = sv.worldmodel->planes;
@@ -451,16 +455,18 @@ void Load_SpecVisData(char *visname)
 	}
 
 	header = (visheader_t*)base;
-	
-	if (strncmp("QVIS", header->qvis, 4)) {
+
+	if (strncmp("QVIS", header->qvis, 4))
+	{
 		Sys_Printf("Load_SpecVisData: %s: unknown file type\n", visname);
 		return;
 	}
 
 	i = LittleLong (header->version);
-	if (i != Q1_BSPVERSION && i != HL_BSPVERSION) {
+	if (i != Q1_BSPVERSION && i != HL_BSPVERSION)
+	{
 		Sys_Printf ("Load_SpecVisData: %s has wrong version number (%i should be %i or %i)",
-				visname, i, Q1_BSPVERSION, HL_BSPVERSION);
+		            visname, i, Q1_BSPVERSION, HL_BSPVERSION);
 		return;
 	}
 
@@ -480,10 +486,10 @@ void Load_SpecVisData(char *visname)
 /*
 ================
 SV_SpawnServer
-
+ 
 Change the server to a new map, taking all connected
 clients along with it.
-
+ 
 This is only called from the SV_Map_f() function.
 ================
 */
@@ -495,7 +501,7 @@ void SV_SpawnServer (char *server)
 	edict_t		*ent;
 	int			i;
 #ifdef USE_PR2
-        char savenames[MAX_CLIENTS][CLIENT_NAME_LEN];
+	char savenames[MAX_CLIENTS][CLIENT_NAME_LEN];
 #endif
 	extern cvar_t version;
 	dfunction_t *f;
@@ -503,14 +509,14 @@ void SV_SpawnServer (char *server)
 	char		*entitystring;
 
 	Con_DPrintf ("SpawnServer: %s\n",server);
-	
+
 	SV_SaveSpawnparms ();
 	SV_LoadAccounts();
 #ifdef USE_PR2
-//save client names from mod memory before unload mod and clearing VM memory by Hunk_FreeToLowMark
-        memset(savenames, 0, sizeof(savenames));
-       	for (i = 0; i < MAX_CLIENTS; i++)
-        {
+	//save client names from mod memory before unload mod and clearing VM memory by Hunk_FreeToLowMark
+	memset(savenames, 0, sizeof(savenames));
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		if( sv_vm && svs.clients[i].isBot ) // remove bot clients
 		{
 			svs.clients[i].old_frags = 0;
@@ -524,13 +530,13 @@ void SV_SpawnServer (char *server)
 		}
 		if (svs.clients[i].name)
 			strlcpy(savenames[i], svs.clients[i].name, CLIENT_NAME_LEN);
-        }
-        if ( sv_vm )
-        	PR2_GameShutDown();
+	}
+	if ( sv_vm )
+		PR2_GameShutDown();
 #endif
 
 	svs.spawncount++;		// any partially connected client will be
-							// restarted
+	// restarted
 
 	sv.state = ss_dead;
 	sv.paused = false;
@@ -557,13 +563,13 @@ void SV_SpawnServer (char *server)
 
 	sv.reliable_datagram.maxsize = sizeof(sv.reliable_datagram_buf);
 	sv.reliable_datagram.data = sv.reliable_datagram_buf;
-	
+
 	sv.multicast.maxsize = sizeof(sv.multicast_buf);
 	sv.multicast.data = sv.multicast_buf;
-	
+
 	sv.master.maxsize = sizeof(sv.master_buf);
 	sv.master.data = sv.master_buf;
-	
+
 	sv.signon.maxsize = sizeof(sv.signon_buffers[0]);
 	sv.signon.data = sv.signon_buffers[0];
 	sv.num_signon_buffers = 1;
@@ -580,6 +586,7 @@ void SV_SpawnServer (char *server)
 		PR2_InitProg();
 	else
 #endif
+
 	{
 		PR_LoadProgs ();
 		sv.edicts = Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
@@ -591,9 +598,9 @@ void SV_SpawnServer (char *server)
 	{
 		ent = EDICT_NUM(i+1);
 #ifdef USE_PR2
-//restore client names
-//for -progtype 0 (VM_NONE) names stored in clientnames array
-//for -progtype 1 (VM_NATIVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
+		//restore client names
+		//for -progtype 0 (VM_NONE) names stored in clientnames array
+		//for -progtype 1 (VM_NATIVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
 		if(sv_vm)
 			svs.clients[i].name = PR2_GetString(ent->v.netname);
 		else
@@ -601,12 +608,12 @@ void SV_SpawnServer (char *server)
 		strlcpy(svs.clients[i].name, savenames[i], CLIENT_NAME_LEN);
 #endif
 		svs.clients[i].edict = ent;
-//ZOID - make sure we update frags right
+		//ZOID - make sure we update frags right
 		svs.clients[i].old_frags = 0;
 	}
 
 	sv.time = sv.gametime = 1.0;
-	
+
 	strlcpy (sv.name, server, MAP_NAME_LEN);
 	snprintf (sv.modelname, MAX_QPATH, "maps/%s.bsp", server);
 	sv.worldmodel = Mod_ForName (sv.modelname, true);
@@ -626,6 +633,7 @@ void SV_SpawnServer (char *server)
 	}
 	else
 #endif
+
 	{
 		sv.sound_precache[0] = pr_strings;
 		sv.model_precache[0] = pr_strings;
@@ -644,7 +652,7 @@ void SV_SpawnServer (char *server)
 
 	//
 	// spawn the rest of the entities on the map
-	//	
+	//
 
 	// precache and static commands can be issued during
 	// map initialization
@@ -655,7 +663,7 @@ void SV_SpawnServer (char *server)
 #ifdef USE_PR2
 	if ( sv_vm )
 		strlcpy(PR2_GetString(ent->v.model), sv.worldmodel->name, 64);
-	else 
+	else
 #endif
 		ent->v.model = PR_SetString(sv.worldmodel->name);
 	ent->v.modelindex = 1;		// world model
@@ -669,9 +677,9 @@ void SV_SpawnServer (char *server)
 	ent->v.items = pr_numbuiltins - 1;
 
 #ifdef USE_PR2
-        if(sv_vm)
-        	strlcpy((char*)PR2_GetString(pr_global_struct->mapname) , sv.name, 64);
-        else
+	if(sv_vm)
+		strlcpy((char*)PR2_GetString(pr_global_struct->mapname) , sv.name, 64);
+	else
 #endif
 		pr_global_struct->mapname = /*sv.name - pr_strings;*/PR_SetString(sv.name);
 	// serverflags are for cross level information (sigils)
@@ -686,7 +694,7 @@ void SV_SpawnServer (char *server)
 	entitystring = NULL;
 	if (sv_loadentfiles.value)
 		entitystring = (char *) COM_LoadHunkFile (va("maps/%s.ent", sv.name));
-	
+
 	if (entitystring)
 	{
 		Con_DPrintf ("Using entfile maps/%s.ent\n", sv.name);
@@ -717,7 +725,7 @@ void SV_SpawnServer (char *server)
 	// all spawning is completed, any further precache statements
 	// or prog writes to the signon message are errors
 	sv.state = ss_active;
-	
+
 	// run two frames to allow everything to settle
 	sv_frametime = 0.1;
 	SV_Physics ();
@@ -735,24 +743,25 @@ void SV_SpawnServer (char *server)
 #ifdef USE_PR2
 	if ( !sv_vm )
 #endif
-	if ((f = ED_FindFunction ("timeofday")) != NULL) {
-		date_t date;
+		if ((f = ED_FindFunction ("timeofday")) != NULL)
+		{
+			date_t date;
 
-		SV_TimeOfDay(&date);
+			SV_TimeOfDay(&date);
 
-		G_FLOAT(OFS_PARM0) = (float)date.sec;
-		G_FLOAT(OFS_PARM1) = (float)date.min;
-		G_FLOAT(OFS_PARM2) = (float)date.hour;
-		G_FLOAT(OFS_PARM3) = (float)date.day;
-		G_FLOAT(OFS_PARM4) = (float)date.mon;
-		G_FLOAT(OFS_PARM5) = (float)date.year;
-		G_INT(OFS_PARM6) = PR_SetTmpString(date.str);
+			G_FLOAT(OFS_PARM0) = (float)date.sec;
+			G_FLOAT(OFS_PARM1) = (float)date.min;
+			G_FLOAT(OFS_PARM2) = (float)date.hour;
+			G_FLOAT(OFS_PARM3) = (float)date.day;
+			G_FLOAT(OFS_PARM4) = (float)date.mon;
+			G_FLOAT(OFS_PARM5) = (float)date.year;
+			G_INT(OFS_PARM6) = PR_SetTmpString(date.str);
 
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = 0;
+			pr_global_struct->time = sv.time;
+			pr_global_struct->self = 0;
 
-		PR_ExecuteProgram((func_t)(f - pr_functions));
-	}
+			PR_ExecuteProgram((func_t)(f - pr_functions));
+		}
 
 	Con_DPrintf ("Server spawned.\n");
 }

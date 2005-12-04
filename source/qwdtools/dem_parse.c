@@ -1,106 +1,106 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: dem_parse.c,v 1.3 2005/09/27 20:51:06 disconn3ct Exp $
+ 
+	$Id: dem_parse.c,v 1.4 2005/12/04 05:39:33 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
 #include "defs.h"
 
 char *svc_strings[] =
-{
-	"svc_bad",
-	"svc_nop",
-	"svc_disconnect",
-	"svc_updatestat",
-	"svc_version",		// [long] server version
-	"svc_setview",		// [short] entity number
-	"svc_sound",			// <see code>
-	"svc_time",			// [float] server time
-	"svc_print",			// [string] null terminated string
-	"svc_stufftext",		// [string] stuffed into client's console buffer
-						// the string should be \n terminated
-	"svc_setangle",		// [vec3] set the view angle to this absolute value
-	
-	"svc_serverdata",		// [long] version ...
-	"svc_lightstyle",		// [byte] [string]
-	"svc_updatename",		// [byte] [string]
-	"svc_updatefrags",	// [byte] [short]
-	"svc_clientdata",		// <shortbits + data>
-	"svc_stopsound",		// <see code>
-	"svc_updatecolors",	// [byte] [byte]
-	"svc_particle",		// [vec3] <variable>
-	"svc_damage",			// [byte] impact [byte] blood [vec3] from
-	
-	"svc_spawnstatic",
-	"OBSOLETE svc_spawnbinary",
-	"svc_spawnbaseline",
-	
-	"svc_temp_entity",		// <variable>
-	"svc_setpause",
-	"svc_signonnum",
-	"svc_centerprint",
-	"svc_killedmonster",
-	"svc_foundsecret",
-	"svc_spawnstaticsound",
-	"svc_intermission",
-	"svc_finale",
+    {
+        "svc_bad",
+        "svc_nop",
+        "svc_disconnect",
+        "svc_updatestat",
+        "svc_version",		// [long] server version
+        "svc_setview",		// [short] entity number
+        "svc_sound",		// <see code>
+        "svc_time",		// [float] server time
+        "svc_print",		// [string] null terminated string
+        "svc_stufftext",	// [string] stuffed into client's console buffer
+        // the string should be \n terminated
+        "svc_setangle",		// [vec3] set the view angle to this absolute value
 
-	"svc_cdtrack",
-	"svc_sellscreen",
+        "svc_serverdata",	// [long] version ...
+        "svc_lightstyle",	// [byte] [string]
+        "svc_updatename",	// [byte] [string]
+        "svc_updatefrags",	// [byte] [short]
+        "svc_clientdata",	// <shortbits + data>
+        "svc_stopsound",	// <see code>
+        "svc_updatecolors",	// [byte] [byte]
+        "svc_particle",		// [vec3] <variable>
+        "svc_damage",		// [byte] impact [byte] blood [vec3] from
 
-	"svc_smallkick",
-	"svc_bigkick",
+        "svc_spawnstatic",
+        "OBSOLETE svc_spawnbinary",
+        "svc_spawnbaseline",
 
-	"svc_updateping",
-	"svc_updateentertime",
+        "svc_temp_entity",	// <variable>
+        "svc_setpause",
+        "svc_signonnum",
+        "svc_centerprint",
+        "svc_killedmonster",
+        "svc_foundsecret",
+        "svc_spawnstaticsound",
+        "svc_intermission",
+        "svc_finale",
 
-	"svc_updatestatlong",
-	"svc_muzzleflash",
-	"svc_updateuserinfo",
-	"svc_download",
-	"svc_playerinfo",
-	"svc_nails",
-	"svc_choke",
-	"svc_modellist",
-	"svc_soundlist",
-	"svc_packetentities",
- 	"svc_deltapacketentities",
-	"svc_maxspeed",
-	"svc_entgravity",
+        "svc_cdtrack",
+        "svc_sellscreen",
 
-	"svc_setinfo",
-	"svc_serverinfo",
-	"svc_updatepl",
-	"svc_nails2",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL"
-};
+        "svc_smallkick",
+        "svc_bigkick",
+
+        "svc_updateping",
+        "svc_updateentertime",
+
+        "svc_updatestatlong",
+        "svc_muzzleflash",
+        "svc_updateuserinfo",
+        "svc_download",
+        "svc_playerinfo",
+        "svc_nails",
+        "svc_choke",
+        "svc_modellist",
+        "svc_soundlist",
+        "svc_packetentities",
+        "svc_deltapacketentities",
+        "svc_maxspeed",
+        "svc_entgravity",
+
+        "svc_setinfo",
+        "svc_serverinfo",
+        "svc_updatepl",
+        "svc_nails2",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL",
+        "NEW PROTOCOL"
+    };
 
 #define	svc_qizmomsg	83		// qizmo voice message
 
@@ -133,7 +133,7 @@ int To(void)
 /*
 =====================
 Dem_ParseDownload
-
+ 
 A download message has been received from the server
 =====================
 */
@@ -157,9 +157,9 @@ void Dem_ParseDownload (void)
 
 /*
 =====================================================================
-
+ 
   SERVER CONNECTING MESSAGES
-
+ 
 =====================================================================
 */
 
@@ -176,12 +176,13 @@ void Dem_ParseServerData (void)
 
 	count = 0;
 
-// parse protocol version number
-// allow 2.2 and 2.29 demos to play
+	// parse protocol version number
+	// allow 2.2 and 2.29 demos to play
 	protover = MSG_ReadLong ();
 	count += 4;
-	if (protover != PROTOCOL_VERSION && 
-		!(protover == 26 || protover == 27 || protover == 28)) {
+	if (protover != PROTOCOL_VERSION &&
+	        !(protover == 26 || protover == 27 || protover == 28))
+	{
 		Sys_Printf ("Incompatible demo version: %i\n", protover);
 		Dem_Stop(from);
 		return;
@@ -194,12 +195,15 @@ void Dem_ParseServerData (void)
 	strcpy(str,MSG_ReadString ());
 	count += strlen(str)+1;
 
-	if (from->format == mvd){
+	if (from->format == mvd)
+	{
 		//world.time = world.frames[0].time = from->time = realtime = demo.time = from->lastframe = MSG_ReadFloat();
 		from->basetime = from->worldtime = from->time = from->lastframe = MSG_ReadFloat();
 		from->worldtime += from->sync;
 		from->playernum = 31;
-	} else {
+	}
+	else
+	{
 		// parse player slot, high bit means spectator
 		from->playernum = MSG_ReadByte ();
 		from->spectator = false;
@@ -238,8 +242,11 @@ void Dem_ParseServerData (void)
 	{
 		world.servercount = from->servercount;
 		strcpy(world.mapname, str2);
-	} else {
-		if (from->servercount != world.servercount || strcmp(world.mapname, str2)) {
+	}
+	else
+	{
+		if (from->servercount != world.servercount || strcmp(world.mapname, str2))
+		{
 			Sys_Printf("Warning: demo %s comes from different game\n", sworld.from[from - sources].name);
 			//Dem_Stop(from);
 		}
@@ -260,7 +267,8 @@ void Dem_Parselist (byte type)
 	msg_startcount = msg_readcount;
 	n = MSG_ReadByte();
 
-	for (;;) {
+	for (;;)
+	{
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
@@ -271,7 +279,8 @@ void Dem_Parselist (byte type)
 			cl_playerindex = n;
 		if (!strcmp(str,"progs/flag.mdl"))
 			cl_flagindex = n;
-		if (!strncmp(str,"misc/r_tele",11)) {
+		if (!strncmp(str,"misc/r_tele",11))
+		{
 			if (n < cl_telemin)
 				cl_telemin = n;
 			if (n > cl_telemax)
@@ -289,9 +298,9 @@ void Dem_Parselist (byte type)
 
 /*
 =====================================================================
-
+ 
 ACTION MESSAGES
-
+ 
 =====================================================================
 */
 
@@ -302,12 +311,12 @@ Dem_ParseStartSoundPacket
 */
 void Dem_ParseStartSoundPacket(void)
 {
-    int		channel, sound_num, i, j, k;
+	int		channel, sound_num, i, j, k;
 	vec3_t	pos, dist;
 	qboolean found = false;
 
 	msg_startcount = msg_readcount;
-	channel = MSG_ReadShort(); 
+	channel = MSG_ReadShort();
 
 	if (channel & SND_VOLUME)
 		MSG_ReadByte();
@@ -323,41 +332,44 @@ void Dem_ParseStartSoundPacket(void)
 	{
 		j = from->parsecount;
 		k = world.parsecount;
-		do {
+		do
+		{
 			if (from->frames[j&UPDATE_MASK].time < world.frames[k&UPDATE_MASK].time)
 				k = k == 0 ? 0 : k - 1;
 
-		for (i = 0; i < MAX_CLIENTS; i++)
-		{
-			if (!from->players[i].name[0])
-				continue;
-			if (from->players[i].spectator)
-				continue;
+			for (i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (!from->players[i].name[0])
+					continue;
+				if (from->players[i].spectator)
+					continue;
 
-			//Sys_Printf("%d sound:%d\n", i, sound_num);
-			VectorSubtract(pos, from->frames[j&UPDATE_MASK].playerstate[i].origin, dist);
-			//Sys_Printf("%d:dist:%f\n", i, dist);
-			if (Length(dist) < 30.0 && world.frames[k&UPDATE_MASK].fixangle[i] == false) {
-				found = true;
-				world.frames[k&UPDATE_MASK].fixangle[i] = true;
-				if (sworld.options & O_DEBUG)
-					fprintf(sworld.debug.file, "fixangle:%d, %d\n", i, k);
+				//Sys_Printf("%d sound:%d\n", i, sound_num);
+				VectorSubtract(pos, from->frames[j&UPDATE_MASK].playerstate[i].origin, dist);
+				//Sys_Printf("%d:dist:%f\n", i, dist);
+				if (Length(dist) < 30.0 && world.frames[k&UPDATE_MASK].fixangle[i] == false)
+				{
+					found = true;
+					world.frames[k&UPDATE_MASK].fixangle[i] = true;
+					if (sworld.options & O_DEBUG)
+						fprintf(sworld.debug.file, "fixangle:%d, %d\n", i, k);
+				}
 			}
+			j--;
 		}
-		j--;
-		} while (!found && j >= from->parsecount && j >= 0);
+		while (!found && j >= from->parsecount && j >= 0);
 	}
 
 	MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf, svc_sound);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
-}       
+}
 
 
 /*
 ==================
 Dem_ParseClientdata
-
+ 
 Server information pertaining to this client only, sent every frame
 ==================
 */
@@ -368,7 +380,7 @@ void Dem_ParseClientdata (void)
 	frame_t		*frame;
 	float		latency;
 
-// calculate simulated time of message
+	// calculate simulated time of message
 
 	i = from->netchan.incoming_acknowledged;
 	from->parsecount = i;
@@ -377,26 +389,27 @@ void Dem_ParseClientdata (void)
 	frame = &from->frames[i];
 	if (from->format == qwd)
 		parsecounttime = from->frames[i].senttime + from->sync;
-	else {
+	else
+	{
 		from->frames[i].senttime = from->time + from->sync;
 		parsecounttime = from->time  + from->sync;
 	}
 
 	frame->receivedtime = from->time + from->sync;
 
-// calculate latency
+	// calculate latency
 	latency = frame->receivedtime - frame->senttime;
 
 	if (latency < 0 || latency > 1.0)
 	{
-//		Con_Printf ("Odd latency: %5.2f\n", latency);
+		//		Con_Printf ("Odd latency: %5.2f\n", latency);
 	}
 	else
 	{
-	// drift the average latency towards the observed latency
+		// drift the average latency towards the observed latency
 		if (latency <= from->latency)
 			from->latency = latency;
-		else 
+		else
 			from->latency += 0.001f;
 
 		//Sys_Printf("%f %f\n", latency, from->latency);
@@ -414,7 +427,7 @@ void Dem_ParseClientdata (void)
 /*
 ====================
 SV_CleanName_Init
-
+ 
 sets chararcter table to translate quake texts to more friendly texts
 ====================
 */
@@ -475,7 +488,7 @@ char *CleanName (unsigned char *name)
 	static char text[2048];
 
 	out = text;
-	
+
 	while (*name)
 		*out++ = chartbl[*name++];
 
@@ -490,7 +503,7 @@ qboolean findPlayer(char *name)
 
 	if (!*name)
 		return false;
-	
+
 	for (i=0; i < MAX_CLIENTS; i++)
 		if (!strcmp(name, world.players[i].name))
 			return true;
@@ -542,14 +555,16 @@ void Dem_ParsePrint (void)
 		{
 			if (sworld.options & O_FT)
 				return;
-			if (from->format == qwd) {
+			if (from->format == qwd)
+			{
 				desttype = from->type;
 				destto = from->to;
 			}
 		}
 	}
 
-	if (sworld.options & O_LOG) {
+	if (sworld.options & O_LOG)
+	{
 		strcat(logbuf, CleanName(s));
 		if (logbuf[strlen(logbuf)-1] == '\n')
 		{
@@ -592,7 +607,8 @@ void Dem_UpdateUserinfo (void)
 	msg_startcount = msg_readcount;
 
 	slot = MSG_ReadByte ();
-	if (slot >= MAX_CLIENTS) {
+	if (slot >= MAX_CLIENTS)
+	{
 		Sys_Printf ("ERROR: Dem_ParseDemoMessage: svc_updateuserinfo > MAX_CLIENTS\n");
 		Dem_Stop(from);
 		return;
@@ -620,7 +636,7 @@ void Dem_UpdateUserinfo (void)
 /*
 ==================
 Dem_ParseDelta
-
+ 
 Can go from either a baseline or a previous packet_entity
 ==================
 */
@@ -647,10 +663,10 @@ void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 			bitcounts[i]++;
 
 	eto->flags = bits;
-	
+
 	if (bits & U_MODEL)
 		eto->modelindex = MSG_ReadByte ();
-		
+
 	if (bits & U_FRAME)
 		eto->frame = MSG_ReadByte ();
 
@@ -665,19 +681,19 @@ void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 
 	if (bits & U_ORIGIN1)
 		eto->origin[0] = MSG_ReadCoord ();
-		
+
 	if (bits & U_ANGLE1)
 		eto->angles[0] = MSG_ReadAngle();
 
 	if (bits & U_ORIGIN2)
 		eto->origin[1] = MSG_ReadCoord ();
-		
+
 	if (bits & U_ANGLE2)
 		eto->angles[1] = MSG_ReadAngle();
 
 	if (bits & U_ORIGIN3)
 		eto->origin[2] = MSG_ReadCoord ();
-		
+
 	if (bits & U_ANGLE3)
 		eto->angles[2] = MSG_ReadAngle();
 
@@ -725,7 +741,7 @@ void FlushEntityPacket (void)
 /*
 ==================
 Dem_ParsePacketEntities
-
+ 
 An svc_packetentities has just been parsed, deal with the
 rest of the data stream.
 ==================
@@ -749,9 +765,12 @@ void Dem_ParsePacketEntities (qboolean delta)
 		deltafrom = MSG_ReadByte ();
 
 		oldpacket = from->frames[newpacket].delta_sequence;
-		if (from->format == mvd) {
+		if (from->format == mvd)
+		{
 			oldpacket = (from->netchan.incoming_sequence-1);
-		} else {
+		}
+		else
+		{
 			if (from->netchan.outgoing_sequence - from->netchan.incoming_sequence >= UPDATE_BACKUP-1)
 			{	// there are no valid frames left, so drop it
 				FlushEntityPacket ();
@@ -822,7 +841,8 @@ void Dem_ParsePacketEntities (qboolean delta)
 			}
 
 			// copy one of the old entities over to the new packet unchanged
-			if (newindex >= MAX_PACKET_ENTITIES) {
+			if (newindex >= MAX_PACKET_ENTITIES)
+			{
 				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
 				Dem_Stop(from);
 				return;
@@ -846,7 +866,8 @@ void Dem_ParsePacketEntities (qboolean delta)
 				}
 				continue;
 			}
-			if (newindex >= MAX_PACKET_ENTITIES) {
+			if (newindex >= MAX_PACKET_ENTITIES)
+			{
 				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
 				Dem_Stop(from);
 				return;
@@ -930,7 +951,8 @@ void Dem_ParsePlayerinfo (void)
 
 	num = MSG_ReadByte ();
 	//Sys_Printf("%d:parse:%d\n",from->parsecount, num);
-	if (num >= MAX_CLIENTS) {
+	if (num >= MAX_CLIENTS)
+	{
 		Sys_Printf ("ERROR:Dem_ParsePlayerinfo: bad num\n");
 		Dem_Stop(from);
 		return;
@@ -939,13 +961,16 @@ void Dem_ParsePlayerinfo (void)
 	memset(&dummy, 0, sizeof(dummy));
 
 	state = &from->frames[from->parsecountmod].playerstate[num];
-	if (from->prevnum[num] > from->parsecount) {
+	if (from->prevnum[num] > from->parsecount)
+	{
 		from->prevnum[num] = 0;
 		prevstate = &dummy;
-	} else {
+	}
+	else
+	{
 		if (from->prevnum[num] - from->parsecount >= UPDATE_BACKUP-1)
 			prevstate = &dummy;
-		else 
+		else
 			prevstate = &from->frames[from->prevnum[num]&UPDATE_MASK].playerstate[num];
 	}
 
@@ -967,28 +992,34 @@ void Dem_ParsePlayerinfo (void)
 		state->command.msec = 0;
 
 		for (i=0; i <3; i++)
-			if (flags & (DF_ORIGIN << i)) {
+			if (flags & (DF_ORIGIN << i))
+			{
 				state->origin[i] = MSG_ReadCoord ();
 			}
 
 		for (i=0; i <3; i++)
-			if (flags & (DF_ANGLES << i)) {
+			if (flags & (DF_ANGLES << i))
+			{
 				state->command.angles[i] = MSG_ReadAngle16 ();
 			}
 
-		if (flags & DF_MODEL) {
+		if (flags & DF_MODEL)
+		{
 			state->modelindex = MSG_ReadByte ();
 		}
 
-		if (flags & DF_SKINNUM) {
+		if (flags & DF_SKINNUM)
+		{
 			state->skinnum = MSG_ReadByte ();
 		}
 
-		if (flags & DF_EFFECTS) {
+		if (flags & DF_EFFECTS)
+		{
 			state->effects = MSG_ReadByte ();
 		}
 
-		if (flags & DF_WEAPONFRAME) {
+		if (flags & DF_WEAPONFRAME)
+		{
 			state->weaponframe = MSG_ReadByte ();
 		}
 
@@ -1021,30 +1052,39 @@ void Dem_ParsePlayerinfo (void)
 
 	for (i=0 ; i<3 ; i++)
 	{
-		if (flags & (PF_VELOCITY1<<i) ) {
+		if (flags & (PF_VELOCITY1<<i) )
+		{
 			state->velocity[i] = MSG_ReadShort();
-		} else
+		}
+		else
 			state->velocity[i] = 0;
 	}
-	if (flags & PF_MODEL) {
+	if (flags & PF_MODEL)
+	{
 		state->modelindex = MSG_ReadByte ();
-	} else
+	}
+	else
 		state->modelindex = cl_playerindex;
 
-	if (flags & PF_SKINNUM) {
+	if (flags & PF_SKINNUM)
+	{
 		state->skinnum = MSG_ReadByte ();
 	}
 	else
 		state->skinnum = 0;
 
-	if (flags & PF_EFFECTS) {
+	if (flags & PF_EFFECTS)
+	{
 		state->effects = MSG_ReadByte ();
-	} else
+	}
+	else
 		state->effects = 0;
 
-	if (flags & PF_WEAPONFRAME) {
+	if (flags & PF_WEAPONFRAME)
+	{
 		state->weaponframe = MSG_ReadByte ();
-	} else
+	}
+	else
 		state->weaponframe = 0;
 
 	if (from->spectator && num == from->playernum)
@@ -1054,7 +1094,7 @@ void Dem_ParsePlayerinfo (void)
 /*
 =====================
 Dem_ParseProjectiles
-
+ 
 Nails are passed as efficient temporary entities
 =====================
 */
@@ -1140,7 +1180,7 @@ Dem_ParseBaseline
 void Dem_ParseBaseline (entity_state_t *es)
 {
 	int			i;
-	
+
 	es->modelindex = MSG_ReadByte ();
 	es->frame = MSG_ReadByte ();
 	es->colormap = MSG_ReadByte();
@@ -1166,17 +1206,17 @@ void Dem_ParseDemoMessage (void)
 	char		*s;
 	extern sizebuf_t stats_msg;
 
-//
-// if recording demos, copy the message out
-//
+	//
+	// if recording demos, copy the message out
+	//
 
 	Dem_ParseClientdata ();
 	if (from->format == qwd)
 		from->frames[from->parsecountmod].num_projectiles = 0;
 
-//
-// parse the message
-//
+	//
+	// parse the message
+	//
 	while (1)
 	{
 		if (!from->running)
@@ -1201,20 +1241,20 @@ void Dem_ParseDemoMessage (void)
 		}
 
 		SHOWNET(svc_strings[cmd]);
-	
-	// other commands
+
+		// other commands
 		switch (cmd)
 		{
 		default:
 			Sys_Printf ("ERROR:Dem_ParseDemoMessage: Illegible demo message %d(prev=%d)\n", cmd, oldcmd);
 			Dem_Stop(from);
 			return;
-			
+
 		case svc_nop:
 			MVDWrite_Begin(dem_all, 0, 1);
 			MSG_WriteByte(msgbuf, cmd);
 			break;
-			
+
 		case svc_disconnect:
 			Dem_Stop(from);
 			return;
@@ -1222,7 +1262,7 @@ void Dem_ParseDemoMessage (void)
 		case svc_print:
 			Dem_ParsePrint ();
 			break;
-			
+
 		case svc_centerprint:
 			s = MSG_ReadString();
 
@@ -1231,7 +1271,7 @@ void Dem_ParseDemoMessage (void)
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_WriteString(msgbuf, s);
 			break;
-			
+
 		case svc_stufftext:
 			msg_startcount = msg_readcount;
 
@@ -1240,12 +1280,14 @@ void Dem_ParseDemoMessage (void)
 			if (sworld.options & O_DEBUG)
 				fprintf(sworld.debug.file, "text(%d):%s\n", strlen(s), s);
 
-			if (!strncmp(s, "reconnect", 9)) {
+			if (!strncmp(s, "reconnect", 9))
+			{
 				Dem_Stop(from);
 				return;
 			}
 
-			if (!strncmp(s, "changing", 8)) {
+			if (!strncmp(s, "changing", 8))
+			{
 				break;
 			}
 
@@ -1256,7 +1298,7 @@ void Dem_ParseDemoMessage (void)
 			MSG_WriteByte(msgbuf, svc_stufftext);
 			MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 			break;
-			
+
 		case svc_damage:
 			MVDWrite_Begin(from->type, To(), 9);
 			MSG_WriteByte(msgbuf, cmd);
@@ -1266,22 +1308,25 @@ void Dem_ParseDemoMessage (void)
 		case svc_serverdata:
 			Dem_ParseServerData ();
 			break;
-			
+
 		case svc_setangle:
 			MVDWrite_Begin(dem_all, 0, 5);
 			MSG_WriteByte(msgbuf, cmd);
-			if (from->format == qwd) {
+			if (from->format == qwd)
+			{
 				MSG_WriteByte(msgbuf, To());
 				for (i=0 ; i<3 ; i++)
 					from->frames[from->parsecountmod].playerstate[from->to].command.angles[i] = MSG_ReadAngle ();
 
 				//world7.frames[world.parsecount&UPDATE_MASK].fixangle[from->to] = true;
-				
+
 				for (i=0 ; i<3 ; i++)
 					MSG_WriteAngle(msgbuf, from->frames[from->parsecountmod].playerstate[from->to].command.angles[i]);
-				
+
 				//MSG_Forward(msgbuf, msg_readcount, 3);
-			} else {
+			}
+			else
+			{
 				MSG_Forward(msgbuf, msg_readcount, 4);
 			}
 			world.frames[world.parsecount&UPDATE_MASK].fixangle[from->to] = -1;
@@ -1290,11 +1335,12 @@ void Dem_ParseDemoMessage (void)
 			if (sworld.options & O_DEBUG)
 				fprintf(sworld.debug.file, "setangle:%d\n", from->to);
 			break;
-			
+
 		case svc_lightstyle:
 			msg_startcount = msg_readcount;
 			i = MSG_ReadByte ();
-			if (i >= MAX_LIGHTSTYLES) {
+			if (i >= MAX_LIGHTSTYLES)
+			{
 				Sys_Printf ("svc_lightstyle > MAX_LIGHTSTYLES\n");
 				Dem_Stop(from);
 				return;
@@ -1306,41 +1352,41 @@ void Dem_ParseDemoMessage (void)
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 			break;
-			
+
 		case svc_sound:
 			Dem_ParseStartSoundPacket();
 			break;
-			
+
 		case svc_stopsound:
 			MVDWrite_Begin(dem_all, 0, 3);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 2);
 			break;
-		
+
 		case svc_updatefrags:
 			MVDWrite_Begin(dem_all, 0, 4);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 3);
-			break;			
+			break;
 
 		case svc_updateping:
 			MVDWrite_Begin(dem_all, 0, 4);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 3);
 			break;
-			
+
 		case svc_updatepl:
 			MVDWrite_Begin(dem_all, 0, 3);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 2);
 			break;
-			
+
 		case svc_updateentertime:
 			MVDWrite_Begin(dem_all, 0, 6);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 5);
 			break;
-			
+
 		case svc_spawnbaseline:
 			msg_startcount = msg_readcount;
 			i = MSG_ReadShort ();
@@ -1354,7 +1400,7 @@ void Dem_ParseDemoMessage (void)
 			MVDWrite_Begin(dem_all, 0, 14);
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 13);
-			break;			
+			break;
 		case svc_temp_entity:
 			Dem_ParseTEnt ();
 			break;
@@ -1370,7 +1416,8 @@ void Dem_ParseDemoMessage (void)
 			break;
 
 		case svc_updatestat:
-			if (from->spectator) {
+			if (from->spectator)
+			{
 				MSG_WriteByte(&stats_msg, cmd);
 				MSG_Forward(&stats_msg, msg_readcount, 2);
 				break;
@@ -1407,7 +1454,8 @@ void Dem_ParseDemoMessage (void)
 			i = MSG_ReadByte();
 			j = MSG_ReadByte();
 
-			if (i < 0 || i >= MAX_CL_STATS) {
+			if (i < 0 || i >= MAX_CL_STATS)
+			{
 				Sys_Printf("Dem_SetStat: %i is invalid", i);
 				Dem_Stop(from);
 				return;
@@ -1422,13 +1470,15 @@ void Dem_ParseDemoMessage (void)
 			*/
 			break;
 		case svc_updatestatlong:
-			if (from->spectator) {
+			if (from->spectator)
+			{
 				MSG_WriteByte(&stats_msg, cmd);
 				MSG_Forward(&stats_msg, msg_readcount, 5);
 				break;
 			}
 
-			if (!world.signonstats) { 
+			if (!world.signonstats)
+			{
 				MVDWrite_Begin(dem_stats, To(), 6);
 				MSG_WriteByte(msgbuf, cmd);
 				MSG_Forward(msgbuf, msg_readcount, 5);
@@ -1438,7 +1488,8 @@ void Dem_ParseDemoMessage (void)
 			i = MSG_ReadByte();
 			j = MSG_ReadLong();
 
-			if (i < 0 || i >= MAX_CL_STATS) {
+			if (i < 0 || i >= MAX_CL_STATS)
+			{
 				Sys_Printf("Dem_SetStat: %i is invalid", i);
 				Dem_Stop(from);
 				return;
@@ -1468,7 +1519,7 @@ void Dem_ParseDemoMessage (void)
 			//MSG_Forward(msgbuf, msg_readcount, 5);
 			*/
 			break;
-			
+
 		case svc_spawnstaticsound:
 			MVDWrite_Begin(dem_all, 0, 10);
 			MSG_WriteByte(msgbuf, cmd);
@@ -1494,7 +1545,7 @@ void Dem_ParseDemoMessage (void)
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_WriteString(msgbuf, s);
 			break;
-			
+
 		case svc_sellscreen:
 			MVDWrite_Begin(dem_all, 0, 1);
 			MSG_WriteByte(msgbuf, cmd);
@@ -1533,7 +1584,7 @@ void Dem_ParseDemoMessage (void)
 
 		case svc_serverinfo:
 			msg_startcount = msg_readcount;
-	
+
 			MSG_ReadString();
 			MSG_ReadString();
 

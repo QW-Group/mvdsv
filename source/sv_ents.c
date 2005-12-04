@@ -1,34 +1,34 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: sv_ents.c,v 1.6 2005/10/12 12:10:49 danfe Exp $
+ 
+	$Id: sv_ents.c,v 1.7 2005/12/04 05:37:44 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 
 /*
 =============================================================================
-
+ 
 The PVS must include a small area around the client to allow head bobbing
 or other small motion on the client side.  Otherwise, a bob might cause an
 entity that should be visible to not show up, especially when the bob
 crosses a waterline.
-
+ 
 =============================================================================
 */
 
@@ -44,7 +44,7 @@ void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
 
 	while (1)
 	{
-	// if this is a leaf, accumulate the pvs bits
+		// if this is a leaf, accumulate the pvs bits
 		if (node->contents < 0)
 		{
 			if (node->contents != CONTENTS_SOLID)
@@ -73,7 +73,7 @@ void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
 /*
 =============
 SV_FatPVS
-
+ 
 Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
 given point.
 =============
@@ -111,7 +111,7 @@ qboolean SV_AddNailUpdate (edict_t *ent)
 		return false;
 
 	if (ent->v.modelindex != sv_nailmodel
-		&& ent->v.modelindex != sv_supernailmodel)
+	        && ent->v.modelindex != sv_supernailmodel)
 		return false;
 	if (numnails == MAX_NAILS)
 		return true;
@@ -122,7 +122,7 @@ qboolean SV_AddNailUpdate (edict_t *ent)
 
 void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
-	byte	bits[6];	// [48 bits] xyzpy 12 12 12 4 8 
+	byte	bits[6];	// [48 bits] xyzpy 12 12 12 4 8
 	int		n, i;
 	edict_t	*ent;
 	int		x, y, z, p, yaw;
@@ -140,8 +140,10 @@ void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 	for (n=0 ; n<numnails ; n++)
 	{
 		ent = nails[n];
-		if (recorder) {
-			if (!ent->v.colormap) {
+		if (recorder)
+		{
+			if (!ent->v.colormap)
+			{
 				if (!((++nailcount)&255)) nailcount++;
 				ent->v.colormap = nailcount&255;
 			}
@@ -173,7 +175,7 @@ void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 /*
 ==================
 SV_WriteDelta
-
+ 
 Writes part of a packetentities message.
 Can delta from either a baseline or a previous packet_entity
 ==================
@@ -183,7 +185,7 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 	int		bits;
 	int		i;
 
-// send an update
+	// send an update
 	bits = 0;
 
 	for (i=0 ; i<3 ; i++)
@@ -268,9 +270,9 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 /*
 =============
 SV_EmitPacketEntities
-
+ 
 Writes a delta update of a packet_entities_t to the message.
-
+ 
 =============
 */
 void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
@@ -302,8 +304,8 @@ void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *
 
 	newindex = 0;
 	oldindex = 0;
-//Con_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK
-//			, client->netchan.outgoing_sequence & UPDATE_MASK);
+	//Con_Printf ("---%i to %i ----\n", client->delta_sequence & UPDATE_MASK
+	//			, client->netchan.outgoing_sequence & UPDATE_MASK);
 	while (newindex < to->num_entities || oldindex < oldmax)
 	{
 		newnum = newindex >= to->num_entities ? 9999 : to->entities[newindex].number;
@@ -311,7 +313,7 @@ void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *
 
 		if (newnum == oldnum)
 		{	// delta update from old position
-//Con_Printf ("delta %i\n", newnum);
+			//Con_Printf ("delta %i\n", newnum);
 			SV_WriteDelta (&from->entities[oldindex], &to->entities[newindex], msg, false);
 			oldindex++;
 			newindex++;
@@ -323,14 +325,14 @@ void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *
 			if (newnum == 9999)
 			{
 				Sys_Printf("LOL, %d, %d, %d, %d %d %d\n",
-					newnum, oldnum, to->num_entities, oldmax,
-					client->netchan.incoming_sequence & UPDATE_MASK,
-					client->delta_sequence & UPDATE_MASK);
+				           newnum, oldnum, to->num_entities, oldmax,
+				           client->netchan.incoming_sequence & UPDATE_MASK,
+				           client->delta_sequence & UPDATE_MASK);
 				if (client->edict == NULL)
 					Sys_Printf("demo\n");
 			}
 			ent = EDICT_NUM(newnum);
-//Con_Printf ("baseline %i\n", newnum);
+			//Con_Printf ("baseline %i\n", newnum);
 			SV_WriteDelta (&ent->baseline, &to->entities[newindex], msg, true);
 			newindex++;
 			continue;
@@ -338,7 +340,7 @@ void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *
 
 		if (newnum > oldnum)
 		{	// the old entity isn't present in the new message
-//Con_Printf ("remove %i\n", oldnum);
+			//Con_Printf ("remove %i\n", oldnum);
 			MSG_WriteShort (msg, oldnum | U_REMOVE);
 			oldindex++;
 			continue;
@@ -362,6 +364,12 @@ SV_WritePlayersToClient
 #define DF_GIB		(1<<9)
 #define DF_WEAPONFRAME (1<<10)
 #define DF_MODEL	(1<<11)
+
+#define TruePointContents(p) PM_HullPointContents(&sv.worldmodel->hulls[0], 0, p)
+
+#define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
+
+static qboolean		disable_updates;	// disables sending entities to the client
 
 void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizebuf_t *msg)
 {
@@ -427,7 +435,7 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 
 		// ZOID visibility tracking
 		if (ent != clent &&
-			!(client->spec_track && client->spec_track - 1 == j)) 
+		        !(client->spec_track && client->spec_track - 1 == j))
 		{
 			if (cl->spectator)
 				continue;
@@ -438,6 +446,11 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 					break;
 			if (i == ent->num_leafs)
 				continue; // not visable
+		}
+
+		if (disable_updates && client != cl)
+		{ // Vladis
+			continue;
 		}
 
 		pflags = PF_MSEC | PF_COMMAND;
@@ -468,7 +481,7 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 		}
 
 		if (client->spec_track && client->spec_track - 1 == j &&
-			ent->v.weaponframe) 
+		        ent->v.weaponframe)
 			pflags |= PF_WEAPONFRAME;
 
 		MSG_WriteByte (msg, svc_playerinfo);
@@ -527,7 +540,7 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 /*
 =============
 SV_WriteEntitiesToClient
-
+ 
 Encodes the current state of the world as
 a svc_packetentities messages and possibly
 a svc_nails message and
@@ -547,7 +560,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 	entity_state_t	*state;
 	client_t	*cl;
 	extern	cvar_t	sv_demoNoVis;
-//	int		max_edicts;
+	//	int		max_edicts;
 
 	// this is the frame we are creating
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
@@ -555,13 +568,16 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 	// find the client's PVS
 	clent = client->edict;
 	pvs = NULL;
-	if (!recorder) {
+	if (!recorder)
+	{
 		VectorAdd (clent->v.origin, clent->v.view_ofs, org);
 		if (client->spectator)
 			pvs = SV_FatPVS (org, true);
 		else
 			pvs = SV_FatPVS (org, false);
-	} else {
+	}
+	else
+	{
 		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
 
 		for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
@@ -576,11 +592,22 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 			{
 				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
 				pvs = SV_FatPVS (org, false);
-			} else {
+			}
+			else
+			{
 				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
 				SV_AddToFatPVS (org, sv.worldmodel->nodes, false);
 			}
 		}
+	}
+	if (clent && client->disable_updates_stop > realtime)
+	{ // Vladis
+		int where = TruePointContents(clent->v.origin); // server flash should not work underwater
+		disable_updates = !ISUNDERWATER(where);
+	}
+	else
+	{
+		disable_updates = false;
 	}
 
 	// send over the players in the PVS
@@ -592,53 +619,57 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean record
 
 	numnails = 0;
 
-	// QW protocol can only handle 512 entities. Any entity with number >= 512 will be invisible
-	// From ZQuake.
-//	max_edicts = min(sv.num_edicts, MAX_EDICTS);
+	if (!disable_updates)
+	{// Vladis, server flash
 
-	for (e = MAX_CLIENTS + 1, ent = EDICT_NUM(e); e < sv.num_edicts/*max_edicts*/; e++, ent = NEXT_EDICT(ent))
-	{
-		// ignore ents without visible models
-		if (!ent->v.modelindex || !*
+		// QW protocol can only handle 512 entities. Any entity with number >= 512 will be invisible
+		// From ZQuake.
+		//	max_edicts = min(sv.num_edicts, MAX_EDICTS);
+
+		for (e = MAX_CLIENTS + 1, ent = EDICT_NUM(e); e < sv.num_edicts/*max_edicts*/; e++, ent = NEXT_EDICT(ent))
+		{
+			// ignore ents without visible models
+			if (!ent->v.modelindex || !*
 #ifdef USE_PR2
-			PR2_GetString(ent->v.model)
+			        PR2_GetString(ent->v.model)
 #else
-			PR_GetString(ent->v.model)
+					PR_GetString(ent->v.model)
 #endif
-			)
-			continue;
+			   )
+				continue;
 
-		if (!sv_demoNoVis.value || !recorder) {
-			// ignore if not touching a PV leaf
-			for (i=0 ; i < ent->num_leafs ; i++)
-				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i]&7) ))
-					break;
+			if (!sv_demoNoVis.value || !recorder)
+			{
+				// ignore if not touching a PV leaf
+				for (i=0 ; i < ent->num_leafs ; i++)
+					if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i]&7) ))
+						break;
 
-			if (i == ent->num_leafs)
-				continue;		// not visible
+				if (i == ent->num_leafs)
+					continue;		// not visible
+			}
+
+			if (SV_AddNailUpdate (ent))
+				continue;	// added to the special update list
+
+			// add to the packetentities
+			if (pack->num_entities == max_packet_entities)
+				continue;	// all full
+
+			state = &pack->entities[pack->num_entities];
+			pack->num_entities++;
+
+			state->number = e;
+			state->flags = 0;
+			VectorCopy (ent->v.origin, state->origin);
+			VectorCopy (ent->v.angles, state->angles);
+			state->modelindex = ent->v.modelindex;
+			state->frame = ent->v.frame;
+			state->colormap = ent->v.colormap;
+			state->skinnum = ent->v.skin;
+			state->effects = ent->v.effects;
 		}
-
-		if (SV_AddNailUpdate (ent))
-			continue;	// added to the special update list
-
-		// add to the packetentities
-		if (pack->num_entities == max_packet_entities)
-			continue;	// all full
-
-		state = &pack->entities[pack->num_entities];
-		pack->num_entities++;
-
-		state->number = e;
-		state->flags = 0;
-		VectorCopy (ent->v.origin, state->origin);
-		VectorCopy (ent->v.angles, state->angles);
-		state->modelindex = ent->v.modelindex;
-		state->frame = ent->v.frame;
-		state->colormap = ent->v.colormap;
-		state->skinnum = ent->v.skin;
-		state->effects = ent->v.effects;
-	}
-
+	} // server flash
 	// encode the packet entities as a delta from the
 	// last packetentities acknowledged by the client
 

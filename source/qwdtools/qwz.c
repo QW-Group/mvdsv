@@ -1,21 +1,21 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: qwz.c,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+ 
+	$Id: qwz.c,v 1.3 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -34,12 +34,13 @@ static qboolean QizmoRunning ()
 	if (!hQizmoProcess)
 		return false;
 
-	if (!GetExitCodeProcess (hQizmoProcess, &ExitCode)) {
+	if (!GetExitCodeProcess (hQizmoProcess, &ExitCode))
+	{
 		Sys_Printf ("WARINING: GetExitCodeProcess failed\n");
 		hQizmoProcess = NULL;
 		return false;
 	}
-	
+
 	if (ExitCode == STILL_ACTIVE)
 		return true;
 
@@ -58,7 +59,8 @@ void StopQWZ (source_t *s)
 
 	num = s - sources;
 
-	if (s->qwz && sworld.from[num].file) {
+	if (s->qwz && sworld.from[num].file)
+	{
 		Sys_fclose(&sworld.from[num].file);
 		s->qwz = false;
 		if (remove (sworld.from[num].name) != 0)
@@ -84,7 +86,7 @@ qboolean OpenQWZ (char *files)
 #endif
 
 	Sys_Printf ("decompressing qwz file(s)...\n");
-	
+
 #ifdef _WIN32
 	// start Qizmo to unpack the demo
 	memset (&si, 0, sizeof(si));
@@ -97,25 +99,26 @@ qboolean OpenQWZ (char *files)
 
 	if (!qizmoDir[0])
 		strcpy(curdir, currentDir);
-	else {
+	else
+	{
 		if (strstr(qizmoDir, ":") != NULL)
 			sprintf(curdir, "%s",  qizmoDir);
 		else
 			sprintf(curdir, "%s/%s", currentDir, qizmoDir);
 	}
-	
+
 	strncpy (cmdline, va("%s/" QIZMO_BIN "-D %s", curdir,
-		files), sizeof(cmdline));
+	                     files), sizeof(cmdline));
 
 #ifdef _WIN32
 	if (!CreateProcess (NULL, cmdline, NULL, NULL,
-		FALSE, 0, NULL, curdir, &si, &pi))
+	                    FALSE, 0, NULL, curdir, &si, &pi))
 #else
 	if (system(cmdline))
 #endif
 	{
 		Sys_Printf ("Couldn't execute %s/" QIZMO_BIN "\n",
-			curdir);
+		            curdir);
 		return false;
 	}
 #ifdef _WIN32
@@ -131,7 +134,7 @@ qboolean OpenQWZ (char *files)
 		return false;
 	}
 #endif
-	
+
 	Sys_Printf ("\ndecompressing finished\n");
 
 	return true;

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.4 2005/05/30 16:41:00 vvd0 Exp $
+ *  $Id: pr2_vm.c,v 1.5 2005/12/04 05:37:44 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -38,7 +38,7 @@
 #ifdef USE_PR2
 
 #ifdef QVM_PROFILE
-cvar_t	sv_enableprofile = {"sv_enableprofile","0"};	
+cvar_t	sv_enableprofile = {"sv_enableprofile","0"};
 typedef struct
 {
 	int adress;
@@ -47,7 +47,8 @@ typedef struct
 #else
 	int instruction_count;
 #endif
-}profile_t;
+}
+profile_t;
 #define MAX_PROFILE_FUNCS 0x1000
 
 profile_t profile_funcs[MAX_PROFILE_FUNCS];
@@ -55,7 +56,7 @@ int num_profile_func;
 
 profile_t* ProfileEnterFunction(int adress)
 {
-        int i;
+	int i;
 	for (  i = 0 ; i < num_profile_func ; i++ )
 	{
 		if(profile_funcs[i].adress == adress)
@@ -65,12 +66,12 @@ profile_t* ProfileEnterFunction(int adress)
 	{
 		profile_funcs[0].adress = adress;
 		profile_funcs[0].instruction_count = 0;
-	
-	return &profile_funcs[0];
+
+		return &profile_funcs[0];
 	}
 	profile_funcs[num_profile_func].adress = adress;
 	profile_funcs[num_profile_func].instruction_count = 0;
-	
+
 	return &profile_funcs[num_profile_func++];
 }
 symbols_t* QVM_FindName( qvm_t * qvm, int off);
@@ -90,20 +91,20 @@ void PR2_Profile_f()
 	int			i;
 	symbols_t *sym;
 
-        if(!sv_vm)
-        {
-        	PR_Profile_f();
-        	return;
-        }
+	if(!sv_vm)
+	{
+		PR_Profile_f();
+		return;
+	}
 #ifdef QVM_PROFILE
-        if(sv_vm->type != VM_BYTECODE)
-        	return;
-        num = 0;
-        if(!sv_enableprofile.value)
-        {
-                Con_Printf ("profiling no enabled\n");
-        	return;
-        }
+	if(sv_vm->type != VM_BYTECODE)
+		return;
+	num = 0;
+	if(!sv_enableprofile.value)
+	{
+		Con_Printf ("profiling no enabled\n");
+		return;
+	}
 	do
 	{
 		max = 0;
@@ -121,7 +122,7 @@ void PR2_Profile_f()
 		{
 			if (num < 15)
 			{
-			        sym = QVM_FindName( (qvm_t*)(sv_vm->hInst), best->adress );
+				sym = QVM_FindName( (qvm_t*)(sv_vm->hInst), best->adress );
 #ifdef _WIN32
 				Con_Printf ("%18I64d %s\n", best->instruction_count, sym->name);
 #else
@@ -132,15 +133,16 @@ void PR2_Profile_f()
 			num++;
 			best->instruction_count = 0;
 		}
-	} while (best);
-    	num_profile_func = 0;
+	}
+	while (best);
+	num_profile_func = 0;
 #endif
 }
 
 void VM_UnloadQVM( qvm_t * qvm )
 {
-     if(qvm)
-	Z_Free( qvm );
+	if(qvm)
+		Z_Free( qvm );
 }
 
 void VM_Unload( vm_t * vm )
@@ -160,8 +162,8 @@ void VM_Unload( vm_t * vm )
 		VM_UnloadQVM( vm->hInst );
 		break;
 	case VM_NONE:
-		return;	
-			
+		return;
+
 	}
 	Z_Free( vm );
 }
@@ -194,7 +196,7 @@ qboolean VM_LoadNative( vm_t * vm )
 	}
 	dllEntry( vm->syscall );
 
-//	Info_SetValueForStarKey( svs.info, "*qvm", DLEXT, MAX_SERVERINFO_STRING );
+	//	Info_SetValueForStarKey( svs.info, "*qvm", DLEXT, MAX_SERVERINFO_STRING );
 	Info_SetValueForStarKey( localinfo, "*qvm", DLEXT, MAX_LOCALINFO_STRING );
 	Info_SetValueForStarKey( svs.info, "*progs", DLEXT, MAX_SERVERINFO_STRING );
 	vm->type = VM_NATIVE;
@@ -203,17 +205,17 @@ qboolean VM_LoadNative( vm_t * vm )
 
 void VM_PrintInfo( vm_t * vm)
 {
-     qvm_t *qvm;
-     if(!vm)
-     {
-     	Con_Printf( "VM_PrintInfo: NULL vm\n" );
-     	return;
-     }
+	qvm_t *qvm;
+	if(!vm)
+	{
+		Con_Printf( "VM_PrintInfo: NULL vm\n" );
+		return;
+	}
 
-     if(!vm->name[0]) 
-     	return;
+	if(!vm->name[0])
+		return;
 
-     	Con_Printf("%s: ", vm->name);
+	Con_Printf("%s: ", vm->name);
 	switch(vm->type)
 	{
 	case VM_NATIVE:
@@ -258,54 +260,56 @@ void LoadMapFile( qvm_t*qvm, char* fname )
 	p=buff;
 	while(*p)
 	{
-          	for( i = 0; i < MAX_LINE_LENGTH; i++)
-          	{
-          		if( p[i] == 0 || p[i] == '\n')
-          			break;
-          	}
-          	if ( i == MAX_LINE_LENGTH ) {
-          		return;
-          	}
+		for( i = 0; i < MAX_LINE_LENGTH; i++)
+		{
+			if( p[i] == 0 || p[i] == '\n')
+				break;
+		}
+		if ( i == MAX_LINE_LENGTH )
+		{
+			return;
+		}
 
-          	memcpy( lineBuffer, p, i );
-          	lineBuffer[i] = 0;
-          	p += i;
-          	if( *p == '\n') p++;
-          	if( 3 != sscanf( lineBuffer,"%d %8x %s",&seg,&off,symname) )
-          		return;
-          	len = strlen(symname);
-          	if(!len)continue;
-          	if( off < 0 )
-          		continue;
+		memcpy( lineBuffer, p, i );
+		lineBuffer[i] = 0;
+		p += i;
+		if( *p == '\n') p++;
+		if( 3 != sscanf( lineBuffer,"%d %8x %s",&seg,&off,symname) )
+			return;
+		len = strlen(symname);
+		if(!len)continue;
+		if( off < 0 )
+			continue;
 
-          	if( seg == 0 && off >= qvm->len_cs)
-          	{
-          		Con_DPrintf("bad cs off in map file %s.map",fname);
-          		qvm->sym_info = NULL;
-          		return;
-          	}
-          	if( seg >= 1 && off >= qvm->len_ds )
-          	{
-          		Con_DPrintf("bad ds off in map file %s.map",fname);
-          		continue;
-          	}
+		if( seg == 0 && off >= qvm->len_cs)
+		{
+			Con_DPrintf("bad cs off in map file %s.map",fname);
+			qvm->sym_info = NULL;
+			return;
+		}
+		if( seg >= 1 && off >= qvm->len_ds )
+		{
+			Con_DPrintf("bad ds off in map file %s.map",fname);
+			continue;
+		}
 
-          	if( !qvm->sym_info )
-          	{
-          	  qvm->sym_info = (symbols_t*) Hunk_Alloc( sizeof(symbols_t) + len + 1);
-          	  sym = qvm->sym_info;
-          	}else
-          	{
-          	  sym->next = (symbols_t*) Hunk_Alloc( sizeof(symbols_t) + len + 1);
-          	  sym = sym->next;
-          	}
-          	sym->seg = seg;
-          	sym->off = off;
-          	sym->next= NULL;
-          	num_symbols++;
-          	strlcpy(sym->name, symname, len + 1);
-         }
-          Con_DPrintf("%i symbols loaded from %s\n",num_symbols,name);
+		if( !qvm->sym_info )
+		{
+			qvm->sym_info = (symbols_t*) Hunk_Alloc( sizeof(symbols_t) + len + 1);
+			sym = qvm->sym_info;
+		}
+		else
+		{
+			sym->next = (symbols_t*) Hunk_Alloc( sizeof(symbols_t) + len + 1);
+			sym = sym->next;
+		}
+		sym->seg = seg;
+		sym->off = off;
+		sym->next= NULL;
+		num_symbols++;
+		strlcpy(sym->name, symname, len + 1);
+	}
+	Con_DPrintf("%i symbols loaded from %s\n",num_symbols,name);
 }
 
 qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
@@ -324,9 +328,9 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	if ( !buff )
 		return false;
 
-// add qvm crc to the serverinfo
+	// add qvm crc to the serverinfo
 	Info_SetValueForStarKey( localinfo, "*qvm", "QVM", MAX_LOCALINFO_STRING );
-//	Info_SetValueForStarKey( svs.info, "*qvm", "QVM", MAX_SERVERINFO_STRING );
+	//	Info_SetValueForStarKey( svs.info, "*qvm", "QVM", MAX_SERVERINFO_STRING );
 
 	snprintf( num, sizeof(num), "%i", CRC_Block( ( byte * ) buff, com_filesize ) );
 	Info_SetValueForStarKey( svs.info, "*progs", num, MAX_SERVERINFO_STRING );
@@ -342,13 +346,13 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	header->litLength = LittleLong( header->litLength );
 	header->bssLength = LittleLong( header->bssLength );
 
-// check file
+	// check file
 	if ( header->vmMagic != VM_MAGIC || header->instructionCount <= 0 || header->codeLength <= 0 )
 	{
 		return false;
 	}
-// create vitrual machine
-    if(vm->hInst)
+	// create vitrual machine
+	if(vm->hInst)
 		qvm = (qvm_t  *)vm->hInst;
 	else
 		qvm = Z_Malloc( sizeof( qvm_t ) );
@@ -361,7 +365,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	qvm->len_ds = qvm->ds_mask;
 	qvm->ds_mask--;
 
-	qvm->len_ss = 0x10000;	// default by q3asm 
+	qvm->len_ss = 0x10000;	// default by q3asm
 	if ( qvm->len_ds < qvm->len_ss )
 		Sys_Error( "VM_LoadBytecode: stacksize greater than data segment" );
 
@@ -369,7 +373,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	qvm->ds = Hunk_AllocName( qvm->len_ds, "qvmdata" );
 	qvm->ss = qvm->ds + qvm->len_ds - qvm->len_ss;
 
-// setup registers
+	// setup registers
 	qvm->PC = 0;
 	qvm->SP = 0;
 	qvm->LP = qvm->len_ds - sizeof(int);
@@ -378,7 +382,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	qvm->syscall = syscall;
 
 
-// load instructions
+	// load instructions
 	{
 		byte   *src = buff + header->codeOffset;
 		qvm_instruction_t *dst = qvm->cs;
@@ -429,7 +433,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 		dst->opcode = OP_BREAK;
 		dst->parm._int = 0;
 	}
-// load data segment
+	// load data segment
 	{
 		int   *src = ( int * ) ( buff + header->dataOffset );
 		int   *dst = ( int * ) qvm->ds;
@@ -455,18 +459,18 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 
 	if ( vm )
 		VM_Unload(vm);
-	
+
 	vm = Z_Malloc( sizeof( vm_t ) );
 
-	
+
 
 	Con_Printf( "VM_Load: \"%s\"\n", name );
 
-// prepare vm struct
+	// prepare vm struct
 	memset( vm, 0, sizeof( vm_t ) );
 	strlcpy( vm->name, name, sizeof( vm->name ) );
 	vm->syscall = syscall;
-#ifdef QVM_PROFILE	
+#ifdef QVM_PROFILE
 	num_profile_func = 0;
 #endif
 
@@ -490,10 +494,10 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 
 
 int     QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, int arg3,
-		  int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 );
+                  int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 );
 
 int VM_Call( vm_t * vm, int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5,
-	     int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 )
+             int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 )
 {
 	if ( !vm )
 		Sys_Error( "VM_Call with NULL vm" );
@@ -504,9 +508,9 @@ int VM_Call( vm_t * vm, int command, int arg0, int arg1, int arg2, int arg3, int
 		return vm->vmMain( command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11 );
 	case VM_BYTECODE:
 		return QVM_Exec( vm->hInst, command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
-				 arg11 );
+		                 arg11 );
 	case VM_NONE:
-		Sys_Error( "VM_Call with VM_NONE type vm" );	
+		Sys_Error( "VM_Call with VM_NONE type vm" );
 	}
 	Sys_Error( "VM_Call with bad vm->type" );
 	return 0;
@@ -517,16 +521,16 @@ symbols_t* QVM_FindName( qvm_t * qvm, int off)
 {
 	symbols_t* sym,*found;
 
-        found = NULL;
-        for(sym = qvm->sym_info; sym; sym = sym->next)
-        {
-        	if( sym->seg != 0)continue;
-        	if(!found)
-        		found = sym;
-        	if( sym->off <= off && sym->off >found->off )
-        		found  = sym;
-        }
-        return found;
+	found = NULL;
+	for(sym = qvm->sym_info; sym; sym = sym->next)
+	{
+		if( sym->seg != 0)continue;
+		if(!found)
+			found = sym;
+		if( sym->off <= off && sym->off >found->off )
+			found  = sym;
+	}
+	return found;
 }
 void  QVM_StackTrace( qvm_t * qvm )
 {
@@ -541,8 +545,8 @@ void  QVM_StackTrace( qvm_t * qvm )
 
 	Con_Printf( "PC %8x LP %8x SP %8x\n", qvm->PC, qvm->LP, qvm->SP );
 
-//	if ( qvm->sym_info == NULL )
-//		return;
+	//	if ( qvm->sym_info == NULL )
+	//		return;
 
 	sym = QVM_FindName( qvm, qvm->PC );
 
@@ -561,7 +565,7 @@ void  QVM_StackTrace( qvm_t * qvm )
 		}
 		if ( num <= 0 )
 		{
-		        Con_Printf( "Error num in stack %8x/%8x\n",  LP, qvm->len_ds );
+			Con_Printf( "Error num in stack %8x/%8x\n",  LP, qvm->len_ds );
 			return;
 		}
 
@@ -570,7 +574,7 @@ void  QVM_StackTrace( qvm_t * qvm )
 			Con_Printf( " %8x %s + %d\n", sym->off, sym->name, off - sym->off );
 		else
 			Con_Printf( " %8x unknown\n", off);
-		
+
 	}
 }
 
@@ -595,10 +599,10 @@ void QVM_RunError( qvm_t * qvm, char *error, ... )
 int trap_Call( qvm_t * qvm, int apinum )
 {
 	int     ret;
-	
+
 	qvm->SP++;
 	ret = qvm->syscall( qvm->ds, qvm->ds_mask, apinum, ( pr2val_t* ) ( qvm->ds + qvm->LP + 2*sizeof(int) ) );
-	
+
 	return ret;
 }
 
@@ -606,7 +610,7 @@ int trap_Call( qvm_t * qvm, int apinum )
 void PrintInstruction( qvm_t * qvm );
 
 int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, int arg3,
-		     int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 )
+              int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 )
 {
 	qvm_parm_type_t opStack[OPSTACKSIZE + 1];	//in q3 stack var of QVM_Exec size~0x400;
 #ifdef QVM_RUNAWAY_PROTECTION
@@ -625,8 +629,8 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 
 
 #ifdef QVM_PROFILE
-        if(sv_enableprofile.value)
-        	profile_func = ProfileEnterFunction(0);
+	if(sv_enableprofile.value)
+		profile_func = ProfileEnterFunction(0);
 #endif
 	if ( !qvm->reenter )
 	{
@@ -634,12 +638,12 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		qvm->LP = qvm->len_ds - sizeof(int);
 	}
 	if ( qvm->reenter++ > MAX_vmMain_Call )
-	        QVM_RunError( qvm, "QVM_Exec MAX_vmMain_Call reached");
+		QVM_RunError( qvm, "QVM_Exec MAX_vmMain_Call reached");
 
 	qvm->PC = 0;
 	qvm->SP = 0;
 	qvm->LP -= 14 * sizeof(int);
-	
+
 	STACK_INT( 0 )  = 0;	// return addres;
 	STACK_INT( 1 )  = 14 * sizeof(int);	//11 params + command + retaddr + num args;
 	STACK_INT( 2 )  = command;
@@ -682,8 +686,8 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			QVM_RunError( qvm, "QVM runaway loop error", qvm->PC );
 #endif
 #ifdef QVM_PROFILE
-                if(sv_enableprofile.value)
-        		profile_func->instruction_count++;
+		if(sv_enableprofile.value)
+			profile_func->instruction_count++;
 #endif
 		op = qvm->cs[qvm->PC++];
 		switch ( op.opcode )
@@ -702,11 +706,11 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		case OP_ENTER:
 			qvm->LP -= op.parm._int;
 #ifdef PARANOID
-           		if ( qvm->LP < qvm->len_ds - qvm->len_ss )
-           		{
-           			QVM_StackTrace( qvm );
-           			Sys_Error( "QVM Stack overflow on enter at %8x", qvm->PC );
-           		}
+			if ( qvm->LP < qvm->len_ds - qvm->len_ss )
+			{
+				QVM_StackTrace( qvm );
+				Sys_Error( "QVM Stack overflow on enter at %8x", qvm->PC );
+			}
 #endif
 			STACK_INT( 1 ) = op.parm._int;
 #ifdef QVM_RUNAWAY_PROTECTION
@@ -719,16 +723,16 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		case OP_LEAVE:
 			qvm->LP += op.parm._int;
 #ifdef PARANOID
-         		if ( qvm->LP >= qvm->len_ds )
-         			QVM_RunError( qvm, "QVM Stack underflow on leave at %8x", qvm->PC );
+			if ( qvm->LP >= qvm->len_ds )
+				QVM_RunError( qvm, "QVM Stack underflow on leave at %8x", qvm->PC );
 #endif
 			qvm->PC = STACK_INT( 0 );
 #ifdef QVM_PROFILE
-                        if(sv_enableprofile.value)
-                        {
-                        	sym = QVM_FindName( qvm, qvm->PC );
-        			profile_func = ProfileEnterFunction(sym->off);
-                        }
+			if(sv_enableprofile.value)
+			{
+				sym = QVM_FindName( qvm, qvm->PC );
+				profile_func = ProfileEnterFunction(sym->off);
+			}
 #endif
 
 #ifdef QVM_RUNAWAY_PROTECTION
@@ -741,16 +745,17 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			ivar = opStack[qvm->SP--]._int;
 			if ( ivar < 0 )
 			{
-				 ivar = trap_Call( qvm, -ivar - 1 );
-				 opStack[qvm->SP]._int = ivar;
+				ivar = trap_Call( qvm, -ivar - 1 );
+				opStack[qvm->SP]._int = ivar;
 			}
 			else
 			{
 				qvm->PC = ivar;
 #ifdef QVM_PROFILE
 				if(sv_enableprofile.value)
-        				profile_func = ProfileEnterFunction(ivar);
+					profile_func = ProfileEnterFunction(ivar);
 #endif
+
 			}
 			break;
 		case OP_PUSH:
@@ -774,7 +779,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 		case OP_JUMP:
 			qvm->PC = opStack[qvm->SP--]._int;
 			break;
-//-----Compare Operators
+			//-----Compare Operators
 		case OP_EQ:
 			if ( opStack[qvm->SP - 1]._int == opStack[qvm->SP]._int )
 				qvm->PC = op.parm._int;
@@ -786,7 +791,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				qvm->PC = op.parm._int;
 			qvm->SP -= 2;
 			break;
-//singed int compare
+			//singed int compare
 		case OP_LTI:
 			if ( opStack[qvm->SP - 1]._int < opStack[qvm->SP]._int )
 				qvm->PC = op.parm._int;
@@ -810,7 +815,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				qvm->PC = op.parm._int;
 			qvm->SP -= 2;
 			break;
-//unsinged int compare
+			//unsinged int compare
 		case OP_LTU:
 			if ( opStack[qvm->SP - 1]._uint < opStack[qvm->SP]._uint )
 				qvm->PC = op.parm._int;
@@ -834,7 +839,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				qvm->PC = op.parm._int;
 			qvm->SP -= 2;
 			break;
-//float                         
+			//float
 		case OP_EQF:
 			if ( opStack[qvm->SP - 1]._float == opStack[qvm->SP]._float )
 				qvm->PC = op.parm._int;
@@ -870,7 +875,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				qvm->PC = op.parm._int;
 			qvm->SP -= 2;
 			break;
-//-------------------
+			//-------------------
 		case OP_LOAD1:
 			ivar = opStack[qvm->SP]._int;
 
@@ -879,7 +884,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				QVM_RunError( qvm, "data load 1 out of range %8x\n", ivar );
 			opStack[qvm->SP]._int = *( char * ) ( qvm->ds + ivar );
 #else
-                        opStack[qvm->SP]._int = *( char * ) ( qvm->ds + (ivar&qvm->ds_mask) );
+			opStack[qvm->SP]._int = *( char * ) ( qvm->ds + (ivar&qvm->ds_mask) );
 #endif
 			break;
 
@@ -940,26 +945,26 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			break;
 
 		case OP_ARG:
-		        ivar = qvm->LP + op.parm._int;
+			ivar = qvm->LP + op.parm._int;
 #ifdef QVM_DATA_PROTECTION
 			if ( ivar & (~qvm->ds_mask) )
 				QVM_RunError( qvm, "arg out of range %8x\n", ivar );
 			*( int * ) ( qvm->ds + ivar ) = opStack[qvm->SP--]._int;
 #else
 			*( int * ) ( qvm->ds + (ivar&qvm->ds_mask) ) = opStack[qvm->SP--]._int;
-#endif		        
+#endif
 			break;
 
 		case OP_BLOCK_COPY:
 			{
-			  	int off1,off2,len;
-			  	off1 = opStack[qvm->SP - 1]._int;
-			  	off2 = opStack[qvm->SP]._int;
-			  	len = op.parm._int;
+				int off1,off2,len;
+				off1 = opStack[qvm->SP - 1]._int;
+				off2 = opStack[qvm->SP]._int;
+				len = op.parm._int;
 #ifdef QVM_DATA_PROTECTION
 				if ( (off1 & (~qvm->ds_mask) ) || (off2 & (~qvm->ds_mask) )
-					|| ((off1 + len) & (~qvm->ds_mask) )
-					|| ((off2 + len) & (~qvm->ds_mask) ))
+				        || ((off1 + len) & (~qvm->ds_mask) )
+				        || ((off2 + len) & (~qvm->ds_mask) ))
 					QVM_RunError( qvm, "block copy out of range %8x\n", ivar );
 				memmove( qvm->ds + off1, qvm->ds + off2, len );
 #else
@@ -968,19 +973,19 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 				qvm->SP -= 2;
 			}
 			break;
-//integer arifmetic
+			//integer arifmetic
 		case OP_SEX8:
-		        if( opStack[qvm->SP]._int & 0x80 )
-		                opStack[qvm->SP]._int |=0xFFFFFF00;
-		        else
-		                opStack[qvm->SP]._int &=0x000000FF;
+			if( opStack[qvm->SP]._int & 0x80 )
+				opStack[qvm->SP]._int |=0xFFFFFF00;
+			else
+				opStack[qvm->SP]._int &=0x000000FF;
 			break;
 
 		case OP_SEX16:
-		        if( opStack[qvm->SP]._int & 0x8000 )
-		                opStack[qvm->SP]._int |=0xFFFF0000;
-		        else
-		                opStack[qvm->SP]._int &=0x0000FFFF;
+			if( opStack[qvm->SP]._int & 0x8000 )
+				opStack[qvm->SP]._int |=0xFFFF0000;
+			else
+				opStack[qvm->SP]._int &=0x0000FFFF;
 			break;
 
 		case OP_NEGI:
@@ -1026,7 +1031,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			opStack[qvm->SP - 1]._uint *= opStack[qvm->SP]._uint;
 			qvm->SP--;
 			break;
-//bits
+			//bits
 		case OP_BAND:
 			opStack[qvm->SP - 1]._int &= opStack[qvm->SP]._int;
 			qvm->SP--;
@@ -1060,7 +1065,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			opStack[qvm->SP - 1]._uint >>= opStack[qvm->SP]._uint;
 			qvm->SP--;
 			break;
-//float arithmetic
+			//float arithmetic
 		case OP_NEGF:
 			opStack[qvm->SP]._float = -opStack[qvm->SP]._float;
 			break;
@@ -1094,7 +1099,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			break;
 		default:
 			QVM_RunError( qvm, "invalid opcode %2.2x at off=%8x\n", op.opcode, qvm->PC - 1 );
-		        QVM_StackTrace( qvm );
+			QVM_StackTrace( qvm );
 			Sys_Error( "invalid opcode %2.2x at off=%8x\n", op.opcode, qvm->PC - 1 );
 		}
 
@@ -1112,95 +1117,95 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
   QVM Debug stuff
 */
 char   *opcode_names[] = {
-	"OP_UNDEF",
+                             "OP_UNDEF",
 
-	"OP_IGNORE",
+                             "OP_IGNORE",
 
-	"OP_BREAK",
+                             "OP_BREAK",
 
-	"OP_ENTER",
-	"OP_LEAVE",
-	"OP_CALL",
-	"OP_PUSH",
-	"OP_POP",
+                             "OP_ENTER",
+                             "OP_LEAVE",
+                             "OP_CALL",
+                             "OP_PUSH",
+                             "OP_POP",
 
-	"OP_CONST",
-	"OP_LOCAL",
+                             "OP_CONST",
+                             "OP_LOCAL",
 
-	"OP_JUMP",
+                             "OP_JUMP",
 
-	//-------------------
+                             //-------------------
 
-	"OP_EQ",
-	"OP_NE",
+                             "OP_EQ",
+                             "OP_NE",
 
-	"OP_LTI",
-	"OP_LEI",
-	"OP_GTI",
-	"OP_GEI",
+                             "OP_LTI",
+                             "OP_LEI",
+                             "OP_GTI",
+                             "OP_GEI",
 
-	"OP_LTU",
-	"OP_LEU",
-	"OP_GTU",
-	"OP_GEU",
+                             "OP_LTU",
+                             "OP_LEU",
+                             "OP_GTU",
+                             "OP_GEU",
 
-	"OP_EQF",
-	"OP_NEF",
+                             "OP_EQF",
+                             "OP_NEF",
 
-	"OP_LTF",
-	"OP_LEF",
-	"OP_GTF",
-	"OP_GEF",
+                             "OP_LTF",
+                             "OP_LEF",
+                             "OP_GTF",
+                             "OP_GEF",
 
-	//-------------------
+                             //-------------------
 
-	"OP_LOAD1",
-	"OP_LOAD2",
-	"OP_LOAD4",
-	"OP_STORE1",
-	"OP_STORE2",
-	"OP_STORE4",		// *(stack[top-1]) = stack[yop
-	"OP_ARG",
-	"OP_BLOCK_COPY",
+                             "OP_LOAD1",
+                             "OP_LOAD2",
+                             "OP_LOAD4",
+                             "OP_STORE1",
+                             "OP_STORE2",
+                             "OP_STORE4",		// *(stack[top-1]) = stack[yop
+                             "OP_ARG",
+                             "OP_BLOCK_COPY",
 
-	//-------------------
+                             //-------------------
 
-	"OP_SEX8",
-	"OP_SEX16",
+                             "OP_SEX8",
+                             "OP_SEX16",
 
-	"OP_NEGI",
-	"OP_ADD",
-	"OP_SUB",
-	"OP_DIVI",
-	"OP_DIVU",
-	"OP_MODI",
-	"OP_MODU",
-	"OP_MULI",
-	"OP_MULU",
+                             "OP_NEGI",
+                             "OP_ADD",
+                             "OP_SUB",
+                             "OP_DIVI",
+                             "OP_DIVU",
+                             "OP_MODI",
+                             "OP_MODU",
+                             "OP_MULI",
+                             "OP_MULU",
 
-	"OP_BAND",
-	"OP_BOR",
-	"OP_BXOR",
-	"OP_BCOM",
+                             "OP_BAND",
+                             "OP_BOR",
+                             "OP_BXOR",
+                             "OP_BCOM",
 
-	"OP_LSH",
-	"OP_RSHI",
-	"OP_RSHU",
+                             "OP_LSH",
+                             "OP_RSHI",
+                             "OP_RSHU",
 
-	"OP_NEGF",
-	"OP_ADDF",
-	"OP_SUBF",
-	"OP_DIVF",
-	"OP_MULF",
+                             "OP_NEGF",
+                             "OP_ADDF",
+                             "OP_SUBF",
+                             "OP_DIVF",
+                             "OP_MULF",
 
-	"OP_CVIF",
-	"OP_CVFI"
-};
+                             "OP_CVIF",
+                             "OP_CVFI"
+                         };
 
 void PrintInstruction( qvm_t * qvm )
 {
-  qvm_instruction_t op = qvm->cs[qvm->PC];
-  Con_DPrintf( "PC %8x LP %8x SP %8x\n", qvm->PC, qvm->LP, qvm->SP );
+	qvm_instruction_t op = qvm->cs[qvm->PC];
+	Con_DPrintf( "PC %8x LP %8x SP %8x\n", qvm->PC, qvm->LP, qvm->SP );
 
 	switch ( op.opcode )
 	{

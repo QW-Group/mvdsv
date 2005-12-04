@@ -1,21 +1,21 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: tools.c,v 1.4 2005/09/27 20:51:06 disconn3ct Exp $
+ 
+	$Id: tools.c,v 1.5 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -37,9 +37,9 @@ static int	header = (char *)&((header_t*)0)->data - (char *)NULL;
 
 /*
 ============================================================================
-
+ 
 					BYTE ORDER FUNCTIONS
-
+ 
 ============================================================================
 */
 
@@ -72,8 +72,8 @@ float FloatSwap (float f)
 		float	f;
 		byte	b[4];
 	} dat1, dat2;
-	
-	
+
+
 	dat1.f = f;
 	dat2.b[0] = dat1.b[3];
 	dat2.b[1] = dat1.b[2];
@@ -84,9 +84,9 @@ float FloatSwap (float f)
 
 /*
 ==============================================================================
-
+ 
 			MESSAGE IO FUNCTIONS
-
+ 
 Handles byte ordering and avoids alignment errors
 ==============================================================================
 */
@@ -98,7 +98,7 @@ Handles byte ordering and avoids alignment errors
 void MSG_WriteChar (sizebuf_t *sb, int c)
 {
 	byte	*buf;
-	
+
 	buf = SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
@@ -106,7 +106,7 @@ void MSG_WriteChar (sizebuf_t *sb, int c)
 void MSG_WriteByte (sizebuf_t *sb, int c)
 {
 	byte	*buf;
-	
+
 	buf = SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
@@ -114,7 +114,7 @@ void MSG_WriteByte (sizebuf_t *sb, int c)
 void MSG_WriteShort (sizebuf_t *sb, int c)
 {
 	byte	*buf;
-	
+
 	buf = SZ_GetSpace (sb, 2);
 	buf[0] = c&0xff;
 	buf[1] = c>>8;
@@ -123,7 +123,7 @@ void MSG_WriteShort (sizebuf_t *sb, int c)
 void MSG_WriteLong (sizebuf_t *sb, int c)
 {
 	byte	*buf;
-	
+
 	buf = SZ_GetSpace (sb, 4);
 	buf[0] = c&0xff;
 	buf[1] = (c>>8)&0xff;
@@ -138,11 +138,11 @@ void MSG_WriteFloat (sizebuf_t *sb, float f)
 		float	f;
 		int	l;
 	} dat;
-	
-	
+
+
 	dat.f = f;
 	dat.l = LittleLong (dat.l);
-	
+
 	SZ_Write (sb, &dat.l, 4);
 }
 
@@ -173,9 +173,9 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 {
 	int		bits;
 
-//
-// send the movement message
-//
+	//
+	// send the movement message
+	//
 	bits = 0;
 	if (cmd->angles[0] != from->angles[0])
 		bits |= CM_ANGLE1;
@@ -194,7 +194,7 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 	if (cmd->impulse != from->impulse)
 		bits |= CM_IMPULSE;
 
-    MSG_WriteByte (buf, bits);
+	MSG_WriteByte (buf, bits);
 
 	if (bits & CM_ANGLE1)
 		MSG_WriteAngle16 (buf, cmd->angles[0]);
@@ -202,18 +202,18 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 		MSG_WriteAngle16 (buf, cmd->angles[1]);
 	if (bits & CM_ANGLE3)
 		MSG_WriteAngle16 (buf, cmd->angles[2]);
-	
+
 	if (bits & CM_FORWARD)
 		MSG_WriteShort (buf, cmd->forwardmove);
 	if (bits & CM_SIDE)
-	  	MSG_WriteShort (buf, cmd->sidemove);
+		MSG_WriteShort (buf, cmd->sidemove);
 	if (bits & CM_UP)
 		MSG_WriteShort (buf, cmd->upmove);
 
- 	if (bits & CM_BUTTONS)
-	  	MSG_WriteByte (buf, cmd->buttons);
- 	if (bits & CM_IMPULSE)
-	    MSG_WriteByte (buf, cmd->impulse);
+	if (bits & CM_BUTTONS)
+		MSG_WriteByte (buf, cmd->buttons);
+	if (bits & CM_IMPULSE)
+		MSG_WriteByte (buf, cmd->impulse);
 	MSG_WriteByte (buf, cmd->msec);
 }
 
@@ -233,7 +233,7 @@ qboolean MSG_Forward (sizebuf_t *sb, int start, int count)
 		msg_badread = true;
 		return false;
 	}
-	
+
 	SZ_Write (sb, net_message.data + msg_readcount, count);
 	msg_readcount += count;
 	return true;
@@ -255,70 +255,70 @@ int MSG_GetReadCount(void)
 int MSG_ReadChar (void)
 {
 	int	c;
-	
+
 	if (msg_readcount+1 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
-		
+
 	c = (signed char)net_message.data[msg_readcount];
 	msg_readcount++;
-	
+
 	return c;
 }
 
 int MSG_ReadByte (void)
 {
 	int	c;
-	
+
 	if (msg_readcount+1 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
-		
+
 	c = (unsigned char)net_message.data[msg_readcount];
 	msg_readcount++;
-	
+
 	return c;
 }
 
 int MSG_ReadShort (void)
 {
 	int	c;
-	
+
 	if (msg_readcount+2 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
-		
+
 	c = (short)(net_message.data[msg_readcount]
-	+ (net_message.data[msg_readcount+1]<<8));
-	
+	            + (net_message.data[msg_readcount+1]<<8));
+
 	msg_readcount += 2;
-	
+
 	return c;
 }
 
 int MSG_ReadLong (void)
 {
 	int	c;
-	
+
 	if (msg_readcount+4 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
-		
+
 	c = net_message.data[msg_readcount]
-	+ (net_message.data[msg_readcount+1]<<8)
-	+ (net_message.data[msg_readcount+2]<<16)
-	+ (net_message.data[msg_readcount+3]<<24);
-	
+	    + (net_message.data[msg_readcount+1]<<8)
+	    + (net_message.data[msg_readcount+2]<<16)
+	    + (net_message.data[msg_readcount+3]<<24);
+
 	msg_readcount += 4;
-	
+
 	return c;
 }
 
@@ -330,23 +330,23 @@ float MSG_ReadFloat (void)
 		float	f;
 		int	l;
 	} dat;
-	
+
 	dat.b[0] =	net_message.data[msg_readcount];
 	dat.b[1] =	net_message.data[msg_readcount+1];
 	dat.b[2] =	net_message.data[msg_readcount+2];
 	dat.b[3] =	net_message.data[msg_readcount+3];
 	msg_readcount += 4;
-	
+
 	dat.l = LittleLong (dat.l);
 
-	return dat.f;	
+	return dat.f;
 }
 
 char *MSG_ReadString (void)
 {
 	static char	string[2048];
 	int		l,c;
-	
+
 	l = 0;
 	do
 	{
@@ -355,10 +355,11 @@ char *MSG_ReadString (void)
 			break;
 		string[l] = c;
 		l++;
-	} while (l < sizeof(string)-1);
-	
+	}
+	while (l < sizeof(string)-1);
+
 	string[l] = 0;
-	
+
 	return string;
 }
 
@@ -366,7 +367,7 @@ char *MSG_ReadStringLine (void)
 {
 	static char	string[2048];
 	int		l,c;
-	
+
 	l = 0;
 	do
 	{
@@ -375,10 +376,11 @@ char *MSG_ReadStringLine (void)
 			break;
 		string[l] = c;
 		l++;
-	} while (l < sizeof(string)-1);
-	
+	}
+	while (l < sizeof(string)-1);
+
 	string[l] = 0;
-	
+
 	return string;
 }
 
@@ -404,35 +406,35 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 	memcpy (move, from, sizeof(*move));
 
 	bits = MSG_ReadByte ();
-		
-// read current angles
+
+	// read current angles
 	if (bits & CM_ANGLE1)
 		move->angles[0] = MSG_ReadAngle16 ();
-		
-	if (bits & CM_ANGLE2) 
+
+	if (bits & CM_ANGLE2)
 		move->angles[1] = MSG_ReadAngle16 ();
-		
+
 	if (bits & CM_ANGLE3)
 		move->angles[2] = MSG_ReadAngle16 ();
-		
-// read movement
+
+	// read movement
 	if (bits & CM_FORWARD)
 		move->forwardmove = MSG_ReadShort ();
-	
+
 	if (bits & CM_SIDE)
 		move->sidemove = MSG_ReadShort ();
-	
-	if (bits & CM_UP) 
+
+	if (bits & CM_UP)
 		move->upmove = MSG_ReadShort ();
-	
-// read buttons
+
+	// read buttons
 	if (bits & CM_BUTTONS)
 		move->buttons = MSG_ReadByte ();
 
 	if (bits & CM_IMPULSE)
 		move->impulse = MSG_ReadByte ();
 
-// read time to run command
+	// read time to run command
 	move->msec = MSG_ReadByte ();
 }
 
@@ -446,29 +448,29 @@ void SZ_Clear (sizebuf_t *buf)
 void *SZ_GetSpace (sizebuf_t *buf, int length)
 {
 	void	*data;
-	
+
 	if (buf->cursize + length > buf->maxsize)
-	{	
+	{
 		Sys_Printf ("SZ_GetSpace: overflow\n");
-		SZ_Clear (buf); 
+		SZ_Clear (buf);
 		Dem_Stop(from);
 	}
 
 	data = buf->data + buf->cursize;
 	buf->cursize += length;
-	
+
 	return data;
 }
 
 void SZ_Write (sizebuf_t *buf, void *data, int length)
 {
-	memcpy (SZ_GetSpace(buf,length),data,length);		
+	memcpy (SZ_GetSpace(buf,length),data,length);
 }
 
 void SZ_Print (sizebuf_t *buf, char *data)
 {
 	int		len;
-	
+
 	len = strlen(data)+1;
 
 	if (!buf->cursize || buf->data[buf->cursize-1])
@@ -487,7 +489,8 @@ void MVDBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg)
 	demobuffer->end = 0;
 	demobuffer->last = 0;
 	demobuffer->msgbuf = msgbuf = msg;
-	if (msgbuf) {
+	if (msgbuf)
+	{
 		memset(msgbuf, 0, sizeof(*msgbuf));
 		msgbuf->data = demobuffer->data;
 		msgbuf->maxsize = MAXSIZE(demobuffer);
@@ -504,7 +507,7 @@ void DemoBuffer_Set(dbuffer_t *dbuffer)
 /*
 ==============
 Demo_SetMsgBuf
-
+ 
 Sets the frame message buffer
 ==============
 */
@@ -527,7 +530,7 @@ void MVDSetMsgBuf(dbuffer_t *dbuffer, sizebuf_t *cur)
 /*
 ==============
 SV_MVDWriteToDisk
-
+ 
 Writes to disk a message meant for specifc client
 or all messages if type == 0
 Message is cleared from demobuf after that
@@ -552,7 +555,8 @@ void SV_MVDWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 		// no type means we are writing to disk everything
 		if (!type || (p->type == type && p->to == to))
 		{
-			if (size) {
+			if (size)
+			{
 				msg.data = p->data;
 				msg.cursize = size;
 
@@ -590,7 +594,7 @@ void SV_MVDWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 /*
 ==============
 MVDSetBuf
-
+ 
 Sets position in the buf for writing to specific client
 ==============
 */
@@ -700,7 +704,8 @@ void MVDWrite_Begin(byte type, int to, int size)
 			MVDMoveBuf();
 	}
 
-	if (msgbuf->h == NULL || msgbuf->h->type != type || msgbuf->h->to != to || msgbuf->h->full) {
+	if (msgbuf->h == NULL || msgbuf->h->type != type || msgbuf->h->to != to || msgbuf->h->full)
+	{
 		MVDSetBuf(type, to);
 	}
 
@@ -711,7 +716,8 @@ void MVDWrite_Begin(byte type, int to, int size)
 	}
 
 	// we have to make room for new data
-	if (msgbuf->cursize != msgbuf->bufsize) {
+	if (msgbuf->cursize != msgbuf->bufsize)
+	{
 		p = msgbuf->data + msgbuf->cursize;
 		memmove(p+size, p, msgbuf->bufsize - msgbuf->cursize);
 	}
@@ -725,7 +731,7 @@ void MVDWrite_Begin(byte type, int to, int size)
 /*
 ====================
 WriteDemoMessage
-
+ 
 Dumps the current net message, prefixed by the length and time
 ====================
 */
@@ -742,12 +748,13 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 	prevtime += msec*0.001;
 
 	//Sys_Printf("%f %f\n", time, prevtime);
-	
+
 	if (!world.signonloaded)
 		msec = 0;
 
 #if 0
-	if (msec > 255) { 
+	if (msec > 255)
+	{
 		Sys_Printf("lag:%d\n", msec);
 		if (msec > 5000) msec = 5000;
 
@@ -755,7 +762,8 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 			fwrite (&len, 4, 1, sworld.demo.file);
 
 		//msec = 255;
-	} else 
+	}
+	else
 #endif
 		if (msec < 2) msec = 0;
 
@@ -790,7 +798,9 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 			Dem_Stop(from);
 			return;
 		}
-	} else {
+	}
+	else
+	{
 		c = dem_read;
 		fwrite (&c, sizeof(c), 1, sworld.demo.file);
 	}
@@ -806,8 +816,7 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 
 
 void Tools_Init (void)
-{
-}
+{}
 
 /*
 ============
@@ -820,7 +829,8 @@ void StripExtension (char *in, char *out)
 
 	strcpy(out, in);
 	p = out + strlen(out);
-	while (p > out && *p != '.') {
+	while (p > out && *p != '.')
+	{
 		p--;
 	}
 
@@ -858,7 +868,7 @@ char *FileExtension (char *in)
 /*
 ==================
 DefaultExtension
-
+ 
 If path doesn't have a .EXT, append extension
 (extension should include the .)
 ==================
@@ -883,7 +893,7 @@ void DefaultExtension (char *path, char *extension)
 /*
 ==================
 ForceExtension
-
+ 
 If path doesn't have an extension or has a different extension,
 append(!) specified extension
 Extension should include the .
@@ -925,8 +935,10 @@ char *getPath(char *path)
 
 	strcpy(dir, path);
 	p = dir + strlen(dir);
-	while (p > dir) {
-		if (*p == '\\' || *p == '/') {
+	while (p > dir)
+	{
+		if (*p == '\\' || *p == '/')
+		{
 			p++;
 			break;
 		}
@@ -940,7 +952,7 @@ char *getPath(char *path)
 /*
 ==============
 GetFileList
-
+ 
 Reads wildcards to get full file list
 ==============
 */
@@ -956,7 +968,7 @@ int AddToFileList(flist_t *filelist, char *file)
 	// move to the end of list
 	while (filelist->list != NULL)
 		filelist++;
-	
+
 	count = 0;
 
 	// get first file, add it to list even if file is not found
@@ -966,10 +978,13 @@ int AddToFileList(flist_t *filelist, char *file)
 	else
 		strcpy(filelist->path, getPath(file));
 
-	do {
-		if (hFile == -1L) {
+	do
+	{
+		if (hFile == -1L)
+		{
 			strcpy(c_file.name, file);
-		} else if (c_file.attrib & _A_SUBDIR || c_file.attrib & _A_SYSTEM)
+		}
+		else if (c_file.attrib & _A_SUBDIR || c_file.attrib & _A_SYSTEM)
 			continue;
 
 		// realloc flist table
@@ -978,12 +993,13 @@ int AddToFileList(flist_t *filelist, char *file)
 
 		// alloc memory for file name
 		p = (char*) Q_Malloc (strlen(c_file.name)+1);
-			
+
 		// copy the name
 		strcpy(p, c_file.name);
 
 		flist[count++] = p;
-	} while ( hFile != -1L && _findnext( hFile, &c_file ) == 0 );
+	}
+	while ( hFile != -1L && _findnext( hFile, &c_file ) == 0 );
 	_findclose( hFile );
 
 	filelist->list = flist;
@@ -1000,7 +1016,7 @@ int AddToFileList(flist_t *filelist, char *file)
 	// move to the end of list
 	while (filelist->list != NULL)
 		filelist++;
-	
+
 	tmp = (char *)Q_Malloc(strlen(file)+1);
 	strcpy(tmp, file);
 	name = basename(tmp);
@@ -1038,7 +1054,7 @@ void FreeFileList(flist_t *flist)
 /*
 ===============
 Info_ValueForKey
-
+ 
 Searches the string for the given
 key and returns the associated value, or an empty string.
 ===============
@@ -1047,10 +1063,10 @@ char *Info_ValueForKey (char *s, char *key)
 {
 	char	pkey[512];
 	static	char value[4][512];	// use two buffers so compares
-								// work without stomping on each other
+	// work without stomping on each other
 	static	int	valueindex;
 	char	*o;
-	
+
 	valueindex = (valueindex + 1) % 4;
 	if (*s == '\\')
 		s++;
@@ -1088,7 +1104,7 @@ char *Info_ValueForKey (char *s, char *key)
 /*
 ================
 CheckParm
-
+ 
 Returns the position (1 to argc-1) in the program's argument list
 where the given parameter appears, or 0 if not present
 ================
@@ -1097,7 +1113,7 @@ where the given parameter appears, or 0 if not present
 int CheckParm (char *parm)
 {
 	int		i;
-	
+
 	for (i=1 ; i<com_argc ; i++)
 	{
 		if (!com_argv[i])
@@ -1105,14 +1121,14 @@ int CheckParm (char *parm)
 		if (!strcmp (parm,com_argv[i]))
 			return i;
 	}
-		
+
 	return 0;
 }
 
 /*
 ================
 AddParm
-
+ 
 Adds the given string at the end of the current argument list
 ================
 */
@@ -1141,7 +1157,7 @@ void RemoveParm (int num)
 void Argv_Init (int argc, char **argv)
 {
 	for (com_argc=0 ; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc) ;
-		 com_argc++)
+	        com_argc++)
 	{
 		com_argv[com_argc] = argv[com_argc];
 	}
@@ -1161,7 +1177,7 @@ void *Q_Malloc (size_t size)
 /*
 ============
 va
-
+ 
 does a varargs printf into a temp buffer, so I don't need to have
 varargs versions of all text functions.
 FIXME: make this buffer size safe someday
@@ -1172,20 +1188,20 @@ char	*va(char *format, ...)
 	va_list		argptr;
 	static char		string[4][1024];
 	static int		index = 0;
-	
+
 	index = (index+1)&3;
 	va_start (argptr, format);
 	vsprintf (string[index], format,argptr);
 	va_end (argptr);
 
-	return string[index];	
+	return string[index];
 }
 
 /*
 ==================================================
-
+ 
   FILE SYSTEM
-
+ 
 ==================================================
 */
 
@@ -1223,7 +1239,7 @@ int FileOpenRead (char *path, FILE **hndl)
 		return -1;
 	}
 	*hndl = f;
-	
+
 	return fileLength(f);
 }
 
@@ -1248,7 +1264,7 @@ vec_t Length(vec3_t v)
 {
 	int		i;
 	float	length;
-	
+
 	length = 0;
 	for (i=0 ; i< 3 ; i++)
 		length += v[i]*v[i];

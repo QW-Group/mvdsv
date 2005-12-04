@@ -1,21 +1,21 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: main.c,v 1.5 2005/09/27 20:51:06 disconn3ct Exp $
+ 
+	$Id: main.c,v 1.6 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -122,10 +122,13 @@ void Sys_Error (char *error, ...)
 	vsprintf (text, error,argptr);
 	va_end (argptr);
 
-	
-	if (sworld.from->file != NULL && sworld.from->file != stdin) {
+
+	if (sworld.from->file != NULL && sworld.from->file != stdin)
+	{
 		Sys_Printf ("ERROR: %s, at:%d\n", text, ftell(sworld.from->file));
-	} else {
+	}
+	else
+	{
 		Sys_Printf ("ERROR: %s\n", text);
 	}
 
@@ -148,9 +151,9 @@ void Sys_Printf (char *fmt, ...)
 	// stdout can be redirected to a file or other process
 	if (
 #ifdef _WIN32
-		ConsoleOutHndl != NULL &&
+	    ConsoleOutHndl != NULL &&
 #endif
-		sworld.options & O_STDOUT)
+	    sworld.options & O_STDOUT)
 	{
 		va_start (argptr,fmt);
 		vsprintf(buf, fmt, argptr);
@@ -171,7 +174,7 @@ void Sys_Printf (char *fmt, ...)
 /*
 =================
 ConnectionlessPacket
-
+ 
 Responses to broadcasts, etc
 =================
 */
@@ -181,7 +184,7 @@ extern int msg_startcount;
 /*
 =================
 Netchan_Process
-
+ 
 called when the current net_message is from remote_address
 modifies net_message so that it points to the packet payload
 =================
@@ -192,7 +195,7 @@ qboolean Netchan_Process (netchan_t *chan)
 	unsigned		sequence, sequence_ack;
 	unsigned		reliable_ack, reliable_message;
 
-// get sequence numbers
+	// get sequence numbers
 	MSG_BeginReading ();
 	sequence = MSG_ReadLong ();
 	sequence_ack = MSG_ReadLong ();
@@ -201,27 +204,27 @@ qboolean Netchan_Process (netchan_t *chan)
 	reliable_message = sequence >> 31;
 	reliable_ack = sequence_ack >> 31;
 
-	sequence &= ~(1<<31);	
-	sequence_ack &= ~(1<<31);	
+	sequence &= ~(1<<31);
+	sequence_ack &= ~(1<<31);
 
-//
-// discard stale or duplicated packets
-//
+	//
+	// discard stale or duplicated packets
+	//
 	if (sequence <= (unsigned)chan->incoming_sequence)
 	{
 		return false;
 	}
 
-//
-// if the current outgoing reliable message has been acknowledged
-// clear the buffer to make way for the next
-//
+	//
+	// if the current outgoing reliable message has been acknowledged
+	// clear the buffer to make way for the next
+	//
 	if (reliable_ack == (unsigned)chan->reliable_sequence)
 		chan->reliable_length = 0;	// it has been received
-	
-//
-// if this message contains a reliable message, bump incoming_reliable_sequence 
-//
+
+	//
+	// if this message contains a reliable message, bump incoming_reliable_sequence
+	//
 	chan->incoming_sequence = sequence;
 	chan->incoming_acknowledged = sequence_ack;
 	chan->incoming_reliable_acknowledged = reliable_ack;
@@ -236,8 +239,8 @@ void ConnectionlessPacket (void)
 {
 	int		c;
 
-    MSG_BeginReading ();
-    MSG_ReadLong ();        // skip the -1
+	MSG_BeginReading ();
+	MSG_ReadLong ();        // skip the -1
 
 	c = MSG_ReadByte ();
 	if (c == S2C_CONNECTION)
@@ -280,14 +283,16 @@ void ConnectionlessPacket (void)
 		return;
 	}
 
-	if (c == S2C_CHALLENGE) {
+	if (c == S2C_CHALLENGE)
+	{
 		if (sworld.options & O_DEBUG)
 			fprintf(sworld.debug.file, "challenge\n");
 		MSG_ReadString ();
 		return;
 	}
 
-	if (c == svc_disconnect) {
+	if (c == svc_disconnect)
+	{
 		if (sworld.options & O_DEBUG)
 			fprintf(sworld.debug.file, "disconnect\n");
 		Dem_Stop(from);
@@ -305,7 +310,7 @@ void Dem_Stop(source_t *s)
 
 	if (sworld.options & O_QWDSYNC)
 	{
-		if (s != NULL) 
+		if (s != NULL)
 			s->running = 0;
 		return;
 	}
@@ -315,7 +320,7 @@ void Dem_Stop(source_t *s)
 	if (s == NULL)
 		for (i = 0; i < sworld.fromcount; i++)
 		{
-			StopQWZ(sources + i);			
+			StopQWZ(sources + i);
 
 			world.running -= sources[i].running;
 			sources[i].running = 0;
@@ -327,7 +332,8 @@ void Dem_Stop(source_t *s)
 		s->running = 0;
 	}
 
-	if (msgbuf) {
+	if (msgbuf)
+	{
 		msgbuf->cursize = 0;
 		msgbuf->bufsize = 0;
 		msgbuf->h = NULL;
@@ -364,14 +370,16 @@ nextdemomessage:
 
 	// read the time from the packet
 	newtime = 0;
-	if (!from->lasttime) 
+	if (!from->lasttime)
 	{
 		if (from->format == mvd)
 		{
 			r = fread(&newtime, sizeof(newtime), 1, sworld.from[num].file);
 			from->prevtime += newtime;
 			demotime = from->basetime + from->prevtime*0.001*from->ratio;
-		} else {
+		}
+		else
+		{
 			r = fread(&demotime, sizeof(demotime), 1, sworld.from[num].file);
 			demotime = LittleFloat(demotime);
 		}
@@ -381,16 +389,19 @@ nextdemomessage:
 			Dem_Stop(from);
 			return 0;
 		}
-	} else {
+	}
+	else
+	{
 		demotime = from->lasttime;
 		newtime = from->prevnewtime;
 		from->lasttime = 0;
 	}
 
-// decide if it is time to grab the next message
+	// decide if it is time to grab the next message
 	if (from->lastframe < 0)
 		from->lastframe = demotime;
-	else if (demotime > from->lastframe + 0.001) {
+	else if (demotime > from->lastframe + 0.001)
+	{
 		if (sworld.options & O_DEBUG)
 			fprintf(sworld.debug.file, "signonloaded %f, %f, %d\n", demotime, from->lastframe, newtime);
 		from->lastframe = demotime;
@@ -420,7 +431,8 @@ nextdemomessage:
 	// get the msg type
 	fread (&c, sizeof(c), 1, sworld.from[num].file);
 
-	switch (c&7) {
+	switch (c&7)
+	{
 	case dem_cmd :
 		// user sent input
 		i = from->netchan.outgoing_sequence & UPDATE_MASK;
@@ -433,7 +445,8 @@ nextdemomessage:
 		}
 
 		// byte order stuff
-		for (j = 0; j < 3; j++) {
+		for (j = 0; j < 3; j++)
+		{
 			pcmd->angles[j] = LittleFloat(pcmd->angles[j]);
 			if (pcmd->angles[j] > 180)
 				pcmd->angles[j] -= 360;
@@ -460,7 +473,8 @@ readit:
 		fread (&net_message.cursize, 4, 1, sworld.from[num].file);
 		net_message.cursize = LittleLong (net_message.cursize);
 
-		if (net_message.cursize > MAX_UDP_PACKET) {
+		if (net_message.cursize > MAX_UDP_PACKET)
+		{
 			Sys_Printf ("ERROR: Demo message > MAX_UDP_PACKET (%d)\n", net_message.cursize);
 			Dem_Stop(from);
 			return 0;
@@ -481,7 +495,8 @@ readit:
 		from->netchan.outgoing_sequence = LittleLong(i);
 		fread (&i, 4, 1, sworld.from[num].file);
 		from->netchan.incoming_sequence = LittleLong(i);
-		if (from->format == mvd) {
+		if (from->format == mvd)
+		{
 			from->netchan.incoming_acknowledged = from->netchan.incoming_sequence;
 			goto nextdemomessage;
 		}
@@ -499,7 +514,7 @@ readit:
 		from->to = LittleLong(i);
 		from->type = dem_multiple;
 		goto readit;
-		
+
 	case dem_single:
 		from->to = c>>3;
 		from->type = dem_single;
@@ -539,7 +554,8 @@ void CheckSpectator (void)
 			continue;
 
 		for (j = 0; j < 3; j++)
-			if (abs(state->command.angles[j] - self->command.angles[j]) > 0.0) {
+			if (abs(state->command.angles[j] - self->command.angles[j]) > 0.0)
+			{
 				break;
 			}
 
@@ -548,16 +564,19 @@ void CheckSpectator (void)
 		break;
 	}
 
-	if (i == MAX_CLIENTS) {
+	if (i == MAX_CLIENTS)
+	{
 		from->spec_track = -1;
-	} else 			
+	}
+	else
 		from->spec_track = i;
 }
 
 void ReadPackets (void)
 {
 	// if it's not a time to read packet from this demofile, return
-	if (world.time && from->worldtime > world.time) {
+	if (world.time && from->worldtime > world.time)
+	{
 		return;
 	}
 
@@ -576,7 +595,8 @@ void ReadPackets (void)
 		{
 			ConnectionlessPacket ();
 
-			if (!from->running) {
+			if (!from->running)
+			{
 				break;
 			}
 			continue;
@@ -587,19 +607,22 @@ void ReadPackets (void)
 			continue;
 		}
 
-		
-		if (from->format == qwd) {
+
+		if (from->format == qwd)
+		{
 			if (!Netchan_Process(&from->netchan))
 				continue;		// wasn't accepted for some reason
-		} else {
+		}
+		else
+		{
 			MSG_BeginReading ();
 		}
-			
+
 		Dem_ParseDemoMessage ();
 
 		if (sworld.options & O_QWDSYNC || !(sworld.options & (O_CONVERT | O_MARGE)))
 			SZ_Clear(msgbuf);
-		
+
 
 		if (!from->running)
 			return;
@@ -607,7 +630,8 @@ void ReadPackets (void)
 
 	CheckSpectator();
 
-	if (stats_msg.cursize) {
+	if (stats_msg.cursize)
+	{
 		MVDWrite_Begin(dem_stats, To(), stats_msg.cursize);
 		SZ_Write(msgbuf, stats_msg.data, stats_msg.cursize);
 		SZ_Clear(&stats_msg);
@@ -634,7 +658,8 @@ void ReadPackets (void)
 				c += ftell(sworld.from[i].file);
 			else c += sworld.from[i].filesize;
 
-		if (c - world.oldftell > 256000) {
+		if (c - world.oldftell > 256000)
+		{
 #ifdef _WIN32
 			if ((p = (int)100.0*c/world.demossize) != world.percentage)
 				SetConsoleTitle(va("qwdtools  %d%% (%d of %d)", p, sworld.count, sworld.sources));
@@ -643,7 +668,7 @@ void ReadPackets (void)
 			world.oldftell = c;
 		}
 	}
-	
+
 }
 
 __inline void SetWorldTime()
@@ -666,7 +691,7 @@ __inline void GetDemoTimes(double *mintime, double *nearest)
 	double t;
 
 	*mintime = *nearest = -1;
-	
+
 	for (i = 0; i < sworld.fromcount; i++)
 	{
 		if (!sources[i].running)
@@ -717,11 +742,13 @@ void AddEntities(packet_entities_t *to, frame_t *prev, frame_t *next)
 			newp.entities[i] = nextp->entities[i];
 			if (j < prevp->num_entities && prevp->entities[j].number == nextp->entities[i].number)
 			{
-				for (k=0; k<3; k++) {
+				for (k=0; k<3; k++)
+				{
 					newp.entities[i].origin[k] = prevp->entities[j].origin[k] + f*(prevp->entities[j].origin[k] - nextp->entities[i].origin[k]);
 					newp.entities[i].angles[k] = adjustangle(nextp->entities[i].angles[k], prevp->entities[j].angles[k],1.0+f);
 				}
-			} else
+			}
+			else
 			{
 				VectorCopy(nextp->entities[i].origin, newp.entities[i].origin);
 				VectorCopy(nextp->entities[i].angles, newp.entities[i].angles);
@@ -742,7 +769,8 @@ void AddEntities(packet_entities_t *to, frame_t *prev, frame_t *next)
 			worldp.entities[worldp.num_entities++] = newp.entities[i++];
 		else if (newp.entities[i].number > to->entities[j].number)
 			worldp.entities[worldp.num_entities++] = to->entities[j++];
-		else { 
+		else
+		{
 			worldp.entities[worldp.num_entities++] = to->entities[j++];
 			i++;
 		}
@@ -763,8 +791,10 @@ void AddNails(frame_t *to, frame_t *frame)
 
 	num = to->num_projectiles;
 
-	for (j = 0; j < frame->num_projectiles; j++) {
-		for (i = 0; i < num; i++) {
+	for (j = 0; j < frame->num_projectiles; j++)
+	{
+		for (i = 0; i < num; i++)
+		{
 			VectorSubtract(frame->projectiles[j].origin, to->projectiles[i].origin, diff);
 			if (Length(diff) < 64)
 				break;
@@ -791,12 +821,14 @@ void AddPlayers(frame_t *to, frame_t *frame)
 		if (state[i].messagenum != from->parsecount)
 			continue;
 
-		if (world.players[i].lastsource) {
+		if (world.players[i].lastsource)
+		{
 			last = world.players[i].lastsource - 1;
 			if (last != from-sources && sources[last].running && sources[last].frames[sources[last].parsecount&UPDATE_MASK].playerstate[i].messagenum == sources[last].parsecount)
 				continue;
 			world.players[i].lastsource = from-sources + 1;
-		} else world.players[i].lastsource = from-sources + 1;
+		}
+		else world.players[i].lastsource = from-sources + 1;
 
 		msec = (world.time - frame->time)*1000;
 		if (msec > 100) msec = 100;
@@ -822,7 +854,8 @@ void Update_SignonStats(void)
 		if (!from->running)
 			continue;
 
-		for (i = 0; i < MAX_CLIENTS; i++) {
+		for (i = 0; i < MAX_CLIENTS; i++)
+		{
 			if (from->players[i].spectator)
 				continue;
 			if (!from->players[i].name[0])
@@ -879,7 +912,8 @@ void MainLoop(void)
 
 	// sync demos
 	world.signonloaded = true;
-	if (!Synchronize()) {
+	if (!Synchronize())
+	{
 		Sys_Printf("couldn't synchronize demos\n");
 		Dem_Stop(NULL);
 		return;
@@ -905,7 +939,9 @@ void MainLoop(void)
 			Sys_Printf("No signon datagram!\n");
 			Dem_Stop(NULL);
 			return;
-		} else {
+		}
+		else
+		{
 			DemoBuffer_Set(&sources[num].dbuffer);
 			if (sworld.options & O_MARGE)
 				Update_SignonStats();
@@ -917,7 +953,8 @@ void MainLoop(void)
 	}
 
 	// clean signon datagrams from all of the demos, they won't be needed
-	for (from = sources; from - sources < sworld.fromcount; from++) {
+	for (from = sources; from - sources < sworld.fromcount; from++)
+	{
 		SZ_Clear(&from->frames[0].buf);
 		DemoBuffer_Clear(&from->dbuffer);
 		MVDSetMsgBuf(&from->dbuffer,&from->frames[0].buf);
@@ -946,15 +983,18 @@ void MainLoop(void)
 		GetDemoTimes(&mintime, &nearest);
 
 		// if not converting, stop here
-		if (!(sworld.options & (O_CONVERT | O_MARGE))) {
-			if (mintime >= world.time) {
+		if (!(sworld.options & (O_CONVERT | O_MARGE)))
+		{
+			if (mintime >= world.time)
+			{
 				world.time = nearest;
 				SetWorldTime();
 			}
 			continue;
 		}
 
-		if (mintime >= world.time || !world.running) {
+		if (mintime >= world.time || !world.running)
+		{
 			// fix world.time,
 			world.time = nearest;
 
@@ -972,7 +1012,8 @@ void MainLoop(void)
 				if (!from->running)
 					continue;
 
-				if (from->oldparse == from->parsecount) {
+				if (from->oldparse == from->parsecount)
+				{
 					//continue;
 				}
 
@@ -983,11 +1024,14 @@ void MainLoop(void)
 				fframe = &from->frames[from->parsecount&UPDATE_MASK];
 				tframe->invalid = false;
 
-				if (from->worldtime == world.time || from->parsecount == 0) {
+				if (from->worldtime == world.time || from->parsecount == 0)
+				{
 					AddEntities(&tframe->packet_entities, fframe, fframe);
 					AddNails(tframe, fframe);
 					AddPlayers(tframe, fframe);
-				} else {
+				}
+				else
+				{
 					num = from->parsecount - 1;
 					pframe = &from->frames[(num)&UPDATE_MASK];
 					while (pframe->time > world.time)
@@ -1015,12 +1059,14 @@ void MainLoop(void)
 			{
 				SetWorldTime();
 
-				if (world.parsecount - world.lastwritten > 60) {
+				if (world.parsecount - world.lastwritten > 60)
+				{
 					WritePackets(30);
 				}
 
 				world.parsecount++;
-				for (from = sources; from - sources < sworld.fromcount; from++) {
+				for (from = sources; from - sources < sworld.fromcount; from++)
+				{
 					MVDSetMsgBuf(&from->dbuffer,&from->frames[world.parsecount&UPDATE_MASK].buf);
 				}
 			}
@@ -1045,9 +1091,9 @@ void QWDToolsMsg(void)
 	char str[1024];
 
 	strcpy(str, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n"
-		        " This demo was converted\n"
-				" from QWD by QWDTools\n"
-				"\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n");
+	       " This demo was converted\n"
+	       " from QWD by QWDTools\n"
+	       "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n");
 
 	MVDWrite_Begin(dem_all, 0, strlen(str) + 3);
 	MSG_WriteByte(msgbuf, svc_print);
@@ -1092,14 +1138,17 @@ qboolean ClearWorld(void)
 		from->signon_stats.data = from->signon_stats_buf;
 		world.running |= from->running;
 
-		if (sworld.options & O_STDIN) {
+		if (sworld.options & O_STDIN)
+		{
 			strcpy(sworld.from[i].name, "stdin");
 			ext = va(".%s", stdintype);
-		} else
+		}
+		else
 			ext = FileExtension(sworld.from[i].name);
 
 		// qwz -> qwd
-		if (!strcasecmp(ext, ".qwz")) {
+		if (!strcasecmp(ext, ".qwz"))
+		{
 			*(sworld.from[i].name + strlen(sworld.from[i].name) - 1) = 'd';
 			ext[3] = 'd';
 			from->qwz = true;
@@ -1115,7 +1164,7 @@ qboolean ClearWorld(void)
 			return false;
 		}
 	}
-	
+
 	return true;
 }
 
@@ -1135,7 +1184,7 @@ int main (int argc, char **argv)
 	CtrlH_Init();
 	World_Init();
 
-//	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
+	//	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
 	Sys_Printf(QWDTOOLS_NAME " version " QWE_VERSION " (c) 2001-2003 Bartlomiej Rychtarski\n");
 	Sys_Printf("Unix port by David (hexum) Balcom and VVD, 2004, 2005\n");
 	Sys_Printf("Part of the " PROJECT_NAME " project: " PROJECT_URL "\n\n");
@@ -1149,7 +1198,8 @@ int main (int argc, char **argv)
 
 	if (sworld.options & O_FC)
 		Sys_Printf("   -filter_chats\n");
-	else {
+	else
+	{
 		if (sworld.options & O_FS)
 			Sys_Printf("   -filter_spectalk\n");
 		if (sworld.options & O_FQ)
@@ -1179,7 +1229,7 @@ int main (int argc, char **argv)
 
 		// get source file names
 		for (; sworld.fromcount < count && (i < source->count || ((i=0) < (++source)->count));
-			i++, fromfiles++, sworld.fromcount++)
+		        i++, fromfiles++, sworld.fromcount++)
 		{
 			strcpy(fromfiles->path, source->path);
 			strcpy(fromfiles->name, source->list[i]);
@@ -1193,10 +1243,12 @@ int main (int argc, char **argv)
 		if (sworld.fromcount == MAX_CLIENTS)
 			Sys_Printf("Warning: too many source files\n");
 
-		
+
 		// alloc memory and cleanup the world
-		if (!ClearWorld()) {
-			if (options & O_MARGE) {
+		if (!ClearWorld())
+		{
+			if (options & O_MARGE)
+			{
 				Sys_Printf("not all files could be opened\n");
 				break;
 			}

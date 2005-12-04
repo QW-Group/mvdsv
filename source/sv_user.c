@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: sv_user.c,v 1.20 2005/10/11 16:36:46 danfe Exp $
+ 
+	$Id: sv_user.c,v 1.21 2005/12/04 05:37:45 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -50,7 +50,7 @@ extern cvar_t	sv_speedcheck; //bliP: 24/9
 qboolean IsLocalIP(netadr_t a)
 {
 	return a.ip.ip[0] == 10 || (a.ip.ip[0] == 172 && (a.ip.ip[1] & 0xF0) == 16)
-	   || (a.ip.ip[0] == 192 && a.ip.ip[1] == 168) || a.ip.ip[0] >= 224;
+	       || (a.ip.ip[0] == 192 && a.ip.ip[1] == 168) || a.ip.ip[0] >= 224;
 }
 qboolean IsInetIP(netadr_t a)
 {
@@ -58,9 +58,9 @@ qboolean IsInetIP(netadr_t a)
 }
 /*
 ============================================================
-
+ 
 USER STRINGCMD EXECUTION
-
+ 
 host_client and sv_player will be valid.
 ============================================================
 */
@@ -68,7 +68,7 @@ host_client and sv_player will be valid.
 /*
 ================
 SV_New_f
-
+ 
 Sends the first message from the server to a connected client.
 This will be sent on the initial connection and upon each server load.
 ================
@@ -95,12 +95,12 @@ void SV_New_f (void)
 		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr);
 
 		if (!((IsLocalIP(net_local_adr) && IsLocalIP(host_client->netchan.remote_address))  ||
-		      (IsInetIP (net_local_adr) && IsInetIP (host_client->netchan.remote_address))) &&
-		    host_client->netchan.remote_address.ip.ip[0] != 127 && !sv_serverip.string[0])
+		        (IsInetIP (net_local_adr) && IsInetIP (host_client->netchan.remote_address))) &&
+		        host_client->netchan.remote_address.ip.ip[0] != 127 && !sv_serverip.string[0])
 		{
 			Sys_Printf ("WARNING: Incorrect server ip address: %s\n"
-			"Set hostname in your operation system or set correctly sv_serverip cvar.\n",
-			server_ip);
+			            "Set hostname in your operation system or set correctly sv_serverip cvar.\n",
+			            server_ip);
 			*(int *)&host_client->realip = *(int *)&host_client->netchan.remote_address;
 			host_client->state = cs_connected;
 		}
@@ -109,22 +109,24 @@ void SV_New_f (void)
 			host_client->state = cs_preconnected;
 			MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
 			MSG_WriteString (&host_client->netchan.message,
-					va("packet %s \"ip %d %d\"\ncmd new\n", server_ip,
-					host_client - svs.clients, host_client->realip_num));
+			                 va("packet %s \"ip %d %d\"\ncmd new\n", server_ip,
+			                    host_client - svs.clients, host_client->realip_num));
 			if (realtime - host_client->connection_started > 3)
 			{
-				if (sv_getrealip.value == 2) {
+				if (sv_getrealip.value == 2)
+				{
 					Netchan_OutOfBandPrint (net_serversocket, net_from,
-						"%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
+					                        "%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
 					host_client->rip_vip = 2;
 				}
 
 				host_client->state = cs_connected;
-			} else
+			}
+			else
 				return;
 		}
 	}
-	
+
 	// rip_vip means that client can be connected if he has VIP for he's real ip
 	// drop him if he hasn't
 	if (host_client->rip_vip == 1)
@@ -133,13 +135,13 @@ void SV_New_f (void)
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_serversocket, net_from,
-				"%c\nserver is full\n\n", A2C_PRINT);
+			                        "%c\nserver is full\n\n", A2C_PRINT);
 		}
 		else
 			host_client->rip_vip = 0;
 	}
 
-	// we can be connected now, announce it, and possibly login 
+	// we can be connected now, announce it, and possibly login
 	if (!host_client->rip_vip)
 	{
 		if (host_client->state == cs_preconnected)
@@ -147,7 +149,7 @@ void SV_New_f (void)
 			// get highest VIP level
 			if (host_client->vip < SV_VIPbyIP(host_client->realip))
 				host_client->vip = SV_VIPbyIP(host_client->realip);
-	
+
 			if (host_client->vip && host_client->spectator)
 				Sys_Printf ("VIP spectator %s connected\n", host_client->name);
 			else if (host_client->spectator)
@@ -156,7 +158,7 @@ void SV_New_f (void)
 				Sys_Printf ("Client %s connected\n", host_client->name);
 
 			Info_SetValueForStarKey (host_client->userinfo, "*VIP",
-				host_client->vip ? va("%d", host_client->vip) : "", MAX_INFO_STRING);
+			                         host_client->vip ? va("%d", host_client->vip) : "", MAX_INFO_STRING);
 
 			// now we are connected
 			host_client->state = cs_connected;
@@ -168,24 +170,25 @@ void SV_New_f (void)
 		if (!host_client->logged && sv_login.value)
 			return; // not so fast;
 
-//bliP: cuff, mute ->
+		//bliP: cuff, mute ->
 		host_client->lockedtill = SV_RestorePenaltyFilter(host_client, ft_mute);
 		host_client->cuff_time = SV_RestorePenaltyFilter(host_client, ft_cuff);
-//<-
+		//<-
 	}
-// send the info about the new client to all connected clients
-//	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
-//	host_client->sendinfo = true;
+	// send the info about the new client to all connected clients
+	//	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
+	//	host_client->sendinfo = true;
 
 	gamedir = Info_ValueForKey (svs.info, "*gamedir");
 	if (!gamedir[0])
 		gamedir = "qw";
 
-//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
-//spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
+	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
+	//spawns.  These functions are written to not overflow
+	if (host_client->num_backbuf)
+	{
 		Con_Printf("WARNING %s: [SV_New] Back buffered (%d0), clearing\n",
-			host_client->name, host_client->netchan.message.cursize); 
+		           host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
@@ -207,11 +210,11 @@ void SV_New_f (void)
 	else
 		MSG_WriteString (&host_client->netchan.message,
 #ifdef USE_PR2
-			PR2_GetString(sv.edicts->v.message)
+		                 PR2_GetString(sv.edicts->v.message)
 #else
-			PR_GetString(sv.edicts->v.message)
+						 PR_GetString(sv.edicts->v.message)
 #endif
-			);
+		                );
 
 	// send the movevars
 	MSG_WriteFloat(&host_client->netchan.message, movevars.gravity);
@@ -240,7 +243,7 @@ void SV_New_f (void)
 	MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
 	MSG_WriteString (&host_client->netchan.message, va("fullserverinfo \"%s\"\n", svs.info) );
 
-//bliP: player logging
+	//bliP: player logging
 	SV_LogPlayer(host_client, "connect", 1);
 }
 
@@ -269,26 +272,28 @@ void SV_Soundlist_f (void)
 	}
 
 	n = atoi(Cmd_Argv(2));
-	if (n >= MAX_SOUNDS) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, 
-			"SV_Soundlist_f: Invalid soundlist index\n");
+	if (n >= MAX_SOUNDS)
+	{
+		SV_ClientPrintf (host_client, PRINT_HIGH,
+		                 "SV_Soundlist_f: Invalid soundlist index\n");
 		SV_DropClient (host_client);
 		return;
 	}
-	
-//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
-//spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_Soundlist] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
+
+	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
+	//spawns.  These functions are written to not overflow
+	if (host_client->num_backbuf)
+	{
+		Con_Printf("WARNING %s: [SV_Soundlist] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
 
 	MSG_WriteByte (&host_client->netchan.message, svc_soundlist);
 	MSG_WriteByte (&host_client->netchan.message, n);
-	for (s = sv.sound_precache+1 + n ; 
-		*s && host_client->netchan.message.cursize < (MAX_MSGLEN/2); 
-		s++, n++)
+	for (s = sv.sound_precache+1 + n ;
+	        *s && host_client->netchan.message.cursize < (MAX_MSGLEN/2);
+	        s++, n++)
 		MSG_WriteString (&host_client->netchan.message, *s);
 
 	MSG_WriteByte (&host_client->netchan.message, 0);
@@ -315,7 +320,7 @@ void SV_Modellist_f (void)
 		Con_Printf ("modellist not valid -- already spawned\n");
 		return;
 	}
-	
+
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
@@ -325,17 +330,19 @@ void SV_Modellist_f (void)
 	}
 
 	n = atoi(Cmd_Argv(2));
-	if (n >= MAX_MODELS) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, 
-			"SV_Modellist_f: Invalid modellist index\n");
+	if (n >= MAX_MODELS)
+	{
+		SV_ClientPrintf (host_client, PRINT_HIGH,
+		                 "SV_Modellist_f: Invalid modellist index\n");
 		SV_DropClient (host_client);
 		return;
 	}
 
-//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
-//spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_Modellist] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
+	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
+	//spawns.  These functions are written to not overflow
+	if (host_client->num_backbuf)
+	{
+		Con_Printf("WARNING %s: [SV_Modellist] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 1;
 
 		SZ_Clear(&host_client->netchan.message);
@@ -343,9 +350,9 @@ void SV_Modellist_f (void)
 
 	MSG_WriteByte (&host_client->netchan.message, svc_modellist);
 	MSG_WriteByte (&host_client->netchan.message, n);
-	for (s = sv.model_precache+1+n ; 
-		*s && host_client->netchan.message.cursize < (MAX_MSGLEN/2); 
-		s++, n++)
+	for (s = sv.model_precache+1+n ;
+	        *s && host_client->netchan.message.cursize < (MAX_MSGLEN/2);
+	        s++, n++)
 		MSG_WriteString (&host_client->netchan.message, *s);
 	MSG_WriteByte (&host_client->netchan.message, 0);
 
@@ -371,7 +378,7 @@ void SV_PreSpawn_f (void)
 		Con_Printf ("prespawn not valid -- already spawned\n");
 		return;
 	}
-	
+
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
@@ -379,40 +386,43 @@ void SV_PreSpawn_f (void)
 		SV_New_f ();
 		return;
 	}
-	
+
 	buf = atoi(Cmd_Argv(2));
 	if (buf >= sv.num_signon_buffers)
 		buf = 0;
 
-	if (!buf) {
+	if (!buf)
+	{
 		// should be three numbers following containing checksums
 		check = atoi(Cmd_Argv(3));
 
-//		Con_DPrintf("Client check = %d\n", check);
+		//		Con_DPrintf("Client check = %d\n", check);
 
 		if (sv_mapcheck.value && check != sv.worldmodel->checksum &&
-			check != sv.worldmodel->checksum2) {
-			SV_ClientPrintf (host_client, PRINT_HIGH, 
-				"Map model file does not match (%s), %i != %i/%i.\n"
-				"You may need a new version of the map, or the proper install files.\n",
-				sv.modelname, check, sv.worldmodel->checksum, sv.worldmodel->checksum2);
-			SV_DropClient (host_client); 
+		        check != sv.worldmodel->checksum2)
+		{
+			SV_ClientPrintf (host_client, PRINT_HIGH,
+			                 "Map model file does not match (%s), %i != %i/%i.\n"
+			                 "You may need a new version of the map, or the proper install files.\n",
+			                 sv.modelname, check, sv.worldmodel->checksum, sv.worldmodel->checksum2);
+			SV_DropClient (host_client);
 			return;
 		}
 		host_client->checksum = check;
 	}
 
-//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
-//spawns.  These functions are written to not overflow
-	if (host_client->num_backbuf) {
-		Con_Printf("WARNING %s: [SV_PreSpawn] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize); 
+	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
+	//spawns.  These functions are written to not overflow
+	if (host_client->num_backbuf)
+	{
+		Con_Printf("WARNING %s: [SV_PreSpawn] Back buffered (%d0), clearing\n", host_client->name, host_client->netchan.message.cursize);
 		host_client->num_backbuf = 0;
 		SZ_Clear(&host_client->netchan.message);
 	}
 
-	SZ_Write (&host_client->netchan.message, 
-		sv.signon_buffers[buf],
-		sv.signon_buffer_size[buf]);
+	SZ_Write (&host_client->netchan.message,
+	          sv.signon_buffers[buf],
+	          sv.signon_buffer_size[buf]);
 
 	buf++;
 	if (buf == sv.num_signon_buffers)
@@ -423,8 +433,8 @@ void SV_PreSpawn_f (void)
 	else
 	{	// need to prespawn more
 		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message, 
-			va("cmd prespawn %i %i\n", svs.spawncount, buf) );
+		MSG_WriteString (&host_client->netchan.message,
+		                 va("cmd prespawn %i %i\n", svs.spawncount, buf) );
 	}
 }
 
@@ -450,7 +460,7 @@ void SV_Spawn_f (void)
 		return;
 	}
 
-// handle the case of a level changing while a client was connecting
+	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
 		Con_Printf ("SV_Spawn_f from different level\n");
@@ -459,35 +469,37 @@ void SV_Spawn_f (void)
 	}
 
 	n = atoi(Cmd_Argv(2));
-	if (n >= MAX_CLIENTS) {
-		SV_ClientPrintf (host_client, PRINT_HIGH, 
-				"SV_Spawn_f: Invalid client start\n");
-		SV_DropClient (host_client); 
+	if (n >= MAX_CLIENTS)
+	{
+		SV_ClientPrintf (host_client, PRINT_HIGH,
+		                 "SV_Spawn_f: Invalid client start\n");
+		SV_DropClient (host_client);
 		return;
 	}
-	
-// send all current names, colors, and frag counts
+
+	// send all current names, colors, and frag counts
 	// FIXME: is this a good thing?
 	SZ_Clear (&host_client->netchan.message);
 
-// send current status of all other players
+	// send current status of all other players
 
 	// normally this could overflow, but no need to check due to backbuf
 	for (i=n, client = svs.clients + n ; i<MAX_CLIENTS && host_client->netchan.message.cursize < (MAX_MSGLEN/2); i++, client++)
 		SV_FullClientUpdateToClient (client, host_client);
 
-	if (i < MAX_CLIENTS) {
+	if (i < MAX_CLIENTS)
+	{
 		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message, 
-		va("cmd spawn %i %d\n", svs.spawncount, i) );
+		MSG_WriteString (&host_client->netchan.message,
+		                 va("cmd spawn %i %d\n", svs.spawncount, i) );
 		return;
 	}
-	
-// send all current light styles
+
+	// send all current light styles
 	for (i=0 ; i<MAX_LIGHTSTYLES ; i++)
 	{
-		ClientReliableWrite_Begin (host_client, svc_lightstyle, 
-			3 + (sv.lightstyles[i] ? strlen(sv.lightstyles[i]) : 1));
+		ClientReliableWrite_Begin (host_client, svc_lightstyle,
+		                           3 + (sv.lightstyles[i] ? strlen(sv.lightstyles[i]) : 1));
 		ClientReliableWrite_Byte (host_client, (char)i);
 		ClientReliableWrite_String (host_client, sv.lightstyles[i]);
 	}
@@ -500,13 +512,14 @@ void SV_Spawn_f (void)
 	{
 		savenetname = ent->v.netname;
 		memset(&ent->v, 0, pr_edict_size - sizeof(edict_t) +
-				sizeof(entvars_t));
+		       sizeof(entvars_t));
 		ent->v.netname = savenetname;
 		//host_client->name = PR2_GetString(ent->v.netname);
 		//strlcpy(PR2_GetString(ent->v.netname), host_client->name, 32);
 	}
 	else
 #endif
+
 	{
 		memset (&ent->v, 0, progs->entityfields * 4);
 		ent->v.netname = PR_SetString(host_client->name);
@@ -519,25 +532,25 @@ void SV_Spawn_f (void)
 	host_client->entgravity = 1.0;
 	val =
 #ifdef USE_PR2
-		PR2_GetEdictFieldValue(ent, "gravity");
+	    PR2_GetEdictFieldValue(ent, "gravity");
 #else
-		GetEdictFieldValue(ent, "gravity");
+	    GetEdictFieldValue(ent, "gravity");
 #endif
 	if (val)
 		val->_float = 1.0;
 	host_client->maxspeed = sv_maxspeed.value;
 	val =
 #ifdef USE_PR2
-		PR2_GetEdictFieldValue(ent, "maxspeed");
+	    PR2_GetEdictFieldValue(ent, "maxspeed");
 #else
 		GetEdictFieldValue(ent, "maxspeed");
 #endif
 	if (val)
 		val->_float = sv_maxspeed.value;
 
-//
-// force stats to be updated
-//
+	//
+	// force stats to be updated
+	//
 	memset (host_client->stats, 0, sizeof(host_client->stats));
 
 	ClientReliableWrite_Begin (host_client, svc_updatestatlong, 6);
@@ -583,11 +596,11 @@ void SV_SpawnSpectator (void)
 		e = EDICT_NUM(i);
 		if (
 #ifdef USE_PR2 /* phucking Linux implements strcmp as a macro */
-			!strcmp(PR2_GetString(e->v.classname), "info_player_start")
+		    !strcmp(PR2_GetString(e->v.classname), "info_player_start")
 #else
-			!strcmp(PR_GetString(e->v.classname), "info_player_start")
+		    !strcmp(PR_GetString(e->v.classname), "info_player_start")
 #endif
-			)
+		)
 		{
 			VectorCopy (e->v.origin, sv_player->v.origin);
 			return;
@@ -625,14 +638,14 @@ void SV_Begin_f (void)
 
 		if (SpectatorConnect
 #ifdef USE_PR2
-			|| sv_vm
+		        || sv_vm
 #endif
-			)
+		   )
 		{
 			// copy spawn parms out of the client_t
 			for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
 				(&pr_global_struct->parm1)[i] = host_client->spawn_parms[i];
-	
+
 			// call the spawn function
 			pr_global_struct->time = sv.time;
 			pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -670,7 +683,7 @@ void SV_Begin_f (void)
 			PR2_GamePutClientInServer(0);
 		else
 #endif
-			PR_ExecuteProgram (pr_global_struct->PutClientInServer);	
+			PR_ExecuteProgram (pr_global_struct->PutClientInServer);
 	}
 
 	// clear the net statistics, because connecting gives a bogus picture
@@ -680,11 +693,13 @@ void SV_Begin_f (void)
 	host_client->netchan.good_count = 0;
 
 	//check he's not cheating
-	if (!host_client->spectator) {
-	if (!*Info_ValueForKey (host_client->userinfo, "pmodel") ||
-	    !*Info_ValueForKey (host_client->userinfo, "emodel")) //bliP: typo? 2nd pmodel to emodel
+	if (!host_client->spectator)
+	{
+		if (!*Info_ValueForKey (host_client->userinfo, "pmodel") ||
+		        !*Info_ValueForKey (host_client->userinfo, "emodel")) //bliP: typo? 2nd pmodel to emodel
 			SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: missing player/eyes model checksum\n", host_client->name);
-	else {
+		else
+		{
 			pmodel = atoi(Info_ValueForKey (host_client->userinfo, "pmodel"));
 			emodel = atoi(Info_ValueForKey (host_client->userinfo, "emodel"));
 
@@ -696,19 +711,20 @@ void SV_Begin_f (void)
 	sv.paused &= ~2;	// FIXME!!!		-- Tonik
 
 	// if we are paused, tell the client
-	if (sv.paused) {
+	if (sv.paused)
+	{
 		ClientReliableWrite_Begin (host_client, svc_setpause, 2);
 		ClientReliableWrite_Byte (host_client, sv.paused);
 		SV_ClientPrintf(host_client, PRINT_HIGH, "Server is paused.\n");
 	}
 
 #if 0
-//
-// send a fixangle over the reliable channel to make sure it gets there
-// Never send a roll angle, because savegames can catch the server
-// in a state where it is expecting the client to correct the angle
-// and it won't happen if the game was just loaded, so you wind up
-// with a permanent head tilt
+	//
+	// send a fixangle over the reliable channel to make sure it gets there
+	// Never send a roll angle, because savegames can catch the server
+	// in a state where it is expecting the client to correct the angle
+	// and it won't happen if the game was just loaded, so you wind up
+	// with a permanent head tilt
 	ent = EDICT_NUM( 1 + (host_client - svs.clients) );
 	MSG_WriteByte (&host_client->netchan.message, svc_setangle);
 	for (i=0 ; i < 2 ; i++)
@@ -729,7 +745,7 @@ qboolean SV_DownloadNextFile (void)
 	int	num;
 	char	*name, n[MAX_OSPATH];
 	unsigned char	all_demos_downloaded[]	= "All demos downloaded.\n",
-					incorrect_demo_number[]	= "Incorrect demo number.\n";
+	                                       incorrect_demo_number[]	= "Incorrect demo number.\n";
 
 	switch (host_client->demonum[0])
 	{
@@ -841,7 +857,7 @@ void OutofBandPrintf(netadr_t where, char *fmt, ...)
 {
 	va_list		argptr;
 	char	send[1024];
-	
+
 	send[0] = 0xff;
 	send[1] = 0xff;
 	send[2] = 0xff;
@@ -865,12 +881,12 @@ void SV_NextUpload (void)
 	int		percent;
 	int		size;
 	char		*name = host_client->uploadfn;
-//	Sys_Printf("-- %s\n", name);
+	//	Sys_Printf("-- %s\n", name);
 
 	SV_ReplaceChar(name, '\\', '/');
 	if (!*name || !strncmp(name, "../", 3) || strstr(name, "/../") || *name == '/'
 #ifdef _WIN32
-	|| (name[1] == ':' && (*name >= 'a' && *name <= 'z' || *name >= 'A' && *name <= 'Z'))
+	        || (name[1] == ':' && (*name >= 'a' && *name <= 'z' || *name >= 'A' && *name <= 'Z'))
 #endif //_WIN32
 	   )
 	{ //bliP: can't upload back a directory
@@ -892,7 +908,8 @@ void SV_NextUpload (void)
 	if (!host_client->upload)
 	{
 		host_client->upload = fopen(name, "wb");
-		if (!host_client->upload) {
+		if (!host_client->upload)
+		{
 			Sys_Printf("Can't create %s\n", name);
 			ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 			ClientReliableWrite_String (host_client, "stopul");
@@ -902,7 +919,7 @@ void SV_NextUpload (void)
 		Sys_Printf("Receiving %s from %d...\n", name, host_client->userid);
 		if (host_client->remote_snap)
 			OutofBandPrintf(host_client->snap_from, "Server receiving %s from %d...\n",
-					name, host_client->userid);
+			                name, host_client->userid);
 	}
 
 	Sys_Printf("-");
@@ -911,17 +928,21 @@ void SV_NextUpload (void)
 
 	Con_DPrintf ("UPLOAD: %d received\n", size);
 
-	if (percent != 100) {
+	if (percent != 100)
+	{
 		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
 		ClientReliableWrite_String (host_client, "nextul\n");
-	} else {
+	}
+	else
+	{
 		fclose (host_client->upload);
 		host_client->upload = NULL;
 		host_client->file_percent = 0; //bliP: file percent
 
 		Sys_Printf("\n%s upload completed.\n", name);
 
-		if (host_client->remote_snap) {
+		if (host_client->remote_snap)
+		{
 			char *p;
 
 			if ((p = strchr(name, '/')) != NULL)
@@ -929,8 +950,8 @@ void SV_NextUpload (void)
 			else
 				p = name;
 			OutofBandPrintf(host_client->snap_from,
-					"%s upload completed.\nTo download, enter:\ndownload %s\n", 
-					name, p);
+			                "%s upload completed.\nTo download, enter:\ndownload %s\n",
+			                name, p);
 		}
 	}
 
@@ -964,51 +985,51 @@ void SV_BeginDownload_f(void)
 	}
 	name = Cmd_Argv(1);
 	SV_ReplaceChar(name, '\\', '/');
-// hacked by zoid to allow more conrol over download		
-//bliP: download ->
-  if
-  (
-    (
-	// leading slash bad as well, must be in subdir
-	*name == '/'
-	// no leading ../
-	|| !strncmp(name, "../", 3)
-	// no /../
-	|| strstr (name, "/../")
-	// no /.. at end
-	|| ( (i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4) )
-#ifdef _WIN32
-	// no leading X:
-	|| ( name[1] == ':' && (*name >= 'a' && *name <= 'z' ||
-				*name >= 'A' && *name <= 'Z') )
-#endif //_WIN32
-	// no logs 
-	|| ( (i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 4) )
-    )
-    ||
-    (
-	!host_client->special &&
+	// hacked by zoid to allow more conrol over download
+	//bliP: download ->
+	if
 	(
-		// global allow check
-		!allow_download.value
-		// next up, skin check
-		|| (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
-		// now models
-		|| (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
-		// now sounds
-		|| (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
-		// now maps (note special case for maps, must not be in pak)
-		|| (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
-		// now demos
-		|| (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
-		|| (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
-		// MUST be in a subdirectory	
-		|| !strstr (name, "/")
+	    (
+	        // leading slash bad as well, must be in subdir
+	        *name == '/'
+	        // no leading ../
+	        || !strncmp(name, "../", 3)
+	        // no /../
+	        || strstr (name, "/../")
+	        // no /.. at end
+	        || ( (i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4) )
+#ifdef _WIN32
+	        // no leading X:
+	        || ( name[1] == ':' && (*name >= 'a' && *name <= 'z' ||
+	                                *name >= 'A' && *name <= 'Z') )
+#endif //_WIN32
+	        // no logs
+	        || ( (i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 4) )
+	    )
+	    ||
+	    (
+	        !host_client->special &&
+	        (
+	            // global allow check
+	            !allow_download.value
+	            // next up, skin check
+	            || (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
+	            // now models
+	            || (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
+	            // now sounds
+	            || (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
+	            // now maps (note special case for maps, must not be in pak)
+	            || (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
+	            // now demos
+	            || (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
+	            || (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
+	            // MUST be in a subdirectory
+	            || !strstr (name, "/")
+	        )
+	    )
+	    || strcasestr (name, "pwd.cfg")
 	)
-    )
-	|| strcasestr (name, "pwd.cfg")
-  )
-//<-
+		//<-
 	{
 		ClientReliableWrite_Begin (host_client, svc_download, 4);
 		ClientReliableWrite_Short (host_client, -1);
@@ -1016,7 +1037,8 @@ void SV_BeginDownload_f(void)
 		return;
 	}
 
-	if (host_client->download) {
+	if (host_client->download)
+	{
 		fclose (host_client->download);
 		host_client->download = NULL;
 		val = Info_ValueForKey (host_client->userinfo, "rate");
@@ -1036,18 +1058,18 @@ void SV_BeginDownload_f(void)
 			char	*num_s = name + 8;
 			int	num_s_len = strlen(num_s);
 			for (num = 0; -num < num_s_len; num--)
-			if (num_s[-num] != '.')
-			{
-				Con_Printf("usage: download demonum/nun\n"
-					"if num is negative then download the Nth to last recorded demo, "
-					"also can type any quantity of dots and "
-					"where N dots is the Nth to last recorded demo\n");
-			
-				ClientReliableWrite_Begin (host_client, svc_download, 4);
-				ClientReliableWrite_Short (host_client, -1);
-				ClientReliableWrite_Byte (host_client, 0);
-				return;
-			}
+				if (num_s[-num] != '.')
+				{
+					Con_Printf("usage: download demonum/nun\n"
+					           "if num is negative then download the Nth to last recorded demo, "
+					           "also can type any quantity of dots and "
+					           "where N dots is the Nth to last recorded demo\n");
+
+					ClientReliableWrite_Begin (host_client, svc_download, 4);
+					ClientReliableWrite_Short (host_client, -1);
+					ClientReliableWrite_Byte (host_client, 0);
+					return;
+				}
 		}
 		name = SV_MVDNum(num);
 		if (!name)
@@ -1085,18 +1107,20 @@ void SV_BeginDownload_f(void)
 				Sys_Printf ("FindFile: %s\n", name);
 			host_client->downloadsize = COM_FileLength (host_client->download);
 		}
-	} else
-	// <-- bliP
+	}
+	else
+		// <-- bliP
 		host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
 	host_client->downloadcount = 0;
 
 	if (!host_client->download ||
-		// special check for maps, if it came from a pak file, don't allow
-		// download  ZOID
-		(strncmp(name, "maps/", 5) == 0 && file_from_pak &&
-		!allow_download_pakmaps.value)) //bliP: pakmaps
+	        // special check for maps, if it came from a pak file, don't allow
+	        // download  ZOID
+	        (strncmp(name, "maps/", 5) == 0 && file_from_pak &&
+	         !allow_download_pakmaps.value)) //bliP: pakmaps
 	{
-		if (host_client->download) {
+		if (host_client->download)
+		{
 			fclose(host_client->download);
 			host_client->download = NULL;
 		}
@@ -1115,26 +1139,26 @@ void SV_BeginDownload_f(void)
 	SV_NextDownload_f ();
 	Sys_Printf ("Downloading %s to %s\n", name, host_client->name);
 
-//bliP: download info/download url ->
+	//bliP: download info/download url ->
 	if (!strncmp(name, "maps/", 5))
 	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Map %s is %.0fKB (%.2fMB)\n",
-				name, (float)host_client->downloadsize / 1024,
-				(float)host_client->downloadsize / 1024 / 1024);
+		                 name, (float)host_client->downloadsize / 1024,
+		                 (float)host_client->downloadsize / 1024 / 1024);
 		if (download_map_url.string[0])
 		{
 			name += 5;
 			COM_StripExtension(name, name);
 			SV_ClientPrintf (host_client, PRINT_HIGH, "Download this map faster:\n");
 			SV_ClientPrintf (host_client, PRINT_HIGH, "%s%s\n\n",
-					download_map_url.string, name);
+			                 download_map_url.string, name);
 		}
 	}
 	else
 		SV_ClientPrintf (host_client, PRINT_HIGH, "File %s is %.0fKB (%.2fMB)\n",
-				name, (float)host_client->downloadsize / 1024,
-				(float)host_client->downloadsize / 1024 / 1024);
-//<-
+		                 name, (float)host_client->downloadsize / 1024,
+		                 (float)host_client->downloadsize / 1024 / 1024);
+	//<-
 }
 
 /*
@@ -1148,8 +1172,8 @@ void SV_DemoDownload_f(void)
 	int		i, num, cmd_argv_i_len;
 	char		*cmd_argv_i;
 	unsigned char	download_queue_cleared[]		= "Download queue cleared.\n",
-					download_queue_empty[]			= "Download queue empty.\n",
-					download_queue_already_exists[]	= "Download queue already exists.\n";
+	        download_queue_empty[]			= "Download queue empty.\n",
+	                                   download_queue_already_exists[]	= "Download queue already exists.\n";
 
 	if (!sv_use_internal_cmd_dl.value)
 		if (SV_ExecutePRCommand())
@@ -1158,12 +1182,12 @@ void SV_DemoDownload_f(void)
 	if (Cmd_Argc() < 2)
 	{
 		Con_Printf("usage: cmd dl [\\] # [# [#]]\n"
-			   "where \"#\" it is demonum from demo list and "
-			   "\"\\\" clear download queue\n"
-			   "you can also use cmd dl ., .. or any quantity of dots "
-			   "where . is the last recorded demo, "
-			   ".. is the second to last recorded demo"
-			   "and where N dots is the Nth to last recorded demo\n");
+		           "where \"#\" it is demonum from demo list and "
+		           "\"\\\" clear download queue\n"
+		           "you can also use cmd dl ., .. or any quantity of dots "
+		           "where . is the last recorded demo, "
+		           ".. is the second to last recorded demo"
+		           "and where N dots is the Nth to last recorded demo\n");
 		return;
 	}
 
@@ -1236,7 +1260,7 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_Say (qboolean team)
 {
 	client_t *client;
-//	int   saved_state;
+	//	int   saved_state;
 	int		j, tmp, cls = 0;
 	char	*p;
 	char  *i;
@@ -1284,29 +1308,33 @@ void SV_Say (qboolean team)
 		strlcpy(text, va("[SPEC] %s: %s", host_client->name, text), sizeof(text));
 	else if (team)
 		strlcpy(text, va("(%s): %s", host_client->name, text), sizeof(text));
-	else {
+	else
+	{
 		strlcpy(text, va("%s: %s", host_client->name, text), sizeof(text));
 	}
 
-	if (fp_messages) {
-		if (!sv.paused && realtime<host_client->lockedtill) {
+	if (fp_messages)
+	{
+		if (!sv.paused && realtime<host_client->lockedtill)
+		{
 			SV_ClientPrintf(host_client, PRINT_CHAT,
-				"You can't talk for %d more seconds\n", 
-					(int) (host_client->lockedtill - realtime));
+			                "You can't talk for %d more seconds\n",
+			                (int) (host_client->lockedtill - realtime));
 			return;
 		}
 		tmp = host_client->whensaidhead - fp_messages + 1;
 		if (tmp < 0)
 			tmp = 10+tmp;
 		if (!sv.paused &&
-			host_client->whensaid[tmp] && (realtime-host_client->whensaid[tmp] < fp_persecond)) {
+		        host_client->whensaid[tmp] && (realtime-host_client->whensaid[tmp] < fp_persecond))
+		{
 			host_client->lockedtill = realtime + fp_secondsdead;
 			if (fp_msg[0])
 				SV_ClientPrintf(host_client, PRINT_CHAT,
-					"FloodProt: %s\n", fp_msg);
+				                "FloodProt: %s\n", fp_msg);
 			else
 				SV_ClientPrintf(host_client, PRINT_CHAT,
-					"FloodProt: You can't talk for %d seconds.\n", fp_secondsdead);
+				                "FloodProt: You can't talk for %d seconds.\n", fp_secondsdead);
 			return;
 		}
 		host_client->whensaidhead++;
@@ -1315,23 +1343,23 @@ void SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-//bliP: kick fake ->
+	//bliP: kick fake ->
 	if (!team)
 		for (i = p; *i; i++)
-//bliP: 24/9 kickfake to unfake ->
+			//bliP: 24/9 kickfake to unfake ->
 			if (*i == 13 && sv_unfake.value) // ^M
 				*i = '#';
-//<-
+	//<-
 
 	Sys_Printf ("%s", text);
 	SV_Write_Log(CONSOLE_LOG, 1, text);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
-    //bliP: everyone sees all ->
+		//bliP: everyone sees all ->
 		//if (client->state != cs_spawned)
 		//	continue;
-    //<-
+		//<-
 		if (host_client->spectator && !sv_spectalk.value)
 			if (!client->spectator)
 				continue;
@@ -1339,10 +1367,13 @@ void SV_Say (qboolean team)
 		if (team)
 		{
 			// the spectator team
-			if (host_client->spectator) {
+			if (host_client->spectator)
+			{
 				if (!client->spectator)
 					continue;
-			} else {
+			}
+			else
+			{
 				if (strcmp(host_client->team, client->team) || client->spectator)
 					continue;	// on different teams
 			}
@@ -1359,7 +1390,8 @@ void SV_Say (qboolean team)
 	if (!team && ((host_client->spectator && sv_spectalk.value) || !host_client->spectator))
 	{
 		MVDWrite_Begin (dem_all, 0, strlen(text)+3);
-	} else 
+	}
+	else
 		MVDWrite_Begin (dem_multiple, cls, strlen(text)+3);
 
 	MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
@@ -1394,7 +1426,7 @@ void SV_Say_Team_f(void)
 /*
 =================
 SV_Pings_f
-
+ 
 The client is showing the scoreboard, so send new ping times for all
 clients
 =================
@@ -1431,7 +1463,7 @@ void SV_Kill_f (void)
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Can't suicide -- already dead!\n");
 		return;
 	}
-	
+
 	pr_global_struct->time = sv.time;
 	pr_global_struct->self = EDICT_TO_PROG(sv_player);
 #ifdef USE_PR2
@@ -1475,15 +1507,17 @@ SV_Pause_f
 */
 void SV_Pause_f (void)
 {
-//	client_t *cl;
+	//	client_t *cl;
 	char st[CLIENT_NAME_LEN + 32];
 
-	if (!pausable.value) {
+	if (!pausable.value)
+	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Pause not allowed.\n");
 		return;
 	}
 
-	if (host_client->spectator) {
+	if (host_client->spectator)
+	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Spectators can not pause.\n");
 		return;
 	}
@@ -1500,7 +1534,7 @@ void SV_Pause_f (void)
 /*
 =================
 SV_Drop_f
-
+ 
 The client is going to disconnect, so remove the connection immediately
 =================
 */
@@ -1509,13 +1543,13 @@ void SV_Drop_f (void)
 	SV_EndRedirect ();
 	if (!host_client->spectator)
 		SV_BroadcastPrintf (PRINT_HIGH, "%s dropped\n", host_client->name);
-	SV_DropClient (host_client);	
+	SV_DropClient (host_client);
 }
 
 /*
 =================
 SV_PTrack_f
-
+ 
 Change the bandwidth estimate for a client
 =================
 */
@@ -1523,7 +1557,7 @@ void SV_PTrack_f (void)
 {
 	int		i;
 	edict_t *ent, *tent;
-	
+
 	if (!host_client->spectator)
 		return;
 
@@ -1536,10 +1570,11 @@ void SV_PTrack_f (void)
 		ent->v.goalentity = EDICT_TO_PROG(tent);
 		return;
 	}
-	
+
 	i = atoi(Cmd_Argv(1));
 	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i].state != cs_spawned ||
-		svs.clients[i].spectator) {
+	        svs.clients[i].spectator)
+	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Invalid client to track\n");
 		host_client->spec_track = 0;
 		ent = EDICT_NUM(host_client - svs.clients + 1);
@@ -1558,21 +1593,21 @@ void SV_PTrack_f (void)
 /*
 =================
 SV_Rate_f
-
+ 
 Change the bandwidth estimate for a client
 =================
 */
 void SV_Rate_f (void)
 {
 	int		rate;
-	
+
 	if (Cmd_Argc() != 2)
 	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Current rate is %i\n",
-			(int)(1.0/host_client->netchan.rate + 0.5));
+		                 (int)(1.0/host_client->netchan.rate + 0.5));
 		return;
 	}
-	
+
 	rate = SV_BoundRate (host_client->download != NULL, atoi(Cmd_Argv(1)));
 
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
@@ -1583,19 +1618,19 @@ void SV_Rate_f (void)
 /*
 =================
 SV_Msg_f
-
+ 
 Change the message level for a client
 =================
 */
 void SV_Msg_f (void)
-{	
+{
 	if (Cmd_Argc() != 2)
 	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Current msg level is %i\n",
-			host_client->messagelevel);
+		                 host_client->messagelevel);
 		return;
 	}
-	
+
 	host_client->messagelevel = atoi(Cmd_Argv(1));
 
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Msg level set to %i\n", host_client->messagelevel);
@@ -1610,7 +1645,7 @@ Login to upload
 */
 int Master_Rcon_Validate (void);
 void SV_TechLogin_f (void)
-{	
+{
 	if (host_client->logincount > 4) //denied
 		return;
 
@@ -1668,7 +1703,7 @@ void SV_ClientUpload_f (void)
 		Con_Printf ("File already exists.\n");
 		return;
 	}
-  
+
 	host_client->remote_snap = false;
 	COM_CreatePath(host_client->uploadfn); //fixed, need to create path
 	snprintf(str, sizeof(str), "cmd fileul \"%s\"\n", Cmd_Argv(1));
@@ -1680,7 +1715,7 @@ void SV_ClientUpload_f (void)
 /*
 ==================
 SV_SetInfo_f
-
+ 
 Allow clients to change userinfo
 ==================
 */
@@ -1688,17 +1723,17 @@ Allow clients to change userinfo
 extern func_t UserInfo_Changed;
 
 char *shortinfotbl[] =
-{
-	"name",
-	"team",
-	"skin",
-	"topcolor",
-	"bottomcolor",
-	//"*client",
-	//"*spectator",
-	//"*VIP",
-	NULL
-};
+    {
+        "name",
+        "team",
+        "skin",
+        "topcolor",
+        "bottomcolor",
+        //"*client",
+        //"*spectator",
+        //"*VIP",
+        NULL
+    };
 
 void SV_SetInfo_f (void)
 {
@@ -1728,22 +1763,22 @@ void SV_SetInfo_f (void)
 	strlcpy(oldval, Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)), MAX_INFO_STRING);
 
 #ifdef USE_PR2
-        if(sv_vm)
-        {
+	if(sv_vm)
+	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 
 		if( PR2_UserInfoChanged() )
 			return;
-        }
+	}
 #endif
 
 	Info_SetValueForKey (host_client->userinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_INFO_STRING);
-// name is extracted below in ExtractFromUserInfo
-//	strlcpy (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
-//		, CLIENT_NAME_LEN);
-//	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
-//	host_client->sendinfo = true;
+	// name is extracted below in ExtractFromUserInfo
+	//	strlcpy (host_client->name, Info_ValueForKey (host_client->userinfo, "name")
+	//		, CLIENT_NAME_LEN);
+	//	SV_FullClientUpdate (host_client, &sv.reliable_datagram);
+	//	host_client->sendinfo = true;
 
 	//Info_ValueForKey(host_client->userinfo, Cmd_Argv(1));
 	if (!strcmp(Info_ValueForKey(host_client->userinfo, Cmd_Argv(1)), oldval))
@@ -1751,62 +1786,65 @@ void SV_SetInfo_f (void)
 
 	if (!strcmp(Cmd_Argv(1), "name"))
 	{
-//bliP: mute ->
+		//bliP: mute ->
 		if (realtime < host_client->lockedtill)
 		{
 			SV_ClientPrintf(host_client, PRINT_CHAT,
-					"You can't change your name while you're muted\n");
+			                "You can't change your name while you're muted\n");
 			return;
 		}
-//<-
-//VVD: forcenick ->
-		if (sv_forcenick.value && sv_login.value && host_client->login) {
+		//<-
+		//VVD: forcenick ->
+		if (sv_forcenick.value && sv_login.value && host_client->login)
+		{
 			SV_ClientPrintf(host_client, PRINT_CHAT,
-					"You can't change your name while logged in on this server.\n");
+			                "You can't change your name while logged in on this server.\n");
 			Info_SetValueForKey (host_client->userinfo, "name",
-						host_client->login, MAX_INFO_STRING);
+			                     host_client->login, MAX_INFO_STRING);
 			strlcpy (host_client->name, host_client->login, CLIENT_NAME_LEN);
 			MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
 			MSG_WriteString (&host_client->netchan.message,
-					va("name %s\n", host_client->login));
+			                 va("name %s\n", host_client->login));
 			MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
 			MSG_WriteString (&host_client->netchan.message,
-					va("setinfo name %s\n", host_client->login));
+			                 va("setinfo name %s\n", host_client->login));
 			return;
-		} 
-//<-
+		}
+		//<-
 	}
 
-//bliP: kick top ->
+	//bliP: kick top ->
 	if (sv_kicktop.value && !strcmp(Cmd_Argv(1), "topcolor"))
 	{
 		if (!host_client->lasttoptime || realtime - host_client->lasttoptime > 8)
 		{
 			host_client->lasttopcount = 0;
 			host_client->lasttoptime = realtime;
-		} else if (host_client->lasttopcount++ > 5)
+		}
+		else if (host_client->lasttopcount++ > 5)
 		{
 			if (!host_client->drop)
 			{
 				saved_state = host_client->state;
 				host_client->state = cs_free;
 				SV_BroadcastPrintf (PRINT_HIGH,
-					"%s was kicked for topcolor spam\n", host_client->name);
+				                    "%s was kicked for topcolor spam\n", host_client->name);
 				host_client->state = saved_state;
-				SV_ClientPrintf (host_client, PRINT_HIGH, 
-					"You were kicked from the game for topcolor spamming\n");
+				SV_ClientPrintf (host_client, PRINT_HIGH,
+				                 "You were kicked from the game for topcolor spamming\n");
 				SV_LogPlayer (host_client, "topcolor spam", 1);
 				host_client->drop = true;
 			}
 			return;
 		}
 	}
-//<-
+	//<-
 
 	// process any changed values
 	SV_ExtractFromUserinfo (host_client, !strcmp(Cmd_Argv(1), "name"));
 
-	if (UserInfo_Changed) {
+	if (UserInfo_Changed)
+	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(host_client->edict);
 		G_INT(OFS_PARM0) = PR_SetTmpString(Cmd_Argv(1));
@@ -1831,7 +1869,8 @@ void SV_SetInfo_f (void)
 		}
 
 	// if start key send to others
-	if (Cmd_Argv(1)[0] == '*') {
+	if (Cmd_Argv(1)[0] == '*')
+	{
 		char *new = Info_ValueForKey(host_client->userinfo, Cmd_Argv(1));
 		Info_SetValueForKey (host_client->userinfoshort, Cmd_Argv(1), new, MAX_INFO_STRING);
 
@@ -1846,7 +1885,7 @@ void SV_SetInfo_f (void)
 /*
 ==================
 SV_ShowServerinfo_f
-
+ 
 Dumps the serverinfo info string
 ==================
 */
@@ -1857,7 +1896,8 @@ void SV_ShowServerinfo_f (void)
 
 void SV_NoSnap_f(void)
 {
-	if (*host_client->uploadfn) {
+	if (*host_client->uploadfn)
+	{
 		*host_client->uploadfn = 0;
 		SV_BroadcastPrintf (PRINT_HIGH, "%s refused remote screenshot\n", host_client->name);
 	}
@@ -1870,28 +1910,28 @@ SV_MinPing_f
 */
 void SV_MinPing_f (void)
 {
-        extern cvar_t	sv_minping, sv_enable_cmd_minping;
+	extern cvar_t	sv_minping, sv_enable_cmd_minping;
 	float		minping;
 	switch (Cmd_Argc())
 	{
-		case 2:
-			if (GameStarted())
-				Con_Printf("Can't change sv_minping value: demo recording in progress or ktpro serverinfo key status not equal 'Standby'.\n");
-			else if (!sv_enable_cmd_minping.value)
-				Con_Printf("Can't change sv_minping: sv_enable_cmd_minping == 0.\n");
+	case 2:
+		if (GameStarted())
+			Con_Printf("Can't change sv_minping value: demo recording in progress or ktpro serverinfo key status not equal 'Standby'.\n");
+		else if (!sv_enable_cmd_minping.value)
+			Con_Printf("Can't change sv_minping: sv_enable_cmd_minping == 0.\n");
+		else
+		{
+			minping = Q_atof(Cmd_Argv(1));
+			if (minping < 0 || minping > 300)
+				Con_Printf("Value must be >= 0 and <= 300.\n");
 			else
-			{
-				minping = Q_atof(Cmd_Argv(1));
-				if (minping < 0 || minping > 300)
-					Con_Printf("Value must be >= 0 and <= 300.\n");
-				else
-					Cvar_SetValue (&sv_minping, minping);
-			}
-		case 1:
-			Con_Printf("sv_minping = %s\n", sv_minping.string);
-			break;
-		default:
-			Con_Printf("usage: minping [<value>]\n<value> = '' show current sv_minping value\n");
+				Cvar_SetValue (&sv_minping, minping);
+		}
+	case 1:
+		Con_Printf("sv_minping = %s\n", sv_minping.string);
+		break;
+	default:
+		Con_Printf("usage: minping [<value>]\n<value> = '' show current sv_minping value\n");
 	}
 }
 
@@ -1906,21 +1946,21 @@ void SV_ShowMapsList_f(void)
 	char	*value, *key;
 	int	i, j, len, i_mod_2 = 1;
 	unsigned char	ztndm3[]			  = "ztndm3",
-					list_of_custom_maps[] = "list of custom maps",
-					end_of_list[]		  = "end of list";
+	                             list_of_custom_maps[] = "list of custom maps",
+	                                                     end_of_list[]		  = "end of list";
 
 	SV_Check_ktpro();
 
 	Con_Printf("Vote for maps by typing the mapname, for example \"%s\"\n\n---%s\n",
-			Q_redtext(ztndm3), Q_redtext(list_of_custom_maps));
-	
+	           Q_redtext(ztndm3), Q_redtext(list_of_custom_maps));
+
 	for (i = LOCALINFO_MAPS_LIST_START; i <= LOCALINFO_MAPS_LIST_END; i++)
 	{
 		key = va("%d", i);
 		value = Info_ValueForKey(localinfo, key);
 		if (*value)
 		{
-			
+
 			if (!(i_mod_2 = i % 2))
 			{
 				if ((len = 19 - strlen(value)) < 1)
@@ -1945,60 +1985,61 @@ typedef struct
 {
 	char	*name;
 	void	(*func) (void);
-} ucmd_t;
+}
+ucmd_t;
 
 ucmd_t ucmds[] =
-{
-	{"new", SV_New_f},
-	{"modellist", SV_Modellist_f},
-	{"soundlist", SV_Soundlist_f},
-	{"prespawn", SV_PreSpawn_f},
-	{"spawn", SV_Spawn_f},
-	{"begin", SV_Begin_f},
+    {
+        {"new", SV_New_f},
+        {"modellist", SV_Modellist_f},
+        {"soundlist", SV_Soundlist_f},
+        {"prespawn", SV_PreSpawn_f},
+        {"spawn", SV_Spawn_f},
+        {"begin", SV_Begin_f},
 
-	{"drop", SV_Drop_f},
-	{"pings", SV_Pings_f},
+        {"drop", SV_Drop_f},
+        {"pings", SV_Pings_f},
 
-// issued by hand at client consoles	
-	{"rate", SV_Rate_f},
-	{"kill", SV_Kill_f},
-	{"pause", SV_Pause_f},
-	{"msg", SV_Msg_f},
+        // issued by hand at client consoles
+        {"rate", SV_Rate_f},
+        {"kill", SV_Kill_f},
+        {"pause", SV_Pause_f},
+        {"msg", SV_Msg_f},
 
-	{"say", SV_Say_f},
-	{"say_team", SV_Say_Team_f},
+        {"say", SV_Say_f},
+        {"say_team", SV_Say_Team_f},
 
-	{"setinfo", SV_SetInfo_f},
+        {"setinfo", SV_SetInfo_f},
 
-	{"serverinfo", SV_ShowServerinfo_f},
+        {"serverinfo", SV_ShowServerinfo_f},
 
-	{"download", SV_BeginDownload_f},
-	{"nextdl", SV_NextDownload_f},
-	{"dl", SV_DemoDownload_f},
+        {"download", SV_BeginDownload_f},
+        {"nextdl", SV_NextDownload_f},
+        {"dl", SV_DemoDownload_f},
 
-	{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
+        {"ptrack", SV_PTrack_f}, //ZOID - used with autocam
 
-//bliP: file upload ->
-	{"techlogin", SV_TechLogin_f},
-	{"upload", SV_ClientUpload_f},
-//<-
+        //bliP: file upload ->
+        {"techlogin", SV_TechLogin_f},
+        {"upload", SV_ClientUpload_f},
+        //<-
 
-	{"snap", SV_NoSnap_f},
-	{"stopdownload", SV_StopDownload_f},
-	{"stopdl", SV_StopDownload_f},
-//	{"dlist", SV_DemoList_f},
-	{"dlistr", SV_DemoListRegex_f},
-	{"dlistregex", SV_DemoListRegex_f},
-	{"demolist", SV_DemoList_f},
-	{"demolistr", SV_DemoListRegex_f},
-	{"demolistregex", SV_DemoListRegex_f},
-	{"demoinfo", SV_MVDInfo_f},
-	{"lastscores", SV_LastScores_f},
-	{"minping", SV_MinPing_f},
-	{"maps", SV_ShowMapsList_f},
-	
-	{NULL, NULL}
-};
+        {"snap", SV_NoSnap_f},
+        {"stopdownload", SV_StopDownload_f},
+        {"stopdl", SV_StopDownload_f},
+        //	{"dlist", SV_DemoList_f},
+        {"dlistr", SV_DemoListRegex_f},
+        {"dlistregex", SV_DemoListRegex_f},
+        {"demolist", SV_DemoList_f},
+        {"demolistr", SV_DemoListRegex_f},
+        {"demolistregex", SV_DemoListRegex_f},
+        {"demoinfo", SV_MVDInfo_f},
+        {"lastscores", SV_LastScores_f},
+        {"minping", SV_MinPing_f},
+        {"maps", SV_ShowMapsList_f},
+
+        {NULL, NULL}
+    };
 
 /*
 ==================
@@ -2009,7 +2050,7 @@ qboolean PR_UserCmd(void);
 void SV_ExecuteUserCommand (char *s)
 {
 	ucmd_t	*u;
-	
+
 	Cmd_TokenizeString (s);
 	sv_player = host_client->edict;
 
@@ -2052,16 +2093,16 @@ qboolean SV_ExecutePRCommand (void)
 
 /*
 ===========================================================================
-
+ 
 USER CMD EXECUTION
-
+ 
 ===========================================================================
 */
 
 /*
 ===============
 SV_CalcRoll
-
+ 
 Used by view and sv_user
 ===============
 */
@@ -2071,21 +2112,21 @@ float SV_CalcRoll (vec3_t angles, vec3_t velocity)
 	float	sign;
 	float	side;
 	float	value;
-	
+
 	AngleVectors (angles, forward, right, up);
 	side = DotProduct (velocity, right);
 	sign = side < 0 ? -1 : 1;
 	side = fabs(side);
-	
+
 	value = sv_rollangle.value;
 
 	if (side < sv_rollspeed.value)
 		side = side * value / sv_rollspeed.value;
 	else
 		side = value;
-	
+
 	return side*sign;
-	
+
 }
 
 
@@ -2098,7 +2139,7 @@ vec3_t	pmove_mins, pmove_maxs;
 /*
 ====================
 AddLinksToPmove
-
+ 
 ====================
 */
 void AddLinksToPmove ( areanode_t *node )
@@ -2119,16 +2160,16 @@ void AddLinksToPmove ( areanode_t *node )
 
 		if (check->v.owner == pl)
 			continue;		// player's own missile
-		if (check->v.solid == SOLID_BSP 
-			|| check->v.solid == SOLID_BBOX 
-			|| check->v.solid == SOLID_SLIDEBOX)
+		if (check->v.solid == SOLID_BSP
+		        || check->v.solid == SOLID_BBOX
+		        || check->v.solid == SOLID_SLIDEBOX)
 		{
 			if (check == sv_player)
 				continue;
 
 			for (i=0 ; i<3 ; i++)
 				if (check->v.absmin[i] > pmove_maxs[i]
-				|| check->v.absmax[i] < pmove_mins[i])
+				        || check->v.absmax[i] < pmove_mins[i])
 					break;
 			if (i != 3)
 				continue;
@@ -2149,8 +2190,8 @@ void AddLinksToPmove ( areanode_t *node )
 			}
 		}
 	}
-	
-// recurse down both sides
+
+	// recurse down both sides
 	if (node->axis == -1)
 		return;
 
@@ -2164,7 +2205,7 @@ void AddLinksToPmove ( areanode_t *node )
 /*
 ================
 AddAllEntsToPmove
-
+ 
 For debugging
 ================
 */
@@ -2184,16 +2225,16 @@ void AddAllEntsToPmove (void)
 			continue;
 		if (check->v.owner == pl)
 			continue;
-		if (check->v.solid == SOLID_BSP 
-			|| check->v.solid == SOLID_BBOX 
-			|| check->v.solid == SOLID_SLIDEBOX)
+		if (check->v.solid == SOLID_BSP
+		        || check->v.solid == SOLID_BBOX
+		        || check->v.solid == SOLID_SLIDEBOX)
 		{
 			if (check == sv_player)
 				continue;
 
 			for (i=0 ; i<3 ; i++)
 				if (check->v.absmin[i] > pmove_maxs[i]
-				|| check->v.absmax[i] < pmove_mins[i])
+				        || check->v.absmax[i] < pmove_mins[i])
 					break;
 			if (i != 3)
 				continue;
@@ -2239,36 +2280,44 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	edict_t		*ent;
 	int			i, n;
 	int			oldmsec;
-//bliP: 24/9 anti speed ->
+	//bliP: 24/9 anti speed ->
 	int     tmp_time;
 
-	if (!inside && sv_speedcheck.value) {
-/* AM101 method */
+	if (!inside && sv_speedcheck.value)
+	{
+		/* AM101 method */
 		tmp_time = (int)((realtime - host_client->last_check) * 1000); // ie. Old 'timepassed'
-		if (tmp_time) {
-		  if (ucmd->msec > tmp_time) {
-			  tmp_time += host_client->msecs; // use accumulated msecs
-				if (ucmd->msec > tmp_time) { // If still over...
+		if (tmp_time)
+		{
+			if (ucmd->msec > tmp_time)
+			{
+				tmp_time += host_client->msecs; // use accumulated msecs
+				if (ucmd->msec > tmp_time)
+				{ // If still over...
 					ucmd->msec = tmp_time;
 					host_client->msecs = 0;
-				} else {
+				}
+				else
+				{
 					host_client->msecs = tmp_time - ucmd->msec; // readjust to leftovers
 				}
-			} else {
+			}
+			else
+			{
 				// Add up extra msecs
 				host_client->msecs += (tmp_time - ucmd->msec);
 			}
 		}
 
 		host_client->last_check = realtime;
-			
+
 		/* Cap it */
 		if (host_client->msecs > 500)
 			host_client->msecs = 500;
 		else if (host_client->msecs < 0)
 			host_client->msecs = 0;
 	}
-//<-
+	//<-
 	cmd = *ucmd;
 
 	// chop up very long command
@@ -2291,14 +2340,14 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	sv_player->v.button1 = (ucmd->buttons & 4) >> 2;
 	if (ucmd->impulse)
 		sv_player->v.impulse = ucmd->impulse;
-//bliP: cuff
+	//bliP: cuff
 	if (host_client->cuff_time > realtime)
 		sv_player->v.button0 = sv_player->v.impulse = 0;
-//<-
+	//<-
 
-//
-// angles
-// show 1/3 the pitch angle and all the roll angle	
+	//
+	// angles
+	// show 1/3 the pitch angle and all the roll angle
 	if (sv_player->v.health > 0)
 	{
 		if (!sv_player->v.fixangle)
@@ -2306,8 +2355,8 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 			sv_player->v.angles[PITCH] = -sv_player->v.v_angle[PITCH]/3;
 			sv_player->v.angles[YAW] = sv_player->v.v_angle[YAW];
 		}
-		sv_player->v.angles[ROLL] = 
-			SV_CalcRoll (sv_player->v.angles, sv_player->v.velocity)*4;
+		sv_player->v.angles[ROLL] =
+		    SV_CalcRoll (sv_player->v.angles, sv_player->v.velocity)*4;
 	}
 
 	sv_frametime = ucmd->msec * 0.001;
@@ -2359,16 +2408,16 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 #endif
 
 #if 0
-{
-	int before, after;
+	{
+		int before, after;
 
-before = PM_TestPlayerPosition (pmove.origin);
-	PlayerMove ();
-after = PM_TestPlayerPosition (pmove.origin);
+		before = PM_TestPlayerPosition (pmove.origin);
+		PlayerMove ();
+		after = PM_TestPlayerPosition (pmove.origin);
 
-if (sv_player->v.health > 0 && before && !after )
-	Con_Printf ("player %s got stuck in playermove!!!!\n", host_client->name);
-}
+		if (sv_player->v.health > 0 && before && !after )
+			Con_Printf ("player %s got stuck in playermove!!!!\n", host_client->name);
+	}
 #else
 	PlayerMove ();
 #endif
@@ -2432,7 +2481,8 @@ void SV_PostRunCmd(void)
 {
 	// run post-think
 
-	if (!host_client->spectator) {
+	if (!host_client->spectator)
+	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 #ifdef USE_PR2
@@ -2442,11 +2492,12 @@ void SV_PostRunCmd(void)
 #endif
 			PR_ExecuteProgram (pr_global_struct->PlayerPostThink);
 		SV_RunNewmis ();
-	} else if (SpectatorThink
+	}
+	else if (SpectatorThink
 #ifdef USE_PR2
-		||  ( sv_vm )
+	         ||  ( sv_vm )
 #endif
-		)
+	        )
 	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -2463,7 +2514,7 @@ void SV_PostRunCmd(void)
 /*
 ===================
 SV_ExecuteClientMessage
-
+ 
 The current net_message is parsed for the given client
 ===================
 */
@@ -2486,11 +2537,14 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 	if (!cl->spectator && !sv.paused)
 	{
-		if (frame->ping_time * 1000 > sv_minping.value) {
+		if (frame->ping_time * 1000 > sv_minping.value)
+		{
 			cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
 			if (cl->delay < 0)
 				cl->delay = 0;
-		} else if (frame->ping_time * 1000 < sv_minping.value) {
+		}
+		else if (frame->ping_time * 1000 < sv_minping.value)
+		{
 			cl->delay += 0.001;//-0.5*(frame->ping_time - sv_minping.value*0.001);
 			if (cl->delay > 300)
 				cl->delay = 300;
@@ -2498,11 +2552,11 @@ void SV_ExecuteClientMessage (client_t *cl)
 	}
 
 	// make sure the reply sequence number matches the incoming
-	// sequence number 
+	// sequence number
 	if (cl->netchan.incoming_sequence >= cl->netchan.outgoing_sequence)
 		cl->netchan.outgoing_sequence = cl->netchan.incoming_sequence;
 	else
-		cl->send_message = false;	// don't reply, sequences have slipped		
+		cl->send_message = false;	// don't reply, sequences have slipped
 
 	// save time for ping calculations
 	cl->frames[cl->netchan.outgoing_sequence & UPDATE_MASK].senttime = realtime;
@@ -2511,12 +2565,12 @@ void SV_ExecuteClientMessage (client_t *cl)
 	host_client = cl;
 	sv_player = host_client->edict;
 
-//	seq_hash = (cl->netchan.incoming_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
+	//	seq_hash = (cl->netchan.incoming_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
 	seq_hash = cl->netchan.incoming_sequence;
-	
+
 	// mark time so clients will know how much to predict
 	// other players
- 	cl->localtime = sv.time;
+	cl->localtime = sv.time;
 	cl->delta_sequence = -1;	// no delta unless requested
 	while (1)
 	{
@@ -2525,19 +2579,19 @@ void SV_ExecuteClientMessage (client_t *cl)
 			Con_Printf ("SV_ReadClientMessage: badread\n");
 			SV_DropClient (cl);
 			return;
-		}	
+		}
 
 		c = MSG_ReadByte ();
 		if (c == -1)
 			break;
-				
+
 		switch (c)
 		{
 		default:
 			Con_Printf ("SV_ReadClientMessage: unknown command char\n");
 			SV_DropClient (cl);
 			return;
-						
+
 		case clc_nop:
 			break;
 
@@ -2555,7 +2609,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			checksum = (byte)MSG_ReadByte ();
 
 			// read loss percentage
-		//bliP: file percent ->
+			//bliP: file percent ->
 			cl->lossage = MSG_ReadByte();
 			if (cl->file_percent)
 				cl->lossage = cl->file_percent;
@@ -2566,7 +2620,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 				else
 					cl->lossage = 100;
 			}*/
-		//<-
+			//<-
 
 			MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
 			MSG_ReadDeltaUsercmd (&oldest, &oldcmd);
@@ -2577,18 +2631,19 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 			// if the checksum fails, ignore the rest of the packet
 			calculatedChecksum = COM_BlockSequenceCRCByte(
-				net_message.data + checksumIndex + 1,
-				MSG_GetReadCount() - checksumIndex - 1,
-				seq_hash);
+			                         net_message.data + checksumIndex + 1,
+			                         MSG_GetReadCount() - checksumIndex - 1,
+			                         seq_hash);
 
 			if (calculatedChecksum != checksum)
 			{
-				Con_DPrintf ("Failed command checksum for %s(%d) (%d != %d)\n", 
-					cl->name, cl->netchan.incoming_sequence, checksum, calculatedChecksum);
+				Con_DPrintf ("Failed command checksum for %s(%d) (%d != %d)\n",
+				             cl->name, cl->netchan.incoming_sequence, checksum, calculatedChecksum);
 				return;
 			}
 
-			if (!sv.paused) {
+			if (!sv.paused)
+			{
 				SV_PreRunCmd();
 
 				if (net_drop < 20)
@@ -2613,7 +2668,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			break;
 
 
-		case clc_stringcmd:	
+		case clc_stringcmd:
 			s = MSG_ReadString ();
 			SV_ExecuteUserCommand (s);
 			break;
@@ -2623,7 +2678,8 @@ void SV_ExecuteClientMessage (client_t *cl)
 			o[1] = MSG_ReadCoord();
 			o[2] = MSG_ReadCoord();
 			// only allowed by spectators
-			if (host_client->spectator) {
+			if (host_client->spectator)
+			{
 				VectorCopy(o, sv_player->v.origin);
 				SV_LinkEdict(sv_player, false);
 			}
