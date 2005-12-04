@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.18 2005/12/04 05:34:10 disconn3ct Exp $
+#	$Id: Makefile.Linux,v 1.19 2005/12/04 07:47:49 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -13,7 +13,7 @@ SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 CC=gcc
-BASE_CFLAGS=-Wall -pipe -funsigned-char -DSERVERONLY -DUSE_PR2
+BASE_CFLAGS=-Wall -pipe -funsigned-char -DUSE_PR2
 WITH_OPTIMIZED_CFLAGS=YES
 #DEBUG_CFLAGS=$(BASE_CFLAGS) -g
 
@@ -22,7 +22,7 @@ ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
 ifneq (,$(findstring 86,$(shell uname -m)))
 ASM=$(USE_ASM)
 endif
-CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -s -ffast-math -funroll-loops
+CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -s -funroll-loops
 else
 CFLAGS=$(BASE_CFLAGS)
 endif

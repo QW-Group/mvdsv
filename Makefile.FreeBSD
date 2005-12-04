@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.17 2005/12/04 05:34:10 disconn3ct Exp $
+#	$Id: Makefile.FreeBSD,v 1.18 2005/12/04 07:47:49 disconn3ct Exp $
 #
 
 CC=gcc
@@ -16,7 +16,7 @@ MAINDIR!=	/bin/pwd
 SV_DIR=${MAINDIR}/source
 QWDTOOLS_DIR=${MAINDIR}/source/qwdtools
 
-DO_CFLAGS =	${CFLAGS} -Wall -pipe -funsigned-char -DSERVERONLY -DUSE_PR2
+DO_CFLAGS =	${CFLAGS} -Wall -pipe -funsigned-char -DUSE_PR2
 WITH_OPTIMIZED_CFLAGS = YES
 
 USE_ASM=-Did386
