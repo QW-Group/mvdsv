@@ -24,7 +24,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: mdfour.c,v 1.2 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: mdfour.c,v 1.3 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
 #include <string.h>		/* XoXus: needed for memset call */
@@ -220,9 +220,3 @@ unsigned Com_BlockChecksum (void *buffer, int length)
 
 	return val;
 }
-
-void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf)
-{
-	mdfour ( outbuf, (unsigned char *) buffer, len );
-}
-

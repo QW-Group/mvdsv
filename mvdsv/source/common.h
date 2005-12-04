@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.9 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: common.h,v 1.10 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -25,8 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "bothdefs.h"
 
-typedef unsigned char 		byte;
-#define _DEF_BYTE_
+typedef unsigned char byte;
 
 // KJB Undefined true and false defined in SciTech's DEBUG.H header
 #undef true
@@ -34,17 +33,17 @@ typedef unsigned char 		byte;
 
 typedef enum {false, true}	qboolean;
 
-#define	MAX_INFO_STRING			196
+#define	MAX_INFO_STRING		196
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
-#define	MAX_KEY_STRING			64
+#define	MAX_KEY_STRING		64
 
 //============================================================================
 typedef struct sizebuf_s
 {
 	qboolean	allowoverflow;	// if false, do a Sys_Error
-	qboolean	overflowed;		// set to true if the buffer size failed
-	byte	*data;
+	qboolean	overflowed;	// set to true if the buffer size failed
+	byte		*data;
 	int		maxsize;
 	int		cursize;
 } sizebuf_t;
@@ -78,22 +77,22 @@ void InsertLinkAfter (link_t *l, link_t *after);
 #define NULL ((void *)0)
 #endif
 
-#define Q_MAXCHAR ((char)0x7f)
-#define Q_MAXSHORT ((short)0x7fff)
+#define Q_MAXCHAR	((char)0x7f)
+#define Q_MAXSHORT	((short)0x7fff)
 #define Q_MAXINT	((int)0x7fffffff)
-#define Q_MAXLONG ((int)0x7fffffff)
-#define Q_MAXFLOAT ((int)0x7fffffff)
+#define Q_MAXLONG	((int)0x7fffffff)
+#define Q_MAXFLOAT	((int)0x7fffffff)
 
-#define Q_MINCHAR ((char)0x80)
-#define Q_MINSHORT ((short)0x8000)
-#define Q_MININT 	((int)0x80000000)
-#define Q_MINLONG ((int)0x80000000)
-#define Q_MINFLOAT ((int)0x7fffffff)
+#define Q_MINCHAR	((char)0x80)
+#define Q_MINSHORT	((short)0x8000)
+#define Q_MININT	((int)0x80000000)
+#define Q_MINLONG	((int)0x80000000)
+#define Q_MINFLOAT	((int)0x7fffffff)
 
 //============================================================================
 
 short	ShortSwap (short l);
-int		LongSwap (int l);
+int	LongSwap (int l);
 float	FloatSwap (float f);
 
 #ifdef __BIG_ENDIAN__
@@ -129,8 +128,8 @@ void MSG_WriteAngle (sizebuf_t *sb, float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, float f);
 void MSG_WriteDeltaUsercmd (sizebuf_t *sb, struct usercmd_s *from, struct usercmd_s *cmd);
 
-extern	int			msg_readcount;
-extern	qboolean	msg_badread;		// set if a read goes beyond end of message
+extern	int		msg_readcount;
+extern	qboolean	msg_badread; // set if a read goes beyond end of message
 
 void MSG_BeginReading (void);
 int MSG_GetReadCount(void);
@@ -175,29 +174,25 @@ char	*Q_yelltext(unsigned char *str); //VVD: white to red text and yellow number
 //============================================================================
 
 #define MAX_COM_TOKEN	1024
-extern	char		com_token[MAX_COM_TOKEN];
-extern	qboolean	com_eof;
+extern	char com_token[MAX_COM_TOKEN];
 
 char *COM_Parse (char *data);
 
 
-extern	int		com_argc;
+extern	int	com_argc;
 extern	char	**com_argv;
 
 int COM_CheckParm (char *parm);
-void COM_AddParm (char *parm);
 
 void COM_Init (void);
 void COM_InitArgv (int argc, char **argv);
 
-char *COM_SkipPath (char *pathname);
 void COM_StripExtension (char *in, char *out);
 void COM_FileBase (char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
-void COM_ForceExtension (char *path, char *extension);
 int COM_FileLength (FILE *f); //bliP: init
 
-char	*va(char *format, ...);
+char *va(char *format, ...);
 // does a varargs printf into a temp buffer
 
 
@@ -211,12 +206,10 @@ extern char	com_basedir[MAX_OSPATH];
 
 void COM_WriteFile (char *filename, void *data, int len);
 int COM_FOpenFile (char *filename, FILE **file);
-void COM_CloseFile (FILE *h);
 
 byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
 byte *COM_LoadTempFile (char *path);
 byte *COM_LoadHunkFile (char *path);
-void COM_LoadCacheFile (char *path, struct cache_user_s *cu);
 void COM_CreatePath (char *path);
 char *COM_NextPath (char *prevpath);
 void COM_Gamedir (char *dir);
@@ -231,7 +224,5 @@ void Info_Print (char *s);
 void Info_CopyStarKeys (char *from, char *to);
 
 unsigned Com_BlockChecksum (void *buffer, int length);
-void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);
-byte	COM_BlockSequenceCheckByte (byte *base, int length, int sequence, unsigned mapchecksum);
 byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 #endif //_COMMON

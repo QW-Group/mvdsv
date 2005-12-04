@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.h,v 1.4 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: cvar.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // cvar.h
 
@@ -57,9 +57,9 @@ interface from being ambiguous.
 // cvar flags
 #define CVAR_ARCHIVE		1
 #define CVAR_USERINFO		2       // mirrored to userinfo
-#define CVAR_SERVERINFO		4		// mirrored to serverinfo
-#define CVAR_ROM			64		// read only
-#define	CVAR_USER_CREATED	128		// created by a set command
+#define CVAR_SERVERINFO		4	// mirrored to serverinfo
+#define CVAR_ROM		64	// read only
+#define	CVAR_USER_CREATED	128	// created by a set command
 
 typedef struct cvar_s
 {
@@ -73,43 +73,35 @@ typedef struct cvar_s
 } cvar_t;
 
 
-void 	Cvar_RegisterVariable (cvar_t *variable);
+void  Cvar_RegisterVariable (cvar_t *variable);
 // registers a cvar that already has the name, string, and optionally the
 // archive elements set.
 
-void 	Cvar_Set (cvar_t *var, char *value);
+void Cvar_Set (cvar_t *var, char *value);
 // equivalent to "<name> <variable>" typed at the console
 
 void Cvar_SetROM (cvar_t *var, char *value);
 // force a set even if the cvar is read only
 
-void	Cvar_SetByName (char *var_name, char *value);
+void Cvar_SetByName (char *var_name, char *value);
 // equivalent to "<name> <variable>" typed at the console
 
-void	Cvar_SetValue (cvar_t *var, float value);
+void Cvar_SetValue (cvar_t *var, float value);
 // expands value to a string and calls Cvar_Set
 
-void	Cvar_SetValueByName (char *var_name, float value);
+void Cvar_SetValueByName (char *var_name, float value);
 // expands value to a string and calls Cvar_Set
 
-float	Cvar_VariableValue (char *var_name);
+float Cvar_VariableValue (char *var_name);
 // returns 0 if not defined or non numeric
 
-char	*Cvar_VariableString (char *var_name);
+char *Cvar_VariableString (char *var_name);
 // returns an empty string if not defined
-
-char 	*Cvar_CompleteVariable (char *partial);
-// attempts to match a partial variable name for command line completion
-// returns NULL if nothing fits
 
 qboolean Cvar_Command (void);
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
-
-void 	Cvar_WriteVariables (FILE *f);
-// Writes lines containing "set variable value" for all variables
-// with the archive flag set to true.
 
 cvar_t *Cvar_FindVar (char *var_name);
 qboolean Cvar_Delete (char *name);

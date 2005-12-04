@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmd.h,v 1.4 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: cmd.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
 // cmd.h -- Command buffer and command execution
@@ -45,9 +45,6 @@ typedef struct cbuf_s {
 } cbuf_t;
 
 extern cbuf_t	cbuf_main;
-#ifndef SERVERONLY
-extern cbuf_t cbuf_svc;
-#endif
 extern cbuf_t	*cbuf_current;
 
 void Cbuf_AddTextEx (cbuf_t *cbuf, char *text);
@@ -87,8 +84,8 @@ typedef struct cmd_function_s
 {
 	struct cmd_function_s	*hash_next;
 	struct cmd_function_s	*next;
-	char					*name;
-	xcommand_t				function;
+	char			*name;
+	xcommand_t		function;
 } cmd_function_t;
 
 void Cmd_Init (void);
@@ -103,22 +100,12 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function);
 qboolean Cmd_Exists (char *cmd_name);
 // used by the cvar code to check for cvar / command name overlap
 
-cmd_function_t *Cmd_FindCommand (char *cmd_name);  // for message triggers
-
-char 	*Cmd_CompleteCommand (char *partial);
-// attempts to match a partial command for automatic command line completion
-// returns NULL if nothing fits
-
-int	Cmd_Argc (void);
+int Cmd_Argc (void);
 char *Cmd_Argv (int arg);
 char *Cmd_Args (void);
 // The functions that execute commands get their parameters with these
 // functions. Cmd_Argv () will return an empty string, not a NULL
 // if arg > argc, so string operations are always safe.
-
-int Cmd_CheckParm (char *parm);
-// Returns the position (1 to argc-1) in the command's argument list
-// where the given parameter apears, or 0 if not present
 
 void Cmd_ExpandString (char *data, char *dest);
 // Expands all $cvar or $macro expressions.
@@ -131,11 +118,6 @@ void Cmd_TokenizeString (char *text);
 void Cmd_ExecuteString (char *text);
 // Parses a single line of text into arguments and tries to execute it
 // as if it was typed at the console
-
-void Cmd_ForwardToServer (void);
-// adds the current command line as a clc_stringcmd to the client message.
-// things like godmode, noclip, etc, are commands directed to the server,
-// so when they are typed in at the console, they will need to be forwarded.
 
 void Cmd_StuffCmds_f (void);
 
@@ -153,7 +135,5 @@ typedef struct cmd_alias_s
 } cmd_alias_t;
 
 qboolean Cmd_DeleteAlias (char *name);	// return true if successful
-cmd_alias_t *Cmd_FindAlias (char *name); // returns NULL on failure
-char *Cmd_AliasString (char *name); // returns NULL on failure
 
-#define	MAX_ARGS		80
+#define MAX_ARGS 80

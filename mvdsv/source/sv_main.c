@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.25 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: sv_main.c,v 1.26 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -3025,7 +3025,7 @@ void SV_InitNet (void)
 	svs.last_heartbeat = -99999;		// send immediately
 	//	NET_StringToAdr ("192.246.40.70:27000", &idmaster_adr);
 
-#if defined (_WIN32) && !defined(_CONSOLE) && defined(SERVERONLY)
+#if defined (_WIN32) && !defined(_CONSOLE)
 	SetWindowText_(va("mvdsv:%d - QuakeWorld server", sv_port));
 #endif
 

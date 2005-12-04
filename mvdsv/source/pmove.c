@@ -16,19 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pmove.c,v 1.5 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: pmove.c,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
 */
 
-#ifdef SERVERONLY
 #include "qwsvdef.h"
-#else
-#include "quakedef.h"
-#endif
-//#include "pmove.h"
 
-#ifndef SERVERONLY
-cvar_t	pm_jumpfixtime = {"pm_jumpfixtime","0.05"};
-#endif
+
 cvar_t	pm_jumpfix = {"pm_jumpfix","1"};
 cvar_t	pm_slidefix = {"pm_slidefix","0"};	// FIXME: remove?
 cvar_t	pm_ktphysics = {"pm_ktphysics", "0"};	// set this when
@@ -65,16 +58,7 @@ void PM_InitBoxHull (void);
 
 void Pmove_Init (void)
 {
-#ifndef SERVERONLY
-	Cvar_RegisterVariable (&pm_jumpfixtime);
-#endif
-
-#if defined(SERVERONLY)
 	Cvar_RegisterVariable (&pm_jumpfix);
-#else
-	pm_jumpfix.value = 1;
-#endif
-
 	Cvar_RegisterVariable (&pm_slidefix);
 	Cvar_RegisterVariable (&pm_ktphysics);
 	Cvar_RegisterVariable (&pm_spawnjumpfix);
@@ -758,13 +742,8 @@ void JumpButton (void)
 	if (onground == -1)
 		return;		// in air, so no effect
 
-#ifdef SERVERONLY
 	if (pmove.oldbuttons & BUTTON_JUMP)
 		return;		// don't pogo stick
-#else
-	if (pmove.oldbuttons & BUTTON_JUMP && !pmove.jump_msec)
-		return;		// don't pogo stick
-#endif
 
 	// When connected to a Kombat Teams server, "fix" the jumping bug
 	// the same way qc code does to minimize prediction errors
@@ -776,10 +755,6 @@ void JumpButton (void)
 	pmove.velocity[2] += 270;
 
 	pmove.oldbuttons |= BUTTON_JUMP;	// don't jump again until released
-
-#ifndef SERVERONLY
-	pmove.jump_msec = pmove.cmd.msec;
-#endif
 }
 
 /*
@@ -881,16 +856,13 @@ void SpectatorMove (void)
 	float		fmove, smove;
 	vec3_t		wishdir;
 	float		wishspeed;
-#ifndef SERVERONLY
-	extern float	server_version;	// version of server we connected to
-#endif
 
 	// friction
 
 	speed = Length (pmove.velocity);
 	if (speed < 1)
 	{
-		VectorCopy (vec3_origin, pmove.velocity)
+		VectorCopy (vec3_origin, pmove.velocity);
 	}
 	else
 	{
@@ -984,15 +956,6 @@ void PlayerMove (void)
 
 	if (pmove.velocity[2] < 0)
 		pmove.waterjumptime = 0;
-
-#ifndef SERVERONLY
-	if (pmove.jump_msec)
-	{
-		pmove.jump_msec += pmove.cmd.msec;
-		if (pmove.jump_msec > pm_jumpfixtime.value*1000)
-			pmove.jump_msec = 0;
-	}
-#endif
 
 	if ((pmove.cmd.buttons & BUTTON_JUMP) || (pmove.dead && pm_spawnjumpfix.value))
 		JumpButton ();

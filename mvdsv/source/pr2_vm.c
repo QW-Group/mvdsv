@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.5 2005/12/04 05:37:44 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -27,12 +27,7 @@
   reenterable vmMain
 */
 
-#ifdef SERVERONLY
 #include "qwsvdef.h"
-#else
-#include "quakedef.h"
-#endif
-
 #include "g_public.h"
 
 #ifdef USE_PR2

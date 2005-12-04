@@ -16,28 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.5 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: cmd.c,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
-#ifdef SERVERONLY
 #include "qwsvdef.h"
-#else
-#include "quakedef.h"
-#endif
-
-#ifndef SERVERONLY
-void Cmd_ForwardToServer (void);
-qboolean CL_CheckServerCommand (void);
-#endif
 
 cvar_t cl_warncmd = {"cl_warncmd", "0"};
 
 cbuf_t	cbuf_main;
-#ifndef SERVERONLY
-cbuf_t	cbuf_svc;
-#endif
-
 cbuf_t	*cbuf_current = NULL;
 
 //=============================================================================
@@ -79,10 +66,6 @@ void Cbuf_Init (void)
 {
 	cbuf_main.text_start = cbuf_main.text_end = MAXCMDBUF / 2;
 	cbuf_main.wait = false;
-#ifndef SERVERONLY
-	cbuf_svc.text_start = cbuf_svc.text_end = MAXCMDBUF / 2;
-	cbuf_svc.wait = false;
-#endif
 }
 
 /*
@@ -199,10 +182,6 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 		// don't execute lines without ending \n; this fixes problems with
 		// partially stuffed aliases not being executed properly
-#ifndef SERVERONLY
-		if (cbuf_current == &cbuf_svc && i == cursize)
-			break;
-#endif
 
 		memcpy (line, text, i);
 		line[i] = 0;
@@ -342,12 +321,7 @@ void Cmd_Exec_f (void)
 	if (!Cvar_Command () && (cl_warncmd.value || developer.value))
 		Con_Printf ("execing %s\n",Cmd_Argv(1));
 
-#ifndef SERVERONLY
-	if (cbuf_current == &cbuf_svc)
-		Cbuf_AddText (f);
-	else
-#endif
-		Cbuf_InsertText (f);
+	Cbuf_InsertText (f);
 	Hunk_FreeToLowMark (mark);
 }
 
@@ -405,35 +379,6 @@ static int Key (char *name)
 
 static cmd_alias_t	*cmd_alias_hash[32];
 static cmd_alias_t	*cmd_alias;
-
-cmd_alias_t *Cmd_FindAlias (char *name)
-{
-	int			key;
-	cmd_alias_t *alias;
-
-	key = Key (name);
-	for (alias = cmd_alias_hash[key] ; alias ; alias = alias->hash_next)
-	{
-		if (!strcasecmp(name, alias->name))
-			return alias;
-	}
-	return NULL;
-}
-
-char *Cmd_AliasString (char *name)
-{
-	int			key;
-	cmd_alias_t *alias;
-
-	key = Key (name);
-	for (alias = cmd_alias_hash[key] ; alias ; alias = alias->hash_next)
-	{
-		if (!strcasecmp(name, alias->name))
-			return alias->value;
-	}
-	return NULL;
-}
-
 
 /*
 ===============
@@ -783,64 +728,6 @@ qboolean Cmd_Exists (char *cmd_name)
 	return false;
 }
 
-
-/*
-============
-Cmd_FindCommand
-============
-*/
-cmd_function_t *Cmd_FindCommand (char *cmd_name)
-{
-	int	key;
-	cmd_function_t	*cmd;
-
-	key = Key (cmd_name);
-	for (cmd=cmd_hash_array[key] ; cmd ; cmd=cmd->hash_next)
-	{
-		if (!strcasecmp (cmd_name, cmd->name))
-			return cmd;
-	}
-
-	return NULL;
-}
-
-
-/*
-============
-Cmd_CompleteCommand
-============
-*/
-char *Cmd_CompleteCommand (char *partial)
-{
-	cmd_function_t	*cmd;
-	int				len;
-	cmd_alias_t		*alias;
-
-	len = strlen(partial);
-
-	if (!len)
-		return NULL;
-
-	// check for exact match
-	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
-		if (!strcasecmp (partial, cmd->name))
-			return cmd->name;
-	for (alias=cmd_alias ; alias ; alias=alias->next)
-		if (!strcasecmp (partial, alias->name))
-			return alias->name;
-
-	// check for partial match
-	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
-		if (!strncasecmp (partial, cmd->name, len))
-			return cmd->name;
-	for (alias=cmd_alias ; alias ; alias=alias->next)
-		if (!strncasecmp (partial, alias->name, len))
-			return alias->name;
-
-	return NULL;
-}
-
-
 void Cmd_CmdList_f (void)
 {
 	cmd_function_t	*cmd;
@@ -873,7 +760,6 @@ void Cmd_Z_Cmd_f (void)
 Cmd_ExpandString
  
 Expands all $cvar expressions to cvar values
-If not SERVERONLY, also expands $macro expressions
 Note: dest must point to a 1024 byte buffer
 ================
 */
@@ -882,14 +768,11 @@ void Cmd_ExpandString (char *data, char *dest)
 {
 	unsigned int	c;
 	char	buf[255];
-	int		i, len;
+	int	i, len;
 	cvar_t	*var, *bestvar;
-	int		quotes = 0;
+	int	quotes = 0;
 	char	*str;
-	int		name_length = 0;
-#ifndef SERVERONLY
-	extern int	macro_length;
-#endif
+	int	name_length = 0;
 
 	len = 0;
 
@@ -917,15 +800,6 @@ void Cmd_ExpandString (char *data, char *dest)
 					bestvar = var;
 			}
 
-#ifndef SERVERONLY
-			str = TP_MacroString (buf);
-			name_length = macro_length;
-			if (bestvar && (!str || (strlen(bestvar->name) > macro_length)))
-			{
-				str = bestvar->string;
-				name_length = strlen(bestvar->name);
-			}
-#else
 			if (bestvar)
 			{
 				str = bestvar->string;
@@ -933,7 +807,6 @@ void Cmd_ExpandString (char *data, char *dest)
 			}
 			else
 				str = NULL;
-#endif
 
 			if (str)
 			{
@@ -984,9 +857,9 @@ extern qboolean PR_ConsoleCmd(void);
 void Cmd_ExecuteString (char *text)
 {
 	cmd_function_t	*cmd;
-	cmd_alias_t		*a;
-	int				key;
-	static char		buf[1024];
+	cmd_alias_t	*a;
+	int		key;
+	static char	buf[1024];
 
 	Cmd_ExpandString (text, buf);
 	Cmd_TokenizeString (buf);
@@ -994,14 +867,6 @@ void Cmd_ExecuteString (char *text)
 	// execute the command line
 	if (!Cmd_Argc())
 		return;		// no tokens
-
-#ifndef SERVERONLY
-	if (cbuf_current == &cbuf_svc)
-	{
-		if (CL_CheckServerCommand())
-			return;
-	}
-#endif
 
 	key = Key (cmd_argv[0]);
 
@@ -1012,10 +877,7 @@ void Cmd_ExecuteString (char *text)
 		{
 			if (cmd->function)
 				cmd->function ();
-#ifndef SERVERONLY
-			else
-				Cmd_ForwardToServer ();
-#endif
+
 			return;
 		}
 	}
@@ -1029,27 +891,15 @@ void Cmd_ExecuteString (char *text)
 	{
 		if (!strcasecmp (cmd_argv[0], a->name))
 		{
-#ifndef SERVERONLY
-			if (cbuf_current == &cbuf_svc)
-			{
-				Cbuf_AddText (a->value);
-				Cbuf_AddText ("\n");
-			}
-			else
-#endif
-
-			{
-				Cbuf_InsertText ("\n");
-				Cbuf_InsertText (a->value);
-			}
+			Cbuf_InsertText ("\n");
+			Cbuf_InsertText (a->value);
 			return;
 		}
 	}
 
-#ifdef SERVERONLY
 	if (PR_ConsoleCmd())
 		return;
-#endif
+
 	if (cl_warncmd.value || developer.value)
 		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
 }
@@ -1145,29 +995,6 @@ void Cmd_If_f (void)
 	}
 
 	Cbuf_InsertText (buf);
-}
-
-
-/*
-================
-Cmd_CheckParm
- 
-Returns the position (1 to argc-1) in the command's argument list
-where the given parameter apears, or 0 if not present
-================
-*/
-int Cmd_CheckParm (char *parm)
-{
-	int i;
-
-	if (!parm)
-		Sys_Error ("Cmd_CheckParm: NULL");
-
-	for (i = 1; i < Cmd_Argc (); i++)
-		if (! strcasecmp (parm, Cmd_Argv (i)))
-			return i;
-
-	return 0;
 }
 
 /*

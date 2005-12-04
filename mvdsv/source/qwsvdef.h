@@ -16,16 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.6 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: qwsvdef.h,v 1.7 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
 #ifndef _QWSVDEF
 #define _QWSVDEF
 
-#define	QUAKE_GAME			// as opposed to utilities
-
-//define	PARANOID			// speed sapping error checking
+//define PARANOID // speed sapping error checking
 
 #ifdef _WIN32
 #pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018)
@@ -52,14 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "protocol.h"
 #include "cmd.h"
 
-#ifdef GLQUAKE
-//FIXME: we don't need vid.h and render.h here
-//#include "vid.h"
-//#include "render.h"
-//#include "gl_model.h"
-#else
 #include "model.h"
-#endif
 
 #include "crc.h"
 #include "sha1.h"
@@ -85,10 +76,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct
 {
 	char	*basedir;
-	int		argc;
+	int	argc;
 	char	**argv;
 	void	*membase;
-	int		memsize;
+	int	memsize;
 } quakeparms_t;
 
 
@@ -106,19 +97,14 @@ typedef struct
 } date_t;
 void SV_TimeOfDay(date_t *date);
 
-//
-// host
-//
 extern	quakeparms_t host_parms;
 
-extern	cvar_t		sys_nostdout;
-extern	cvar_t		developer;
+extern	cvar_t	sys_nostdout;
+extern	cvar_t	developer;
 
-extern	qboolean	host_initialized;		// true if into command execution
-//extern	double		host_frametime;
-extern	double		realtime;			// not bounded in any way, changed at
-										// start of every frame, never reset
-extern	float		sv_frametime;
+extern	qboolean host_initialized; // true if into command execution
+extern	double	realtime; // not bounded in any way, changed at start of every frame, never reset
+extern	float	sv_frametime;
 
 void SV_Error (char *error, ...);
 void SV_Init (quakeparms_t *parms);

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: winquake.h,v 1.3 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: winquake.h,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
 */
 // winquake.h: Win32-specific Quake header file
 
@@ -26,41 +26,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <windows.h>
 #define WM_MOUSEWHEEL                   0x020A
 
-#ifndef SERVERONLY
-#include <ddraw.h>
-#include <dsound.h>
-#ifndef GLQUAKE
-#include "mgraph.h"
-#endif
-#endif
 
 extern	HINSTANCE	global_hInstance;
-extern	int			global_nCmdShow;
-
-#ifndef SERVERONLY
-
-extern LPDIRECTDRAW		lpDD;
-extern qboolean			DDActive;
-extern LPDIRECTDRAWSURFACE	lpPrimary;
-extern LPDIRECTDRAWSURFACE	lpFrontBuffer;
-extern LPDIRECTDRAWSURFACE	lpBackBuffer;
-extern LPDIRECTDRAWPALETTE	lpDDPal;
-extern LPDIRECTSOUND pDS;
-extern LPDIRECTSOUNDBUFFER pDSBuf;
-
-extern DWORD gSndBufSize;
-//#define SNDBUFSIZE 65536
-
-void	VID_LockBuffer (void);
-void	VID_UnlockBuffer (void);
-
-#endif
+extern	int		global_nCmdShow;
 
 typedef enum {MS_WINDOWED, MS_FULLSCREEN, MS_FULLDIB, MS_UNINIT} modestate_t;
 
 extern modestate_t	modestate;
 
-extern HWND			mainwindow;
+extern HWND		mainwindow;
 extern qboolean		ActiveApp, Minimized;
 
 extern qboolean	WinNT;
