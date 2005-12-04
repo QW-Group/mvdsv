@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.3 2005/05/30 16:41:00 vvd0 Exp $
+ *  $Id: pr2_exec.c,v 1.4 2005/12/04 05:37:44 disconn3ct Exp $
  */
 
 #include <stdarg.h>
@@ -41,7 +41,7 @@ void ED2_PrintEdicts (void);
 void PR2_Profile_f (void);
 void ED2_PrintEdict_f (void);
 void ED_Count (void);
-void PR_CleanLogText_Init(); 
+void PR_CleanLogText_Init();
 void PR2_Init(void)
 {
 	int p;
@@ -50,8 +50,8 @@ void PR2_Init(void)
 	Cvar_RegisterVariable(&sv_progsname);
 #ifdef QVM_PROFILE
 	Cvar_RegisterVariable(&sv_enableprofile);
-#endif	
-	
+#endif
+
 	p = COM_CheckParm ("-progtype");
 
 	if (p && p < com_argc)
@@ -79,16 +79,16 @@ void PR2_Init(void)
 //===========================================================================
 char *PR2_GetString(int num)
 {
-    qvm_t *qvm;
+	qvm_t *qvm;
 
-        if(!sv_vm)
-        	return PR_GetString(num);
+	if(!sv_vm)
+		return PR_GetString(num);
 
 	switch (sv_vm->type)
 	{
 	case VM_NONE:
 		return PR_GetString(num);
-			
+
 	case VM_NATIVE:
 		if (num)
 			return (char *) num;
@@ -112,20 +112,20 @@ char *PR2_GetString(int num)
 
 //===========================================================================
 // PR2_SetString
-// FIXME for VM 
+// FIXME for VM
 //===========================================================================
-int PR2_SetString(char *s) 
+int PR2_SetString(char *s)
 {
-    qvm_t *qvm;
-    int off;
-        if(!sv_vm)
-        	return PR_SetString(s);
-        	
+	qvm_t *qvm;
+	int off;
+	if(!sv_vm)
+		return PR_SetString(s);
+
 	switch (sv_vm->type)
 	{
 	case VM_NONE:
 		return PR_SetString(s);
-			
+
 	case VM_NATIVE:
 		return (int) s;
 
@@ -138,7 +138,7 @@ int PR2_SetString(char *s)
 		return off;
 		break;
 	}
-	
+
 	return 0;
 }
 
@@ -163,7 +163,7 @@ void PR2_LoadEnts(char *data)
 void PR2_GameStartFrame()
 {
 	VM_Call(sv_vm, GAME_START_FRAME, (int) (sv.time * 1000), 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0);
+	        0, 0, 0);
 }
 
 //===========================================================================
@@ -277,31 +277,33 @@ void PR2_GameShutDown()
 //===========================================================================
 void PR2_GameConsoleCommand(void)
 {
-	int     old_other, old_self;	
+	int     old_other, old_self;
 	client_t	*cl;
 	int			i;
 
-        if( sv_vm )
+	if( sv_vm )
 	{
-        	old_self = pr_global_struct->self;
-        	old_other = pr_global_struct->other;
-        	pr_global_struct->other = 0; //sv_cmd = SV_CMD_CONSOLE;
-        	pr_global_struct->self = 0;
+		old_self = pr_global_struct->self;
+		old_other = pr_global_struct->other;
+		pr_global_struct->other = 0; //sv_cmd = SV_CMD_CONSOLE;
+		pr_global_struct->self = 0;
 
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		{
 			if (!cl->state)
 				continue;
 			if ( cl->isBot )
 				continue;
 
-			if (NET_CompareAdr(cl->netchan.remote_address, net_from)){
+			if (NET_CompareAdr(cl->netchan.remote_address, net_from))
+			{
 				pr_global_struct->self = EDICT_TO_PROG(cl->edict);
 				break;
 			}
 		}
 		VM_Call(sv_vm, GAME_CONSOLE_COMMAND, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        	pr_global_struct->self = old_self;
-        	pr_global_struct->other = old_other;
+		pr_global_struct->self = old_self;
+		pr_global_struct->other = old_other;
 	}
 }
 

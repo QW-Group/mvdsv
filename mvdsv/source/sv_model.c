@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: sv_model.c,v 1.5 2005/10/17 16:17:58 vvd0 Exp $
+ 
+	$Id: sv_model.c,v 1.6 2005/12/04 05:37:45 disconn3ct Exp $
 */
 // models.c -- model loading and caching
 
@@ -128,7 +128,8 @@ byte *Mod_DecompressVis (byte *in, int numleafs)
 			*out++ = 0;
 			c--;
 		}
-	} while (out - decompressed < row);
+	}
+	while (out - decompressed < row);
 #endif
 
 	return decompressed;
@@ -161,7 +162,7 @@ void Mod_ClearAll (void)
 /*
 ==================
 Mod_FindName
-
+ 
 ==================
 */
 qmodel_t *Mod_FindName (char *name)
@@ -172,9 +173,9 @@ qmodel_t *Mod_FindName (char *name)
 	if (!name[0])
 		SV_Error ("Mod_ForName: NULL name");
 
-//
-// search the currently loaded models
-//
+	//
+	// search the currently loaded models
+	//
 	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
 		if (!strcmp (mod->name, name) )
 			break;
@@ -195,7 +196,7 @@ qmodel_t *Mod_FindName (char *name)
 /*
 ==================
 Mod_LoadModel
-
+ 
 Loads a model into the cache
 ==================
 */
@@ -217,9 +218,9 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 			return mod;		// not cached at all
 	}
 
-//
-// load the file
-//
+	//
+	// load the file
+	//
 	buf = (unsigned *)COM_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
 	if (!buf)
 	{
@@ -228,18 +229,18 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 		return NULL;
 	}
 
-//
-// allocate a new model
-//
+	//
+	// allocate a new model
+	//
 	COM_FileBase (mod->name, loadname);
 
 	loadmodel = mod;
 
-//
-// fill it in
-//
+	//
+	// fill it in
+	//
 
-// call the apropriate loader
+	// call the apropriate loader
 	mod->needload = false;
 
 	Mod_LoadBrushModel (mod, buf);
@@ -250,7 +251,7 @@ qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 /*
 ==================
 Mod_ForName
-
+ 
 Loads in a model for the given name
 ==================
 */
@@ -266,9 +267,9 @@ qmodel_t *Mod_ForName (char *name, qboolean crash)
 
 /*
 ===============================================================================
-
+ 
 					BRUSHMODEL LOADING
-
+ 
 ===============================================================================
 */
 
@@ -327,9 +328,9 @@ void Mod_LoadTextures (lump_t *l)
 		memcpy ( tx+1, mt+1, pixels);
 	}
 
-//
-// sequence the animations
-//
+	//
+	// sequence the animations
+	//
 	for (i=0 ; i<m->nummiptex ; i++)
 	{
 		tx = loadmodel->textures[i];
@@ -338,7 +339,7 @@ void Mod_LoadTextures (lump_t *l)
 		if (tx->anim_next)
 			continue;	// already sequenced
 
-	// find the number of frames in the animation
+		// find the number of frames in the animation
 		memset (anims, 0, sizeof(anims));
 		memset (altanims, 0, sizeof(altanims));
 
@@ -393,7 +394,7 @@ void Mod_LoadTextures (lump_t *l)
 		}
 
 #define	ANIM_CYCLE	2
-	// link them all together
+		// link them all together
 		for (j=0 ; j<max ; j++)
 		{
 			tx2 = anims[j];
@@ -593,7 +594,8 @@ void Mod_LoadTexinfo (lump_t *l)
 		len1 = Length (in->vecs[0]);
 		len2 = Length (in->vecs[1]);
 #else
-		for (j=0 ; j<4 ; j++) {
+		for (j=0 ; j<4 ; j++)
+		{
 			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
 			out->vecs[1][j] = LittleFloat (in->vecs[1][j]);
 		}
@@ -630,7 +632,7 @@ void Mod_LoadTexinfo (lump_t *l)
 /*
 ================
 CalcSurfaceExtents
-
+ 
 Fills in s->texturemins[] and s->extents[]
 ================
 */
@@ -657,10 +659,10 @@ void CalcSurfaceExtents (msurface_t *s)
 
 		for (j=0 ; j<2 ; j++)
 		{
-			val = v->position[0] * tex->vecs[j][0] + 
-				v->position[1] * tex->vecs[j][1] +
-				v->position[2] * tex->vecs[j][2] +
-				tex->vecs[j][3];
+			val = v->position[0] * tex->vecs[j][0] +
+			      v->position[1] * tex->vecs[j][1] +
+			      v->position[2] * tex->vecs[j][2] +
+			      tex->vecs[j][3];
 			if (val < mins[j])
 				mins[j] = val;
 			if (val > maxs[j])
@@ -719,7 +721,7 @@ void Mod_LoadFaces (lump_t *l)
 
 		CalcSurfaceExtents (out);
 
-	// lighting info
+		// lighting info
 
 		for (i=0 ; i<MAXLIGHTMAPS ; i++)
 			out->styles[i] = in->styles[i];
@@ -729,7 +731,7 @@ void Mod_LoadFaces (lump_t *l)
 		else
 			out->samples = loadmodel->lightdata + i;
 
-	// set the drawing flags flag
+		// set the drawing flags flag
 
 		if (!strncmp(out->texinfo->texture->name,"sky",3))	// sky
 		{
@@ -844,7 +846,7 @@ void Mod_LoadLeafs (lump_t *l)
 		out->contents = p;
 
 		out->firstmarksurface = loadmodel->marksurfaces +
-			LittleShort(in->firstmarksurface);
+		                        LittleShort(in->firstmarksurface);
 		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
 
 		p = LittleLong(in->visofs);
@@ -914,7 +916,7 @@ void Mod_LoadClipnodes (lump_t *l)
 /*
 =================
 Mod_MakeHull0
-
+ 
 Deplicate the drawing hull structure as a clipping hull
 =================
 */
@@ -1059,31 +1061,32 @@ void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	i = LittleLong (header->version);
 	if (i != Q1_BSPVERSION && i != HL_BSPVERSION)
 		SV_Error ("Mod_LoadBrushModel: %s has wrong version number (%i should be %i or %i)",
-				mod->name, i, Q1_BSPVERSION, HL_BSPVERSION);
+		          mod->name, i, Q1_BSPVERSION, HL_BSPVERSION);
 	mod->bspversion = i;
 
-// swap all the lumps
+	// swap all the lumps
 	mod_base = (byte *)header;
 
 	for (i=0 ; i<sizeof(dheader_t)/4 ; i++)
 		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
 
-// load into heap
+	// load into heap
 
 	mod->checksum = 0;
 	mod->checksum2 = 0;
 
 	// checksum all of the map, except for entities
-	for (i = 0; i < HEADER_LUMPS; i++) {
+	for (i = 0; i < HEADER_LUMPS; i++)
+	{
 		if (i == LUMP_ENTITIES)
 			continue;
-		mod->checksum ^= LittleLong(Com_BlockChecksum(mod_base + header->lumps[i].fileofs, 
-			header->lumps[i].filelen));
+		mod->checksum ^= LittleLong(Com_BlockChecksum(mod_base + header->lumps[i].fileofs,
+		                            header->lumps[i].filelen));
 
 		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
 			continue;
-		mod->checksum2 ^= LittleLong(Com_BlockChecksum(mod_base + header->lumps[i].fileofs, 
-			header->lumps[i].filelen));
+		mod->checksum2 ^= LittleLong(Com_BlockChecksum(mod_base + header->lumps[i].fileofs,
+		                             header->lumps[i].filelen));
 	}
 
 	Mod_LoadVertexes (&header->lumps[LUMP_VERTEXES]);
@@ -1106,9 +1109,9 @@ void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 
 	mod->numframes = 2;		// regular and alternate animation
 
-//
-// set up the submodels (FIXME: this is confusing)
-//
+	//
+	// set up the submodels (FIXME: this is confusing)
+	//
 	for (i=0 ; i<mod->numsubmodels ; i++)
 	{
 		bm = &mod->submodels[i];

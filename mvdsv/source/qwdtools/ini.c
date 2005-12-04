@@ -1,21 +1,21 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: ini.c,v 1.4 2005/09/14 17:21:34 disconn3ct Exp $
+ 
+	$Id: ini.c,v 1.5 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -27,7 +27,7 @@ static char	token[MAX_TOKEN];
 /*
 ==============
 Parse
-
+ 
 Parse a token out of a string
 ==============
 */
@@ -42,25 +42,26 @@ char *Parse (char *data, qboolean newline)
 	if (!data)
 		return NULL;
 
-// skip whitespace
-while (true)
-{
-	while ( (c = *data) == ' ' || c == '\t' || (newline && (c == '\r' || c == '\n')))
-		data++;
-
-	if (c == 0)
-		return NULL;			// end of file;
-
-// skip # comments
-	if (c=='#')
+	// skip whitespace
+	while (true)
 	{
-		while (*data && *data != '\n')
+		while ( (c = *data) == ' ' || c == '\t' || (newline && (c == '\r' || c == '\n')))
 			data++;
-	} else
-		break;
-}
 
-// handle quoted strings specially
+		if (c == 0)
+			return NULL;			// end of file;
+
+		// skip # comments
+		if (c=='#')
+		{
+			while (*data && *data != '\n')
+				data++;
+		}
+		else
+			break;
+	}
+
+	// handle quoted strings specially
 	if (c == '\"')
 	{
 		data++;
@@ -79,7 +80,7 @@ while (true)
 		}
 	}
 
-// parse a regular word
+	// parse a regular word
 	do
 	{
 		token[len] = c;
@@ -88,7 +89,8 @@ while (true)
 		if (len >= MAX_TOKEN-1)
 			break;
 		c = *data;
-	} while (c && c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '#');
+	}
+	while (c && c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '#');
 
 	token[len] = 0;
 	return data;
@@ -106,11 +108,12 @@ void ReadIni(char *buf)
 	if (!(CheckParm("-m") || CheckParm("-marge")))
 	{
 		if (!(CheckParm("-debug") || CheckParm("-log"))
-			|| CheckParm("-c") || CheckParm("-convert"))
+		        || CheckParm("-c") || CheckParm("-convert"))
 			job = D_CONVERT;
 		else
 			job = D_COMMON;
-	} else job = D_MARGE;
+	}
+	else job = D_MARGE;
 
 	while (buf)
 	{
@@ -119,7 +122,8 @@ void ReadIni(char *buf)
 		if (!token[0])
 			return;
 
-		if (token[0] == '[') {
+		if (token[0] == '[')
+		{
 			if (!strcasecmp(token, "[marge]"))
 				dest = D_MARGE;
 			else if (!strcasecmp(token, "[convert]"))

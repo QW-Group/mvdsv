@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_edict.c,v 1.2 2005/02/21 15:19:09 vvd0 Exp $
+ *  $Id: pr2_edict.c,v 1.3 2005/12/04 05:37:44 disconn3ct Exp $
  */
 
 #include "qwsvdef.h"
@@ -48,7 +48,7 @@ eval_t *PR2_GetEdictFieldValue(edict_t *ed, char *field)
 /*
 =================
 ED2_ClearEdict
-
+ 
 Sets everything to NULL
 =================
 */
@@ -61,7 +61,7 @@ void ED2_ClearEdict(edict_t *e)
 /*
 =================
 ED2_Alloc
-
+ 
 Either finds a free edict, or allocates a new one.
 Try to avoid reusing an entity that was recently freed, because it
 can cause the client to think the entity morphed into something else
@@ -85,7 +85,7 @@ edict_t *ED2_Alloc(void)
 			return e;
 		}
 	}
-	
+
 	if (i == MAX_EDICTS)
 	{
 		Con_Printf ("WARNING: ED2_Alloc: no free edicts\n");
@@ -105,7 +105,7 @@ edict_t *ED2_Alloc(void)
 /*
 =================
 ED_Free
-
+ 
 Marks the edict as free
 FIXME: walk all entities and NULL out references to this entity
 =================
@@ -125,7 +125,7 @@ void ED2_Free(edict_t *ed)
 	VectorCopy (vec3_origin, ed->v.angles);
 	ed->v.nextthink = -1;
 	ed->v.solid = 0;
-	
+
 	ed->freetime = sv.time;
 }
 
@@ -137,41 +137,41 @@ void ED_PrintEdicts (void);
 /*
 =============
 ED2_PrintEdict_f
-
+ 
 For debugging, prints a single edicy
 =============
 */
 void ED2_PrintEdict_f (void)
 {
-        if(!sv_vm)
-        	ED_PrintEdict_f();
+	if(!sv_vm)
+		ED_PrintEdict_f();
 }
 
 /*
 =============
 ED2_PrintEdicts
-
+ 
 For debugging, prints all the entities in the current server
 =============
 */
 void ED2_PrintEdicts (void)
 {
-        if(!sv_vm)
-        	ED_PrintEdicts();
+	if(!sv_vm)
+		ED_PrintEdicts();
 
 }
 
 /*
 ============
 PR2_Profile_f
-
+ 
 ============
 */
 /*void PR2_Profile_f (void)
 {
         if(!sv_vm)
         	PR_Profile_f();
-
+ 
 }*/
 
 #endif /* USE_PR2 */

@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: pr_edict.c,v 1.7 2005/10/23 11:38:51 disconn3ct Exp $
+ 
+	$Id: pr_edict.c,v 1.8 2005/12/04 05:37:44 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -41,10 +41,12 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s);
 #define	MAX_FIELD_LEN	64
 #define GEFV_CACHESIZE	2
 
-typedef struct {
+typedef struct
+{
 	ddef_t	*pcache;
 	char	field[MAX_FIELD_LEN];
-} gefv_cache;
+}
+gefv_cache;
 
 static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 
@@ -61,7 +63,7 @@ cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
 /*
 =================
 ED_ClearEdict
-
+ 
 Sets everything to NULL
 =================
 */
@@ -74,7 +76,7 @@ void ED_ClearEdict (edict_t *e)
 /*
 =================
 ED_Alloc
-
+ 
 Either finds a free edict, or allocates a new one.
 Try to avoid reusing an entity that was recently freed, because it
 can cause the client to think the entity morphed into something else
@@ -117,7 +119,7 @@ edict_t *ED_Alloc (void)
 /*
 =================
 ED_Free
-
+ 
 Marks the edict as free
 FIXME: walk all entities and NULL out references to this entity
 =================
@@ -276,7 +278,7 @@ Done:
 /*
 ============
 PR_ValueString
-
+ 
 Returns a string describing *data in a type specific manner
 =============
 */
@@ -327,7 +329,7 @@ char *PR_ValueString (etype_t type, eval_t *val)
 /*
 ============
 PR_UglyValueString
-
+ 
 Returns a string describing *data in a type specific manner
 Easier to parse than PR_ValueString
 =============
@@ -376,12 +378,13 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 /*
 ============
 PR_GlobalString
-
+ 
 Returns a string with a description and the contents of a global,
 padded to 20 field width
 ============
 */
-char *PR_GlobalString (int ofs) {
+char *PR_GlobalString (int ofs)
+{
 	char	*s;
 	int		i;
 	ddef_t	*def;
@@ -432,7 +435,7 @@ char *PR_GlobalStringNoContents (int ofs)
 /*
 =============
 ED_Print
-
+ 
 For debugging
 =============
 */
@@ -460,7 +463,7 @@ void ED_Print (edict_t *ed)
 
 		v = (int *)((char *)&ed->v + d->ofs*4);
 
-	// if the value is still all 0, skip the field
+		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
 
 		for (j=0 ; j<type_size[type] ; j++)
@@ -481,7 +484,7 @@ void ED_Print (edict_t *ed)
 /*
 =============
 ED_Write
-
+ 
 For savegames
 =============
 */
@@ -510,7 +513,7 @@ void ED_Write (FILE *f, edict_t *ed)
 
 		v = (int *)((char *)&ed->v + d->ofs*4);
 
-	// if the value is still all 0, skip the field
+		// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
 		for (j=0 ; j<type_size[type] ; j++)
 			if (v[j])
@@ -533,7 +536,7 @@ void ED_PrintNum (int ent)
 /*
 =============
 ED_PrintEdicts
-
+ 
 For debugging, prints all the entities in the current server
 =============
 */
@@ -552,7 +555,7 @@ void ED_PrintEdicts (void)
 /*
 =============
 ED_PrintEdict_f
-
+ 
 For debugging, prints a single edicy
 =============
 */
@@ -568,7 +571,7 @@ void ED_PrintEdict_f (void)
 /*
 =============
 ED_Count
-
+ 
 For debugging
 =============
 */
@@ -603,9 +606,9 @@ void ED_Count (void)
 
 /*
 ==============================================================================
-
+ 
 					ARCHIVING GLOBALS
-
+ 
 FIXME: need to tag constants, doesn't really work
 ==============================================================================
 */
@@ -632,8 +635,8 @@ void ED_WriteGlobals (FILE *f)
 		type &= ~DEF_SAVEGLOBAL;
 
 		if (type != ev_string
-		&& type != ev_float
-		&& type != ev_entity)
+		        && type != ev_float
+		        && type != ev_entity)
 			continue;
 
 		name = PR_GetString(def->s_name);
@@ -655,7 +658,7 @@ void ED_ParseGlobals (char *data)
 
 	while (1)
 	{
-	// parse key
+		// parse key
 		data = COM_Parse (data);
 		if (com_token[0] == '}')
 			break;
@@ -664,7 +667,7 @@ void ED_ParseGlobals (char *data)
 
 		strlcpy (keyname, com_token, sizeof(keyname));
 
-	// parse value
+		// parse value
 		data = COM_Parse (data);
 		if (!data)
 			SV_Error ("ED_ParseEntity: EOF without closing brace");
@@ -722,7 +725,7 @@ char *ED_NewString (char *string)
 /*
 =============
 ED_ParseEval
-
+ 
 Can parse either fields or globals
 returns false if error
 =============
@@ -795,7 +798,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 /*
 ====================
 ED_ParseEdict
-
+ 
 Parses an edict out of the given string, returning the new position
 ed should be a properly initialized empty edict.
 Used for initial level load and for savegames.
@@ -810,37 +813,37 @@ char *ED_ParseEdict (char *data, edict_t *ent)
 
 	init = false;
 
-// clear it
+	// clear it
 	if (ent != sv.edicts)	// hack
 		memset (&ent->v, 0, progs->entityfields * 4);
 
-// go through all the dictionary pairs
+	// go through all the dictionary pairs
 	while (1)
 	{
-	// parse key
+		// parse key
 		data = COM_Parse (data);
 		if (com_token[0] == '}')
 			break;
 		if (!data)
 			SV_Error ("ED_ParseEntity: EOF without closing brace");
 
-// anglehack is to allow QuakeEd to write single scalar angles
-// and allow them to be turned into vectors. (FIXME...)
-if (!strcmp(com_token, "angle"))
-{
-	strlcpy (com_token, "angles", MAX_COM_TOKEN);
-	anglehack = true;
-}
-else
-	anglehack = false;
+		// anglehack is to allow QuakeEd to write single scalar angles
+		// and allow them to be turned into vectors. (FIXME...)
+		if (!strcmp(com_token, "angle"))
+		{
+			strlcpy (com_token, "angles", MAX_COM_TOKEN);
+			anglehack = true;
+		}
+		else
+			anglehack = false;
 
-// FIXME: change light to _light to get rid of this hack
-if (!strcmp(com_token, "light"))
-	strlcpy (com_token, "light_lev", MAX_COM_TOKEN);	// hack for single light def
+		// FIXME: change light to _light to get rid of this hack
+		if (!strcmp(com_token, "light"))
+			strlcpy (com_token, "light_lev", MAX_COM_TOKEN);	// hack for single light def
 
 		strlcpy (keyname, com_token, sizeof(keyname));
 
-	// parse value
+		// parse value
 		data = COM_Parse (data);
 		if (!data)
 			SV_Error ("ED_ParseEntity: EOF without closing brace");
@@ -850,8 +853,8 @@ if (!strcmp(com_token, "light"))
 
 		init = true;
 
-// keynames with a leading underscore are used for utility comments,
-// and are immediately discarded by quake
+		// keynames with a leading underscore are used for utility comments,
+		// and are immediately discarded by quake
 		if (keyname[0] == '_')
 			continue;
 
@@ -862,12 +865,12 @@ if (!strcmp(com_token, "light"))
 			continue;
 		}
 
-if (anglehack)
-{
-char	temp[32];
-strlcpy (temp, com_token, sizeof(temp));
-snprintf (com_token, MAX_COM_TOKEN, "0 %s 0", temp);
-}
+		if (anglehack)
+		{
+			char	temp[32];
+			strlcpy (temp, com_token, sizeof(temp));
+			snprintf (com_token, MAX_COM_TOKEN, "0 %s 0", temp);
+		}
 
 		if (!ED_ParseEpair ((void *)&ent->v, key, com_token))
 			SV_Error ("ED_ParseEdict: parse error");
@@ -883,14 +886,14 @@ snprintf (com_token, MAX_COM_TOKEN, "0 %s 0", temp);
 /*
 ================
 ED_LoadFromFile
-
+ 
 The entities are directly placed in the array, rather than allocated with
 ED_Alloc, because otherwise an error loading the map would have entity
 number references out of order.
-
+ 
 Creates a server's entity / program execution context by
 parsing textual entity definitions out of an ent file.
-
+ 
 Used for both fresh maps and savegame loads.  A fresh map would also need
 to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 ================
@@ -905,10 +908,10 @@ void ED_LoadFromFile (char *data)
 	inhibit = 0;
 	pr_global_struct->time = sv.time;
 
-// parse ents
+	// parse ents
 	while (1)
 	{
-// parse the opening brace
+		// parse the opening brace
 		data = COM_Parse (data);
 		if (!data)
 			break;
@@ -921,7 +924,7 @@ void ED_LoadFromFile (char *data)
 			ent = ED_Alloc ();
 		data = ED_ParseEdict (data, ent);
 
-// remove things from different skill levels or deathmatch
+		// remove things from different skill levels or deathmatch
 		if (deathmatch.value)
 		{
 			if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
@@ -932,17 +935,17 @@ void ED_LoadFromFile (char *data)
 			}
 		}
 		else if ((current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY))
-				|| (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
-				|| (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)) )
+		         || (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
+		         || (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)) )
 		{
 			ED_Free (ent);
 			inhibit++;
 			continue;
 		}
 
-//
-// immediately call spawn function
-//
+		//
+		// immediately call spawn function
+		//
 		if (!ent->v.classname)
 		{
 			Con_Printf ("No classname for:\n");
@@ -951,7 +954,7 @@ void ED_LoadFromFile (char *data)
 			continue;
 		}
 
-	// look for the spawn function
+		// look for the spawn function
 		func = ED_FindFunction ( PR_GetString(ent->v.classname) );
 
 		if (!func)
@@ -974,7 +977,8 @@ qboolean PR_ConsoleCmd(void)
 {
 	if (mod_ConsoleCmd)
 	{
-		if (sv_redirected != RD_MOD) {
+		if (sv_redirected != RD_MOD)
+		{
 			pr_global_struct->time = sv.time;
 			pr_global_struct->self = 0;
 		}
@@ -1029,11 +1033,11 @@ void PR_LoadProgs (void)
 	char	name[MAX_OSPATH];
 	dfunction_t *f;
 
-// flush the non-C variable lookup cache
+	// flush the non-C variable lookup cache
 	for (i=0 ; i<GEFV_CACHESIZE ; i++)
 		gefvCache[i].field[0] = 0;
 
-// clear pr_newstrtbl
+	// clear pr_newstrtbl
 	PF_clear_strtbl();
 
 	snprintf(name, sizeof(name), "%s.dat", sv_progsname.string);
@@ -1046,15 +1050,15 @@ void PR_LoadProgs (void)
 		SV_Error ("PR_LoadProgs: couldn't load progs.dat");
 	Con_DPrintf ("Programs occupy %iK.\n", com_filesize/1024);
 
-// add prog crc to the serverinfo
+	// add prog crc to the serverinfo
 	snprintf (num, sizeof(num), "%i", CRC_Block ((byte *)progs, com_filesize));
 #ifdef USE_PR2
 	Info_SetValueForStarKey( localinfo, "*qvm", "DAT", MAX_LOCALINFO_STRING );
-//	Info_SetValueForStarKey (svs.info, "*qvm", "DAT", MAX_SERVERINFO_STRING);
+	//	Info_SetValueForStarKey (svs.info, "*qvm", "DAT", MAX_SERVERINFO_STRING);
 #endif
 	Info_SetValueForStarKey (svs.info, "*progs", num, MAX_SERVERINFO_STRING);
 
-// byte swap the header
+	// byte swap the header
 	for (i=0 ; i<sizeof(*progs)/4 ; i++)
 		((int *)progs)[i] = LittleLong ( ((int *)progs)[i] );
 
@@ -1076,7 +1080,7 @@ void PR_LoadProgs (void)
 
 	pr_edict_size = progs->entityfields * 4 + sizeof (edict_t) - sizeof(entvars_t);
 
-// byte swap the lumps
+	// byte swap the lumps
 	for (i=0 ; i<progs->numstatements ; i++)
 	{
 		pr_statements[i].op = LittleShort(pr_statements[i].op);
@@ -1087,12 +1091,12 @@ void PR_LoadProgs (void)
 
 	for (i=0 ; i<progs->numfunctions; i++)
 	{
-	pr_functions[i].first_statement = LittleLong (pr_functions[i].first_statement);
-	pr_functions[i].parm_start = LittleLong (pr_functions[i].parm_start);
-	pr_functions[i].s_name = LittleLong (pr_functions[i].s_name);
-	pr_functions[i].s_file = LittleLong (pr_functions[i].s_file);
-	pr_functions[i].numparms = LittleLong (pr_functions[i].numparms);
-	pr_functions[i].locals = LittleLong (pr_functions[i].locals);
+		pr_functions[i].first_statement = LittleLong (pr_functions[i].first_statement);
+		pr_functions[i].parm_start = LittleLong (pr_functions[i].parm_start);
+		pr_functions[i].s_name = LittleLong (pr_functions[i].s_name);
+		pr_functions[i].s_file = LittleLong (pr_functions[i].s_file);
+		pr_functions[i].numparms = LittleLong (pr_functions[i].numparms);
+		pr_functions[i].locals = LittleLong (pr_functions[i].locals);
 	}
 
 	for (i=0 ; i<progs->numglobaldefs ; i++)
@@ -1141,10 +1145,10 @@ void PR_LoadProgs (void)
 PR_Init
 ===============
 */
-//void PR_CleanLogText_Init(); 
+//void PR_CleanLogText_Init();
 void PR_Init (void)
 {
-        Cvar_RegisterVariable(&sv_progsname);
+	Cvar_RegisterVariable(&sv_progsname);
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f);
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
@@ -1152,7 +1156,7 @@ void PR_Init (void)
 	Cmd_AddCommand ("profile", PR_Profile_f);
 
 	memset(pr_newstrtbl, 0, sizeof(pr_newstrtbl));
-//	PR_CleanLogText_Init();
+	//	PR_CleanLogText_Init();
 }
 
 

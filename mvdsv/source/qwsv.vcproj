@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="qwsv"
+	ProjectGUID="{4A02A275-B5F3-4FC1-8430-F5A5A2FB5424}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -912,19 +913,10 @@
 				RelativePath="bspfile.h">
 			</File>
 			<File
-				RelativePath="cdaudio.h">
-			</File>
-			<File
-				RelativePath="client.h">
-			</File>
-			<File
 				RelativePath="cmd.h">
 			</File>
 			<File
 				RelativePath="common.h">
-			</File>
-			<File
-				RelativePath="console.h">
 			</File>
 			<File
 				RelativePath="crc.h">
@@ -933,19 +925,7 @@
 				RelativePath="cvar.h">
 			</File>
 			<File
-				RelativePath="d_iface.h">
-			</File>
-			<File
-				RelativePath="draw.h">
-			</File>
-			<File
 				RelativePath="g_public.h">
-			</File>
-			<File
-				RelativePath="input.h">
-			</File>
-			<File
-				RelativePath="keys.h">
 			</File>
 			<File
 				RelativePath="log.h">
@@ -955,9 +935,6 @@
 			</File>
 			<File
 				RelativePath="mdfour.h">
-			</File>
-			<File
-				RelativePath="menu.h">
 			</File>
 			<File
 				RelativePath="model.h">
@@ -990,13 +967,7 @@
 				RelativePath="protocol.h">
 			</File>
 			<File
-				RelativePath="quakedef.h">
-			</File>
-			<File
 				RelativePath="qwsvdef.h">
-			</File>
-			<File
-				RelativePath="render.h">
 			</File>
 			<File
 				RelativePath="resource.h">
@@ -1005,16 +976,10 @@
 				RelativePath="sbar.h">
 			</File>
 			<File
-				RelativePath="screen.h">
-			</File>
-			<File
 				RelativePath="server.h">
 			</File>
 			<File
 				RelativePath="sha1.h">
-			</File>
-			<File
-				RelativePath="sound.h">
 			</File>
 			<File
 				RelativePath="spritegn.h">
@@ -1030,15 +995,6 @@
 			</File>
 			<File
 				RelativePath="version.h">
-			</File>
-			<File
-				RelativePath="vid.h">
-			</File>
-			<File
-				RelativePath="view.h">
-			</File>
-			<File
-				RelativePath="wad.h">
 			</File>
 			<File
 				RelativePath="winquake.h">

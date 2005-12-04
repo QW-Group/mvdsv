@@ -1,24 +1,25 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: tools.h,v 1.3 2005/09/27 20:51:06 disconn3ct Exp $
+ 
+	$Id: tools.h,v 1.4 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
-typedef struct {
+typedef struct
+{
 	int frame;
 	byte source;
 	byte type;
@@ -26,7 +27,8 @@ typedef struct {
 	int to;
 	int size;
 	byte data[1];
-} header_t;
+}
+header_t;
 
 typedef struct sizebuf_s
 {
@@ -35,14 +37,17 @@ typedef struct sizebuf_s
 	int		cursize;
 	int		bufsize;
 	header_t *h;
-} sizebuf_t;
+}
+sizebuf_t;
 
-typedef struct {
+typedef struct
+{
 	byte	*data;
 	int		start, end, last;
 	int		maxsize;
 	sizebuf_t *msgbuf;
-} dbuffer_t;
+}
+dbuffer_t;
 
 extern sizebuf_t	*msgbuf;
 
@@ -51,7 +56,8 @@ typedef struct
 	char **list;
 	char path[MAX_OSPATH];
 	int  count;
-} flist_t;
+}
+flist_t;
 
 
 void SZ_Clear (sizebuf_t *buf);

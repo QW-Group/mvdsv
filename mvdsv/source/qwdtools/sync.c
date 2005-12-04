@@ -1,34 +1,36 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: sync.c,v 1.3 2005/09/14 17:21:34 disconn3ct Exp $
+ 
+	$Id: sync.c,v 1.4 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 #include "defs.h"
 
 void ReadPackets (void);
 
-typedef struct {
+typedef struct
+{
 	int		running;
 	float	time;
 	float	diff;
 	float	ratio;
 	qboolean synced;
-} info_t;
+}
+info_t;
 
 static info_t	info[MAX_CLIENTS];
 static sizebuf_t dummy;
@@ -40,21 +42,22 @@ void *FindEntity(int type, frame_t *f, int num, int frame)
 	//f = &d->frames[frame&UPDATE_MASK];
 	f += frame&UPDATE_MASK;
 
-	switch (type) {
-	case T_ENT: 
+	switch (type)
+	{
+	case T_ENT:
 		{
-		packet_entities_t *p;
-		int i;
+			packet_entities_t *p;
+			int i;
 
-		if (f->invalid)
+			if (f->invalid)
+				return NULL;
+
+			p = &f->packet_entities;
+			for (i = 0; i < p->num_entities; i++)
+				if (p->entities[i].number == num)
+					return &p->entities[i];
+
 			return NULL;
-
-		p = &f->packet_entities;
-		for (i = 0; i < p->num_entities; i++)
-			if (p->entities[i].number == num)
-				return &p->entities[i];
-
-		return NULL;
 		}
 
 	case T_CL:
@@ -193,8 +196,8 @@ float demcmp(source_t *d1, source_t *d2)
 
 			VectorSubtract(p1->origin, p2->origin, vec);
 			VectorSubtract(p1->origin, op1->origin, vec2);
-				//Sys_Printf("ent:%d %f\n",e1->entities[i].number, Length(vec)/Length(vec2));
-			//return Length(vec)/Length(vec2); 
+			//Sys_Printf("ent:%d %f\n",e1->entities[i].number, Length(vec)/Length(vec2));
+			//return Length(vec)/Length(vec2);
 			sr += Length(vec)/Length(vec2);
 			c++;
 		}
@@ -219,7 +222,8 @@ float demcmp(source_t *d1, source_t *d2)
 			i++;
 		else if (e1->entities[i].number > e2->entities[j].number)
 			j++;
-		else {
+		else
+		{
 			for (k = 1; k < depth; k++)
 			{
 				pe1 = (entity_state_t*)FindEntity(T_ENT, d1->frames, e1->entities[i].number, d1->parsecount - k);
@@ -256,7 +260,7 @@ float demcmp(source_t *d1, source_t *d2)
 				VectorSubtract(e1->entities[i].origin, e2->entities[j].origin, vec);
 				VectorSubtract(e1->entities[i].origin, pe1->origin, vec2);
 				//Sys_Printf("ent:%d %f\n",e1->entities[i].number, Length(vec)/Length(vec2));
-				//return Length(vec)/Length(vec2); 
+				//return Length(vec)/Length(vec2);
 				sr += Length(vec)/Length(vec2);
 				c++;
 			}
@@ -298,7 +302,7 @@ qboolean SetComparisionDemo(source_t *dem, float time)
 		from->lastframe = time;
 
 	ReadPackets();
-	
+
 	return from->running != 0;
 }
 
@@ -343,7 +347,7 @@ qboolean Synchronize (void)
 		p->time = from->time;
 		p->ratio = 1;
 	}
-	
+
 	dem1 = sources;
 	info[0].synced = true;
 
@@ -357,247 +361,260 @@ qboolean Synchronize (void)
 		x = 1;
 		y = info[i].time - info[0].time;
 		// rewind dem1
-		if (!SetComparisionDemo(dem1, info->time)) {
+		if (!SetComparisionDemo(dem1, info->time))
+		{
 			sworld.options -= O_QWDSYNC;
 			return false;
 		}
 
 		// read 10 sec from dem2
-		while (dem1->running) {
-		j = 0;
-		diff = 0;
-		if (!dem2->running)
-			SetComparisionDemo(dem2, info[i].time);
-
-		while (dem1->running && dem2->running && dem2->time - dem1->time < x + y)
+		while (dem1->running)
 		{
-			if (diff <0)
+			j = 0;
+			diff = 0;
+			if (!dem2->running)
+				SetComparisionDemo(dem2, info[i].time);
+
+			while (dem1->running && dem2->running && dem2->time - dem1->time < x + y)
 			{
-				f = dem2->time - dem1->time;
+				if (diff <0)
+				{
+					f = dem2->time - dem1->time;
 
-				from = dem1;
-				from->lastframe += 1;
-				ReadPackets();
-
-				from = dem2;
-				while (from->running && from->time < dem1->time + f)
+					from = dem1;
+					from->lastframe += 1;
 					ReadPackets();
-			} else {
-				from = dem2;
-				ReadPackets();
-			}
 
-			diff = demcmp(dem1, dem2);
+					from = dem2;
+					while (from->running && from->time < dem1->time + f)
+						ReadPackets();
+				}
+				else
+				{
+					from = dem2;
+					ReadPackets();
+				}
 
-			//Sys_Printf("diff:%f, %f, %f %f\n", diff, dem2->worldtime - dem1->worldtime, dem1->worldtime, dem2->worldtime);
+				diff = demcmp(dem1, dem2);
 
-			if (diff < 0 || diff > 5)
-				continue;
+				//Sys_Printf("diff:%f, %f, %f %f\n", diff, dem2->worldtime - dem1->worldtime, dem1->worldtime, dem2->worldtime);
 
-			f = dem2->time + 1;
-			desync = dem1->time - dem2->time;
-			from = dem2;
-
-			//Sys_Printf("diff:%f, desync:%f\n", diff, desync);
-			while (from->running && from->time < f)
-			{
-				ReadPackets();
-				m = demcmp(dem1, dem2);
-				if (m < 0 || m >= diff)
+				if (diff < 0 || diff > 5)
 					continue;
 
-				diff = m;
+				f = dem2->time + 1;
 				desync = dem1->time - dem2->time;
-			}
-
-			//Sys_Printf("diff:%f, desync:%f\n", diff, desync);
-
-			bad = 0;
-			j = 0;
-			sr = 0;
-			c = 0;
-			sr2 = 0;
-
-			//dem1->lastframe += 1;
-			test = desync;
-
-			while (dem1->running && dem2->running && bad < 5 && j < 30)
-			{
-				from = dem1;
-				//from->lastframe += 0.5;
-				f = from->time + 0.5;
-				while (from->running && from->time < f)
-					ReadPackets();
-
 				from = dem2;
-				f = -1;
-				m = -1;
-				while (from->running && from->time + desync < dem1->time + 0.25)
+
+				//Sys_Printf("diff:%f, desync:%f\n", diff, desync);
+				while (from->running && from->time < f)
 				{
 					ReadPackets();
 					m = demcmp(dem1, dem2);
-					if ( m < 0)
+					if (m < 0 || m >= diff)
 						continue;
 
-					if (f < 0 || f > m)
-					{
-						f = m;
-						newdesync = dem1->time - dem2->time;
-					}
+					diff = m;
+					desync = dem1->time - dem2->time;
 				}
 
-				//m = demcmp(dem1, dem2);
+				//Sys_Printf("diff:%f, desync:%f\n", diff, desync);
 
-				if (f < 0)
-					continue;
+				bad = 0;
+				j = 0;
+				sr = 0;
+				c = 0;
+				sr2 = 0;
 
-				//Sys_Printf("diff:%f\n", f);
-				if (f > 1) {
-					bad++;
-					continue;
-				}
+				//dem1->lastframe += 1;
+				test = desync;
 
-				m = newdesync - test;
-				test += m < 0 ? max(-0.025, m) : min(0.025, m);
-
-				if (!f)
-					f = 0.01f;
-
-				f = 1;
-				sr2 += 1/(f*f);
-				sr += newdesync/(f*f);
-				c++;
-				
-				desync = test;
-
-				if (c > 10)
-					desync = sr/sr2;
-
-				j++;
-			}
-
-			//Sys_Printf("\n%f %d %d, %d, %f\n",desync, j , bad, c, x);
-			
-			if (bad == 5) {
-				diff = 0;
-				continue;
-			}
-
-			if (j == 30)
-				break;
-		}
-
-		if (j == 30) {
-			Sys_Printf("sync1:%f %f\n", desync, sr/sr2);
-			if (c)
-				desync = sr/sr2;
-
-			desync = test;
-			before = dem2->time;
-			prevdesync = desync;
-
-
-			sr = 0;
-			c = 0;
-			sr2 = 0;
-			j = 0;
-#if 1
-			//desync = 0.5;
-			if (desync < 0) {
-				SetComparisionDemo(dem1, info->time - desync + 2);
-				SetComparisionDemo(dem2, 0);
-			} else {
-				SetComparisionDemo(dem1, info->time + 2);
-				SetComparisionDemo(dem2, info[i].time + desync);
-			}
-
-			test = desync;
-
-			while (dem1->running && dem2->running && j < 800)
-			{
-				from = dem1;
-				f = from->time + 2;
-				while (from->running && from->time < f)
-					ReadPackets();
-				//from->lastframe += 1;
-				//ReadPackets();
-
-				from = dem2;
-				f = -999;
-				m = -999;
-				sec2 = 0;
-				while (from->running && from->time + desync < dem1->time + 1)
+				while (dem1->running && dem2->running && bad < 5 && j < 30)
 				{
-					ReadPackets();
-					sec2 = 0;
+					from = dem1;
+					//from->lastframe += 0.5;
+					f = from->time + 0.5;
+					while (from->running && from->time < f)
+						ReadPackets();
 
-					m = demcmp(dem1, dem2);
-					if ( m < 0)
+					from = dem2;
+					f = -1;
+					m = -1;
+					while (from->running && from->time + desync < dem1->time + 0.25)
+					{
+						ReadPackets();
+						m = demcmp(dem1, dem2);
+						if ( m < 0)
+							continue;
+
+						if (f < 0 || f > m)
+						{
+							f = m;
+							newdesync = dem1->time - dem2->time;
+						}
+					}
+
+					//m = demcmp(dem1, dem2);
+
+					if (f < 0)
 						continue;
 
-					if (f < 0 || f > m)
+					//Sys_Printf("diff:%f\n", f);
+					if (f > 1)
 					{
-						f = m; 
-						newdesync = dem1->time - dem2->time;
+						bad++;
+						continue;
 					}
 
-				}
-
-				if (fabs(f) < 1)
-				{
-					test2 = 0;
 					m = newdesync - test;
 					test += m < 0 ? max(-0.025, m) : min(0.025, m);
-					
-					//Sys_Printf("%f %f %f %f, %f %f\n",newdesync, f, desync, test, dem1->time, dem1->time - newdesync);
+
 					if (!f)
-						f = 0.1f;
+						f = 0.01f;
+
 					f = 1;
 					sr2 += 1/(f*f);
 					sr += newdesync/(f*f);
 					c++;
-				} else if (f > 4) {
-					test2++;
-					if (test2 == 5)
-						Sys_Printf("lag:%f, %d\n", dem1->worldtime, dem2-sources);
 
-				}
-
-				if (f < 0)
-					continue;
-
-				if (c > 10)
-					//desync = sr/sr2;
 					desync = test;
 
-				after = dem2->time;
-				j++;
+					if (c > 10)
+						desync = sr/sr2;
+
+					j++;
+				}
+
+				//Sys_Printf("\n%f %d %d, %d, %f\n",desync, j , bad, c, x);
+
+				if (bad == 5)
+				{
+					diff = 0;
+					continue;
+				}
+
+				if (j == 30)
+					break;
 			}
-			//Sys_Printf("j:%d sync:%f\n", j, desync);
-			
-			if (c) {
-				//desync = sr/sr2;
+
+			if (j == 30)
+			{
+				Sys_Printf("sync1:%f %f\n", desync, sr/sr2);
+				if (c)
+					desync = sr/sr2;
+
 				desync = test;
-				//Sys_Printf("time:%f, b:%f, a:%f, p:%f, d:%f\n", info[i].time, before, after, prevdesync, desync);
-				info[i].ratio = (after - before + desync - prevdesync)/(after - before);
-				//Sys_Printf("ratio:%f\n", info[i].ratio);
-				f = (desync - prevdesync)/(after - before);
-				desync += f*(info[i].time - after);
-			}
-			
+				before = dem2->time;
+				prevdesync = desync;
+
+
+				sr = 0;
+				c = 0;
+				sr2 = 0;
+				j = 0;
+#if 1
+				//desync = 0.5;
+				if (desync < 0)
+				{
+					SetComparisionDemo(dem1, info->time - desync + 2);
+					SetComparisionDemo(dem2, 0);
+				}
+				else
+				{
+					SetComparisionDemo(dem1, info->time + 2);
+					SetComparisionDemo(dem2, info[i].time + desync);
+				}
+
+				test = desync;
+
+				while (dem1->running && dem2->running && j < 800)
+				{
+					from = dem1;
+					f = from->time + 2;
+					while (from->running && from->time < f)
+						ReadPackets();
+					//from->lastframe += 1;
+					//ReadPackets();
+
+					from = dem2;
+					f = -999;
+					m = -999;
+					sec2 = 0;
+					while (from->running && from->time + desync < dem1->time + 1)
+					{
+						ReadPackets();
+						sec2 = 0;
+
+						m = demcmp(dem1, dem2);
+						if ( m < 0)
+							continue;
+
+						if (f < 0 || f > m)
+						{
+							f = m;
+							newdesync = dem1->time - dem2->time;
+						}
+
+					}
+
+					if (fabs(f) < 1)
+					{
+						test2 = 0;
+						m = newdesync - test;
+						test += m < 0 ? max(-0.025, m) : min(0.025, m);
+
+						//Sys_Printf("%f %f %f %f, %f %f\n",newdesync, f, desync, test, dem1->time, dem1->time - newdesync);
+						if (!f)
+							f = 0.1f;
+						f = 1;
+						sr2 += 1/(f*f);
+						sr += newdesync/(f*f);
+						c++;
+					}
+					else if (f > 4)
+					{
+						test2++;
+						if (test2 == 5)
+							Sys_Printf("lag:%f, %d\n", dem1->worldtime, dem2-sources);
+
+					}
+
+					if (f < 0)
+						continue;
+
+					if (c > 10)
+						//desync = sr/sr2;
+						desync = test;
+
+					after = dem2->time;
+					j++;
+				}
+				//Sys_Printf("j:%d sync:%f\n", j, desync);
+
+				if (c)
+				{
+					//desync = sr/sr2;
+					desync = test;
+					//Sys_Printf("time:%f, b:%f, a:%f, p:%f, d:%f\n", info[i].time, before, after, prevdesync, desync);
+					info[i].ratio = (after - before + desync - prevdesync)/(after - before);
+					//Sys_Printf("ratio:%f\n", info[i].ratio);
+					f = (desync - prevdesync)/(after - before);
+					desync += f*(info[i].time - after);
+				}
+
 
 #endif
-			info[i].diff = desync;
-			info[i].synced = true;
-			if (mindiff > desync)
-				mindiff = desync;
-			break;
-		}
-		
-		//Sys_Printf("another try\n");
-		x *= 2;
-		SetComparisionDemo(dem1, info->time + x);
-		SetComparisionDemo(dem2, info[i].time);
+				info[i].diff = desync;
+				info[i].synced = true;
+				if (mindiff > desync)
+					mindiff = desync;
+				break;
+			}
+
+			//Sys_Printf("another try\n");
+			x *= 2;
+			SetComparisionDemo(dem1, info->time + x);
+			SetComparisionDemo(dem2, info[i].time);
 		}
 
 	}
@@ -618,10 +635,12 @@ qboolean Synchronize (void)
 		from->prevtime = 0;
 		from->parsecount = 0;
 		from->ratio = p->ratio;
-		if (!p->synced) {
+		if (!p->synced)
+		{
 			Sys_Printf(" couldn't synchronize %s\n", sworld.from[i].name);
 			done = false;
-		} else
+		}
+		else
 			Sys_Printf(" time offset:%f, time ratio:%f\n", from->sync, from->ratio);
 
 		from->lastframe = -1;

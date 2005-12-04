@@ -1,26 +1,30 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: cmd.c,v 1.4 2005/10/12 12:10:49 danfe Exp $
+ 
+	$Id: cmd.c,v 1.5 2005/12/04 05:37:44 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
+#ifdef SERVERONLY
+#include "qwsvdef.h"
+#else
 #include "quakedef.h"
+#endif
 
 #ifndef SERVERONLY
 void Cmd_ForwardToServer (void);
@@ -41,7 +45,7 @@ cbuf_t	*cbuf_current = NULL;
 /*
 ============
 Cmd_Wait_f
-
+ 
 Causes execution of the remainder of the command buffer to be delayed until
 next frame.  This allows commands like:
 bind g "impulse 5 ; +attack ; wait ; -attack ; impulse 2"
@@ -55,9 +59,9 @@ void Cmd_Wait_f (void)
 
 /*
 =============================================================================
-
+ 
 						COMMAND BUFFER
-
+ 
 =============================================================================
 */
 
@@ -84,7 +88,7 @@ void Cbuf_Init (void)
 /*
 ============
 Cbuf_AddText
-
+ 
 Adds command text at the end of the buffer
 ============
 */
@@ -123,7 +127,7 @@ void Cbuf_AddTextEx (cbuf_t *cbuf, char *text)
 /*
 ============
 Cbuf_InsertText
-
+ 
 Adds command text immediately after the current command
 Adds a \n to the text
 ============
@@ -178,7 +182,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 	while (cbuf->text_end > cbuf->text_start)
 	{
-// find a \n or ; line break
+		// find a \n or ; line break
 		text = (char *)cbuf->text_buf + cbuf->text_start;
 
 		cursize = cbuf->text_end - cbuf->text_start;
@@ -193,8 +197,8 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 				break;
 		}
 
-// don't execute lines without ending \n; this fixes problems with
-// partially stuffed aliases not being executed properly
+		// don't execute lines without ending \n; this fixes problems with
+		// partially stuffed aliases not being executed properly
 #ifndef SERVERONLY
 		if (cbuf_current == &cbuf_svc && i == cursize)
 			break;
@@ -205,9 +209,9 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		if (i > 0 && line[i-1] == '\r')
 			line[i-1] = 0;	// remove DOS ending CR
 
-// delete the text from the command buffer and move remaining commands down
-// this is necessary because commands (exec, alias) can insert data at the
-// beginning of the text buffer
+		// delete the text from the command buffer and move remaining commands down
+		// this is necessary because commands (exec, alias) can insert data at the
+		// beginning of the text buffer
 
 		if (i == cursize)
 		{
@@ -219,7 +223,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 			cbuf->text_start += i;
 		}
 
-// execute the command line
+		// execute the command line
 		Cmd_ExecuteString (line);
 
 		if (cbuf->wait)
@@ -236,16 +240,16 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 /*
 ==============================================================================
-
+ 
 						SCRIPT COMMANDS
-
+ 
 ==============================================================================
 */
 
 /*
 ===============
 Cmd_StuffCmds_f
-
+ 
 Adds command line parameters as script statements
 Commands lead with a +, and continue until a - or another +
 quake +prog jctest.qp +cmd amlev1
@@ -258,7 +262,7 @@ void Cmd_StuffCmds_f (void)
 	int		s;
 	char	*text, *build, c;
 
-// build the combined string to parse from
+	// build the combined string to parse from
 	s = 0;
 	for (i=1 ; i<com_argc ; i++)
 	{
@@ -280,7 +284,7 @@ void Cmd_StuffCmds_f (void)
 			strlcat (text, " ", s + 1);
 	}
 
-// pull out the commands
+	// pull out the commands
 	build = Z_Malloc (s+1);
 	build[0] = 0;
 
@@ -351,7 +355,7 @@ void Cmd_Exec_f (void)
 /*
 ===============
 Cmd_Echo_f
-
+ 
 Just prints the rest of the line to the console
 ===============
 */
@@ -366,9 +370,9 @@ void Cmd_Echo_f (void)
 
 /*
 =============================================================================
-
+ 
 								HASH
-
+ 
 =============================================================================
 */
 
@@ -385,7 +389,7 @@ static int Key (char *name)
 
 	v = 0;
 	while ( (c = *name++) != 0 )
-//		v += *name;
+		//		v += *name;
 		v += c &~ 32;	// make it case insensitive
 
 	return v % 32;
@@ -393,9 +397,9 @@ static int Key (char *name)
 
 /*
 =============================================================================
-
+ 
 								ALIASES
-
+ 
 =============================================================================
 */
 
@@ -434,7 +438,7 @@ char *Cmd_AliasString (char *name)
 /*
 ===============
 Cmd_Alias_f
-
+ 
 Creates a new command that executes a command string (possibly ; seperated)
 ===============
 */
@@ -455,7 +459,7 @@ void Cmd_Alias_f (void)
 	int			i, c;
 	int			key;
 	char		*s;
-//	cvar_t		*var;
+	//	cvar_t		*var;
 
 	c = Cmd_Argc();
 	if (c == 1)
@@ -474,11 +478,13 @@ void Cmd_Alias_f (void)
 	}
 
 #if 0
-	if ( (var = Cvar_FindVar(s)) != NULL ) {
+	if ( (var = Cvar_FindVar(s)) != NULL )
+	{
 		if (var->flags & CVAR_USER_CREATED)
 			Cvar_Delete (var->name);
-		else {
-//			Con_Printf ("%s is a variable\n");
+		else
+		{
+			//			Con_Printf ("%s is a variable\n");
 			return;
 		}
 	}
@@ -506,7 +512,7 @@ void Cmd_Alias_f (void)
 	}
 	strlcpy (a->name, s, MAX_ALIAS_NAME);
 
-// copy the rest of the command line
+	// copy the rest of the command line
 	cmd[0] = 0;		// start out with a null string
 	for (i=2 ; i<c ; i++)
 	{
@@ -594,7 +600,8 @@ void Cmd_UnAliasAll_f (void)
 	cmd_alias_t	*a, *next;
 	int i;
 
-	for (a=cmd_alias ; a ; a=next) {
+	for (a=cmd_alias ; a ; a=next)
+	{
 		next = a->next;
 		Z_Free (a->value);
 		Z_Free (a);
@@ -602,7 +609,8 @@ void Cmd_UnAliasAll_f (void)
 	cmd_alias = NULL;
 
 	// clear hash
-	for (i=0 ; i<32 ; i++) {
+	for (i=0 ; i<32 ; i++)
+	{
 		cmd_alias_hash[i] = NULL;
 	}
 }
@@ -610,9 +618,9 @@ void Cmd_UnAliasAll_f (void)
 
 /*
 =============================================================================
-
+ 
 					COMMAND EXECUTION
-
+ 
 =============================================================================
 */
 
@@ -649,7 +657,7 @@ char *Cmd_Argv (int arg)
 /*
 ============
 Cmd_Args
-
+ 
 Returns a single string containing argv(1) to argv(argc()-1)
 ============
 */
@@ -664,7 +672,7 @@ char *Cmd_Args (void)
 /*
 ============
 Cmd_TokenizeString
-
+ 
 Parses the given string into command line tokens.
 ============
 */
@@ -696,7 +704,7 @@ void Cmd_TokenizeString (char *text)
 			return;
 
 		if (cmd_argc == 1)
-			 cmd_args = text;
+			cmd_args = text;
 
 		text = COM_Parse (text);
 		if (!text)
@@ -726,7 +734,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 	if (host_initialized)	// because hunk allocation would get stomped
 		Sys_Error ("Cmd_AddCommand after host_initialized");
 
-// fail if the command is a variable name
+	// fail if the command is a variable name
 	if (Cvar_FindVar(cmd_name))
 	{
 		Con_Printf ("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
@@ -735,7 +743,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 
 	key = Key (cmd_name);
 
-// fail if the command already exists
+	// fail if the command already exists
 	for (cmd=cmd_hash_array[key] ; cmd ; cmd=cmd->hash_next)
 	{
 		if (!strcasecmp (cmd_name, cmd->name))
@@ -813,7 +821,7 @@ char *Cmd_CompleteCommand (char *partial)
 	if (!len)
 		return NULL;
 
-// check for exact match
+	// check for exact match
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
 		if (!strcasecmp (partial, cmd->name))
 			return cmd->name;
@@ -821,7 +829,7 @@ char *Cmd_CompleteCommand (char *partial)
 		if (!strcasecmp (partial, alias->name))
 			return alias->name;
 
-// check for partial match
+	// check for partial match
 	for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
 		if (!strncasecmp (partial, cmd->name, len))
 			return cmd->name;
@@ -863,7 +871,7 @@ void Cmd_Z_Cmd_f (void)
 /*
 ================
 Cmd_ExpandString
-
+ 
 Expands all $cvar expressions to cvar values
 If not SERVERONLY, also expands $macro expressions
 Note: dest must point to a 1024 byte buffer
@@ -912,15 +920,18 @@ void Cmd_ExpandString (char *data, char *dest)
 #ifndef SERVERONLY
 			str = TP_MacroString (buf);
 			name_length = macro_length;
-			if (bestvar && (!str || (strlen(bestvar->name) > macro_length))) {
+			if (bestvar && (!str || (strlen(bestvar->name) > macro_length)))
+			{
 				str = bestvar->string;
 				name_length = strlen(bestvar->name);
 			}
 #else
-			if (bestvar) {
+			if (bestvar)
+			{
 				str = bestvar->string;
 				name_length = strlen(bestvar->name);
-			} else
+			}
+			else
 				str = NULL;
 #endif
 
@@ -963,7 +974,7 @@ void Cmd_ExpandString (char *data, char *dest)
 /*
 ============
 Cmd_ExecuteString
-
+ 
 A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
@@ -980,12 +991,13 @@ void Cmd_ExecuteString (char *text)
 	Cmd_ExpandString (text, buf);
 	Cmd_TokenizeString (buf);
 
-// execute the command line
+	// execute the command line
 	if (!Cmd_Argc())
 		return;		// no tokens
 
 #ifndef SERVERONLY
-	if (cbuf_current == &cbuf_svc) {
+	if (cbuf_current == &cbuf_svc)
+	{
 		if (CL_CheckServerCommand())
 			return;
 	}
@@ -993,7 +1005,7 @@ void Cmd_ExecuteString (char *text)
 
 	key = Key (cmd_argv[0]);
 
-// check functions
+	// check functions
 	for (cmd=cmd_hash_array[key] ; cmd ; cmd=cmd->hash_next)
 	{
 		if (!strcasecmp (cmd_argv[0], cmd->name))
@@ -1008,22 +1020,24 @@ void Cmd_ExecuteString (char *text)
 		}
 	}
 
-// check cvars
+	// check cvars
 	if (Cvar_Command())
 		return;
 
-// check alias
+	// check alias
 	for (a=cmd_alias_hash[key] ; a ; a=a->hash_next)
 	{
 		if (!strcasecmp (cmd_argv[0], a->name))
 		{
 #ifndef SERVERONLY
-			if (cbuf_current == &cbuf_svc) {
+			if (cbuf_current == &cbuf_svc)
+			{
 				Cbuf_AddText (a->value);
 				Cbuf_AddText ("\n");
 			}
 			else
 #endif
+
 			{
 				Cbuf_InsertText ("\n");
 				Cbuf_InsertText (a->value);
@@ -1044,8 +1058,8 @@ void Cmd_ExecuteString (char *text)
 static qboolean is_numeric (char *c)
 {
 	return (*c >= '0' && *c <= '9') ||
-		((*c == '-' || *c == '+') && (c[1] == '.' || (c[1]>='0' && c[1]<='9'))) ||
-		(*c == '.' && (c[1]>='0' && c[1]<='9'));
+	       ((*c == '-' || *c == '+') && (c[1] == '.' || (c[1]>='0' && c[1]<='9'))) ||
+	       (*c == '.' && (c[1]>='0' && c[1]<='9'));
 }
 /*
 ================
@@ -1060,14 +1074,15 @@ void Cmd_If_f (void)
 	char	buf[256];
 
 	c = Cmd_Argc ();
-	if (c < 5) {
+	if (c < 5)
+	{
 		Con_Printf ("usage: if <expr1> <op> <expr2> <command> [else <command>]\n");
 		return;
 	}
 
 	op = Cmd_Argv (2);
 	if (!strcmp(op, "==") || !strcmp(op, "=") || !strcmp(op, "!=")
-		|| !strcmp(op, "<>"))
+	        || !strcmp(op, "<>"))
 	{
 		if (is_numeric(Cmd_Argv(1)) && is_numeric(Cmd_Argv(3)))
 			result = Q_atof(Cmd_Argv(1)) == Q_atof(Cmd_Argv(3));
@@ -1089,7 +1104,8 @@ void Cmd_If_f (void)
 		result = strstr(Cmd_Argv(3), Cmd_Argv(1)) != NULL;
 	else if (!strcmp(op, "!isin"))
 		result = strstr(Cmd_Argv(3), Cmd_Argv(1)) == NULL;
-	else {
+	else
+	{
 		Con_Printf ("unknown operator: %s\n", op);
 		Con_Printf ("valid operators are ==, =, !=, <>, >, <, >=, <=, isin, !isin\n");
 		return;
@@ -1098,7 +1114,8 @@ void Cmd_If_f (void)
 	buf[0] = '\0';
 	if (result)
 	{
-		for (i=4; i < c ; i++) {
+		for (i=4; i < c ; i++)
+		{
 			if ((i == 4) && !strcasecmp(Cmd_Argv(i), "then"))
 				continue;
 			if (!strcasecmp(Cmd_Argv(i), "else"))
@@ -1110,7 +1127,8 @@ void Cmd_If_f (void)
 	}
 	else
 	{
-		for (i=4; i < c ; i++) {
+		for (i=4; i < c ; i++)
+		{
 			if (!strcasecmp(Cmd_Argv(i), "else"))
 				break;
 		}
@@ -1118,7 +1136,8 @@ void Cmd_If_f (void)
 		if (i == c)
 			return;
 
-		for (i++ ; i < c ; i++) {
+		for (i++ ; i < c ; i++)
+		{
 			if (buf[0])
 				strlcat (buf, " ", sizeof(buf));
 			strlcat (buf, Cmd_Argv(i), sizeof(buf));
@@ -1132,7 +1151,7 @@ void Cmd_If_f (void)
 /*
 ================
 Cmd_CheckParm
-
+ 
 Returns the position (1 to argc-1) in the command's argument list
 where the given parameter apears, or 0 if not present
 ================
@@ -1158,9 +1177,9 @@ Cmd_Init
 */
 void Cmd_Init (void)
 {
-//
-// register our commands
-//
+	//
+	// register our commands
+	//
 	Cmd_AddCommand ("stuffcmds",Cmd_StuffCmds_f);
 	Cmd_AddCommand ("exec",Cmd_Exec_f);
 	Cmd_AddCommand ("echo",Cmd_Echo_f);

@@ -1,21 +1,21 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: world.h,v 1.2 2005/05/27 15:09:56 vvd0 Exp $
+ 
+	$Id: world.h,v 1.3 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 // player_state_t is the information needed by a player entity
@@ -38,7 +38,8 @@ typedef struct
 
 	int			flags;			// dead, gib, etc
 	int			msec;
-} player_state_t;
+}
+player_state_t;
 
 
 #define	MAX_SCOREBOARDNAME	16
@@ -49,7 +50,8 @@ typedef struct player_info_s
 	int		stats[MAX_CL_STATS];	// health, etc
 	qboolean	spectator;
 	int		lastsource;
-} player_info_t;
+}
+player_info_t;
 
 typedef struct
 {
@@ -60,7 +62,8 @@ typedef struct
 	int		model;
 	int		effects;
 	int		parsecount;
-} demoinfo_t;
+}
+demoinfo_t;
 
 typedef struct
 {
@@ -68,7 +71,8 @@ typedef struct
 	vec3_t	origin;
 	vec3_t	angles;
 	int		num;
-} projectile_t;
+}
+projectile_t;
 
 #define	MAX_PROJECTILES	32
 
@@ -83,7 +87,7 @@ typedef struct
 	double		receivedtime;	// time message was received, or -1
 	player_state_t	playerstate[MAX_CLIENTS];	// message received that reflects performing
 	qboolean	fixangle[MAX_CLIENTS];
-							// the usercmd
+	// the usercmd
 	packet_entities_t	packet_entities;
 	qboolean	invalid;		// true if the packet_entities delta was invalid
 	sizebuf_t	buf;
@@ -92,14 +96,16 @@ typedef struct
 	int			parsecount;
 	float		latency;
 	float		time;
-} frame_t;
+}
+frame_t;
 
 
 typedef struct
 {
 	int		length;
 	char	map[MAX_STYLESTRING];
-} lightstyle_t;
+}
+lightstyle_t;
 
 #define	MAX_EFRAGS		512
 
@@ -112,7 +118,8 @@ typedef struct
 	vec3_t		origin;
 	vec3_t		angles;
 	int			oldindex;
-} interpolate_t;
+}
+interpolate_t;
 
 typedef struct
 {
@@ -120,7 +127,8 @@ typedef struct
 	char	path[MAX_OSPATH];
 	char	name[MAX_OSPATH];
 	long	filesize;
-} file_t;
+}
+file_t;
 
 typedef struct
 {
@@ -138,7 +146,8 @@ typedef struct
 	int		fraglimit;
 	float	demotime;
 	int		demofps;
-} analyse_t;
+}
+analyse_t;
 
 typedef struct
 {
@@ -148,8 +157,8 @@ typedef struct
 	int			parsecount;		// server message counter
 	int			delta_sequence;
 	int			validsequence;	// this is the sequence number of the last good
-								// packetentity_t we got.  If this is 0, we can't
-								// render a frame yet
+	// packetentity_t we got.  If this is 0, we can't
+	// render a frame yet
 	int			lastwritten;
 	frame_t		frames[UPDATE_BACKUP];
 
@@ -166,7 +175,8 @@ typedef struct
 	byte		buffer[45*MAX_MSGLEN];
 	int			lastmarged;
 	qboolean	signonstats;
-} world_state_t;
+}
+world_state_t;
 
 typedef struct
 {
@@ -183,7 +193,8 @@ typedef struct
 	int			fromcount;
 	flist_t		filelist[50];
 	int			range;
-} static_world_state_t;
+}
+static_world_state_t;
 
 extern char				qizmoDir[MAX_OSPATH];
 extern char				outputDir[MAX_OSPATH];

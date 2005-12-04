@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: sv_sys_unix.c,v 1.10 2005/10/17 16:17:58 vvd0 Exp $
+ 
+	$Id: sv_sys_unix.c,v 1.11 2005/12/04 05:37:45 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -74,9 +74,9 @@ static qboolean	isdaemon = 0;
 
 /*
 ===============================================================================
-
+ 
 				REQUIRED SYS FUNCTIONS
-
+ 
 ===============================================================================
 */
 
@@ -84,27 +84,27 @@ static qboolean	isdaemon = 0;
 /*
 ============
 Sys_FileTime
-
+ 
 returns -1 if not present
 ============
 */
 int	Sys_FileTime (char *path)
 {
 	struct	stat	buf;
-	
+
 	if (stat (path,&buf) == -1)
 		return -1;
-	
+
 	return buf.st_mtime;
 }
 
 int	Sys_FileSize (char *path)
 {
 	struct	stat	buf;
-	
+
 	if (stat (path,&buf) == -1)
 		return 0;
-	
+
 	return buf.st_size;
 }
 
@@ -112,7 +112,7 @@ int	Sys_FileSize (char *path)
 /*
 ============
 Sys_mkdir
-
+ 
 ============
 */
 void Sys_mkdir (char *path)
@@ -120,7 +120,7 @@ void Sys_mkdir (char *path)
 	if (mkdir (path, 0777) != -1)
 		return;
 	if (errno != EEXIST)
-		Sys_Error ("mkdir %s: %s",path, strerror(errno)); 
+		Sys_Error ("mkdir %s: %s",path, strerror(errno));
 }
 
 /*
@@ -173,7 +173,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		if (!(preg = pcre_compile(ext, PCRE_CASELESS, &errbuf, &r, NULL)))
 		{
 			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
-					ext, errbuf, r);
+			           ext, errbuf, r);
 			Q_Free(preg);
 			return dir;
 		}
@@ -191,15 +191,15 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		if (!all)
 		{
 			switch (r = pcre_exec(preg, NULL, oneentry->d_name,
-						strlen(oneentry->d_name), 0, 0, NULL, 0))
+			                      strlen(oneentry->d_name), 0, 0, NULL, 0))
 			{
-				case 0: break;
-				case PCRE_ERROR_NOMATCH: continue;
-				default:
-					Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
-							ext, oneentry->d_name, r);
-					Q_Free(preg);
-					return dir;
+			case 0: break;
+			case PCRE_ERROR_NOMATCH: continue;
+			default:
+				Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
+				           ext, oneentry->d_name, r);
+				Q_Free(preg);
+				return dir;
 			}
 		}
 		snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
@@ -228,13 +228,13 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 
 	switch (sort_type)
 	{
-		case SORT_NO: break;
-		case SORT_BY_DATE:
-			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
-			break;
-		case SORT_BY_NAME:
-			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_name);
-			break;
+	case SORT_NO: break;
+	case SORT_BY_DATE:
+		qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
+		break;
+	case SORT_BY_NAME:
+		qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_name);
+		break;
 	}
 
 	return dir;
@@ -276,7 +276,7 @@ void Sys_Error (char *error, ...)
 {
 	va_list		argptr;
 	char		string[1024];
-	
+
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
@@ -300,13 +300,13 @@ double Sys_DoubleTime (void)
 	static int		secbase;
 
 	gettimeofday(&tp, &tzp);
-	
+
 	if (!secbase)
 	{
 		secbase = tp.tv_sec;
 		return tp.tv_usec/1000000.0;
 	}
-	
+
 	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
 }
 
@@ -315,7 +315,7 @@ static int do_stdin = 1;
 /*
 ================
 Sys_ConsoleInput
-
+ 
 Checks for a complete line of text typed in at the console, then forwards
 it to the host command processor
 ================
@@ -363,27 +363,27 @@ char *Sys_ConsoleInput (void)
 		{
 			switch (read (telnet_iosock, text + len, 1))
 			{
-				case 0:
+			case 0:
+				len = telnet_connected = authenticated = 0;
+				close (telnet_iosock);
+				SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
+				return NULL;
+			case 1:
+				if (text[len] == 8)
+				{
+					if(len > 0) --len;
+				}
+				else
+					++len;
+				break;
+			default:
+				if (errno != EAGAIN) // demand for M$ WIN 2K telnet support
+				{
 					len = telnet_connected = authenticated = 0;
 					close (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
-					return NULL;
-				case 1: 
-					if (text[len] == 8)
-					{
-						if(len > 0) --len;
-					}
-					else
-						++len;
-					break;
-				default:
-					if (errno != EAGAIN) // demand for M$ WIN 2K telnet support
-					{
-						len = telnet_connected = authenticated = 0;
-						close (telnet_iosock);
-						SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(errno)));
-					}
-					return NULL;
+					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(errno)));
+				}
+				return NULL;
 			}// switch
 		}// do
 		while (len < sizeof(text) - 1 && text[len - 1] != '\n' && text[len - 1] != '\r' && text[len - 1] != 0);
@@ -421,8 +421,8 @@ char *Sys_ConsoleInput (void)
 				}
 				else
 					SV_Write_Log(TELNET_LOG, 1, "Authenticated: no\n");
-				len = 0;
-				return NULL;
+			len = 0;
+			return NULL;
 		}
 
 		if (strlen(text) == 1  && text[0] == 4)
@@ -440,7 +440,8 @@ char *Sys_ConsoleInput (void)
 	{
 		stdin_ready = false;
 		len = read (0, text, sizeof(text));
-		if (len == 0) {	// end of file
+		if (len == 0)
+		{	// end of file
 			do_stdin = 0;
 			return NULL;
 		}
@@ -465,10 +466,10 @@ void Sys_Printf (char *fmt, ...)
 
 	va_start (argptr,fmt);
 	vsnprintf(text, sizeof(text), fmt, argptr);
-//	if (vsnprintf(text, sizeof(text), fmt, argptr) >= sizeof(text))
-//        	Sys_Error("memory overwrite in Sys_Printf.\n");
+	//	if (vsnprintf(text, sizeof(text), fmt, argptr) >= sizeof(text))
+	//        	Sys_Error("memory overwrite in Sys_Printf.\n");
 	va_end (argptr);
-	
+
 	if (!(telnetport && telnet_connected && authenticated) && sys_nostdout.value)
 		return;
 
@@ -494,7 +495,7 @@ void Sys_Printf (char *fmt, ...)
 /*
 =============
 Sys_Init
-
+ 
 Quake calls this so the system can register variables before host_hunklevel
 is marked
 =============
@@ -516,7 +517,7 @@ int NET_Sleep(double sec)
 	FD_SET(m = net_serversocket, &fdset); // network socket
 	if (telnetport)
 	{
-	        FD_SET(net_telnetsocket, &fdset);
+		FD_SET(net_telnetsocket, &fdset);
 		m = max(m, net_telnetsocket);
 		if (telnet_connected)
 		{
@@ -526,7 +527,7 @@ int NET_Sleep(double sec)
 	}
 	if (do_stdin)
 		FD_SET(0, &fdset); // stdin is processed too
-	
+
 	timeout.tv_sec = (long) sec;
 	timeout.tv_usec = (sec - floor(sec))*1000000L;
 
@@ -549,12 +550,12 @@ void Sys_Sleep(unsigned long ms)
 int Sys_Script(char *path, char *args)
 {
 	char str[1024];
-	
+
 	snprintf(str, sizeof(str), "cd %s\n./%s.qws %s &\ncd ..", com_gamedir, path, args);
-	
+
 	if (system(str) == -1)
 		return 0;
-	
+
 	return 1;
 }
 
@@ -562,11 +563,11 @@ DL_t Sys_DLOpen(const char *path)
 {
 	return dlopen(path,
 #ifdef OS_OPENBSD
-		DL_LAZY
+	              DL_LAZY
 #else
-		RTLD_NOW
+	              RTLD_NOW
 #endif
-		);
+	             );
 }
 
 qboolean Sys_DLClose(DL_t dl)
@@ -580,10 +581,12 @@ void *Sys_DLProc(DL_t dl, const char *name)
 }
 
 
-static int only_digits(const char *s) {
+static int only_digits(const char *s)
+{
 	if (*s == '\0')
 		return (0);
-	while (*s != '\0') {
+	while (*s != '\0')
+	{
 		if (!isdigit(*s))
 			return (0);
 		s++;
@@ -601,18 +604,18 @@ inline void Sys_Telnet (void)
 	if (telnet_connected)
 	{
 		if ((tempsock =
-		accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
+		            accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
 		{
-//			if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-				send (tempsock, "Console busy by another user.\n", 31, 0);
+			//			if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+			send (tempsock, "Console busy by another user.\n", 31, 0);
 			closesocket (tempsock);
 			SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
-				inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
+			                               inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
 		}
 		if (	(!authenticated && not_auth_timeout.value &&
-			realtime - cur_time_not_auth > not_auth_timeout.value) ||
-			(authenticated && auth_timeout.value &&
-			realtime - cur_time_auth > auth_timeout.value))
+		        realtime - cur_time_not_auth > not_auth_timeout.value) ||
+		        (authenticated && auth_timeout.value &&
+		         realtime - cur_time_auth > auth_timeout.value))
 		{
 			telnet_connected = 0;
 			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
@@ -623,21 +626,21 @@ inline void Sys_Telnet (void)
 	else
 	{
 		if ((telnet_iosock =
-		accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
+		            accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
 		{
-//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-//			{
-				telnet_connected = 1;
-				cur_time_not_auth = realtime;
-				SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-				send (telnet_iosock, "# ", 2, 0);
-/*			}
-			else
-			{
-				closesocket (telnet_iosock);
-				SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			}
-*/
+			//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+			//			{
+			telnet_connected = 1;
+			cur_time_not_auth = realtime;
+			SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+			send (telnet_iosock, "# ", 2, 0);
+			/*			}
+						else
+						{
+							closesocket (telnet_iosock);
+							SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+						}
+			*/
 		}
 	}
 }
@@ -653,14 +656,14 @@ int main (int argc, char *argv[])
 	double		time, oldtime, newtime;
 	quakeparms_t	parms;
 
-//Added by VVD {
+	//Added by VVD {
 	int	j;
 	uid_t   user_id;
 	gid_t   group_id;
 	struct passwd	*pw;
 	struct group	*gr;
 	char	*user_name, *group_name = NULL, *chroot_dir;
-//Added by VVD }
+	//Added by VVD }
 #ifndef NEWWAY
 	struct timeval timeout;
 	fd_set	fdset;
@@ -670,9 +673,9 @@ int main (int argc, char *argv[])
 
 	memset (&parms, 0, sizeof(parms));
 
-        PR_CleanLogText_Init();
+	PR_CleanLogText_Init();
 
-	COM_InitArgv (argc, argv);	
+	COM_InitArgv (argc, argv);
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
@@ -692,11 +695,12 @@ int main (int argc, char *argv[])
 
 	SV_Init (&parms);
 
-// daemon
+	// daemon
 	j = COM_CheckParm ("-d");
 	if (j && j < com_argc)
 	{
-		switch (fork()) {
+		switch (fork())
+		{
 		case -1:
 			return (-1);
 		case 0:
@@ -708,7 +712,8 @@ int main (int argc, char *argv[])
 		if (setsid() == -1)
 			Sys_Printf("setsid: %s\n", strerror(errno));
 
-		if ((j = open(_PATH_DEVNULL, O_RDWR)) != -1) {
+		if ((j = open(_PATH_DEVNULL, O_RDWR)) != -1)
+		{
 			(void)dup2(j, STDIN_FILENO);
 			(void)dup2(j, STDOUT_FILENO);
 			(void)dup2(j, STDERR_FILENO);
@@ -718,7 +723,7 @@ int main (int argc, char *argv[])
 		}
 	}
 
-// chroot
+	// chroot
 	j = COM_CheckParm ("-t");
 	if (j && j + 1 < com_argc)
 	{
@@ -730,7 +735,7 @@ int main (int argc, char *argv[])
 				Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(errno));
 	}
 
-// setgid
+	// setgid
 	j = COM_CheckParm ("-g");
 	if (j && j + 1 < com_argc)
 	{
@@ -746,7 +751,7 @@ int main (int argc, char *argv[])
 		if (setgid(group_id) < 0)
 			Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(errno));
 	}
-// setuid
+	// setuid
 	j = COM_CheckParm ("-u");
 	if (j && j + 1 < com_argc)
 	{
@@ -775,23 +780,23 @@ int main (int argc, char *argv[])
 		}
 	}
 
-// run one frame immediately for first heartbeat
-	SV_Frame (0.1);		
+	// run one frame immediately for first heartbeat
+	SV_Frame (0.1);
 
-//
-// main loop
-//
+	//
+	// main loop
+	//
 	oldtime = Sys_DoubleTime () - 0.1;
-#ifndef NEWWAY 
+#ifndef NEWWAY
 	while (1)
 	{
-	// select on the net socket and stdin
-	// the only reason we have a timeout at all is so that if the last
-	// connected client times out, the message would not otherwise
-	// be printed until the next event.
+		// select on the net socket and stdin
+		// the only reason we have a timeout at all is so that if the last
+		// connected client times out, the message would not otherwise
+		// be printed until the next event.
 		FD_ZERO(&fdset);
 		FD_SET(j = net_serversocket, &fdset);
-// Added by VVD {
+		// Added by VVD {
 		if (telnetport)
 		{
 			Sys_Telnet();
@@ -803,7 +808,7 @@ int main (int argc, char *argv[])
 				j = max(j, telnet_iosock);
 			}
 		}
-// Added by VVD }
+		// Added by VVD }
 		timeout.tv_sec  = ((int)sys_select_timeout.value) / 1000000;
 		timeout.tv_usec = ((int)sys_select_timeout.value) - timeout.tv_sec;
 
@@ -812,26 +817,26 @@ int main (int argc, char *argv[])
 
 		switch (select (j + 1, &fdset, NULL, NULL, &timeout))
 		{
-			case -1: continue;
-			case 0: break;
-			default:
-				if (do_stdin)
-					stdin_ready = FD_ISSET(0, &fdset);
-				if (telnetport && telnet_connected)
-					iosock_ready = FD_ISSET(telnet_iosock, &fdset);
+		case -1: continue;
+		case 0: break;
+		default:
+			if (do_stdin)
+				stdin_ready = FD_ISSET(0, &fdset);
+			if (telnetport && telnet_connected)
+				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 		}
 
-	// find time passed since last cycle
+		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
 		oldtime = newtime;
-		
-		SV_Frame (time);		
-		
-	// extrasleep is just a way to generate a fucked up connection on purpose
+
+		SV_Frame (time);
+
+		// extrasleep is just a way to generate a fucked up connection on purpose
 		if (sys_extrasleep.value)
 			usleep (sys_extrasleep.value);
-	}	
+	}
 #else
 	while (1)
 	{
@@ -839,7 +844,8 @@ int main (int argc, char *argv[])
 		{
 			newtime = Sys_DoubleTime ();
 			time = newtime - oldtime;
-		} while (time < 0.001);
+		}
+		while (time < 0.001);
 
 		SV_Frame (time);
 		oldtime = newtime;

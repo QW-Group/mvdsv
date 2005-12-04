@@ -1,21 +1,21 @@
 /*
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: defs.h,v 1.5 2005/10/12 12:14:37 danfe Exp $
+ 
+	$Id: defs.h,v 1.6 2005/12/04 05:39:33 disconn3ct Exp $
 */
 
 #ifdef _WIN32
@@ -98,11 +98,11 @@ extern	sizebuf_t	net_message;
 
 typedef struct
 {
-// bandwidth estimator
+	// bandwidth estimator
 	double		cleartime;			// if realtime > nc->cleartime, free to go
 	double		rate;				// seconds / byte
 
-// sequencing variables
+	// sequencing variables
 	int			incoming_sequence;
 	int			incoming_acknowledged;
 	int			incoming_reliable_acknowledged;	// single bit
@@ -115,12 +115,13 @@ typedef struct
 
 	int			reliable_length;
 
-} netchan_t;
+}
+netchan_t;
 
 
 typedef enum {
-	qwd,
-	mvd
+    qwd,
+    mvd
 } format_t;
 
 typedef struct
@@ -133,7 +134,8 @@ typedef struct
 	int			stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
 	byte		buffer[15*MAX_MSGLEN];
 	dbuffer_t	dbuffer;
-} demo_t;
+}
+demo_t;
 
 typedef struct
 {
@@ -170,13 +172,14 @@ typedef struct
 	dbuffer_t	dbuffer;
 	qboolean	signonloaded;
 	float		ratio;
-} source_t;
+}
+source_t;
 
 typedef enum
 {
-	TYPE_S = 1,
-	TYPE_I = 2,
-	TYPE_O = 4,
+    TYPE_S = 1,
+    TYPE_I = 2,
+    TYPE_O = 4,
 } type_t;
 
 typedef struct
@@ -190,7 +193,8 @@ typedef struct
 		int		opt;
 	} opt1;
 	int	opt2;
-} param_t;
+}
+param_t;
 
 //
 // main.c

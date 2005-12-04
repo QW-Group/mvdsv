@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-
+ 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
+ 
 See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-	$Id: sv_login.c,v 1.9 2005/10/17 16:17:58 vvd0 Exp $
+ 
+	$Id: sv_login.c,v 1.10 2005/12/04 05:37:44 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -43,8 +43,9 @@ typedef struct
 	int			inuse;
 	ipfilter_t	adress;
 	acc_state_t state;
-	quse_t		use; 
-} account_t;
+	quse_t		use;
+}
+account_t;
 
 static account_t	accounts[MAX_ACCOUNTS];
 static int			num_accounts = 0;
@@ -67,7 +68,7 @@ static qboolean validAcc(char *acc)
 /*
 =================
 WriteAccounts
-
+ 
 Writes account list to disk
 =================
 */
@@ -92,7 +93,7 @@ static void WriteAccounts()
 
 		if (acc->use == use_log)
 			fprintf(f, "%s %s %d %d\n", acc->login, acc->pass, acc->state, acc->failures);
-		else 
+		else
 			fprintf(f, "%s %s %d\n", acc->login, acc->pass, acc->state);
 
 		c++;
@@ -104,7 +105,7 @@ static void WriteAccounts()
 /*
 =================
 SV_LoadAccounts
-
+ 
 loads account list from disk
 =================
 */
@@ -133,14 +134,15 @@ void SV_LoadAccounts(void)
 	while (!feof(f))
 	{
 		memset(acc, 0, sizeof(account_t));
-// Is realy safe to use 'fscanf(f, "%s", s)'? FIXME!
+		// Is realy safe to use 'fscanf(f, "%s", s)'? FIXME!
 		fscanf(f, "%s", acc->login);
 		if (StringToFilter(acc->login, &acc->adress))
 		{
 			strlcpy(acc->pass, acc->login, MAX_LOGINNAME);
 			acc->use = use_ip;
 			fscanf(f, "%s %d\n", acc->pass, (int *)&acc->state);
-		} else
+		}
+		else
 			fscanf(f, "%s %d %d\n", acc->pass,  (int *)&acc->state, &acc->failures);
 
 		if (acc->state != a_free) // lol?
@@ -161,11 +163,12 @@ void SV_LoadAccounts(void)
 			continue;
 
 		for (i = 0, acc = accounts; i < num_accounts; i++, acc++)
-			if ( (acc->use == use_log && !strncmp(acc->login, cl->login, CLIENT_LOGIN_LEN)) 
-				|| (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip.ip[0], cl->realip.ip.ip[1], cl->realip.ip.ip[2], cl->realip.ip.ip[3]))) )
+			if ( (acc->use == use_log && !strncmp(acc->login, cl->login, CLIENT_LOGIN_LEN))
+			        || (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip.ip[0], cl->realip.ip.ip[1], cl->realip.ip.ip[2], cl->realip.ip.ip[3]))) )
 				break;
 
-		if (i < num_accounts && acc->state == a_ok) {
+		if (i < num_accounts && acc->state == a_ok)
+		{
 			// login again if possible
 			if (!acc->inuse || acc->use == use_ip)
 			{
@@ -189,7 +192,7 @@ void SV_LoadAccounts(void)
 /*
 =================
 SV_CreateAccount_f
-
+ 
 acc_create <login> [<password>]
 if password is not given, login will be used for password
 login/pass has to be max 16 chars and at least 3, only regular chars are acceptable
@@ -214,14 +217,17 @@ void SV_CreateAccount_f(void)
 		return;
 	}
 
-	if (StringToFilter(Cmd_Argv(1), &adr)) {
+	if (StringToFilter(Cmd_Argv(1), &adr))
+	{
 		use = use_ip;
 		if (Cmd_Argc() < 3)
 		{
 			Con_Printf("usage: acc_create <address> <username>\nmaximum %d characters for username\n", MAX_LOGINNAME - 1); //bliP; adress typo
 			return;
 		}
-	} else {
+	}
+	else
+	{
 		use = use_log;
 
 		// validate user login/pass
@@ -241,7 +247,8 @@ void SV_CreateAccount_f(void)
 	// find free spot, check if login exist;
 	for (i = 0, c = 0, spot = -1 ; c < num_accounts; i++)
 	{
-		if (accounts[i].state == a_free) {
+		if (accounts[i].state == a_free)
+		{
 			if (spot == -1)	spot = i;
 			continue;
 		}
@@ -269,7 +276,7 @@ void SV_CreateAccount_f(void)
 	else
 		i = 1;
 	strlcpy(accounts[spot].pass, sv_hashpasswords.value ?
-		SHA1(Cmd_Argv(i)) : Cmd_Argv(i), MAX_LOGINNAME);
+	        SHA1(Cmd_Argv(i)) : Cmd_Argv(i), MAX_LOGINNAME);
 
 	accounts[spot].state = a_ok;
 	accounts[spot].use = use;
@@ -281,7 +288,7 @@ void SV_CreateAccount_f(void)
 /*
 =================
 SV_RemoveAccount_f
-
+ 
 acc_remove <login>
 removes the login
 =================
@@ -323,7 +330,7 @@ void SV_RemoveAccount_f(void)
 /*
 =================
 SV_ListAccount_f
-
+ 
 shows the list of accounts
 =================
 */
@@ -355,7 +362,7 @@ void SV_ListAccount_f (void)
 /*
 =================
 SV_blockAccount
-
+ 
 blocks/unblocks an account
 =================
 */
@@ -380,7 +387,8 @@ void SV_blockAccount(qboolean block)
 
 			if (accounts[i].state != a_blocked)
 				Con_Printf("account %s not blocked\n", Cmd_Argv(1));
-			else {
+			else
+			{
 				accounts[i].state = a_ok;
 				accounts[i].failures = 0;
 				Con_Printf("account %s unblocked\n", Cmd_Argv(1));
@@ -422,7 +430,7 @@ void SV_BlockAccount_f(void)
 /*
 =================
 checklogin
-
+ 
 returns positive value if login/pass are valid
 values <= 0 indicates a failure
 =================
@@ -438,7 +446,7 @@ int checklogin(char *log, char *pass, int num, int use)
 			continue;
 
 		if (use == accounts[i].use &&
-			/*use == use_log && accounts[i].use == use_log && */!strcasecmp(log, accounts[i].login))
+		        /*use == use_log && accounts[i].use == use_log && */!strcasecmp(log, accounts[i].login))
 		{
 			if (accounts[i].inuse && accounts[i].use == use_log)
 				return -1;
@@ -447,8 +455,9 @@ int checklogin(char *log, char *pass, int num, int use)
 				return -2;
 
 			if (use == use_ip ||
-			(!sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
-			( sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass))) {
+			        (!sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
+			        ( sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass)))
+			{
 				accounts[i].failures = 0;
 				accounts[i].inuse++;
 				return i+1;
@@ -488,7 +497,7 @@ void Login_Init (void)
 /*
 ===============
 SV_Login
-
+ 
 called on connect after cmd new is issued
 ===============
 */
@@ -500,7 +509,8 @@ qboolean SV_Login(client_t *cl)
 	char *ip;
 
 	// is sv_login is disabled, login is not necessery
-	if (!sv_login.value) {
+	if (!sv_login.value)
+	{
 		SV_Logout(cl);
 		cl->logged = -1;
 		return true;
@@ -530,7 +540,8 @@ qboolean SV_Login(client_t *cl)
 	cl->logged = false;
 	cl->login[0] = 0;
 
-	if (sv_registrationinfo.string[0]) {
+	if (sv_registrationinfo.string[0])
+	{
 		strlcpy (info, sv_registrationinfo.string, 254);
 		strlcat (info, "\n", 255);
 		MSG_WriteByte (&cl->netchan.message, svc_print);
@@ -546,7 +557,8 @@ qboolean SV_Login(client_t *cl)
 
 void SV_Logout(client_t *cl)
 {
-	if (cl->logged > 0) {
+	if (cl->logged > 0)
+	{
 		accounts[cl->logged-1].inuse--;
 		cl->login[0] = 0;
 		cl->logged = 0;
@@ -558,10 +570,13 @@ void SV_ParseLogin(client_t *cl)
 	extern cvar_t sv_forcenick;
 	char *log, *pass;
 
-	if (Cmd_Argc() > 2) {
+	if (Cmd_Argc() > 2)
+	{
 		log = Cmd_Argv(1);
 		pass = Cmd_Argv(2);
-	} else { // bah usually whole text in 'say' is put into ""
+	}
+	else
+	{ // bah usually whole text in 'say' is put into ""
 		log = pass = Cmd_Argv(1);
 		while (*pass && *pass != ' ')
 			pass++;
@@ -574,10 +589,13 @@ void SV_ParseLogin(client_t *cl)
 	}
 
 	// if login is parsed, we read just a password
-	if (cl->login[0]) {
+	if (cl->login[0])
+	{
 		pass = log;
 		log = cl->login;
-	} else {
+	}
+	else
+	{
 		strlcpy(cl->login, log, CLIENT_LOGIN_LEN);
 	}
 
@@ -620,8 +638,9 @@ void SV_ParseLogin(client_t *cl)
 		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
 		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log));
 
-//VVD: forcenick ->
-		if (sv_forcenick.value && cl->login) {
+		//VVD: forcenick ->
+		if (sv_forcenick.value && cl->login)
+		{
 			Info_SetValueForKey (cl->userinfo, "name", cl->login, MAX_INFO_STRING);
 			strlcpy (cl->name, cl->login, CLIENT_NAME_LEN);
 			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
@@ -629,7 +648,7 @@ void SV_ParseLogin(client_t *cl)
 			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 			MSG_WriteString (&cl->netchan.message, va("setinfo name %s\n", cl->login));
 		}
-//<-
+		//<-
 
 		MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 		MSG_WriteString (&cl->netchan.message, "cmd new\n");
