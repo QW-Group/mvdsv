@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#	$Id: configure,v 1.5 2005/10/11 17:47:31 vvd0 Exp $
+#	$Id: configure,v 1.6 2005/12/12 16:49:49 vvd0 Exp $
 #
 
 if [ x$1 != x ]; then
@@ -31,7 +31,7 @@ FreeBSD | Darwin | OpenBSD)
 	echo "${UNAME} system - use FreeBSD Makefile."
 	cp Makefile.FreeBSD Makefile
 	echo "Configuration completed."
-        ;;
+	;;
 Linux | SunOS)
 	echo "${UNAME} system - use Linux Makefile."
 	echo UNAME=${UNAME} > Makefile
@@ -53,5 +53,5 @@ Linux | SunOS)
 	echo ""
 	echo "Other systems not supported yet."
 	echo ""
-        ;;
+	;;
 esac
