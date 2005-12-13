@@ -1,9 +1,11 @@
 
-$Id: changes.txt,v 1.42 2005/12/04 07:53:48 disconn3ct Exp $
+$Id: changes.txt,v 1.43 2005/12/13 19:55:39 disconn3ct Exp $
 
 ----
 MVDSV v0.19.01-CVS build 21?? (2005.12.??)
+- new cvar "sv_maxuserid" 99 by default. limits userid in 1...99 range. (by disconnect)
 - hardcore cleanup. Removed lot of client-onlt code (by Angel)
+- removed client sources. MVDSV now consist of server and qwdtools only (by Angel)
 - server-side flash for TeamFortress (oldgrens mode) (by Angel)
 - work on SunOS SPARC and ix86 targets now
 - added MSVC 7.1 solution/project file
