@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.14 2005/12/04 05:37:44 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.15 2005/12/13 19:50:01 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -2061,7 +2061,6 @@ void PF2_strnicmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 
 /////////Bot Functions
 extern cvar_t maxclients, maxspectators;
-extern int userid;
 void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
 {
 	client_t *cl, *newcl = NULL;
@@ -2124,7 +2123,7 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 	          name, topcolor, bottomcolor, skin );
 
 	newcl->state = cs_spawned;
-	newcl->userid = ++userid;
+	newcl->userid = SV_GenerateUserID();
 	newcl->datagram.allowoverflow = true;
 	newcl->datagram.data = newcl->datagram_buf;
 	newcl->datagram.maxsize = sizeof( newcl->datagram_buf );
