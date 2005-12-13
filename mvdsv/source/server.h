@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.15 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: server.h,v 1.16 2005/12/13 19:50:01 disconn3ct Exp $
 */
 // server.h
 
@@ -376,6 +376,7 @@ typedef struct
 {
 	int			spawncount;			// number of servers spawned since start,
 									// used to check late spawns
+	int			lastuserid;			// userid of last spawned client
 	client_t	clients[MAX_CLIENTS];
 	int			serverflags;		// episode completion information
 	

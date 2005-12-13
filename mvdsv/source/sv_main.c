@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.26 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: sv_main.c,v 1.27 2005/12/13 19:50:01 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -29,11 +29,11 @@ qboolean	host_initialized;		// true if into command execution (compatability)
 float		sv_frametime;
 
 
-double		realtime;				// without any filtering or bounding
+double		realtime;			// without any filtering or bounding
 
-int			host_hunklevel;
+int		host_hunklevel;
 
-int			current_skill;			// for entity spawnflags checking
+int		current_skill;			// for entity spawnflags checking
 
 netadr_t	master_adr[MAX_MASTERS];	// address of group servers
 
@@ -164,6 +164,8 @@ cvar_t	hostname = {"hostname","unnamed",CVAR_SERVERINFO};
 
 cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
 cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login"
+
+cvar_t sv_maxuserid = {"sv_maxuserid", "99"};
 
 log_t	logs[MAX_LOG];
 
@@ -464,6 +466,24 @@ void SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 		SV_FullClientUpdate (client, &cl->netchan.message);
 }
 
+//Returns a unique userid in 1..<sv_maxuserid> range
+int SV_GenerateUserID (void)
+{
+	int i;
+	client_t *cl;
+
+	do {
+		svs.lastuserid++;
+		if (svs.lastuserid == 1 + Q_atoi (sv_maxuserid.string))
+			svs.lastuserid = 1;
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+			if (cl->state != cs_free && cl->userid == svs.lastuserid)
+				break;
+	} while (i != MAX_CLIENTS);
+	
+	return svs.lastuserid;
+}
+
 
 /*
 ==============================================================================
@@ -724,14 +744,10 @@ int SV_VIPbyPass (char *pass);
 
 #ifdef USE_PR2
 extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
-int	userid;
 #endif
 void SVC_DirectConnect (void)
 {
 	char		userinfo[1024];
-#ifndef USE_PR2
-	static		int	userid;
-#endif
 	netadr_t	adr;
 	int			i;
 	client_t	*cl, *newcl;
@@ -836,12 +852,11 @@ void SVC_DirectConnect (void)
 	Info_RemoveKey (userinfo, "password"); // remove passwd
 
 	adr = net_from;
-	userid++;	// so every client gets a unique id
 
 	newcl = &temp;
 	memset (newcl, 0, sizeof(client_t));
 
-	newcl->userid = userid;
+	newcl->userid = SV_GenerateUserID();
 
 	gotnewcl = false; //bliP: reuse connection
 
@@ -871,7 +886,7 @@ void SVC_DirectConnect (void)
 			if ((realtime - cl->lastconnect) < ((int)sv_reconnectlimit.value * 1000))
 			{
 				Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
-				userid--;
+				//userid--;
 				return;
 			}
 			//<-
@@ -879,7 +894,7 @@ void SVC_DirectConnect (void)
 			if (cl->state == cs_connected || cl->state == cs_preconnected)
 			{
 				Con_Printf("%s:dup connect\n", NET_AdrToString (adr));
-				userid--;
+				//userid--;
 				return;
 			}
 
@@ -956,7 +971,7 @@ void SVC_DirectConnect (void)
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
 			Netchan_OutOfBandPrint (net_serversocket, adr, "%c\nserver is full\n\n", A2C_PRINT);
-			userid--; //bliP: count users properly
+			//userid--; //bliP: count users properly
 			newcl->rip_vip = 3; // added drop client after "server is full" message
 			return;
 		}
@@ -2652,6 +2667,8 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_mod_msg_file);
 	Cvar_RegisterVariable (&sv_forcenick);
 	Cvar_RegisterVariable (&sv_registrationinfo);
+
+	Cvar_RegisterVariable (&sv_maxuserid);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
