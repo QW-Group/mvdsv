@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.16 2005/12/13 19:50:01 disconn3ct Exp $
+	$Id: server.h,v 1.17 2005/12/20 20:19:29 disconn3ct Exp $
 */
 // server.h
 
@@ -177,78 +177,78 @@ typedef struct client_s
 
 	// back buffers for client reliable data
 	sizebuf_t	backbuf;
-	int			num_backbuf;
-	int			backbuf_size[MAX_BACK_BUFFERS];
+	int		num_backbuf;
+	int		backbuf_size[MAX_BACK_BUFFERS];
 	byte		backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
 
-	byte			stufftext_buf[MAX_STUFFTEXT];
+	byte		stufftext_buf[MAX_STUFFTEXT];
 
-	double			connection_started;	// or time of disconnect for zombies
-	qboolean		send_message;		// set on frames a datagram arived on
+	double		connection_started;	// or time of disconnect for zombies
+	qboolean	send_message;		// set on frames a datagram arived on
 
 // spawn parms are carried from level to level
-	float			spawn_parms[NUM_SPAWN_PARMS];
+	float		spawn_parms[NUM_SPAWN_PARMS];
 
 // client known data for deltas	
-	int				old_frags;
+	int		old_frags;
 	
-	int				stats[MAX_CL_STATS];
+	int		stats[MAX_CL_STATS];
 
 
 	client_frame_t	frames[UPDATE_BACKUP];	// updates can be deltad from here
 
-	FILE			*download;			// file being downloaded
-	int				downloadsize;		// total bytes
-	int				downloadcount;		// bytes sent
+	FILE		*download;		// file being downloaded
+	int		downloadsize;		// total bytes
+	int		downloadcount;		// bytes sent
 // demo download list for internal cmd dl function
 //Added by VVD {
-	int				demonum[MAX_ARGS];
-	qboolean		demolist;
+	int		demonum[MAX_ARGS];
+	qboolean	demolist;
 // } Added by VVD
 
-	int				spec_track;			// entnum of player tracking
+	int		spec_track;		// entnum of player tracking
 
-	double			whensaid[10];       // JACK: For floodprots
- 	int			whensaidhead;       // Head value for floodprots
- 	double			lockedtill;
+	double		whensaid[10];		// JACK: For floodprots
+ 	int		whensaidhead;		// Head value for floodprots
+ 	double		lockedtill;
 
-	//qboolean		upgradewarn;		// did we warn him? //bliP: this isn't used anywhere
+	//qboolean		upgradewarn;	// did we warn him? //bliP: this isn't used anywhere
 
-	FILE			*upload;
-	char			uploadfn[MAX_QPATH];
-	netadr_t		snap_from;
-	qboolean		remote_snap;
+	FILE		*upload;
+	char		uploadfn[MAX_QPATH];
+	netadr_t	snap_from;
+	qboolean	remote_snap;
 
-	char			login[CLIENT_LOGIN_LEN];
-	int				logged;
+	char		login[CLIENT_LOGIN_LEN];
+	int		logged;
 
-	int				spawncount;			// for tracking map changes during downloading
+	int		spawncount;		// for tracking map changes during downloading
 
 //bliP: additional ->
-	int				file_percent;
-	qboolean		special;
-	int				logincount;
-	float			lasttoptime;		// time of last topcolor change
-	int				lasttopcount;		// count of last topcolor change
-	int				lastconnect;
-	int				spec_print;
-	double			cuff_time;
+	int		file_percent;
+	qboolean	special;
+	int		logincount;
+	float		lasttoptime;		// time of last topcolor change
+	int		lasttopcount;		// count of last topcolor change
+	int		lastconnect;
+	int		spec_print;
+	double		cuff_time;
 //bliP: 24/9 anti speed ->
-	int				msecs;
-	double			last_check;
+	int		msecs;
+	double		last_check;
 //<-
 //<-
  
 //===== NETWORK ============
-	int				chokecount;
-	int				delta_sequence;		// -1 = no compression
-	netchan_t		netchan;
-	netadr_t		realip;				// client's ip, not latest proxy's
-	int				realip_num;			// random value
-	int				realip_count;
-	int				rip_vip;
-	double			delay;
-	double			disable_updates_stop; //Vladis
+	int		chokecount;
+	int		delta_sequence;		// -1 = no compression
+	netchan_t	netchan;
+	netadr_t	realip;			// client's ip, not latest proxy's
+	int		realip_num;		// random value
+	int		realip_count;
+	int		rip_vip;
+	double		delay;
+	double		disable_updates_stop; //Vladis
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -261,22 +261,22 @@ typedef struct
 {
 	vec3_t	origin;
 	vec3_t	angles;
-	int		weaponframe;
-	int		skinnum;
-	int		model;
-	int		effects;
+	int	weaponframe;
+	int	skinnum;
+	int	model;
+	int	effects;
 }	demoinfo_t;
 
 typedef struct
 {
 	demoinfo_t	info;
 	float		sec;
-	int			parsecount;
+	int		parsecount;
 	qboolean	fixangle;
 	vec3_t		angle;
 	float		cmdtime;
-	int			flags;
-	int			frame;
+	int		flags;
+	int		frame;
 } demo_client_t;
 
 typedef struct {
@@ -291,7 +291,7 @@ typedef struct
 {
 	qboolean	allowoverflow;	// if false, do a Sys_Error
 	qboolean	overflowed;		// set to true if the buffer size failed
-	byte	*data;
+	byte		*data;
 	int		maxsize;
 	int		cursize;
 	int		bufsize;
@@ -308,8 +308,8 @@ typedef struct
 
 typedef struct {
 	byte	*data;
-	int		start, end, last;
-	int		maxsize;
+	int	start, end, last;
+	int	maxsize;
 } dbuffer_t;
 
 #define DEMO_FRAMES 64
@@ -321,22 +321,22 @@ typedef struct
 	dbuffer_t	dbuffer;
 	sizebuf_t	datagram;
 	byte		datagram_data[MSG_BUF_SIZE];
-	int			lastto;
-	int			lasttype;
+	int		lastto;
+	int		lasttype;
 	double		time, pingtime;
-	int			stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
+	int		stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
 	client_t	recorder;
 	qboolean	fixangle[MAX_CLIENTS];
 	float		fixangletime[MAX_CLIENTS];
 	vec3_t		angles[MAX_CLIENTS];
 	char		name[MAX_OSPATH], path[MAX_OSPATH];
-	int			parsecount;
-	int			lastwritten;
+	int		parsecount;
+	int		lastwritten;
 	demo_frame_t	frames[DEMO_FRAMES];
 	demoinfo_t	info[MAX_CLIENTS];
 	byte		buffer[20*MAX_MSGLEN];
-	int			bufsize;
-	int			forceFrame;
+	int		bufsize;
+	int		forceFrame;
 
 	struct mvddest_s *dest;
 } demo_t;
@@ -351,13 +351,13 @@ typedef struct
 	double	active;
 	double	idle;
 	double	demo;
-	int		count;
-	int		packets;
+	int	count;
+	int	packets;
 
 	double	latched_active;
 	double	latched_idle;
 	double	latched_demo;
-	int		latched_packets;
+	int	latched_packets;
 } svstats_t;
 
 // MAX_CHALLENGES is made large to prevent a denial
@@ -368,38 +368,36 @@ typedef struct
 typedef struct
 {
 	netadr_t	adr;
-	int			challenge;
-	int			time;
+	int		challenge;
+	int		time;
 } challenge_t;
 
 typedef struct
 {
-	int			spawncount;			// number of servers spawned since start,
+	int		spawncount;		// number of servers spawned since start,
 									// used to check late spawns
-	int			lastuserid;			// userid of last spawned client
+	int		lastuserid;		// userid of last spawned client
 	client_t	clients[MAX_CLIENTS];
-	int			serverflags;		// episode completion information
+	int		serverflags;		// episode completion information
 	
 	double		last_heartbeat;
-	int			heartbeat_sequence;
+	int		heartbeat_sequence;
 	svstats_t	stats;
 
 	char		info[MAX_SERVERINFO_STRING];
 
 	// log messages are used so that fraglog processes can get stats
-	int			logsequence;	// the message currently being filled
+	int		logsequence;		// the message currently being filled
 	double		logtime;		// time of last swap
 	sizebuf_t	log[2];
 	byte		log_buf[2][MAX_DATAGRAM];
 
 	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
-	byte		*demomem;
-	int			demomemsize;
 
-	packet_t		packets[MAX_DELAYED_PACKETS];
-	int				num_packets;
-//	packet_t		packets_out[MAX_DELAYED_PACKETS];
-//	int				num_packets_out;
+	packet_t	packets[MAX_DELAYED_PACKETS];
+	int		num_packets;
+//	packet_t	packets_out[MAX_DELAYED_PACKETS];
+//	int		num_packets_out;
 } server_static_t;
 
 //=============================================================================
@@ -590,7 +588,7 @@ qboolean SV_FilterPacket (void);
 void SV_SendBan (void);
 qboolean GameStarted(void);
 //<-
-
+void SV_Script_f (void);
 
 //
 // sv_init.c
