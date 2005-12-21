@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.23 2005/12/20 20:19:29 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.24 2005/12/21 16:32:41 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -145,7 +145,7 @@ void DestClose(mvddest_t *d, qboolean destroyfiles)
 	{
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, d->path, d->name);
 		Sys_remove(path);
-		strncasecmp(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 		Sys_remove(path);
 	}
 
@@ -227,13 +227,31 @@ void DestFlush(qboolean compleate)
 	}
 }
 
+static char *SV_PrintTeams(void);
 void DestCloseAllFlush(qboolean destroyfiles)
 {
+	char path[MAX_OSPATH];
 	mvddest_t *d;
 	DestFlush(true);	//make sure it's all written.
 
 	while (demo.dest)
 	{
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, demo.name);
+		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+		
+		if (sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
+		{
+			FILE *f;
+			char *text;
+			if ((f = fopen (path, "w+t")))
+			{
+				text = SV_PrintTeams();
+				fwrite(text, strlen(text), 1, f);
+				fflush(f);
+				fclose(f);
+			}
+		}
+
 		d = demo.dest;
 		demo.dest = d->nextdest;
 
@@ -241,10 +259,6 @@ void DestCloseAllFlush(qboolean destroyfiles)
 
 		if (sv_onrecordfinish.string[0] && !destroyfiles) // dont gzip deleted demos
 		{
-			char path[MAX_OSPATH];
-			snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, d->path, d->name);
-			strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
-	
 			extern redirect_t sv_redirected;
 			int old = sv_redirected;
 			char *p;
@@ -861,18 +875,18 @@ static char *SV_PrintTeams(void)
 	// create output
 	lastscores[0] = 0;
 	snprintf(buf, sizeof(buf),
-	         "date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n",
-	         date.str, sv.name, (int)teamplay.value, (int)deathmatch.value,
-	         (int)timelimit.value);
+		"date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n",
+		date.str, sv.name, (int)teamplay.value, (int)deathmatch.value,
+		(int)timelimit.value);
 	if (numcl == 2) // duel
 	{
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-		         "player1: %s (%i)\nplayer2: %s (%i)\n",
-		         clients[0]->name, clients[0]->old_frags,
-		         clients[1]->name, clients[1]->old_frags);
+			"player1: %s (%i)\nplayer2: %s (%i)\n",
+			clients[0]->name, clients[0]->old_frags,
+			clients[1]->name, clients[1]->old_frags);
 		snprintf(lastscores, sizeof(lastscores), "duel: %s vs %s @ %s - %i:%i\n",
-		         clients[0]->name, clients[1]->name, sv.name,
-		         clients[0]->old_frags, clients[1]->old_frags);
+			clients[0]->name, clients[1]->name, sv.name,
+			clients[0]->old_frags, clients[1]->old_frags);
 	}
 	else if (!teamplay.value) // ffa
 	{
@@ -881,12 +895,12 @@ static char *SV_PrintTeams(void)
 		for (i = 0; i < numcl; i++)
 		{
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-			         "  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
+				"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
 			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-			         "  %s(%i)", clients[i]->name, clients[i]->old_frags);
+				"  %s(%i)", clients[i]->name, clients[i]->old_frags);
 		}
 		snprintf(lastscores + strlen(lastscores),
-		         sizeof(lastscores) - strlen(lastscores), " @ %s\n", sv.name);
+			sizeof(lastscores) - strlen(lastscores), " @ %s\n", sv.name);
 	}
 	else
 	{ // teamplay
@@ -894,25 +908,25 @@ static char *SV_PrintTeams(void)
 		for (j = 0; j < numt; j++)
 		{
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-			         "team[%i] %s:\n", j, teams[j]);
+				"team[%i] %s:\n", j, teams[j]);
 			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-			         "%s[", teams[j]);
+				"%s[", teams[j]);
 			scores = 0;
 			for (i = 0; i < numcl; i++)
 				if (!strcmp(clients[i]->team, teams[j]))
 				{
 					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-					         "  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
+						"  %s (%i)\n", clients[i]->name, clients[i]->old_frags);
 					snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-					         " %s(%i) ", clients[i]->name, clients[i]->old_frags);
+						" %s(%i) ", clients[i]->name, clients[i]->old_frags);
 					scores += clients[i]->old_frags;
 				}
 			snprintf(lastscores + strlen(lastscores), sizeof(lastscores) - strlen(lastscores),
-			         "](%i)  ", scores);
+				"](%i)  ", scores);
 
 		}
 		snprintf(lastscores + strlen(lastscores),
-		         sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.name);
+			sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.name);
 	}
 
 	for (p = buf; *p; p++) *p = chartbl2[(byte)*p];
@@ -960,17 +974,17 @@ mvddest_t *SV_InitRecordFile (char *name)
 
 	s = name + strlen(name);
 	while (*s != '/') s--;
-	strncpy(dst->name, s+1, sizeof(dst->name));
-	strncpy(dst->path, sv_demoDir.string, sizeof(dst->path));
+	strlcpy(dst->name, s+1, sizeof(dst->name));
+	strlcpy(dst->path, sv_demoDir.string, sizeof(dst->path));
 
 	if (!*demo.path)
-		strncpy(demo.path, ".", MAX_OSPATH);
+		strlcpy(demo.path, ".", MAX_OSPATH);
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
 	Cvar_SetROM(&serverdemo, dst->name);
 
-	strncpy(path, name, MAX_OSPATH);
-	strncpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+	strlcpy(path, name, MAX_OSPATH);
+	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 
 	if (sv_demotxt.value)
 	{
@@ -1502,7 +1516,7 @@ qboolean SV_DirSizeCheck (void)
 	dir_t	dir;
 	file_t	*list;
 	int	i;
-start:
+
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
 	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
 	{
@@ -1513,7 +1527,11 @@ start:
 		}
 		list = dir.files;
 		i = sv_demoClearOld.value;
-		Con_Printf("clearing %d old files\n", i);
+		Con_Printf("clearing %d old demos\n", i);
+		// HACK!!! HACK!!! HACK!!!
+		if (sv_demotxt.value) // if our server record demos and txts, then to remove
+			i=i*2;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
+
 		for (; list->name[0] && i > 0; list++)
 		{
 			if (list->isdir)
@@ -1522,7 +1540,6 @@ start:
 			//Con_Printf("remove %d - %s/%s/%s\n", i, com_gamedir, sv_demoDir.string, list->name);
 			i--;
 		}
-		goto start;
 	}
 	return true;
 }
