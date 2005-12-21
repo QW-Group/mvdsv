@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.17 2005/12/20 20:19:29 disconn3ct Exp $
+	$Id: server.h,v 1.18 2005/12/21 16:32:41 disconn3ct Exp $
 */
 // server.h
 
@@ -589,6 +589,7 @@ void SV_SendBan (void);
 qboolean GameStarted(void);
 //<-
 void SV_Script_f (void);
+int SV_GenerateUserID (void);
 
 //
 // sv_init.c
