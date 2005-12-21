@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.25 2005/12/21 19:37:30 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.26 2005/12/21 19:40:09 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -240,9 +240,7 @@ void DestCloseAllFlush(qboolean destroyfiles)
 		demo.dest = d->nextdest;
 
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, d->path, d->name);
-		SV_BroadcastPrintf (PRINT_CHAT, "1 path = %s\n", path);
 		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
-		SV_BroadcastPrintf (PRINT_CHAT, "2 path = %s\n", path);
 		if (sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
 		{
 			FILE *f;
