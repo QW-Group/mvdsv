@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.11 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.12 2005/12/24 22:40:39 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -690,8 +690,6 @@ int main (int argc, char *argv[])
 		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
 	parms.membase = Q_Malloc (parms.memsize);
-
-	parms.basedir = ".";
 
 	SV_Init (&parms);
 

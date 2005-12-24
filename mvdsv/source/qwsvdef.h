@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.7 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: qwsvdef.h,v 1.8 2005/12/24 22:40:39 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -75,7 +75,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef struct
 {
-	char	*basedir;
 	int	argc;
 	char	**argv;
 	void	*membase;

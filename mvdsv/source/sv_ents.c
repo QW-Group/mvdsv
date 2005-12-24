@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ents.c,v 1.7 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: sv_ents.c,v 1.8 2005/12/24 22:40:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -102,7 +102,7 @@ int		nailcount = 0;
 
 extern	int	sv_nailmodel, sv_supernailmodel, sv_playermodel;
 
-cvar_t	sv_nailhack	= {"sv_nailhack", "0"};
+cvar_t	sv_nailhack	= {"sv_nailhack", "1"};
 
 
 qboolean SV_AddNailUpdate (edict_t *ent)
@@ -122,10 +122,10 @@ qboolean SV_AddNailUpdate (edict_t *ent)
 
 void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
-	byte	bits[6];	// [48 bits] xyzpy 12 12 12 4 8
-	int		n, i;
-	edict_t	*ent;
-	int		x, y, z, p, yaw;
+	byte bits[6];	// [48 bits] xyzpy 12 12 12 4 8
+	int n, i;
+	edict_t *ent;
+	int x, y, z, p, yaw;
 
 	if (!numnails)
 		return;
@@ -151,11 +151,11 @@ void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 			MSG_WriteByte (msg, (byte)ent->v.colormap);
 		}
 
-		x = (int)(ent->v.origin[0]+4096)>>1;
-		y = (int)(ent->v.origin[1]+4096)>>1;
-		z = (int)(ent->v.origin[2]+4096)>>1;
-		p = (int)(16*ent->v.angles[0]/360)&15;
-		yaw = (int)(256*ent->v.angles[1]/360)&255;
+		x = ((int)(ent->v.origin[0] + 4096 + 1) >> 1) & 4095;
+		y = ((int)(ent->v.origin[1] + 4096 + 1) >> 1) & 4095;
+		z = ((int)(ent->v.origin[2] + 4096 + 1) >> 1) & 4095;
+		p = Q_rint(ent->v.angles[0]*(16.0/360.0)) & 15;
+		yaw = Q_rint(ent->v.angles[1]*(256.0/360.0)) & 255;
 
 		bits[0] = x;
 		bits[1] = (x>>8) | (y<<4);
