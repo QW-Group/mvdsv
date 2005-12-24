@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.14 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: common.c,v 1.15 2005/12/24 22:40:38 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -26,15 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 #define MAX_NUM_ARGVS	50
-#define NUM_SAFE_ARGVS	6
 
 usercmd_t nullcmd; // guarenteed to be zero
 
-static char	*largv[MAX_NUM_ARGVS + NUM_SAFE_ARGVS + 1];
-static char	*argvdummy = " ";
-
-static char	*safeargvs[NUM_SAFE_ARGVS] =
-    {"-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse"};
+static char	*largv[MAX_NUM_ARGVS + 1];
 
 cvar_t	registered = {"registered","0"};
 
@@ -505,12 +500,12 @@ void MSG_WriteCoord (sizebuf_t *sb, float f)
 
 void MSG_WriteAngle (sizebuf_t *sb, float f)
 {
-	MSG_WriteByte (sb, (int)(f*256/360) & 255);
+	MSG_WriteByte (sb, Q_rint(f*256.0/360.0) & 255);
 }
 
 void MSG_WriteAngle16 (sizebuf_t *sb, float f)
 {
-	MSG_WriteShort (sb, (int)(f*65536/360) & 65535);
+	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
 }
 
 void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
@@ -678,7 +673,9 @@ char *MSG_ReadString (void)
 	l = 0;
 	do
 	{
-		c = MSG_ReadChar ();
+		c = MSG_ReadByte ();
+		if (c == 255)		// skip these to avoid security problems
+			continue;	// with old clients and servers
 		if (c == -1 || c == 0)
 			break;
 		string[l] = c;
@@ -699,7 +696,9 @@ char *MSG_ReadStringLine (void)
 	l = 0;
 	do
 	{
-		c = MSG_ReadChar ();
+		c = MSG_ReadByte ();
+		if (c == 255)
+			continue;
 		if (c == -1 || c == 0 || c == '\n')
 			break;
 		string[l] = c;
@@ -873,9 +872,8 @@ char *COM_FileExtension (char *in)
 	static char exten[8];
 	int		i;
 
-	while (*in && *in != '.')
-		in++;
-	if (!*in)
+	in = strrchr(in, '.');
+	if (!in || strchr(in, '/'))
 		return "";
 	in++;
 	for (i=0 ; i<7 && *in ; i++,in++)
@@ -985,26 +983,30 @@ char *COM_Parse (char *data)
 		while (1)
 		{
 			c = *data++;
-			if (c=='\"' || !c || len >= MAX_COM_TOKEN - 1)
+			if (c=='\"' || !c)
 			{
 				com_token[len] = 0;
 				if (!c)
 					data--;
 				return data;
 			}
-			com_token[len] = c;
-			len++;
+			if (len < MAX_COM_TOKEN-1)
+			{
+				com_token[len] = c;
+				len++;
+			}
 		}
 	}
 
 	// parse a regular word
 	do
 	{
-		com_token[len] = c;
+		if (len < MAX_COM_TOKEN-1)
+		{
+			com_token[len] = c;
+			len++;
+		}
 		data++;
-		len++;
-		if (len >= MAX_COM_TOKEN - 1)
-			break;
 		c = *data;
 	}
 	while (c && c != ' ' && c != '\t' && c != '\n' && c != '\r');
@@ -1012,31 +1014,6 @@ char *COM_Parse (char *data)
 	com_token[len] = 0;
 	return data;
 }
-
-
-/*
-================
-COM_CheckParm
- 
-Returns the position (1 to argc-1) in the program's argument list
-where the given parameter appears, or 0 if not present
-================
-*/
-int COM_CheckParm (char *parm)
-{
-	int		i;
-
-	for (i=1 ; i<com_argc ; i++)
-	{
-		if (!com_argv[i])
-			continue;		// NEXTSTEP sometimes clears appkit vars.
-		if (!strcmp (parm,com_argv[i]))
-			return i;
-	}
-
-	return 0;
-}
-
 
 /*
 ================
@@ -1067,32 +1044,37 @@ COM_InitArgv
 */
 void COM_InitArgv (int argc, char **argv)
 {
-	qboolean	safe;
-	int			i;
-
-	safe = false;
-
-	for (com_argc=0 ; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc) ;
-	        com_argc++)
+	for (com_argc=0 ; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc) ; com_argc++)
 	{
-		largv[com_argc] = argv[com_argc];
-		if (!strcmp ("-safe", argv[com_argc]))
-			safe = true;
+		if (argv[com_argc])
+			largv[com_argc] = argv[com_argc];
+		else
+			largv[com_argc] = "";
 	}
 
-	if (safe)
-	{
-		// force all the safe-mode switches. Note that we reserved extra space in
-		// case we need to add these, so we don't need an overflow check
-		for (i=0 ; i<NUM_SAFE_ARGVS ; i++)
-		{
-			largv[com_argc] = safeargvs[i];
-			com_argc++;
-		}
-	}
-
-	largv[com_argc] = argvdummy;
+	largv[com_argc] = "";
 	com_argv = largv;
+}
+
+/*
+================
+COM_CheckParm
+ 
+Returns the position (1 to argc-1) in the program's argument list
+where the given parameter appears, or 0 if not present
+================
+*/
+int COM_CheckParm (char *parm)
+{
+	int i;
+
+	for (i=1 ; i<com_argc ; i++)
+	{
+		if (!strcmp (parm,com_argv[i]))
+			return i;
+	}
+
+	return 0;
 }
 
 /*
@@ -1132,18 +1114,6 @@ char	*va(char *format, ...)
 	va_end (argptr);
 
 	return string[index++];
-}
-
-
-/// just for debugging
-int	memsearch (byte *start, int count, int search)
-{
-	int		i;
-
-	for (i=0 ; i<count ; i++)
-		if (start[i] == search)
-			return i;
-	return -1;
 }
 
 /*
@@ -1365,11 +1335,10 @@ int file_from_pak; // global indicating file came from pack file ZOID
 
 int COM_FOpenFile (char *filename, FILE **file)
 {
-	searchpath_t	*search;
-	char		netpath[MAX_OSPATH];
-	pack_t		*pak;
-	int			i;
-	int			findtime;
+	searchpath_t *search;
+	char netpath[MAX_OSPATH];
+	pack_t *pak;
+	int i;
 
 	file_from_pak = 0;
 
@@ -1402,8 +1371,8 @@ int COM_FOpenFile (char *filename, FILE **file)
 		{
 			snprintf (netpath, sizeof(netpath), "%s/%s", search->filename, filename);
 
-			findtime = Sys_FileTime (netpath);
-			if (findtime == -1)
+			*file = fopen (netpath, "rb");
+			if (!*file)
 				continue;
 
 			if (developer.value)
@@ -1415,7 +1384,8 @@ int COM_FOpenFile (char *filename, FILE **file)
 
 	}
 
-	Sys_Printf ("FindFile: can't find %s\n", filename);
+	if (developer.value)
+		Sys_Printf ("FindFile: can't find %s\n", filename);
 
 	*file = NULL;
 	com_filesize = -1;
@@ -1459,8 +1429,6 @@ byte *COM_LoadFile (char *path, int usehunk)
 		buf = Hunk_AllocName_f (len+1, base, false);
 	else if (usehunk == 2)
 		buf = Hunk_TempAlloc (len+1);
-	else if (usehunk == 0)
-		buf = Z_Malloc (len+1);
 	else if (usehunk == 3)
 		buf = Cache_Alloc (loadcache, len+1, base);
 	else if (usehunk == 4)
@@ -1560,7 +1528,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 	if (numpackfiles > MAX_FILES_IN_PACK)
 		Sys_Error ("%s has %i files", packfile, numpackfiles);
 
-	newfiles = Z_Malloc (numpackfiles * sizeof(packfile_t));
+	newfiles = Q_Malloc (numpackfiles * sizeof(packfile_t));
 
 	fseek (packhandle, header.dirofs, SEEK_SET);
 	fread (&info, 1, header.dirlen, packhandle);
@@ -1573,7 +1541,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 		newfiles[i].filelen = LittleLong(info[i].filelen);
 	}
 
-	pack = Z_Malloc (sizeof (pack_t));
+	pack = Q_Malloc (sizeof (pack_t));
 	strlcpy (pack->filename, packfile, MAX_OSPATH);
 	pack->handle = packhandle;
 	pack->numfiles = numpackfiles;
@@ -1611,6 +1579,7 @@ void COM_AddGameDirectory (char *dir)
 	//
 	search = Hunk_Alloc (sizeof(searchpath_t));
 	strlcpy (search->filename, dir, MAX_OSPATH);
+	search->pack = NULL;
 	search->next = com_searchpaths;
 	com_searchpaths = search;
 
@@ -1685,11 +1654,11 @@ void COM_Gamedir (char *dir)
 		if (com_searchpaths->pack)
 		{
 			fclose (com_searchpaths->pack->handle);
-			Z_Free (com_searchpaths->pack->files);
-			Z_Free (com_searchpaths->pack);
+			Q_Free (com_searchpaths->pack->files);
+			Q_Free (com_searchpaths->pack);
 		}
 		next = com_searchpaths->next;
-		Z_Free (com_searchpaths);
+		Q_Free (com_searchpaths);
 		com_searchpaths = next;
 	}
 
@@ -1698,16 +1667,17 @@ void COM_Gamedir (char *dir)
 	//
 	Cache_Flush ();
 
+	snprintf (com_gamedir, MAX_OSPATH, "%s/%s", com_basedir, dir);
+
 	if (!strncmp(dir, "id1", 4) || !strncmp(dir, "qw", 3))
 		return;
-
-	snprintf (com_gamedir, MAX_OSPATH, "%s/%s", com_basedir, dir);
 
 	//
 	// add the directory to the search path
 	//
-	search = Z_Malloc (sizeof(searchpath_t));
+	search = Q_Malloc (sizeof(searchpath_t));
 	strlcpy (search->filename, com_gamedir, MAX_OSPATH);
+	search->pack = NULL;
 	search->next = com_searchpaths;
 	com_searchpaths = search;
 
@@ -1720,7 +1690,7 @@ void COM_Gamedir (char *dir)
 		pak = COM_LoadPackFile (pakfile);
 		if (!pak)
 			break;
-		search = Z_Malloc (sizeof(searchpath_t));
+		search = Q_Malloc (sizeof(searchpath_t));
 		search->pack = pak;
 		search->next = com_searchpaths;
 		com_searchpaths = search;
@@ -1744,7 +1714,7 @@ void COM_InitFilesystem (void)
 	if (i && i < com_argc-1)
 		strlcpy (com_basedir, com_argv[i + 1], MAX_OSPATH);
 	else
-		strlcpy (com_basedir, host_parms.basedir, MAX_OSPATH);
+		strlcpy (com_basedir, ".", MAX_OSPATH);
 
 	i = strlen(com_basedir)-1;
 	if ((i >= 0) && (com_basedir[i]=='/' || com_basedir[i]=='\\'))
@@ -2110,7 +2080,7 @@ void Info_CopyStarKeys (char *from, char *to)
 	}
 }
 
-static byte chktbl[1024 + 4] = {
+static byte chktbl[1024] = {
 	0x78,0xd2,0x94,0xe3,0x41,0xec,0xd6,0xd5,0xcb,0xfc,0xdb,0x8a,0x4b,0xcc,0x85,0x01,
 	0x23,0xd2,0xe5,0xf2,0x29,0xa7,0x45,0x94,0x4a,0x62,0xe3,0xa5,0x6f,0x3f,0xe1,0x7a,
 	0x64,0xed,0x5c,0x99,0x29,0x87,0xa8,0x78,0x59,0x0d,0xaa,0x0f,0x25,0x0a,0x5c,0x58,
@@ -2143,8 +2113,10 @@ static byte chktbl[1024 + 4] = {
 	0x19,0x19,0x31,0xc3,0x85,0xec,0x1d,0x8c,0x20,0xf0,0x3a,0xfa,0x80,0x4d,0x2c,0x7d,
 	0xac,0x60,0x09,0xc0,0x40,0xee,0xb9,0xeb,0x13,0x5b,0xe8,0x2b,0xb1,0x20,0xf0,0xce,
 	0x4c,0xbd,0xc6,0x04,0x86,0x70,0xc6,0x33,0xc3,0x15,0x0f,0x65,0x19,0xfd,0xc2,0xd3,
-	// map checksum goes here
-	0x00,0x00,0x00,0x00
+	// Only the first 512 bytes of the table are initialized, the rest
+	// is just zeros.
+	// This is an idiocy in QW but we can't change this, or checksums
+	// will not match.
 };
 
 /*
@@ -2154,13 +2126,13 @@ COM_BlockSequenceCRCByte
 For proxy protecting
 ====================
 */
-byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
+byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 {
 	unsigned short crc;
 	byte	*p;
 	byte chkb[60 + 4];
 
-	p = chktbl + (sequence % (sizeof(chktbl) - 8));
+	p = chktbl + ((unsigned int)sequence % (sizeof(chktbl) - 4));
 
 	if (length > 60)
 		length = 60;
@@ -2173,7 +2145,7 @@ byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 
 	length += 4;
 
-	crc = CRC_Block(chkb, length);
+	crc = CRC_Block (chkb, length);
 
 	crc &= 0xff;
 

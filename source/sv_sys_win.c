@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.7 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.8 2005/12/24 22:40:40 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -656,8 +656,6 @@ int main (int argc, char **argv)
 
 	parms.membase = Q_Malloc (parms.memsize);
 
-	parms.basedir = ".";
-
 	SV_Init (&parms);
 
 	// run one frame immediately for first heartbeat
@@ -860,9 +858,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	}
 
 	parms.membase = Q_Malloc (parms.memsize);
-
-	parms.basedir = ".";
-
+	
 	SV_Init (&parms);
 
 	// if stared miminize update notify icon message (with correct port)
