@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_user.c,v 1.21 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_user.c,v 1.22 2005/12/27 17:15:32 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1386,7 +1386,7 @@ void SV_Say (qboolean team)
 	if (!sv.mvdrecording || !cls)
 		return;
 
-	// non-team messages should be seen allways, even if not tracking any player
+	// non-team messages should be seen always, even if not tracking any player
 	if (!team && ((host_client->spectator && sv_spectalk.value) || !host_client->spectator))
 	{
 		MVDWrite_Begin (dem_all, 0, strlen(text)+3);

@@ -16,8 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: zone.h,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: zone.h,v 1.5 2005/12/27 17:15:32 disconn3ct Exp $
 */
+#ifndef _ZONE_H_
+#define _ZONE_H_
+
 /*
  memory allocation
 
@@ -36,12 +39,8 @@ The video buffers are allocated high to avoid leaving a hole underneath
 server allocations when changing to a higher video mode.
 
 
-Z_??? Zone memory functions used for small, dynamic allocations like text
-strings from command input.  There is only about 48K for it, allocated at
-the very bottom of the hunk.
-
 Cache_??? Cache memory is for objects that can be dynamically loaded and
-can usefully stay persistant between levels.  The size of the cache
+can usefully stay persistent between levels.  The size of the cache
 fluctuates from level to level.
 
 To allocate a cachable object
@@ -76,8 +75,6 @@ client and server low hunk allocations
 
 startup hunk allocations
 
-Zone block
-
 ----- Bottom of Memory -----
 
 
@@ -89,23 +86,15 @@ void Memory_Init (void *buf, int size);
 void *Q_Malloc (size_t size);
 #define	Q_Free(ptr)	free(ptr)
 
-void Z_Free (void *ptr);
-void *Z_Malloc (int size);			// returns 0 filled memory
-void *Z_TagMalloc (int size, int tag);
-
-void Z_DumpHeap (void);
-void Z_CheckHeap (void);
-int Z_FreeMemory (void);
-
-void *Hunk_Alloc (int size);		// returns 0 filled memory
+void *Hunk_Alloc (int size); // returns 0 filled memory
 void *Hunk_AllocName (int size, char *name);
 
 void *Hunk_HighAllocName (int size, char *name);
 
-int	Hunk_LowMark (void);
+int Hunk_LowMark (void);
 void Hunk_FreeToLowMark (int mark);
 
-int	Hunk_HighMark (void);
+int Hunk_HighMark (void);
 void Hunk_FreeToHighMark (int mark);
 
 void *Hunk_TempAlloc (int size);
@@ -114,7 +103,7 @@ void Hunk_Check (void);
 
 typedef struct cache_user_s
 {
-	void	*data;
+	void *data;
 } cache_user_t;
 
 void Cache_Flush (void);
@@ -126,10 +115,10 @@ void *Cache_Check (cache_user_t *c);
 void Cache_Free (cache_user_t *c);
 
 void *Cache_Alloc (cache_user_t *c, int size, char *name);
-// Returns NULL if all purgable data was tossed and there still
+// Returns NULL if all purgeable data was tossed and there still
 // wasn't enough room.
 
 void Cache_Report (void);
 
-
+#endif /* _ZONE_H_ */
 

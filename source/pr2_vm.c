@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.7 2005/12/27 17:15:32 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -137,7 +137,7 @@ void PR2_Profile_f()
 void VM_UnloadQVM( qvm_t * qvm )
 {
 	if(qvm)
-		Z_Free( qvm );
+		Q_Free( qvm );
 }
 
 void VM_Unload( vm_t * vm )
@@ -160,7 +160,7 @@ void VM_Unload( vm_t * vm )
 		return;
 
 	}
-	Z_Free( vm );
+	Q_Free( vm );
 }
 
 qboolean VM_LoadNative( vm_t * vm )
@@ -350,7 +350,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	if(vm->hInst)
 		qvm = (qvm_t  *)vm->hInst;
 	else
-		qvm = Z_Malloc( sizeof( qvm_t ) );
+		qvm = Q_Malloc( sizeof( qvm_t ) );
 
 	qvm->len_cs = header->instructionCount + 1;	//bad opcode padding.
 	qvm->len_ds = header->dataOffset + header->litLength + header->bssLength;
@@ -455,7 +455,7 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 	if ( vm )
 		VM_Unload(vm);
 
-	vm = Z_Malloc( sizeof( vm_t ) );
+	vm = Q_Malloc( sizeof( vm_t ) );
 
 
 
@@ -478,7 +478,7 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 		if ( VM_LoadBytecode( vm, syscallex ) )
 			break;
 	default:
-		Z_Free(vm);
+		Q_Free(vm);
 		return NULL;
 		break;
 	}

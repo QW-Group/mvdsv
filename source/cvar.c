@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: cvar.c,v 1.6 2005/12/27 17:15:32 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -126,9 +126,9 @@ void Cvar_Set (cvar_t *var, char *value)
 		changing = false;
 	}
 
-	Z_Free (var->string);	// free the old value string
+	Q_Free (var->string);	// free the old value string
 
-	var->string = Z_Malloc (strlen(value)+1);
+	var->string = Q_Malloc (strlen(value)+1);
 	strlcpy (var->string, value, strlen(value) + 1);
 	var->value = Q_atof (var->string);
 
@@ -245,9 +245,9 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	variable->next = cvar_vars;
 	cvar_vars = variable;
 
-	// copy the value off, because future sets will Z_Free it
+	// copy the value off, because future sets will Q_Free it
 	strlcpy (value, variable->string, sizeof(value));
-	variable->string = Z_Malloc (1);
+	variable->string = Q_Malloc (1);
 
 	// set it through the function to be consistent
 	Cvar_SetROM (variable, value);
@@ -352,7 +352,7 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v = Cvar_FindVar(name);
 	if (v)
 		return v;
-	v = (cvar_t *) Z_Malloc(sizeof(cvar_t));
+	v = (cvar_t *) Q_Malloc(sizeof(cvar_t));
 	// Cvar doesn't exist, so we create it
 	v->next = cvar_vars;
 	cvar_vars = v;
@@ -361,9 +361,9 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v->hash_next = cvar_hash[key];
 	cvar_hash[key] = v;
 
-	v->name = Z_Malloc(strlen(name)+1);
+	v->name = Q_Malloc(strlen(name)+1);
 	strlcpy (v->name, name, strlen(name) + 1);
-	v->string = Z_Malloc (strlen(string)+1);
+	v->string = Q_Malloc (strlen(string)+1);
 	strlcpy (v->string, string, strlen(string) + 1);
 	v->flags = cvarflags;
 	v->value = Q_atof (v->string);
@@ -414,9 +414,9 @@ qboolean Cvar_Delete (char *name)
 				cvar_vars = var->next;
 
 			// free
-			Z_Free (var->string);
-			Z_Free (var->name);
-			Z_Free (var);
+			Q_Free (var->string);
+			Q_Free (var->name);
+			Q_Free (var);
 			return true;
 		}
 		prev = var;

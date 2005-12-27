@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.13 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.14 2005/12/27 17:15:32 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1502,7 +1502,7 @@ void SV_Serverinfo_f (void)
 	var = Cvar_FindVar (Cmd_Argv(1));
 	if (var)
 	{
-		Z_Free (var->string);	// free the old value string
+		Q_Free (var->string);	// free the old value string
 		var->string = CopyString (Cmd_Argv(2));
 		var->value = Q_atof (var->string);
 	}

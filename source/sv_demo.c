@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.26 2005/12/21 19:40:09 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.27 2005/12/27 17:15:32 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -149,7 +149,7 @@ void DestClose(mvddest_t *d, qboolean destroyfiles)
 		Sys_remove(path);
 	}
 
-	Z_Free(d);
+	Q_Free(d);
 }
 
 void DestFlush(qboolean compleate)
@@ -955,7 +955,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 		return NULL;
 	}
 
-	dst = Z_Malloc(sizeof(mvddest_t));
+	dst = Q_Malloc(sizeof(mvddest_t));
 
 	if (!sv_demoUseCache.value)
 	{
@@ -1009,7 +1009,7 @@ mvddest_t *SV_InitStream(int socket)
 {
 	mvddest_t *dst;
 
-	dst = Z_Malloc(sizeof(mvddest_t));
+	dst = Q_Malloc(sizeof(mvddest_t));
 
 	dst->desttype = DEST_STREAM;
 	dst->socket = socket;

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_phys.c,v 1.6 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.7 2005/12/27 17:15:32 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -61,35 +61,8 @@ cvar_t	sv_use_forward_control = {"pm_use_forward_control","0",CVAR_SERVERINFO};
 cvar_t	sv_max_wishspeed = {"pm_max_wishspeed","0",CVAR_SERVERINFO};
 */
 
-#define	MOVE_EPSILON	0.01
-
 void SV_Physics_Toss (edict_t *ent);
 
-/*
-================
-SV_CheckAllEnts
-================
-*/
-void SV_CheckAllEnts (void)
-{
-	int			e;
-	edict_t		*check;
-
-	// see if any solid entities are inside the final position
-	check = NEXT_EDICT(sv.edicts);
-	for (e=1 ; e<sv.num_edicts ; e++, check = NEXT_EDICT(check))
-	{
-		if (check->free)
-			continue;
-		if (check->v.movetype == MOVETYPE_PUSH
-		        || check->v.movetype == MOVETYPE_NONE
-		        || check->v.movetype == MOVETYPE_NOCLIP)
-			continue;
-
-		if (SV_TestEntityPosition (check))
-			Con_Printf ("entity in invalid position\n");
-	}
-}
 
 /*
 ================
@@ -909,7 +882,7 @@ void SV_RunEntity (edict_t *ent)
 		return;
 	ent->v.lastruntime = (float)sv.time;
 
-	switch ( (int)ent->v.movetype)
+	switch ((int)ent->v.movetype)
 	{
 	case MOVETYPE_PUSH:
 		SV_Physics_Pusher (ent);

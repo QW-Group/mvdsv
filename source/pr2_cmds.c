@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.15 2005/12/13 19:50:01 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.16 2005/12/27 17:15:32 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -394,7 +394,7 @@ Each entity can have eight independant sound sources, like voice,
 weapon, feet, etc.
  
 Channel 0 is an auto-allocate channel, the others override anything
-allready running on that entity/channel pair.
+already running on that entity/channel pair.
  
 An attenuation of 0 will play full volume everywhere in the level.
 Larger attenuations will drop off.

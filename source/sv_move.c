@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_move.c,v 1.3 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_move.c,v 1.4 2005/12/27 17:15:32 disconn3ct Exp $
 */
 // sv_move.c -- monster movement
 
@@ -33,8 +33,6 @@ is not a staircase.
  
 =============
 */
-int c_yes, c_no;
-
 qboolean SV_CheckBottom (edict_t *ent)
 {
 	vec3_t	mins, maxs, start, stop;
@@ -57,12 +55,9 @@ qboolean SV_CheckBottom (edict_t *ent)
 			if (SV_PointContents (start) != CONTENTS_SOLID)
 				goto realcheck;
 		}
-
-	c_yes++;
 	return true;		// we got out easy
 
 realcheck:
-	c_no++;
 	//
 	// check it for real...
 	//
@@ -92,8 +87,6 @@ realcheck:
 			if (trace.fraction == 1.0 || mid - trace.endpos[2] > STEPSIZE)
 				return false;
 		}
-
-	c_yes++;
 	return true;
 }
 

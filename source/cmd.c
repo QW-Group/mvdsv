@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: cmd.c,v 1.7 2005/12/27 17:15:32 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -252,7 +252,7 @@ void Cmd_StuffCmds_f (void)
 	if (!s)
 		return;
 
-	text = Z_Malloc (s+1);
+	text = Q_Malloc (s+1);
 	text[0] = 0;
 	for (i=1 ; i<com_argc ; i++)
 	{
@@ -264,7 +264,7 @@ void Cmd_StuffCmds_f (void)
 	}
 
 	// pull out the commands
-	build = Z_Malloc (s+1);
+	build = Q_Malloc (s+1);
 	build[0] = 0;
 
 	for (i=0 ; i<s-1 ; i++)
@@ -289,8 +289,8 @@ void Cmd_StuffCmds_f (void)
 	if (build[0])
 		Cbuf_InsertText (build);
 
-	Z_Free (text);
-	Z_Free (build);
+	Q_Free (text);
+	Q_Free (build);
 }
 
 
@@ -392,7 +392,7 @@ char *CopyString (char *in)
 {
 	char	*out;
 
-	out = Z_Malloc (strlen(in)+1);
+	out = Q_Malloc (strlen(in)+1);
 	strlcpy (out, in, strlen(in) + 1);
 	return out;
 }
@@ -442,14 +442,14 @@ void Cmd_Alias_f (void)
 	{
 		if (!strcasecmp(a->name, s))
 		{
-			Z_Free (a->value);
+			Q_Free (a->value);
 			break;
 		}
 	}
 
 	if (!a)
 	{
-		a = Z_Malloc (sizeof(cmd_alias_t));
+		a = Q_Malloc (sizeof(cmd_alias_t));
 		a->next = cmd_alias;
 		cmd_alias = a;
 		a->hash_next = cmd_alias_hash[key];
@@ -507,8 +507,8 @@ qboolean Cmd_DeleteAlias (char *name)
 				cmd_alias = a->next;
 
 			// free
-			Z_Free (a->value);
-			Z_Free (a);
+			Q_Free (a->value);
+			Q_Free (a);
 			return true;
 		}
 		prev = a;
@@ -548,8 +548,8 @@ void Cmd_UnAliasAll_f (void)
 	for (a=cmd_alias ; a ; a=next)
 	{
 		next = a->next;
-		Z_Free (a->value);
-		Z_Free (a);
+		Q_Free (a->value);
+		Q_Free (a);
 	}
 	cmd_alias = NULL;
 
