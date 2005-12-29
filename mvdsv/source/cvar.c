@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.6 2005/12/27 17:15:32 disconn3ct Exp $
+	$Id: cvar.c,v 1.7 2005/12/29 11:31:17 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -367,6 +367,7 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	strlcpy (v->string, string, strlen(string) + 1);
 	v->flags = cvarflags;
 	v->value = Q_atof (v->string);
+	v->OnChange = NULL;
 
 	return v;
 }

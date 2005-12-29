@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.16 2005/12/27 17:15:32 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.17 2005/12/29 11:31:17 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -96,7 +96,8 @@ void PF2_DPrint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 
 void PF2_conprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Con_Printf("%s", VM_POINTER(base,mask,stack[0].string));
+//	Con_Printf("%s", VM_POINTER(base,mask,stack[0].string));
+	Sys_Printf("%s", VM_POINTER( base, mask, stack[0].string));
 }
 
 void PF2_Error(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
