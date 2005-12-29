@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.12 2005/12/24 22:40:39 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.13 2005/12/29 11:31:17 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -167,6 +167,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
+
 	dir.files = list;
 	all = !strncmp(ext, ".*", 3);
 	if (!all)

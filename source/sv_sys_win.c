@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.8 2005/12/24 22:40:40 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.9 2005/12/29 11:31:17 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -133,7 +133,8 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	snprintf(pathname, sizeof(pathname), "%s/*.*", path);
 	if ((h = FindFirstFile (pathname , &fd)) == INVALID_HANDLE_VALUE)
 	{
-		Q_Free(preg);
+		if (!all)
+			Q_Free(preg);
 		return dir;
 	}
 
@@ -151,7 +152,8 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 			default:
 				Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
 				           ext, fd.cFileName, r);
-				Q_Free(preg);
+				if (!all)
+					Q_Free(preg);
 				return dir;
 			}
 		}
@@ -179,7 +181,8 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	while (FindNextFile(h, &fd));
 
 	FindClose (h);
-	Q_Free(preg);
+	if (!all)
+		Q_Free(preg);
 
 	switch (sort_type)
 	{
