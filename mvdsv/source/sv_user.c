@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_user.c,v 1.23 2005/12/28 19:49:24 qqshka Exp $
+	$Id: sv_user.c,v 1.24 2005/12/30 16:18:13 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2510,8 +2510,6 @@ void SV_PostRunCmd(void)
 	}
 }
 
-int clc_cmd = -1;
-
 /*
 ===================
 SV_ExecuteClientMessage
@@ -2582,7 +2580,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			return;
 		}
 
-		clc_cmd = c = MSG_ReadByte ();
+		c = MSG_ReadByte ();
 		if (c == -1)
 			break;
 
