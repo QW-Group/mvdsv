@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.28 2005/12/20 20:19:29 disconn3ct Exp $
+	$Id: sv_main.c,v 1.29 2005/12/31 23:22:47 qqshka Exp $
 */
 
 #include "version.h"
@@ -318,7 +318,11 @@ void SV_DropClient (client_t *drop)
 #endif
 				PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
 		}
-		else if (SpectatorDisconnect)
+		else if (SpectatorDisconnect
+#ifdef USE_PR2
+			|| ( sv_vm )
+#endif
+			)
 		{
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
