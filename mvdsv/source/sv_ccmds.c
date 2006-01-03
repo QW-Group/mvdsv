@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.14 2005/12/27 17:15:32 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.15 2006/01/03 16:44:48 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1455,11 +1455,10 @@ void SV_SendServerInfoChange(char *key, char *value)
 /*
 ===========
 SV_Serverinfo_f
- 
-  Examine or change the serverinfo string
+
+Examine or change the serverinfo string
 ===========
 */
-char *CopyString(char *s);
 void SV_Serverinfo_f (void)
 {
 	cvar_t	*var;
@@ -1498,15 +1497,18 @@ void SV_Serverinfo_f (void)
 	}
 	Info_SetValueForKey (svs.info, Cmd_Argv(1), Cmd_Argv(2), MAX_SERVERINFO_STRING);
 
-	// if this is a cvar, change it too
+	// if the key is also a serverinfo cvar, change it too
 	var = Cvar_FindVar (Cmd_Argv(1));
-	if (var)
+	if (var && (var->flags & CVAR_SERVERINFO))
 	{
-		Q_Free (var->string);	// free the old value string
-		var->string = CopyString (Cmd_Argv(2));
-		var->value = Q_atof (var->string);
+		// a hack - strip the serverinfo flag so that the Cvar_Set
+		// doesn't trigger SV_SendServerInfoChange
+		var->flags &= ~CVAR_SERVERINFO;
+		Cvar_Set (var, Cmd_Argv(2));
+		var->flags |= CVAR_SERVERINFO; // put it back
 	}
 
+	// FIXME, don't send if the key hasn't changed
 	SV_SendServerInfoChange(Cmd_Argv(1), Cmd_Argv(2));
 }
 
