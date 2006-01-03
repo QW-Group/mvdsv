@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.7 2005/12/27 17:15:32 disconn3ct Exp $
+	$Id: cmd.c,v 1.8 2006/01/03 17:42:06 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -228,7 +228,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 /*
 ===============
 Cmd_StuffCmds_f
- 
+
 Adds command line parameters as script statements
 Commands lead with a +, and continue until a - or another +
 quake +prog jctest.qp +cmd amlev1
@@ -237,27 +237,22 @@ quake -nosound +cmd amlev1
 */
 void Cmd_StuffCmds_f (void)
 {
-	int		i, j;
-	int		s;
-	char	*text, *build, c;
+	int i, j;
+	int s;
+	char *text, *build, c;
 
 	// build the combined string to parse from
 	s = 0;
-	for (i=1 ; i<com_argc ; i++)
-	{
-		if (!com_argv[i])
-			continue;		// NEXTSTEP nulls out -NXHost
+	for (i = 1; i < com_argc; i++)
 		s += strlen (com_argv[i]) + 1;
-	}
+
 	if (!s)
 		return;
 
 	text = Q_Malloc (s+1);
 	text[0] = 0;
-	for (i=1 ; i<com_argc ; i++)
+	for (i = 1; i < com_argc; i++)
 	{
-		if (!com_argv[i])
-			continue;		// NEXTSTEP nulls out -NXHost
 		strlcat (text, com_argv[i], s + 1);
 		if (i != com_argc-1)
 			strlcat (text, " ", s + 1);
@@ -287,7 +282,7 @@ void Cmd_StuffCmds_f (void)
 	}
 
 	if (build[0])
-		Cbuf_InsertText (build);
+		Cbuf_AddText (build);
 
 	Q_Free (text);
 	Q_Free (build);
@@ -1007,7 +1002,6 @@ void Cmd_Init (void)
 	//
 	// register our commands
 	//
-	Cmd_AddCommand ("stuffcmds",Cmd_StuffCmds_f);
 	Cmd_AddCommand ("exec",Cmd_Exec_f);
 	Cmd_AddCommand ("echo",Cmd_Echo_f);
 	Cmd_AddCommand ("alias",Cmd_Alias_f);
