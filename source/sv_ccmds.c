@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.15 2006/01/03 16:44:48 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.16 2006/01/03 17:06:30 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -425,7 +425,6 @@ void SV_Give_f (void)
 
 void CL_Disconnect ();
 int UDP_OpenSocket (int, qboolean);
-void Host_ConnectLocal ();
 
 /*
 ======================
@@ -1582,7 +1581,7 @@ void SV_User_f (void)
 {
 	if (Cmd_Argc() != 2)
 	{
-		Con_Printf ("Usage: info <userid>\n");
+		Con_Printf ("Usage: user <userid>\n");
 		return;
 	}
 
@@ -1739,13 +1738,14 @@ SV_Snap
 void SV_Snap (int uid)
 {
 	client_t *cl;
-	char		pcxname[80];
-	char		checkname[MAX_OSPATH];
-	int			i;
+	char pcxname[80];
+	char checkname[MAX_OSPATH];
+	int i;
+	FILE *f;
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
-		if (!cl->state)
+		if (cl->state < cs_preconnected)
 			continue;
 		if (cl->userid == uid)
 			break;
@@ -1756,19 +1756,18 @@ void SV_Snap (int uid)
 		return;
 	}
 
+	COM_CreatePath (va("%s/snap/", com_gamedir));
 	snprintf(pcxname, sizeof(pcxname), "%d-00.pcx", uid);
-
-	snprintf(checkname, MAX_OSPATH, "%s/snap", gamedirfile);
-	Sys_mkdir(gamedirfile);
-	Sys_mkdir(checkname);
 
 	for (i=0 ; i<=99 ; i++)
 	{
 		pcxname[strlen(pcxname) - 6] = i/10 + '0';
 		pcxname[strlen(pcxname) - 5] = i%10 + '0';
-		snprintf (checkname, MAX_OSPATH, "%s/snap/%s", gamedirfile, pcxname);
-		if (Sys_FileTime(checkname) == -1)
-			break;	// file doesn't exist
+		snprintf (checkname, MAX_OSPATH, "%s/snap/%s", com_gamedir, pcxname);
+		f = fopen (checkname, "rb");
+		if (!f)
+			break; // file doesn't exist
+		fclose (f);
 	}
 	if (i==100)
 	{
