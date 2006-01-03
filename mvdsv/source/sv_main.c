@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.29 2005/12/31 23:22:47 qqshka Exp $
+	$Id: sv_main.c,v 1.30 2006/01/03 17:08:02 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -146,12 +146,12 @@ cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", 0, sv_mod_msg_file_OnChange};
 cvar_t	fraglimit = {"fraglimit","0",CVAR_SERVERINFO};
 cvar_t	timelimit = {"timelimit","0",CVAR_SERVERINFO};
 cvar_t	teamplay = {"teamplay","0",CVAR_SERVERINFO};
-cvar_t	samelevel = {"samelevel","0",CVAR_SERVERINFO};
+cvar_t	samelevel = {"samelevel","0"};
 cvar_t	maxclients = {"maxclients","8",CVAR_SERVERINFO};
 cvar_t	maxspectators = {"maxspectators","8",CVAR_SERVERINFO};
 cvar_t	maxvip_spectators = {"maxvip_spectators","0"/*,CVAR_SERVERINFO*/};
-cvar_t	deathmatch = {"deathmatch","1",CVAR_SERVERINFO};			// 0, 1, or 2
-cvar_t	spawn = {"spawn","0",CVAR_SERVERINFO};
+cvar_t	deathmatch = {"deathmatch","1",CVAR_SERVERINFO};
+cvar_t	spawn = {"spawn","0"};
 cvar_t	watervis = {"watervis","0",CVAR_SERVERINFO};
 cvar_t	serverdemo = {"serverdemo","",CVAR_SERVERINFO | CVAR_ROM};
 // not mirrored
