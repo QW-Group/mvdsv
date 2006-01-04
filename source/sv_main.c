@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.30 2006/01/03 17:08:02 disconn3ct Exp $
+	$Id: sv_main.c,v 1.31 2006/01/04 03:32:50 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -2689,6 +2689,7 @@ void SV_InitLocal (void)
 
 	Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*version", va("%4.2f", QW_VERSION), MAX_SERVERINFO_STRING);
+	//Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
 
 	// init fraglog stuff
 	svs.logsequence = 1;
@@ -3088,7 +3089,7 @@ void SV_Init (quakeparms_t *parms)
 	SV_InitLocal ();
 
 	Sys_Init ();
-	Pmove_Init ();
+	PM_Init ();
 
 	SV_MVDInit ();
 	Login_Init ();
