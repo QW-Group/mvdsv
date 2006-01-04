@@ -16,9 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: net.h,v 1.7 2006/01/04 03:35:01 disconn3ct Exp $
 */
 // net.h -- quake's interface to the networking layer
+#ifndef _NET_H_
+#define _NET_H_
 
 #define	PORT_ANY	-1
 
@@ -88,6 +90,8 @@ typedef struct
 {
 	qboolean	fatal_error;
 
+	int		dropped;		// between last packet and previous
+
 	float		last_received;		// for timeouts
 
 // the statistics are cleared at each client begin, because
@@ -129,8 +133,6 @@ typedef struct
 	double		outgoing_time[MAX_LATENT];
 } netchan_t;
 
-extern int net_drop;		// packets dropped before this one
-
 void Netchan_Init (void);
 void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 void Netchan_OutOfBand (int net_socket, netadr_t adr, int length, byte *data);
@@ -142,3 +144,6 @@ qboolean Netchan_CanPacket (netchan_t *chan);
 qboolean Netchan_CanReliable (netchan_t *chan);
 
 void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a);
+
+#endif /* _NET_H_ */
+
