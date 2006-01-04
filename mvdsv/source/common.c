@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.15 2005/12/24 22:40:38 disconn3ct Exp $
+	$Id: common.c,v 1.16 2006/01/04 03:25:11 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <limits.h>
 
 #include "qwsvdef.h"
+#include "mdfour.h"
 
 #define MAX_NUM_ARGVS	50
 
@@ -114,13 +115,11 @@ int Q_atoi (char *str)
 		str += 2;
 		while (1)
 		{
-			c = *str++;
-			if (c >= '0' && c <= '9')
+			c = (int)(unsigned char)*str++;
+			if ( isdigit(c) )
 				val = (val<<4) + c - '0';
-			else if (c >= 'a' && c <= 'f')
-				val = (val<<4) + c - 'a' + 10;
-			else if (c >= 'A' && c <= 'F')
-				val = (val<<4) + c - 'A' + 10;
+			else if ( isxdigit(c) )
+				val = (val<<4) + tolower(c) - 'a' + 10;
 			else
 				return val*sign;
 		}
@@ -139,8 +138,8 @@ int Q_atoi (char *str)
 	//
 	while (1)
 	{
-		c = *str++;
-		if (c <'0' || c > '9')
+		c = (int)(unsigned char)*str++;
+		if ( !isdigit(c) )
 			return val*sign;
 		val = val*10 + c - '0';
 	}
@@ -174,13 +173,11 @@ float Q_atof (char *str)
 		str += 2;
 		while (1)
 		{
-			c = *str++;
-			if (c >= '0' && c <= '9')
+			c = (int)(unsigned char)*str++;
+			if ( isdigit(c) )
 				val = (val*16) + c - '0';
-			else if (c >= 'a' && c <= 'f')
-				val = (val*16) + c - 'a' + 10;
-			else if (c >= 'A' && c <= 'F')
-				val = (val*16) + c - 'A' + 10;
+			else if ( isxdigit(c) )
+				val = (val*16) + tolower(c) - 'a' + 10;
 			else
 				return val*sign;
 		}
@@ -207,7 +204,7 @@ float Q_atof (char *str)
 			decimal = total;
 			continue;
 		}
-		if (c <'0' || c > '9')
+		if ( !isdigit(c) )
 			break;
 		val = val*10 + c - '0';
 		total++;
@@ -223,6 +220,24 @@ float Q_atof (char *str)
 
 	return val*sign;
 }
+
+
+// removes trailing zeros
+char *Q_ftos (float value)
+{
+	static char str[128];
+	int	i;
+
+	snprintf (str, sizeof(str), "%f", value);
+
+	for (i=strlen(str)-1 ; i>0 && str[i]=='0' ; i--)
+		str[i] = 0;
+	if (str[i] == '.')
+		str[i] = 0;
+
+	return str;
+}
+
 
 #ifdef _WIN32
 int snprintf(char *buffer, size_t count, char const *format, ...)
@@ -2151,3 +2166,27 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 
 	return crc;
 }
+
+
+//============================================================================
+
+///////////////////////////////////////////////////////////////
+//	MD4-based checksum utility functions
+//
+//	Copyright (C) 2000       Jeff Teunissen <d2deek@pmail.net>
+//
+//	Author: Jeff Teunissen	<d2deek@pmail.net>
+//	Date: 01 Jan 2000
+
+unsigned Com_BlockChecksum (void *buffer, int length)
+{
+	int				digest[4];
+	unsigned 		val;
+
+	mdfour ( (unsigned char *) digest, (unsigned char *) buffer, length );
+
+	val = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
+
+	return val;
+}
+
