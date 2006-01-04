@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_chan.c,v 1.8 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: net_chan.c,v 1.9 2006/01/04 03:29:13 disconn3ct Exp $
 */
 
 #include <stdlib.h>
@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	PACKET_HEADER 8
 
 /*
- 
+
 packet header
 -------------
 31	sequence
@@ -38,47 +38,46 @@ packet header
 31	acknowledge sequence
 1	acknowledge receipt of even/odd message
 16  qport
- 
+
 The remote connection never knows if it missed a reliable message, the
 local side detects that it has been dropped by seeing a sequence acknowledge
-higher thatn the last reliable sequence, but without the correct evon/odd
+higher than the last reliable sequence, but without the correct evon/odd
 bit for the reliable set.
- 
+
 If the sender notices that a reliable message has been dropped, it will be
 retransmitted.  It will not be retransmitted again until a message after
 the retransmit has been acknowledged and the reliable still failed to get there.
- 
-if the sequence number is -1, the packet should be handled without a netcon
- 
+
+If the sequence number is -1, the packet should be handled without a netcon.
+
 The reliable message can be added to at any time by doing
 MSG_Write* (&netchan->message, <data>).
- 
+
 If the message buffer is overflowed, either by a single message, or by
 multiple frames worth piling up while the last reliable transmit goes
 unacknowledged, the netchan signals a fatal error.
- 
+
 Reliable messages are always placed first in a packet, then the unreliable
 message is included if there is sufficient room.
- 
+
 To the receiver, there is no distinction between the reliable and unreliable
 parts of the message, they are just processed out as a single larger message.
- 
+
 Illogical packet sequence numbers cause the packet to be dropped, but do
 not kill the connection.  This, combined with the tight window of valid
 reliable acknowledgement numbers provides protection against malicious
 address spoofing.
- 
+
 The qport field is a workaround for bad address translating routers that
 sometimes remap the client's source port on a packet during gameplay.
- 
+
 If the base part of the net address matches and the qport matches, then the
 channel matches even if the IP port differs.  The IP port should be updated
 to the new value before sending out any replies.
- 
- 
+
+
 */
 
-int		net_drop;
 cvar_t	showpackets = {"showpackets", "0"};
 cvar_t	showdrop = {"showdrop", "0"};
 cvar_t	qport = {"qport", "0"};
@@ -112,7 +111,7 @@ void Netchan_Init (void)
 /*
 ===============
 Netchan_OutOfBand
- 
+
 Sends an out-of-band datagram
 ================
 */
@@ -290,7 +289,6 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	chan->outgoing_size[i] = send.cursize;
 	chan->outgoing_time[i] = realtime;
 
-	//zoid, no input in demo playback mode
 	NET_SendPacket (chan->net_socket, send.cursize, send.data, chan->remote_address);
 
 	if (chan->cleartime < realtime)
@@ -396,16 +394,16 @@ qboolean Netchan_Process (netchan_t *chan)
 	//
 	// dropped packets don't keep the message from being used
 	//
-	net_drop = sequence - (chan->incoming_sequence+1);
-	if (net_drop > 0)
+	chan->dropped = sequence - (chan->incoming_sequence+1);
+	if (chan->dropped > 0)
 	{
 		chan->drop_count += 1;
 
 		if (showdrop.value)
 			Con_Printf ("%s:Dropped %i packets at %i\n"
-			            , NET_AdrToString (chan->remote_address)
-			            , sequence-(chan->incoming_sequence+1)
-			            , sequence);
+			, NET_AdrToString (chan->remote_address)
+			, chan->dropped
+			, sequence);
 	}
 
 	//
@@ -429,9 +427,9 @@ qboolean Netchan_Process (netchan_t *chan)
 	// update statistics counters
 	//
 	chan->frame_latency = chan->frame_latency*OLD_AVG
-	                      + (chan->outgoing_sequence-sequence_ack)*(1.0-OLD_AVG);
+		+ (chan->outgoing_sequence-sequence_ack)*(1.0-OLD_AVG);
 	chan->frame_rate = chan->frame_rate*OLD_AVG
-	                   + (realtime-chan->last_received)*(1.0-OLD_AVG);
+		+ (realtime-chan->last_received)*(1.0-OLD_AVG);
 	chan->good_count += 1;
 
 	chan->last_received = realtime;
