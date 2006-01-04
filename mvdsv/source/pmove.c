@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pmove.c,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: pmove.c,v 1.7 2006/01/04 03:31:16 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 
 
-cvar_t	pm_jumpfix = {"pm_jumpfix","1"};
-cvar_t	pm_slidefix = {"pm_slidefix","0"};	// FIXME: remove?
+//cvar_t	pm_jumpfix = {"pm_jumpfix","1"};
+//cvar_t	pm_slidefix = {"pm_slidefix","0"};	// FIXME: remove?
 cvar_t	pm_ktphysics = {"pm_ktphysics", "0"};	// set this when
 // playing on a server running Kombat Teams 2.10 or later
 
@@ -44,22 +44,12 @@ vec3_t		forward, right, up;
 vec3_t	player_mins = {-16, -16, -24};
 vec3_t	player_maxs = {16, 16, 32};
 
-// #define	PM_GRAVITY			800
-// #define	PM_STOPSPEED		100
-// #define	PM_MAXSPEED			320
-// #define	PM_SPECTATORMAXSPEED	500
-// #define	PM_ACCELERATE		10
-// #define	PM_AIRACCELERATE	0.7
-// #define	PM_WATERACCELERATE	10
-// #define	PM_FRICTION			6
-// #define	PM_WATERFRICTION	1
-
 void PM_InitBoxHull (void);
 
-void Pmove_Init (void)
+void PM_Init (void)
 {
-	Cvar_RegisterVariable (&pm_jumpfix);
-	Cvar_RegisterVariable (&pm_slidefix);
+//	Cvar_RegisterVariable (&pm_jumpfix);
+//	Cvar_RegisterVariable (&pm_slidefix);
 	Cvar_RegisterVariable (&pm_ktphysics);
 	Cvar_RegisterVariable (&pm_spawnjumpfix);
 	PM_InitBoxHull ();
@@ -144,7 +134,7 @@ int PM_FlyMove (void)
 		for (i=0 ; i<3 ; i++)
 			end[i] = pmove.origin[i] + time_left * pmove.velocity[i];
 
-		trace = PM_PlayerMove (pmove.origin, end);
+		trace = PM_PlayerTrace (pmove.origin, end);
 
 		if (trace.startsolid || trace.allsolid)
 		{	// entity is trapped in another solid
@@ -250,7 +240,7 @@ void PM_GroundMove (void)
 	vec3_t	original, originalvel, down, up, downvel;
 	float	downdist, updist;
 
-	if (!pm_slidefix.value)
+//	if (!pm_slidefix.value)
 		pmove.velocity[2] = 0;
 
 	if (!pmove.velocity[0] && !pmove.velocity[1])
@@ -266,7 +256,7 @@ void PM_GroundMove (void)
 
 	// first try moving directly to the next spot
 	VectorCopy (dest, start);
-	trace = PM_PlayerMove (pmove.origin, dest);
+	trace = PM_PlayerTrace (pmove.origin, dest);
 
 	if (trace.fraction == 1)
 	{
@@ -291,7 +281,7 @@ void PM_GroundMove (void)
 	// move up a stair height
 	VectorCopy (pmove.origin, dest);
 	dest[2] += STEPSIZE;
-	trace = PM_PlayerMove (pmove.origin, dest);
+	trace = PM_PlayerTrace (pmove.origin, dest);
 	if (!trace.startsolid && !trace.allsolid)
 	{
 		VectorCopy (trace.endpos, pmove.origin);
@@ -303,7 +293,7 @@ void PM_GroundMove (void)
 	// press down the stepheight
 	VectorCopy (pmove.origin, dest);
 	dest[2] -= STEPSIZE;
-	trace = PM_PlayerMove (pmove.origin, dest);
+	trace = PM_PlayerTrace (pmove.origin, dest);
 	if ( trace.plane.normal[2] < 0.7)
 		goto usedown;
 	if (!trace.startsolid && !trace.allsolid)
@@ -372,7 +362,7 @@ void PM_Friction (void)
 		start[2] = pmove.origin[2] + player_mins[2];
 		stop[2] = start[2] - 34;
 
-		trace = PM_PlayerMove (start, stop);
+		trace = PM_PlayerTrace (start, stop);
 
 		if (trace.fraction == 1)
 		{
@@ -527,7 +517,7 @@ void PM_WaterMove (void)
 	VectorMA (pmove.origin, frametime, pmove.velocity, dest);
 	VectorCopy (dest, start);
 	start[2] += STEPSIZE + 1;
-	trace = PM_PlayerMove (start, dest);
+	trace = PM_PlayerTrace (start, dest);
 	if (!trace.startsolid && !trace.allsolid)	// FIXME: check steep slope?
 	{	// walked up the step
 		VectorCopy (trace.endpos, pmove.origin);
@@ -548,7 +538,7 @@ PM_AirMove
 */
 void PM_AirMove (void)
 {
-	int			i;
+	int		i;
 	vec3_t		wishvel;
 	float		fmove, smove;
 	vec3_t		wishdir;
@@ -584,7 +574,7 @@ void PM_AirMove (void)
 
 	if ( onground != -1)
 	{
-		if (pmove.velocity[2] > 0 || !pm_slidefix.value)
+		if (pmove.velocity[2] > 0/* || !pm_slidefix.value*/)
 			pmove.velocity[2] = 0;
 		PM_Accelerate (wishdir, wishspeed, movevars.accelerate);
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity * frametime;
@@ -602,7 +592,7 @@ void PM_AirMove (void)
 		pmove.velocity[2] -= movevars.entgravity * movevars.gravity * frametime;
 
 		i = PM_FlyMove();
-		if (!i && pm_jumpfix.value)
+		if (!i/* && .value*/)
 		{
 			// the move didn't get blocked
 			PM_CategorizePosition ();
@@ -658,7 +648,7 @@ void PM_CategorizePosition (void)
 	}
 	else
 	{
-		tr = PM_PlayerMove (pmove.origin, point);
+		tr = PM_PlayerTrace (pmove.origin, point);
 		if ( tr.plane.normal[2] < 0.7)
 			onground = -1;	// too steep
 		else
@@ -922,7 +912,7 @@ void SpectatorMove (void)
 
 /*
 =============
-PlayerMove
+PM_PlayerMove
  
 Returns with origin, angles, and velocity modified in place.
  
@@ -930,7 +920,7 @@ Numtouch and touchindex[] will be set if any of the physents
 were contacted during the move.
 =============
 */
-void PlayerMove (void)
+void PM_PlayerMove (void)
 {
 	frametime = pmove.cmd.msec * 0.001;
 	pmove.numtouch = 0;
