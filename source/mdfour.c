@@ -24,7 +24,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: mdfour.c,v 1.3 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: mdfour.c,v 1.4 2006/01/04 03:26:43 disconn3ct Exp $
 */
 
 #include <string.h>		/* XoXus: needed for memset call */
@@ -110,15 +110,15 @@ static void copy64(uint32 *M, unsigned char *in)
 
 	for (i=0;i<16;i++)
 		M[i] = (in[i*4+3]<<24) | (in[i*4+2]<<16) |
-		       (in[i*4+1]<<8) | (in[i*4+0]<<0);
+			(in[i*4+1]<<8) | (in[i*4+0]<<0);
 }
 
 static void copy4(unsigned char *out,uint32 x)
 {
-	out[0] = x&0xFF;
-	out[1] = (x>>8)&0xFF;
-	out[2] = (x>>16)&0xFF;
-	out[3] = (x>>24)&0xFF;
+	out[0] = (unsigned char)(x & 0xFF);
+	out[1] = (unsigned char)((x>>8) & 0xFF);
+	out[2] = (unsigned char)((x>>16) & 0xFF);
+	out[3] = (unsigned char)((x>>24) & 0xFF);
 }
 
 void mdfour_begin(struct mdfour *md)
@@ -199,24 +199,4 @@ void mdfour(unsigned char *out, unsigned char *in, int n)
 	mdfour_begin(&md);
 	mdfour_update(&md, in, n);
 	mdfour_result(&md, out);
-}
-
-///////////////////////////////////////////////////////////////
-//	MD4-based checksum utility functions
-//
-//	Copyright (C) 2000       Jeff Teunissen <d2deek@pmail.net>
-//
-//	Author: Jeff Teunissen	<d2deek@pmail.net>
-//	Date: 01 Jan 2000
-
-unsigned Com_BlockChecksum (void *buffer, int length)
-{
-	int				digest[4];
-	unsigned 		val;
-
-	mdfour ( (unsigned char *) digest, (unsigned char *) buffer, length );
-
-	val = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
-
-	return val;
 }
