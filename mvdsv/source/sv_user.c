@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_user.c,v 1.25 2006/01/04 03:44:30 disconn3ct Exp $
+	$Id: sv_user.c,v 1.26 2006/01/04 03:51:43 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1980,7 +1980,7 @@ ucmd_t ucmds[] =
         {"soundlist", SV_Soundlist_f},
         {"prespawn", SV_PreSpawn_f},
         {"spawn", SV_Spawn_f},
-        {"begin", },
+	{"begin", SV_Begin_f},
 
         {"drop", SV_Drop_f},
         {"pings", SV_Pings_f},
