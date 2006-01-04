@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.h,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: pmove.h,v 1.7 2006/01/04 03:33:52 disconn3ct Exp $
 */
 
 typedef struct
@@ -93,12 +93,12 @@ extern	int		onground;
 extern	int		waterlevel;
 extern	int		watertype;
 
-void PlayerMove (void);
-void Pmove_Init (void);
+void PM_PlayerMove (void);
+void PM_Init (void);
 
 int PM_HullPointContents (hull_t *hull, int num, vec3_t p);
 int PM_PointContents (vec3_t point);
 void PM_CategorizePosition (void);
 qboolean PM_TestPlayerPosition (vec3_t point);
-pmtrace_t PM_PlayerMove (vec3_t start, vec3_t end);
+pmtrace_t PM_PlayerTrace (vec3_t start, vec3_t end);
 pmtrace_t PM_TraceLine (vec3_t start, vec3_t end);
