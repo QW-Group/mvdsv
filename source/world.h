@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: world.h,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: world.h,v 1.5 2006/01/04 03:16:49 disconn3ct Exp $
 */
 // world.h
 
@@ -89,6 +89,3 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 // shouldn't be considered solid objects
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
-
-
-edict_t	*SV_TestPlayerPosition (edict_t *ent, vec3_t origin);

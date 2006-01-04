@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: world.c,v 1.6 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: world.c,v 1.7 2006/01/04 03:16:49 disconn3ct Exp $
 */
 // world.c -- world query functions
 
@@ -889,64 +889,4 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 
 	return clip.trace;
 }
-
-//=============================================================================
-
-/*
-============
-SV_TestPlayerPosition
- 
-============
-*/
-edict_t	*SV_TestPlayerPosition (edict_t *ent, vec3_t origin)
-{
-	hull_t	*hull;
-	edict_t	*check;
-	vec3_t	boxmins, boxmaxs;
-	vec3_t	offset;
-	int		e;
-
-	// check world first
-	hull = &sv.worldmodel->hulls[1];
-	if ( SV_HullPointContents (hull, hull->firstclipnode, origin) != CONTENTS_EMPTY )
-		return sv.edicts;
-
-	// check all entities
-	VectorAdd (origin, ent->v.mins, boxmins);
-	VectorAdd (origin, ent->v.maxs, boxmaxs);
-
-	check = NEXT_EDICT(sv.edicts);
-	for (e=1 ; e<sv.num_edicts ; e++, check = NEXT_EDICT(check))
-	{
-		if (check->free)
-			continue;
-		if (check->v.solid != SOLID_BSP &&
-		        check->v.solid != SOLID_BBOX &&
-		        check->v.solid != SOLID_SLIDEBOX)
-			continue;
-
-		if (boxmins[0] > check->v.absmax[0]
-		        || boxmins[1] > check->v.absmax[1]
-		        || boxmins[2] > check->v.absmax[2]
-		        || boxmaxs[0] < check->v.absmin[0]
-		        || boxmaxs[1] < check->v.absmin[1]
-		        || boxmaxs[2] < check->v.absmin[2] )
-			continue;
-
-		if (check == ent)
-			continue;
-
-		// get the clipping hull
-		hull = SV_HullForEntity (check, ent->v.mins, ent->v.maxs, offset);
-
-		VectorSubtract (origin, offset, offset);
-
-		// test the point
-		if ( SV_HullPointContents (hull, hull->firstclipnode, offset) != CONTENTS_EMPTY )
-			return check;
-	}
-
-	return NULL;
-}
-
 
