@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pmovetst.c,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: pmovetst.c,v 1.5 2006/01/04 03:31:49 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -347,10 +347,10 @@ qboolean PM_TestPlayerPosition (vec3_t pos)
 
 /*
 ================
-PM_PlayerMove
+PM_PlayerTrace
 ================
 */
-pmtrace_t PM_PlayerMove (vec3_t start, vec3_t end)
+pmtrace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 {
 	pmtrace_t		trace, total;
 	vec3_t		offset;
@@ -419,7 +419,7 @@ pmtrace_t PM_PlayerMove (vec3_t start, vec3_t end)
 ================
 PM_TraceLine
  
-FIXME: merge with PM_PlayerMove (PM_Move?)
+FIXME: merge with PM_PlayerTrace (PM_Move?)
 ================
 */
 pmtrace_t PM_TraceLine (vec3_t start, vec3_t end)
