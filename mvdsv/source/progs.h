@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.7 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: progs.h,v 1.8 2006/01/04 03:48:33 disconn3ct Exp $
 */
 
 #include "pr_comp.h"			// defs shared with qcc
@@ -51,6 +51,11 @@ typedef struct edict_s
 	entvars_t	v;					// C exported fields from progs
 // other fields from progs come immediately after
 } edict_t;
+
+// (type *)STRUCT_FROM_LINK(link_t *link, type, member)
+// ent = STRUCT_FROM_LINK(link,entity_t,order)
+// FIXME: remove this mess!
+#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)l - (int)&(((t *)0)->m)))
 #define	EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
 
 //============================================================================

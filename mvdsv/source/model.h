@@ -16,24 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: model.h,v 1.7 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: model.h,v 1.8 2006/01/04 03:48:33 disconn3ct Exp $
 */
 
 #ifndef __MODEL__
 #define __MODEL__
 
 #include "bspfile.h"
-
-
-// entity effects
-#define	EF_BRIGHTFIELD	1
-#define	EF_MUZZLEFLASH	2
-#define	EF_BRIGHTLIGHT	4
-#define	EF_DIMLIGHT	8
-#define	EF_FLAG1	16
-#define	EF_FLAG2	32
-#define EF_BLUE		64
-#define EF_RED		128
 
 /*
 ==============================================================================
@@ -276,7 +265,6 @@ typedef struct {
 void	Mod_Init (void);
 void	Mod_ClearAll (void);
 qmodel_t *Mod_ForName (char *name, qboolean crash);
-void	Mod_TouchModel (char *name);
 mleaf_t *Mod_PointInLeaf (float *p, qmodel_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model, qboolean);
 

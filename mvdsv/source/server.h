@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.18 2005/12/21 16:32:41 disconn3ct Exp $
+	$Id: server.h,v 1.19 2006/01/04 03:48:33 disconn3ct Exp $
 */
 // server.h
 
@@ -24,14 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //#define NEWWAY
 
-#define	MAX_MASTERS	8				// max recipients for heartbeat packets
+#define	MAX_MASTERS 8 // max recipients for heartbeat packets
 
-#define	MAX_SIGNON_BUFFERS	8
+#define	MAX_SIGNON_BUFFERS 8
 
 typedef enum {
-	ss_dead,			// no map loaded
-	ss_loading,			// spawning level edicts
-	ss_active			// actively running
+	ss_dead,	// no map loaded
+	ss_loading,	// spawning level edicts
+	ss_active	// actively running
 } server_state_t;
 // some qc commands are only valid before the server has finished
 // initializing (precache commands, static sounds / objects, etc)
@@ -39,7 +39,7 @@ typedef enum {
 typedef struct
 {
 	double		time;
-	int			num;
+	int		num;
 	sizebuf_t	sb;
 	byte		buf[MAX_MSGLEN];
 } packet_t;
@@ -48,14 +48,13 @@ typedef struct
 #define MAP_NAME_LEN 64
 typedef struct
 {
-//	qboolean	active;				// false when server is going down
-	server_state_t	state;			// precache commands are only valid during load
+	server_state_t	state;				// precache commands are only valid during load
 
 	double		time;
 	double		gametime;
 	
-	int			lastcheck;			// used by PF_checkclient
-	double		lastchecktime;		// for monster ai 
+	int		lastcheck;			// used by PF_checkclient
+	double		lastchecktime;			// for monster ai
 
 	qboolean	paused;				// are we paused?
 
@@ -63,18 +62,18 @@ typedef struct
 	unsigned	model_player_checksum;
 	unsigned	eyes_player_checksum;
 	
-	char		name[MAP_NAME_LEN];			// map name
+	char		name[MAP_NAME_LEN];		// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	struct model_s 	*worldmodel;
 	char		*model_precache[MAX_MODELS];	// NULL terminated
 	char		*sound_precache[MAX_SOUNDS];	// NULL terminated
 	char		*lightstyles[MAX_LIGHTSTYLES];
-	struct model_s		*models[MAX_MODELS];
+	struct model_s	*models[MAX_MODELS];
 
-	int			num_edicts;			// increases towards MAX_EDICTS
+	int		num_edicts;			// increases towards MAX_EDICTS
 	edict_t		*edicts;			// can NOT be array indexed, because
-									// edict_t is variable sized, but can
-									// be used to reference the world ent
+							// edict_t is variable sized, but can
+							// be used to reference the world ent
 
 	byte		*pvs, *phs;			// fully expanded and decompressed
 
@@ -99,22 +98,22 @@ typedef struct
 	// large levels will have >MAX_DATAGRAM sized signons, so 
 	// multiple signon messages are kept
 	sizebuf_t	signon;
-	int			num_signon_buffers;
-	int			signon_buffer_size[MAX_SIGNON_BUFFERS];
+	int		num_signon_buffers;
+	int		signon_buffer_size[MAX_SIGNON_BUFFERS];
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
 	qboolean	mvdrecording;
 } server_t;
 
-#define	NUM_SPAWN_PARMS			16
+#define	NUM_SPAWN_PARMS 16
 
 typedef enum
 {
 	cs_free,		// can be reused for a new connection
 	cs_zombie,		// client has been disconnected, but don't reuse
-					// connection for a couple seconds
-	cs_preconnected,// has been assigned, but login/realip not settled yet
-	cs_connected,	// has been assigned to a client_t, but not in game yet
+				// connection for a couple seconds
+	cs_preconnected,	// has been assigned, but login/realip not settled yet
+	cs_connected,		// has been assigned to a client_t, but not in game yet
 	cs_spawned		// client is fully in game
 } sv_client_state_t;		// FIXME
 
@@ -123,8 +122,8 @@ typedef struct
 	// received from client
 
 	// reply
-	double				senttime;
-	float				ping_time;
+	double			senttime;
+	float			ping_time;
 	packet_entities_t	entities;
 } client_frame_t;
 
@@ -136,44 +135,44 @@ typedef struct client_s
 {
 	sv_client_state_t	state;
 
-	int				spectator;			// non-interactive
-	int				vip;
+	int		spectator;			// non-interactive
+	int		vip;
 
-	qboolean		sendinfo;			// at end of frame, send info to all
-										// this prevents malicious multiple broadcasts
-	float			lastnametime;		// time of last name change
-	int				lastnamecount;		// time of last name change
-	unsigned		checksum;			// checksum for calcs
-	qboolean		drop;				// lose this guy next opportunity
-	int				lossage;			// loss percentage
+	qboolean	sendinfo;			// at end of frame, send info to all
+							// this prevents malicious multiple broadcasts
+	float		lastnametime;			// time of last name change
+	int		lastnamecount;			// time of last name change
+	unsigned	checksum;			// checksum for calcs
+	qboolean	drop;				// lose this guy next opportunity
+	int		lossage;			// loss percentage
 
-	int				userid;							// identifying number
-	char			userinfo[MAX_INFO_STRING];		// infostring
-	char			userinfoshort[MAX_INFO_STRING];		// infostring
+	int		userid;				// identifying number
+	char		userinfo[MAX_INFO_STRING];	// infostring
+	char		userinfoshort[MAX_INFO_STRING];	// infostring
 
-	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
-	double			localtime;			// of last message
-	int				oldbuttons;
+	usercmd_t	lastcmd;			// for filling in big drops and partial predictions
+	double		localtime;			// of last message
+	int		oldbuttons;
 
-	float			maxspeed;			// localized maxspeed
-	float			entgravity;			// localized ent gravity
+	float		maxspeed;			// localized maxspeed
+	float		entgravity;			// localized ent gravity
 
-	edict_t			*edict;				// EDICT_NUM(clientnum+1)
+	edict_t		*edict;				// EDICT_NUM(clientnum+1)
 #ifdef USE_PR2
-	int			isBot;
-	usercmd_t		botcmd;			// bot movment
-	char			*name;			// in PR2 points to ent->v.netname
+	int		isBot;
+	usercmd_t	botcmd;				// bot movment
+	char		*name;				// in PR2 points to ent->v.netname
 #else
-	char			name[CLIENT_NAME_LEN];			// for printing to other people
+	char		name[CLIENT_NAME_LEN];		// for printing to other people
 #endif
-	char			team[CLIENT_NAME_LEN];
-										// extracted from userinfo
-	int				messagelevel;		// for filtering printed messages
+	char		team[CLIENT_NAME_LEN];
+							// extracted from userinfo
+	int		messagelevel;			// for filtering printed messages
 
 	// the datagram is written to after every frame, but only cleared
 	// when it is sent out to the client.  overflow is tolerated.
-	sizebuf_t		datagram;
-	byte			datagram_buf[MAX_DATAGRAM];
+	sizebuf_t	datagram;
+	byte		datagram_buf[MAX_DATAGRAM];
 
 	// back buffers for client reliable data
 	sizebuf_t	backbuf;
@@ -183,8 +182,8 @@ typedef struct client_s
 
 	byte		stufftext_buf[MAX_STUFFTEXT];
 
-	double		connection_started;	// or time of disconnect for zombies
-	qboolean	send_message;		// set on frames a datagram arived on
+	double		connection_started;		// or time of disconnect for zombies
+	qboolean	send_message;			// set on frames a datagram arived on
 
 // spawn parms are carried from level to level
 	float		spawn_parms[NUM_SPAWN_PARMS];
@@ -195,24 +194,22 @@ typedef struct client_s
 	int		stats[MAX_CL_STATS];
 
 
-	client_frame_t	frames[UPDATE_BACKUP];	// updates can be deltad from here
+	client_frame_t	frames[UPDATE_BACKUP];		// updates can be deltad from here
 
-	FILE		*download;		// file being downloaded
-	int		downloadsize;		// total bytes
-	int		downloadcount;		// bytes sent
+	FILE		*download;			// file being downloaded
+	int		downloadsize;			// total bytes
+	int		downloadcount;			// bytes sent
 // demo download list for internal cmd dl function
 //Added by VVD {
 	int		demonum[MAX_ARGS];
 	qboolean	demolist;
 // } Added by VVD
 
-	int		spec_track;		// entnum of player tracking
+	int		spec_track;			// entnum of player tracking
 
-	double		whensaid[10];		// JACK: For floodprots
- 	int		whensaidhead;		// Head value for floodprots
+	double		whensaid[10];			// JACK: For floodprots
+ 	int		whensaidhead;			// Head value for floodprots
  	double		lockedtill;
-
-	//qboolean		upgradewarn;	// did we warn him? //bliP: this isn't used anywhere
 
 	FILE		*upload;
 	char		uploadfn[MAX_QPATH];
@@ -222,14 +219,14 @@ typedef struct client_s
 	char		login[CLIENT_LOGIN_LEN];
 	int		logged;
 
-	int		spawncount;		// for tracking map changes during downloading
+	int		spawncount;			// for tracking map changes during downloading
 
 //bliP: additional ->
 	int		file_percent;
 	qboolean	special;
 	int		logincount;
-	float		lasttoptime;		// time of last topcolor change
-	int		lasttopcount;		// count of last topcolor change
+	float		lasttoptime;			// time of last topcolor change
+	int		lasttopcount;			// count of last topcolor change
 	int		lastconnect;
 	int		spec_print;
 	double		cuff_time;
@@ -241,14 +238,14 @@ typedef struct client_s
  
 //===== NETWORK ============
 	int		chokecount;
-	int		delta_sequence;		// -1 = no compression
+	int		delta_sequence;			// -1 = no compression
 	netchan_t	netchan;
-	netadr_t	realip;			// client's ip, not latest proxy's
-	int		realip_num;		// random value
+	netadr_t	realip;				// client's ip, not latest proxy's
+	int		realip_num;			// random value
 	int		realip_count;
 	int		rip_vip;
 	double		delay;
-	double		disable_updates_stop; //Vladis
+	double		disable_updates_stop;		//Vladis
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -259,13 +256,13 @@ typedef struct client_s
 
 typedef struct
 {
-	vec3_t	origin;
-	vec3_t	angles;
-	int	weaponframe;
-	int	skinnum;
-	int	model;
-	int	effects;
-}	demoinfo_t;
+	vec3_t		origin;
+	vec3_t		angles;
+	int		weaponframe;
+	int		skinnum;
+	int		model;
+	int		effects;
+} demoinfo_t;
 
 typedef struct
 {
@@ -280,36 +277,36 @@ typedef struct
 } demo_client_t;
 
 typedef struct {
-	byte type;
-	byte full;
-	int to;
-	int size;
-	byte data[1]; //gcc doesn't allow [] (?)
+	byte		type;
+	byte		full;
+	int		to;
+	int		size;
+	byte		data[1]; //gcc doesn't allow [] (?)
 } header_t;
 
 typedef struct
 {
-	qboolean	allowoverflow;	// if false, do a Sys_Error
-	qboolean	overflowed;		// set to true if the buffer size failed
+	qboolean	allowoverflow; // if false, do a Sys_Error
+	qboolean	overflowed; // set to true if the buffer size failed
 	byte		*data;
 	int		maxsize;
 	int		cursize;
 	int		bufsize;
-	header_t *h;
+	header_t 	*h;
 } demobuf_t;
 
 typedef struct
 {
-	demo_client_t clients[MAX_CLIENTS];
+	demo_client_t	clients[MAX_CLIENTS];
 	double		time;
 	demobuf_t	buf;
 
 } demo_frame_t;
 
 typedef struct {
-	byte	*data;
-	int	start, end, last;
-	int	maxsize;
+	byte		*data;
+	int		start, end, last;
+	int		maxsize;
 } dbuffer_t;
 
 #define DEMO_FRAMES 64
@@ -348,16 +345,16 @@ typedef struct
 #define	STATFRAMES	100
 typedef struct
 {
-	double	active;
-	double	idle;
-	double	demo;
-	int	count;
-	int	packets;
+	double		active;
+	double		idle;
+	double		demo;
+	int		count;
+	int		packets;
 
-	double	latched_active;
-	double	latched_idle;
-	double	latched_demo;
-	int	latched_packets;
+	double		latched_active;
+	double		latched_idle;
+	double		latched_demo;
+	int		latched_packets;
 } svstats_t;
 
 // MAX_CHALLENGES is made large to prevent a denial
@@ -375,7 +372,7 @@ typedef struct
 typedef struct
 {
 	int		spawncount;		// number of servers spawned since start,
-									// used to check late spawns
+						// used to check late spawns
 	int		lastuserid;		// userid of last spawned client
 	client_t	clients[MAX_CLIENTS];
 	int		serverflags;		// episode completion information
@@ -404,7 +401,7 @@ typedef struct
 
 // edict->movetype values
 #define	MOVETYPE_NONE			0		// never moves
-#define	MOVETYPE_ANGLENOCLIP	1
+#define	MOVETYPE_ANGLENOCLIP		1
 #define	MOVETYPE_ANGLECLIP		2
 #define	MOVETYPE_WALK			3		// gravity
 #define	MOVETYPE_STEP			4		// gravity, special edge handling
@@ -416,46 +413,34 @@ typedef struct
 #define	MOVETYPE_BOUNCE			10
 
 // edict->solid values
-#define	SOLID_NOT				0		// no interaction with other objects
+#define	SOLID_NOT			0		// no interaction with other objects
 #define	SOLID_TRIGGER			1		// touch on edge, but not blocking
-#define	SOLID_BBOX				2		// touch on edge, block
+#define	SOLID_BBOX			2		// touch on edge, block
 #define	SOLID_SLIDEBOX			3		// touch on edge, but not an onground
-#define	SOLID_BSP				4		// bsp clip, touch on edge, block
+#define	SOLID_BSP			4		// bsp clip, touch on edge, block
 
 // edict->deadflag values
-#define	DEAD_NO					0
-#define	DEAD_DYING				1
-#define	DEAD_DEAD				2
-
-#define	DAMAGE_NO				0
-#define	DAMAGE_YES				1
-#define	DAMAGE_AIM				2
+#define	DAMAGE_NO			0
+#define	DAMAGE_YES			1
+#define	DAMAGE_AIM			2
 
 // edict->flags
-#define	FL_FLY					1
-#define	FL_SWIM					2
-#define	FL_GLIMPSE				4
-#define	FL_CLIENT				8
-#define	FL_INWATER				16
-#define	FL_MONSTER				32
-#define	FL_GODMODE				64
-#define	FL_NOTARGET				128
-#define	FL_ITEM					256
-#define	FL_ONGROUND				512
+#define	FL_FLY				1
+#define	FL_SWIM				2
+#define	FL_GLIMPSE			4
+#define	FL_CLIENT			8
+#define	FL_INWATER			16
+#define	FL_MONSTER			32
+#define	FL_GODMODE			64
+#define	FL_NOTARGET			128
+#define	FL_ITEM				256
+#define	FL_ONGROUND			512
 #define	FL_PARTIALGROUND		1024	// not all corners are valid
 #define	FL_WATERJUMP			2048	// player jumping out of water
 
-// entity effects
-
-//define	EF_BRIGHTFIELD			1
-//define	EF_MUZZLEFLASH 			2
-#define	EF_BRIGHTLIGHT 			4
-#define	EF_DIMLIGHT 			8
-
-
-#define	SPAWNFLAG_NOT_EASY			256
+#define	SPAWNFLAG_NOT_EASY		256
 #define	SPAWNFLAG_NOT_MEDIUM		512
-#define	SPAWNFLAG_NOT_HARD			1024
+#define	SPAWNFLAG_NOT_HARD		1024
 #define	SPAWNFLAG_NOT_DEATHMATCH	2048
 
 #define	MULTICAST_ALL			0
@@ -475,15 +460,15 @@ typedef struct
 #define SERVERINFO_KTPRO_BUILD		"build"
 
 #define MAX_REDIRECTMESSAGES	128
-#define OUTPUTBUF_SIZE			8000
+#define OUTPUTBUF_SIZE		8000
 //============================================================================
 
 extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
 extern	cvar_t	sv_maxspeed;
 
-extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
+extern	netadr_t master_adr[MAX_MASTERS]; // address of the master server
 
-extern	int		current_skill;
+extern	int current_skill;
 
 extern	cvar_t	spawn;
 extern	cvar_t	teamplay;
@@ -494,11 +479,11 @@ extern	cvar_t	timelimit;
 extern	cvar_t	skill;
 extern	cvar_t	coop;
 
-extern	cvar_t	sv_specprint; //bliP: spectator print
+extern	cvar_t	sv_specprint;	//bliP: spectator print
 
-extern	server_static_t	svs;				// persistant server info
-extern	server_t		sv;					// local server
-extern	demo_t			demo;				// server demo struct
+extern	server_static_t	svs;	// persistant server info
+extern	server_t	sv;	// local server
+extern	demo_t		demo;	// server demo struct
 extern	entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
 
 extern	client_t	*host_client;
@@ -506,11 +491,10 @@ extern	client_t	*host_client;
 extern	edict_t		*sv_player;
 
 #define	MODEL_NAME_LEN	5
-extern	char		localmodels[MAX_MODELS][MODEL_NAME_LEN];	// inline model names for precache
-
+extern	char		localmodels[MAX_MODELS][MODEL_NAME_LEN]; // inline model names for precache
 extern	char		localinfo[MAX_LOCALINFO_STRING+1];
 
-extern	int			host_hunklevel;
+extern	int		host_hunklevel;
 
 extern	qboolean	sv_error;
 
@@ -524,7 +508,7 @@ typedef struct
 {
 	unsigned	mask;
 	unsigned	compare;
-	int			level;
+	int		level;
 } ipfilter_t;
 
 //bliP: penalty filters ->
@@ -535,14 +519,13 @@ typedef enum {
 
 typedef struct
 {
-	byte ip[4];
-	double			time;
+	byte		ip[4];
+	double		time;
 	filtertype_t	type;
 } penfilter_t;
 //<-
 
 void SV_Shutdown (void);
-void SV_ShutdownServer (void);
 void SV_Frame (double time);
 void SV_FinalMessage (char *message);
 void SV_DropClient (client_t *drop);
@@ -559,9 +542,6 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
 void SV_MoveToGoal (void);
 
-void SV_Physics_Client (edict_t	*ent);
-
-void SV_ExecuteUserCommand (char *s);
 void SV_InitOperatorCommands (void);
 
 void SV_SendServerinfo (client_t *client);
@@ -569,7 +549,6 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged);
 int SV_BoundRate (qboolean dl, int rate);
 
 void Master_Heartbeat (void);
-void Master_Packet (void);
 
 //bliP: init ->
 void SV_ListFiles_f (void);
@@ -682,7 +661,7 @@ void SV_MVDStop_f (void);
 void SV_MVDWritePackets (int num);
 void MVD_Init (void);
 
-extern demo_t	demo;				// server demo struct
+extern demo_t	demo; // server demo struct
 
 extern cvar_t	sv_demofps;
 extern cvar_t	sv_demoPings;
