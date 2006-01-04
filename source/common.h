@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.10 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: common.h,v 1.11 2006/01/04 03:48:33 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -66,28 +66,11 @@ void RemoveLink (link_t *l);
 void InsertLinkBefore (link_t *l, link_t *before);
 void InsertLinkAfter (link_t *l, link_t *after);
 
-// (type *)STRUCT_FROM_LINK(link_t *link, type, member)
-// ent = STRUCT_FROM_LINK(link,entity_t,order)
-// FIXME: remove this mess!
-#define	STRUCT_FROM_LINK(l,t,m) ((t *)((byte *)l - (int)&(((t *)0)->m)))
-
 //============================================================================
 
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
-
-#define Q_MAXCHAR	((char)0x7f)
-#define Q_MAXSHORT	((short)0x7fff)
-#define Q_MAXINT	((int)0x7fffffff)
-#define Q_MAXLONG	((int)0x7fffffff)
-#define Q_MAXFLOAT	((int)0x7fffffff)
-
-#define Q_MINCHAR	((char)0x80)
-#define Q_MINSHORT	((short)0x8000)
-#define Q_MININT	((int)0x80000000)
-#define Q_MINLONG	((int)0x80000000)
-#define Q_MINFLOAT	((int)0x7fffffff)
 
 //============================================================================
 
