@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_user.c,v 1.24 2005/12/30 16:18:13 qqshka Exp $
+	$Id: sv_user.c,v 1.25 2006/01/04 03:44:30 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -26,11 +26,8 @@ edict_t	*sv_player;
 
 usercmd_t	cmd;
 
-cvar_t	sv_rollspeed = {"cl_rollspeed", "200"};
-cvar_t	sv_rollangle = {"cl_rollangle", "2.0"};
-
 cvar_t	sv_spectalk = {"sv_spectalk", "1"};
-cvar_t	sv_mapcheck	= {"sv_mapcheck", "1"};
+cvar_t	sv_mapcheck = {"sv_mapcheck", "1"};
 
 cvar_t	sv_use_internal_cmd_dl = {"sv_use_internal_cmd_dl", "1"};
 
@@ -58,9 +55,9 @@ qboolean IsInetIP(netadr_t a)
 }
 /*
 ============================================================
- 
+
 USER STRINGCMD EXECUTION
- 
+
 host_client and sv_player will be valid.
 ============================================================
 */
@@ -68,13 +65,13 @@ host_client and sv_player will be valid.
 /*
 ================
 SV_New_f
- 
+
 Sends the first message from the server to a connected client.
 This will be sent on the initial connection and upon each server load.
 ================
 */
 int SV_VIPbyIP (netadr_t adr);
-void SV_New_f (void)
+static void SV_New_f (void)
 {
 	char		*gamedir;
 	int			playernum;
@@ -252,7 +249,7 @@ void SV_New_f (void)
 SV_Soundlist_f
 ==================
 */
-void SV_Soundlist_f (void)
+static void SV_Soundlist_f (void)
 {
 	char		**s;
 	unsigned	n;
@@ -310,7 +307,7 @@ void SV_Soundlist_f (void)
 SV_Modellist_f
 ==================
 */
-void SV_Modellist_f (void)
+static void SV_Modellist_f (void)
 {
 	char		**s;
 	unsigned	n;
@@ -368,7 +365,7 @@ void SV_Modellist_f (void)
 SV_PreSpawn_f
 ==================
 */
-void SV_PreSpawn_f (void)
+static void SV_PreSpawn_f (void)
 {
 	unsigned	buf;
 	unsigned	check;
@@ -443,7 +440,7 @@ void SV_PreSpawn_f (void)
 SV_Spawn_f
 ==================
 */
-void SV_Spawn_f (void)
+static void SV_Spawn_f (void)
 {
 	int		i;
 	client_t	*client;
@@ -614,7 +611,7 @@ void SV_SpawnSpectator (void)
 SV_Begin_f
 ==================
 */
-void SV_Begin_f (void)
+static void SV_Begin_f (void)
 {
 	unsigned pmodel = 0, emodel = 0;
 	int		i;
@@ -718,19 +715,7 @@ void SV_Begin_f (void)
 		SV_ClientPrintf(host_client, PRINT_HIGH, "Server is paused.\n");
 	}
 
-#if 0
-	//
-	// send a fixangle over the reliable channel to make sure it gets there
-	// Never send a roll angle, because savegames can catch the server
-	// in a state where it is expecting the client to correct the angle
-	// and it won't happen if the game was just loaded, so you wind up
-	// with a permanent head tilt
-	ent = EDICT_NUM( 1 + (host_client - svs.clients) );
-	MSG_WriteByte (&host_client->netchan.message, svc_setangle);
-	for (i=0 ; i < 2 ; i++)
-		MSG_WriteAngle (&host_client->netchan.message, ent->v.angles[i] );
-	MSG_WriteAngle (&host_client->netchan.message, 0 );
-#endif
+	//sv_client->lastservertimeupdate = -99;	// update immediately
 }
 
 //=============================================================================
@@ -786,7 +771,7 @@ qboolean SV_DownloadNextFile (void)
 SV_NextDownload_f
 ==================
 */
-void SV_NextDownload_f (void)
+static void SV_NextDownload_f (void)
 {
 	byte	buffer[FILE_TRANSFER_BUF_SIZE];
 	int		r, tmp;
@@ -963,7 +948,7 @@ SV_BeginDownload_f
 ==================
 */
 void SV_ReplaceChar(char *s, char from, char to);
-void SV_BeginDownload_f(void)
+static void SV_BeginDownload_f(void)
 {
 	char	*name, n[MAX_OSPATH], *val;
 	extern	cvar_t	allow_download;
@@ -1167,7 +1152,7 @@ SV_DemoDownload_f
 ==================
 */
 qboolean SV_ExecutePRCommand (void);
-void SV_DemoDownload_f(void)
+static void SV_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
 	char		*cmd_argv_i;
@@ -1230,7 +1215,7 @@ void SV_DemoDownload_f(void)
 SV_StopDownload_f
 ==================
 */
-void SV_StopDownload_f(void)
+static void SV_StopDownload_f(void)
 {
 	unsigned char	download_stopped[] = "Download stopped.\n";
 	if (host_client->download)
@@ -1405,7 +1390,7 @@ void SV_Say (qboolean team)
 SV_Say_f
 ==================
 */
-void SV_Say_f(void)
+static void SV_Say_f(void)
 {
 	SV_Say (false);
 }
@@ -1414,7 +1399,7 @@ void SV_Say_f(void)
 SV_Say_Team_f
 ==================
 */
-void SV_Say_Team_f(void)
+static void SV_Say_Team_f(void)
 {
 	SV_Say (true);
 }
@@ -1426,12 +1411,12 @@ void SV_Say_Team_f(void)
 /*
 =================
 SV_Pings_f
- 
+
 The client is showing the scoreboard, so send new ping times for all
 clients
 =================
 */
-void SV_Pings_f (void)
+static void SV_Pings_f (void)
 {
 	client_t *client;
 	int		j;
@@ -1456,7 +1441,7 @@ void SV_Pings_f (void)
 SV_Kill_f
 ==================
 */
-void SV_Kill_f (void)
+static void SV_Kill_f (void)
 {
 	if (sv_player->v.health <= 0)
 	{
@@ -1505,7 +1490,7 @@ void SV_TogglePause (const char *msg)
 SV_Pause_f
 ==================
 */
-void SV_Pause_f (void)
+static void SV_Pause_f (void)
 {
 	//	client_t *cl;
 	char st[CLIENT_NAME_LEN + 32];
@@ -1534,11 +1519,11 @@ void SV_Pause_f (void)
 /*
 =================
 SV_Drop_f
- 
+
 The client is going to disconnect, so remove the connection immediately
 =================
 */
-void SV_Drop_f (void)
+static void SV_Drop_f (void)
 {
 	SV_EndRedirect ();
 	if (!host_client->spectator)
@@ -1549,11 +1534,11 @@ void SV_Drop_f (void)
 /*
 =================
 SV_PTrack_f
- 
+
 Change the bandwidth estimate for a client
 =================
 */
-void SV_PTrack_f (void)
+static void SV_PTrack_f (void)
 {
 	int		i;
 	edict_t *ent, *tent;
@@ -1593,11 +1578,11 @@ void SV_PTrack_f (void)
 /*
 =================
 SV_Rate_f
- 
+
 Change the bandwidth estimate for a client
 =================
 */
-void SV_Rate_f (void)
+static void SV_Rate_f (void)
 {
 	int		rate;
 
@@ -1618,11 +1603,11 @@ void SV_Rate_f (void)
 /*
 =================
 SV_Msg_f
- 
+
 Change the message level for a client
 =================
 */
-void SV_Msg_f (void)
+static void SV_Msg_f (void)
 {
 	if (Cmd_Argc() != 2)
 	{
@@ -1644,7 +1629,7 @@ Login to upload
 =================
 */
 int Master_Rcon_Validate (void);
-void SV_TechLogin_f (void)
+static void SV_TechLogin_f (void)
 {
 	if (host_client->logincount > 4) //denied
 		return;
@@ -1671,7 +1656,7 @@ void SV_TechLogin_f (void)
 SV_ClientUpload_f
 ================
 */
-void SV_ClientUpload_f (void)
+static void SV_ClientUpload_f (void)
 {
 	char str[MAX_OSPATH];
 
@@ -1715,7 +1700,7 @@ void SV_ClientUpload_f (void)
 /*
 ==================
 SV_SetInfo_f
- 
+
 Allow clients to change userinfo
 ==================
 */
@@ -1735,7 +1720,7 @@ char *shortinfotbl[] =
         NULL
     };
 
-void SV_SetInfo_f (void)
+static void SV_SetInfo_f (void)
 {
 	extern cvar_t sv_forcenick, sv_login;
 	int i, saved_state;
@@ -1885,16 +1870,16 @@ void SV_SetInfo_f (void)
 /*
 ==================
 SV_ShowServerinfo_f
- 
+
 Dumps the serverinfo info string
 ==================
 */
-void SV_ShowServerinfo_f (void)
+static void SV_ShowServerinfo_f (void)
 {
 	Info_Print (svs.info);
 }
 
-void SV_NoSnap_f(void)
+static void SV_NoSnap_f(void)
 {
 	if (*host_client->uploadfn)
 	{
@@ -1908,7 +1893,7 @@ void SV_NoSnap_f(void)
 SV_MinPing_f
 ==============
 */
-void SV_MinPing_f (void)
+static void SV_MinPing_f (void)
 {
 	extern cvar_t	sv_minping, sv_enable_cmd_minping;
 	float		minping;
@@ -1941,7 +1926,7 @@ SV_ShowMapsList_f
 ==============
 */
 void SV_Check_ktpro(void);
-void SV_ShowMapsList_f(void)
+static void SV_ShowMapsList_f(void)
 {
 	char	*value, *key;
 	int	i, j, len, i_mod_2 = 1;
@@ -1995,18 +1980,18 @@ ucmd_t ucmds[] =
         {"soundlist", SV_Soundlist_f},
         {"prespawn", SV_PreSpawn_f},
         {"spawn", SV_Spawn_f},
-        {"begin", SV_Begin_f},
+        {"begin", },
 
         {"drop", SV_Drop_f},
         {"pings", SV_Pings_f},
 
         // issued by hand at client consoles
-        {"rate", SV_Rate_f},
-        {"kill", SV_Kill_f},
+	{"rate", SV_Rate_f},
+	{"kill", SV_Kill_f},
         {"pause", SV_Pause_f},
         {"msg", SV_Msg_f},
 
-        {"say", SV_Say_f},
+	{"say", SV_Say_f},
         {"say_team", SV_Say_Team_f},
 
         {"setinfo", SV_SetInfo_f},
@@ -2047,7 +2032,7 @@ SV_ExecuteUserCommand
 ==================
 */
 qboolean PR_UserCmd(void);
-void SV_ExecuteUserCommand (char *s)
+static void SV_ExecuteUserCommand (char *s)
 {
 	ucmd_t	*u;
 
@@ -2093,62 +2078,32 @@ qboolean SV_ExecutePRCommand (void)
 
 /*
 ===========================================================================
- 
+
 USER CMD EXECUTION
- 
+
 ===========================================================================
 */
 
 /*
-===============
-SV_CalcRoll
- 
-Used by view and sv_user
-===============
-*/
-float SV_CalcRoll (vec3_t angles, vec3_t velocity)
-{
-	vec3_t	forward, right, up;
-	float	sign;
-	float	side;
-	float	value;
-
-	AngleVectors (angles, forward, right, up);
-	side = DotProduct (velocity, right);
-	sign = side < 0 ? -1 : 1;
-	side = fabs(side);
-
-	value = sv_rollangle.value;
-
-	if (side < sv_rollspeed.value)
-		side = side * value / sv_rollspeed.value;
-	else
-		side = value;
-
-	return side*sign;
-
-}
-
-
-
-
-//============================================================================
-
-vec3_t	pmove_mins, pmove_maxs;
-
-/*
 ====================
 AddLinksToPmove
- 
+
 ====================
 */
-void AddLinksToPmove ( areanode_t *node )
+static void AddLinksToPmove ( areanode_t *node )
 {
 	link_t		*l, *next;
 	edict_t		*check;
-	int			pl;
-	int			i;
+	int 		pl;
+	int 		i;
 	physent_t	*pe;
+	vec3_t		pmove_mins, pmove_maxs;
+
+	for (i=0 ; i<3 ; i++)
+	{
+		pmove_mins[i] = pmove.origin[i] - 256;
+		pmove_maxs[i] = pmove.origin[i] + 256;
+	}
 
 	pl = EDICT_TO_PROG(sv_player);
 
@@ -2169,7 +2124,7 @@ void AddLinksToPmove ( areanode_t *node )
 
 			for (i=0 ; i<3 ; i++)
 				if (check->v.absmin[i] > pmove_maxs[i]
-				        || check->v.absmax[i] < pmove_mins[i])
+				|| check->v.absmax[i] < pmove_mins[i])
 					break;
 			if (i != 3)
 				continue;
@@ -2180,8 +2135,13 @@ void AddLinksToPmove ( areanode_t *node )
 
 			VectorCopy (check->v.origin, pe->origin);
 			pe->info = NUM_FOR_EDICT(check);
-			if (check->v.solid == SOLID_BSP)
+			if (check->v.solid == SOLID_BSP) {
+				if ((unsigned)check->v.modelindex >= MAX_MODELS)
+					SV_Error ("AddLinksToPmove: check->v.modelindex >= MAX_MODELS");
 				pe->model = sv.models[(int)(check->v.modelindex)];
+				if (!pe->model)
+					SV_Error ("SOLID_BSP with a non-bsp model");
+			}
 			else
 			{
 				pe->model = NULL;
@@ -2201,61 +2161,25 @@ void AddLinksToPmove ( areanode_t *node )
 		AddLinksToPmove ( node->children[1] );
 }
 
-
-/*
-================
-AddAllEntsToPmove
- 
-For debugging
-================
-*/
-void AddAllEntsToPmove (void)
+/*int SV_PMTypeForClient (client_t *cl)
 {
-	int			e;
-	edict_t		*check;
-	int			i;
-	physent_t	*pe;
-	int			pl;
-
-	pl = EDICT_TO_PROG(sv_player);
-	check = NEXT_EDICT(sv.edicts);
-	for (e=1 ; e<sv.num_edicts ; e++, check = NEXT_EDICT(check))
-	{
-		if (check->free)
-			continue;
-		if (check->v.owner == pl)
-			continue;
-		if (check->v.solid == SOLID_BSP
-		        || check->v.solid == SOLID_BBOX
-		        || check->v.solid == SOLID_SLIDEBOX)
-		{
-			if (check == sv_player)
-				continue;
-
-			for (i=0 ; i<3 ; i++)
-				if (check->v.absmin[i] > pmove_maxs[i]
-				        || check->v.absmax[i] < pmove_mins[i])
-					break;
-			if (i != 3)
-				continue;
-			pe = &pmove.physents[pmove.numphysent];
-
-			VectorCopy (check->v.origin, pe->origin);
-			pmove.physents[pmove.numphysent].info = e;
-			if (check->v.solid == SOLID_BSP)
-				pe->model = sv.models[(int)(check->v.modelindex)];
-			else
-			{
-				pe->model = NULL;
-				VectorCopy (check->v.mins, pe->mins);
-				VectorCopy (check->v.maxs, pe->maxs);
-			}
-
-			if (++pmove.numphysent == MAX_PHYSENTS)
-				break;
-		}
+	if (cl->edict->v.movetype == MOVETYPE_NOCLIP) {
+		if (cl->extensions & Z_EXT_PM_TYPE_NEW)
+			return PM_SPECTATOR;
+		return PM_OLD_SPECTATOR;
 	}
-}
+
+	if (sv_player->v.movetype == MOVETYPE_FLY)
+		return PM_FLY;
+
+	if (sv_player->v.movetype == MOVETYPE_NONE)
+		return PM_NONE;
+
+	if (sv_player->v.health <= 0)
+		return PM_DEAD;
+
+	return PM_NORMAL;
+}*/
 
 /*
 ===========
@@ -2263,7 +2187,7 @@ SV_PreRunCmd
 ===========
 Done before running a player command.  Clears the touch array
 */
-byte playertouch[(MAX_EDICTS+7)/8];
+static byte playertouch[(MAX_EDICTS+7)/8];
 
 void SV_PreRunCmd(void)
 {
@@ -2277,11 +2201,10 @@ SV_RunCmd
 */
 void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 {
-	edict_t		*ent;
-	int			i, n;
-	int			oldmsec;
+	int	i, n;
+	vec3_t	offset;
 	//bliP: 24/9 anti speed ->
-	int     tmp_time;
+	int	tmp_time;
 
 	if (!inside && sv_speedcheck.value)
 	{
@@ -2323,6 +2246,7 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	// chop up very long command
 	if (cmd.msec > 50)
 	{
+		int oldmsec;
 		oldmsec = ucmd->msec;
 		cmd.msec = oldmsec/2;
 		SV_RunCmd (&cmd, true);
@@ -2332,9 +2256,9 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 		return;
 	}
 
-	if (!sv_player->v.fixangle)
-		VectorCopy (ucmd->angles, sv_player->v.v_angle);
+	sv_frametime = ucmd->msec * 0.001;
 
+	// copy humans' intentions to progs
 	sv_player->v.button0 = ucmd->buttons & 1;
 	sv_player->v.button2 = (ucmd->buttons & 2)>>1;
 	sv_player->v.button1 = (ucmd->buttons & 4) >> 2;
@@ -2345,6 +2269,14 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 		sv_player->v.button0 = sv_player->v.impulse = 0;
 	//<-
 
+	// clamp view angles
+	if (ucmd->angles[PITCH] > 80.0)
+		ucmd->angles[PITCH] = 80.0;
+	if (ucmd->angles[PITCH] < -70.0)
+		ucmd->angles[PITCH] = -70.0;
+	if (!sv_player->v.fixangle)
+		VectorCopy (ucmd->angles, sv_player->v.v_angle);
+	
 	//
 	// angles
 	// show 1/3 the pitch angle and all the roll angle
@@ -2355,18 +2287,15 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 			sv_player->v.angles[PITCH] = -sv_player->v.v_angle[PITCH]/3;
 			sv_player->v.angles[YAW] = sv_player->v.v_angle[YAW];
 		}
-		sv_player->v.angles[ROLL] =
-		    SV_CalcRoll (sv_player->v.angles, sv_player->v.velocity)*4;
+		sv_player->v.angles[ROLL] = 0;
 	}
 
-	sv_frametime = ucmd->msec * 0.001;
 	if (sv_frametime > 0.1)
 		sv_frametime = 0.1;
 
 	if (!host_client->spectator)
 	{
 		pr_global_struct->frametime = sv_frametime;
-
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 #ifdef USE_PR2
@@ -2379,49 +2308,34 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 		SV_RunThink (sv_player);
 	}
 
-	for (i=0 ; i<3 ; i++)
-		pmove.origin[i] = sv_player->v.origin[i] + (sv_player->v.mins[i] - player_mins[i]);
+	// copy player state to pmove
+	VectorSubtract (sv_player->v.mins, player_mins, offset);
+	VectorAdd (sv_player->v.origin, offset, pmove.origin);
 	VectorCopy (sv_player->v.velocity, pmove.velocity);
 	VectorCopy (sv_player->v.v_angle, pmove.angles);
-
+	
 	pmove.spectator = host_client->spectator;
 	pmove.waterjumptime = sv_player->v.teleport_time;
-	pmove.numphysent = 1;
-	pmove.physents[0].model = sv.worldmodel;
 	pmove.cmd = *ucmd;
 	pmove.dead = sv_player->v.health <= 0;
 	pmove.oldbuttons = host_client->oldbuttons;
 
+	// build physent list
+	pmove.numphysent = 1;
+	pmove.physents[0].model = sv.worldmodel;
+	AddLinksToPmove ( sv_areanodes );
+
+	// fill in movevars
 	movevars.entgravity = host_client->entgravity;
 	movevars.maxspeed = host_client->maxspeed;
 	movevars.bunnyspeedcap = sv_bunnyspeedcap.value;
 
-	for (i=0 ; i<3 ; i++)
-	{
-		pmove_mins[i] = pmove.origin[i] - 256;
-		pmove_maxs[i] = pmove.origin[i] + 256;
-	}
-#if 1
-	AddLinksToPmove ( sv_areanodes );
-#else
-	AddAllEntsToPmove ();
-#endif
+	
+	// do the move
+	PM_PlayerMove ();
 
-#if 0
-	{
-		int before, after;
-
-		before = PM_TestPlayerPosition (pmove.origin);
-		PlayerMove ();
-		after = PM_TestPlayerPosition (pmove.origin);
-
-		if (sv_player->v.health > 0 && before && !after )
-			Con_Printf ("player %s got stuck in playermove!!!!\n", host_client->name);
-	}
-#else
-	PlayerMove ();
-#endif
-
+	
+	// get player state back out of pmove
 	host_client->oldbuttons = pmove.oldbuttons;
 	sv_player->v.teleport_time = pmove.waterjumptime;
 	sv_player->v.waterlevel = waterlevel;
@@ -2433,17 +2347,9 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	}
 	else
 		sv_player->v.flags = (int)sv_player->v.flags & ~FL_ONGROUND;
-	for (i=0 ; i<3 ; i++)
-		sv_player->v.origin[i] = pmove.origin[i] - (sv_player->v.mins[i] - player_mins[i]);
 
-#if 0
-	// truncate velocity the same way the net protocol will
-	for (i=0 ; i<3 ; i++)
-		sv_player->v.velocity[i] = (int)pmove.velocity[i];
-#else
+	VectorSubtract (pmove.origin, offset, sv_player->v.origin);
 	VectorCopy (pmove.velocity, sv_player->v.velocity);
-#endif
-
 	VectorCopy (pmove.angles, sv_player->v.v_angle);
 
 	if (!host_client->spectator)
@@ -2454,6 +2360,7 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 		// touch other objects
 		for (i=0 ; i<pmove.numtouch ; i++)
 		{
+			edict_t *ent;
 			n = pmove.physents[pmove.touchindex[i]].info;
 			ent = EDICT_NUM(n);
 			if (!ent->v.touch || (playertouch[n/8]&(1<<(n%8))))
@@ -2512,6 +2419,41 @@ void SV_PostRunCmd(void)
 
 /*
 ===================
+SV_ExecuteClientMove
+
+Run one or more client move commands (more than one if some
+packets were dropped)
+===================
+*/
+static void SV_ExecuteClientMove (client_t *cl, usercmd_t oldest, usercmd_t oldcmd, usercmd_t newcmd)
+{
+	int net_drop;
+	
+	if (sv.paused)
+		return;
+
+	SV_PreRunCmd();
+
+	net_drop = cl->netchan.dropped;
+	if (net_drop < 20)
+	{
+		while (net_drop > 2)
+		{
+			SV_RunCmd (&cl->lastcmd, false);
+			net_drop--;
+		}
+	}
+	if (net_drop > 1)
+		SV_RunCmd (&oldest, false);
+	if (net_drop > 0)
+		SV_RunCmd (&oldcmd, false);
+	SV_RunCmd (&newcmd, false);
+	
+	SV_PostRunCmd();
+}
+
+/*
+===================
 SV_ExecuteClientMessage
  
 The current net_message is parsed for the given client
@@ -2520,13 +2462,13 @@ The current net_message is parsed for the given client
 void SV_ExecuteClientMessage (client_t *cl)
 {
 	int		c;
-	char	*s;
+	char		*s;
 	usercmd_t	oldest, oldcmd, newcmd;
 	client_frame_t	*frame;
-	vec3_t o;
+	vec3_t 		o;
 	qboolean	move_issued = false; //only allow one move command
 	int		checksumIndex;
-	byte	checksum, calculatedChecksum;
+	byte		checksum, calculatedChecksum;
 	int		seq_hash;
 	extern cvar_t sv_minping;
 
@@ -2564,7 +2506,6 @@ void SV_ExecuteClientMessage (client_t *cl)
 	host_client = cl;
 	sv_player = host_client->edict;
 
-	//	seq_hash = (cl->netchan.incoming_sequence & 0xffff) ; // ^ QW_CHECK_HASH;
 	seq_hash = cl->netchan.incoming_sequence;
 
 	// mark time so clients will know how much to predict
@@ -2630,37 +2571,18 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 			// if the checksum fails, ignore the rest of the packet
 			calculatedChecksum = COM_BlockSequenceCRCByte(
-			                         net_message.data + checksumIndex + 1,
-			                         MSG_GetReadCount() - checksumIndex - 1,
-			                         seq_hash);
+				net_message.data + checksumIndex + 1,
+				MSG_GetReadCount() - checksumIndex - 1,
+				seq_hash);
 
 			if (calculatedChecksum != checksum)
 			{
 				Con_DPrintf ("Failed command checksum for %s(%d) (%d != %d)\n",
-				             cl->name, cl->netchan.incoming_sequence, checksum, calculatedChecksum);
+					cl->name, cl->netchan.incoming_sequence, checksum, calculatedChecksum);
 				return;
 			}
 
-			if (!sv.paused)
-			{
-				SV_PreRunCmd();
-
-				if (net_drop < 20)
-				{
-					while (net_drop > 2)
-					{
-						SV_RunCmd (&cl->lastcmd, false);
-						net_drop--;
-					}
-					if (net_drop > 1)
-						SV_RunCmd (&oldest, false);
-					if (net_drop > 0)
-						SV_RunCmd (&oldcmd, false);
-				}
-				SV_RunCmd (&newcmd, false);
-
-				SV_PostRunCmd();
-			}
+			SV_ExecuteClientMove (cl, oldest, oldcmd, newcmd);
 
 			cl->lastcmd = newcmd;
 			cl->lastcmd.buttons = 0; // avoid multiple fires on lag
@@ -2669,6 +2591,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 		case clc_stringcmd:
 			s = MSG_ReadString ();
+			s[1023] = 0;
 			SV_ExecuteUserCommand (s);
 			break;
 
@@ -2699,8 +2622,6 @@ SV_UserInit
 */
 void SV_UserInit (void)
 {
-	Cvar_RegisterVariable (&sv_rollspeed);
-	Cvar_RegisterVariable (&sv_rollangle);
 	Cvar_RegisterVariable (&sv_spectalk);
 	Cvar_RegisterVariable (&sv_mapcheck);
 	Cvar_RegisterVariable (&sv_use_internal_cmd_dl);
