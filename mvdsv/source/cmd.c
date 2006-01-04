@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.8 2006/01/03 17:42:06 disconn3ct Exp $
+	$Id: cmd.c,v 1.9 2006/01/04 03:18:55 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -282,7 +282,7 @@ void Cmd_StuffCmds_f (void)
 	}
 
 	if (build[0])
-		Cbuf_AddText (build);
+		Cbuf_InsertText (build);
 
 	Q_Free (text);
 	Q_Free (build);
