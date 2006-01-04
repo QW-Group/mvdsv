@@ -16,13 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: protocol.h,v 1.6 2006/01/04 03:49:02 disconn3ct Exp $
 */
 // protocol.h -- communications protocols
+#ifndef _PROTOCOL_H_
+#define _PROTOCOL_H_
 
 #define	PROTOCOL_VERSION	28
-
-#define QW_CHECK_HASH 0x5157
 
 //=========================================
 
@@ -80,7 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	svc_stopsound		16	// <see code>
 //define	svc_updatecolors	17	// [byte] [byte] [byte]
 //define	svc_particle		18	// [vec3] <variable>
-#define	svc_damage			19
+#define	svc_damage		19
 
 #define	svc_spawnstatic		20
 //	svc_spawnbinary		21
@@ -179,7 +179,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	PF_WEAPONFRAME	(1<<8)	// only sent for view player
 #define	PF_DEAD		(1<<9)	// don't block movement any more
 #define	PF_GIB		(1<<10)	// offset the view height differently
-#define	PF_NOGRAV	(1<<11)	// don't apply gravity for prediction
+// bits 11..13 are player move type bits (ZQuake extension)
+#define PF_PMC_SHIFT	11
+#define	PF_PMC_MASK	7
+#define	PF_ONGROUND	(1<<14)		// ZQuake extension
+
+// player move types
+#define PMC_NORMAL		0	// normal ground movement
+#define PMC_NORMAL_JUMP_HELD	1	// normal ground novement + jump_held
+#define PMC_OLD_SPECTATOR	2	// fly through walls (QW compatibility mode)
+#define PMC_SPECTATOR		3	// fly through walls
+#define PMC_FLY			4	// fly, bump into walls
+#define PMC_NONE		5	// can't move (client had better lerp the origin...)
+#define PMC_FREEZE		6	// TODO: lerp movement and viewangles
+#define PMC_EXTRA3		7	// future extension
 
 //==============================================
 
@@ -252,6 +265,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	TE_BLOOD		12
 #define	TE_LIGHTNINGBLOOD	13
 
+//==============================================
+
+//
+// ZQuake protocol extensions (*z_ext serverinfo key)
+//
+#define Z_EXT_PM_TYPE		(1<<0)	// basic PM_TYPE functionality (reliable jump_held)
+#define Z_EXT_PM_TYPE_NEW	(1<<1)	// adds PM_FLY, PM_SPECTATOR
+#define Z_EXT_VIEWHEIGHT	(1<<2)	// STAT_VIEWHEIGHT
+#define Z_EXT_SERVERTIME	(1<<3)	// STAT_TIME
+#define Z_EXT_PITCHLIMITS	(1<<4)	// serverinfo maxpitch & minpitch
+#define Z_EXT_JOIN_OBSERVE	(1<<5)	// server: "join" and "observe" commands are supported
+					// client: on-the-fly spectator <-> player switching supported
+#define Z_EXT_PF_ONGROUND	(1<<6)	// server: PF_ONGROUND is valid for all svc_playerinfo
+
+// what our server supports
+#define SERVER_EXTENSIONS (Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|	\
+		Z_EXT_VIEWHEIGHT|Z_EXT_SERVERTIME|Z_EXT_PITCHLIMITS|	\
+		Z_EXT_JOIN_OBSERVE|Z_EXT_PF_ONGROUND)
+
 
 /*
 ==========================================================
@@ -283,8 +315,8 @@ typedef struct
 } entity_state_t;
 
 
-#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
-#define MAX_DEMO_PACKET_ENTITIES 300
+#define	MAX_PACKET_ENTITIES		64 // doesn't count nails
+#define MAX_DEMO_PACKET_ENTITIES	300
 typedef struct
 {
 	int		num_entities;
@@ -300,4 +332,6 @@ typedef struct usercmd_s
 	byte	buttons;
 	byte	impulse;
 } usercmd_t;
+
+#endif /* _PROTOCOL_H_ */
 
