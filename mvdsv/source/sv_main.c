@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.31 2006/01/04 03:32:50 disconn3ct Exp $
+	$Id: sv_main.c,v 1.32 2006/01/05 15:07:43 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -26,16 +26,11 @@ quakeparms_t host_parms;
 
 qboolean	host_initialized;		// true if into command execution (compatability)
 
-float		sv_frametime;
-
-
 double		realtime;			// without any filtering or bounding
 
 int		host_hunklevel;
 
 int		current_skill;			// for entity spawnflags checking
-
-netadr_t	master_adr[MAX_MASTERS];	// address of group servers
 
 client_t	*host_client;			// current client
 
@@ -172,7 +167,6 @@ log_t	logs[MAX_LOG];
 qboolean sv_error = 0;
 
 void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
-void Master_Shutdown (void);
 
 //============================================================================
 
@@ -2717,72 +2711,6 @@ void SV_InitLocal (void)
 
 
 //============================================================================
-
-/*
-================
-Master_Heartbeat
- 
-Send a message to the master every few minutes to
-let it know we are alive, and log information
-================
-*/
-#define	HEARTBEAT_SECONDS	300
-void Master_Heartbeat (void)
-{
-	char		string[2048];
-	int			active;
-	int			i;
-
-	if (realtime - svs.last_heartbeat < HEARTBEAT_SECONDS)
-		return;		// not time to send yet
-
-	svs.last_heartbeat = realtime;
-
-	//
-	// count active users
-	//
-	active = 0;
-	for (i=0 ; i<MAX_CLIENTS ; i++)
-		if (svs.clients[i].state == cs_connected ||
-		        svs.clients[i].state == cs_spawned )
-			active++;
-
-	svs.heartbeat_sequence++;
-	snprintf (string, sizeof(string), "%c\n%i\n%i\n", S2M_HEARTBEAT,
-	          svs.heartbeat_sequence, active);
-
-
-	// send to group master
-	for (i=0 ; i<MAX_MASTERS ; i++)
-		if (master_adr[i].port)
-		{
-			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (net_serversocket, strlen(string), string, master_adr[i]);
-		}
-}
-
-/*
-=================
-Master_Shutdown
- 
-Informs all masters that this server is going down
-=================
-*/
-void Master_Shutdown (void)
-{
-	char		string[2048];
-	int			i;
-
-	snprintf (string, sizeof(string), "%c\n", S2M_SHUTDOWN);
-
-	// send to group master
-	for (i=0 ; i<MAX_MASTERS ; i++)
-		if (master_adr[i].port)
-		{
-			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (net_serversocket, strlen(string), string, master_adr[i]);
-		}
-}
 
 /*
 =================
