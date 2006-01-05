@@ -16,9 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.19 2006/01/04 03:48:33 disconn3ct Exp $
+	$Id: server.h,v 1.20 2006/01/05 15:07:02 disconn3ct Exp $
 */
 // server.h
+
+#ifndef __SERVER_H__
+#define __SERVER_H__
 
 #include "progs.h"
 
@@ -51,6 +54,7 @@ typedef struct
 	server_state_t	state;				// precache commands are only valid during load
 
 	double		time;
+	double		old_time;			// bumped by SV_Physics
 	double		gametime;
 	
 	int		lastcheck;			// used by PF_checkclient
@@ -466,8 +470,6 @@ typedef struct
 extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
 extern	cvar_t	sv_maxspeed;
 
-extern	netadr_t master_adr[MAX_MASTERS]; // address of the master server
-
 extern	int current_skill;
 
 extern	cvar_t	spawn;
@@ -547,8 +549,6 @@ void SV_InitOperatorCommands (void);
 void SV_SendServerinfo (client_t *client);
 void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged);
 int SV_BoundRate (qboolean dl, int rate);
-
-void Master_Heartbeat (void);
 
 //bliP: init ->
 void SV_ListFiles_f (void);
@@ -687,3 +687,11 @@ qboolean SV_Login(client_t *cl);
 void SV_Logout(client_t *cl);
 void SV_ParseLogin(client_t *cl);
 void SV_LoginCheckTimeOut(client_t *cl);
+
+// sv_master.c
+void SV_SetMaster_f (void);
+void SV_Heartbeat_f (void);
+void Master_Shutdown (void);
+void Master_Heartbeat (void);
+
+#endif // __SERVER_H__
