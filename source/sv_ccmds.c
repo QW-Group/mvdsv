@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.16 2006/01/03 17:06:30 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.17 2006/01/05 15:07:43 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -43,49 +43,12 @@ extern	redirect_t	sv_redirected;
 
 /*
 ===============================================================================
- 
+
 OPERATOR CONSOLE ONLY COMMANDS
- 
+
 These commands can only be entered from stdin or by a remote operator datagram
 ===============================================================================
 */
-
-/*
-====================
-SV_SetMaster_f
- 
-Make a master server current
-====================
-*/
-void SV_SetMaster_f (void)
-{
-	char	data[2];
-	int		i;
-
-	memset (&master_adr, 0, sizeof(master_adr));
-
-	for (i=1 ; i<Cmd_Argc() ; i++)
-	{
-		if (!strcmp(Cmd_Argv(i), "none") || !NET_StringToAdr (Cmd_Argv(i), &master_adr[i-1]))
-		{
-			Con_Printf ("Setting nomaster mode.\n");
-			return;
-		}
-		if (master_adr[i-1].port == 0)
-			master_adr[i-1].port = BigShort (27000);
-
-		Con_Printf ("Master server at %s\n", NET_AdrToString (master_adr[i-1]));
-
-		Con_Printf ("Sending a ping.\n");
-
-		data[0] = A2A_PING;
-		data[1] = 0;
-		NET_SendPacket (net_serversocket, 2, data, master_adr[i-1]);
-	}
-
-	svs.last_heartbeat = -99999;
-}
-
 
 /*
 ==================
@@ -1428,17 +1391,6 @@ void SV_ConSay_f(void)
 
 	Sys_Printf("%s", text);
 	SV_Write_Log(CONSOLE_LOG, 1, text);
-}
-
-
-/*
-==================
-SV_Heartbeat_f
-==================
-*/
-void SV_Heartbeat_f (void)
-{
-	svs.last_heartbeat = -9999;
 }
 
 void SV_SendServerInfoChange(char *key, char *value)
