@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pmove.c,v 1.7 2006/01/04 03:31:16 disconn3ct Exp $
+	$Id: pmove.c,v 1.8 2006/01/05 15:03:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -138,7 +138,7 @@ int PM_FlyMove (void)
 
 		if (trace.startsolid || trace.allsolid)
 		{	// entity is trapped in another solid
-			VectorCopy (vec3_origin, pmove.velocity);
+			VectorClear (pmove.velocity);
 			return 3;
 		}
 
@@ -169,7 +169,7 @@ int PM_FlyMove (void)
 		// cliped to another plane
 		if (numplanes >= MAX_CLIP_PLANES)
 		{	// this shouldn't really happen
-			VectorCopy (vec3_origin, pmove.velocity);
+			VectorClear (pmove.velocity);
 			break;
 		}
 
@@ -199,8 +199,8 @@ int PM_FlyMove (void)
 		{	// go along the crease
 			if (numplanes != 2)
 			{
-				//				Con_Printf ("clip velocity, numplanes == %i\n",numplanes);
-				VectorCopy (vec3_origin, pmove.velocity);
+				// Con_Printf ("clip velocity, numplanes == %i\n",numplanes);
+				VectorClear (pmove.velocity);
 				break;
 			}
 			CrossProduct (planes[0], planes[1], dir);
@@ -214,7 +214,7 @@ int PM_FlyMove (void)
 		//
 		if (DotProduct (pmove.velocity, primal_velocity) <= 0)
 		{
-			VectorCopy (vec3_origin, pmove.velocity);
+			VectorClear (pmove.velocity);
 			break;
 		}
 	}
@@ -849,10 +849,10 @@ void SpectatorMove (void)
 
 	// friction
 
-	speed = Length (pmove.velocity);
+	speed = VectorLength (pmove.velocity);
 	if (speed < 1)
 	{
-		VectorCopy (vec3_origin, pmove.velocity);
+		VectorClear (pmove.velocity);
 	}
 	else
 	{

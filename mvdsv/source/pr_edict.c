@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.8 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: pr_edict.c,v 1.9 2006/01/05 15:03:39 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -137,8 +137,8 @@ void ED_Free (edict_t *ed)
 	ed->v.frame = 0;
 	ed->v.health = 0;
 	ed->v.classname = 0;
-	VectorCopy (vec3_origin, ed->v.origin);
-	VectorCopy (vec3_origin, ed->v.angles);
+	VectorClear (ed->v.origin);
+	VectorClear (ed->v.angles);
 	ed->v.nextthink = -1;
 	ed->v.solid = 0;
 

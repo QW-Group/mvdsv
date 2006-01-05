@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_model.c,v 1.6 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_model.c,v 1.7 2006/01/05 15:03:39 disconn3ct Exp $
 */
 // models.c -- model loading and caching
 
@@ -591,16 +591,16 @@ void Mod_LoadTexinfo (lump_t *l)
 #if 0
 		for (j=0 ; j<8 ; j++)
 			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
-		len1 = Length (in->vecs[0]);
-		len2 = Length (in->vecs[1]);
+		len1 = VectorLength (in->vecs[0]);
+		len2 = VectorLength (in->vecs[1]);
 #else
 		for (j=0 ; j<4 ; j++)
 		{
 			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
 			out->vecs[1][j] = LittleFloat (in->vecs[1][j]);
 		}
-		len1 = Length (out->vecs[0]);
-		len2 = Length (out->vecs[1]);
+		len1 = VectorLength (out->vecs[0]);
+		len2 = VectorLength (out->vecs[1]);
 #endif
 		if (len1 + len2 < 2 /*0.001*/)
 			out->mipadjust = 1;

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.15 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_send.c,v 1.16 2006/01/05 15:03:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -394,7 +394,7 @@ void SV_Multicast (vec3_t origin, int to)
 		{
 			vec3_t delta;
 			VectorSubtract(origin, org, delta);
-			if (Length(delta) <= 1024)
+			if (VectorLength(delta) <= 1024)
 				goto inrange;
 		}
 

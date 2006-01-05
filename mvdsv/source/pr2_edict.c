@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_edict.c,v 1.3 2005/12/04 05:37:44 disconn3ct Exp $
+ *  $Id: pr2_edict.c,v 1.4 2006/01/05 15:03:39 disconn3ct Exp $
  */
 
 #include "qwsvdef.h"
@@ -121,8 +121,8 @@ void ED2_Free(edict_t *ed)
 	ed->v.colormap = 0;
 	ed->v.skin = 0;
 	ed->v.frame = 0;
-	VectorCopy (vec3_origin, ed->v.origin);
-	VectorCopy (vec3_origin, ed->v.angles);
+	VectorClear (ed->v.origin);
+	VectorClear (ed->v.angles);
 	ed->v.nextthink = -1;
 	ed->v.solid = 0;
 
