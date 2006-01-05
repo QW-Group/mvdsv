@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_user.c,v 1.26 2006/01/04 03:51:43 disconn3ct Exp $
+	$Id: sv_user.c,v 1.27 2006/01/05 15:04:55 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -37,6 +37,7 @@ extern int	fp_messages, fp_persecond, fp_secondsdead;
 extern char	fp_msg[];
 extern cvar_t	pausable;
 extern cvar_t	sv_bunnyspeedcap; //bliP: 24/9
+extern double	sv_frametime;
 
 //bliP: init ->
 extern cvar_t	sv_unfake; //bliP: 24/9 kickfake to unfake
@@ -583,8 +584,8 @@ void SV_SpawnSpectator (void)
 	int		i;
 	edict_t	*e;
 
-	VectorCopy (vec3_origin, sv_player->v.origin);
-	VectorCopy (vec3_origin, sv_player->v.view_ofs);
+	VectorClear (sv_player->v.origin);
+	VectorClear (sv_player->v.view_ofs);
 	sv_player->v.view_ofs[2] = 22;
 
 	// search for an info_playerstart to spawn the spectator at
@@ -2289,9 +2290,6 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 		}
 		sv_player->v.angles[ROLL] = 0;
 	}
-
-	if (sv_frametime > 0.1)
-		sv_frametime = 0.1;
 
 	if (!host_client->spectator)
 	{
