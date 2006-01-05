@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.10 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: sv_init.c,v 1.11 2006/01/05 15:05:07 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -129,7 +129,7 @@ void SV_CreateBaseline (void)
 		}
 
 		//
-		// flush the signon message out to a seperate buffer if
+		// flush the signon message out to a separate buffer if
 		// nearly full
 		//
 		SV_FlushSignon ();
@@ -727,9 +727,11 @@ void SV_SpawnServer (char *server)
 	sv.state = ss_active;
 
 	// run two frames to allow everything to settle
-	sv_frametime = 0.1;
 	SV_Physics ();
+	sv.time += 0.1;
 	SV_Physics ();
+	sv.time += 0.1;
+	sv.old_time = sv.time;
 
 	// save movement vars
 	SV_SetMoveVars();
