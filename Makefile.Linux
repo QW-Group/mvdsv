@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.19 2005/12/04 07:47:49 disconn3ct Exp $
+#	$Id: Makefile.Linux,v 1.20 2006/01/05 15:09:12 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -52,6 +52,7 @@ SV_OBJS = \
 		$(SV_DIR)/pr2_exec.o \
 		$(SV_DIR)/pr2_vm.o \
 \
+		$(SV_DIR)/sv_master.o \
 		$(SV_DIR)/sv_ccmds.o \
 		$(SV_DIR)/sv_demo.o \
 		$(SV_DIR)/sv_ents.o \
@@ -89,8 +90,7 @@ SV_OBJS = \
 ifeq ($(USE_ASM),$(ASM))
 SV_AS_OBJS = \
 		$(SV_DIR)/worlda.o \
-		$(SV_DIR)/math.o \
-		$(SV_DIR)/sys_x86.o 
+		$(SV_DIR)/math.o
 endif
 
 #############################################################################
