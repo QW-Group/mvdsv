@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sync.c,v 1.4 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: sync.c,v 1.5 2006/01/05 15:14:52 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -168,7 +168,7 @@ float demcmp(source_t *d1, source_t *d2)
 				continue;
 
 			VectorSubtract(p1->origin, op1->origin, vec);
-			if (Length(vec) > 0 && Length(vec) < 100)
+			if (VectorLength(vec) > 0 && VectorLength(vec) < 100)
 				break;
 		}
 
@@ -183,7 +183,7 @@ float demcmp(source_t *d1, source_t *d2)
 				continue;
 
 			VectorSubtract(p2->origin, op2->origin, vec);
-			if (Length(vec) > 0 && Length(vec) < 100)
+			if (VectorLength(vec) > 0 && VectorLength(vec) < 100)
 				break;
 		}
 
@@ -196,17 +196,17 @@ float demcmp(source_t *d1, source_t *d2)
 
 			VectorSubtract(p1->origin, p2->origin, vec);
 			VectorSubtract(p1->origin, op1->origin, vec2);
-			//Sys_Printf("ent:%d %f\n",e1->entities[i].number, Length(vec)/Length(vec2));
-			//return Length(vec)/Length(vec2);
-			sr += Length(vec)/Length(vec2);
+			//Sys_Printf("ent:%d %f\n",e1->entities[i].number, VectorLength(vec)/VectorLength(vec2));
+			//return VectorLength(vec)/VectorLength(vec2);
+			sr += VectorLength(vec)/VectorLength(vec2);
 			c++;
 		}
 
-		//sr += Length(vec);
+		//sr += VectorLength(vec);
 		//c++;
 		//p++;
-		//if (Length(vec))
-		//	Sys_Printf("cl:%d %f %s\n", i, Length(vec), d1->players[i].name);
+		//if (VectorLength(vec))
+		//	Sys_Printf("cl:%d %f %s\n", i, VectorLength(vec), d1->players[i].name);
 	}
 
 	// compare entities
@@ -232,7 +232,7 @@ float demcmp(source_t *d1, source_t *d2)
 					continue;
 
 				VectorSubtract(e1->entities[i].origin, pe1->origin, vec);
-				if (Length(vec) > 0)
+				if (VectorLength(vec) > 0)
 					break;
 			}
 
@@ -247,7 +247,7 @@ float demcmp(source_t *d1, source_t *d2)
 					continue;
 
 				VectorSubtract(e2->entities[j].origin, pe2->origin, vec);
-				if (Length(vec) > 0)
+				if (VectorLength(vec) > 0)
 					break;
 			}
 			if (k == depth)
@@ -259,9 +259,9 @@ float demcmp(source_t *d1, source_t *d2)
 
 				VectorSubtract(e1->entities[i].origin, e2->entities[j].origin, vec);
 				VectorSubtract(e1->entities[i].origin, pe1->origin, vec2);
-				//Sys_Printf("ent:%d %f\n",e1->entities[i].number, Length(vec)/Length(vec2));
-				//return Length(vec)/Length(vec2);
-				sr += Length(vec)/Length(vec2);
+				//Sys_Printf("ent:%d %f\n",e1->entities[i].number, VectorLength(vec)/VectorLength(vec2));
+				//return VectorLength(vec)/VectorLength(vec2);
+				sr += VectorLength(vec)/VectorLength(vec2);
 				c++;
 			}
 

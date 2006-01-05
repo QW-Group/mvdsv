@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: main.c,v 1.6 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: main.c,v 1.7 2006/01/05 15:14:52 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -796,7 +796,7 @@ void AddNails(frame_t *to, frame_t *frame)
 		for (i = 0; i < num; i++)
 		{
 			VectorSubtract(frame->projectiles[j].origin, to->projectiles[i].origin, diff);
-			if (Length(diff) < 64)
+			if (VectorLength(diff) < 64)
 				break;
 		}
 

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.h,v 1.4 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: tools.h,v 1.5 2006/01/05 15:14:52 disconn3ct Exp $
 */
 
 typedef struct
@@ -185,7 +185,7 @@ void DemoWrite_Cat(sizebuf_t *buf);
 void SV_MVDWriteToDisk(sizebuf_t *m, int type, int to, float time);
 void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time);
 
-vec_t Length(vec3_t v);
+vec_t VectorLength(vec3_t v);
 
 /*
 #define MAXSIZE (demobuffer->end < demobuffer->last ? \

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: dem_parse.c,v 1.4 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: dem_parse.c,v 1.5 2006/01/05 15:14:52 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -347,7 +347,7 @@ void Dem_ParseStartSoundPacket(void)
 				//Sys_Printf("%d sound:%d\n", i, sound_num);
 				VectorSubtract(pos, from->frames[j&UPDATE_MASK].playerstate[i].origin, dist);
 				//Sys_Printf("%d:dist:%f\n", i, dist);
-				if (Length(dist) < 30.0 && world.frames[k&UPDATE_MASK].fixangle[i] == false)
+				if (VectorLength(dist) < 30.0 && world.frames[k&UPDATE_MASK].fixangle[i] == false)
 				{
 					found = true;
 					world.frames[k&UPDATE_MASK].fixangle[i] = true;

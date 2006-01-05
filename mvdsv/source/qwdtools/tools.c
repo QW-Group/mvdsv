@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.5 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: tools.c,v 1.6 2006/01/05 15:14:52 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -1260,15 +1260,7 @@ byte *LoadFile(char *path)
 	return buf;
 }
 
-vec_t Length(vec3_t v)
+vec_t VectorLength(vec3_t v)
 {
-	int		i;
-	float	length;
-
-	length = 0;
-	for (i=0 ; i< 3 ; i++)
-		length += v[i]*v[i];
-	length = sqrt (length);		// FIXME
-
-	return length;
+	return sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
