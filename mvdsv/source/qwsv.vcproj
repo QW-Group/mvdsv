@@ -611,6 +611,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\sv_master.c">
+			</File>
+			<File
 				RelativePath="sv_mod_frags.c">
 				<FileConfiguration
 					Name="Release|Win32">
