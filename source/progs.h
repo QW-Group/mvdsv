@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.8 2006/01/04 03:48:33 disconn3ct Exp $
+	$Id: progs.h,v 1.9 2006/01/05 15:02:25 disconn3ct Exp $
 */
 
 #include "pr_comp.h"			// defs shared with qcc
@@ -36,19 +36,18 @@ typedef union eval_s
 typedef struct edict_s
 {
 	qboolean	free;
-	link_t		area;				// linked to a division node or leaf
+	link_t		area;			// linked to a division node or leaf
 
 	int		num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
 
 	entity_state_t	baseline;
 
-	float		freetime;			// sv.time when the object was freed
-#ifdef USE_PR2
+	float		freetime;		// sv.time when the object was freed
 	double		lastruntime;		// sv.time when SV_RunEntity was last
-									// called for this edict (Tonik)
-#endif
-	entvars_t	v;					// C exported fields from progs
+						// called for this edict (Tonik)
+
+	entvars_t	v;			// C exported fields from progs
 // other fields from progs come immediately after
 } edict_t;
 
@@ -85,7 +84,7 @@ void PR_Profile_f (void);
 edict_t *ED_Alloc (void);
 void ED_Free (edict_t *ed);
 
-char	*ED_NewString (char *string);
+char *ED_NewString (char *string);
 // returns a copy of the string allocated from the server's string heap
 
 void ED_Print (edict_t *ed);
@@ -125,19 +124,19 @@ int NUM_FOR_EDICT(edict_t *e);
 
 extern	int		type_size[8];
 
-typedef void (*builtin_t) (void);
-extern	builtin_t *pr_builtins;
-extern int pr_numbuiltins;
+typedef void		(*builtin_t) (void);
+extern	builtin_t	*pr_builtins;
+extern	int		pr_numbuiltins;
 
-extern int		pr_argc;
+extern	int		pr_argc;
 
 extern	qboolean	pr_trace;
 extern	dfunction_t	*pr_xfunction;
 extern	int		pr_xstatement;
 
-extern func_t SpectatorConnect;
-extern func_t SpectatorThink;
-extern func_t SpectatorDisconnect;
+extern	func_t		SpectatorConnect;
+extern	func_t		SpectatorThink;
+extern	func_t		SpectatorDisconnect;
 
 void PR_RunError (char *error, ...);
 
@@ -158,4 +157,3 @@ extern int num_prstr;
 char *PR_GetString(int num);
 int PR_SetString(char *s);
 int PR_SetTmpString(char *s);
-

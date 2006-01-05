@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.7 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: sys.h,v 1.8 2006/01/05 15:02:25 disconn3ct Exp $
 */
 // sys.h -- non-portable functions
 
@@ -37,47 +37,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct
 {
 	char	name[MAX_DEMO_NAME];
-	int		size;
-	int		time;
+	int	size;
+	int	time;
 	qboolean isdir; //bliP: list dir
 } file_t;
 
 typedef struct
 {
 	file_t *files;
-	int		size;
-	int		numfiles;
-	int		numdirs;
+	int	size;
+	int	numfiles;
+	int	numdirs;
 } dir_t;
 
-int Sys_FileOpenRead (char *path, int *hndl);
-
-int Sys_FileOpenWrite (char *path);
-void Sys_FileClose (int handle);
-void Sys_FileSeek (int handle, int position);
-int Sys_FileRead (int handle, void *dest, int count);
-int Sys_FileWrite (int handle, void *data, int count);
-int	Sys_FileTime (char *path);
+int Sys_FileTime (char *path);
 void Sys_mkdir (char *path);
 int Sys_rmdir (char *path);
 int Sys_remove (char *path);
 dir_t Sys_listdir (char *path, char *ext, int sort_type);
 int Sys_compare_by_date(const void *a, const void *b);
 int Sys_compare_by_name(const void *a, const void *b);
-#define SORT_NO			0
+#define SORT_NO		0
 #define SORT_BY_DATE	1
 #define SORT_BY_NAME	2
 
-//
-// memory protection
-//
-void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 
 //
 // system IO
 //
-void Sys_DebugLog (char *file, char *fmt, ...);
-
 void Sys_Error (char *error, ...);
 // an error will cause the entire program to exit
 
@@ -93,13 +80,6 @@ char *Sys_ConsoleInput (void);
 //void Sys_Sleep (void);
 // called to yield for a little bit so as
 // not to hog cpu when paused or debugging
-
-void Sys_SendKeyEvents (void);
-// Perform Key_Event () callbacks until the input que is empty
-
-void Sys_LowFPPrecision (void);
-void Sys_HighFPPrecision (void);
-void Sys_SetFPCW (void);
 
 void Sys_Init (void);
 
