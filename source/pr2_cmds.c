@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.17 2005/12/29 11:31:17 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.18 2006/01/05 15:01:23 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -443,7 +443,7 @@ void PF2_traceline(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 
 	ent = EDICT_NUM(stack[7]._int);
 
-	trace = SV_Move(v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
+	trace = SV_Trace(v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
 	pr_global_struct->trace_allsolid = trace.allsolid;
 	pr_global_struct->trace_startsolid = trace.startsolid;
@@ -503,7 +503,7 @@ void PF2_TraceCapsule(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*r
 	v4[1] = stack[12]._float;
 	v4[2] = stack[13]._float;
 
-	trace = SV_Move(v1, v3, v4, v2, nomonsters, ent);
+	trace = SV_Trace(v1, v3, v4, v2, nomonsters, ent);
 
 	pr_global_struct->trace_allsolid = trace.allsolid;
 	pr_global_struct->trace_startsolid = trace.startsolid;
@@ -941,7 +941,7 @@ void PF2_droptofloor(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	VectorCopy(ent->v.origin, end);
 	end[2] -= 256;
 
-	trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, end, false, ent);
+	trace = SV_Trace(ent->v.origin, ent->v.mins, ent->v.maxs, end, false, ent);
 
 	if (trace.fraction == 1 || trace.allsolid)
 	{

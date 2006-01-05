@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_move.c,v 1.4 2005/12/27 17:15:32 disconn3ct Exp $
+	$Id: sv_move.c,v 1.5 2006/01/05 15:01:23 disconn3ct Exp $
 */
 // sv_move.c -- monster movement
 
@@ -67,7 +67,7 @@ realcheck:
 	start[0] = stop[0] = (mins[0] + maxs[0])*0.5;
 	start[1] = stop[1] = (mins[1] + maxs[1])*0.5;
 	stop[2] = start[2] - 2*STEPSIZE;
-	trace = SV_Move (start, vec3_origin, vec3_origin, stop, true, ent);
+	trace = SV_Trace (start, vec3_origin, vec3_origin, stop, true, ent);
 
 	if (trace.fraction == 1.0)
 		return false;
@@ -80,7 +80,7 @@ realcheck:
 			start[0] = stop[0] = x ? maxs[0] : mins[0];
 			start[1] = stop[1] = y ? maxs[1] : mins[1];
 
-			trace = SV_Move (start, vec3_origin, vec3_origin, stop, true, ent);
+			trace = SV_Trace (start, vec3_origin, vec3_origin, stop, true, ent);
 
 			if (trace.fraction != 1.0 && trace.endpos[2] > bottom)
 				bottom = trace.endpos[2];
@@ -129,7 +129,7 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 				if (dz < 30)
 					neworg[2] += 8;
 			}
-			trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, neworg, false, ent);
+			trace = SV_Trace (ent->v.origin, ent->v.mins, ent->v.maxs, neworg, false, ent);
 
 			if (trace.fraction == 1)
 			{
@@ -154,7 +154,7 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 	VectorCopy (neworg, end);
 	end[2] -= STEPSIZE*2;
 
-	trace = SV_Move (neworg, ent->v.mins, ent->v.maxs, end, false, ent);
+	trace = SV_Trace (neworg, ent->v.mins, ent->v.maxs, end, false, ent);
 
 	if (trace.allsolid)
 		return false;
@@ -162,7 +162,7 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 	if (trace.startsolid)
 	{
 		neworg[2] -= STEPSIZE;
-		trace = SV_Move (neworg, ent->v.mins, ent->v.maxs, end, false, ent);
+		trace = SV_Trace (neworg, ent->v.mins, ent->v.maxs, end, false, ent);
 		if (trace.allsolid || trace.startsolid)
 			return false;
 	}
