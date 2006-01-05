@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: mathlib.c,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: mathlib.c,v 1.5 2006/01/05 14:59:14 disconn3ct Exp $
 */
 // mathlib.c -- math primitives
 
@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void Sys_Error (char *error, ...);
 
 vec3_t vec3_origin = {0,0,0};
-int nanmask = 255<<23;
 
 /*-----------------------------------------------------------------*/
 
@@ -47,7 +46,7 @@ float anglemod(float a)
 /*
 ==================
 BOPS_Error
- 
+
 Split out like this for ASM to call.
 ==================
 */
@@ -61,14 +60,14 @@ void BOPS_Error (void)
 /*
 ==================
 BoxOnPlaneSide
- 
+
 Returns 1, 2, or 1 + 2
 ==================
 */
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 {
-	float	dist1, dist2;
-	int		sides;
+	float dist1, dist2;
+	int sides;
 
 #if 0	// this is done by the BOX_ON_PLANE_SIDE macro before calling this
 	// function
@@ -170,28 +169,43 @@ int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
-	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
-
+	float angle;
+	float sr, sp, sy, cr, cp, cy;
+	
 	angle = angles[YAW] * (M_PI*2 / 360);
 	sy = sin(angle);
 	cy = cos(angle);
 	angle = angles[PITCH] * (M_PI*2 / 360);
 	sp = sin(angle);
 	cp = cos(angle);
-	angle = angles[ROLL] * (M_PI*2 / 360);
-	sr = sin(angle);
-	cr = cos(angle);
 
-	forward[0] = cp*cy;
-	forward[1] = cp*sy;
-	forward[2] = -sp;
-	right[0] = (-1*sr*sp*cy+-1*cr*-sy);
-	right[1] = (-1*sr*sp*sy+-1*cr*cy);
-	right[2] = -1*sr*cp;
-	up[0] = (cr*sp*cy+-sr*-sy);
-	up[1] = (cr*sp*sy+-sr*cy);
-	up[2] = cr*cp;
+	if (forward)
+	{
+		forward[0] = cp*cy;
+		forward[1] = cp*sy;
+		forward[2] = -sp;
+	}
+
+	if (right || up)
+	{
+		angle = angles[ROLL] * (M_PI*2 / 360);
+		sr = sin(angle);
+		cr = cos(angle);
+
+		if (right)
+		{
+			right[0] = (-1*sr*sp*cy+-1*cr*-sy);
+			right[1] = (-1*sr*sp*sy+-1*cr*cy);
+			right[2] = -1*sr*cp;
+		}
+
+		if (up)
+		{
+			up[0] = (cr*sp*cy+-sr*-sy);
+			up[1] = (cr*sp*sy+-sr*cy);
+			up[2] = cr*cp;
+		}
+	}
 }
 
 void VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc)
@@ -208,25 +222,16 @@ void CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross)
 	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-vec_t Length(vec3_t v)
+vec_t VectorLength (vec3_t v)
 {
-	int		i;
-	float	length;
-
-	length = 0;
-	for (i=0 ; i< 3 ; i++)
-		length += v[i]*v[i];
-	length = sqrt (length);		// FIXME
-
-	return length;
+	return sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
 float VectorNormalize (vec3_t v)
 {
-	float	length, ilength;
+	float length, ilength;
 
-	length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-	length = sqrt (length); // FIXME
+	length = sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 
 	if (length)
 	{
@@ -235,9 +240,8 @@ float VectorNormalize (vec3_t v)
 		v[1] *= ilength;
 		v[2] *= ilength;
 	}
-
+		
 	return length;
-
 }
 
 void VectorScale (vec3_t in, vec_t scale, vec3_t out)
