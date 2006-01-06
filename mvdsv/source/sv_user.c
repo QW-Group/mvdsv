@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_user.c,v 1.27 2006/01/05 15:04:55 disconn3ct Exp $
+	$Id: sv_user.c,v 1.28 2006/01/06 19:09:07 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2210,7 +2210,7 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	if (!inside && sv_speedcheck.value)
 	{
 		/* AM101 method */
-		tmp_time = (int)((realtime - host_client->last_check) * 1000); // ie. Old 'timepassed'
+		tmp_time = Q_rint((realtime - host_client->last_check) * 1000); // ie. Old 'timepassed'
 		if (tmp_time)
 		{
 			if (ucmd->msec > tmp_time)
