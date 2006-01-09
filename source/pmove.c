@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pmove.c,v 1.8 2006/01/05 15:03:39 disconn3ct Exp $
+	$Id: pmove.c,v 1.9 2006/01/09 20:37:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -115,7 +115,7 @@ int PM_FlyMove (void)
 	vec3_t		planes[MAX_CLIP_PLANES];
 	vec3_t		primal_velocity, original_velocity;
 	int			i, j;
-	pmtrace_t		trace;
+	trace_t		trace;
 	vec3_t		end;
 	float		time_left;
 	int			blocked;
@@ -152,7 +152,7 @@ int PM_FlyMove (void)
 			break;		// moved the entire distance
 
 		// save entity for contact
-		pmove.touchindex[pmove.numtouch] = trace.ent;
+		pmove.touchindex[pmove.numtouch] = trace.e.entnum;
 		pmove.numtouch++;
 
 		if (trace.plane.normal[2] > 0.7)
@@ -236,7 +236,7 @@ Player is on ground, with no upwards velocity
 void PM_GroundMove (void)
 {
 	vec3_t	start, dest;
-	pmtrace_t	trace;
+	trace_t	trace;
 	vec3_t	original, originalvel, down, up, downvel;
 	float	downdist, updist;
 
@@ -337,7 +337,7 @@ void PM_Friction (void)
 	float	friction;
 	float	drop;
 	vec3_t	start, stop;
-	pmtrace_t		trace;
+	trace_t		trace;
 
 	if (pmove.waterjumptime)
 		return;
@@ -483,7 +483,7 @@ void PM_WaterMove (void)
 	float	wishspeed;
 	vec3_t	wishdir;
 	vec3_t	start, dest;
-	pmtrace_t	trace;
+	trace_t	trace;
 
 	//
 	// user intentions
@@ -633,7 +633,7 @@ void PM_CategorizePosition (void)
 {
 	vec3_t		point;
 	int			cont;
-	pmtrace_t		tr;
+	trace_t		tr;
 
 	// if the player hull point one unit down is solid, the player
 	// is on ground
@@ -652,7 +652,7 @@ void PM_CategorizePosition (void)
 		if ( tr.plane.normal[2] < 0.7)
 			onground = -1;	// too steep
 		else
-			onground = tr.ent;
+			onground = tr.e.entnum;
 		if (onground != -1)
 		{
 			pmove.waterjumptime = 0;
@@ -661,9 +661,9 @@ void PM_CategorizePosition (void)
 		}
 
 		// standing on an entity other than the world
-		if (tr.ent > 0)
+		if (tr.e.entnum > 0)
 		{
-			pmove.touchindex[pmove.numtouch] = tr.ent;
+			pmove.touchindex[pmove.numtouch] = tr.e.entnum;
 			pmove.numtouch++;
 		}
 	}

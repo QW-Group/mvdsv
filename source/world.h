@@ -16,29 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: world.h,v 1.6 2006/01/05 15:01:23 disconn3ct Exp $
+	$Id: world.h,v 1.7 2006/01/09 20:37:15 disconn3ct Exp $
 */
 // world.h
+#ifndef _WORLD_H_
+#define _WORLD_H_
 
-typedef struct
-{
-	vec3_t	normal;
-	float	dist;
-} plane_t;
-
-typedef struct
-{
-	qboolean	allsolid;	// if true, plane is not valid
-	qboolean	startsolid;	// if true, the initial point was in a solid area
-	qboolean	inopen, inwater;
-	float	fraction;		// time completed, 1.0 = didn't hit anything
-	vec3_t	endpos;			// final position
-	plane_t	plane;			// surface normal at impact
-	edict_t	*ent;			// entity the surface is on
-} trace_t;
-
-
-#define	MOVE_NORMAL		0
+#define	MOVE_NORMAL	0
 #define	MOVE_NOMONSTERS	1
 #define	MOVE_MISSILE	2
 
@@ -50,6 +34,7 @@ typedef struct areanode_s
 	link_t	trigger_edicts;
 	link_t	solid_edicts;
 } areanode_t;
+
 
 #define	AREA_DEPTH	4
 #define	AREA_NODES	32
@@ -89,3 +74,6 @@ trace_t SV_Trace (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, 
 // shouldn't be considered solid objects
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
+
+#endif /* _WORLD_H_ */
+

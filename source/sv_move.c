@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_move.c,v 1.5 2006/01/05 15:01:23 disconn3ct Exp $
+	$Id: sv_move.c,v 1.6 2006/01/09 20:37:15 disconn3ct Exp $
 */
 // sv_move.c -- monster movement
 
@@ -203,7 +203,7 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 		//		Con_Printf ("back on ground\n");
 		ent->v.flags = (int)ent->v.flags & ~FL_PARTIALGROUND;
 	}
-	ent->v.groundentity = EDICT_TO_PROG(trace.ent);
+	ent->v.groundentity = EDICT_TO_PROG(trace.e.ent);
 
 	// the move is ok
 	if (relink)

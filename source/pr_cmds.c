@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.15 2006/01/05 15:06:24 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.16 2006/01/09 20:37:15 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -582,8 +582,8 @@ void PF_traceline (void)
 	VectorCopy (trace.endpos, pr_global_struct->trace_endpos);
 	VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
 	pr_global_struct->trace_plane_dist =  trace.plane.dist;
-	if (trace.ent)
-		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.ent);
+	if (trace.e.ent)
+		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.e.ent);
 	else
 		pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
 }
@@ -1638,7 +1638,7 @@ void PF_droptofloor (void)
 		VectorCopy (trace.endpos, ent->v.origin);
 		SV_LinkEdict (ent, false);
 		ent->v.flags = (int)ent->v.flags | FL_ONGROUND;
-		ent->v.groundentity = EDICT_TO_PROG(trace.ent);
+		ent->v.groundentity = EDICT_TO_PROG(trace.e.ent);
 		G_FLOAT(OFS_RETURN) = 1;
 	}
 }
