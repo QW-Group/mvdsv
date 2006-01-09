@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.13 2005/12/29 11:31:17 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.14 2006/01/09 01:15:39 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -326,33 +326,6 @@ char *Sys_ConsoleInput (void)
 	static char	text[256], *t;
 	static int	len = 0;
 
-#ifdef NEWWAY
-	fd_set		fdset;
-	struct timeval	timeout;
-	int		max = 1;
-	if (!(telnetport && telnet_connected) && !do_stdin)
-		return NULL;
-
-	FD_ZERO(&fdset);
-	if (telnetport && telnet_connected)
-	{
-		FD_SET(telnet_iosock, &fdset);
-		max += telnet_iosock;
-	}
-	if (do_stdin)
-		FD_SET(0, &fdset); // stdin
-
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 0;
-
-	if (select (max + 1, &fdset, NULL, NULL, &timeout) == -1)
-		return NULL;
-
-	if (do_stdin)
-		stdin_ready = FD_ISSET(0, &fdset);
-	if (telnetport && telnet_connected)
-		iosock_ready = FD_ISSET(telnet_iosock, &fdset);
-#endif
 
 	if (!(telnetport && iosock_ready && telnet_connected) && !(do_stdin && stdin_ready))
 		return NULL;		// the select didn't say it was ready
@@ -665,10 +638,10 @@ int main (int argc, char *argv[])
 	struct group	*gr;
 	char	*user_name, *group_name = NULL, *chroot_dir;
 	//Added by VVD }
-#ifndef NEWWAY
+
 	struct timeval timeout;
 	fd_set	fdset;
-#endif
+
 	argv0 = argv[0];
 	telnet_connected = 0;
 
@@ -786,7 +759,7 @@ int main (int argc, char *argv[])
 	// main loop
 	//
 	oldtime = Sys_DoubleTime () - 0.1;
-#ifndef NEWWAY
+
 	while (1)
 	{
 		// select on the net socket and stdin
@@ -836,24 +809,6 @@ int main (int argc, char *argv[])
 		if (sys_extrasleep.value)
 			usleep (sys_extrasleep.value);
 	}
-#else
-	while (1)
-	{
-		do
-		{
-			newtime = Sys_DoubleTime ();
-			time = newtime - oldtime;
-		}
-		while (time < 0.001);
 
-		SV_Frame (time);
-		oldtime = newtime;
-
-		// extrasleep is just a way to generate a fucked up connection on purpose
-		if (sys_extrasleep.value)
-			usleep (sys_extrasleep.value);
-	}
-#endif
 	return 1;
 }
-

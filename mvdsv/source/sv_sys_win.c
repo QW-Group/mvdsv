@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.9 2005/12/29 11:31:17 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.10 2006/01/09 01:15:39 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -632,14 +632,14 @@ char	*newargv[256];
 int main (int argc, char **argv)
 {
 	quakeparms_t	parms;
-	double			newtime, time, oldtime;
+	double		newtime, time, oldtime;
 	static	char	cwd[1024];
-#ifndef NEWWAY
+
 	struct timeval	timeout;
-	fd_set			fdset;
-#endif
-	int				t;
-	int				sleep_msec;
+	fd_set		fdset;
+
+	int		t;
+	int		sleep_msec;
 
 	GetConsoleTitle(title, sizeof(title));
 	COM_InitArgv (argc, argv);
@@ -668,7 +668,7 @@ int main (int argc, char **argv)
 	// main loop
 	//
 	oldtime = Sys_DoubleTime () - 0.1;
-#ifndef NEWWAY
+
 	while (1)
 	{
 		sleep_msec = sys_sleep.value;
@@ -697,27 +697,6 @@ int main (int argc, char **argv)
 
 		SV_Frame (time);
 	}
-#else
-
-	/* main window message loop */
-	while (1)
-	{
-		// if at a full screen console, don't update unless needed
-		Sleep (1);
-
-		do
-		{
-			newtime = Sys_DoubleTime ();
-			time = newtime - oldtime;
-		}
-		while (time < 0.001);
-
-		//_controlfp( _PC_24, _MCW_PC );
-
-		SV_Frame (time);
-		oldtime = newtime;
-	}
-#endif
 
 	return true;
 }

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.8 2006/01/05 14:58:26 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.9 2006/01/09 01:15:39 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -945,16 +945,6 @@ void SV_Physics (void)
 	if (sv.state != ss_active)
 		return;
 
-#ifdef NEWWAY
-	// don't bother running a frame if sys_ticrate seconds haven't passed
-	sv_frametime = sv_ticrate.value;
-	sv.time += sv_ticrate.value;
-	if (sv.time < sv.gametime)
-	{
-		Con_Printf ("sv highclamp\n");
-		sv.gametime = sv.time;
-	}
-#else
 	if (sv.old_time)
 	{
 		// don't bother running a frame if sv_mintic seconds haven't passed
@@ -967,8 +957,6 @@ void SV_Physics (void)
 	}
 	else
 		sv_frametime = 0.1; // initialization frame
-
-#endif
 
 	pr_global_struct->frametime = sv_frametime;
 
