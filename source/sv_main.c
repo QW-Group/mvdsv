@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.33 2006/01/09 01:15:39 disconn3ct Exp $
+	$Id: sv_main.c,v 1.34 2006/01/09 02:25:18 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -2386,20 +2386,6 @@ void SV_Frame (double time)
 {
 	static double	start, end;
 	double	demo_start, demo_end;
-
-#if 0	// disabled for now
-
-	if (sv.state != ss_active || cls.state != ca_active || (int)maxclients.value > 1 || key_dest == key_game)
-	{
-		sv.paused &= ~2;
-		cl.paused &= ~4;
-	}
-	else
-	{
-		sv.paused |= 2;
-		cl.paused |= 4;
-	}
-#endif
 
 	start = Sys_DoubleTime ();
 	svs.stats.idle += start - end;
