@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.20 2006/01/05 15:07:02 disconn3ct Exp $
+	$Id: server.h,v 1.21 2006/01/09 01:15:38 disconn3ct Exp $
 */
 // server.h
 
@@ -24,8 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __SERVER_H__
 
 #include "progs.h"
-
-//#define NEWWAY
 
 #define	MAX_MASTERS 8 // max recipients for heartbeat packets
 
@@ -55,8 +53,7 @@ typedef struct
 
 	double		time;
 	double		old_time;			// bumped by SV_Physics
-	double		gametime;
-	
+
 	int		lastcheck;			// used by PF_checkclient
 	double		lastchecktime;			// for monster ai
 
@@ -660,6 +657,7 @@ void SV_MVDStop (int reason);
 void SV_MVDStop_f (void);
 void SV_MVDWritePackets (int num);
 void MVD_Init (void);
+void SV_MVDStream_Poll(void);
 
 extern demo_t	demo; // server demo struct
 

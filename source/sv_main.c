@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.32 2006/01/05 15:07:43 disconn3ct Exp $
+	$Id: sv_main.c,v 1.33 2006/01/09 01:15:39 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -36,12 +36,9 @@ client_t	*host_client;			// current client
 
 cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map changes
 
-#ifdef NEWWAY
-cvar_t	sv_ticrate = {"sv_ticrate","0.014"};	// bound the size of the
-#endif //NEWWAY
-cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 
-cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	//
+cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
+cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic
 
 cvar_t	sys_select_timeout = {"sys_select_timeout", "10000"};
 // MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
@@ -2413,12 +2410,8 @@ void SV_Frame (double time)
 	// decide the simulation time
 	if (!sv.paused)
 	{
-
 		realtime += time;
-#ifndef NEWWAY
 		sv.time += time;
-#endif
-		sv.gametime += time;
 	}
 
 	// check timeouts
@@ -2432,11 +2425,8 @@ void SV_Frame (double time)
 	// toggle the log buffer if full
 	SV_CheckLog ();
 
-	{
-		void SV_MVDStream_Poll(void);
-		SV_MVDStream_Poll();
-	}
-
+	SV_MVDStream_Poll();
+	
 	// check for commands typed to the host
 	SV_GetConsoleCommands ();
 
@@ -2448,34 +2438,6 @@ void SV_Frame (double time)
 
 	SV_CheckVars ();
 
-#ifdef NEWWAY
-	if (sv.gametime < sv.time)
-	{
-		// never let the time get too far off
-		if (sv.time - sv.gametime > 0.1)
-		{
-			//if (sv_showclamp->value)
-			Con_Printf ("sv lowclamp\n");
-			sv.gametime = sv.time - 0.1;
-		}
-
-		end = Sys_DoubleTime ();
-		svs.stats.active += end-start;
-
-		if (NET_Sleep(sv.time - sv.gametime) <= 0)
-			return;
-
-		start = Sys_DoubleTime ();
-		svs.stats.idle += start - end;
-		//return;
-	}
-	else if (!sv.paused)
-		SV_Physics ();
-
-	// get packets
-	SV_ReadPackets ();
-#else
-
 	// get packets
 	SV_ReadPackets ();
 
@@ -2485,7 +2447,6 @@ void SV_Frame (double time)
 	// move autonomous things around if enough time has passed
 	if (!sv.paused)
 		SV_Physics ();
-#endif
 
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
@@ -2587,9 +2548,6 @@ void SV_InitLocal (void)
 
 	Cvar_RegisterVariable (&sv_nailhack);
 
-#ifdef NEWWAY
-	Cvar_RegisterVariable (&sv_ticrate);
-#endif //NEWWAY
 	Cvar_RegisterVariable (&sv_mintic);
 	Cvar_RegisterVariable (&sv_maxtic);
 	Cvar_RegisterVariable (&sys_select_timeout);

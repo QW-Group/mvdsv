@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.11 2006/01/05 15:05:07 disconn3ct Exp $
+	$Id: sv_init.c,v 1.12 2006/01/09 01:15:38 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -611,8 +611,6 @@ void SV_SpawnServer (char *server)
 		//ZOID - make sure we update frags right
 		svs.clients[i].old_frags = 0;
 	}
-
-	sv.time = sv.gametime = 1.0;
 
 	strlcpy (sv.name, server, MAP_NAME_LEN);
 	snprintf (sv.modelname, MAX_QPATH, "maps/%s.bsp", server);
