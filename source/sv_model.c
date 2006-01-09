@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_model.c,v 1.7 2006/01/05 15:03:39 disconn3ct Exp $
+	$Id: sv_model.c,v 1.8 2006/01/09 20:38:59 disconn3ct Exp $
 */
 // models.c -- model loading and caching
 
@@ -281,6 +281,7 @@ byte	*mod_base;
 Mod_LoadTextures
 =================
 */
+#if 0
 void Mod_LoadTextures (lump_t *l)
 {
 	int		i, j, pixels, num, max, altmax;
@@ -421,12 +422,13 @@ void Mod_LoadTextures (lump_t *l)
 		}
 	}
 }
-
+#endif 
 /*
 =================
 Mod_LoadLighting
 =================
 */
+#if 0
 void Mod_LoadLighting (lump_t *l)
 {
 	if (!l->filelen)
@@ -437,7 +439,7 @@ void Mod_LoadLighting (lump_t *l)
 	loadmodel->lightdata = Hunk_AllocName ( l->filelen, loadname);
 	memcpy (loadmodel->lightdata, mod_base + l->fileofs, l->filelen);
 }
-
+#endif
 
 /*
 =================
@@ -542,6 +544,7 @@ void Mod_LoadSubmodels (lump_t *l)
 Mod_LoadEdges
 =================
 */
+#if 0
 void Mod_LoadEdges (lump_t *l)
 {
 	dedge_t *in;
@@ -563,12 +566,13 @@ void Mod_LoadEdges (lump_t *l)
 		out->v[1] = (unsigned short)LittleShort(in->v[1]);
 	}
 }
-
+#endif
 /*
 =================
 Mod_LoadTexinfo
 =================
 */
+#if 0
 void Mod_LoadTexinfo (lump_t *l)
 {
 	texinfo_t *in;
@@ -628,7 +632,7 @@ void Mod_LoadTexinfo (lump_t *l)
 		}
 	}
 }
-
+#endif
 /*
 ================
 CalcSurfaceExtents
@@ -636,6 +640,7 @@ CalcSurfaceExtents
 Fills in s->texturemins[] and s->extents[]
 ================
 */
+#if 0
 void CalcSurfaceExtents (msurface_t *s)
 {
 	float	mins[2], maxs[2], val;
@@ -681,13 +686,14 @@ void CalcSurfaceExtents (msurface_t *s)
 			SV_Error ("Bad surface extents");
 	}
 }
-
+#endif
 
 /*
 =================
 Mod_LoadFaces
 =================
 */
+#if 0
 void Mod_LoadFaces (lump_t *l)
 {
 	dface_t		*in;
@@ -751,7 +757,7 @@ void Mod_LoadFaces (lump_t *l)
 		}
 	}
 }
-
+#endif
 
 /*
 =================
@@ -957,6 +963,7 @@ void Mod_MakeHull0 (void)
 Mod_LoadMarksurfaces
 =================
 */
+#if 0
 void Mod_LoadMarksurfaces (lump_t *l)
 {
 	int		i, j, count;
@@ -980,12 +987,14 @@ void Mod_LoadMarksurfaces (lump_t *l)
 		out[i] = loadmodel->surfaces + j;
 	}
 }
+#endif
 
 /*
 =================
 Mod_LoadSurfedges
 =================
 */
+#if 0
 void Mod_LoadSurfedges (lump_t *l)
 {
 	int		i, count;
@@ -1003,7 +1012,7 @@ void Mod_LoadSurfedges (lump_t *l)
 	for ( i=0 ; i<count ; i++)
 		out[i] = LittleLong (in[i]);
 }
-
+#endif 
 /*
 =================
 Mod_LoadPlanes
@@ -1090,14 +1099,14 @@ void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	}
 
 	Mod_LoadVertexes (&header->lumps[LUMP_VERTEXES]);
-	Mod_LoadEdges (&header->lumps[LUMP_EDGES]);
-	Mod_LoadSurfedges (&header->lumps[LUMP_SURFEDGES]);
-	Mod_LoadTextures (&header->lumps[LUMP_TEXTURES]);
-	Mod_LoadLighting (&header->lumps[LUMP_LIGHTING]);
+//	Mod_LoadEdges (&header->lumps[LUMP_EDGES]);
+//	Mod_LoadSurfedges (&header->lumps[LUMP_SURFEDGES]);
+//	Mod_LoadTextures (&header->lumps[LUMP_TEXTURES]);
+//	Mod_LoadLighting (&header->lumps[LUMP_LIGHTING]);
 	Mod_LoadPlanes (&header->lumps[LUMP_PLANES]);
-	Mod_LoadTexinfo (&header->lumps[LUMP_TEXINFO]);
-	Mod_LoadFaces (&header->lumps[LUMP_FACES]);
-	Mod_LoadMarksurfaces (&header->lumps[LUMP_MARKSURFACES]);
+//	Mod_LoadTexinfo (&header->lumps[LUMP_TEXINFO]);
+//	Mod_LoadFaces (&header->lumps[LUMP_FACES]);
+//	Mods (&header->lumps[LUMP_MARKSURFACES]);
 	Mod_LoadVisibility (&header->lumps[LUMP_VISIBILITY]);
 	Mod_LoadLeafs (&header->lumps[LUMP_LEAFS]);
 	Mod_LoadNodes (&header->lumps[LUMP_NODES]);
