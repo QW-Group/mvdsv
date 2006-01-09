@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: world.c,v 1.8 2006/01/05 15:01:23 disconn3ct Exp $
+	$Id: world.c,v 1.9 2006/01/09 20:37:15 disconn3ct Exp $
 */
 // world.c -- world query functions
 
@@ -727,7 +727,7 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t max
 
 	// did we clip the move?
 	if (trace.fraction < 1 || trace.startsolid  )
-		trace.ent = ent;
+		trace.e.ent = ent;
 
 	return trace;
 }
@@ -791,7 +791,7 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		if (trace.allsolid || trace.startsolid ||
 		        trace.fraction < clip->trace.fraction)
 		{
-			trace.ent = touch;
+			trace.e.ent = touch;
 			if (clip->trace.startsolid)
 			{
 				clip->trace = trace;

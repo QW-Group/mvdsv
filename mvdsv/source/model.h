@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: model.h,v 1.8 2006/01/04 03:48:33 disconn3ct Exp $
+	$Id: model.h,v 1.9 2006/01/09 20:37:14 disconn3ct Exp $
 */
 
 #ifndef __MODEL__
@@ -45,6 +45,26 @@ typedef struct mplane_s
 	byte	signbits;		// signx + signy<<1 + signz<<1
 	byte	pad[2];
 } mplane_t;
+
+typedef struct
+{
+	vec3_t	normal;
+	float	dist;
+} plane_t;
+
+typedef struct
+{
+	qboolean	allsolid;	// if true, plane is not valid
+	qboolean	startsolid;	// if true, the initial point was in a solid area
+	qboolean	inopen, inwater;
+	float		fraction;	// time completed, 1.0 = didn't hit anything
+	vec3_t		endpos;		// final position
+	plane_t		plane;		// surface normal at impact
+	union {				// entity the surface is on
+		int		entnum;	// for pmove
+		struct edict_s	*ent;	// for sv_world
+	} e;
+} trace_t;
 
 typedef struct texture_s
 {

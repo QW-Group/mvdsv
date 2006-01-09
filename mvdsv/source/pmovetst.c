@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pmovetst.c,v 1.5 2006/01/04 03:31:49 disconn3ct Exp $
+	$Id: pmovetst.c,v 1.6 2006/01/09 20:37:15 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -176,7 +176,7 @@ PM_RecursiveHullCheck
  
 ==================
 */
-qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, pmtrace_t *trace)
+qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace)
 {
 	dclipnode_t	*node;
 	mplane_t	*plane;
@@ -350,20 +350,20 @@ qboolean PM_TestPlayerPosition (vec3_t pos)
 PM_PlayerTrace
 ================
 */
-pmtrace_t PM_PlayerTrace (vec3_t start, vec3_t end)
+trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 {
-	pmtrace_t		trace, total;
+	trace_t		trace, total;
 	vec3_t		offset;
 	vec3_t		start_l, end_l;
 	hull_t		*hull;
-	int			i;
+	int		i;
 	physent_t	*pe;
 	vec3_t		mins, maxs;
 
 	// fill in a default trace
-	memset (&total, 0, sizeof(pmtrace_t));
+	memset (&total, 0, sizeof(trace_t));
 	total.fraction = 1;
-	total.ent = -1;
+	trace.e.entnum = -1;
 	VectorCopy (end, total.endpos);
 
 	for (i=0 ; i< pmove.numphysent ; i++)
@@ -386,7 +386,7 @@ pmtrace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 		VectorSubtract (end, offset, end_l);
 
 		// fill in a default trace
-		memset (&trace, 0, sizeof(pmtrace_t));
+		memset (&trace, 0, sizeof(trace_t));
 		trace.fraction = 1;
 		trace.allsolid = true;
 		//		trace.startsolid = true;
@@ -406,7 +406,7 @@ pmtrace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 			// fix trace up by the offset
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
-			total.ent = i;
+			trace.e.entnum = i;
 		}
 
 	}
@@ -422,9 +422,9 @@ PM_TraceLine
 FIXME: merge with PM_PlayerTrace (PM_Move?)
 ================
 */
-pmtrace_t PM_TraceLine (vec3_t start, vec3_t end)
+trace_t PM_TraceLine (vec3_t start, vec3_t end)
 {
-	pmtrace_t		trace, total;
+	trace_t		trace, total;
 	vec3_t		offset;
 	vec3_t		start_l, end_l;
 	hull_t		*hull;
@@ -432,9 +432,9 @@ pmtrace_t PM_TraceLine (vec3_t start, vec3_t end)
 	physent_t	*pe;
 
 	// fill in a default trace
-	memset (&total, 0, sizeof(pmtrace_t));
+	memset (&total, 0, sizeof(trace_t));
 	total.fraction = 1;
-	total.ent = -1;
+	trace.e.entnum = -1;
 	VectorCopy (end, total.endpos);
 
 	for (i=0 ; i< pmove.numphysent ; i++)
@@ -453,7 +453,7 @@ pmtrace_t PM_TraceLine (vec3_t start, vec3_t end)
 		VectorSubtract (end, offset, end_l);
 
 		// fill in a default trace
-		memset (&trace, 0, sizeof(pmtrace_t));
+		memset (&trace, 0, sizeof(trace_t));
 		trace.fraction = 1;
 		trace.allsolid = true;
 		//		trace.startsolid = true;
@@ -473,7 +473,7 @@ pmtrace_t PM_TraceLine (vec3_t start, vec3_t end)
 			// fix trace up by the offset
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
-			total.ent = i;
+			trace.e.entnum = i;
 		}
 
 	}

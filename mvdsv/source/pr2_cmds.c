@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.18 2006/01/05 15:01:23 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.19 2006/01/09 20:37:15 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -454,8 +454,8 @@ void PF2_traceline(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 	VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
 	pr_global_struct->trace_plane_dist = trace.plane.dist;
 
-	if (trace.ent)
-		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.ent);
+	if (trace.e.ent)
+		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.e.ent);
 	else
 		pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
 }
@@ -514,8 +514,8 @@ void PF2_TraceCapsule(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*r
 	VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
 	pr_global_struct->trace_plane_dist = trace.plane.dist;
 
-	if (trace.ent)
-		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.ent);
+	if (trace.e.ent)
+		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.e.ent);
 	else
 		pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
 }
@@ -953,7 +953,7 @@ void PF2_droptofloor(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		VectorCopy(trace.endpos, ent->v.origin);
 		SV_LinkEdict(ent, false);
 		ent->v.flags = (int) ent->v.flags | FL_ONGROUND;
-		ent->v.groundentity = EDICT_TO_PROG(trace.ent);
+		ent->v.groundentity = EDICT_TO_PROG(trace.e.ent);
 		retval->_int =  1;
 		return;
 	}
