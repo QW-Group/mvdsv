@@ -1,8 +1,9 @@
 
-$Id: changes.txt,v 1.45 2006/01/09 20:51:20 disconn3ct Exp $
+$Id: changes.txt,v 1.46 2006/01/10 01:56:02 disconn3ct Exp $
 
 ----
 MVDSV v0.19.01-CVS build 22?? (2006.??.??)
+- improved timer accuracy for win32. use -nohwtimer to use old-style timing (by disconnect) // from ZQuake
 - bugfix to bliP's sv_speedcheck: round to nearest value instead of rounding down
   This bug cause to wrong frametime --> wrong /fpslist (ktpro/ktx commands) output.
 - To run server you only need a map (.bsp file), qwprogs and mvdsv executable.

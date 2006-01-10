@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: winquake.h,v 1.5 2006/01/04 03:48:33 disconn3ct Exp $
+	$Id: winquake.h,v 1.6 2006/01/10 01:54:45 disconn3ct Exp $
 */
 // winquake.h: Win32-specific Quake header file
 
@@ -31,8 +31,6 @@ extern	int		global_nCmdShow;
 
 extern HWND		mainwindow;
 extern qboolean		Minimized;
-
-extern qboolean	WinNT;
 
 int (PASCAL FAR *pWSAStartup)(WORD wVersionRequired, LPWSADATA lpWSAData);
 int (PASCAL FAR *pWSACleanup)(void);

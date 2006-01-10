@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.10 2006/01/09 01:15:39 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.11 2006/01/10 01:54:45 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -40,8 +40,6 @@ extern cvar_t auth_timeout;
 
 cvar_t	sys_nostdout = {"sys_nostdout", "0"};
 cvar_t	sys_sleep = {"sys_sleep", "8"};
-
-qboolean WinNT;
 
 static char title[16];
 
@@ -266,12 +264,48 @@ void Sys_Error (char *error, ...)
 	Sys_Exit (1);
 }
 
-#if 1
+static double pfreq;
+static qboolean hwtimer = false;
+static __int64 startcount;
+void Sys_InitDoubleTime (void)
+{
+	__int64 freq;
+
+	if (!COM_CheckParm("-nohwtimer") &&
+		QueryPerformanceFrequency ((LARGE_INTEGER *)&freq) && freq > 0)
+	{
+		// hardware timer available
+		pfreq = (double)freq;
+		hwtimer = true;
+		QueryPerformanceCounter ((LARGE_INTEGER *)&startcount);
+	}
+	else
+	{
+		// make sure the timer is high precision, otherwise
+		// NT gets 18ms resolution
+		timeBeginPeriod (1);
+	}
+}
+
 double Sys_DoubleTime (void)
 {
+	__int64 pcount;
+
 	static DWORD starttime;
 	static qboolean first = true;
 	DWORD now;
+
+	if (hwtimer)
+	{
+		QueryPerformanceCounter ((LARGE_INTEGER *)&pcount);
+		if (first) {
+			first = false;
+			startcount = pcount;
+			return 0.0;
+		}
+		// TODO: check for wrapping; is it necessary?
+		return (pcount - startcount) / pfreq;
+	}
 
 	now = timeGetTime();
 
@@ -290,14 +324,7 @@ double Sys_DoubleTime (void)
 
 	return (now - starttime) / 1000.0;
 }
-
-#else
-
-/*
-================
-Sys_DoubleTime
-================
-*/
+#if 0
 double Sys_DoubleTime (void)
 {
 	double t;
@@ -305,15 +332,14 @@ double Sys_DoubleTime (void)
 	static int	starttime;
 
 	_ftime( &tstruct );
-
+ 
 	if (!starttime)
 		starttime = tstruct.time;
 	t = (tstruct.time-starttime) + tstruct.millitm*0.001;
-
+	
 	return t;
 }
 #endif
-
 /*
 ================
 Sys_ConsoleInput
@@ -523,6 +549,7 @@ is marked
 */
 void Sys_Init (void)
 {
+	qboolean	WinNT;
 	OSVERSIONINFO	vinfo;
 
 	// make sure the timer is high precision, otherwise
@@ -563,6 +590,8 @@ void Sys_Init (void)
 		if (WinNT)
 			Cvar_Set (&sys_sleep, "0");
 	}
+
+	Sys_InitDoubleTime ();
 }
 
 int NET_Sleep(double sec)
