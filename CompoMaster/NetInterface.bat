@@ -1,0 +1,1 @@
+java -cp CompoMaster.jar Data/NetInterface %1 %2

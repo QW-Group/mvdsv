@@ -1,0 +1,1 @@
+start javaw -cp CompoMaster.jar CompoMaster/CompoMaster
