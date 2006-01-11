@@ -202,6 +202,10 @@ SOURCE=sv_main.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\sv_master.c
+# End Source File
+# Begin Source File
+
 SOURCE=sv_mod_frags.c
 # End Source File
 # Begin Source File
@@ -484,7 +488,7 @@ SOURCE=math.s
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build
-OutDir=SRelease
+OutDir=.\SRelease
 InputPath=math.s
 InputName=math
 
@@ -499,7 +503,7 @@ InputName=math
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=SDebug
+OutDir=.\SDebug
 InputPath=math.s
 InputName=math
 
@@ -522,7 +526,7 @@ SOURCE=worlda.s
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build
-OutDir=SRelease
+OutDir=.\SRelease
 InputPath=worlda.s
 InputName=worlda
 
@@ -537,7 +541,7 @@ InputName=worlda
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=SDebug
+OutDir=.\SDebug
 InputPath=worlda.s
 InputName=worlda
 
