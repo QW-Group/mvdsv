@@ -1,8 +1,12 @@
 
-$Id: changes.txt,v 1.46 2006/01/10 01:56:02 disconn3ct Exp $
+$Id: changes.txt,v 1.47 2006/01/11 17:24:28 vvd0 Exp $
 
 ----
 MVDSV v0.19.01-CVS build 22?? (2006.??.??)
+- hardcore cleanup. Removed lot of client-onlt code (by Angel)
+- work on SunOS SPARC and ix86 targets now
+- added MSVC 7.1 solution/project file
+[server]
 - improved timer accuracy for win32. use -nohwtimer to use old-style timing (by disconnect) // from ZQuake
 - bugfix to bliP's sv_speedcheck: round to nearest value instead of rounding down
   This bug cause to wrong frametime --> wrong /fpslist (ktpro/ktx commands) output.
@@ -13,12 +17,7 @@ MVDSV v0.19.01-CVS build 22?? (2006.??.??)
   can understand it :P } (by disconnect)
 - sv_nailhack is 1 by default. Dunno why it was set 0 at begin of 'mvd-era'. (by disconnect)
 - new cvar "sv_maxuserid" 99 by default. limits userid in 1...99 range. (by disconnect)
-- hardcore cleanup. Removed lot of client-onlt code (by Angel)
-- removed client sources. MVDSV now consist of server and qwdtools only (by Angel)
 - server-side flash for TeamFortress (oldgrens mode) (ported by Angel from QW262)
-- work on SunOS SPARC and ix86 targets now
-- added MSVC 7.1 solution/project file
-[server]
 - added possibility to set small speed for objects on map
 (by ivan)
 - added possibility to set non integer volume for sounds from mods
@@ -49,6 +48,8 @@ MVDSV v0.19.01-CVS build 22?? (2006.??.??)
   - MAX_REDIRECTMESSAGES increased from 4 to 128 (EXPERIMENTAL)
 - bugfix from 0.160b: pause with sv_minping > 0 cause all players disconnected
 (Thaks to Siberex)
+[client]
+- removed client sources. MVDSV now consist of server and qwdtools only (by Angel)
 
 
 ----

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_login.c,v 1.10 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: sv_login.c,v 1.11 2006/01/11 17:24:29 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -253,7 +253,8 @@ void SV_CreateAccount_f(void)
 			continue;
 		}
 
-		if (!strcasecmp(accounts[i].login, Cmd_Argv(1)) || (use == use_ip && !strcasecmp(accounts[i].login, Cmd_Argv(2))))
+		if (!strcasecmp(accounts[i].login, Cmd_Argv(1)) ||
+			(use == use_ip && !strcasecmp(accounts[i].login, Cmd_Argv(2))))
 			break;
 
 		c++;
@@ -275,7 +276,7 @@ void SV_CreateAccount_f(void)
 		i = 2;
 	else
 		i = 1;
-	strlcpy(accounts[spot].pass, sv_hashpasswords.value ?
+	strlcpy(accounts[spot].pass, sv_hashpasswords.value && use == use_log ?
 	        SHA1(Cmd_Argv(i)) : Cmd_Argv(i), MAX_LOGINNAME);
 
 	accounts[spot].state = a_ok;
@@ -446,7 +447,8 @@ int checklogin(char *log, char *pass, int num, int use)
 			continue;
 
 		if (use == accounts[i].use &&
-		        /*use == use_log && accounts[i].use == use_log && */!strcasecmp(log, accounts[i].login))
+		        /*use == use_log && accounts[i].use == use_log && */
+			!strcasecmp(log, accounts[i].login))
 		{
 			if (accounts[i].inuse && accounts[i].use == use_log)
 				return -1;
