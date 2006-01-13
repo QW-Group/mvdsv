@@ -1,6 +1,6 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
@@ -9,14 +9,14 @@ of the License, or (at your option) any later version.
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: pmovetst.c,v 1.6 2006/01/09 20:37:15 disconn3ct Exp $
+
+	$Id: pmovetst.c,v 1.7 2006/01/13 13:39:10 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -32,7 +32,7 @@ extern	vec3_t player_maxs;
 /*
 ===================
 PM_InitBoxHull
- 
+
 Set up the planes and clipnodes so that the six floats of a bounding box
 can just be stored out and get a proper hull_t structure.
 ===================
@@ -69,7 +69,7 @@ void PM_InitBoxHull (void)
 /*
 ===================
 PM_HullForBox
- 
+
 To keep everything totally uniform, bounding boxes are turned into small
 BSP trees instead of being compared directly.
 ===================
@@ -90,7 +90,7 @@ hull_t	*PM_HullForBox (vec3_t mins, vec3_t maxs)
 /*
 ==================
 PM_HullPointContents
- 
+
 ==================
 */
 int PM_HullPointContents (hull_t *hull, int num, vec3_t p)
@@ -123,7 +123,7 @@ int PM_HullPointContents (hull_t *hull, int num, vec3_t p)
 /*
 ==================
 PM_PointContents
- 
+
 ==================
 */
 int PM_PointContents (vec3_t p)
@@ -161,9 +161,9 @@ int PM_PointContents (vec3_t p)
 
 /*
 ===============================================================================
- 
+
 LINE TESTING IN HULLS
- 
+
 ===============================================================================
 */
 
@@ -173,7 +173,7 @@ LINE TESTING IN HULLS
 /*
 ==================
 PM_RecursiveHullCheck
- 
+
 ==================
 */
 qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace)
@@ -312,7 +312,7 @@ qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 /*
 ================
 PM_TestPlayerPosition
- 
+
 Returns false if the given player position is not valid (in solid)
 ================
 */
@@ -363,7 +363,7 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 	// fill in a default trace
 	memset (&total, 0, sizeof(trace_t));
 	total.fraction = 1;
-	trace.e.entnum = -1;
+	total.e.entnum = -1;
 	VectorCopy (end, total.endpos);
 
 	for (i=0 ; i< pmove.numphysent ; i++)
@@ -406,7 +406,7 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 			// fix trace up by the offset
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
-			trace.e.entnum = i;
+			total.e.entnum = i;
 		}
 
 	}
@@ -418,7 +418,7 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 /*
 ================
 PM_TraceLine
- 
+
 FIXME: merge with PM_PlayerTrace (PM_Move?)
 ================
 */
@@ -434,7 +434,7 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 	// fill in a default trace
 	memset (&total, 0, sizeof(trace_t));
 	total.fraction = 1;
-	trace.e.entnum = -1;
+	total.e.entnum = -1;
 	VectorCopy (end, total.endpos);
 
 	for (i=0 ; i< pmove.numphysent ; i++)
@@ -473,7 +473,7 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 			// fix trace up by the offset
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
-			trace.e.entnum = i;
+			total.e.entnum = i;
 		}
 
 	}
