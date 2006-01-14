@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_user.c,v 1.28 2006/01/06 19:09:07 disconn3ct Exp $
+	$Id: sv_user.c,v 1.29 2006/01/14 12:53:40 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -512,6 +512,14 @@ static void SV_Spawn_f (void)
 		memset(&ent->v, 0, pr_edict_size - sizeof(edict_t) +
 		       sizeof(entvars_t));
 		ent->v.netname = savenetname;
+
+		// so spec will have right goalentity - if speccing someone
+		// qqshka {
+		if(host_client->spectator && host_client->spec_track > 0)
+			ent->v.goalentity = EDICT_TO_PROG(svs.clients[host_client->spec_track-1].edict);
+
+		// }
+
 		//host_client->name = PR2_GetString(ent->v.netname);
 		//strlcpy(PR2_GetString(ent->v.netname), host_client->name, 32);
 	}
