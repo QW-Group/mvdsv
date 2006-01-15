@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.16 2006/01/09 20:37:15 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.17 2006/01/15 18:11:42 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -729,7 +729,7 @@ void PF_stuffcmd (void)
 	char	*str;
 	client_t	*cl, *spec;
 	char	*buf;
-	int		i, j;
+	int j;
 
 	entnum = G_EDICTNUM(OFS_PARM0);
 	if (entnum < 1 || entnum > MAX_CLIENTS)
@@ -738,50 +738,47 @@ void PF_stuffcmd (void)
 
 	cl = &svs.clients[entnum-1];
 
+	if (!strncmp(str, "disconnect\n", MAX_STUFFTEXT))
+	{
+		// so long and thanks for all the fish
+		cl->drop = true;
+		return;
+	}
+
 	buf = cl->stufftext_buf;
 	if (strlen(buf) + strlen(str) >= MAX_STUFFTEXT)
 		PR_RunError ("stufftext buffer overflow");
 	strlcat (buf, str, MAX_STUFFTEXT);
 
-	for (i = strlen(buf); i >= 0; i--)
+	if( strchr( buf, '\n' ) )
 	{
-		if (buf[i] == '\n')
+		ClientReliableWrite_Begin (cl, svc_stufftext, 2+strlen(buf));
+		ClientReliableWrite_String (cl, buf);
+		if (sv.mvdrecording)
 		{
-			if (!strncmp(buf, "disconnect\n", MAX_STUFFTEXT))
-			{
-				// so long and thanks for all the fish
-				cl->drop = true;
-				buf[0] = 0;
-				return;
-			}
-			ClientReliableWrite_Begin (cl, svc_stufftext, 2+strlen(buf));
-			ClientReliableWrite_String (cl, buf);
-			if (sv.mvdrecording)
-			{
-				MVDWrite_Begin ( dem_single, cl - svs.clients, 2+strlen(buf));
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
-				MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
-			}
+			MVDWrite_Begin ( dem_single, cl - svs.clients, 2+strlen(buf));
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
+			MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
+		}
 
-			//bliP: spectator print ->
-			if ((int)sv_specprint.value & SPECPRINT_STUFFCMD)
+		//bliP: spectator print ->
+		if ((int)sv_specprint.value & SPECPRINT_STUFFCMD)
+		{
+			for (j = 0, spec = svs.clients; j < MAX_CLIENTS; j++, spec++)
 			{
-				for (j = 0, spec = svs.clients; j < MAX_CLIENTS; j++, spec++)
+				if (!cl->state || !spec->spectator)
+					continue;
+
+				if ((spec->spec_track == entnum) && (cl->spec_print & SPECPRINT_STUFFCMD))
 				{
-					if (!cl->state || !spec->spectator)
-						continue;
-
-					if ((spec->spec_track == entnum) && (cl->spec_print & SPECPRINT_STUFFCMD))
-					{
-						ClientReliableWrite_Begin (spec, svc_stufftext, 2+strlen(buf));
-						ClientReliableWrite_String (spec, buf);
-					}
+					ClientReliableWrite_Begin (spec, svc_stufftext, 2+strlen(buf));
+					ClientReliableWrite_String (spec, buf);
 				}
 			}
-			//<-
-
-			buf[0] = 0;
 		}
+		//<-
+	
+	buf[0] = 0;
 	}
 }
 

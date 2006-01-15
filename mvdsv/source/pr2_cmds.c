@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.19 2006/01/09 20:37:15 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.20 2006/01/15 18:11:41 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -96,8 +96,7 @@ void PF2_DPrint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 
 void PF2_conprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-//	Con_Printf("%s", VM_POINTER(base,mask,stack[0].string));
-	Sys_Printf("%s", VM_POINTER( base, mask, stack[0].string));
+	Sys_Printf("%s", VM_POINTER(base, mask, stack[0].string));
 }
 
 void PF2_Error(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
@@ -288,10 +287,11 @@ sprint(clientent, value)
 */
 void PF2_sprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	client_t	*client;
-	int		entnum = stack[0]._int;
-	int 		level = stack[1]._int;
-	char* 		s = VM_POINTER(base,mask,stack[2].string);
+	client_t *client, *cl;
+	int entnum = stack[0]._int;
+	int level = stack[1]._int;
+	char *s = VM_POINTER(base,mask,stack[2].string);
+	int i;
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 	{
@@ -302,26 +302,41 @@ void PF2_sprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 	client = &svs.clients[entnum - 1];
 
 	SV_ClientPrintf(client, level, "%s", s);
+
+	//bliP: spectator print ->
+	if ((int)sv_specprint.value & SPECPRINT_SPRINT)
+	{
+		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		{
+			if (!cl->state || !cl->spectator)
+				continue;
+
+			if ((cl->spec_track == entnum) && (cl->spec_print & SPECPRINT_SPRINT))
+				SV_ClientPrintf (cl, level, "%s", s);
+		}
+	}
+	//<-
 }
 
 /*
 =================
 PF2_centerprint
- 
+
 single print to a specific client
- 
+
 centerprint(clientent, value)
 =================
 */
 void PF2_centerprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	client_t	*cl;
-	int		entnum = stack[0]._int;
-	char* 		s = VM_POINTER(base,mask,stack[1].string);
+	client_t *cl, *spec;
+	int entnum = stack[0]._int;
+	char *s = VM_POINTER(base,mask,stack[1].string);
+	int i;
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 	{
-		Con_Printf("tried to sprint to a non-client\n");
+		Con_Printf("tried to centerprint to a non-client %d \n", entnum);
 		return;
 	}
 
@@ -336,6 +351,23 @@ void PF2_centerprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		MSG_WriteByte((sizebuf_t *) demo.dbuf, svc_centerprint);
 		MSG_WriteString((sizebuf_t *) demo.dbuf, s);
 	}
+
+	//bliP: spectator print ->
+	if ((int)sv_specprint.value & SPECPRINT_CENTERPRINT)
+	{
+		for (i = 0, spec = svs.clients; i < MAX_CLIENTS; i++, spec++)
+		{
+			if (!cl->state || !spec->spectator)
+				continue;
+
+			if ((spec->spec_track == entnum) && (cl->spec_print & SPECPRINT_CENTERPRINT))
+			{
+				ClientReliableWrite_Begin (spec, svc_centerprint, 2 + strlen(s));
+				ClientReliableWrite_String (spec, s);
+			}
+		}
+	}
+	//<-
 
 }
 
@@ -641,19 +673,18 @@ void PF2_checkclient(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 /*
 =================
 PF2_stuffcmd
- 
+
 Sends text over to the client's execution buffer
- 
+
 stuffcmd (clientent, value)
 =================
 */
 void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	char		*str;
-	client_t	*cl;
-	char		*buf;
-	int			i;
-	int 		entnum = stack[0]._int;
+	char *str=NULL, *buf=NULL;
+	client_t *cl, *spec;
+	int entnum = stack[0]._int;
+	int j;
 
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)
@@ -663,35 +694,48 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	if( !str )
 		PR2_RunError("PF2_stuffcmd: NULL pointer");
 
-
 	cl = &svs.clients[entnum - 1];
+	if (!strncmp(str, "disconnect\n", MAX_STUFFTEXT))
+	{
+		// so long and thanks for all the fish
+		cl->drop = true;
+		return;
+	}
+	
 	buf = cl->stufftext_buf;
 	if (strlen(buf) + strlen(str) >= MAX_STUFFTEXT)
 		PR2_RunError("stufftext buffer overflow");
-	strcat(buf, str);
+	strlcat (buf, str, MAX_STUFFTEXT);
 
-	for (i = strlen(buf); i >= 0; i--)
+	if( strchr( buf, '\n' ) )
 	{
-		if (buf[i] == '\n')
+		ClientReliableWrite_Begin(cl, svc_stufftext, 2 + strlen(buf));
+		ClientReliableWrite_String(cl, buf);
+		if (sv.mvdrecording)
 		{
-			if (!strcmp(buf, "disconnect\n"))
-			{
-				// so long and thanks for all the fish
-				cl->drop = true;
-				buf[0] = 0;
-				return;
-			}
-			ClientReliableWrite_Begin(cl, svc_stufftext, 2 + strlen(buf));
-			ClientReliableWrite_String(cl, buf);
-			if (sv.mvdrecording)
-			{
-				MVDWrite_Begin(dem_single, cl - svs.clients, 2 + strlen(buf));
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
-				MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
-			}
-			buf[0] = 0;
+			MVDWrite_Begin(dem_single, cl - svs.clients, 2 + strlen(buf));
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
+			MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
 		}
+
+		//bliP: spectator print ->
+		if ((int)sv_specprint.value & SPECPRINT_STUFFCMD)
+		{
+			for (j = 0, spec = svs.clients; j < MAX_CLIENTS; j++, spec++)
+			{
+				if (!cl->state || !spec->spectator)
+					continue;
+
+				if ((spec->spec_track == entnum) && (cl->spec_print & SPECPRINT_STUFFCMD))
+				{
+					ClientReliableWrite_Begin (spec, svc_stufftext, 2+strlen(buf));
+					ClientReliableWrite_String (spec, buf);
+				}
+			}
+		}
+		buf[0] = 0;
 	}
+
 }
 
 /*

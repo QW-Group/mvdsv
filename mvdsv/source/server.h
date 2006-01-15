@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.21 2006/01/09 01:15:38 disconn3ct Exp $
+	$Id: server.h,v 1.22 2006/01/15 18:11:42 disconn3ct Exp $
 */
 // server.h
 
@@ -28,6 +28,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_MASTERS 8 // max recipients for heartbeat packets
 
 #define	MAX_SIGNON_BUFFERS 8
+
+// sv_specprint stuff
+#define SPECPRINT_CENTERPRINT	0x1
+#define SPECPRINT_SPRINT	0x2
+#define SPECPRINT_STUFFCMD	0x4
 
 typedef enum {
 	ss_dead,	// no map loaded
