@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: sv_user.c,v 1.29 2006/01/14 12:53:40 disconn3ct Exp $
+
+	$Id: sv_user.c,v 1.30 2006/01/19 04:22:26 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -45,12 +45,12 @@ extern cvar_t	sv_kicktop;
 extern cvar_t	sv_speedcheck; //bliP: 24/9
 //<-
 
-qboolean IsLocalIP(netadr_t a)
+static qboolean IsLocalIP(netadr_t a)
 {
 	return a.ip.ip[0] == 10 || (a.ip.ip[0] == 172 && (a.ip.ip[1] & 0xF0) == 16)
 	       || (a.ip.ip[0] == 192 && a.ip.ip[1] == 168) || a.ip.ip[0] >= 224;
 }
-qboolean IsInetIP(netadr_t a)
+static qboolean IsInetIP(netadr_t a)
 {
 	return a.ip.ip[0] != 127 && !IsLocalIP(a);
 }
@@ -587,14 +587,16 @@ static void SV_Spawn_f (void)
 SV_SpawnSpectator
 ==================
 */
-void SV_SpawnSpectator (void)
+static void SV_SpawnSpectator (void)
 {
-	int		i;
-	edict_t	*e;
+	int i;
+	edict_t *e;
 
 	VectorClear (sv_player->v.origin);
 	VectorClear (sv_player->v.view_ofs);
 	sv_player->v.view_ofs[2] = 22;
+	sv_player->v.fixangle = true;
+	sv_player->v.movetype = MOVETYPE_NOCLIP; // progs can change this to MOVETYPE_FLY, for example
 
 	// search for an info_playerstart to spawn the spectator at
 	for (i=MAX_CLIENTS-1 ; i<sv.num_edicts ; i++)
@@ -609,6 +611,7 @@ void SV_SpawnSpectator (void)
 		)
 		{
 			VectorCopy (e->v.origin, sv_player->v.origin);
+			VectorCopy (e->v.angles, sv_player->v.angles);
 			return;
 		}
 	}
@@ -623,7 +626,7 @@ SV_Begin_f
 static void SV_Begin_f (void)
 {
 	unsigned pmodel = 0, emodel = 0;
-	int		i;
+	int i;
 
 	if (host_client->state == cs_spawned)
 		return; // don't begin again
@@ -724,7 +727,7 @@ static void SV_Begin_f (void)
 		SV_ClientPrintf(host_client, PRINT_HIGH, "Server is paused.\n");
 	}
 
-	//sv_client->lastservertimeupdate = -99;	// update immediately
+	//sv_client->lastservertimeupdate = -99; // update immediately
 }
 
 //=============================================================================
@@ -734,12 +737,12 @@ static void SV_Begin_f (void)
 SV_DownloadNextFile_f
 ==================
 */
-qboolean SV_DownloadNextFile (void)
+static qboolean SV_DownloadNextFile (void)
 {
-	int	num;
-	char	*name, n[MAX_OSPATH];
-	unsigned char	all_demos_downloaded[]	= "All demos downloaded.\n",
-	                                       incorrect_demo_number[]	= "Incorrect demo number.\n";
+	int		num;
+	char		*name, n[MAX_OSPATH];
+	unsigned char	all_demos_downloaded[]	= "All demos downloaded.\n";
+	unsigned char	incorrect_demo_number[]	= "Incorrect demo number.\n";
 
 	switch (host_client->demonum[0])
 	{
@@ -847,10 +850,10 @@ static void SV_NextDownload_f (void)
 
 }
 
-void OutofBandPrintf(netadr_t where, char *fmt, ...)
+static void OutofBandPrintf(netadr_t where, char *fmt, ...)
 {
-	va_list		argptr;
-	char	send[1024];
+	va_list	 argptr;
+	char send[1024];
 
 	send[0] = 0xff;
 	send[1] = 0xff;
@@ -870,11 +873,11 @@ SV_NextUpload
 ==================
 */
 void SV_ReplaceChar(char *s, char from, char to);
-void SV_NextUpload (void)
+static void SV_NextUpload (void)
 {
-	int		percent;
-	int		size;
-	char		*name = host_client->uploadfn;
+	int	percent;
+	int	size;
+	char	*name = host_client->uploadfn;
 	//	Sys_Printf("-- %s\n", name);
 
 	SV_ReplaceChar(name, '\\', '/');
@@ -959,77 +962,78 @@ SV_BeginDownload_f
 void SV_ReplaceChar(char *s, char from, char to);
 static void SV_BeginDownload_f(void)
 {
-	char	*name, n[MAX_OSPATH], *val;
+	char	*name, n[MAX_OSPATH], *val, *p;
 	extern	cvar_t	allow_download;
 	extern	cvar_t	allow_download_skins;
 	extern	cvar_t	allow_download_models;
 	extern	cvar_t	allow_download_sounds;
 	extern	cvar_t	allow_download_maps;
+	extern  cvar_t	allow_download_pakmaps;
 	extern	cvar_t	allow_download_demos;
-	extern  cvar_t	allow_download_pakmaps; //bliP: pakmaps
+	extern	cvar_t	allow_download_other;
 	extern  cvar_t  download_map_url; //bliP: download url
 	extern	cvar_t	sv_demoDir;
-	extern	int		file_from_pak; // ZOID did file come from pak?
-	int			i;
+	extern	qboolean file_from_pak; // ZOID did file come from pak?
+	int i;
 
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf("download [filename]\n");
 		return;
 	}
+
 	name = Cmd_Argv(1);
+
 	SV_ReplaceChar(name, '\\', '/');
+
 	// hacked by zoid to allow more conrol over download
-	//bliP: download ->
-	if
-	(
-	    (
-	        // leading slash bad as well, must be in subdir
-	        *name == '/'
-	        // no leading ../
-	        || !strncmp(name, "../", 3)
-	        // no /../
-	        || strstr (name, "/../")
-	        // no /.. at end
-	        || ( (i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4) )
+	if (
+		(
+			(strstr(name, "..")) //no under paths
+			|| *name == '.' //relative is pointless
+			|| (*name == '/') //no absolute
+			|| (strchr(name, '\\')) //no windows paths - grow up lame windows users
+			|| ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name+i-4,".log",4)) // no logs
 #ifdef _WIN32
-	        // no leading X:
-	        || ( name[1] == ':' && (*name >= 'a' && *name <= 'z' ||
-	                                *name >= 'A' && *name <= 'Z') )
+			// no leading X:
+		   	|| ( name[1] == ':' && (*name >= 'a' && *name <= 'z' ||
+						*name >= 'A' && *name <= 'Z') )
 #endif //_WIN32
-	        // no logs
-	        || ( (i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 4) )
-	    )
-	    ||
-	    (
-	        !host_client->special &&
-	        (
-	            // global allow check
-	            !allow_download.value
-	            // next up, skin check
-	            || (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
-	            // now models
-	            || (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
-	            // now sounds
-	            || (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
-	            // now maps (note special case for maps, must not be in pak)
-	            || (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
-	            // now demos
-	            || (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
-	            || (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
-	            // MUST be in a subdirectory
-	            || !strstr (name, "/")
-	        )
-	    )
-	    || strcasestr (name, "pwd.cfg")
-	)
-		//<-
-	{
-		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		ClientReliableWrite_Short (host_client, -1);
-		ClientReliableWrite_Byte (host_client, 0);
-		return;
-	}
+		)
+		||
+		(
+			!host_client->special &&
+			(
+			// global allow check
+			!allow_download.value
+			// next up, skin check
+			|| (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
+			// now models
+			|| (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
+			// now sounds
+			|| (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
+			// now maps (note special case for maps, must not be in pak)
+			|| (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
+			// now demos
+			|| (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
+			|| (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
+			// all other stuff FIXME
+			|| (!allow_download_other.value &&
+		   		!strncmp(name, "skins/", 6) &&
+		   		!strncmp(name, "progs/", 6) &&
+				!strncmp(name, "sound/", 6) &&
+				!strncmp(name, "maps/", 5) &&
+				!strncmp(name, "demos/", 6) &&
+				!strncmp(name, "demonum/", 8))
+			//  MUST be in a subdirectory
+			|| !strstr (name, "/")
+			)
+		)
+		||
+		(
+			strcasestr (name, "pwd.cfg") // disconnect: FIXME: remove it?
+		)
+	) goto deny_download;
 
 	if (host_client->download)
 	{
@@ -1046,11 +1050,11 @@ static void SV_BeginDownload_f(void)
 	}
 	else if (!strncmp(name, "demonum/", 8))
 	{
-		int	num;
+		int num;
 		if ((num = atoi(name + 8)) == 0 && name[8] != '0')
 		{
-			char	*num_s = name + 8;
-			int	num_s_len = strlen(num_s);
+			char *num_s = name + 8;
+			int num_s_len = strlen(num_s);
 			for (num = 0; -num < num_s_len; num--)
 				if (num_s[-num] != '.')
 				{
@@ -1059,21 +1063,14 @@ static void SV_BeginDownload_f(void)
 					           "also can type any quantity of dots and "
 					           "where N dots is the Nth to last recorded demo\n");
 
-					ClientReliableWrite_Begin (host_client, svc_download, 4);
-					ClientReliableWrite_Short (host_client, -1);
-					ClientReliableWrite_Byte (host_client, 0);
-					return;
+					goto deny_download;
 				}
 		}
 		name = SV_MVDNum(num);
 		if (!name)
 		{
 			Con_Printf(Q_yelltext(va("Demo number %d not found.\n", num)));
-
-			ClientReliableWrite_Begin (host_client, svc_download, 4);
-			ClientReliableWrite_Short (host_client, -1);
-			ClientReliableWrite_Byte (host_client, 0);
-			return;
+			goto deny_download;
 		}
 		//Con_Printf("downloading demos/%s\n",name);
 		snprintf(n, sizeof(n), "download demos/%s\n", name);
@@ -1085,7 +1082,6 @@ static void SV_BeginDownload_f(void)
 
 	// lowercase name (needed for casesen file systems)
 	{
-		char *p;
 		for (p = name; *p; p++)
 			*p = (char)tolower(*p);
 	}
@@ -1107,29 +1103,25 @@ static void SV_BeginDownload_f(void)
 		host_client->downloadsize = COM_FOpenFile (name, &host_client->download);
 	host_client->downloadcount = 0;
 
-	if (!host_client->download ||
-	        // special check for maps, if it came from a pak file, don't allow
-	        // download  ZOID
-	        (strncmp(name, "maps/", 5) == 0 && file_from_pak &&
-	         !allow_download_pakmaps.value)) //bliP: pakmaps
+	if (!host_client->download)
 	{
-		if (host_client->download)
-		{
-			fclose(host_client->download);
-			host_client->download = NULL;
-		}
-
 		Sys_Printf ("Couldn't download %s to %s\n", name, host_client->name);
-		ClientReliableWrite_Begin (host_client, svc_download, 4);
-		ClientReliableWrite_Short (host_client, -1);
-		ClientReliableWrite_Byte (host_client, 0);
-		return;
+		goto deny_download;
+	}
+
+	// special check for maps that came from a pak file
+	if (!strncmp(name, "maps/", 5) && file_from_pak && !allow_download_pakmaps.value)
+	{
+		fclose(host_client->download);
+		host_client->download = NULL;
+		goto deny_download;
 	}
 
 	val = Info_ValueForKey (host_client->userinfo, "drate");
 	if (atoi(val))
 		host_client->netchan.rate = 1.0/SV_BoundRate(true, atoi(val));
 
+	// all checks passed, start downloading
 	SV_NextDownload_f ();
 	Sys_Printf ("Downloading %s to %s\n", name, host_client->name);
 
@@ -1149,10 +1141,20 @@ static void SV_BeginDownload_f(void)
 		}
 	}
 	else
+	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "File %s is %.0fKB (%.2fMB)\n",
 		                 name, (float)host_client->downloadsize / 1024,
 		                 (float)host_client->downloadsize / 1024 / 1024);
+	}
 	//<-
+
+	return;
+
+deny_download:
+	ClientReliableWrite_Begin (host_client, svc_download, 4);
+	ClientReliableWrite_Short (host_client, -1);
+	ClientReliableWrite_Byte (host_client, 0);
+	return;
 }
 
 /*
@@ -1165,9 +1167,9 @@ static void SV_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
 	char		*cmd_argv_i;
-	unsigned char	download_queue_cleared[]		= "Download queue cleared.\n",
-	        download_queue_empty[]			= "Download queue empty.\n",
-	                                   download_queue_already_exists[]	= "Download queue already exists.\n";
+	unsigned char	download_queue_cleared[] = "Download queue cleared.\n";
+	unsigned char	download_queue_empty[] = "Download queue empty.\n";
+	unsigned char	download_queue_already_exists[]	= "Download queue already exists.\n";
 
 	if (!sv_use_internal_cmd_dl.value)
 		if (SV_ExecutePRCommand())
@@ -1251,13 +1253,12 @@ extern func_t ChatMessage;
 
 void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 
-void SV_Say (qboolean team)
+static void SV_Say (qboolean team)
 {
 	client_t *client;
-	//	int   saved_state;
-	int		j, tmp, cls = 0;
+	int	j, tmp, cls = 0;
 	char	*p;
-	char  *i;
+	char	*i;
 	char	text[2048];
 
 	if (Cmd_Argc () < 2)
@@ -1428,7 +1429,7 @@ clients
 static void SV_Pings_f (void)
 {
 	client_t *client;
-	int		j;
+	int j;
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
@@ -1490,6 +1491,8 @@ void SV_TogglePause (const char *msg)
 			continue;
 		ClientReliableWrite_Begin (cl, svc_setpause, 2);
 		ClientReliableWrite_Byte (cl, sv.paused ? 1 : 0);
+
+		//cl->lastservertimeupdate = -99;	// force an update to be sent
 	}
 }
 
@@ -1501,7 +1504,6 @@ SV_Pause_f
 */
 static void SV_Pause_f (void)
 {
-	//	client_t *cl;
 	char st[CLIENT_NAME_LEN + 32];
 
 	if (!pausable.value)
@@ -1566,8 +1568,7 @@ static void SV_PTrack_f (void)
 	}
 
 	i = atoi(Cmd_Argv(1));
-	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i].state != cs_spawned ||
-	        svs.clients[i].spectator)
+	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i].state != cs_spawned || svs.clients[i].spectator)
 	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Invalid client to track\n");
 		host_client->spec_track = 0;
@@ -1939,9 +1940,9 @@ static void SV_ShowMapsList_f(void)
 {
 	char	*value, *key;
 	int	i, j, len, i_mod_2 = 1;
-	unsigned char	ztndm3[]			  = "ztndm3",
-	                             list_of_custom_maps[] = "list of custom maps",
-	                                                     end_of_list[]		  = "end of list";
+	unsigned char	ztndm3[] = "ztndm3";
+	unsigned char	list_of_custom_maps[] = "list of custom maps";
+	unsigned char	end_of_list[] = "end of list";
 
 	SV_Check_ktpro();
 
