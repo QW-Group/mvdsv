@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.16 2006/01/04 03:25:11 disconn3ct Exp $
+	$Id: common.c,v 1.17 2006/01/19 04:09:50 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -1346,7 +1346,7 @@ Finds the file in the search path.
 Sets com_filesize and one of handle or file
 ===========
 */
-int file_from_pak; // global indicating file came from pack file ZOID
+qboolean file_from_pak; // global indicating file came from pack file ZOID
 
 int COM_FOpenFile (char *filename, FILE **file)
 {
@@ -1355,7 +1355,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 	pack_t *pak;
 	int i;
 
-	file_from_pak = 0;
+	file_from_pak = false;
 
 	//
 	// search through the path, one element at a time
@@ -1378,7 +1378,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 						Sys_Error ("Couldn't reopen %s", pak->filename);
 					fseek (*file, pak->files[i].filepos, SEEK_SET);
 					com_filesize = pak->files[i].filelen;
-					file_from_pak = 1;
+					file_from_pak = true;
 					return com_filesize;
 				}
 		}
