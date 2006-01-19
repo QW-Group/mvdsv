@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.35 2006/01/14 12:54:57 disconn3ct Exp $
+	$Id: sv_main.c,v 1.36 2006/01/19 04:08:53 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -89,14 +89,15 @@ cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status command
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
 
-cvar_t	allow_download = {"allow_download", "1"};
-cvar_t	allow_download_skins = {"allow_download_skins", "1"};
-cvar_t	allow_download_models = {"allow_download_models", "1"};
-cvar_t	allow_download_sounds = {"allow_download_sounds", "1"};
-cvar_t	allow_download_maps = {"allow_download_maps", "1"};
-cvar_t	allow_download_demos = {"allow_download_demos", "1"};
+cvar_t	allow_download		= {"allow_download", "1"};
+cvar_t	allow_download_skins	= {"allow_download_skins", "1"};
+cvar_t	allow_download_models	= {"allow_download_models", "1"};
+cvar_t	allow_download_sounds	= {"allow_download_sounds", "1"};
+cvar_t	allow_download_maps	= {"allow_download_maps", "1"};
+cvar_t	allow_download_pakmaps	= {"allow_download_pakmaps", "0"};
+cvar_t	allow_download_demos	= {"allow_download_demos", "1"};
+cvar_t	allow_download_other	= {"allow_download_other", "0"};
 //bliP: init ->
-cvar_t	allow_download_pakmaps = {"allow_download_pakmaps", "0"};
 cvar_t	download_map_url = {"download_map_url", ""};
 
 cvar_t	sv_specprint = {"sv_specprint", "0"};
@@ -2579,9 +2580,10 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&allow_download_models);
 	Cvar_RegisterVariable (&allow_download_sounds);
 	Cvar_RegisterVariable (&allow_download_maps);
-	Cvar_RegisterVariable (&allow_download_demos);
-	//bliP: init ->
 	Cvar_RegisterVariable (&allow_download_pakmaps);
+	Cvar_RegisterVariable (&allow_download_demos);
+	Cvar_RegisterVariable (&allow_download_other);
+	//bliP: init ->
 	Cvar_RegisterVariable (&download_map_url);
 
 	Cvar_RegisterVariable (&sv_specprint);
