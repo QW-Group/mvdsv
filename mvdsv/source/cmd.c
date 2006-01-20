@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.9 2006/01/04 03:18:55 disconn3ct Exp $
+	$Id: cmd.c,v 1.10 2006/01/20 18:23:44 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -736,24 +736,9 @@ void Cmd_CmdList_f (void)
 
 
 /*
-===========
-Cmd_Z_Cmd_f
-===========
-_z_cmd <command>
-Just executes the rest of the string.
-Can be used to do some zqwcl-specific action, e.g. "_z_cmd exec tonik_z.cfg"
-*/
-void Cmd_Z_Cmd_f (void)
-{
-	Cbuf_InsertText (Cmd_Args());
-	Cbuf_InsertText ("\n");
-}
-
-
-/*
 ================
 Cmd_ExpandString
- 
+
 Expands all $cvar expressions to cvar values
 Note: dest must point to a 1024 byte buffer
 ================
@@ -1010,5 +995,4 @@ void Cmd_Init (void)
 	Cmd_AddCommand ("unaliasall", Cmd_UnAliasAll_f);
 	Cmd_AddCommand ("unalias", Cmd_UnAlias_f);
 	Cmd_AddCommand ("if", Cmd_If_f);
-	Cmd_AddCommand ("_z_cmd", Cmd_Z_Cmd_f);	// ZQuake
 }
