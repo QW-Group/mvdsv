@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.30 2006/01/19 04:22:26 disconn3ct Exp $
+	$Id: sv_user.c,v 1.31 2006/01/20 21:33:34 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -989,10 +989,13 @@ static void SV_BeginDownload_f(void)
 	// hacked by zoid to allow more conrol over download
 	if (
 		(
-			(strstr(name, "..")) //no under paths
+//		TODO: split name to pathname and filename
+//		and check for 'bad symbols' only in pathname
+			*name == '/' //no absolute
+			|| !strncmp(name, "../", 3) // no leading ../
+			|| strstr (name, "/../") // no /../
+			|| ((i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4)) // no /.. at end
 			|| *name == '.' //relative is pointless
-			|| (*name == '/') //no absolute
-			|| (strchr(name, '\\')) //no windows paths - grow up lame windows users
 			|| ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name+i-4,".log",4)) // no logs
 #ifdef _WIN32
 			// no leading X:
