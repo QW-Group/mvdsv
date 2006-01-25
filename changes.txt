@@ -1,8 +1,8 @@
 
-$Id: changes.txt,v 1.47 2006/01/11 17:24:28 vvd0 Exp $
+$Id: changes.txt,v 1.48 2006/01/25 13:53:12 vvd0 Exp $
 
 ----
-MVDSV v0.19.01-CVS build 22?? (2006.??.??)
+MVDSV v0.19.11-develop build 2227 (2006.01.25)
 - hardcore cleanup. Removed lot of client-onlt code (by Angel)
 - work on SunOS SPARC and ix86 targets now
 - added MSVC 7.1 solution/project file
