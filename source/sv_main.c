@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.36 2006/01/19 04:08:53 disconn3ct Exp $
+	$Id: sv_main.c,v 1.37 2006/02/07 12:52:36 vvd0 Exp $
 */
 
 #include "version.h"
@@ -763,7 +763,8 @@ void SVC_DirectConnect (void)
 	version = atoi(Cmd_Argv(1));
 	if (version != PROTOCOL_VERSION)
 	{
-		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
+//		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
+		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nServer is version " QW_VERSION ".\n", A2C_PRINT);
 		Con_Printf ("* rejected connect from version %i\n", version);
 		return;
 	}
@@ -2627,8 +2628,9 @@ void SV_InitLocal (void)
 	for (i=0 ; i<MAX_MODELS ; i++)
 		snprintf (localmodels[i], MODEL_NAME_LEN, "*%i", i);
 
-	//Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);
-	Info_SetValueForStarKey (svs.info, "*version", va("mvdsv %s", QWE_VERSION), MAX_SERVERINFO_STRING);
+	Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);
+	Info_SetValueForStarKey (svs.info, "*version", QW_VERSION, MAX_SERVERINFO_STRING);
+	//Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " QWE_VERSION, MAX_SERVERINFO_STRING);
 	//Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
 
 	// init fraglog stuff
@@ -2839,7 +2841,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 		cl->spec_print = Q_atoi(val);
 	//<-
 	// Added by VVD {
-	// ktpro crash if absolute value of userinfo keys "ls" or/and "lw" is to large
+// ktpro version before 1.67 crash if absolute value of userinfo keys "ls" or/and "lw" is to large
 	limit = 63;
 	SV_CheckUserInfoKeyLimit("lw", limit, cl);
 	SV_CheckUserInfoKeyLimit("ls", limit, cl);
@@ -2988,7 +2990,7 @@ void SV_Init (quakeparms_t *parms)
 	if (telnetport)
 	{
 		SV_Write_Log(TELNET_LOG, 1, "============================================\n");
-		SV_Write_Log(TELNET_LOG, 1, va("mvdsv %s started\n", QWE_VERSION));
+		SV_Write_Log(TELNET_LOG, 1, SERVER_NAME " " QWE_VERSION " started\n");
 	}
 
 	SV_Map(true);

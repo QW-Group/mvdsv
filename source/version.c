@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: version.c,v 1.6 2006/02/07 12:52:36 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -76,7 +76,8 @@ Version_f
 */
 void Version_f (void)
 {
-	Con_Printf ("QW version %4.2f\n", QW_VERSION);
+//	Con_Printf ("QW version %4.2f\n", QW_VERSION);
+	Con_Printf ("QW version " QW_VERSION "\n");
 	Con_Printf ("%s\n", full_version);
-	Con_Printf (PROJECT_NAME " Project home page: http://mvdsv.sourceforge.net\n\n");
+	Con_Printf (PROJECT_NAME " Project home page: " PROJECT_URL "\n\n");
 }
