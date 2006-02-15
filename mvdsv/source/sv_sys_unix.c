@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.14 2006/01/09 01:15:39 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.15 2006/02/15 17:54:34 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -48,11 +48,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
-#ifndef sun
-#include <paths.h>
-#else
+
+#ifdef sun
 #define _PATH_DEVNULL "/dev/null"
+#else
+#include <paths.h>
 #endif
+
 #include "version.h"
 // Added by VVD }
 
@@ -120,7 +122,7 @@ void Sys_mkdir (char *path)
 	if (mkdir (path, 0777) != -1)
 		return;
 	if (errno != EEXIST)
-		Sys_Error ("mkdir %s: %s",path, strerror(errno));
+		Sys_Error ("mkdir %s: %s", path, strerror(errno));
 }
 
 /*
