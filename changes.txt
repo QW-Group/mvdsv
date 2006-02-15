@@ -1,9 +1,12 @@
 
-$Id: changes.txt,v 1.50 2006/02/07 12:52:35 vvd0 Exp $
+$Id: changes.txt,v 1.51 2006/02/15 17:54:34 vvd0 Exp $
 
 ----
 MVDSV v0.19.11-CVS build 22?? (2006.02.??)
 [server]
+- bugfix from 0.19.10-develop: incorrect demo numbering while game proceed if used extracts by
+  substrings in command 'cmd dlist', example: 'cmd dlist aerowalk'
+(Thanks to gLAd)
 - give back from EXPEREMENTAL changes in 0.19.10-develop:
   'serverinfo key *version changed from "2.40" to "mvdsv QWE_VERSION" and *qwe_version was removed
   (EXPERIMENTAL)', because ktpro can't determine version of the server and said
@@ -18,7 +21,7 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
 - added MSVC 7.1 solution/project file
 [server]
 - serverinfo key *version changed from "2.40" to "mvdsv QWE_VERSION" and *qwe_version was removed
-  (EXPERIMENTAL)
+  (EXPERIMENTAL) (QWE_VERSION = "0.19.10-develop")
 (by disconnect)
 - bugfix: disabled download from gamedir. So only subdirs of gamedir are allowed.
 - new variable: allow_download_other (0 by default) - allows/disallows downloading of stuff

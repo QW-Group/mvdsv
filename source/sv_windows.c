@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.6 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_windows.c,v 1.7 2006/02/15 17:54:34 vvd0 Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
@@ -54,15 +54,15 @@ void ConsoleAddText(char *text)
 	DrawConsole = true;
 
 	SendMessage(HEdit1, WM_SETREDRAW, 0, 0);
-	SendMessage(HEdit1, EM_SETREADONLY, 0,0);
+	SendMessage(HEdit1, EM_SETREADONLY, 0, 0);
 
 	//  set the carriage in the end of the text
 	l = SendMessage(HEdit1, WM_GETTEXTLENGTH, 0,0);
-	SendMessage(HEdit1, EM_SETSEL, l,l);
+	SendMessage(HEdit1, EM_SETSEL, l, l);
 
 	while (*text)
 		SendMessage(HEdit1, WM_CHAR, chartbl2[(byte)(*text++)], 1);
-	SendMessage(HEdit1, EM_SETREADONLY, 1,0);
+	SendMessage(HEdit1, EM_SETREADONLY, 1, 0);
 	SendMessage(HEdit1, WM_SETREDRAW, 1, 0);
 }
 
@@ -83,7 +83,7 @@ BOOL CreateMainWindow(HINSTANCE hInstance, int nCmdShow)
 
 	/* Register the frame class */
 	wc.style         = 0;
-	wc.lpfnWndProc = DefDlgProc;
+	wc.lpfnWndProc   = DefDlgProc;
 	wc.cbClsExtra    = 0;
 	wc.cbWndExtra    = DLGWINDOWEXTRA;
 	wc.hInstance     = hInstance;
@@ -91,7 +91,7 @@ BOOL CreateMainWindow(HINSTANCE hInstance, int nCmdShow)
 	wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
 	wc.lpszMenuName  = 0;
-	wc.lpszClassName = "mvdsv";
+	wc.lpszClassName = SERVER_NAME;
 
 	if (!RegisterClass (&wc) )
 		Sys_Error ("Couldn't register window class");

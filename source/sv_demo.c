@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.27 2005/12/27 17:15:32 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.28 2006/02/15 17:54:34 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1221,11 +1221,11 @@ static qboolean SV_MVD_Record (mvddest_t *dest)
 	// send full levelname
 	MSG_WriteString (&buf,
 #ifdef USE_PR2
-	                 PR2_GetString(sv.edicts->v.message)
+	                 PR2_GetString
 #else
-					 PR_GetString(sv.edicts->v.message)
+					 PR_GetString
 #endif
-	                );
+	                (sv.edicts->v.message));
 
 	// send the movevars
 	MSG_WriteFloat(&buf, movevars.gravity);
@@ -1950,12 +1950,15 @@ void SV_DemoList (qboolean use_regex)
 	mvddest_t *d;
 	dir_t	dir;
 	file_t	*list;
-	float	f;
-	int	i,j,show;
+	float	free_space;
+	int		i, j, n;
+	int		files[MAX_DIRFILES + 1];
 
 	int	r;
 	pcre	*preg;
 	const char	*errbuf;
+
+	memset(files, 0, sizeof(files));
 
 	Con_Printf("content of %s/%s/%s\n", com_gamedir, sv_demoDir.string, sv_demoRegexp.string);
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
@@ -1965,13 +1968,7 @@ void SV_DemoList (qboolean use_regex)
 		Con_Printf("no demos\n");
 	}
 
-	if (GameStarted() && dir.numfiles > 100)
-	{
-		i = dir.numfiles - 100;
-		list = &dir.files[i];
-	}
-
-	for (i=1; list->name[0]; list++, i++)
+	for (i = 1, n = 0; list->name[0]; list++, i++)
 	{
 		for (j = 1; j < Cmd_Argc(); j++)
 		{
@@ -2003,30 +2000,36 @@ void SV_DemoList (qboolean use_regex)
 				if (strstr(list->name, Cmd_Argv(j)) == NULL)
 					break;
 		}
-		show = Cmd_Argc() == j;
 
-		if (show)
+		if (Cmd_Argc() == j)
 		{
-			for (d = demo.dest; d; d = d->nextdest)
-			{
-				if (!strcmp(list->name, d->name))
-					Con_Printf("*%d: %s %dk\n", i, list->name, d->totalsize/1024);
-			}
-			if (!d)
-				Con_Printf("%d: %s %dk\n", i, list->name, list->size/1024);
+			files[n++] = i;
 		}
+	}
+
+	list = dir.files;
+	for (j = (GameStarted() && n > 100) ? n - 100 : 0; files[j]; j++)
+	{
+		i = files[j];
+		for (d = demo.dest; d; d = d->nextdest)
+		{
+			if (!strcmp(list[i].name, d->name))
+				Con_Printf("*%d: %s %dk\n", i, list[i - 1].name, d->totalsize / 1024);
+		}
+		if (!d)
+			Con_Printf("%d: %s %dk\n", i, list[i - 1].name, list[i - 1].size / 1024);
 	}
 
 	for (d = demo.dest; d; d = d->nextdest)
 		dir.size += d->totalsize;
 
-	Con_Printf("\ndirectory size: %.1fMB\n",(float)dir.size/(1024*1024));
+	Con_Printf("\ndirectory size: %.1fMB\n", (float)dir.size / (1024 * 1024));
 	if (sv_demoMaxDirSize.value)
 	{
-		f = (sv_demoMaxDirSize.value*1024 - dir.size)/(1024*1024);
-		if ( f < 0)
-			f = 0;
-		Con_Printf("space available: %.1fMB\n", f);
+		free_space = (sv_demoMaxDirSize.value * 1024 - dir.size) / (1024 * 1024);
+		if (free_space < 0)
+			free_space = 0;
+		Con_Printf("space available: %.1fMB\n", free_space);
 	}
 }
 
