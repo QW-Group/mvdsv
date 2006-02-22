@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.17 2006/01/19 04:09:50 disconn3ct Exp $
+	$Id: common.c,v 1.18 2006/02/22 00:16:32 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -859,22 +859,9 @@ COM_StripExtension
 */
 void COM_StripExtension (char *in, char *out)
 {
-	char *s;
-
-	strcpy(out, in);
-
-	s = out+strlen(out);
-
-	while(*s != '/' && s != out)
-	{
-		if (*s == '.')
-		{
-			*s = 0;
-			break;
-		}
-
-		s--;
-	}
+	while (*in && *in != '.')
+		*out++ = *in++;
+	*out = 0;
 }
 
 /*
