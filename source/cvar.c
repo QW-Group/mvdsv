@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.7 2005/12/29 11:31:17 disconn3ct Exp $
+	$Id: cvar.c,v 1.8 2006/02/22 00:16:40 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -207,7 +207,7 @@ void Cvar_SetValueByName (char *var_name, float value)
 {
 	char	val[32];
 
-	sprintf (val, "%.8g",value);
+	snprintf (val, sizeof(val), "%.8g",value);
 	Cvar_SetByName (var_name, val);
 }
 
