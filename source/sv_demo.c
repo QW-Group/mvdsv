@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.28 2006/02/15 17:54:34 vvd0 Exp $
+	$Id: sv_demo.c,v 1.29 2006/02/22 00:17:08 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1808,7 +1808,7 @@ void SV_MVDEasyRecord_f (void)
 	strlcpy(name2, name, sizeof(name2));
 	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 	//	COM_StripExtension(name2, name2);
-	strcat (name2, ".mvd");
+	strlcat (name2, ".mvd", sizeof(name2));
 	if ((f = fopen (name2, "rb")) == 0)
 		f = fopen(va("%s.gz", name2), "rb");
 
@@ -1820,7 +1820,7 @@ void SV_MVDEasyRecord_f (void)
 			fclose (f);
 			snprintf(name2, sizeof(name2), "%s_%02i", name, i);
 			//			COM_StripExtension(name2, name2);
-			strcat (name2, ".mvd");
+			strlcat (name2, ".mvd", sizeof(name2));
 			if ((f = fopen (name2, "rb")) == 0)
 				f = fopen(va("%s.gz", name2), "rb");
 			i++;
