@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.h,v 1.5 2006/01/05 15:14:52 disconn3ct Exp $
+	$Id: tools.h,v 1.6 2006/02/22 00:18:17 disconn3ct Exp $
 */
 
 typedef struct
@@ -197,7 +197,7 @@ vec_t VectorLength(vec3_t v);
 				(d)->maxsize - (d)->end)
 
 
-
+#define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
 
 
 

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: init.c,v 1.4 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: init.c,v 1.5 2006/02/22 00:18:17 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -500,10 +500,10 @@ int Files_Init (int options)
 		}
 	}
 
-	sprintf(analyse, "%s", va("%s%s", out, analyse));
-	sprintf(convert, "%s", va("%s%s", out, convert));
-	sprintf(log, "%s", va("%s%s", out, log));
-	sprintf(debug, "%s", va("%s%s", out, debug));
+	snprintf(analyse, sizeof(analyse), "%s", va("%s%s", out, analyse));
+	snprintf(convert, sizeof(convert), "%s", va("%s%s", out, convert));
+	snprintf(log, sizeof(log), "%s", va("%s%s", out, log));
+	snprintf(debug, sizeof(debug), "%s", va("%s%s", out, debug));
 
 	// open source file(s)
 	for (i = 0, from = sources; i < sworld.fromcount; i++, from++)

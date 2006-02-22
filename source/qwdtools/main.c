@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: main.c,v 1.7 2006/01/05 15:14:52 disconn3ct Exp $
+	$Id: main.c,v 1.8 2006/02/22 00:18:17 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -119,7 +119,7 @@ void Sys_Error (char *error, ...)
 	char		text[1024];
 
 	va_start (argptr,error);
-	vsprintf (text, error,argptr);
+	vsnprintf (text, sizeof(text), error,argptr);
 	va_end (argptr);
 
 
@@ -156,7 +156,7 @@ void Sys_Printf (char *fmt, ...)
 	    sworld.options & O_STDOUT)
 	{
 		va_start (argptr,fmt);
-		vsprintf(buf, fmt, argptr);
+		vsnprintf(buf, sizeof(buf), fmt, argptr);
 		va_end (argptr);
 #ifdef _WIN32
 		WriteFile(ConsoleOutHndl, buf, strlen(buf), &count, NULL);
