@@ -16,22 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.15 2006/02/15 17:54:34 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.16 2006/02/22 01:48:00 disconn3ct Exp $
 */
 
 #include <dirent.h>
 #include <dlfcn.h>
 #include "qwsvdef.h"
-
-#ifdef NeXT
-#include <libc.h>
-#endif
+#include "netinc.h"
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
-#include <sys/stat.h>
-#include <unistd.h>
 #include <sys/time.h>
-#include <errno.h>
+#include <sys/stat.h>
 
 #include "pcre/pcre.h"
 
@@ -42,9 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // Added by VVD {
 #include <fcntl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
@@ -570,7 +562,6 @@ static int only_digits(const char *s)
 	return (1);
 }
 
-#define closesocket close
 inline void Sys_Telnet (void)
 {
 	static int			tempsock;

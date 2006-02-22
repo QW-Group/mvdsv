@@ -16,22 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.17 2006/01/05 15:07:43 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.18 2006/02/22 01:47:58 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 #include "log.h"
-#include <time.h>
-#ifdef _WIN32
-#include <Winsock2.h>
-#else
+#include "netinc.h"
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#endif
+#include <time.h>
 
 qboolean	sv_allow_cheats;
 
