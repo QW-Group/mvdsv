@@ -1,59 +1,28 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the included (GNU.txt) GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.29 2006/02/22 00:17:08 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.30 2006/02/22 01:47:59 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 #include "winquake.h"
+#include "netinc.h"
 #include "pcre/pcre.h"
-
-#ifdef _WIN32
-
-#define EWOULDBLOCK	WSAEWOULDBLOCK
-#define EMSGSIZE	WSAEMSGSIZE
-#define ECONNRESET	WSAECONNRESET
-#define ECONNABORTED	WSAECONNABORTED
-#define ECONNREFUSED	WSAECONNREFUSED
-#define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
-
-#define qerrno WSAGetLastError()
-#else
-#define qerrno errno
-
-#include <sys/ioctl.h>
-
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <unistd.h>
-
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET -1
-
-#define closesocket close
-#define ioctlsocket ioctl
-
-#endif
-#endif
 
 #define demo_size_padding 0x1000
 
