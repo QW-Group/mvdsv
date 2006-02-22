@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.7 2005/12/27 17:15:32 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.8 2006/02/22 00:16:57 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -579,7 +579,7 @@ void QVM_RunError( qvm_t * qvm, char *error, ... )
 	char    string[1024];
 
 	va_start( argptr, error );
-	vsprintf( string, error, argptr );
+	vsnprintf( string, sizeof(string), error, argptr );
 	va_end( argptr );
 
 	sv_error = true;
