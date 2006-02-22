@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.20 2006/01/15 18:11:41 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.21 2006/02/22 00:16:50 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -57,7 +57,7 @@ void PR2_RunError(char *error, ...)
 	char		string[1024];
 
 	va_start(argptr, error);
-	vsprintf(string, error, argptr);
+	vsnprintf(string, sizeof(string), error, argptr);
 	va_end(argptr);
 
 	sv_error = true;
@@ -1549,13 +1549,13 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 		else if (!strcmp(key, "ping"))
 		{
 			int ping = SV_CalcPing(&svs.clients[e1 - 1]);
-			sprintf(ov, "%d", ping);
+			snprintf(ov, sizeof(ov), "%d", ping);
 			value = ov;
 		}
 		else
 			if (!strcmp(key, "*userid"))
 			{
-				sprintf(ov, "%d", svs.clients[e1 - 1].userid);
+				snprintf(ov, sizeof(ov), "%d", svs.clients[e1 - 1].userid);
 				value = ov;
 			}
 			else
