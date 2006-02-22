@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.51 2006/02/15 17:54:34 vvd0 Exp $
+$Id: changes.txt,v 1.52 2006/02/22 17:37:47 vvd0 Exp $
 
 ----
 MVDSV v0.19.11-CVS build 22?? (2006.02.??)
@@ -926,6 +926,11 @@ QWEX v0.159 Beta DEVELOP
 
 - few more minor changes/bugfixes  
   
+
+----
+QWEX v0.158 Beta DEVELOP build 936 (2002.04.05)
+----
+
 
 ----
 QWEX v0.153 Beta DEVELOP build 781 (2002.02.09)
