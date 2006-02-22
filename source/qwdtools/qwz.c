@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: qwz.c,v 1.3 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: qwz.c,v 1.4 2006/02/22 00:18:52 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -98,13 +98,13 @@ qboolean OpenQWZ (char *files)
 		*p = 0;
 
 	if (!qizmoDir[0])
-		strcpy(curdir, currentDir);
+		strncpy(curdir, currentDir, sizeof(curdir));
 	else
 	{
 		if (strstr(qizmoDir, ":") != NULL)
-			sprintf(curdir, "%s",  qizmoDir);
+			snprintf(curdir, sizeof(curdir), "%s",  qizmoDir);
 		else
-			sprintf(curdir, "%s/%s", currentDir, qizmoDir);
+			snprintf(curdir, sizeof(curdir), "%s/%s", currentDir, qizmoDir);
 	}
 
 	strncpy (cmdline, va("%s/" QIZMO_BIN "-D %s", curdir,
