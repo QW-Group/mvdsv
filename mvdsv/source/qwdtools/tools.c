@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.6 2006/01/05 15:14:52 disconn3ct Exp $
+	$Id: tools.c,v 1.7 2006/02/22 00:18:17 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -161,12 +161,12 @@ void MSG_WriteCoord (sizebuf_t *sb, float f)
 
 void MSG_WriteAngle (sizebuf_t *sb, float f)
 {
-	MSG_WriteByte (sb, (int)(f*256/360) & 255);
+	MSG_WriteByte (sb, Q_rint(f*256.0/360.0) & 255);
 }
 
 void MSG_WriteAngle16 (sizebuf_t *sb, float f)
 {
-	MSG_WriteShort (sb, (int)(f*65536/360) & 65535);
+	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
 }
 
 void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
@@ -1168,6 +1168,7 @@ void *Q_Malloc (size_t size)
 	void *p;
 
 	p = malloc(size);
+	memset(p, 0, size);
 	if (!p)
 		Sys_Error ("Not enough memory free; check disk space\n");
 
@@ -1180,18 +1181,17 @@ va
  
 does a varargs printf into a temp buffer, so I don't need to have
 varargs versions of all text functions.
-FIXME: make this buffer size safe someday
 ============
 */
-char	*va(char *format, ...)
+char *va(char *format, ...)
 {
-	va_list		argptr;
-	static char		string[4][1024];
-	static int		index = 0;
+	va_list argptr;
+	static char string[4][1024];
+	static int index = 0;
 
 	index = (index+1)&3;
 	va_start (argptr, format);
-	vsprintf (string[index], format,argptr);
+	vsnprintf (string[index], sizeof(string[0]), format,argptr);
 	va_end (argptr);
 
 	return string[index];
