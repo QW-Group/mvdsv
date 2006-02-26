@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.6 2006/01/04 03:49:02 disconn3ct Exp $
+	$Id: protocol.h,v 1.7 2006/02/26 05:32:00 vvd0 Exp $
 */
 // protocol.h -- communications protocols
 #ifndef _PROTOCOL_H_
@@ -315,13 +315,26 @@ typedef struct
 } entity_state_t;
 
 
-#define	MAX_PACKET_ENTITIES		64 // doesn't count nails
-#define MAX_DEMO_PACKET_ENTITIES	300
+#ifndef QWDTOOLS
+
+#define	MAX_PACKET_ENTITIES	64	// doesn't count nails
+#define MAX_DEMO_PACKET_ENTITIES 300
 typedef struct
 {
 	int		num_entities;
 	entity_state_t	*entities;
 } packet_entities_t;
+
+#else
+
+#define	MAX_PACKET_ENTITIES	300	// doesn't count nails
+typedef struct
+{
+	int		num_entities;
+	entity_state_t	entities[MAX_PACKET_ENTITIES];
+} packet_entities_t;
+
+#endif
 
 
 typedef struct usercmd_s

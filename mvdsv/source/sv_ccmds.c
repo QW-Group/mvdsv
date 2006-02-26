@@ -16,12 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.18 2006/02/22 01:47:58 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.19 2006/02/26 05:32:00 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
 #include "log.h"
-#include "netinc.h"
 #include <sys/stat.h>
 #include <time.h>
 
@@ -1155,11 +1154,16 @@ void SV_Status_f (void)
 	avg = 1000 * svs.stats.latched_active  / STATFRAMES;
 	pak = (float)svs.stats.latched_packets / STATFRAMES;
 
-	Con_Printf ("net address                 : %s\n", NET_AdrToString (net_local_adr));
-	Con_Printf ("cpu utilization (overall)   : %3i%%\n", (int)cpu);
-	Con_Printf ("cpu utilization (recording) : %3i%%\n", (int)demo);
-	Con_Printf ("avg response time           : %i ms\n", (int)avg);
-	Con_Printf ("packets/frame               : %5.2f (%d)\n", pak, num_prstr);
+	Con_Printf ("net address                 : %s\n"
+				"cpu utilization (overall)   : %3i%%\n"
+				"cpu utilization (recording) : %3i%%\n"
+				"avg response time           : %i ms\n"
+				"packets/frame               : %5.2f (%d)\n",
+				NET_AdrToString (net_local_adr),
+				(int)cpu,
+				(int)demo,
+				(int)avg,
+				pak, num_prstr);
 
 	// min fps lat drp
 	if (sv_redirected != RD_NONE && sv_redirected != RD_MOD)
@@ -1198,8 +1202,8 @@ void SV_Status_f (void)
 	}
 	else
 	{
-		Con_Printf ("name             ping frags   id   address                real ip\n");
-		Con_Printf ("---------------- ---- ----- ------ ---------------------- ---------------\n");
+		Con_Printf ("name             ping frags   id   address                real ip\n"
+					"---------------- ---- ----- ------ ---------------------- ---------------\n");
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 		{
 			if (!cl->state)
@@ -1771,6 +1775,19 @@ void SV_SnapAll_f (void)
 
 /*
 ==================
+SV_ShowTime_f
+For development purposes only
+//VVD
+==================
+*/
+/*void SV_ShowTime_f (void)
+{
+	Con_Printf("realtime = %f,\nsv.time = %f,\nsv.old_time = %f\n",
+			realtime, sv.time, sv.old_time);
+}*/
+
+/*
+==================
 SV_InitOperatorCommands
 ==================
 */
@@ -1833,6 +1850,11 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("sv_gamedir", SV_Gamedir);
 	Cmd_AddCommand ("floodprot", SV_Floodprot_f);
 	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f);
+/*
+	Cmd_AddCommand ("showtime", SV_ShowTime_f);
+For development purposes only
+//VVD
+*/
 
 	cl_warncmd.value = 1;
 }

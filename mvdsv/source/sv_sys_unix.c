@@ -16,23 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.16 2006/02/22 01:48:00 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.17 2006/02/26 05:32:00 vvd0 Exp $
 */
 
 #include <dirent.h>
 #include <dlfcn.h>
 #include "qwsvdef.h"
-#include "netinc.h"
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
 #include <sys/time.h>
 #include <sys/stat.h>
-
-#include "pcre/pcre.h"
-
 #else
 #include <sys/dir.h>
 #endif
+
 #include <time.h>
 
 // Added by VVD {

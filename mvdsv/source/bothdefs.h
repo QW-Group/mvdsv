@@ -16,13 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.7 2006/01/04 03:49:02 disconn3ct Exp $
+	$Id: bothdefs.h,v 1.8 2006/02/26 05:32:00 vvd0 Exp $
 */
 
 // defs common to client and server
 
-#ifndef _BOTHDEFS
-#define _BOTHDEFS
+#ifndef __BOTHDEFS_H__
+#define __BOTHDEFS_H__
 
 #define	MSG_BUF_SIZE	8192
 
@@ -124,4 +124,74 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
-#endif //_BOTHDEFS
+
+typedef unsigned char byte;
+
+// KJB Undefined true and false defined in SciTech's DEBUG.H header
+#undef true
+#undef false
+typedef enum {false, true} qboolean;
+
+#define	MAX_INFO_STRING		196
+#define	MAX_SERVERINFO_STRING	512
+#define	MAX_LOCALINFO_STRING	32768
+#define	MAX_KEY_STRING		64
+
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
+
+#define MAX_NUM_ARGVS	50
+
+//============================================================================
+
+short	ShortSwap (short l);
+int		LongSwap (int l);
+float	FloatSwap (float f);
+
+#ifdef __BIG_ENDIAN__
+#define BigShort(x) (x)
+#define BigLong(x) (x)
+#define BigFloat(x) (x)
+#define LittleShort(x) ShortSwap(x)
+#define LittleLong(x) LongSwap(x)
+#define LittleFloat(x) FloatSwap(x)
+#else
+#define BigShort(x) ShortSwap(x)
+#define BigLong(x) LongSwap(x)
+#define BigFloat(x) FloatSwap(x)
+#define LittleShort(x) (x)
+#define LittleLong(x) (x)
+#define LittleFloat(x) (x)
+#endif
+
+//============================================================================
+
+#ifdef _WIN32
+#define strcasecmp(s1, s2)	_stricmp  ((s1),   (s2))
+#define strncasecmp(s1, s2, n)	_strnicmp ((s1),   (s2),   (n))
+int snprintf(char *str, size_t n, char const *fmt, ...);
+int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
+#endif
+
+#if defined(__linux__) || defined(_WIN32)
+size_t	strlcpy (char *dst, char *src, size_t siz);
+size_t	strlcat (char *dst, char *src, size_t siz);
+#endif
+#ifndef __FreeBSD__
+char	*strnstr (char *s, char *find, size_t slen);
+char	*strcasestr(const char *s, const char *find);
+#endif
+
+int		Q_atoi (char *str);
+float	Q_atof (char *str);
+//char	*Q_ftos (float value);
+#define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
+
+// does a varargs printf into a temp buffer
+char	*va(char *format, ...);
+
+void *Q_Malloc (size_t size);
+#define	Q_Free(ptr)	free(ptr)
+
+#endif //__BOTHDEFS_H__

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.8 2006/02/22 17:37:48 vvd0 Exp $
+	$Id: sv_windows.c,v 1.9 2006/02/26 05:32:00 vvd0 Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
@@ -33,7 +33,8 @@ HINSTANCE	global_hInstance;
 HWND		DlgHwnd;
 HWND		HEdit1 = NULL, HEdit2 = NULL;
 HMENU		Menu;
-
+unsigned int	HEdit1_size = 0;
+char		*HEdit1_buf = NULL;
 qboolean minimized = false;
 
 qboolean DrawConsole = false;
@@ -51,7 +52,7 @@ also works much faster
 
 void ConsoleAddText(char *text)
 {
-	int l;
+	int l, size;
 	extern char chartbl2[]; // quake char translation map
 	DrawConsole = true;
 
@@ -59,7 +60,16 @@ void ConsoleAddText(char *text)
 	SendMessage(HEdit1, EM_SETREADONLY, 0, 0);
 
 	//  set the carriage in the end of the text
-	l = SendMessage(HEdit1, WM_GETTEXTLENGTH, 0,0);
+	l = SendMessage(HEdit1, WM_GETTEXTLENGTH, 0, 0);
+
+	size = l + strlen(text) + 1;
+	if (HEdit1_size < size)
+	{
+		SendMessage(HEdit1, WM_GETTEXT, l + 1, (LPARAM)HEdit1_buf);
+		SendMessage(HEdit1, WM_SETTEXT, 0, (LPARAM)(HEdit1_buf + size - HEdit1_size));
+		l = SendMessage(HEdit1, WM_GETTEXTLENGTH, 0, 0);
+	}
+
 	SendMessage(HEdit1, EM_SETSEL, l, l);
 
 	while (*text)
@@ -172,7 +182,7 @@ void ShowNotifyIcon(void)
 	tnid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
 	tnid.uCallbackMessage = WM_TRAY;
 	tnid.hIcon = icon;
-	lstrcpyn(tnid.szTip, va("mvdsv:%d", sv_port), sizeof(tnid.szTip));
+	lstrcpyn(tnid.szTip, va(SERVER_NAME ":%d", sv_port), sizeof(tnid.szTip));
 
 	Shell_NotifyIcon(NIM_ADD, &tnid);
 
@@ -217,7 +227,7 @@ DWORD WINAPI TrackPopup(LPVOID param)
 	// we can't create menu of a window from another thread,
 	// so we need to make a temporary window here
 
-	win = CreateWindow("mvdsv", "", 0,0,0,0,0,NULL, NULL, global_hInstance, NULL);
+	win = CreateWindow(SERVER_NAME, "", 0,0,0,0,0,NULL, NULL, global_hInstance, NULL);
 
 	GetCursorPos(&point);
 	result = TrackPopupMenu(Menu, TPM_RETURNCMD|TPM_LEFTALIGN|TPM_LEFTBUTTON, point.x, point.y, 0, win, NULL);
@@ -285,6 +295,11 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		HEdit2 = GetDlgItem(hwndDlg, IDC_EDIT2);
 
 		SetFocus(HEdit2);
+
+//		SendMessage(HEdit1, EM_LIMITTEXT, 1000, 0);
+		HEdit1_size = SendMessage(HEdit1, EM_GETLIMITTEXT, 0, 0);
+		HEdit1_buf = Q_Malloc(HEdit1_size + 1);
+Sys_Printf("%d\n", HEdit1_size);
 		break;
 
 	case WM_CTLCOLORSTATIC:

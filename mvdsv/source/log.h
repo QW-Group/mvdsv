@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: log.h,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: log.h,v 1.7 2006/02/26 05:32:00 vvd0 Exp $
 */
 
-#ifndef _LOG
-#define _LOG
+#ifndef __LOG_H__
+#define __LOG_H__
 #include <time.h>
 enum {	MIN_LOG = 0, CONSOLE_LOG = 0, ERROR_LOG,  RCON_LOG,
 	TELNET_LOG,  FRAG_LOG,        PLAYER_LOG, MOD_FRAG_LOG, MAX_LOG};
@@ -40,8 +40,9 @@ extern	cvar_t	frag_log_type;
 extern	cvar_t	telnet_log_level;
 
 //bliP: logging
-void SV_Logfile (int sv_log, qboolean newlog);
-void SV_LogPlayer(client_t *cl, char *msg, int level);
+void	SV_Logfile (int sv_log, qboolean newlog);
+void	SV_LogPlayer(client_t *cl, char *msg, int level);
 //<-
 void	SV_Write_Log(int sv_log, int level, char *msg);
-#endif
+
+#endif //__LOG_H__

@@ -15,8 +15,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: defs.h,v 1.7 2005/12/04 07:52:39 disconn3ct Exp $
+	$Id: defs.h,v 1.8 2006/02/26 05:32:01 vvd0 Exp $
 */
+
+#ifndef __DEFS_H__
+#define __DEFS_H__
 
 #ifdef _WIN32
 #include <conio.h>
@@ -44,10 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fcntl.h>
 
 #define INI_FILE	"qwdtools.ini"
-
-typedef enum {false, true} qboolean;
-
-typedef unsigned char byte;
 
 typedef float vec_t;
 typedef vec_t vec3_t[3];
@@ -83,8 +82,9 @@ typedef vec_t vec3_t[3];
 
 #define JOB_TODO	(O_MARGE | O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
 
-#include "../protocol.h"
+#define	QWDTOOLS
 #include "../bothdefs.h"
+#include "../protocol.h"
 #include "../version.h"
 #include "tools.h"
 #include "world.h"
@@ -259,7 +259,4 @@ void ReadIni(char *buf);
 qboolean OpenQWZ (char *files);
 void StopQWZ (source_t *s);
 
-#ifdef _WIN32
-#define strcasecmp(s1, s2)	_stricmp  ((s1),   (s2))
-#define strncasecmp(s1, s2, n)	_strnicmp ((s1),   (s2),   (n))
-#endif
+#endif //__DEFS_H__

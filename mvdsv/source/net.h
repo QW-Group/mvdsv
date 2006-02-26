@@ -16,11 +16,58 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.7 2006/01/04 03:35:01 disconn3ct Exp $
+	$Id: net.h,v 1.8 2006/02/26 05:32:00 vvd0 Exp $
 */
 // net.h -- quake's interface to the networking layer
-#ifndef _NET_H_
-#define _NET_H_
+#ifndef __NET_H__
+#define __NET_H__
+
+#ifdef _WIN32
+#include <Winsock2.h>
+
+#define EWOULDBLOCK	WSAEWOULDBLOCK
+#define EMSGSIZE	WSAEMSGSIZE
+#define ECONNRESET	WSAECONNRESET
+#define ECONNABORTED	WSAECONNABORTED
+#define ECONNREFUSED	WSAECONNREFUSED
+#define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
+#define EAFNOSUPPORT	WSAEAFNOSUPPORT
+
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <sys/uio.h>
+#include <arpa/inet.h>
+#include <errno.h>
+
+#include <unistd.h>
+
+#ifdef sun
+#include <sys/filio.h>
+#endif
+
+#ifdef NeXT
+#include <libc.h>
+#endif
+
+#define closesocket close
+#define ioctlsocket ioctl
+#endif
+
+#if defined(_WIN32)
+#define qerrno WSAGetLastError()
+#else
+#define qerrno errno
+#endif
+
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET -1
+#endif
+
 
 #define	PORT_ANY	-1
 
@@ -145,5 +192,4 @@ qboolean Netchan_CanReliable (netchan_t *chan);
 
 void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a);
 
-#endif /* _NET_H_ */
-
+#endif /* __NET_H__ */

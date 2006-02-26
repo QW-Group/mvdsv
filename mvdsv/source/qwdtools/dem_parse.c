@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: dem_parse.c,v 1.5 2006/01/05 15:14:52 disconn3ct Exp $
+	$Id: dem_parse.c,v 1.6 2006/02/26 05:32:01 vvd0 Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -549,7 +549,7 @@ void Dem_ParsePrint (void)
 		return;
 	if (level == PRINT_CHAT && s[0] == '(' && strstr(s, "): ") != NULL)
 	{
-		strncpy(str, s + 1, sizeof(str));
+		strlcpy(str, s + 1, sizeof(str));
 		*(str + ((strstr(s, "): ") - s))) = 0;
 		if (findPlayer(str))
 		{
@@ -617,8 +617,8 @@ void Dem_UpdateUserinfo (void)
 	player = &from->players[slot];
 	/*player->userid = */MSG_ReadLong ();
 
-	strncpy (player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
-	strncpy (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
+	strlcpy (player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
+	strlcpy (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
 
 	if (Info_ValueForKey (player->userinfo, "*spectator")[0])
 		player->spectator = true;

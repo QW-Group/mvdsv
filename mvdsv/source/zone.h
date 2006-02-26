@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: zone.h,v 1.5 2005/12/27 17:15:32 disconn3ct Exp $
+	$Id: zone.h,v 1.6 2006/02/26 05:32:00 vvd0 Exp $
 */
-#ifndef _ZONE_H_
-#define _ZONE_H_
+#ifndef __ZONE_H__
+#define __ZONE_H__
 
 /*
  memory allocation
@@ -83,9 +83,6 @@ startup hunk allocations
 
 void Memory_Init (void *buf, int size);
 
-void *Q_Malloc (size_t size);
-#define	Q_Free(ptr)	free(ptr)
-
 void *Hunk_Alloc (int size); // returns 0 filled memory
 void *Hunk_AllocName (int size, char *name);
 
@@ -120,5 +117,5 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name);
 
 void Cache_Report (void);
 
-#endif /* _ZONE_H_ */
+#endif /* __ZONE_H__ */
 

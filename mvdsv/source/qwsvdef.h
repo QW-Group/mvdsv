@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.9 2006/01/05 15:02:25 disconn3ct Exp $
+	$Id: qwsvdef.h,v 1.10 2006/02/26 05:32:00 vvd0 Exp $
 */
 // qwsvdef.h -- primary header for server
 
-#ifndef _QWSVDEF
-#define _QWSVDEF
+#ifndef __QWSVDEF_H__
+#define __QWSVDEF_H__
 
 //define PARANOID // speed sapping error checking
 
@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <setjmp.h>
 #include <ctype.h>
 
-#include "bothdefs.h"
+//#include "bothdefs.h" - included in common.h
 
 #include "common.h"
 #include "bspfile.h"
@@ -59,6 +59,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "world.h"
 #include "pmove.h"
 #include "log.h"
+
+#include "pcre/pcre.h"
 
 #ifdef USE_PR2
 // Angel -->
@@ -110,4 +112,4 @@ void SV_Init (quakeparms_t *parms);
 void Con_Printf (char *fmt, ...);
 void Con_DPrintf (char *fmt, ...);
 
-#endif //_QWSVDEF
+#endif //__QWSVDEF_H__

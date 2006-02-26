@@ -15,39 +15,42 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.16 2006/02/07 12:52:36 vvd0 Exp $
+	$Id: version.h,v 1.17 2006/02/26 05:32:00 vvd0 Exp $
 */
 // version.h
 
+#ifndef __VERSION_H__
+#define __VERSION_H__
+
 #ifdef _WIN32
-#define QW_PLATFORM		"Win32"
+#define QW_PLATFORM			"Win32"
 #define QW_PLATFORM_SHORT	"(w)"
 #endif
 
 #ifdef __FreeBSD__
-#define QW_PLATFORM		"FreeBSD"
+#define QW_PLATFORM			"FreeBSD"
 #define QW_PLATFORM_SHORT	"(f)"
 #endif
 
 /*Claymore added this stuff ---> */
 #ifdef __OpenBSD__
-#define QW_PLATFORM		"OpenBSD"
+#define QW_PLATFORM			"OpenBSD"
 #define QW_PLATFORM_SHORT	"(o)"
 #endif
 /* <---  */
 
 #ifdef __linux__
-#define QW_PLATFORM		"Linux"
+#define QW_PLATFORM			"Linux"
 #define QW_PLATFORM_SHORT	"(l)"
 #endif
 
 #ifdef sun
-#define QW_PLATFORM		"SunOS"
+#define QW_PLATFORM			"SunOS"
 #define QW_PLATFORM_SHORT	"(s)"
 #endif
 
 #ifdef __APPLE__
-#define QW_PLATFORM		"Darwin"
+#define QW_PLATFORM			"Darwin"
 #define QW_PLATFORM_SHORT	"(d)"
 #endif
 
@@ -56,10 +59,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define QWE_VERSION		"0.19.11-CVS"
 #define QWE_VERNUM		0.1911
 #define SERVER_NAME		"MVDSV"
-#define QWDTOOLS_NAME		"QWDtools"
-#define PROJECT_NAME		SERVER_NAME
+#define QWDTOOLS_NAME	"QWDtools"
+#define PROJECT_NAME	SERVER_NAME
 #define PROJECT_URL		"http://mvdsv.sorceforge.net"
-#define FULL_VERSION		SERVER_NAME " " QWE_VERSION " " QW_PLATFORM_SHORT ", build %d"
+#define FULL_VERSION	SERVER_NAME " " QWE_VERSION " " QW_PLATFORM_SHORT ", build %d"
 #define BUILD_DATE		"Build date: " __DATE__ ", " __TIME__
 #define SIZEOF_FULL_VERSION	(sizeof(FULL_VERSION) + sizeof(BUILD_DATE) + sizeof(int) * 3)
 
@@ -68,3 +71,5 @@ extern char full_version[];
 
 int build_number (void);
 void Version_f (void);
+
+#endif //__VERSION_H__

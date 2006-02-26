@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.7 2006/02/22 00:18:17 disconn3ct Exp $
+	$Id: tools.c,v 1.8 2006/02/26 05:32:01 vvd0 Exp $
 */
 
 #include "defs.h"
@@ -34,53 +34,6 @@ sizebuf_t			*msgbuf;
 dbuffer_t	*demobuffer;
 static int	header = (char *)&((header_t*)0)->data - (char *)NULL;
 
-
-/*
-============================================================================
- 
-					BYTE ORDER FUNCTIONS
- 
-============================================================================
-*/
-
-short   ShortSwap (short l)
-{
-	byte    b1,b2;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-
-	return (b1<<8) + b2;
-}
-
-int    LongSwap (int l)
-{
-	byte    b1,b2,b3,b4;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-	b3 = (l>>16)&255;
-	b4 = (l>>24)&255;
-
-	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
-}
-
-float FloatSwap (float f)
-{
-	union
-	{
-		float	f;
-		byte	b[4];
-	} dat1, dat2;
-
-
-	dat1.f = f;
-	dat2.b[0] = dat1.b[3];
-	dat2.b[1] = dat1.b[2];
-	dat2.b[2] = dat1.b[1];
-	dat2.b[3] = dat1.b[0];
-	return dat2.f;
-}
 
 /*
 ==============================================================================
@@ -922,8 +875,8 @@ char *TemplateName (char *from, char *to, char *ch)
 		return to;
 
 	StripExtension(from, tmp);
-	strncpy(name, to, p - to);
-	strcat(name,va("%s%s",tmp, p+1));
+	strlcpy(name, to, p - to);
+	strlcat(name, va("%s%s", tmp, p + 1), sizeof(name));
 
 	return name;
 }
@@ -956,7 +909,6 @@ GetFileList
 Reads wildcards to get full file list
 ==============
 */
-void *Q_Malloc (size_t size);
 #ifdef _WIN32
 int AddToFileList(flist_t *filelist, char *file)
 {
@@ -1161,40 +1113,6 @@ void Argv_Init (int argc, char **argv)
 	{
 		com_argv[com_argc] = argv[com_argc];
 	}
-}
-
-void *Q_Malloc (size_t size)
-{
-	void *p;
-
-	p = malloc(size);
-	memset(p, 0, size);
-	if (!p)
-		Sys_Error ("Not enough memory free; check disk space\n");
-
-	return p;
-}
-
-/*
-============
-va
- 
-does a varargs printf into a temp buffer, so I don't need to have
-varargs versions of all text functions.
-============
-*/
-char *va(char *format, ...)
-{
-	va_list argptr;
-	static char string[4][1024];
-	static int index = 0;
-
-	index = (index+1)&3;
-	va_start (argptr, format);
-	vsnprintf (string[index], sizeof(string[0]), format,argptr);
-	va_end (argptr);
-
-	return string[index];
 }
 
 /*

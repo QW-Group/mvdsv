@@ -106,6 +106,10 @@ SOURCE=pcre\pcre.c
 # End Group
 # Begin Source File
 
+SOURCE=bothtools.c
+# End Source File
+# Begin Source File
+
 SOURCE=cmd.c
 # End Source File
 # Begin Source File
@@ -202,7 +206,7 @@ SOURCE=sv_main.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\sv_master.c
+SOURCE=sv_master.c
 # End Source File
 # Begin Source File
 
