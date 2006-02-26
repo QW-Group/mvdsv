@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.20 2006/01/05 15:09:12 disconn3ct Exp $
+#	$Id: Makefile.Linux,v 1.21 2006/02/26 05:32:00 vvd0 Exp $
 #
 
 MAINDIR=.
@@ -52,13 +52,13 @@ SV_OBJS = \
 		$(SV_DIR)/pr2_exec.o \
 		$(SV_DIR)/pr2_vm.o \
 \
-		$(SV_DIR)/sv_master.o \
 		$(SV_DIR)/sv_ccmds.o \
 		$(SV_DIR)/sv_demo.o \
 		$(SV_DIR)/sv_ents.o \
 		$(SV_DIR)/sv_init.o \
 		$(SV_DIR)/sv_login.o \
 		$(SV_DIR)/sv_main.o \
+		$(SV_DIR)/sv_master.o \
 		$(SV_DIR)/sv_mod_frags.o \
 		$(SV_DIR)/sv_model.o \
 		$(SV_DIR)/sv_move.o \
@@ -68,6 +68,7 @@ SV_OBJS = \
 		$(SV_DIR)/sv_sys_unix.o \
 		$(SV_DIR)/sv_user.o \
 \
+		$(SV_DIR)/bothtools.o \
 		$(SV_DIR)/cmd.o \
 		$(SV_DIR)/common.o \
 		$(SV_DIR)/crc.o \
@@ -98,6 +99,7 @@ endif
 #############################################################################
 
 QWDTOOLS_OBJS = \
+		$(SV_DIR)/bothtools.o \
 		$(QWDTOOLS_DIR)/dem_parse.o \
 		$(QWDTOOLS_DIR)/dem_send.o \
 		$(QWDTOOLS_DIR)/ini.o \

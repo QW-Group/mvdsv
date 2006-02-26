@@ -16,13 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.30 2006/02/22 01:47:59 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.31 2006/02/26 05:32:00 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
 #include "winquake.h"
-#include "netinc.h"
-#include "pcre/pcre.h"
 
 #define demo_size_padding 0x1000
 

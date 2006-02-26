@@ -15,8 +15,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.h,v 1.6 2006/02/22 00:18:17 disconn3ct Exp $
+	$Id: tools.h,v 1.7 2006/02/26 05:32:01 vvd0 Exp $
 */
+
+#ifndef __TOOLS_H__
+#define __TOOLS_H__
 
 typedef struct
 {
@@ -66,10 +69,6 @@ void SZ_Write (sizebuf_t *buf, void *data, int length);
 void SZ_Print (sizebuf_t *buf, char *data);	// strcats onto the sizebuf
 
 
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
 #define Q_MAXCHAR ((char)0x7f)
 #define Q_MAXSHORT ((short)0x7fff)
 #define Q_MAXINT	((int)0x7fffffff)
@@ -81,34 +80,6 @@ void SZ_Print (sizebuf_t *buf, char *data);	// strcats onto the sizebuf
 #define Q_MININT 	((int)0x80000000)
 #define Q_MINLONG ((int)0x80000000)
 #define Q_MINFLOAT ((int)0x7fffffff)
-
-#define	MAX_INFO_STRING	196
-#define	MAX_SERVERINFO_STRING	512
-#define	MAX_LOCALINFO_STRING	32768
-
-//============================================================================
-
-short	ShortSwap (short l);
-int		LongSwap (int l);
-float	FloatSwap (float f);
-
-#ifdef __BIG_ENDIAN__
-#define BigShort(x) (x)
-#define BigLong(x) (x)
-#define BigFloat(x) (x)
-#define LittleShort(x) ShortSwap(x)
-#define LittleLong(x) LongSwap(x)
-#define LittleFloat(x) FloatSwap(x)
-#else
-#define BigShort(x) ShortSwap(x)
-#define BigLong(x) LongSwap(x)
-#define BigFloat(x) FloatSwap(x)
-#define LittleShort(x) (x)
-#define LittleLong(x) (x)
-#define LittleFloat(x) (x)
-#endif
-
-//============================================================================
 
 struct usercmd_s;
 
@@ -146,8 +117,6 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 char *Info_ValueForKey (char *s, char *key);
 
-#define MAX_NUM_ARGVS	50
-
 extern	int		com_argc;
 extern	char	*com_argv[MAX_NUM_ARGVS];
 
@@ -167,9 +136,6 @@ char *TemplateName (char *dst, char *src, char *ch);
 char *getPath(char *path);
 int AddToFileList(flist_t*filelist, char *file);
 void FreeFileList(flist_t*filelist);
-
-char	*va(char *format, ...);
-// does a varargs printf into a temp buffer
 
 int fileLength (FILE *f);
 int FileOpenRead (char *path, FILE **hndl);
@@ -196,8 +162,4 @@ vec_t VectorLength(vec3_t v);
 				(d)->start - (d)->end : \
 				(d)->maxsize - (d)->end)
 
-
-#define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
-
-
-
+#endif // __TOOLS_H__

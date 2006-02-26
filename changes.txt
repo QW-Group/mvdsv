@@ -1,9 +1,12 @@
 
-$Id: changes.txt,v 1.52 2006/02/22 17:37:47 vvd0 Exp $
+$Id: changes.txt,v 1.53 2006/02/26 05:32:00 vvd0 Exp $
 
 ----
-MVDSV v0.19.11-CVS build 22?? (2006.02.??)
+MVDSV v0.19.11-CVS build 22?? (2006.03.??)
+- for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
+  to bothtools.c and bothdefs.h
 [server]
+- added "scroll" console output on Win32
 - bugfix from 0.19.10-develop: incorrect demo numbering while game proceed if used extracts by
   substrings in command 'cmd dlist', example: 'cmd dlist aerowalk'
 (Thanks to gLAd)
@@ -12,6 +15,8 @@ MVDSV v0.19.11-CVS build 22?? (2006.02.??)
   (EXPERIMENTAL)', because ktpro can't determine version of the server and said
   "<COMMAND NAME> command is only for qwe > 2.40" (commands: autotrack, tracklist and etc.)
 (Thanks to Renzo)
+[qwdtools]
+- bugfix from 0.19.10-develop: crashed
 
 
 ----
@@ -21,8 +26,7 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
 - added MSVC 7.1 solution/project file
 [server]
 - serverinfo key *version changed from "2.40" to "mvdsv QWE_VERSION" and *qwe_version was removed
-  (EXPERIMENTAL) (QWE_VERSION = "0.19.10-develop")
-(by disconnect)
+  (EXPERIMENTAL) (QWE_VERSION = "0.19.10-develop") (by disconnect)
 - bugfix: disabled download from gamedir. So only subdirs of gamedir are allowed.
 - new variable: allow_download_other (0 by default) - allows/disallows downloading of stuff
 - improved timer accuracy for win32. use -nohwtimer to use old-style timing
@@ -32,15 +36,13 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
 - To run server you only need a map (.bsp file), qwprogs and mvdsv executable.
   You even dont need pak0.pak, etc (by disconnect from ZQuake)
 - A thousand bugfixes i found at ZQuake (like merge pmtrace_t with trace_t, etc),
-  but i dont think i have to write it here, since only developers 
+  but I dont think I have to write it here, since only developers 
   can understand it :P } (by disconnect)
 - sv_nailhack is 1 by default. Dunno why it was set 0 at begin of 'mvd-era'. (by disconnect)
-- new cvar "sv_maxuserid" 99 by default. limits userid in 1...99 range. (by disconnect)
+- new cvar "sv_maxuserid" 99 by default. Limits userid in 1...99 range. (by disconnect)
 - server-side flash for TeamFortress (oldgrens mode) (ported by Angel from QW262)
-- added possibility to set small speed for objects on map
-(by ivan)
-- added possibility to set non integer volume for sounds from mods
-(by ivan)
+- added possibility to set small speed for objects on map (by ivan)
+- added possibility to set non integer volume for sounds from mods (by ivan)
 - added possibility to record multiple demos at same time (from FTE by disconnect)
 - FTE's QTV (FTV) support (from FTE by disconnect) :
   - mvd_streamport - cvar, to control a port for MVD data streaming
@@ -66,7 +68,7 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
   - MAX_BACK_BUFFERS increased from 16 to 128 (EXPERIMENTAL)
   - MAX_REDIRECTMESSAGES increased from 4 to 128 (EXPERIMENTAL)
 - bugfix from 0.160b: pause with sv_minping > 0 cause all players disconnected
-(Thaks to Siberex)
+(Thanks to Siberex)
 [client]
 - removed client sources. MVDSV now consist of server and qwdtools only (by Angel)
 
@@ -75,7 +77,7 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
 MVDSV v0.19 build 2050 (2005.08.01)
 [server]
 - bugfix ktpro: posibility to crash ktpro from client
-(Thaks to MoosemaN)
+(Thanks to MoosemaN)
 - bugfix from 0.179b: internal 'cmd dl' function used one queue for all players -
   made self queue for each player
 
@@ -1130,7 +1132,7 @@ changes over QWE v0.11 Beta build 628 (2001.09.09)
 - increased maximum size of packet. (some qizmo demos with voice coused problems)
 
 
-QWE v0.?? build 526+ (2001.05.30+)
+QWE v0.?? build ??? (2001.0?.??)
 Project started.
 
 ZQUAKE v0.12 build 526 (2001.05.30)

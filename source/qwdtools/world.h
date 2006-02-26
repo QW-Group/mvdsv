@@ -15,8 +15,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: world.h,v 1.3 2005/12/04 05:39:33 disconn3ct Exp $
+	$Id: world.h,v 1.4 2006/02/26 05:32:01 vvd0 Exp $
 */
+
+#ifndef __WORLD_H__
+#define __WORLD_H__
 
 // player_state_t is the information needed by a player entity
 // to do move prediction and to generate a drawable entity
@@ -203,3 +206,4 @@ extern static_world_state_t	sworld;
 extern lightstyle_t		lightstyle[MAX_LIGHTSTYLES];
 extern entity_state_t	baselines[MAX_EDICTS];
 
+#endif //__WORLD_H__

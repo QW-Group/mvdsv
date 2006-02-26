@@ -16,15 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_udp.c,v 1.8 2006/02/22 01:47:58 disconn3ct Exp $
+	$Id: net_udp.c,v 1.9 2006/02/26 05:32:00 vvd0 Exp $
 */
 // net_main.c
 
 #include "qwsvdef.h"
-#include "netinc.h"
 
 #include <sys/param.h>
-
 
 
 netadr_t	net_local_adr;

@@ -24,11 +24,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_mod_frags.c,v 1.6 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_mod_frags.c,v 1.7 2006/02/26 05:32:00 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
-#include "pcre/pcre.h"
 #include "sv_mod_frags.h"
 
 qwmsg_t *qwmsg[MOD_MSG_MAX + 1];

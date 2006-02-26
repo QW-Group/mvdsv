@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.21 2006/02/22 00:16:50 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.22 2006/02/26 05:32:00 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -2478,6 +2478,8 @@ int sv_sys_callex(byte *data, unsigned int mask, int fn, pr2val_t*arg)
 extern gameData_t *gamedata;
 extern field_t *fields;
 
+#define GAME_API_VERSION_MIN	GAME_API_VERSION
+
 void PR2_InitProg()
 {
 	PR2_FS_Restart();
@@ -2489,8 +2491,15 @@ void PR2_InitProg()
 		SV_Error("PR2_InitProg gamedata == NULL");
 
 	gamedata = (gameData_t *)PR2_GetString((int)gamedata);
-	if (gamedata->APIversion < 8 || gamedata->APIversion > GAME_API_VERSION)
-		SV_Error("PR2_InitProg: Incorrect API version");
+	if (gamedata->APIversion < GAME_API_VERSION_MIN || gamedata->APIversion > GAME_API_VERSION)
+	{
+		if (GAME_API_VERSION_MIN == GAME_API_VERSION)
+			SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)",
+				gamedata->APIversion, GAME_API_VERSION);
+		else
+			SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)",
+				gamedata->APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
+	}
 
 	sv.edicts = (edict_t *)PR2_GetString((int)gamedata->ents);
 	pr_global_struct = (globalvars_t*)PR2_GetString((int)gamedata->global);

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: zone.c,v 1.8 2006/01/03 16:44:13 disconn3ct Exp $
+	$Id: zone.c,v 1.9 2006/02/26 05:32:00 vvd0 Exp $
 */
 // zone.c - memory management
 
@@ -24,30 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void Cache_FreeLow (int new_low_hunk);
 void Cache_FreeHigh (int new_high_hunk);
-
-
-/*
-===================
-Q_Malloc
-
-Use it instead of malloc so that if memory allocation fails,
-the program exits with a message saying there's not enough memory
-instead of crashing after trying to use a NULL pointer.
-It also sets memory to zero.
-===================
-*/
-void *Q_Malloc (size_t size)
-{
-	void *p;
-
-	p = malloc(size);
-	memset(p, 0, size);
-	//p = calloc(1, size); //malloc & memset or just calloc?
-	if (!p)
-		Sys_Error ("Not enough memory free");
-
-	return p;
-}
 
 //============================================================================
 

@@ -16,27 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.11 2006/01/04 03:48:33 disconn3ct Exp $
+	$Id: common.h,v 1.12 2006/02/26 05:32:00 vvd0 Exp $
 */
 // common.h  -- general definitions
 
-#ifndef _COMMON
-#define _COMMON
+#ifndef __COMMON_H__
+#define __COMMON_H__
 
 #include "bothdefs.h"
-
-typedef unsigned char byte;
-
-// KJB Undefined true and false defined in SciTech's DEBUG.H header
-#undef true
-#undef false
-
-typedef enum {false, true}	qboolean;
-
-#define	MAX_INFO_STRING		196
-#define	MAX_SERVERINFO_STRING	512
-#define	MAX_LOCALINFO_STRING	32768
-#define	MAX_KEY_STRING		64
 
 //============================================================================
 typedef struct sizebuf_s
@@ -65,34 +52,6 @@ void ClearLink (link_t *l);
 void RemoveLink (link_t *l);
 void InsertLinkBefore (link_t *l, link_t *before);
 void InsertLinkAfter (link_t *l, link_t *after);
-
-//============================================================================
-
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
-//============================================================================
-
-short	ShortSwap (short l);
-int	LongSwap (int l);
-float	FloatSwap (float f);
-
-#ifdef __BIG_ENDIAN__
-#define BigShort(x) (x)
-#define BigLong(x) (x)
-#define BigFloat(x) (x)
-#define LittleShort(x) ShortSwap(x)
-#define LittleLong(x) LongSwap(x)
-#define LittleFloat(x) FloatSwap(x)
-#else
-#define BigShort(x) ShortSwap(x)
-#define BigLong(x) LongSwap(x)
-#define BigFloat(x) FloatSwap(x)
-#define LittleShort(x) (x)
-#define LittleLong(x) (x)
-#define LittleFloat(x) (x)
-#endif
 
 //============================================================================
 
@@ -131,25 +90,6 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 //============================================================================
 
-#ifdef _WIN32
-#define strcasecmp(s1, s2)	_stricmp  ((s1),   (s2))
-#define strncasecmp(s1, s2, n)	_strnicmp ((s1),   (s2),   (n))
-int snprintf(char *str, size_t n, char const *fmt, ...);
-int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
-#endif
-
-#if defined(__linux__) || defined(_WIN32)
-size_t	strlcpy (char *dst, char *src, size_t siz);
-size_t	strlcat (char *dst, char *src, size_t siz);
-#endif
-#ifndef __FreeBSD__
-char	*strnstr (char *s, char *find, size_t slen);
-char	*strcasestr(const char *s, const char *find);
-#endif
-
-int	Q_atoi (char *str);
-float	Q_atof (char *str);
-
 char	*Q_normalizetext(unsigned char *name); //bliP: red to white text
 char	*Q_redtext(unsigned char *str); //bliP: white to red text
 char	*Q_yelltext(unsigned char *str); //VVD: white to red text and yellow numbers
@@ -174,9 +114,6 @@ void COM_StripExtension (char *in, char *out);
 void COM_FileBase (char *in, char *out);
 void COM_DefaultExtension (char *path, char *extension);
 int COM_FileLength (FILE *f); //bliP: init
-
-char *va(char *format, ...);
-// does a varargs printf into a temp buffer
 
 
 //============================================================================
@@ -208,4 +145,5 @@ void Info_CopyStarKeys (char *from, char *to);
 
 unsigned Com_BlockChecksum (void *buffer, int length);
 byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
-#endif //_COMMON
+
+#endif //__COMMON_H__
