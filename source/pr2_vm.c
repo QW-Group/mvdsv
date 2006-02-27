@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.8 2006/02/22 00:16:57 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.9 2006/02/27 12:44:07 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -241,7 +241,7 @@ void LoadMapFile( qvm_t*qvm, char* fname )
 	char	lineBuffer[MAX_LINE_LENGTH];
 	char	symname[MAX_LINE_LENGTH];
 	int	i,off,seg,len,num_symbols = 0;
-	symbols_t* sym;
+	symbols_t *sym = NULL;
 
 	byte   *buff;
 	byte   *p;
@@ -612,7 +612,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 	int 	cycles[MAX_PROC_CALL],cycles_p=0;
 #endif
 #ifdef QVM_PROFILE
-	profile_t*profile_func;
+	profile_t *profile_func = NULL;
 	symbols_t *sym;
 #endif
 	int     savePC, saveSP, saveLP, ivar;
