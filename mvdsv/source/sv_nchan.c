@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_nchan.c,v 1.3 2005/12/04 05:37:45 disconn3ct Exp $
+	$Id: sv_nchan.c,v 1.4 2006/02/27 13:50:39 disconn3ct Exp $
 */
 // sv_nchan.c, user reliable data stream writes
 
@@ -190,3 +190,14 @@ void ClientReliableWrite_SZ(client_t *cl, void *data, int len)
 		SZ_Write(&cl->netchan.message, data, len);
 }
 
+void SV_ClearBackbuf (client_t *cl)
+{
+	cl->num_backbuf = 0;
+}
+
+// clears both cl->netchan.message and backbuf
+void SV_ClearReliable (client_t *cl)
+{
+	SZ_Clear (&cl->netchan.message);
+	SV_ClearBackbuf (cl);
+}

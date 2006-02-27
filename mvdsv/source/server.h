@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.22 2006/01/15 18:11:42 disconn3ct Exp $
+	$Id: server.h,v 1.23 2006/02/27 13:50:39 disconn3ct Exp $
 */
 // server.h
 
@@ -650,6 +650,7 @@ void ClientReliableWrite_Long(client_t *cl, int c);
 void ClientReliableWrite_Short(client_t *cl, int c);
 void ClientReliableWrite_String(client_t *cl, char *s);
 void ClientReliableWrite_SZ(client_t *cl, void *data, int len);
+void SV_ClearReliable (client_t *cl); // clear cl->netchan.message and backbuf
 
 //
 // sv_demo.c
