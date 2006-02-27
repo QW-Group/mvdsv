@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.40 2006/02/27 13:50:39 disconn3ct Exp $
+	$Id: sv_main.c,v 1.41 2006/02/27 18:51:58 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -33,6 +33,8 @@ int		host_hunklevel;
 int		current_skill;			// for entity spawnflags checking
 
 client_t	*host_client;			// current client
+
+char		master_rcon_password[128] = "";	//bliP: password for remote server commands
 
 cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map changes
 
@@ -53,7 +55,6 @@ cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 // after disconnect
 
 cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
-cvar_t	master_rcon_password = {"master_rcon_password", ""};	//bliP: password for remote server commands
 cvar_t	password = {"password", ""};	// password for entering the game
 cvar_t	sv_hashpasswords = {"sv_hashpasswords", "1"}; // 0 - plain passwords; 1 - hashed passwords
 cvar_t	telnet_password = {"telnet_password", ""}; // password for login via telnet
@@ -163,6 +164,7 @@ cvar_t sv_maxuserid = {"sv_maxuserid", "99"};
 log_t	logs[MAX_LOG];
 
 qboolean sv_error = 0;
+qboolean server_cfg_done = false;
 
 void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 
@@ -1173,7 +1175,7 @@ int Master_Rcon_Validate (void)
 	}
 	//	Sys_Printf("client_string = %s\nclient_string_len = %d, strlen(client_string) = %d\n",
 	//		client_string, client_string_len, strlen(client_string));
-	i = Rcon_Validate (client_string, master_rcon_password.string);
+	i = Rcon_Validate (client_string, master_rcon_password);
 	Q_Free(client_string);
 	return i;
 }
@@ -1200,7 +1202,7 @@ void SVC_RemoteCommand (char *client_string)
 	qboolean	banned = false;
 
 
-	if (Rcon_Validate (client_string, master_rcon_password.string))
+	if (Rcon_Validate (client_string, master_rcon_password))
 		do_cmd = true;
 	else if (Rcon_Validate (client_string, rcon_password.string))
 	{
@@ -1214,7 +1216,7 @@ void SVC_RemoteCommand (char *client_string)
 		{
 			strlcpy (str, Cmd_Argv(2), sizeof(str));
 			if (	str[0] && //normal rcon can't use these commands
-			        (	!strcmp(str, "master_rcon_password") ||
+				(!strcmp(str, "master_rcon_password") || //disconnect: remove?
 			          !strcmp(str, "rm") ||
 			          !strcmp(str, "rmdir") ||
 			          !strcmp(str, "ls") ||
@@ -1256,7 +1258,7 @@ void SVC_RemoteCommand (char *client_string)
 		if (!sv_crypt_rcon.value)
 		{
 			hide = net_message.data + 9;
-			p = admin_cmd ? rcon_password.string : master_rcon_password.string;
+			p = admin_cmd ? rcon_password.string : master_rcon_password;
 			while (*p)
 			{
 				p++;
@@ -1287,7 +1289,7 @@ void SVC_RemoteCommand (char *client_string)
 		if (admin_cmd && !sv_crypt_rcon.value)
 		{
 			hide = net_message.data + 9;
-			p = admin_cmd ? rcon_password.string : master_rcon_password.string;
+			p = admin_cmd ? rcon_password.string : master_rcon_password;
 			while (*p)
 			{
 				p++;
@@ -2447,7 +2449,6 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_serverip);
 	Cvar_RegisterVariable (&sv_cpserver);
 	Cvar_RegisterVariable (&rcon_password);
-	Cvar_RegisterVariable (&master_rcon_password); //bliP: init
 	Cvar_RegisterVariable (&password);
 	Cvar_RegisterVariable (&sv_hashpasswords);
 	//Added by VVD {
@@ -2941,6 +2942,8 @@ void SV_Init (quakeparms_t *parms)
 	}
 
 	SV_Map(true);
+
+	server_cfg_done  = true;
 
 	// if a map wasn't specified on the command line, spawn start map
 	if (sv.state == ss_dead)
