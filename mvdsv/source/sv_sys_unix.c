@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.18 2006/02/27 12:01:59 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.19 2006/02/27 12:44:07 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -153,7 +153,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	qboolean all;
 
 	int	r;
-	pcre	*preg;
+	pcre	*preg=NULL;
 	const char	*errbuf;
 
 	memset(list, 0, sizeof(list));
