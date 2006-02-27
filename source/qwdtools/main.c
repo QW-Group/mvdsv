@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: main.c,v 1.9 2006/02/27 10:48:39 disconn3ct Exp $
+	$Id: main.c,v 1.10 2006/02/27 11:03:37 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -1147,16 +1147,16 @@ qboolean ClearWorld(void)
 			ext = COM_FileExtension(sworld.from[i].name);
 
 		// qwz -> qwd
-		if (!strcasecmp(ext, ".qwz"))
+		if (!strcasecmp(ext, "qwz"))
 		{
 			*(sworld.from[i].name + strlen(sworld.from[i].name) - 1) = 'd';
 			ext[3] = 'd';
 			from->qwz = true;
 		}
 
-		if (!strcasecmp(ext, ".qwd"))
+		if (!strcasecmp(ext, "qwd"))
 			from->format = qwd;
-		else if (!strcasecmp(ext, ".mvd"))
+		else if (!strcasecmp(ext, "mvd"))
 			from->format = mvd;
 		else
 		{
