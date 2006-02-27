@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_wins.c,v 1.9 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: net_wins.c,v 1.10 2006/02/27 12:01:59 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -27,8 +27,7 @@ netadr_t	net_local_adr;
 
 netadr_t	net_from;
 sizebuf_t	net_message;
-int		net_clientsocket;
-int		net_serversocket;
+int		net_socket;
 int		net_telnetsocket;
 int		sv_port;
 int		telnetport;
@@ -38,14 +37,6 @@ int		telnet_connected;
 byte		net_message_buffer[MSG_BUF_SIZE];
 
 WSADATA		winsockdata;
-
-// Tonik -->
-#define	 PORT_LOOPBACK 65535
-int			loop_c2s_messageLength;
-char		loop_c2s_message[MSG_BUF_SIZE];
-int			loop_s2c_messageLength;
-char		loop_s2c_message[MSG_BUF_SIZE];
-// <-- Tonik
 
 //=============================================================================
 
@@ -169,25 +160,12 @@ qboolean NET_StringToAdr (char *s, netadr_t *a)
 
 //=============================================================================
 
-qboolean NET_GetPacket (int net_socket)
+qboolean NET_GetPacket (void)
 {
-	static int	ret;
+	static int ret;
 	struct sockaddr_qstorage from;
-	static int	fromlen;
+	static int fromlen;
 
-
-	// Tonik -->
-	if (loop_c2s_messageLength > 0)
-	{
-		memcpy (net_message_buffer, loop_c2s_message, loop_c2s_messageLength);
-		net_message.cursize = loop_c2s_messageLength;
-		loop_c2s_messageLength = 0;
-		memset (&from, 0, sizeof(from));
-		((struct sockaddr_in *)&from)->sin_port = PORT_LOOPBACK;
-		SockadrToNetadr (&from, &net_from);
-		return net_message.cursize;
-	}
-	// <-- Tonik
 
 	fromlen = sizeof(from);
 	ret = recvfrom (net_socket, (char *)net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
@@ -221,38 +199,17 @@ qboolean NET_GetPacket (int net_socket)
 		return false;
 	}
 
+	net_message_buffer[ret]='\0';
+	
 	return ret;
 }
 
 //=============================================================================
 
-void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
+void NET_SendPacket (int length, void *data, netadr_t to)
 {
-	static struct sockaddr_in	addr;
+	static struct sockaddr_in addr;
 
-	// Tonik -->
-	if (*(int *)&to.ip == 0 && to.port == 65535)	// Loopback
-	{
-		if (net_socket == net_clientsocket)
-		{
-			//if (loop_c2s_messageLength)
-			//	Con_Printf ("Warning: NET_SendPacket: loop_c2s: NET_SendPacket without NET_GetPacket\n");
-			memcpy (loop_c2s_message, data, length);
-			loop_c2s_messageLength = length;
-			return;
-		}
-		else if (net_socket == net_serversocket)
-		{
-			//if (loop_s2c_messageLength)
-			//	Con_Printf ("Warning: NET_SendPacket: loop_s2c: NET_SendPacket without NET_GetPacket\n");
-			memcpy (loop_s2c_message, data, length);
-			loop_s2c_messageLength = length;
-			return;
-		}
-		Sys_Error("NET_SendPacket: loopback: unknown socket");
-		return;
-	}
-	// <-- Tonik
 	NetadrToSockadr (&to, &addr);
 
 	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr)))
@@ -269,7 +226,7 @@ void NET_SendPacket (int net_socket, int length, void *data, netadr_t to)
 
 //=============================================================================
 
-int UDP_OpenSocket (int *port/*, qboolean crash*/)
+int UDP_OpenSocket (int *port)
 {
 	int newsocket;
 	struct sockaddr_in address;
@@ -393,7 +350,7 @@ void NET_GetLocalAddress (int net_socket) // FIXME
 
 	namelen = sizeof(address);
 	if (getsockname (net_socket, (struct sockaddr *)&address, &namelen) == -1)
-		Sys_Error ("NET_Init: getsockname:", strerror(errno));
+		Sys_Error ("NET_Init: getsockname: %d", strerror(errno));
 	net_local_adr.port = address.sin_port;
 
 	Con_Printf("IP address %s\n", NET_AdrToString (net_local_adr) );
@@ -404,8 +361,7 @@ void NET_GetLocalAddress (int net_socket) // FIXME
 NET_Init
 ====================
 */
-int __serverport; // so we can open it later
-int NET_Init (int clientport, int serverport, int telnetport)
+int NET_Init (int serverport, int telnetport)
 {
 	//
 	// open the single socket to be used for all communications
@@ -419,10 +375,8 @@ int NET_Init (int clientport, int serverport, int telnetport)
 	// Why we need version 2.0?
 	if (WSAStartup (MAKEWORD(2, 0), &winsockdata))
 		Sys_Error ("Winsock initialization failed.");
-	if (clientport)
-		net_clientsocket = UDP_OpenSocket (&clientport/*, true*/);
-	else
-		net_serversocket = UDP_OpenSocket (&serverport/*, false*/);
+
+	net_socket = UDP_OpenSocket (&serverport);
 
 #if 0//ndef SERVERONLY
 
@@ -436,15 +390,10 @@ int NET_Init (int clientport, int serverport, int telnetport)
 	net_message.data = net_message_buffer;
 
 	// determine my name & address
-	if (clientport)
-		NET_GetLocalAddress (net_clientsocket);
-	else
-		NET_GetLocalAddress (net_serversocket);
+	NET_GetLocalAddress (net_socket);
 
 	Con_Printf("UDP Initialized\n");
 
-	if (clientport)
-		return clientport;
 	return serverport;
 }
 
@@ -455,10 +404,8 @@ NET_Shutdown
 */
 void NET_Shutdown (void)
 {
-	if (net_clientsocket)
-		closesocket (net_clientsocket);
-	if (net_serversocket)
-		closesocket (net_serversocket);
+	if (net_socket)
+		closesocket (net_socket);
 	if (telnetport)
 	{
 		if (telnet_connected)

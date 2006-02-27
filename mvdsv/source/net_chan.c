@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_chan.c,v 1.9 2006/01/04 03:29:13 disconn3ct Exp $
+	$Id: net_chan.c,v 1.10 2006/02/27 12:01:58 disconn3ct Exp $
 */
 
 #include <stdlib.h>
@@ -115,7 +115,7 @@ Netchan_OutOfBand
 Sends an out-of-band datagram
 ================
 */
-void Netchan_OutOfBand (int net_socket, netadr_t adr, int length, byte *data)
+void Netchan_OutOfBand (netadr_t adr, int length, byte *data)
 {
 	sizebuf_t	send;
 	byte		send_buf[MAX_MSGLEN + PACKET_HEADER];
@@ -129,17 +129,17 @@ void Netchan_OutOfBand (int net_socket, netadr_t adr, int length, byte *data)
 	SZ_Write (&send, data, length);
 
 	// send the datagram
-	NET_SendPacket (net_socket, send.cursize, send.data, adr);
+	NET_SendPacket (send.cursize, send.data, adr);
 }
 
 /*
 ===============
 Netchan_OutOfBandPrint
- 
+
 Sends a text message in an out-of-band datagram
 ================
 */
-void Netchan_OutOfBandPrint (int net_socket, netadr_t adr, char *format, ...)
+void Netchan_OutOfBandPrint (netadr_t adr, char *format, ...)
 {
 	va_list		argptr;
 	static char		string[8192];		// ??? why static? - make program look big :-D
@@ -149,22 +149,20 @@ void Netchan_OutOfBandPrint (int net_socket, netadr_t adr, char *format, ...)
 	va_end (argptr);
 
 
-	Netchan_OutOfBand (net_socket, adr, strlen(string), (byte *)string);
+	Netchan_OutOfBand (adr, strlen(string), (byte *)string);
 }
 
 
 /*
 ==============
 Netchan_Setup
- 
+
 called to open a channel to a remote system
 ==============
 */
-void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int net_socket)
+void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
 {
 	memset (chan, 0, sizeof(*chan));
-
-	chan->net_socket = net_socket;
 
 	chan->remote_address = adr;
 	chan->last_received = realtime;
@@ -289,7 +287,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	chan->outgoing_size[i] = send.cursize;
 	chan->outgoing_time[i] = realtime;
 
-	NET_SendPacket (chan->net_socket, send.cursize, send.data, chan->remote_address);
+	NET_SendPacket (send.cursize, send.data, chan->remote_address);
 
 	if (chan->cleartime < realtime)
 		chan->cleartime = realtime + send.cursize*chan->rate;

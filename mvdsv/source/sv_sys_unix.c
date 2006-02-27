@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.17 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.18 2006/02/27 12:01:59 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -479,7 +479,7 @@ int NET_Sleep(double sec)
 	int		m;
 
 	FD_ZERO(&fdset);
-	FD_SET(m = net_serversocket, &fdset); // network socket
+	FD_SET(m = net_socket, &fdset); // network socket
 	if (telnetport)
 	{
 		FD_SET(net_telnetsocket, &fdset);
@@ -757,7 +757,7 @@ int main (int argc, char *argv[])
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
 		FD_ZERO(&fdset);
-		FD_SET(j = net_serversocket, &fdset);
+		FD_SET(j = net_socket, &fdset);
 		// Added by VVD {
 		if (telnetport)
 		{

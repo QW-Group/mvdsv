@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.12 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.13 2006/02/27 12:01:59 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -598,12 +598,12 @@ int NET_Sleep(double sec)
 	fd_set	fdset;
 
 	FD_ZERO(&fdset);
-	FD_SET(net_serversocket, &fdset);
+	FD_SET(net_socket, &fdset);
 
 	timeout.tv_sec = (long) sec;
 	timeout.tv_usec = (sec - floor(sec))*1000000L;
 	//Sys_Printf("%lf, %ld %ld\n", sec, timeout.tv_sec, timeout.tv_usec);
-	return select(net_serversocket+1, &fdset, NULL, NULL, &timeout);
+	return select(net_socket+1, &fdset, NULL, NULL, &timeout);
 }
 
 void Sys_Sleep(unsigned long ms)
@@ -711,10 +711,10 @@ int main (int argc, char **argv)
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
 		FD_ZERO(&fdset);
-		FD_SET(net_serversocket, &fdset);
+		FD_SET(net_socket, &fdset);
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100;
-		if (select (net_serversocket+1, &fdset, NULL, NULL, &timeout) == -1)
+		if (select (net_socket+1, &fdset, NULL, NULL, &timeout) == -1)
 			continue;
 
 		// find time passed since last cycle
@@ -913,7 +913,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		// be printed until the next event.
 
 		FD_ZERO(&fdset);
-		FD_SET(j = net_serversocket, &fdset);
+		FD_SET(j = net_socket, &fdset);
 		// Added by VVD {
 		if (telnetport)
 		{

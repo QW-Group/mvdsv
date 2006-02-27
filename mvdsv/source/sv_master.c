@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_master.c,v 1.1 2006/01/05 15:24:32 disconn3ct Exp $
+    $Id: sv_master.c,v 1.2 2006/02/27 12:01:59 disconn3ct Exp $
 */
 // sv_master.c - send heartbeats to master server
 
@@ -56,7 +56,7 @@ void SV_SetMaster_f (void)
 
 		data[0] = A2A_PING;
 		data[1] = 0;
-		NET_SendPacket (net_serversocket, 2, data, master_adr[i-1]);
+		NET_SendPacket (2, data, master_adr[i-1]);
 	}
 
 	svs.last_heartbeat = -99999;
@@ -110,7 +110,7 @@ void Master_Heartbeat (void)
 		if (master_adr[i].port)
 		{
 			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (net_serversocket, strlen(string), string, master_adr[i]);
+			NET_SendPacket (strlen(string), string, master_adr[i]);
 		}
 }
 
@@ -133,7 +133,7 @@ void Master_Shutdown (void)
 		if (master_adr[i].port)
 		{
 			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (net_serversocket, strlen(string), string, master_adr[i]);
+			NET_SendPacket (strlen(string), string, master_adr[i]);
 		}
 }
 
