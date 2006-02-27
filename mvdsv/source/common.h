@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.12 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: common.h,v 1.13 2006/02/27 10:48:10 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -110,9 +110,7 @@ int COM_CheckParm (char *parm);
 void COM_Init (void);
 void COM_InitArgv (int argc, char **argv);
 
-void COM_StripExtension (char *in, char *out);
 void COM_FileBase (char *in, char *out);
-void COM_DefaultExtension (char *path, char *extension);
 int COM_FileLength (FILE *f); //bliP: init
 
 

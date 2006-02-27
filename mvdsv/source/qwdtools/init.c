@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: init.c,v 1.6 2006/02/27 10:31:03 disconn3ct Exp $
+	$Id: init.c,v 1.7 2006/02/27 10:48:39 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -279,11 +279,11 @@ void ParseArgv(void)
 			// it's a file name, first add default extension if needed
 			// then add to file list
 			strcpy(tmp, arg);
-			DefaultExtension(tmp, ".qwd");
+			COM_DefaultExtension(tmp, ".qwd");
 			sworld.sources += AddToFileList(sworld.filelist, tmp);
 
 			// check for qwz extension
-			ext = FileExtension (arg);
+			ext = COM_FileExtension (arg);
 			if (!strcasecmp(ext, ".qwz"))
 			{
 				if (!strcmp(qizmoDir, ".") || !strcmp(qizmoDir, "./")
@@ -599,7 +599,7 @@ void Load_ini (void)
 	else
 		strcpy(name, com_argv[0]);
 
-	StripExtension(name, name);
+	COM_StripExtension(name, name);
 	ForceExtension(name, ".ini");
 
 	//Sys_Printf("name:%s\nargv:%s\n", name, com_argv[0]);

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.8 2006/02/26 05:32:01 vvd0 Exp $
+	$Id: tools.c,v 1.9 2006/02/27 10:48:39 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -772,78 +772,6 @@ void Tools_Init (void)
 {}
 
 /*
-============
-StripExtension
-============
-*/
-void StripExtension (char *in, char *out)
-{
-	char *p;
-
-	strcpy(out, in);
-	p = out + strlen(out);
-	while (p > out && *p != '.')
-	{
-		p--;
-	}
-
-	if (*p == '.')
-		*p = 0;
-}
-
-/*
-============
-FileExtension
-============
-*/
-
-char *FileExtension (char *in)
-{
-	static char exten[8];
-	int		i;
-	char	*p;
-
-	p = in + strlen(in);
-
-	while (p > in && *p != '.')
-		p--;
-
-	if (p == in)
-		return "";
-
-	for (i=0 ; i<7 && *p; i++,p++)
-		exten[i] = *p;
-	exten[i] = 0;
-
-	return exten;
-}
-
-/*
-==================
-DefaultExtension
- 
-If path doesn't have a .EXT, append extension
-(extension should include the .)
-==================
-*/
-
-void DefaultExtension (char *path, char *extension)
-{
-	char    *src;
-
-	src = path + strlen(path) - 1;
-
-	while (*src != '/' && src != path)
-	{
-		if (*src == '.')
-			return;                 // it has an extension
-		src--;
-	}
-
-	strncat (path, extension, MAX_OSPATH);
-}
-
-/*
 ==================
 ForceExtension
  
@@ -874,7 +802,7 @@ char *TemplateName (char *from, char *to, char *ch)
 	if ( !(p = strstr(to, ch)) )
 		return to;
 
-	StripExtension(from, tmp);
+	COM_StripExtension(from, tmp);
 	strlcpy(name, to, p - to);
 	strlcat(name, va("%s%s", tmp, p + 1), sizeof(name));
 
@@ -1003,14 +931,6 @@ void FreeFileList(flist_t *flist)
 
 //============================================================================
 
-/*
-===============
-Info_ValueForKey
- 
-Searches the string for the given
-key and returns the associated value, or an empty string.
-===============
-*/
 char *Info_ValueForKey (char *s, char *key)
 {
 	char	pkey[512];
@@ -1027,7 +947,7 @@ char *Info_ValueForKey (char *s, char *key)
 		o = pkey;
 		while (*s != '\\')
 		{
-			if (!*s)
+			if (!*s || o >= pkey + sizeof(pkey) - 1)
 				return "";
 			*o++ = *s++;
 		}
@@ -1038,13 +958,13 @@ char *Info_ValueForKey (char *s, char *key)
 
 		while (*s != '\\' && *s)
 		{
-			if (!*s)
+			if (!*s || o >= value[valueindex] + sizeof(value[valueindex]) - 1)
 				return "";
 			*o++ = *s++;
 		}
 		*o = 0;
 
-		if (!strcmp (key, pkey) )
+		if (!strncmp (key, pkey, sizeof(pkey)) )
 			return value[valueindex];
 
 		if (!*s)
