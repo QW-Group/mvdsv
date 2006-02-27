@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.13 2006/02/27 12:01:59 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.14 2006/02/27 16:27:16 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -28,8 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 #include "sv_windows.h"
-
-#include <errno.h>
 
 extern cvar_t sys_select_timeout;
 extern cvar_t sys_restart_on_error;
@@ -219,10 +217,10 @@ void Sys_Quit (qboolean restart)
 		{
 #ifdef _CONSOLE
 			if (!(sys_nostdout.value || isdaemon))
-				printf("Restart failed: %s\n", strerror(errno));
+				printf("Restart failed: (%i): %s\n", qerrno, strerror(qerrno));
 #else
 			if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
-				MessageBox(NULL, strerror(errno), "Restart failed", 0 /* MB_OK */ );
+				MessageBox(NULL, strerror(qerrno), "Restart failed", 0 /* MB_OK */ );
 #endif
 			Sys_Exit(1);
 		}
@@ -421,11 +419,11 @@ char *Sys_ConsoleInput (void)
 					++len;
 				break;
 			default:
-				if (errno != EAGAIN && errno != ENOENT && errno != EBADF) // demand for M$ WIN 2K telnet support
+				if (qerrno != EAGAIN && qerrno != ENOENT && qerrno != EBADF) // demand for M$ WIN 2K telnet support
 				{
 					len = telnet_connected = authenticated = 0;
 					closesocket (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(errno)));
+					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: (%i): %s\n", qerrno, strerror(qerrno)));
 				}
 				return NULL;
 			}// switch
