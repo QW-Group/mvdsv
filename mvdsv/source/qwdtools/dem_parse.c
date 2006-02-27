@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: dem_parse.c,v 1.6 2006/02/26 05:32:01 vvd0 Exp $
+	$Id: dem_parse.c,v 1.7 2006/02/27 10:31:03 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -518,10 +518,10 @@ Dem_ParsePrint
 
 void Dem_ParsePrint (void)
 {
-	char *s, str[128];
-	byte level;
+	char	*s, str[128];
+	byte	level;
 	byte	desttype = dem_all;
-	int		destto = 0;
+	int	destto = 0;
 	static	char logbuf[2048] = "";
 
 	msg_startcount = msg_readcount;
@@ -565,7 +565,7 @@ void Dem_ParsePrint (void)
 
 	if (sworld.options & O_LOG)
 	{
-		strcat(logbuf, CleanName(s));
+		strlcat(logbuf, CleanName(s), sizeof(logbuf));
 		if (logbuf[strlen(logbuf)-1] == '\n')
 		{
 			char *p = logbuf;

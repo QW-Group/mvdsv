@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: init.c,v 1.5 2006/02/22 00:18:17 disconn3ct Exp $
+	$Id: init.c,v 1.6 2006/02/27 10:31:03 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -241,7 +241,7 @@ param_t *FindParam(char *parm)
 
 void ParseArgv(void)
 {
-	int		i, o;
+	int	i, o;
 	param_t	*param;
 	char	qwz_files[1024] = "", *ext, *arg, tmp[MAX_OSPATH];
 
@@ -294,9 +294,9 @@ void ParseArgv(void)
 					qizmoDir[0] = 0;
 
 				if (strstr(arg, ":") || !qizmoDir[0])
-					strcat(qwz_files, va("\"%s\" ", arg));
+					strlcat(qwz_files, va("\"%s\" ", arg), sizeof(qwz_files));
 				else
-					strcat(qwz_files, va("\"%s/%s\" ", currentDir, arg));
+					strlcat(qwz_files, va("\"%s/%s\" ", currentDir, arg), sizeof(qwz_files));
 			}
 
 			continue;
@@ -520,9 +520,9 @@ int Files_Init (int options)
 		if (sworld.options & O_STDIN)
 		{
 			if (from->format == qwd)
-				strcat(sworld.from[i].name, " (qwd)");
+				strlcat(sworld.from[i].name, " (qwd)", sizeof(sworld.from[i].name));
 			else
-				strcat(sworld.from[i].name, " (mvd)");
+				strlcat(sworld.from[i].name, " (mvd)", sizeof(sworld.from[i].name));
 		}
 		else if ((sworld.from[i].filesize = FileOpenRead(sworld.from[i].name, &sworld.from[i].file)) == -1)
 		{
