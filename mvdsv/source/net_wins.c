@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: net_wins.c,v 1.10 2006/02/27 12:01:59 disconn3ct Exp $
+
+	$Id: net_wins.c,v 1.11 2006/02/27 16:32:37 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -36,17 +36,24 @@ int		telnet_connected;
 
 byte		net_message_buffer[MSG_BUF_SIZE];
 
+#ifdef _WIN32
 WSADATA		winsockdata;
-
+#endif
 //=============================================================================
 
-void NetadrToSockadr (netadr_t *a, struct sockaddr_in *s)
+void NetadrToSockadr (netadr_t *a, struct sockaddr_qstorage *s)
 {
-	memset (s, 0, sizeof(*s));
+/*	memset (s, 0, sizeof(*s));
 	s->sin_family = AF_INET;
 
 	*(int *)&s->sin_addr = *(int *)&a->ip;
 	s->sin_port = a->port;
+*/
+	memset (s, 0, sizeof(struct sockaddr_in));
+	((struct sockaddr_in*)s)->sin_family = AF_INET;
+
+	*(int *)&((struct sockaddr_in*)s)->sin_addr = *(int *)&a->ip.ip;
+	((struct sockaddr_in*)s)->sin_port = a->port;
 }
 
 void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a)
@@ -92,7 +99,7 @@ char *NET_BaseAdrToString (netadr_t a)
 /*
 =============
 NET_StringToAdr
- 
+
 idnewt
 idnewt:28000
 192.246.40.70
@@ -121,7 +128,8 @@ qboolean NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 				((struct sockaddr_in *)sadr)->sin_port = htons((short)atoi(colon+1));
 			}
 
-		if (copy[0] >= '0' && copy[0] <= '9')	//this is the wrong way to test. a server name may start with a number.
+		//this is the wrong way to test. a server name may start with a number.
+		if (copy[0] >= '0' && copy[0] <= '9')
 		{
 			*(int *)&((struct sockaddr_in *)sadr)->sin_addr = inet_addr(copy);
 		}
@@ -162,45 +170,39 @@ qboolean NET_StringToAdr (char *s, netadr_t *a)
 
 qboolean NET_GetPacket (void)
 {
-	static int ret;
+	int ret;
 	struct sockaddr_qstorage from;
-	static int fromlen;
+	int fromlen;
 
 
 	fromlen = sizeof(from);
 	ret = recvfrom (net_socket, (char *)net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
 	SockadrToNetadr (&from, &net_from);
-
 	if (ret == -1)
 	{
-		int errno = WSAGetLastError();
-
-		if (errno == WSAEWOULDBLOCK)
+		if (qerrno == EWOULDBLOCK)
 			return false;
-		if (errno == WSAEMSGSIZE)
+		if (qerrno == EMSGSIZE)
 		{
-			Con_Printf ("Warning:  Oversize packet from %s\n",
-			            NET_AdrToString (net_from));
+			Con_Printf ("Warning:  Oversize packet from %s\n", NET_AdrToString (net_from));
 			return false;
 		}
-		if (errno == 10054)
+		if (qerrno == 10054)
 		{
 			Con_DPrintf ("NET_GetPacket: Error 10054 from %s\n", NET_AdrToString (net_from));
 			return false;
 		}
 
-		Sys_Error ("NET_GetPacket: %s", strerror(errno));
+		Sys_Error ("NET_GetPacket: recvfrom: (%i): %s\n", qerrno, strerror(qerrno));
 	}
 
 	net_message.cursize = ret;
 	if (ret == sizeof(net_message_buffer) )
 	{
-		Con_Printf ("Oversize packet from %s\n", NET_AdrToString (net_from));
+		Con_Printf ("Warning:  Oversize packet from %s\n", NET_AdrToString (net_from));
 		return false;
 	}
 
-	net_message_buffer[ret]='\0';
-	
 	return ret;
 }
 
@@ -208,36 +210,41 @@ qboolean NET_GetPacket (void)
 
 void NET_SendPacket (int length, void *data, netadr_t to)
 {
-	static struct sockaddr_in addr;
+	struct sockaddr_qstorage addr;
 
 	NetadrToSockadr (&to, &addr);
 
-	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr)))
+	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)))
 	{
-		int err = WSAGetLastError();
-
-		// wouldblock is silent
-		if (err == WSAEWOULDBLOCK)
+		if (qerrno == EWOULDBLOCK)
 			return;
-
-		Con_Printf ("NET_SendPacket ERROR: %i\n", errno);
+		if (qerrno == ECONNREFUSED)
+			return;
+		Sys_Printf ("NET_SendPacket: sendto: (%i): %s\n", qerrno, strerror(qerrno));
 	}
 }
 
 //=============================================================================
 
-int UDP_OpenSocket (int *port)
+int UDP_OpenSocket (int port)
 {
 	int newsocket;
 	struct sockaddr_in address;
-	unsigned long _true = true;
+	qboolean _true = true;
 	int i;
 
-	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-		Sys_Error ("UDP_OpenSocket: socket: %s", strerror(errno));
-
+	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
+	{
+		Sys_Error ("UDP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
+		return INVALID_SOCKET;
+	}
+#if 0
+// disconnect: we need it?
+	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEADDR, &_true, sizeof(_true)))
+		Sys_Error ("UDP_OpenSocket: setsockopt SO_REUSEADDR: (%i): %s\n", qerrno, strerror(qerrno));
+#endif
 	if (ioctlsocket (newsocket, FIONBIO, &_true) == -1)
-		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
+		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
 
 	address.sin_family = AF_INET;
 	//ZOID -- check for interface binding option
@@ -250,16 +257,18 @@ int UDP_OpenSocket (int *port)
 	else
 		address.sin_addr.s_addr = INADDR_ANY;
 
-	if (*port == PORT_ANY)
+	if (port == PORT_ANY)
 		address.sin_port = 0;
 	else
-		address.sin_port = htons((short)*port);
+		address.sin_port = htons((short)port);
 
 	if (COM_CheckParm("-port"))
 	{
 		if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
 		{
-			Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
+			Sys_Error ("UDP_OpenSocket: bind: (%i): %s\n", qerrno, strerror(qerrno));
+			closesocket(newsocket);
+			return INVALID_SOCKET;
 		}
 	}
 	else
@@ -267,34 +276,40 @@ int UDP_OpenSocket (int *port)
 		// try any port
 		int i;
 
-		for (i = 0; i < 100; i++, (*port)++)
+		for (i = 0; i < 100; i++, (port)++)
 		{
-			address.sin_port = htons((short)*port);
+			address.sin_port = htons((short)port);
 			if( bind (newsocket, (void *)&address, sizeof(address)) != -1)
 				break;
 		}
-		if (i == 100)
-			Sys_Error ("UDP_OpenSocket: bind: %s", strerror(errno));
+		if (i == 100) {
+			Sys_Error ("UDP_OpenSocket: bind: (%i): %s\n", qerrno, strerror(qerrno));
+			closesocket(newsocket);
+			return INVALID_SOCKET;
+		}
 	}
 
 	return newsocket;
 }
 
-int TCP_OpenSocket (int *port)
+int TCP_OpenSocket (int port)
 {
 	int newsocket;
 	struct sockaddr_in address;
-	unsigned long _true = true;
+	qboolean _true = true;
 	int i;
 
-	if ((newsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
-		Sys_Error ("TCP_OpenSocket: socket: %s", strerror(errno));
+	if ((newsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
+	{
+		Sys_Error ("TCP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
+		return INVALID_SOCKET;
+	}
 
 	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEADDR, (char*)&_true, sizeof(_true)))
-		Sys_Error ("TCP_OpenSocket: socket: %s", strerror(errno));
+		Sys_Error ("TCP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
 
 	if (ioctlsocket (newsocket, FIONBIO, &_true) == -1)
-		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO: %s", strerror(errno));
+		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
 
 	address.sin_family = AF_INET;
 	//ZOID -- check for interface binding option
@@ -307,53 +322,79 @@ int TCP_OpenSocket (int *port)
 	else
 		address.sin_addr.s_addr = INADDR_ANY;
 
-	address.sin_port = htons((short)*port);
+	address.sin_port = htons((short)port);
 
 	if (COM_CheckParm("-telnetport"))
 	{
 		if( bind (newsocket, (void *)&address, sizeof(address)) == -1)
 		{
-			Sys_Error ("TCP_OpenSocket: bind: %s", strerror(errno));
+			Sys_Error ("TCP_OpenSocket: bind: (%i): %s\n", qerrno, strerror(qerrno));
+			closesocket(newsocket);
+			return INVALID_SOCKET;
 		}
 	}
-	else
+	else // disconnect: is it safe for telnet port?
 	{
 		// try any port
 		int i;
 
-		for (i = 0; i < 100; i++, (*port)++)
+		for (i = 0; i < 100; i++, (port)++)
 		{
-			address.sin_port = htons((short)*port);
+			address.sin_port = htons((short)port);
 			if( bind (newsocket, (void *)&address, sizeof(address)) != -1)
 				break;
 		}
-		if (i == 100)
-			Sys_Error ("TCP_OpenSocket: bind: %s", strerror(errno));
+		if (i == 100) {
+			Sys_Error ("TCP_OpenSocket: bind: (%i): %s\n", qerrno, strerror(qerrno));
+			closesocket(newsocket);
+			return INVALID_SOCKET;
+		}
 	}
 
-	if (listen (newsocket, 1))
-		Sys_Error ("TCP_OpenSocket: listen: %s", strerror(errno));
+	if (listen(newsocket, 1) == INVALID_SOCKET) {
+		Sys_Error ("TCP_OpenSocket: listen: (%i): %s\n", qerrno, strerror(qerrno));
+		closesocket(newsocket);
+		return INVALID_SOCKET;
+	}
 
 	return newsocket;
 }
 
-void NET_GetLocalAddress (int net_socket) // FIXME
+void NET_GetLocalAddress (netadr_t *out)
 {
-	char	buff[512];
-	struct sockaddr_in	address;
-	int		namelen;
+	struct sockaddr_qstorage address;
+	qboolean notvalid = false;
+	netadr_t adr = {0};
+	char buff[512];
+	int namelen;
 
+	strcpy(buff, "localhost");
 	gethostname(buff, 512);
 	buff[512-1] = 0;
 
-	NET_StringToAdr (buff, &net_local_adr);
+	if (!NET_StringToAdr (buff, &adr)) //urm
+		NET_StringToAdr ("127.0.0.1", &adr);
+
 
 	namelen = sizeof(address);
 	if (getsockname (net_socket, (struct sockaddr *)&address, &namelen) == -1)
-		Sys_Error ("NET_Init: getsockname: %d", strerror(errno));
-	net_local_adr.port = address.sin_port;
+	{
+		notvalid = true;
+		NET_StringToSockaddr("0.0.0.0", (struct sockaddr_qstorage *)&address);
+		Sys_Error ("NET_Init: getsockname: (%i): %s\n", qerrno, strerror(qerrno));
+	}
+	
+	SockadrToNetadr(&address, out);
+	if (!*(int*)out->ip.ip) //socket was set to auto
+	{
+		//change it to what the machine says it is, rather than the socket.
+		*(int *)out->ip.ip = *(int *)adr.ip.ip;
+	}
 
-	Con_Printf("IP address %s\n", NET_AdrToString (net_local_adr) );
+	if (notvalid)
+		Con_Printf("Couldn't detect local ip\n");
+	else
+		Con_Printf("IP address %s\n", NET_AdrToString(*out));
 }
 
 /*
@@ -363,20 +404,21 @@ NET_Init
 */
 int NET_Init (int serverport, int telnetport)
 {
-	//
 	// open the single socket to be used for all communications
-	//
 	if (telnetport)
 	{
-		net_telnetsocket = TCP_OpenSocket (&telnetport);
+		net_telnetsocket = TCP_OpenSocket (telnetport);
 		Con_Printf("TCP Initialized\n");
 		return telnetport;
 	}
+	
+#ifdef _WIN32
 	// Why we need version 2.0?
 	if (WSAStartup (MAKEWORD(2, 0), &winsockdata))
 		Sys_Error ("Winsock initialization failed.");
+#endif
 
-	net_socket = UDP_OpenSocket (&serverport);
+	net_socket = UDP_OpenSocket (serverport);
 
 #if 0//ndef SERVERONLY
 
@@ -390,7 +432,7 @@ int NET_Init (int serverport, int telnetport)
 	net_message.data = net_message_buffer;
 
 	// determine my name & address
-	NET_GetLocalAddress (net_socket);
+	NET_GetLocalAddress (&net_local_adr);
 
 	Con_Printf("UDP Initialized\n");
 
@@ -412,5 +454,9 @@ void NET_Shutdown (void)
 			closesocket(telnet_iosock);
 		closesocket (net_telnetsocket);
 	}
+
+#ifdef _WIN32
 	WSACleanup ();
+#endif
 }
+
