@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.1 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: bothtools.c,v 1.2 2006/02/27 10:48:10 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -24,18 +24,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /*
 ============
 va
- 
+
 does a varargs printf into a temp buffer, so I don't need to have
 varargs versions of all text functions.
 FIXME: make this buffer size safe someday
 ============
 */
 #define MAX_STRINGS 16
-char	*va(char *format, ...)
+char *va(char *format, ...)
 {
 	va_list		argptr;
-	static char		string[MAX_STRINGS][1024];
-	static int		index = 0;
+	static char	string[MAX_STRINGS][1024];
+	static int	index = 0;
 
 	index %= MAX_STRINGS;
 	//index = (++index)&(MAX_STRINGS - 1);
@@ -48,9 +48,9 @@ char	*va(char *format, ...)
 
 /*
 ============================================================================
- 
-					LIBRARY REPLACEMENT FUNCTIONS
- 
+
+			LIBRARY REPLACEMENT FUNCTIONS
+
 ============================================================================
 */
 
@@ -212,6 +212,7 @@ int snprintf(char *buffer, size_t count, char const *format, ...)
 	va_end(argptr);
 	return ret;
 }
+
 int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 {
 	int ret;
@@ -307,6 +308,7 @@ char *strnstr(char *s, char *find, size_t slen)
 	}
 	return ((char *)s);
 }
+
 /*
  * Find the first occurrence of find in s, ignore case.
  */
@@ -337,13 +339,13 @@ char *strcasestr(register const char *s, register const char *find)
 
 /*
 ============================================================================
- 
-					BYTE ORDER FUNCTIONS
- 
+
+			BYTE ORDER FUNCTIONS
+
 ============================================================================
 */
 
-short   ShortSwap (short l)
+short ShortSwap (short l)
 {
 	byte    b1,b2;
 
@@ -353,7 +355,7 @@ short   ShortSwap (short l)
 	return (b1<<8) + b2;
 }
 
-int    LongSwap (int l)
+int LongSwap (int l)
 {
 	byte    b1,b2,b3,b4;
 
@@ -402,3 +404,59 @@ void *Q_Malloc (size_t size)
 
 	return p;
 }
+
+
+/*
+============
+COM_StripExtension
+============
+*/
+void COM_StripExtension (char *in, char *out)
+{
+	strlcpy(out, in, strrchr(in, '.') - in + 1);
+}
+
+/*
+============
+COM_FileExtension
+============
+*/
+char *COM_FileExtension (char *in)
+{
+	static char exten[8];
+	int i;
+
+	in = strrchr(in, '.');
+	if (!in || strchr(in, '/'))
+		return "";
+	in++;
+	for (i=0 ; i<7 && *in ; i++,in++)
+		exten[i] = *in;
+	exten[i] = 0;
+	return exten;
+}
+
+/*
+==================
+COM_DefaultExtension
+
+If path doesn't have a .EXT, append extension
+(extension should include the .)
+==================
+*/
+void COM_DefaultExtension (char *path, char *extension)
+{
+	char *src;
+
+	src = path + strlen(path) - 1;
+
+	while (*src != '/' && src != path)
+	{
+		if (*src == '.')
+			return; // it has an extension
+		src--;
+	}
+
+	strncat (path, extension, MAX_OSPATH);
+}
+

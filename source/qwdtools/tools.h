@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.h,v 1.7 2006/02/26 05:32:01 vvd0 Exp $
+	$Id: tools.h,v 1.8 2006/02/27 10:48:39 disconn3ct Exp $
 */
 
 #ifndef __TOOLS_H__
@@ -127,9 +127,6 @@ void RemoveParm (int num);
 void Tools_Init (void);
 void Argv_Init (int argc, char **argv);
 
-void StripExtension (char *in, char *out);
-char *FileExtension (char *in);
-void DefaultExtension (char *path, char *extension);
 void ForceExtension (char *path, char *extension);
 char *TemplateName (char *dst, char *src, char *ch);
 

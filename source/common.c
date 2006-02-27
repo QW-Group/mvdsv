@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.19 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: common.c,v 1.20 2006/02/27 10:48:10 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -512,35 +512,6 @@ void SZ_Print (sizebuf_t *buf, char *data)
 
 //============================================================================
 
-/*
-============
-COM_StripExtension
-============
-*/
-void COM_StripExtension (char *in, char *out)
-{
-	strlcpy(out, in, strrchr(in, '.') - in + 1);
-}
-
-/*
-============
-COM_FileExtension
-============
-*/
-char *COM_FileExtension (char *in)
-{
-	static char exten[8];
-	int		i;
-
-	in = strrchr(in, '.');
-	if (!in || strchr(in, '/'))
-		return "";
-	in++;
-	for (i=0 ; i<7 && *in ; i++,in++)
-		exten[i] = *in;
-	exten[i] = 0;
-	return exten;
-}
 
 /*
 ============
@@ -569,29 +540,7 @@ void COM_FileBase (char *in, char *out)
 }
 
 
-/*
-==================
-COM_DefaultExtension
- 
-If path doesn't have a .EXT, append extension
-(extension should include the .)
-==================
-*/
-void COM_DefaultExtension (char *path, char *extension)
-{
-	char    *src;
 
-	src = path + strlen(path) - 1;
-
-	while (*src != '/' && src != path)
-	{
-		if (*src == '.')
-			return;                 // it has an extension
-		src--;
-	}
-
-	strncat (path, extension, MAX_OSPATH);
-}
 
 //============================================================================
 
@@ -1370,16 +1319,16 @@ void COM_InitFilesystem (void)
 
 /*
 =====================================================================
- 
+
   INFO STRINGS
- 
+
 =====================================================================
 */
 
 /*
 ===============
 Info_ValueForKey
- 
+
 Searches the string for the given
 key and returns the associated value, or an empty string.
 ===============
