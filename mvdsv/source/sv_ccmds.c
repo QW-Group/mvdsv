@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.20 2006/02/27 12:01:59 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.21 2006/02/27 18:51:58 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1772,6 +1772,21 @@ void SV_SnapAll_f (void)
 	}
 }
 
+// QW262 -->
+/*
+================
+SV_MasterPassword
+================
+*/
+void SV_MasterPassword_f (void)
+{
+	if (!server_cfg_done)
+		strlcpy(master_rcon_password, Cmd_Argv(1), sizeof(master_rcon_password));
+	else
+		Con_Printf("master_rcon_password can be set only in server.cfg\n");
+}
+// <-- QW262
+
 /*
 ==================
 SV_ShowTime_f
@@ -1849,6 +1864,8 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("sv_gamedir", SV_Gamedir);
 	Cmd_AddCommand ("floodprot", SV_Floodprot_f);
 	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f);
+
+	Cmd_AddCommand ("master_rcon_password", SV_MasterPassword_f);
 /*
 	Cmd_AddCommand ("showtime", SV_ShowTime_f);
 For development purposes only

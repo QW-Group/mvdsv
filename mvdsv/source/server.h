@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.23 2006/02/27 13:50:39 disconn3ct Exp $
+	$Id: server.h,v 1.24 2006/02/27 18:51:58 disconn3ct Exp $
 */
 // server.h
 
@@ -501,6 +501,9 @@ extern	char		localinfo[MAX_LOCALINFO_STRING+1];
 extern	int		host_hunklevel;
 
 extern	qboolean	sv_error;
+
+extern qboolean		server_cfg_done;
+extern char		master_rcon_password[128];
 
 //===========================================================
 
