@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.31 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: sv_demo.c,v 1.32 2006/02/27 16:27:16 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1815,12 +1815,12 @@ int MVD_StreamStartListening(int port)
 
 	if ((sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
 	{
-		Sys_Error ("MVD_StreamStartListening: socket:", strerror(qerrno));
+		Sys_Error ("MVD_StreamStartListening: socket: (%i): %s\n", qerrno, strerror(qerrno));
 	}
 
 	if (ioctlsocket (sock, FIONBIO, &nonblocking) == -1)
 	{
-		Sys_Error ("FTP_TCP_OpenSocket: ioctl FIONBIO:", strerror(qerrno));
+		Sys_Error ("FTP_TCP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
 	}
 
 	if( bind (sock, (void *)&address, sizeof(address)) == -1)

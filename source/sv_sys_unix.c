@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.19 2006/02/27 12:44:07 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.20 2006/02/27 16:27:16 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -110,8 +110,8 @@ void Sys_mkdir (char *path)
 {
 	if (mkdir (path, 0777) != -1)
 		return;
-	if (errno != EEXIST)
-		Sys_Error ("mkdir %s: %s", path, strerror(errno));
+	if (qerrno != EEXIST)
+		Sys_Error ("mkdir %s: (%i): %s\n", path, qerrno, strerror(qerrno));
 }
 
 /*
@@ -253,7 +253,7 @@ void Sys_Quit (qboolean restart)
 	if (restart)
 		if (execv(argv0, com_argv) == -1)
 		{
-			Sys_Printf("Restart failed: %s\n", strerror(errno));
+			Sys_Printf("Restart failed: %s\n", strerror(qerrno));
 			Sys_Exit(1);
 		}
 	Sys_Exit(0);		// appkit isn't running
@@ -342,11 +342,11 @@ char *Sys_ConsoleInput (void)
 					++len;
 				break;
 			default:
-				if (errno != EAGAIN) // demand for M$ WIN 2K telnet support
+				if (qerrno != EAGAIN) // demand for M$ WIN 2K telnet support
 				{
 					len = telnet_connected = authenticated = 0;
 					close (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(errno)));
+					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(qerrno)));
 				}
 				return NULL;
 			}// switch
@@ -672,7 +672,7 @@ int main (int argc, char *argv[])
 		}
 
 		if (setsid() == -1)
-			Sys_Printf("setsid: %s\n", strerror(errno));
+			Sys_Printf("setsid: %s\n", strerror(qerrno));
 
 		if ((j = open(_PATH_DEVNULL, O_RDWR)) != -1)
 		{
@@ -691,10 +691,10 @@ int main (int argc, char *argv[])
 	{
 		chroot_dir = com_argv[j + 1];
 		if (chroot(chroot_dir) < 0)
-			Sys_Printf("chroot %s failed: %s\n", chroot_dir, strerror(errno));
+			Sys_Printf("chroot %s failed: %s\n", chroot_dir, strerror(qerrno));
 		else
 			if (chdir("/") < 0)
-				Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(errno));
+				Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(qerrno));
 	}
 
 	// setgid
@@ -711,7 +711,7 @@ int main (int argc, char *argv[])
 			group_id = gr->gr_gid;
 		}
 		if (setgid(group_id) < 0)
-			Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(errno));
+			Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(qerrno));
 	}
 	// setuid
 	j = COM_CheckParm ("-u");
@@ -732,12 +732,12 @@ int main (int argc, char *argv[])
 				{
 					group_id = pw->pw_gid;
 					if (setgid(group_id) < 0)
-						Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(errno));
+						Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(qerrno));
 				}
 				if (!getuid() && initgroups(user_name, group_id) < 0)
-					Sys_Printf("Can't initgroups(%s, %d): %s", user_name, (int)group_id, strerror(errno));
+					Sys_Printf("Can't initgroups(%s, %d): %s", user_name, (int)group_id, strerror(qerrno));
 				if (setuid(user_id) < 0)
-					Sys_Printf("Can't setuid to user \"%s\": %s\n", user_name, strerror(errno));
+					Sys_Printf("Can't setuid to user \"%s\": %s\n", user_name, strerror(qerrno));
 			}
 		}
 	}

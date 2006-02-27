@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: winquake.h,v 1.6 2006/01/10 01:54:45 disconn3ct Exp $
+	$Id: winquake.h,v 1.7 2006/02/27 16:27:16 disconn3ct Exp $
 */
 // winquake.h: Win32-specific Quake header file
 
@@ -34,7 +34,6 @@ extern qboolean		Minimized;
 
 int (PASCAL FAR *pWSAStartup)(WORD wVersionRequired, LPWSADATA lpWSAData);
 int (PASCAL FAR *pWSACleanup)(void);
-int (PASCAL FAR *pWSAGetLastError)(void);
 SOCKET (PASCAL FAR *psocket)(int af, int type, int protocol);
 int (PASCAL FAR *pioctlsocket)(SOCKET s, long cmd, u_long FAR *argp);
 int (PASCAL FAR *psetsockopt)(SOCKET s, int level, int optname,
