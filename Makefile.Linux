@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.21 2006/02/26 05:32:00 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.22 2006/02/27 16:32:27 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -76,7 +76,7 @@ SV_OBJS = \
 		$(SV_DIR)/mathlib.o \
 		$(SV_DIR)/mdfour.o \
 		$(SV_DIR)/net_chan.o \
-		$(SV_DIR)/net_udp.o \
+		$(SV_DIR)/net_wins.o \
 		$(SV_DIR)/pmove.o \
 		$(SV_DIR)/pmovetst.o \
 		$(SV_DIR)/sha1.o \
