@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.32 2006/02/27 12:01:59 disconn3ct Exp $
+	$Id: sv_user.c,v 1.33 2006/02/27 13:50:39 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -264,6 +264,7 @@ static void SV_Soundlist_f (void)
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
+		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Soundlist_f from different level\n");
 		SV_New_f ();
 		return;
@@ -272,6 +273,7 @@ static void SV_Soundlist_f (void)
 	n = atoi(Cmd_Argv(2));
 	if (n >= MAX_SOUNDS)
 	{
+		SV_ClearReliable (host_client);
 		SV_ClientPrintf (host_client, PRINT_HIGH,
 		                 "SV_Soundlist_f: Invalid soundlist index\n");
 		SV_DropClient (host_client);
@@ -322,6 +324,7 @@ static void SV_Modellist_f (void)
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
+		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Modellist_f from different level\n");
 		SV_New_f ();
 		return;
@@ -330,6 +333,7 @@ static void SV_Modellist_f (void)
 	n = atoi(Cmd_Argv(2));
 	if (n >= MAX_MODELS)
 	{
+		SV_ClearReliable (host_client);
 		SV_ClientPrintf (host_client, PRINT_HIGH,
 		                 "SV_Modellist_f: Invalid modellist index\n");
 		SV_DropClient (host_client);
@@ -380,6 +384,7 @@ static void SV_PreSpawn_f (void)
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
+		SV_ClearReliable (host_client);
 		Con_Printf ("SV_PreSpawn_f from different level\n");
 		SV_New_f ();
 		return;
@@ -461,6 +466,7 @@ static void SV_Spawn_f (void)
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
+		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Spawn_f from different level\n");
 		SV_New_f ();
 		return;
@@ -634,6 +640,7 @@ static void SV_Begin_f (void)
 	// handle the case of a level changing while a client was connecting
 	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
 	{
+		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Begin_f from different level\n");
 		SV_New_f ();
 		return;

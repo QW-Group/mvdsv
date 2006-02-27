@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.39 2006/02/27 12:01:59 disconn3ct Exp $
+	$Id: sv_main.c,v 1.40 2006/02/27 13:50:39 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -480,19 +480,18 @@ int SV_GenerateUserID (void)
 	return svs.lastuserid;
 }
 
-
 /*
 ==============================================================================
- 
+
 CONNECTIONLESS COMMANDS
- 
+
 ==============================================================================
 */
 
 /*
 ================
 SVC_Status
- 
+
 Responds with all the info that qplug or qspy can see
 This message can be up to around 5k with worst case string lengths.
 ================
@@ -745,18 +744,16 @@ void SVC_DirectConnect (void)
 {
 	char		userinfo[1024];
 	netadr_t	adr;
-	int			i;
+	int		i;
 	client_t	*cl, *newcl;
-	client_t	temp;
 	edict_t		*ent;
-	int			edictnum;
+	int		edictnum;
 	char		*s, *key;
-	int			clients, spectators, vips;
+	int		clients, spectators, vips;
 	qboolean	spectator;
-	int			qport;
-	int			version;
-	int			challenge;
-	qboolean	gotnewcl; //bliP: reuse connection
+	int		qport;
+	int		version;
+	int		challenge;
 	qboolean	spass = false, vip;
 	extern char *shortinfotbl[];
 
@@ -850,26 +847,6 @@ void SVC_DirectConnect (void)
 
 	adr = net_from;
 
-	newcl = &temp;
-	memset (newcl, 0, sizeof(client_t));
-
-	newcl->userid = SV_GenerateUserID();
-
-	gotnewcl = false; //bliP: reuse connection
-
-	// works properly
-	if (!sv_highchars.value)
-	{
-		byte *p, *q;
-
-		for (p = (byte *)newcl->userinfo, q = (byte *)userinfo;
-		        *q && p < (byte *)newcl->userinfo + sizeof(newcl->userinfo)-1; q++)
-			if (*q > 31 && *q <= 127)
-				*p++ = *q;
-	}
-	else
-		strlcpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
-
 	// if there is already a slot for this ip, reuse (changed from drop) it
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
@@ -883,7 +860,6 @@ void SVC_DirectConnect (void)
 			if ((realtime - cl->lastconnect) < ((int)sv_reconnectlimit.value * 1000))
 			{
 				Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
-				//userid--;
 				return;
 			}
 			//<-
@@ -891,43 +867,31 @@ void SVC_DirectConnect (void)
 			if (cl->state == cs_connected || cl->state == cs_preconnected)
 			{
 				Con_Printf("%s:dup connect\n", NET_AdrToString (adr));
-				//userid--;
 				return;
 			}
 
 			Con_Printf ("%s:reconnect\n", NET_AdrToString (adr));
-			//bliP: reuse connect ->
-			//SV_DropClient (cl);
-			*cl = *newcl;
-			newcl = cl;
-
-			cl->download = NULL;
-			cl->file_percent = 0;
-			// demo download list for internal cmd dl function
-			//Added by VVD {
-			cl->demonum[0] = 0;
-			cl->demolist = false;
-			// } Added by VVD
-
-			gotnewcl = true;
+			if (cl->state == cs_spawned)
+			{
+				SV_DropClient (cl);
+				SV_ClearReliable (cl);	// don't send the disconnect
+			}
+			cl->state = cs_free;
 			break;
-			//<-
 		}
 	}
 
 	// count up the clients and spectators
-	clients = 0;
-	spectators = 0;
-	vips = 0;
+	clients = spectators = vips = 0;
+	newcl = NULL;
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
 		if (cl->state == cs_free)
+		{
+			if (!newcl)
+				newcl = cl; // grab first available slot
 			continue;
-		//bliP: reuse connect ->
-		//don't count their existing connection so they can connect
-		if (gotnewcl && cl->userid == newcl->userid)
-			continue;
-		//<-
+		}
 
 		if (cl->vip)
 			vips++;
@@ -956,7 +920,8 @@ void SVC_DirectConnect (void)
 	if ( (vip && spectator && vips >= (int)maxvip_spectators.value &&
 	        (spectators >= (int)maxspectators.value || !spass))
 	        || (!vip && spectator && (spectators >= (int)maxspectators.value || !spass))
-	        || (!spectator && clients >= (int)maxclients.value))
+	        || (!spectator && clients >= (int)maxclients.value)
+                || !newcl)
 	{
 		if (spectator == 2 && maxvip_spectators.value > vips && !vip)
 		{
@@ -968,43 +933,23 @@ void SVC_DirectConnect (void)
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
 			Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
-			//userid--; //bliP: count users properly
 			newcl->rip_vip = 3; // added drop client after "server is full" message
 			return;
 		}
 	}
 
-	// find a client slot
-	//bliP: reuse connection ->
-	if (!gotnewcl)
-	{
-		newcl = NULL;
-		for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
-		{
-			if (cl->state == cs_free)
-			{
-				newcl = cl;
-				break;
-			}
-		}
-		if (!newcl)
-		{
-			Con_Printf ("WARNING: miscounted available clients\n");
-			return;
-		}
-		// build a new connection
-		// accept the new client
-		// this is the only place a client_t is ever initialized
-		*newcl = temp;
-	}
-	//<-
+	// build a new connection
+	// accept the new client
+	// this is the only place a client_t is ever initialized
+	memset (newcl, 0, sizeof(*newcl));
+	newcl->userid = SV_GenerateUserID();
 
+	strlcpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
+	
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION );
-
-	edictnum = (newcl-svs.clients)+1;
 
 	Netchan_Setup (&newcl->netchan, adr, qport);
 
@@ -1018,7 +963,9 @@ void SVC_DirectConnect (void)
 	newcl->spectator = spectator;
 	newcl->vip = vip;
 
+	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
+	ent->free = false;
 	newcl->edict = ent;
 #ifdef USE_PR2
 	//restore pointer to client name
