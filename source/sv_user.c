@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.31 2006/01/20 21:33:34 disconn3ct Exp $
+	$Id: sv_user.c,v 1.32 2006/02/27 12:01:59 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -113,7 +113,7 @@ static void SV_New_f (void)
 			{
 				if (sv_getrealip.value == 2)
 				{
-					Netchan_OutOfBandPrint (net_serversocket, net_from,
+					Netchan_OutOfBandPrint (net_from,
 					                        "%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
 					host_client->rip_vip = 2;
 				}
@@ -132,7 +132,7 @@ static void SV_New_f (void)
 		if ((host_client->vip = SV_VIPbyIP(host_client->realip)) == 0)
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_serversocket, net_from,
+			Netchan_OutOfBandPrint (net_from,
 			                        "%c\nserver is full\n\n", A2C_PRINT);
 		}
 		else
@@ -864,7 +864,7 @@ static void OutofBandPrintf(netadr_t where, char *fmt, ...)
 	vsnprintf (send + 5, sizeof(send) - 5, fmt, argptr);
 	va_end (argptr);
 
-	NET_SendPacket (net_serversocket, strlen(send)+1, send, where);
+	NET_SendPacket (strlen(send)+1, send, where);
 }
 
 /*

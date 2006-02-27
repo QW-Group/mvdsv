@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.16 2006/01/05 15:03:39 disconn3ct Exp $
+	$Id: sv_send.c,v 1.17 2006/02/27 12:01:59 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -60,7 +60,7 @@ void SV_FlushRedirect (void)
 		send[4] = A2C_PRINT;
 		memcpy (send+5, outputbuf, strlen(outputbuf)+1);
 
-		NET_SendPacket (net_serversocket, strlen(send)+1, send, net_from);
+		NET_SendPacket (strlen(send)+1, send, net_from);
 	}
 	else if (sv_redirected == RD_CLIENT && sv_redirectbufcount < MAX_REDIRECTMESSAGES)
 	{

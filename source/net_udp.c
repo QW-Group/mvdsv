@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_udp.c,v 1.9 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: net_udp.c,v 1.10 2006/02/27 12:01:59 disconn3ct Exp $
 */
 // net_main.c
 
@@ -29,8 +29,7 @@ netadr_t	net_local_adr;
 
 netadr_t	net_from;
 sizebuf_t	net_message;
-int		net_send_socket;	// blocking, for sends
-int		net_serversocket;	// non blocking, for receives
+int		net_socket; // non blocking, for receives
 int		net_telnetsocket;
 int		sv_port;
 int		telnetport;
@@ -161,14 +160,14 @@ qboolean NET_StringToAdr (char *s, netadr_t *a)
 
 //=============================================================================
 
-qboolean NET_GetPacket (int dummy)
+qboolean NET_GetPacket (void)
 {
-	static int ret;
+	int ret;
 	struct sockaddr_qstorage from;
-	static int fromlen;
+	int fromlen;
 
 	fromlen = sizeof(from);
-	ret = recvfrom (net_serversocket, net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
+	ret = recvfrom (net_socket, net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
 	if (ret == -1)
 	{
 		if (errno == EWOULDBLOCK)
@@ -179,6 +178,8 @@ qboolean NET_GetPacket (int dummy)
 		return false;
 	}
 
+	if(ret<MSG_BUF_SIZE) net_message_buffer[ret]='\0';
+	
 	net_message.cursize = ret;
 	SockadrToNetadr (&from, &net_from);
 
@@ -187,13 +188,13 @@ qboolean NET_GetPacket (int dummy)
 
 //=============================================================================
 
-void NET_SendPacket (int dummy, int length, void *data, netadr_t to)
+void NET_SendPacket (int length, void *data, netadr_t to)
 {
-	static struct sockaddr_in	addr;
+	static struct sockaddr_in addr;
 
 	NetadrToSockadr (&to, &addr);
 
-	if (-1 == sendto (net_serversocket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr)))
+	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(addr)))
 	{
 		if (errno == EWOULDBLOCK)
 			return;
@@ -292,8 +293,8 @@ void NET_GetLocalAddress (void)
 	NET_StringToAdr (buff, &net_local_adr);
 
 	namelen = sizeof(address);
-	if (getsockname (net_serversocket, (struct sockaddr *)&address, &namelen) == -1)
-		Sys_Error ("NET_Init: getsockname:", strerror(errno));
+	if (getsockname (net_socket, (struct sockaddr *)&address, &namelen) == -1)
+		Sys_Error ("NET_Init: getsockname: %d", strerror(errno));
 	net_local_adr.port = address.sin_port;
 
 	Con_Printf("IP address %s\n", NET_AdrToString (net_local_adr) );
@@ -304,15 +305,12 @@ void NET_GetLocalAddress (void)
 NET_Init
 ====================
 */
-int NET_Init (int port, int dummy, int telnetport)
+int NET_Init (int port, int telnetport)
 {
-	if (dummy)
-		port = dummy;
-
 	// open the single socket to be used for all communications
 	if (port)
 	{
-		net_serversocket = UDP_OpenSocket (port);
+		net_socket = UDP_OpenSocket (port);
 		// init the message buffer
 		net_message.maxsize = sizeof(net_message_buffer);
 		net_message.data = net_message_buffer;
@@ -338,7 +336,8 @@ NET_Shutdown
 */
 void NET_Shutdown (void)
 {
-	close (net_serversocket);
+	if (net_socket)
+		closesocket (net_socket);
 	if (telnetport)
 	{
 		if (telnet_connected)

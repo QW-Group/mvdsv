@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.38 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: sv_main.c,v 1.39 2006/02/27 12:01:59 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -639,7 +639,7 @@ void SVC_Log (void)
 	if (seq == svs.logsequence-1 || !logs[FRAG_LOG].sv_logfile)
 	{	// they already have this data, or we aren't logging frags
 		data[0] = A2A_NACK;
-		NET_SendPacket (net_serversocket, 1, data, net_from);
+		NET_SendPacket (1, data, net_from);
 		return;
 	}
 
@@ -648,7 +648,7 @@ void SVC_Log (void)
 	snprintf (data, MAX_DATAGRAM + 64, "stdlog %i\n", svs.logsequence-1);
 	strlcat (data, (char *)svs.log_buf[((svs.logsequence-1)&1)], MAX_DATAGRAM + 64);
 
-	NET_SendPacket (net_serversocket, strlen(data)+1, data, net_from);
+	NET_SendPacket (strlen(data)+1, data, net_from);
 }
 
 /*
@@ -664,7 +664,7 @@ void SVC_Ping (void)
 
 	data = A2A_ACK;
 
-	NET_SendPacket (net_serversocket, 1, &data, net_from);
+	NET_SendPacket (1, &data, net_from);
 }
 
 /*
@@ -709,7 +709,7 @@ void SVC_GetChallenge (void)
 	}
 
 	// send it back
-	Netchan_OutOfBandPrint (net_serversocket, net_from, "%c%i", S2C_CHALLENGE,
+	Netchan_OutOfBandPrint (net_from, "%c%i", S2C_CHALLENGE,
 	                        svs.challenges[i].challenge);
 }
 
@@ -763,8 +763,8 @@ void SVC_DirectConnect (void)
 	version = atoi(Cmd_Argv(1));
 	if (version != PROTOCOL_VERSION)
 	{
-//		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
-		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nServer is version " QW_VERSION ".\n", A2C_PRINT);
+//		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
+		Netchan_OutOfBandPrint (net_from, "%c\nServer is version " QW_VERSION ".\n", A2C_PRINT);
 		Con_Printf ("* rejected connect from version %i\n", version);
 		return;
 	}
@@ -777,7 +777,7 @@ void SVC_DirectConnect (void)
 	strlcpy (userinfo, Cmd_Argv(4), sizeof(userinfo));
 	if (!ValidateUserInfo(userinfo))
 	{
-		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nInvalid userinfo. Restart your qwcl\n", A2C_PRINT);
+		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo. Restart your qwcl\n", A2C_PRINT);
 		return;
 	}
 
@@ -788,13 +788,13 @@ void SVC_DirectConnect (void)
 		{
 			if (challenge == svs.challenges[i].challenge)
 				break;		// good
-			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nBad challenge.\n", A2C_PRINT);
+			Netchan_OutOfBandPrint (net_from, "%c\nBad challenge.\n", A2C_PRINT);
 			return;
 		}
 	}
 	if (i == MAX_CHALLENGES)
 	{
-		Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nNo challenge for address.\n", A2C_PRINT);
+		Netchan_OutOfBandPrint (net_from, "%c\nNo challenge for address.\n", A2C_PRINT);
 		return;
 	}
 
@@ -820,7 +820,7 @@ void SVC_DirectConnect (void)
 		if (!vip && !spass)
 		{
 			Con_Printf ("%s:spectator password failed\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nrequires a spectator password\n\n", A2C_PRINT);
+			Netchan_OutOfBandPrint (net_from, "%c\nrequires a spectator password\n\n", A2C_PRINT);
 			return;
 		}
 
@@ -840,7 +840,7 @@ void SVC_DirectConnect (void)
 		        strcmp(password.string, s) )
 		{
 			Con_Printf ("%s:password failed\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_serversocket, net_from, "%c\nserver requires a password\n\n", A2C_PRINT);
+			Netchan_OutOfBandPrint (net_from, "%c\nserver requires a password\n\n", A2C_PRINT);
 			return;
 		}
 		spectator = false;
@@ -967,7 +967,7 @@ void SVC_DirectConnect (void)
 		else
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
-			Netchan_OutOfBandPrint (net_serversocket, adr, "%c\nserver is full\n\n", A2C_PRINT);
+			Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
 			//userid--; //bliP: count users properly
 			newcl->rip_vip = 3; // added drop client after "server is full" message
 			return;
@@ -1002,11 +1002,11 @@ void SVC_DirectConnect (void)
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
 
-	Netchan_OutOfBandPrint (net_serversocket, adr, "%c", S2C_CONNECTION );
+	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION );
 
 	edictnum = (newcl-svs.clients)+1;
 
-	Netchan_Setup (&newcl->netchan, adr, qport, net_serversocket);
+	Netchan_Setup (&newcl->netchan, adr, qport);
 
 	newcl->state = cs_preconnected;
 
@@ -1813,7 +1813,7 @@ void SV_SendBan (void)
 	data[5] = 0;
 	strlcat (data, "\nbanned.\n", sizeof(data));
 
-	NET_SendPacket (net_serversocket, strlen(data), data, net_from);
+	NET_SendPacket (strlen(data), data, net_from);
 }
 
 /*
@@ -2080,7 +2080,7 @@ void SV_ReadPackets (void)
 	int			qport;
 
 	good = false;
-	while (NET_GetPacket(net_serversocket))
+	while (NET_GetPacket())
 	{
 		// check for connectionless packet (0xffffffff) first
 		if (*(int *)net_message.data == -1)
@@ -2905,7 +2905,7 @@ void SV_InitNet (void)
 		sv_port = atoi(com_argv[p + 1]);
 		Con_Printf ("Port: %i\n", sv_port);
 	}
-	sv_port = NET_Init (0, sv_port, 0);
+	sv_port = NET_Init (sv_port, 0);
 
 	p = COM_CheckParm ("-telnetport");
 	if (p && p + 1 < com_argc)
@@ -2916,7 +2916,7 @@ void SV_InitNet (void)
 	else
 		p = 0/*sv_port*/;
 	if (p)
-		telnetport = NET_Init (0, 0, p);
+		telnetport = NET_Init (0, p);
 
 	Netchan_Init ();
 	// heartbeats will always be sent to the id master
