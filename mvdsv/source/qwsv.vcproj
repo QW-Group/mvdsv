@@ -307,7 +307,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="net_wins.c">
+				RelativePath="net.c">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool

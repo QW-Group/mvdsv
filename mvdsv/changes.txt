@@ -1,13 +1,13 @@
 
-$Id: changes.txt,v 1.54 2006/02/27 18:53:38 disconn3ct Exp $
+$Id: changes.txt,v 1.55 2006/02/28 14:03:21 vvd0 Exp $
 
 ----
 MVDSV v0.19.11-CVS build 22?? (2006.03.??)
-- fixed insanly dangerous bug with master_rcon_password :E. Now it can be set only from
-  server configs. (by disconnect)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
+- fixed insanly dangerous bug with master_rcon_password :E. Now it can be set only from
+  server configs. (by disconnect)
 - added "scroll" console output on Win32
 - bugfix from 0.19.10-develop: incorrect demo numbering while game proceed if used extracts by
   substrings in command 'cmd dlist', example: 'cmd dlist aerowalk'
