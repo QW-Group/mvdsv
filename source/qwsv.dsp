@@ -138,7 +138,7 @@ SOURCE=net_chan.c
 # End Source File
 # Begin Source File
 
-SOURCE=net_wins.c
+SOURCE=net.c
 # End Source File
 # Begin Source File
 

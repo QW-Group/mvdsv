@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.41 2006/02/27 18:51:58 disconn3ct Exp $
+	$Id: sv_main.c,v 1.42 2006/02/28 14:03:22 vvd0 Exp $
 */
 
 #include "version.h"
@@ -2853,18 +2853,21 @@ void SV_InitNet (void)
 		sv_port = atoi(com_argv[p + 1]);
 		Con_Printf ("Port: %i\n", sv_port);
 	}
-	sv_port = NET_Init (sv_port, 0);
 
 	p = COM_CheckParm ("-telnetport");
 	if (p && p + 1 < com_argc)
 	{
-		p = atoi(com_argv[p + 1]);
-		Con_Printf ("Telnet port: %i\n", p);
+		telnetport = atoi(com_argv[p + 1]);
+		Con_Printf ("Telnet port: %i\n", telnetport);
 	}
 	else
-		p = 0/*sv_port*/;
-	if (p)
-		telnetport = NET_Init (0, p);
+		telnetport = 
+#ifdef ENABLE_TELNET_BY_DEFAULT
+			sv_port;
+#else
+			0;
+#endif
+	NET_Init (&sv_port, &telnetport);
 
 	Netchan_Init ();
 	// heartbeats will always be sent to the id master
