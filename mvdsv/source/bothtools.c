@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.2 2006/02/27 10:48:10 disconn3ct Exp $
+	$Id: bothtools.c,v 1.3 2006/02/28 17:10:10 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -337,6 +337,14 @@ char *strcasestr(register const char *s, register const char *find)
 }
 #endif
 
+int strchrn(char* str, char c)
+{
+	int i = 0;
+	while (*str)
+		if (*s++ == c)
+			++i;
+	return i;
+}
 /*
 ============================================================================
 

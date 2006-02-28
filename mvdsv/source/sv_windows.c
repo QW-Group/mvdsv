@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.9 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: sv_windows.c,v 1.10 2006/02/28 17:10:10 vvd0 Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
@@ -62,11 +62,11 @@ void ConsoleAddText(char *text)
 	//  set the carriage in the end of the text
 	l = SendMessage(HEdit1, WM_GETTEXTLENGTH, 0, 0);
 
-	size = l + strlen(text) + 1;
+	size = l + strlen(text) + strchrn(text, '\n');
 	if (HEdit1_size < size)
 	{
-		SendMessage(HEdit1, WM_GETTEXT, l + 1, (LPARAM)HEdit1_buf);
-		SendMessage(HEdit1, WM_SETTEXT, 0, (LPARAM)(HEdit1_buf + size - HEdit1_size));
+		SendMessage(HEdit1, WM_GETTEXT, HEdit1_size, (LPARAM)HEdit1_buf);
+		SendMessage(HEdit1, WM_SETTEXT, 0, (LPARAM)(HEdit1_buf + size + 1 - HEdit1_size));
 		l = SendMessage(HEdit1, WM_GETTEXTLENGTH, 0, 0);
 	}
 
@@ -297,9 +297,9 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		SetFocus(HEdit2);
 
 //		SendMessage(HEdit1, EM_LIMITTEXT, 1000, 0);
-		HEdit1_size = SendMessage(HEdit1, EM_GETLIMITTEXT, 0, 0);
-		HEdit1_buf = Q_Malloc(HEdit1_size + 1);
-Sys_Printf("%d\n", HEdit1_size);
+		HEdit1_size = SendMessage(HEdit1, EM_GETLIMITTEXT, 0, 0) + 1;
+		HEdit1_buf = Q_Malloc(HEdit1_size);
+//Sys_Printf("%d\n", HEdit1_size);
 		break;
 
 	case WM_CTLCOLORSTATIC:
