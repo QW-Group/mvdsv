@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.10 2006/02/28 17:10:10 vvd0 Exp $
+	$Id: sv_windows.c,v 1.11 2006/03/01 12:03:18 vvd0 Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
@@ -63,7 +63,7 @@ void ConsoleAddText(char *text)
 	l = SendMessage(HEdit1, WM_GETTEXTLENGTH, 0, 0);
 
 	size = l + strlen(text) + strchrn(text, '\n');
-	if (HEdit1_size < size)
+	if (HEdit1_size <= size)
 	{
 		SendMessage(HEdit1, WM_GETTEXT, HEdit1_size, (LPARAM)HEdit1_buf);
 		SendMessage(HEdit1, WM_SETTEXT, 0, (LPARAM)(HEdit1_buf + size + 1 - HEdit1_size));
