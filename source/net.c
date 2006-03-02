@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.1 2006/02/28 14:03:22 vvd0 Exp $
+	$Id: net.c,v 1.2 2006/03/02 07:44:27 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -43,12 +43,6 @@ WSADATA		winsockdata;
 
 void NetadrToSockadr (netadr_t *a, struct sockaddr_qstorage *s)
 {
-/*	memset (s, 0, sizeof(*s));
-	s->sin_family = AF_INET;
-
-	*(int *)&s->sin_addr = *(int *)&a->ip;
-	s->sin_port = a->port;
-*/
 	memset (s, 0, sizeof(struct sockaddr_in));
 	((struct sockaddr_in*)s)->sin_family = AF_INET;
 
@@ -228,8 +222,9 @@ void NET_SendPacket (int length, void *data, netadr_t to)
 
 int UDP_OpenSocket (int port)
 {
+	int i;
 	struct sockaddr_in address;
-//	qboolean _true = true;
+	qboolean _true = true; // disconnect: WTF?
 
 	if ((net_socket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
 	{
@@ -290,6 +285,7 @@ int UDP_OpenSocket (int port)
 
 int TCP_OpenSocket (int port, int udp_port)
 {
+	int i;
 	struct sockaddr_in address;
 	qboolean _true = true;
 

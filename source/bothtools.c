@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.3 2006/02/28 17:10:10 vvd0 Exp $
+	$Id: bothtools.c,v 1.4 2006/03/02 07:44:27 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -341,7 +341,7 @@ int strchrn(char* str, char c)
 {
 	int i = 0;
 	while (*str)
-		if (*s++ == c)
+		if (*str++ == c)
 			++i;
 	return i;
 }
