@@ -1,11 +1,14 @@
 
-$Id: changes.txt,v 1.55 2006/02/28 14:03:21 vvd0 Exp $
+$Id: changes.txt,v 1.56 2006/03/03 14:35:28 vvd0 Exp $
 
 ----
 MVDSV v0.19.11-CVS build 22?? (2006.03.??)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
+- new code in determination of demo existing for easyrecord command
+- bugfix from 0.1728: posibility to crash server via lastscores
+(Thanks to 100Nosao)
 - fixed insanly dangerous bug with master_rcon_password :E. Now it can be set only from
   server configs. (by disconnect)
 - added "scroll" console output on Win32
