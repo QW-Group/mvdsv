@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.32 2006/02/27 16:27:16 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.33 2006/03/03 14:35:29 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1674,15 +1674,33 @@ int	Dem_CountTeamPlayers (char *t)
 }
 
 // <-
+char *quote(char *str)
+{
+	char *out, *s;
+	if (!str)
+		return NULL;
+	if (!*str)
+		return NULL;
 
+	s = out = Q_Malloc(strlen(str) * 2 + 1);
+	while (*str)
+	{
+		*s++ = '\\';
+		*s++ = *str++;
+	}
+	*s = '\0';
+	return out;
+}
 void SV_MVDEasyRecord_f (void)
 {
-	int	c;
+	int		c;
 	char	name[MAX_DEMO_NAME];
 	char	name2[MAX_OSPATH*7]; // scream
 	//char	name2[MAX_OSPATH*2];
 	int		i;
-	FILE	*f;
+//	FILE	*f;
+	dir_t	dir;
+	char	*name3;
 
 	c = Cmd_Argc();
 	if (c > 2)
@@ -1770,12 +1788,28 @@ void SV_MVDEasyRecord_f (void)
 	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)),
 	        MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
 	strlcat(name, sv_demoSuffix.string, sizeof(name));
-	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
+//	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
 	// find a filename that doesn't exist yet
 	strlcpy(name2, name, sizeof(name2));
 	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 	//	COM_StripExtension(name2, name2);
-	strlcat (name2, ".mvd", sizeof(name2));
+
+	if (!(name3 = quote(name2)))
+		return;
+	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+					  va("^%s%s", name3, sv_demoRegexp.string), SORT_NO);
+	Q_Free(name3);
+	for (i = 1; dir.numfiles; )
+	{
+		snprintf(name2, sizeof(name2), "%s_%02i", name, i++);
+		if (!(name3 = quote(name2)))
+			return;
+		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+						  va("^%s%s", name3, sv_demoRegexp.string), SORT_NO);
+		Q_Free(name3);
+	}
+
+/*	strlcat (name2, ".mvd", sizeof(name2));
 	if ((f = fopen (name2, "rb")) == 0)
 		f = fopen(va("%s.gz", name2), "rb");
 
@@ -1794,6 +1828,8 @@ void SV_MVDEasyRecord_f (void)
 		}
 		while (f);
 	}
+*/
+	snprintf(name2, sizeof(name2), va("%s/%s/%s.mvd", com_gamedir, sv_demoDir.string, name2));
 
 	SV_MVD_Record (SV_InitRecordFile(name2));
 }
@@ -1820,6 +1856,7 @@ int MVD_StreamStartListening(int port)
 
 	if (ioctlsocket (sock, FIONBIO, &nonblocking) == -1)
 	{
+		closesocket(sock);
 		Sys_Error ("FTP_TCP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
 	}
 
@@ -2034,31 +2071,60 @@ while (list->name[0] && num) {list++; num--;};
 	return NULL;
 }
 
+#define OVECCOUNT	3
 char *SV_MVDName2Txt(char *name)
 {
 	char	s[MAX_OSPATH];
-	int	len;
+	int		len;
+
+	int		r, ovector[OVECCOUNT];
+	pcre	*preg;
+	const char	*errbuf;
 
 	if (!name)
 		return NULL;
 
-	strlcpy(s, name, MAX_OSPATH);
-	len = strlen(s) - 4;
-	if (len < 0)
-		return va("%s", s);
-	if (strcmp(&s[len], ".mvd"))
-	{
-		if (len < 3)
-			return va("%s", s);
-		len -= 3;
-		if (strcmp(&s[len], ".mvd.gz"))
-			return va("%s", s);
-	}
-	s[++len] = 't';
-	s[++len] = 'x';
-	s[++len] = 't';
-	s[++len] = '\0';
+	if (!*name)
+		return NULL;
 
+	strlcpy(s, name, MAX_OSPATH);
+	len = strlen(s);
+
+	if (!(preg = pcre_compile(sv_demoRegexp.string, PCRE_CASELESS, &errbuf, &r, NULL)))
+	{
+		Con_Printf("SV_MVDName2Txt: pcre_compile(%s) error: %s at offset %d\n",
+					sv_demoRegexp.string, errbuf, r);
+		Q_Free(preg);
+		return NULL;
+	}
+	r = pcre_exec(preg, NULL, s, len, 0, 0, ovector, OVECCOUNT);
+	Q_Free(preg);
+	if (r < 0)
+	{
+		switch (r)
+		{
+		case PCRE_ERROR_NOMATCH:
+			return NULL;
+		default:
+			Con_Printf("SV_MVDName2Txt: pcre_exec(%s, %s) error code: %d\n",
+						sv_demoRegexp.string, s, r);
+			return NULL;
+		}
+	}
+	else
+	{
+		if (ovector[0] + 5 > MAX_OSPATH)
+			len = MAX_OSPATH - 5;
+		else
+			len = ovector[0];
+	}
+	s[len++] = '.';
+	s[len++] = 't';
+	s[len++] = 'x';
+	s[len++] = 't';
+	s[len]   = '\0';
+
+	Con_Printf("%d) %s, %s\n", r, name, s);
 	return va("%s", s);
 }
 
@@ -2225,7 +2291,7 @@ void SV_MVDInfoAdd_f (void)
 	}
 	else
 	{
-		name = SV_MVDTxTNum(atoi(Cmd_Argv(1)));
+		name = SV_MVDTxTNum(Q_atoi(Cmd_Argv(1)));
 
 		if (!name)
 		{
@@ -2275,7 +2341,7 @@ void SV_MVDInfoRemove_f (void)
 	}
 	else
 	{
-		name = SV_MVDTxTNum(atoi(Cmd_Argv(1)));
+		name = SV_MVDTxTNum(Q_atoi(Cmd_Argv(1)));
 
 		if (!name)
 		{
@@ -2315,7 +2381,7 @@ void SV_MVDInfo_f (void)
 	}
 	else
 	{
-		name = SV_MVDTxTNum(atoi(Cmd_Argv(1)));
+		name = SV_MVDTxTNum(Q_atoi(Cmd_Argv(1)));
 
 		if (!name)
 		{
@@ -2344,7 +2410,7 @@ void SV_MVDInfo_f (void)
 #define MAXDEMOS	10
 void SV_LastScores_f (void)
 {
-	int	demos, i;
+	int		demos = MAXDEMOS, i;
 	char	buf[512];
 	FILE	*f = NULL;
 	char	path[MAX_OSPATH];
@@ -2356,46 +2422,48 @@ void SV_LastScores_f (void)
 		return;
 	}
 
-	if (Cmd_Argc() == 1)
-		demos = MAXDEMOS;
-	else
-		demos = atoi(Cmd_Argv(1));
-
-	if (sv.mvdrecording && demos > MAXDEMOS)
-		Con_Printf("<numlastdemos> was decreased to %i: demo recording in progress.\n", demos = MAXDEMOS);
+	if (Cmd_Argc() == 2)
+		if ((demos = Q_atoi(Cmd_Argv(1))) <= 0)
+			demos = MAXDEMOS;
 
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
 	                  sv_demoRegexp.string, SORT_BY_DATE);
-
 	if (!dir.numfiles)
 	{
 		Con_Printf("No demos.\n");
 		return;
 	}
-	if (dir.numfiles < demos || !demos)
+
+	if (dir.numfiles < demos)
 		demos = dir.numfiles;
+
+	if (GameStarted() && demos > MAXDEMOS)
+		Con_Printf("<numlastdemos> was decreased to %i: match is in progress.\n", demos = MAXDEMOS);
+
+	Con_Printf("List of %d last demos:\n", demos);
 
 	for (i = dir.numfiles - demos; i < dir.numfiles; )
 	{
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, SV_MVDName2Txt(dir.files[i].name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string,
+					SV_MVDName2Txt(dir.files[i].name));
 
 		Con_Printf("%i. ", ++i);
 		if ((f = fopen(path, "rt")) == NULL)
-		{
 			Con_Printf("(empty)\n");
-			continue;
-		}
-
-		while (!feof(f))
+		else
 		{
-			buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
-			*strchr(buf, '\n') = 0;
-			Con_Printf("%s\n", Q_yelltext(buf));
+			if (!feof(f))
+			{
+				buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
+				*strchr(buf, '\n') = 0;
+				Con_Printf("%s\n", Q_yelltext(buf));
+			}
+			else
+				Con_Printf("(empty)\n");
+			fclose(f);
 		}
-		fclose(f);
 	}
 }
-
 
 
 void SV_MVDInit (void)
