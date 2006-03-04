@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.22 2006/02/26 05:32:00 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.23 2006/03/04 17:40:10 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -1535,7 +1535,14 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 
 	if (e1 == 0)
 	{
-		if ((value = Info_ValueForKey(svs.info, key)) == NULL || !*value)
+		if (!strcmp(key, "date_str")) { // qqshka - qvm does't have any time builtin support, so add this
+			date_t date;
+
+			SV_TimeOfDay(&date);
+			snprintf(ov, sizeof(ov), "%s", date.str);
+			value = ov;
+		}
+		else if ((value = Info_ValueForKey(svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey(localinfo, key);
 	}
 	else if (e1 <= MAX_CLIENTS)
