@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.10 2006/01/09 20:37:15 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.11 2006/03/05 10:25:11 qqshka Exp $
 */
 // sv_phys.c
 
@@ -988,6 +988,23 @@ void SV_Physics (void)
 #ifdef USE_PR2
 	savesvpl = sv_player;
 	savehc = host_client;
+
+	// so spec will have right goalentity - if speccing someone
+	// qqshka {
+	if ( sv_vm ) // don't fix .qc based mods
+		for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
+		{
+			if ( cl->state == cs_free )
+				continue;
+
+			host_client = cl;
+			ent = cl->edict;
+
+			if( host_client->spectator && host_client->spec_track > 0 )
+				ent->v.goalentity = EDICT_TO_PROG(svs.clients[host_client->spec_track-1].edict);
+		}
+	// }
+
 	for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
 	{
 		if ( cl->state == cs_free )
