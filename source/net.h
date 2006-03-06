@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.10 2006/03/02 07:44:27 disconn3ct Exp $
+	$Id: net.h,v 1.11 2006/03/06 17:22:35 vvd0 Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
@@ -33,7 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
 #define EAFNOSUPPORT	WSAEAFNOSUPPORT
 
-#else
+#define qerrno	WSAGetLastError()
+#else //_WIN32
+#define qerrno	errno
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -41,31 +44,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/ioctl.h>
 #include <sys/uio.h>
 #include <arpa/inet.h>
-#include <errno.h>
-
 #include <unistd.h>
 
 #ifdef sun
 #include <sys/filio.h>
-#endif
+#endif //sun
 
 #ifdef NeXT
 #include <libc.h>
-#endif
+#endif //NeXT
 
-#define closesocket close
-#define ioctlsocket ioctl
-#endif
+#define closesocket	close
+#define ioctlsocket	ioctl
+#endif //_WIN32
 
-#if defined(_WIN32)
-#define qerrno WSAGetLastError()
-#else
-#define qerrno errno
-#endif
 
+#include <errno.h>
 
 #ifndef INVALID_SOCKET
-#define INVALID_SOCKET -1
+#define INVALID_SOCKET	-1
 #endif
 
 

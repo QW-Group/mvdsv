@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.2 2006/03/02 07:44:27 disconn3ct Exp $
+	$Id: net.c,v 1.3 2006/03/06 17:22:35 vvd0 Exp $
 */
 // net_wins.c
 
@@ -222,9 +222,9 @@ void NET_SendPacket (int length, void *data, netadr_t to)
 
 int UDP_OpenSocket (int port)
 {
-	int i;
+	int	i;
 	struct sockaddr_in address;
-	qboolean _true = true; // disconnect: WTF?
+	int	_true = true; // disconnect: WTF?
 
 	if ((net_socket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
 	{
@@ -266,12 +266,10 @@ int UDP_OpenSocket (int port)
 	else
 	{
 		// try any port
-		int i;
-
 		for (i = 0; i < 100; i++, port++)
 		{
 			address.sin_port = htons((short)port);
-			if( bind (net_socket, (void *)&address, sizeof(address)) != -1)
+			if (bind (net_socket, (void *)&address, sizeof(address)) != -1)
 				break;
 		}
 		if (i == 100) {
@@ -285,9 +283,9 @@ int UDP_OpenSocket (int port)
 
 int TCP_OpenSocket (int port, int udp_port)
 {
-	int i;
+	int	i;
 	struct sockaddr_in address;
-	qboolean _true = true;
+	int	_true = true;
 
 	if ((net_telnetsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
 	{
@@ -329,12 +327,10 @@ int TCP_OpenSocket (int port, int udp_port)
 	else // disconnect: is it safe for telnet port?
 	{
 		// try any port
-		int i;
-
 		for (port = udp_port, i = 0; i < 100; i++, port++)
 		{
 			address.sin_port = htons((short)port);
-			if( bind (net_telnetsocket, (void *)&address, sizeof(address)) != -1)
+			if (bind (net_telnetsocket, (void *)&address, sizeof(address)) != -1)
 				break;
 		}
 		if (i == 100) {
@@ -399,9 +395,12 @@ void NET_Init (int *serverport, int *telnetport)
 	// open the single socket to be used for all communications
 	
 #ifdef _WIN32
-	// Why we need version 2.0? Trying 1.1...
+	// Why we need version 2.0? Trying 1.1...  Work with 1.0 too.
 	if (WSAStartup (MAKEWORD(1, 1), &winsockdata))
-		Sys_Error ("Winsock initialization failed.");
+		Sys_Error ("WinSock initialization failed.");
+
+	Sys_Printf("WinSock version is: %d.%d\n",
+				LOBYTE(winsockdata.wVersion), HIBYTE(winsockdata.wVersion));
 #endif
 
 	*serverport = UDP_OpenSocket (*serverport);
@@ -449,4 +448,3 @@ void NET_Shutdown (void)
 	WSACleanup ();
 #endif
 }
-

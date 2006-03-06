@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.11 2006/03/02 07:44:27 disconn3ct Exp $
+	$Id: bothdefs.h,v 1.12 2006/03/06 17:22:34 vvd0 Exp $
 */
 
 // defs common to client and server
@@ -170,8 +170,8 @@ float	FloatSwap (float f);
 #ifdef _WIN32
 #define strcasecmp(s1, s2) _stricmp  ((s1),   (s2))
 #define strncasecmp(s1, s2, n) _strnicmp ((s1),   (s2),   (n))
-int	snprintf(char *str, size_t n, char const *fmt, ...);
-int	vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
+int		snprintf(char *str, size_t n, char const *fmt, ...);
+int		vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 #endif
 
 #if defined(__linux__) || defined(_WIN32)
@@ -182,9 +182,9 @@ size_t	strlcat (char *dst, char *src, size_t siz);
 char	*strnstr (char *s, char *find, size_t slen);
 char	*strcasestr(const char *s, const char *find);
 #endif
-int	strchrn(char* str, char c);
+int		strchrn(char* str, char c);
 
-int	Q_atoi (char *str);
+int		Q_atoi (char *str);
 float	Q_atof (char *str);
 //char	*Q_ftos (float value);
 #define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
