@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.21 2006/03/07 07:04:17 disconn3ct Exp $
+	$Id: common.c,v 1.22 2006/03/07 07:20:01 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -28,75 +28,42 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 usercmd_t nullcmd; // guarenteed to be zero
 
-static char	*largv[MAX_NUM_ARGVS + 1];
-
-cvar_t	registered = {"registered","0"};
+static char *largv[MAX_NUM_ARGVS + 1];
 
 qboolean msg_suppress_1 = 0;
 
 void COM_InitFilesystem (void);
 void COM_Path_f (void);
 
-char	gamedirfile[MAX_OSPATH];
+char gamedirfile[MAX_OSPATH];
 
 /*
- 
- 
 All of Quake's data access is through a hierchal file system, but the contents of the file system can be transparently merged from several sources.
- 
+
 The "base directory" is the path to the directory holding the quake.exe and all game directories.  The sys_* files pass this to host_init in quakeparms_t->basedir.  This can be overridden with the "-basedir" command line parm to allow code debugging in a different directory.  The base directory is
 only used during filesystem initialization.
- 
+
 The "game directory" is the first tree on the search path and directory that all generated files (savegames, screenshots, demos, config files) will be saved to.  This can be overridden with the "-game" command line parameter.  The game directory can never be changed while quake is executing.  This is a precacution against having a malicious server instruct clients to write files over areas they shouldn't.
- 
 */
 
 //============================================================================
 
 
-// ClearLink is used for new headnodes
-void ClearLink (link_t *l)
-{
-	l->prev = l->next = l;
-}
-
-void RemoveLink (link_t *l)
-{
-	l->next->prev = l->prev;
-	l->prev->next = l->next;
-}
-
-void InsertLinkBefore (link_t *l, link_t *before)
-{
-	l->next = before;
-	l->prev = before->prev;
-	l->prev->next = l;
-	l->next->prev = l;
-}
-void InsertLinkAfter (link_t *l, link_t *after)
-{
-	l->next = after->next;
-	l->prev = after;
-	l->prev->next = l;
-	l->next->prev = l;
-}
 
 /*
 ==============================================================================
- 
+
 			MESSAGE IO FUNCTIONS
- 
+
 Handles byte ordering and avoids alignment errors
 ==============================================================================
 */
 
-//
 // writing functions
-//
 
 void MSG_WriteChar (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
 #ifdef PARANOID
 	if (c < -128 || c > 127)
@@ -109,7 +76,7 @@ void MSG_WriteChar (sizebuf_t *sb, int c)
 
 void MSG_WriteByte (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
 #ifdef PARANOID
 	if (c < 0 || c > 255)
@@ -122,7 +89,7 @@ void MSG_WriteByte (sizebuf_t *sb, int c)
 
 void MSG_WriteShort (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
 #ifdef PARANOID
 	if (c < ((short)0x8000) || c > (short)0x7fff)
@@ -136,7 +103,7 @@ void MSG_WriteShort (sizebuf_t *sb, int c)
 
 void MSG_WriteLong (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
 	buf = SZ_GetSpace (sb, 4);
 	buf[0] = c&0xff;
@@ -149,8 +116,8 @@ void MSG_WriteFloat (sizebuf_t *sb, float f)
 {
 	union
 	{
-		float	f;
-		int	l;
+		float f;
+		int l;
 	} dat;
 
 
@@ -185,11 +152,9 @@ void MSG_WriteAngle16 (sizebuf_t *sb, float f)
 
 void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 {
-	int		bits;
+	int bits;
 
-	//
 	// send the movement message
-	//
 	bits = 0;
 	if (cmd->angles[0] != from->angles[0])
 		bits |= CM_ANGLE1;
@@ -232,11 +197,10 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 }
 
 
-//
 // reading functions
-//
-int			msg_readcount;
-qboolean	msg_badread;
+
+int msg_readcount;
+qboolean msg_badread;
 
 void MSG_BeginReading (void)
 {
@@ -252,7 +216,7 @@ int MSG_GetReadCount(void)
 // returns -1 and sets msg_badread if no more characters are available
 int MSG_ReadChar (void)
 {
-	int	c;
+	int c;
 
 	if (msg_readcount+1 > net_message.cursize)
 	{
@@ -268,7 +232,7 @@ int MSG_ReadChar (void)
 
 int MSG_ReadByte (void)
 {
-	int	c;
+	int c;
 
 	if (msg_readcount+1 > net_message.cursize)
 	{
@@ -284,7 +248,7 @@ int MSG_ReadByte (void)
 
 int MSG_ReadShort (void)
 {
-	int	c;
+	int c;
 
 	if (msg_readcount+2 > net_message.cursize)
 	{
@@ -302,7 +266,7 @@ int MSG_ReadShort (void)
 
 int MSG_ReadLong (void)
 {
-	int	c;
+	int c;
 
 	if (msg_readcount+4 > net_message.cursize)
 	{
@@ -324,9 +288,9 @@ float MSG_ReadFloat (void)
 {
 	union
 	{
-		byte	b[4];
-		float	f;
-		int	l;
+		byte b[4];
+		float f;
+		int l;
 	} dat;
 
 	dat.b[0] =	net_message.data[msg_readcount];
@@ -342,15 +306,15 @@ float MSG_ReadFloat (void)
 
 char *MSG_ReadString (void)
 {
-	static char	string[2048];
-	int		l,c;
+	static char string[2048];
+	int l,c;
 
 	l = 0;
 	do
 	{
 		c = MSG_ReadByte ();
-		if (c == 255)		// skip these to avoid security problems
-			continue;	// with old clients and servers
+		if (c == 255) // skip these to avoid security problems
+			continue; // with old clients and servers
 		if (c == -1 || c == 0)
 			break;
 		string[l] = c;
@@ -365,8 +329,8 @@ char *MSG_ReadString (void)
 
 char *MSG_ReadStringLine (void)
 {
-	static char	string[2048];
-	int		l,c;
+	static char string[2048];
+	int l,c;
 
 	l = 0;
 	do
@@ -408,40 +372,33 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 	memcpy (move, from, sizeof(*move));
 
 	bits = MSG_ReadByte ();
-	//stat_size +=1;
 
 	// read current angles
 	if (bits & CM_ANGLE1)
 	{
 		move->angles[0] = MSG_ReadAngle16 ();
-		//stat_size += 2;
 	}
 	if (bits & CM_ANGLE2)
 	{
 		move->angles[1] = MSG_ReadAngle16 ();
-		//stat_size += 2;
 	}
 	if (bits & CM_ANGLE3)
 	{
 		move->angles[2] = MSG_ReadAngle16 ();
-		//stat_size += 2;
 	}
 
 	// read movement
 	if (bits & CM_FORWARD)
 	{
 		move->forwardmove = MSG_ReadShort ();
-		//stat_size += 2;
 	}
 	if (bits & CM_SIDE)
 	{
 		move->sidemove = MSG_ReadShort ();
-		//stat_size += 2;
 	}
 	if (bits & CM_UP)
 	{
 		move->upmove = MSG_ReadShort ();
-		//stat_size += 2;
 	}
 
 	// read buttons
@@ -453,7 +410,6 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 	// read time to run command
 	move->msec = MSG_ReadByte ();
-	//stat_size += 1;
 }
 
 
@@ -467,7 +423,7 @@ void SZ_Clear (sizebuf_t *buf)
 
 void *SZ_GetSpace (sizebuf_t *buf, int length)
 {
-	void	*data;
+	void *data;
 
 	if (buf->cursize + length > buf->maxsize)
 	{
@@ -499,7 +455,7 @@ void SZ_Write (sizebuf_t *buf, void *data, int length)
 
 void SZ_Print (sizebuf_t *buf, char *data)
 {
-	int		len;
+	int len;
 
 	len = strlen(data)+1;
 
@@ -544,21 +500,21 @@ void COM_FileBase (char *in, char *out)
 
 //============================================================================
 
-char	com_token[MAX_COM_TOKEN];
-int		com_argc;
-char	**com_argv;
+char com_token[MAX_COM_TOKEN];
+int com_argc;
+char **com_argv;
 
 /*
 ==============
 COM_Parse
- 
+
 Parse a token out of a string
 ==============
 */
 char *COM_Parse (char *data)
 {
 	unsigned char c;
-	int		len;
+	int len;
 
 	len = 0;
 	com_token[0] = 0;
@@ -573,7 +529,7 @@ char *COM_Parse (char *data)
 			data++;
 
 		if (c == 0)
-			return NULL;			// end of file;
+			return NULL; // end of file;
 
 		// skip // comments
 		if (c=='/' && data[1] == '/')
@@ -626,29 +582,8 @@ char *COM_Parse (char *data)
 
 /*
 ================
-COM_CheckRegistered
- 
-Checks the existence of gfx/pop.lmp file.
-Sets the "registered" cvar.
-================
-*/
-void COM_CheckRegistered (void)
-{
-	FILE		*h;
-
-	COM_FOpenFile("gfx/pop.lmp", &h);
-
-	if (h)
-	{
-		Cvar_Set (&registered, "1");
-		fclose (h);
-	}
-}
-
-
-/*
-================
 COM_InitArgv
+
 ================
 */
 void COM_InitArgv (int argc, char **argv)
@@ -668,7 +603,7 @@ void COM_InitArgv (int argc, char **argv)
 /*
 ================
 COM_CheckParm
- 
+
 Returns the position (1 to argc-1) in the program's argument list
 where the given parameter appears, or 0 if not present
 ================
@@ -689,32 +624,29 @@ int COM_CheckParm (char *parm)
 /*
 ================
 COM_Init
+
 ================
 */
 void COM_Init (void)
 {
-	Cvar_RegisterVariable (&registered);
 	Cmd_AddCommand ("path", COM_Path_f);
 
 	COM_InitFilesystem ();
-	COM_CheckRegistered ();
 }
 
 
 /*
 =============================================================================
- 
+
 QUAKE FILESYSTEM
- 
+
 =============================================================================
 */
 
-int	com_filesize;
+int com_filesize;
 
 
-//
 // in memory
-//
 
 typedef struct
 {
@@ -732,9 +664,9 @@ typedef struct pack_s
 }
 pack_t;
 
-//
+
 // on disk
-//
+
 typedef struct
 {
 	char name[56];
@@ -752,8 +684,8 @@ dpackheader_t;
 
 #define MAX_FILES_IN_PACK 2048
 
-char	com_gamedir[MAX_OSPATH];
-char	com_basedir[MAX_OSPATH];
+char com_gamedir[MAX_OSPATH];
+char com_basedir[MAX_OSPATH];
 
 typedef struct searchpath_s
 {
@@ -1323,9 +1255,9 @@ key and returns the associated value, or an empty string.
 char *Info_ValueForKey (char *s, char *key)
 {
 	char	pkey[512];
-	static	char value[4][512];	// use two buffers so compares
+	static	char value[4][512]; // use two buffers so compares
 	// work without stomping on each other
-	static	int	valueindex;
+	static	int valueindex;
 	char	*o;
 
 	valueindex = (valueindex + 1) % 4;
@@ -1365,10 +1297,10 @@ char *Info_ValueForKey (char *s, char *key)
 
 char *Info_KeyNameForKeyNum (char *s, int key)
 {
-	static	char pkey[4][512];	// use two buffers so compares
+	static char pkey[4][512]; // use two buffers so compares
 	// work without stomping on each other
-	static	int	keyindex;
-	char	*o;
+	static int keyindex;
+	char *o;
 
 	keyindex = (keyindex + 1) % 4;
 	if (*s == '\\')
@@ -1408,10 +1340,10 @@ char *Info_KeyNameForKeyNum (char *s, int key)
 
 void Info_RemoveKey (char *s, char *key)
 {
-	char	*start;
-	char	pkey[512];
-	char	value[512];
-	char	*o;
+	char *start;
+	char pkey[512];
+	char value[512];
+	char *o;
 
 	if (strstr (key, "\\"))
 	{
@@ -1457,10 +1389,10 @@ void Info_RemoveKey (char *s, char *key)
 
 void Info_RemovePrefixedKeys (char *start, char prefix)
 {
-	char	*s;
-	char	pkey[512];
-	char	value[512];
-	char	*o;
+	char *s;
+	char pkey[512];
+	char value[512];
+	char *o;
 
 	s = start;
 
@@ -1502,8 +1434,8 @@ void Info_RemovePrefixedKeys (char *start, char prefix)
 
 void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 {
-	char	_new[1024], *v;
-	int		c;
+	char _new[1024], *v;
+	int c;
 	extern cvar_t sv_highchars;
 
 	if (strstr (key, "\\") || strstr (value, "\\") )
@@ -1561,7 +1493,7 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 			if (c < 32 || c > 127)
 				continue;
 		}
-		//		c &= 127;		// strip high bits
+		// c &= 127; // strip high bits
 		if (c > 13) // && c < 127)
 			*s++ = c;
 	}
@@ -1581,10 +1513,10 @@ void Info_SetValueForKey (char *s, char *key, char *value, int maxsize)
 
 void Info_Print (char *s)
 {
-	char	key[512];
-	char	value[512];
-	char	*o;
-	int		l;
+	char key[512];
+	char value[512];
+	char *o;
+	int l;
 
 	if (*s == '\\')
 		s++;
@@ -1624,9 +1556,9 @@ void Info_Print (char *s)
 
 void Info_CopyStarKeys (char *from, char *to)
 {
-	char	key[512];
-	char	value[512];
-	char	*o;
+	char key[512];
+	char value[512];
+	char *o;
 
 	if (*from == '\\')
 		from++;
@@ -1701,7 +1633,7 @@ For proxy protecting
 byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 {
 	unsigned short crc;
-	byte	*p;
+	byte *p;
 	byte chkb[60 + 4];
 
 	p = chktbl + ((unsigned int)sequence % (sizeof(chktbl) - 4));
