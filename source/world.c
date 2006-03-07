@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: world.c,v 1.9 2006/01/09 20:37:15 disconn3ct Exp $
+	$Id: world.c,v 1.10 2006/03/07 07:20:02 disconn3ct Exp $
 */
 // world.c -- world query functions
 
@@ -195,15 +195,44 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 
 /*
 ===============================================================================
- 
+
 ENTITY AREA CHECKING
- 
+
 ===============================================================================
 */
 
+// ClearLink is used for new headnodes
+void ClearLink (link_t *l)
+{
+	l->prev = l->next = l;
+}
 
-areanode_t	sv_areanodes[AREA_NODES];
-int			sv_numareanodes;
+void RemoveLink (link_t *l)
+{
+	l->next->prev = l->prev;
+	l->prev->next = l->next;
+}
+
+void InsertLinkBefore (link_t *l, link_t *before)
+{
+	l->next = before;
+	l->prev = before->prev;
+	l->prev->next = l;
+	l->next->prev = l;
+}
+void InsertLinkAfter (link_t *l, link_t *after)
+{
+	l->next = after->next;
+	l->prev = after;
+	l->prev->next = l;
+	l->next->prev = l;
+}
+
+//============================================================================
+
+
+areanode_t sv_areanodes[AREA_NODES];
+int sv_numareanodes;
 
 /*
 ===============

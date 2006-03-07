@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.13 2006/02/27 10:48:10 disconn3ct Exp $
+	$Id: common.h,v 1.14 2006/03/07 07:20:02 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -47,11 +47,6 @@ typedef struct link_s
 	struct link_s	*prev, *next;
 } link_t;
 
-
-void ClearLink (link_t *l);
-void RemoveLink (link_t *l);
-void InsertLinkBefore (link_t *l, link_t *before);
-void InsertLinkAfter (link_t *l, link_t *after);
 
 //============================================================================
 
