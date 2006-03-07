@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.12 2006/03/07 11:19:52 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.13 2006/03/07 11:25:26 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -930,7 +930,7 @@ SV_Physics
 */
 #ifdef USE_PR2
 void SV_PreRunCmd(void);
-void SV_RunCmd (usercmd_t *ucmd, qboolean inside)
+void SV_RunCmd (usercmd_t *ucmd, qboolean inside);
 void SV_PostRunCmd(void);
 #endif
 void SV_Physics (void)
