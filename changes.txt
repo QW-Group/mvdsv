@@ -1,11 +1,12 @@
 
-$Id: changes.txt,v 1.56 2006/03/03 14:35:28 vvd0 Exp $
+$Id: changes.txt,v 1.57 2006/03/07 07:29:30 disconn3ct Exp $
 
 ----
 MVDSV v0.19.11-CVS build 22?? (2006.03.??)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
+- removed `registered` cvar
 - new code in determination of demo existing for easyrecord command
 - bugfix from 0.1728: posibility to crash server via lastscores
 (Thanks to 100Nosao)
