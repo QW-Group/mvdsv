@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.33 2006/03/03 14:35:29 vvd0 Exp $
+	$Id: sv_demo.c,v 1.34 2006/03/08 10:32:23 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1841,7 +1841,7 @@ int MVD_StreamStartListening(int port)
 	struct sockaddr_in	address;
 	//	int fromlen;
 
-	unsigned int nonblocking = true;
+	unsigned long nonblocking = true;
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
