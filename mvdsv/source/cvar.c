@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.8 2006/02/22 00:16:40 disconn3ct Exp $
+	$Id: cvar.c,v 1.9 2006/03/08 12:07:57 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -128,7 +128,7 @@ void Cvar_Set (cvar_t *var, char *value)
 
 	Q_Free (var->string);	// free the old value string
 
-	var->string = Q_Malloc (strlen(value)+1);
+	var->string = (char *) Q_Malloc (strlen(value)+1);
 	strlcpy (var->string, value, strlen(value) + 1);
 	var->value = Q_atof (var->string);
 
@@ -247,7 +247,7 @@ void Cvar_RegisterVariable (cvar_t *variable)
 
 	// copy the value off, because future sets will Q_Free it
 	strlcpy (value, variable->string, sizeof(value));
-	variable->string = Q_Malloc (1);
+	variable->string = (char *) Q_Malloc (1);
 
 	// set it through the function to be consistent
 	Cvar_SetROM (variable, value);
@@ -361,9 +361,9 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v->hash_next = cvar_hash[key];
 	cvar_hash[key] = v;
 
-	v->name = Q_Malloc(strlen(name)+1);
+	v->name = (char *) Q_Malloc(strlen(name)+1);
 	strlcpy (v->name, name, strlen(name) + 1);
-	v->string = Q_Malloc (strlen(string)+1);
+	v->string = (char *) Q_Malloc (strlen(string)+1);
 	strlcpy (v->string, string, strlen(string) + 1);
 	v->flags = cvarflags;
 	v->value = Q_atof (v->string);

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.42 2006/02/28 14:03:22 vvd0 Exp $
+	$Id: sv_main.c,v 1.43 2006/03/08 12:07:57 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -1166,7 +1166,7 @@ int Master_Rcon_Validate (void)
 
 	for (i = 0; i < Cmd_Argc(); ++i)
 		client_string_len += strlen(Cmd_Argv(i));
-	client_string = Q_Malloc(client_string_len);
+	client_string = (char *) Q_Malloc(client_string_len);
 	*client_string = 0;
 	for (i = 0; i < Cmd_Argc(); ++i)
 	{
