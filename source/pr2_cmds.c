@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.23 2006/03/04 17:40:10 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.24 2006/03/08 12:07:57 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -1111,7 +1111,7 @@ void PF2_Find (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 	char*		str,*t;
 	edict_t	*ed;
 
-	e    = NUM_FOR_EDICT(VM_POINTER(base,mask,stack[0]._int));
+	e  = NUM_FOR_EDICT((edict_t *) VM_POINTER(base,mask,stack[0]._int));
 	fofs = stack[1]._int;
 
 	str = VM_POINTER(base,mask,stack[2].string);

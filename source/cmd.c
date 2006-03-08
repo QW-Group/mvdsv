@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.10 2006/01/20 18:23:44 disconn3ct Exp $
+	$Id: cmd.c,v 1.11 2006/03/08 12:07:56 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -249,7 +249,7 @@ void Cmd_StuffCmds_f (void)
 	if (!s)
 		return;
 
-	text = Q_Malloc (s+1);
+	text = (char *) Q_Malloc (s+1);
 	text[0] = 0;
 	for (i = 1; i < com_argc; i++)
 	{
@@ -259,7 +259,7 @@ void Cmd_StuffCmds_f (void)
 	}
 
 	// pull out the commands
-	build = Q_Malloc (s+1);
+	build = (char *) Q_Malloc (s+1);
 	build[0] = 0;
 
 	for (i=0 ; i<s-1 ; i++)
@@ -387,7 +387,7 @@ char *CopyString (char *in)
 {
 	char	*out;
 
-	out = Q_Malloc (strlen(in)+1);
+	out = (char *) Q_Malloc (strlen(in)+1);
 	strlcpy (out, in, strlen(in) + 1);
 	return out;
 }
@@ -444,7 +444,7 @@ void Cmd_Alias_f (void)
 
 	if (!a)
 	{
-		a = Q_Malloc (sizeof(cmd_alias_t));
+		a = (cmd_alias_t*) Q_Malloc (sizeof(cmd_alias_t));
 		a->next = cmd_alias;
 		cmd_alias = a;
 		a->hash_next = cmd_alias_hash[key];
@@ -693,7 +693,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 		}
 	}
 
-	cmd = Hunk_Alloc (sizeof(cmd_function_t));
+	cmd = (cmd_function_t *) Hunk_Alloc (sizeof(cmd_function_t));
 	cmd->name = cmd_name;
 	cmd->function = function;
 	cmd->next = cmd_functions;

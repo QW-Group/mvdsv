@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.16 2006/03/06 17:25:07 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.17 2006/03/08 12:07:57 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -801,7 +801,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	if (_argv[0][0] == '"')
 	{
 		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++);
-		argv0 = (char *)Q_Malloc(j);
+		argv0 = (char *) Q_Malloc(j);
 		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++)
 			argv0[j - 1] = _argv[0][j];
 		argv0[j] = 0;

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.34 2006/03/08 10:32:23 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.35 2006/03/08 12:07:57 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -922,7 +922,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 		return NULL;
 	}
 
-	dst = Q_Malloc(sizeof(mvddest_t));
+	dst = (mvddest_t*) Q_Malloc(sizeof(mvddest_t));
 
 	if (!sv_demoUseCache.value)
 	{
@@ -935,7 +935,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 		dst->desttype = DEST_BUFFEREDFILE;
 		dst->file = file;
 		dst->maxcachesize = (int)sv_demoCacheSize.value; // 0x81000
-		dst->cache = Q_Malloc(dst->maxcachesize);
+		dst->cache = (char *) Q_Malloc(dst->maxcachesize);
 	}
 
 	s = name + strlen(name);
@@ -976,12 +976,12 @@ mvddest_t *SV_InitStream(int socket)
 {
 	mvddest_t *dst;
 
-	dst = Q_Malloc(sizeof(mvddest_t));
+	dst = (mvddest_t *) Q_Malloc(sizeof(mvddest_t));
 
 	dst->desttype = DEST_STREAM;
 	dst->socket = socket;
 	dst->maxcachesize = 0x8000;	//is this too small?
-	dst->cache = Q_Malloc(dst->maxcachesize);
+	dst->cache = (char *) Q_Malloc(dst->maxcachesize);
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
 
@@ -1682,7 +1682,7 @@ char *quote(char *str)
 	if (!*str)
 		return NULL;
 
-	s = out = Q_Malloc(strlen(str) * 2 + 1);
+	s = out = (char *) Q_Malloc(strlen(str) * 2 + 1);
 	while (*str)
 	{
 		*s++ = '\\';

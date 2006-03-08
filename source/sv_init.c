@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.14 2006/01/14 12:54:17 disconn3ct Exp $
+	$Id: sv_init.c,v 1.15 2006/03/08 12:07:57 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -217,7 +217,7 @@ void SV_CalcPHS (void)
 	rowwords = (num+31)>>5;
 	rowbytes = rowwords*4;
 
-	sv.pvs = Hunk_Alloc (rowbytes*num);
+	sv.pvs = (byte *) Hunk_Alloc (rowbytes*num);
 	scan = sv.pvs;
 	vcount = 0;
 	for (i=0 ; i<num ; i++, scan+=rowbytes)
@@ -236,13 +236,13 @@ void SV_CalcPHS (void)
 	}
 
 
-	sv.phs = Hunk_Alloc (rowbytes*num);
+	sv.phs = (byte *) Hunk_Alloc (rowbytes*num);
 	count = 0;
 	scan = sv.pvs;
 	dest = (unsigned *)sv.phs;
 	for (i=0 ; i<num ; i++, dest += rowwords, scan += rowbytes)
 	{
-		memcpy (dest, scan, rowbytes);
+		memcpy ((void *) dest, (const void *) scan, (size_t) rowbytes);
 		for (j=0 ; j<rowbytes ; j++)
 		{
 			bitbyte = scan[j];
@@ -329,7 +329,7 @@ void VIS_LoadPlanes(lump_t *l, byte *base, char *allocname)
 	if (l->filelen % sizeof(*in))
 		Sys_Printf("VIS_LoadPlanes: lol?\n");
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*2*sizeof(*out), allocname);
+	out = (mplane_t* ) Hunk_AllocName ( count*2*sizeof(*out), allocname);
 
 	specworld.planes = out;
 	specworld.numplanes = count;
@@ -359,7 +359,7 @@ void VIS_LoadVisibility (lump_t *l, byte *base, char *allocname)
 		return;
 	}
 
-	specworld.visdata = Hunk_AllocName ( l->filelen, allocname);
+	specworld.visdata = (byte *) Hunk_AllocName ( l->filelen, allocname);
 	memcpy (specworld.visdata, base + l->fileofs, l->filelen);
 }
 
@@ -378,7 +378,7 @@ void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
 	count = l->filelen / sizeof(*in);
 	if (l->filelen % sizeof(*in))
 		Sys_Printf("VIS_LoadLeafs: lol?\n");
-	out = Hunk_AllocName ( count*sizeof(*out), allocname);
+	out = (mleaf_t*)Hunk_AllocName ( count*sizeof(*out), allocname);
 
 	specworld.leafs = out;
 	specworld.numleafs = count;
@@ -406,7 +406,7 @@ void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
 	count = l->filelen / sizeof(*in);
 	if (l->filelen % sizeof(*in))
 		Sys_Printf("VIS_LoadNodes: lol?\n");
-	out = Hunk_AllocName ( count*sizeof(*out), allocname);
+	out = (mnode_t*)Hunk_AllocName ( count*sizeof(*out), allocname);
 
 	specworld.nodes = out;
 	specworld.numnodes = count;
@@ -597,7 +597,7 @@ void SV_SpawnServer (char *server)
 
 	{
 		PR_LoadProgs ();
-		sv.edicts = Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
+		sv.edicts = (edict_t*) Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
 	}
 
 	// leave slots at start for clients only

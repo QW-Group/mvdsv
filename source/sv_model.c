@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_model.c,v 1.8 2006/01/09 20:38:59 disconn3ct Exp $
+	$Id: sv_model.c,v 1.9 2006/03/08 12:07:57 disconn3ct Exp $
 */
 // models.c -- model loading and caching
 
@@ -453,7 +453,7 @@ void Mod_LoadVisibility (lump_t *l)
 		loadmodel->visdata = NULL;
 		return;
 	}
-	loadmodel->visdata = Hunk_AllocName ( l->filelen, loadname);
+	loadmodel->visdata = (byte *) Hunk_AllocName ( l->filelen, loadname);
 	memcpy (loadmodel->visdata, mod_base + l->fileofs, l->filelen);
 }
 
@@ -470,7 +470,7 @@ void Mod_LoadEntities (lump_t *l)
 		loadmodel->entities = NULL;
 		return;
 	}
-	loadmodel->entities = Hunk_AllocName ( l->filelen, loadname);
+	loadmodel->entities = (char *) Hunk_AllocName ( l->filelen, loadname);
 	memcpy (loadmodel->entities, mod_base + l->fileofs, l->filelen);
 }
 
@@ -490,7 +490,7 @@ void Mod_LoadVertexes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		SV_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = (mvertex_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
 
 	loadmodel->vertexes = out;
 	loadmodel->numvertexes = count;
@@ -518,7 +518,7 @@ void Mod_LoadSubmodels (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		SV_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = (dmodel_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
 
 	loadmodel->submodels = out;
 	loadmodel->numsubmodels = count;
@@ -788,7 +788,7 @@ void Mod_LoadNodes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		SV_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = (mnode_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
 
 	loadmodel->nodes = out;
 	loadmodel->numnodes = count;
@@ -835,7 +835,7 @@ void Mod_LoadLeafs (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		SV_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = (mleaf_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
 
 	loadmodel->leafs = out;
 	loadmodel->numleafs = count;
@@ -882,7 +882,7 @@ void Mod_LoadClipnodes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		SV_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = (dclipnode_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
 
 	loadmodel->clipnodes = out;
 	loadmodel->numclipnodes = count;
@@ -937,7 +937,7 @@ void Mod_MakeHull0 (void)
 
 	in = loadmodel->nodes;
 	count = loadmodel->numnodes;
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = (dclipnode_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
 
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
@@ -1030,7 +1030,7 @@ void Mod_LoadPlanes (lump_t *l)
 	if (l->filelen % sizeof(*in))
 		SV_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*2*sizeof(*out), loadname);
+	out = (mplane_t *) Hunk_AllocName ( count*2*sizeof(*out), loadname);
 
 	loadmodel->planes = out;
 	loadmodel->numplanes = count;

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.9 2006/02/27 12:44:07 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.10 2006/03/08 12:07:57 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -290,12 +290,12 @@ void LoadMapFile( qvm_t*qvm, char* fname )
 
 		if( !qvm->sym_info )
 		{
-			qvm->sym_info = (symbols_t*) Hunk_Alloc( sizeof(symbols_t) + len + 1);
+			qvm->sym_info = (symbols_t *) Hunk_Alloc( sizeof(symbols_t) + len + 1);
 			sym = qvm->sym_info;
 		}
 		else
 		{
-			sym->next = (symbols_t*) Hunk_Alloc( sizeof(symbols_t) + len + 1);
+			sym->next = (symbols_t *) Hunk_Alloc( sizeof(symbols_t) + len + 1);
 			sym = sym->next;
 		}
 		sym->seg = seg;
@@ -350,7 +350,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	if(vm->hInst)
 		qvm = (qvm_t  *)vm->hInst;
 	else
-		qvm = Q_Malloc( sizeof( qvm_t ) );
+		qvm = (qvm_t*) Q_Malloc( sizeof( qvm_t ) );
 
 	qvm->len_cs = header->instructionCount + 1;	//bad opcode padding.
 	qvm->len_ds = header->dataOffset + header->litLength + header->bssLength;
@@ -365,7 +365,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 		Sys_Error( "VM_LoadBytecode: stacksize greater than data segment" );
 
 	qvm->cs = ( qvm_instruction_t * ) Hunk_AllocName( qvm->len_cs * sizeof( qvm_instruction_t ), "qvmcode" );
-	qvm->ds = Hunk_AllocName( qvm->len_ds, "qvmdata" );
+	qvm->ds = (byte *) Hunk_AllocName( qvm->len_ds, "qvmdata" );
 	qvm->ss = qvm->ds + qvm->len_ds - qvm->len_ss;
 
 	// setup registers
@@ -455,7 +455,7 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 	if ( vm )
 		VM_Unload(vm);
 
-	vm = Q_Malloc( sizeof( vm_t ) );
+	vm = (vm_t *) Q_Malloc( sizeof( vm_t ) );
 
 
 
