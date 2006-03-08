@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: log.h,v 1.7 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: log.h,v 1.8 2006/03/08 10:31:49 disconn3ct Exp $
 */
 
 #ifndef __LOG_H__
@@ -35,7 +35,7 @@ typedef struct log_s {
 	int			log_level;
 } log_t;
 
-extern	log_t	logs[];
+extern	log_t	logs[MAX_LOG];
 extern	cvar_t	frag_log_type;
 extern	cvar_t	telnet_log_level;
 
