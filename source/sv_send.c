@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.17 2006/02/27 12:01:59 disconn3ct Exp $
+	$Id: sv_send.c,v 1.18 2006/03/08 10:31:36 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -241,11 +241,10 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...)
 /*
 =================
 SV_BroadcastPrintf
- 
+
 Sends text to all active clients
 =================
 */
-extern	log_t	logs[];
 char *parse_mod_string(char *str);
 void SV_BroadcastPrintf (int level, char *fmt, ...)
 {
