@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.9 2006/02/27 10:48:39 disconn3ct Exp $
+	$Id: tools.c,v 1.10 2006/03/09 06:43:08 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -897,7 +897,7 @@ int AddToFileList(flist_t *filelist, char *file)
 	while (filelist->list != NULL)
 		filelist++;
 
-	tmp = (char *)Q_Malloc(strlen(file)+1);
+	tmp = (char *) Q_Malloc(strlen(file)+1);
 	strcpy(tmp, file);
 	name = basename(tmp);
 
@@ -1085,12 +1085,12 @@ byte *LoadFile(char *path)
 {
 	FILE *f;
 	byte *buf;
-	int	len;
+	int len;
 
 	if ((len = FileOpenRead(path, &f)) == -1)
 		return NULL;
 
-	buf = Q_Malloc(len+1);
+	buf = (byte *) Q_Malloc(len+1);
 
 	fread(buf, 1, len, f);
 	Sys_fclose(&f);
