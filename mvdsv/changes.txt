@@ -1,12 +1,13 @@
 
-$Id: changes.txt,v 1.57 2006/03/07 07:29:30 disconn3ct Exp $
+$Id: changes.txt,v 1.58 2006/03/10 18:48:06 vvd0 Exp $
 
 ----
 MVDSV v0.19.11-CVS build 22?? (2006.03.??)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
-- removed `registered` cvar
+- bugfix from 0.19.10-develop: didn't close files not from paks (by disconnect)
+- removed cvar registered (by disconnect)
 - new code in determination of demo existing for easyrecord command
 - bugfix from 0.1728: posibility to crash server via lastscores
 (Thanks to 100Nosao)
@@ -45,7 +46,9 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
   but I dont think I have to write it here, since only developers 
   can understand it :P } (by disconnect)
 - sv_nailhack is 1 by default. Dunno why it was set 0 at begin of 'mvd-era'. (by disconnect)
-- new cvar "sv_maxuserid" 99 by default. Limits userid in 1...99 range. (by disconnect)
+- new cvar sv_maxuserid - limits userid in 1...99 range
+  default: 99
+(by disconnect)
 - server-side flash for TeamFortress (oldgrens mode) (ported by Angel from QW262)
 - added possibility to set small speed for objects on map (by ivan)
 - added possibility to set non integer volume for sounds from mods (by ivan)

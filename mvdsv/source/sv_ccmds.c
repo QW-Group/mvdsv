@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.22 2006/03/07 11:17:53 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.23 2006/03/10 18:48:07 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1812,7 +1812,7 @@ void SV_InitOperatorCommands (void)
 		Info_SetValueForStarKey (svs.info, "*cheats", "ON", MAX_SERVERINFO_STRING);
 	}
 
-	for (i = 0; i < MAX_LOG; ++i)
+	for (i = MIN_LOG; i < MAX_LOG; ++i)
 		Cmd_AddCommand (logs[i].command, logs[i].function);
 
 	Cmd_AddCommand ("nslookup", SV_Nslookup_f);

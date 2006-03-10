@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.4 2006/03/02 07:44:27 disconn3ct Exp $
+	$Id: bothtools.c,v 1.5 2006/03/10 18:48:07 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -224,6 +224,12 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 #endif
 
 #if defined(__linux__) || defined(_WIN32)
+/* 
+ * Functions strlcpy, strlcat, strnstr and strcasestr
+ * was copied from FreeBSD 4.10 libc: src/lib/libc/string/
+ *
+ *  // VVD
+ */
 size_t strlcpy(char *dst, char *src, size_t siz)
 {
 	register char *d = dst;

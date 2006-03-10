@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.35 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.36 2006/03/10 18:48:07 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1685,7 +1685,8 @@ char *quote(char *str)
 	s = out = (char *) Q_Malloc(strlen(str) * 2 + 1);
 	while (*str)
 	{
-		*s++ = '\\';
+		if (!isdigit(*str) && !isalpha(*str))
+			*s++ = '\\';
 		*s++ = *str++;
 	}
 	*s = '\0';
@@ -1785,9 +1786,9 @@ void SV_MVDEasyRecord_f (void)
 	// <-
 
 	// Make sure the filename doesn't contain illegal characters
-	strlcpy(name, va("%s%s", sv_demoPrefix.string, SV_CleanName(name)),
-	        MAX_DEMO_NAME - strlen(sv_demoSuffix.string) - 7);
-	strlcat(name, sv_demoSuffix.string, sizeof(name));
+	strlcpy(name, va("%s%s%s", sv_demoPrefix.string, SV_CleanName(name), sv_demoSuffix.string),
+	        MAX_DEMO_NAME);
+//	strlcat(name, sv_demoSuffix.string, sizeof(name));
 //	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
 	// find a filename that doesn't exist yet
 	strlcpy(name2, name, sizeof(name2));
@@ -2124,7 +2125,7 @@ char *SV_MVDName2Txt(char *name)
 	s[len++] = 't';
 	s[len]   = '\0';
 
-	Con_Printf("%d) %s, %s\n", r, name, s);
+	//Con_Printf("%d) %s, %s\n", r, name, s);
 	return va("%s", s);
 }
 
