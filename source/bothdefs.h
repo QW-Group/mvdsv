@@ -16,13 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.12 2006/03/06 17:22:34 vvd0 Exp $
+	$Id: bothdefs.h,v 1.13 2006/03/10 18:48:07 vvd0 Exp $
 */
 
 // defs common to client and server
 
 #ifndef __BOTHDEFS_H__
 #define __BOTHDEFS_H__
+
+#ifdef _BIG_ENDIAN
+#ifndef __BIG_ENDIAN__
+#define __BIG_ENDIAN__
+#endif
+#endif
 
 #define	MSG_BUF_SIZE	8192
 
