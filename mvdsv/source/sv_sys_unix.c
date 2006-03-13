@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.20 2006/02/27 16:27:16 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.21 2006/03/13 11:27:06 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -545,7 +545,7 @@ void *Sys_DLProc(DL_t dl, const char *name)
 	return dlsym(dl, name);
 }
 
-
+// Function only_digits was copied from bind (DNS server) sources.
 static int only_digits(const char *s)
 {
 	if (*s == '\0')
@@ -657,6 +657,8 @@ int main (int argc, char *argv[])
 
 	SV_Init (&parms);
 
+// Daemon, chroot, setgid and setuid code (-d, -t, -g, -u)
+// was copied from bind (DNS server) sources.
 	// daemon
 	j = COM_CheckParm ("-d");
 	if (j && j < com_argc)
