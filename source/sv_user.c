@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.33 2006/02/27 13:50:39 disconn3ct Exp $
+	$Id: sv_user.c,v 1.34 2006/03/13 11:27:06 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1994,57 +1994,57 @@ typedef struct
 ucmd_t;
 
 ucmd_t ucmds[] =
-    {
-        {"new", SV_New_f},
-        {"modellist", SV_Modellist_f},
-        {"soundlist", SV_Soundlist_f},
-        {"prespawn", SV_PreSpawn_f},
-        {"spawn", SV_Spawn_f},
-	{"begin", SV_Begin_f},
+	{
+		{"new", SV_New_f},
+		{"modellist", SV_Modellist_f},
+		{"soundlist", SV_Soundlist_f},
+		{"prespawn", SV_PreSpawn_f},
+		{"spawn", SV_Spawn_f},
+		{"begin", SV_Begin_f},
 
-        {"drop", SV_Drop_f},
-        {"pings", SV_Pings_f},
+		{"drop", SV_Drop_f},
+		{"pings", SV_Pings_f},
 
-        // issued by hand at client consoles
-	{"rate", SV_Rate_f},
-	{"kill", SV_Kill_f},
-        {"pause", SV_Pause_f},
-        {"msg", SV_Msg_f},
+		// issued by hand at client consoles
+		{"rate", SV_Rate_f},
+		{"kill", SV_Kill_f},
+		{"pause", SV_Pause_f},
+		{"msg", SV_Msg_f},
 
-	{"say", SV_Say_f},
-        {"say_team", SV_Say_Team_f},
+		{"say", SV_Say_f},
+		{"say_team", SV_Say_Team_f},
 
-        {"setinfo", SV_SetInfo_f},
+		{"setinfo", SV_SetInfo_f},
 
-        {"serverinfo", SV_ShowServerinfo_f},
+		{"serverinfo", SV_ShowServerinfo_f},
 
-        {"download", SV_BeginDownload_f},
-        {"nextdl", SV_NextDownload_f},
-        {"dl", SV_DemoDownload_f},
+		{"download", SV_BeginDownload_f},
+		{"nextdl", SV_NextDownload_f},
+		{"dl", SV_DemoDownload_f},
 
-        {"ptrack", SV_PTrack_f}, //ZOID - used with autocam
+		{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
 
-        //bliP: file upload ->
-        {"techlogin", SV_TechLogin_f},
-        {"upload", SV_ClientUpload_f},
-        //<-
+		//bliP: file upload ->
+		{"techlogin", SV_TechLogin_f},
+		{"upload", SV_ClientUpload_f},
+		//<-
 
-        {"snap", SV_NoSnap_f},
-        {"stopdownload", SV_StopDownload_f},
-        {"stopdl", SV_StopDownload_f},
-        //	{"dlist", SV_DemoList_f},
-        {"dlistr", SV_DemoListRegex_f},
-        {"dlistregex", SV_DemoListRegex_f},
-        {"demolist", SV_DemoList_f},
-        {"demolistr", SV_DemoListRegex_f},
-        {"demolistregex", SV_DemoListRegex_f},
-        {"demoinfo", SV_MVDInfo_f},
-        {"lastscores", SV_LastScores_f},
-        {"minping", SV_MinPing_f},
-        {"maps", SV_ShowMapsList_f},
+		{"snap", SV_NoSnap_f},
+		{"stopdownload", SV_StopDownload_f},
+		{"stopdl", SV_StopDownload_f},
+		//	{"dlist", SV_DemoList_f},
+		{"dlistr", SV_DemoListRegex_f},
+		{"dlistregex", SV_DemoListRegex_f},
+		{"demolist", SV_DemoList_f},
+		{"demolistr", SV_DemoListRegex_f},
+		{"demolistregex", SV_DemoListRegex_f},
+		{"demoinfo", SV_MVDInfo_f},
+		{"lastscores", SV_LastScores_f},
+		{"minping", SV_MinPing_f},
+		{"maps", SV_ShowMapsList_f},
 
-        {NULL, NULL}
-    };
+		{NULL, NULL}
+	};
 
 /*
 ==================
@@ -2073,6 +2073,7 @@ static void SV_ExecuteUserCommand (char *s)
 
 	SV_EndRedirect ();
 }
+
 qboolean SV_ExecutePRCommand (void)
 {
 #ifdef USE_PR2
@@ -2136,8 +2137,8 @@ static void AddLinksToPmove ( areanode_t *node )
 		if (check->v.owner == pl)
 			continue;		// player's own missile
 		if (check->v.solid == SOLID_BSP
-		        || check->v.solid == SOLID_BBOX
-		        || check->v.solid == SOLID_SLIDEBOX)
+				|| check->v.solid == SOLID_BBOX
+				|| check->v.solid == SOLID_SLIDEBOX)
 		{
 			if (check == sv_player)
 				continue;
@@ -2419,9 +2420,9 @@ void SV_PostRunCmd(void)
 	}
 	else if (SpectatorThink
 #ifdef USE_PR2
-	         ||  ( sv_vm )
+			 ||  ( sv_vm )
 #endif
-	        )
+			)
 	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
