@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.36 2006/03/10 18:48:07 vvd0 Exp $
+	$Id: sv_demo.c,v 1.37 2006/03/13 16:53:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1458,6 +1458,12 @@ char *SV_CleanName (unsigned char *name)
 	static char text[1024];
 	char *out = text;
 
+	if (!*name)
+	{
+		*out = '\0';
+		return text;
+	}
+
 	*out = chartbl[*name++];
 
 	while (*name && out - text < sizeof(text))
@@ -1542,16 +1548,23 @@ void SV_MVD_Record_f (void)
 		return;
 	//<-
 
-	strlcpy(newname, va("%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1))),
-	        sizeof(newname) - strlen(sv_demoSuffix.string) - 5);
-	strlcat(newname, sv_demoSuffix.string, sizeof(newname));
+	strlcpy(newname, va("%s%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1)),
+						sv_demoSuffix.string), sizeof(newname) - 4);
+
+	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 
 	snprintf (name, sizeof(name), "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
 
-
-	COM_StripExtension(name, name);
-	COM_DefaultExtension(name, ".mvd");
-	COM_CreatePath(name);
+//Sys_Printf("%s\n", name);
+	//COM_StripExtension(name, name);
+	if ((c = strlen(name)) > 3)
+		if (strcmp(name + c - 4, ".mvd"))
+			strlcat(name, ".mvd", sizeof(name));
+	//Sys_Printf("%s\n", name)
+	//COM_DefaultExtension(name, ".mvd");
+//Sys_Printf("%s\n", name);
+	//COM_CreatePath(name);
+	//Sys_Printf("%s\n", name)
 
 	//
 	// open the demo file and start recording
@@ -1791,7 +1804,9 @@ void SV_MVDEasyRecord_f (void)
 //	strlcat(name, sv_demoSuffix.string, sizeof(name));
 //	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
 	// find a filename that doesn't exist yet
+//Sys_Printf("%s, %s\n", name, name2);
 	strlcpy(name2, name, sizeof(name2));
+//Sys_Printf("%s, %s\n", name, name2);
 	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
 	//	COM_StripExtension(name2, name2);
 
