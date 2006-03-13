@@ -1,11 +1,13 @@
 
-$Id: changes.txt,v 1.59 2006/03/13 11:27:04 vvd0 Exp $
+$Id: changes.txt,v 1.60 2006/03/13 14:25:56 vvd0 Exp $
 
 ----
 MVDSV v0.19.11-CVS build 22?? (2006.03.??)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
+- bugfix: SunOS on SPARC-64 didn't determine big endian
+(Thanks to Krok)
 - no more ".gz" strings in sources - used sv_demoRegexp
 - bugfix from 0.19.10-develop: didn't close files not from paks (by disconnect)
 - removed cvar registered (by disconnect)
