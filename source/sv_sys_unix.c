@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.21 2006/03/13 11:27:06 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.22 2006/03/16 18:45:48 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -527,7 +527,7 @@ int Sys_Script(char *path, char *args)
 DL_t Sys_DLOpen(const char *path)
 {
 	return dlopen(path,
-#ifdef OS_OPENBSD
+#ifdef __OpenBSD__
 	              DL_LAZY
 #else
 	              RTLD_NOW
