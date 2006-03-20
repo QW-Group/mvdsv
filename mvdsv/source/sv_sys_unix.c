@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.22 2006/03/16 18:45:48 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.23 2006/03/20 13:24:04 disconn3ct Exp $
 */
 
 #include <dirent.h>
 #include <dlfcn.h>
+#include <signal.h>
 #include "qwsvdef.h"
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -634,6 +635,8 @@ int main (int argc, char *argv[])
 
 	argv0 = argv[0];
 	telnet_connected = 0;
+
+	signal(SIGPIPE, SIG_IGN);
 
 	memset (&parms, 0, sizeof(parms));
 
