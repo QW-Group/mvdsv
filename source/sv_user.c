@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.34 2006/03/13 11:27:06 vvd0 Exp $
+	$Id: sv_user.c,v 1.35 2006/03/20 14:04:40 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -30,6 +30,9 @@ cvar_t	sv_spectalk = {"sv_spectalk", "1"};
 cvar_t	sv_mapcheck = {"sv_mapcheck", "1"};
 
 cvar_t	sv_use_internal_cmd_dl = {"sv_use_internal_cmd_dl", "1"};
+
+cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "1"};
+cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "10"};
 
 extern	vec3_t	player_mins;
 
@@ -1746,17 +1749,43 @@ static void SV_SetInfo_f (void)
 	int i, saved_state;
 	char oldval[MAX_INFO_STRING];
 
-	if (Cmd_Argc() == 1)
+	if (sv_kickuserinfospamtime.value > 0 && sv_kickuserinfospamcount.value > 0)
 	{
-		Con_Printf ("User info settings:\n");
-		Info_Print (host_client->userinfo);
-		return;
+		if (!host_client->lastuserinfotime ||
+			realtime - host_client->lastuserinfotime > sv_kickuserinfospamtime.value)
+		{
+			host_client->lastuserinfocount = 0;
+			host_client->lastuserinfotime = realtime;
+		}
+		else if (++(host_client->lastuserinfocount) > sv_kickuserinfospamcount.value)
+		{
+			if (!host_client->drop)
+			{
+				saved_state = host_client->state;
+				host_client->state = cs_free;
+				SV_BroadcastPrintf (PRINT_HIGH,
+				                    "%s was kicked for userinfo spam\n", host_client->name);
+				host_client->state = saved_state;
+				SV_ClientPrintf (host_client, PRINT_HIGH,
+			    	             "You were kicked from the game for userinfo spamming\n");
+				SV_LogPlayer (host_client, "userinfo spam", 1);
+				host_client->drop = true;
+			}
+			return;
+		}
 	}
 
-	if (Cmd_Argc() != 3)
+	switch (Cmd_Argc())
 	{
-		Con_Printf ("usage: setinfo [ <key> <value> ]\n");
-		return;
+		case 1:
+			Con_Printf ("User info settings:\n");
+			Info_Print (host_client->userinfo);
+			return;
+		case 3:
+			break;
+		default:
+			Con_Printf ("usage: setinfo [ <key> <value> ]\n");
+			return;
 	}
 
 	if (Cmd_Argv(1)[0] == '*')
@@ -1945,7 +1974,7 @@ static void SV_MinPing_f (void)
 SV_ShowMapsList_f
 ==============
 */
-void SV_Check_ktpro(void);
+void SV_Check_ktpro_maps(void);
 static void SV_ShowMapsList_f(void)
 {
 	char	*value, *key;
@@ -1954,7 +1983,7 @@ static void SV_ShowMapsList_f(void)
 	unsigned char	list_of_custom_maps[] = "list of custom maps";
 	unsigned char	end_of_list[] = "end of list";
 
-	SV_Check_ktpro();
+	SV_Check_ktpro_maps();
 
 	Con_Printf("Vote for maps by typing the mapname, for example \"%s\"\n\n---%s\n",
 	           Q_redtext(ztndm3), Q_redtext(list_of_custom_maps));
@@ -2074,6 +2103,7 @@ static void SV_ExecuteUserCommand (char *s)
 	SV_EndRedirect ();
 }
 
+qboolean SV_Check_ktpro(void);
 qboolean SV_ExecutePRCommand (void)
 {
 #ifdef USE_PR2
@@ -2089,11 +2119,24 @@ qboolean SV_ExecutePRCommand (void)
 	}
 	else
 #endif
+	{
+		if (SV_Check_ktpro() && Cmd_Argc() > 1)
+		 	if (!((strcmp(Cmd_Argv(0), "admin") && strcmp(Cmd_Argv(0), "judge")) ||
+				strcmp(Cmd_Argv(1), "-0")))
+			{
+				Cbuf_AddText(va("say \"ATTENTION: Attempt to use ktpro bug: id '%d', name '%s', address '%s', realip '%s'!\"\n",
+							host_client->userid, host_client->name,
+							NET_BaseAdrToString(host_client->netchan.remote_address),
+							host_client->realip.ip.ip[0] ?
+								NET_BaseAdrToString(host_client->realip) : "not detected"));
+				return false;
+			}
 		if (!PR_UserCmd())
 		{
 			Con_Printf ("Bad user command: %s\n", Cmd_Argv(0));
 			return false;
 		}
+	}
 	return true;
 }
 
@@ -2643,4 +2686,6 @@ void SV_UserInit (void)
 	Cvar_RegisterVariable (&sv_spectalk);
 	Cvar_RegisterVariable (&sv_mapcheck);
 	Cvar_RegisterVariable (&sv_use_internal_cmd_dl);
+	Cvar_RegisterVariable (&sv_kickuserinfospamtime);
+	Cvar_RegisterVariable (&sv_kickuserinfospamcount);
 }

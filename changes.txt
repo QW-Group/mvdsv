@@ -1,15 +1,34 @@
 
-$Id: changes.txt,v 1.61 2006/03/16 18:45:47 vvd0 Exp $
+$Id: changes.txt,v 1.62 2006/03/20 14:04:34 vvd0 Exp $
 
 ----
-MVDSV v0.19.11-CVS build 22?? (2006.03.??)
-- bugfix: didn't compile on AMD64/EM64T - disabled assembler optimization for this platform
-(Thanks to Renzo and kingiz)
+MVDSV v0.19.12-CVS build 22?? (2006.03.??)
+- bugfix from 0.179b: SunOS on SPARC-64 didn't determine big endian
+(Thanks to Krok)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
-- bugfix: SunOS on SPARC-64 didn't determine big endian
-(Thanks to Krok)
+- new cvar sv_kickuserinfospamtime - time in seconds for checking userinfo changes spam
+  0 - disable kick of the userinfo spaming player
+  default: 1
+- new cvar sv_kickuserinfospamcount - number of permitted userinfo changes,
+  server will kick player if count exceed in sv_kickuserinfospamtime seconds
+  0 - disable kick of the userinfo spaming player
+  default: 10
+- bugfix from 0.160b: possibility to crash server from client
+(Thanks to anm-zip)
+- bugfix ktpro: very important security fixes
+(Thanks to anm-zip)
+- bugfix from 0.174b: in ktpro command 'klist' show incorrect info in section
+  "Not full connected clients"
+(Thanks to Renzo)
+- new cvar sv_old_status_for_ktpro:
+  0 - always show new status
+  1 - show old status in server console if ktpro was detected (need for correct 'klist''s output)
+  default: 1
+  Note: 'rcon status' show new status always
+- bugfix: didn't compile on AMD64/EM64T - disabled assembler optimization for this platform
+(Thanks to Renzo and kingiz)
 - no more ".gz" strings in sources - used sv_demoRegexp
 - bugfix from 0.19.10-develop: didn't close files not from paks (by disconnect)
 - removed cvar registered (by disconnect)
