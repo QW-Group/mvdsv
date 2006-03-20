@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.22 2006/02/28 14:03:21 vvd0 Exp $
+#	$Id: Makefile.FreeBSD,v 1.23 2006/03/20 14:04:34 vvd0 Exp $
 #
 
 CC=gcc
@@ -122,4 +122,4 @@ qwdtools:	${QWDTOOLS_OBJS}
 		${CC} ${DO_CFLAGS} ${LDFLAGS} -o qwdtools ${QWDTOOLS_OBJS}
 
 clean:
-		-rm -f ${SV_DIR}/*.core ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${QWDTOOLS_DIR}/*.o
+		-rm -f ${MAINDIR}/Makefile ${SV_DIR}/*.core ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${QWDTOOLS_DIR}/*.o

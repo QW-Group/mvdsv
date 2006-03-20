@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.11 2006/03/08 12:07:56 disconn3ct Exp $
+	$Id: cmd.c,v 1.12 2006/03/20 14:04:36 vvd0 Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -160,6 +160,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 	char	line[1024];
 	int		quotes;
 	int		cursize;
+	qboolean semicolon = false;
 
 	cbuf_current = cbuf;
 
@@ -175,7 +176,10 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 			if (text[i] == '"')
 				quotes++;
 			if ( !(quotes&1) &&  text[i] == ';')
+			{
+				semicolon = true;
 				break;	// don't break if inside a quoted string
+			}
 			if (text[i] == '\n')
 				break;
 		}
@@ -202,8 +206,12 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 			cbuf->text_start += i;
 		}
 
-		// execute the command line
-		Cmd_ExecuteString (line);
+		// security bugfix in ktpro
+		if (SV_Check_ktpro() && semicolon && strcasestr(line, "rcon_password"))
+			Sys_Printf("ATTENTION: possibly tried to use ktpro's security hole, rcon_password command must be before ';'!\n");
+		else
+			// execute the command line
+			Cmd_ExecuteString (line);
 
 		if (cbuf->wait)
 		{	// skip out while text still remains in buffer, leaving it

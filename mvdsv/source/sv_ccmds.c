@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.23 2006/03/10 18:48:07 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.24 2006/03/20 14:04:38 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1132,13 +1132,14 @@ void SV_Nslookup_f (void)
 SV_Status_f
 ================
 */
+qboolean SV_Check_ktpro(void);
 void SV_Status_f (void)
 {
 	int			i;
 	client_t	*cl;
 	float		cpu, avg, pak, demo = 0;
 	char		*s;
-	extern cvar_t	sv_use_dns;
+	extern cvar_t	sv_use_dns, sv_old_status_for_ktpro;
 
 	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
 
@@ -1199,53 +1200,90 @@ void SV_Status_f (void)
 	}
 	else
 	{
-		Con_Printf ("name             ping frags   id   address                real ip\n"
-					"---------------- ---- ----- ------ ---------------------- ---------------\n");
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		if (SV_Check_ktpro() && sv_old_status_for_ktpro.value)
 		{
-			if (!cl->state)
-				continue;
-			s = NET_BaseAdrToString(cl->netchan.remote_address);
-			Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, (int)SV_CalcPing(cl),
-			            (int)cl->edict->v.frags, cl->userid,
-			            sv_use_dns.value ? SV_Resolve(s) : s);
-			if (cl->realip.ip.ip[0])
-				Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
-			Con_Printf (cl->spectator ? "(s)\n" : "\n");
-
-			switch (cl->state)
+			Con_Printf ("frags id  address         name            rate ping drop  real ip\n"
+						"----- --- --------------- --------------- ---- ---- ----- ---------------\n");
+			for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 			{
-			case cs_connected:
-			case cs_preconnected:
-				Con_Printf ("CONNECTING\n");
-				continue;
-			case cs_zombie:
-				Con_Printf ("ZOMBIE\n");
-				continue;
-			default:;
+				if (!cl->state)
+					continue;
+				s = NET_BaseAdrToString(cl->netchan.remote_address);
+				Con_Printf ("%5i %3i %-15s %-15s ", (int)cl->edict->v.frags, cl->userid,
+							sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
+				switch (cl->state)
+				{
+					case cs_connected:
+					case cs_preconnected:
+						Con_Printf ("CONNECTING\n");
+						continue;
+					case cs_zombie:
+						Con_Printf ("ZOMBIE\n");
+						continue;
+					default:;
+				}
+				Con_Printf ("%4i %4i %5.1f %s %s\n",
+							(int)(1000 * cl->netchan.frame_rate),
+							(int)SV_CalcPing (cl),
+							100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence,
+							cl->realip.ip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
+							cl->spectator ? "(s)" : "");
 			}
-		}
+		} // if
+		else
+		{
+			Con_Printf ("name             ping frags   id   address                real ip\n"
+						"---------------- ---- ----- ------ ---------------------- ---------------\n");
+			for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+			{
+				if (!cl->state)
+					continue;
+				s = NET_BaseAdrToString(cl->netchan.remote_address);
+				Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, cl->userid, (int)SV_CalcPing(cl),
+							(int)cl->edict->v.frags, sv_use_dns.value ? SV_Resolve(s) : s);
+				if (cl->realip.ip.ip[0])
+					Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
+				Con_Printf (cl->spectator ? "(s)" : "");
+
+				switch (cl->state)
+				{
+				case cs_connected:
+				case cs_preconnected:
+					Con_Printf (" CONNECTING\n");
+					continue;
+				case cs_zombie:
+					Con_Printf (" ZOMBIE\n");
+					continue;
+				default:
+					Con_Printf ("\n");
+				}
+			}
+		} // else
 	}
 	Con_Printf ("\n");
 }
-
 
 /*
 ==================
 SV_Check_ktpro
 ==================
 */
-void SV_Check_ktpro(void)
+qboolean SV_Check_ktpro(void)
+{
+	return	*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION) &&
+			*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD);
+}
+
+void SV_Check_ktpro_maps(void)
 {
 	float	k_version;
 	char	*k_version_s;
-	int	k_build;
+	int		k_build;
 	char	*k_build_s;
 
 	k_version = Q_atof(k_version_s = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION));
 	k_build   = Q_atoi(k_build_s   = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD));
-	if (k_version < LOCALINFO_MAPS_KTPRO_VERSION ||
-	        k_build   <	LOCALINFO_MAPS_KTPRO_BUILD)
+	if (k_version < LOCALINFO_MAPS_KTPRO_VERSION || k_build < LOCALINFO_MAPS_KTPRO_BUILD)
 	{
 		Con_Printf("WARNING: Storing maps list in LOCALINFO supported only by ktpro version "
 		           LOCALINFO_MAPS_KTPRO_VERSION_S " build %i and newer.\n",
@@ -1270,7 +1308,7 @@ void SV_Check_maps_f(void)
 	int i, j, maps_id1;
 	char *s=NULL, *key;
 
-	SV_Check_ktpro();
+	SV_Check_ktpro_maps();
 
 	d = Sys_listdir("id1/maps", ".bsp$", SORT_BY_NAME);
 	list = d.files;

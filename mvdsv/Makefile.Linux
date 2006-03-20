@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.24 2006/03/16 18:45:47 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.25 2006/03/20 14:04:34 vvd0 Exp $
 #
 
 MAINDIR=.
@@ -26,7 +26,7 @@ endif
 endif
 CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -s -funroll-loops
 else
-	CFLAGS=$(BASE_CFLAGS)
+CFLAGS=$(BASE_CFLAGS)
 endif
 
 LDFLAGS=-lm
@@ -132,4 +132,4 @@ qwdtools : $(QWDTOOLS_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
 
 clean : 
-	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o
+	-rm -f $(MAINDIR)/Makefile $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o

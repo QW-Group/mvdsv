@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.43 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: sv_main.c,v 1.44 2006/03/20 14:04:39 vvd0 Exp $
 */
 
 #include "version.h"
@@ -160,6 +160,8 @@ cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
 cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login"
 
 cvar_t sv_maxuserid = {"sv_maxuserid", "99"};
+
+cvar_t sv_old_status_for_ktpro = {"sv_old_status_for_ktpro", "1"};
 
 log_t	logs[MAX_LOG];
 
@@ -2562,6 +2564,7 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_registrationinfo);
 
 	Cvar_RegisterVariable (&sv_maxuserid);
+	Cvar_RegisterVariable (&sv_old_status_for_ktpro);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
