@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: zone.c,v 1.9 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: zone.c,v 1.10 2006/03/21 13:52:37 vvd0 Exp $
 */
 // zone.c - memory management
 
@@ -282,7 +282,7 @@ void *Hunk_HighAllocName (int size, char *name)
 	memset (h, 0, size);
 	h->size = size;
 	h->sentinel = HUNK_SENTINEL;
-	strncpy (h->name, name, 8);
+	strlcpy (h->name, name, 8);
 
 	return (void *)(h+1);
 }
@@ -656,7 +656,7 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name)
 		cs = Cache_TryAlloc (size, false);
 		if (cs)
 		{
-			strncpy (cs->name, name, sizeof(cs->name)-1);
+			strlcpy (cs->name, name, sizeof(cs->name));
 			c->data = (void *)(cs+1);
 			cs->user = c;
 			break;
