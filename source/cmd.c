@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.12 2006/03/20 14:04:36 vvd0 Exp $
+	$Id: cmd.c,v 1.13 2006/03/21 15:23:47 vvd0 Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -153,6 +153,7 @@ void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text)
 Cbuf_Execute
 ============
 */
+qboolean SV_Check_ktpro(void);
 void Cbuf_ExecuteEx (cbuf_t *cbuf)
 {
 	int		i;
