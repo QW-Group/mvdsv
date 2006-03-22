@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.24 2006/03/22 19:47:35 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.25 2006/03/22 21:04:15 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -637,8 +637,6 @@ int main (int argc, char *argv[])
 
 	argv0 = argv[0];
 	telnet_connected = 0;
-
-	signal(SIGPIPE, SIG_IGN);
 
 	memset (&parms, 0, sizeof(parms));
 
