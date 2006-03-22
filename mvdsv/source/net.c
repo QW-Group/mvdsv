@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.4 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: net.c,v 1.5 2006/03/22 19:47:34 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -231,11 +231,10 @@ int UDP_OpenSocket (int port)
 		Sys_Error ("UDP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
 		return INVALID_SOCKET;
 	}
-#if 0
-// disconnect: we need it?
-	if (setsockopt (newsocket, SOL_SOCKET, SO_REUSEADDR, &_true, sizeof(_true)))
+
+	if (setsockopt (net_socket, SOL_SOCKET, SO_REUSEADDR, &_true, sizeof(_true)))
 		Sys_Error ("UDP_OpenSocket: setsockopt SO_REUSEADDR: (%i): %s\n", qerrno, strerror(qerrno));
-#endif
+
 	if (ioctlsocket (net_socket, FIONBIO, &_true) == -1)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
 

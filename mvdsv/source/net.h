@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.11 2006/03/06 17:22:35 vvd0 Exp $
+	$Id: net.h,v 1.12 2006/03/22 19:47:34 disconn3ct Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
@@ -116,6 +116,7 @@ void NET_Init	(int *serverport, int *telnetport);
 void		NET_Shutdown (void);
 qboolean	NET_GetPacket (void);
 void		NET_SendPacket (int length, void *data, netadr_t to);
+void		NET_Sleep (int msec);
 
 qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
 qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);

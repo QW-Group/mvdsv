@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.18 2006/03/08 10:31:36 disconn3ct Exp $
+	$Id: sv_send.c,v 1.19 2006/03/22 19:47:35 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -748,49 +748,7 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 
 	// send the datagram
 	Netchan_Transmit (&client->netchan, msg.cursize, buf);
-	/*	if (svs.num_packets_out < MAX_DELAYED_PACKETS)
-		{
-			pack = &svs.packets_out[svs.num_packets_out++];
-			pack->time = realtime;
-			pack->num  = client_num;
-			SZ_Clear(&pack->sb);
-			SZ_Write(&pack->sb, buf, msg.cursize);
-		}
-		else
-			Sys_Printf("svs.num_packets_out == MAX_DELAYED_PACKETS\n");
-	*/
 }
-
-/*
-=======================
-SV_SendDelayedClientDatagram
-=======================
-*/
-/*void SV_SendDelayedClientMessages ()
-{
-	int		i, j;
-	packet_t	*pack;
-	client_t	*cl;
- 
-	for (i = 0, pack = svs.packets_out; i < svs.num_packets_out; )
-	{
-		cl = &svs.clients[pack->num];
-		if (realtime < pack->time + cl->delay) {
-			i++;
-			pack++;
-			continue;
-		}
-		Netchan_Transmit (&cl->netchan, pack->sb.cursize, pack->sb.data);
-		for (j = i + 1; j < svs.num_packets_out; j++) {
-			SZ_Clear(&svs.packets_out[j - 1].sb);
-			SZ_Write(&svs.packets_out[j - 1].sb, svs.packets_out[j].sb.data,
-				svs.packets_out[j].sb.cursize);
-			svs.packets_out[j - 1].time = svs.packets_out[j].time;
-			svs.packets_out[j - 1].num  = svs.packets_out[j].num;
-		}
-		svs.num_packets_out--;
-	}
-}*/
 
 /*
 =======================

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.17 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.18 2006/03/22 19:47:35 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 #include "sv_windows.h"
 
-extern cvar_t sys_select_timeout;
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
 extern cvar_t auth_timeout;
@@ -590,6 +589,7 @@ void Sys_Init (void)
 	Sys_InitDoubleTime ();
 }
 
+/*
 int NET_Sleep(double sec)
 {
 	struct timeval timeout;
@@ -602,6 +602,20 @@ int NET_Sleep(double sec)
 	timeout.tv_usec = (sec - floor(sec))*1000000L;
 	//Sys_Printf("%lf, %ld %ld\n", sec, timeout.tv_sec, timeout.tv_usec);
 	return select(net_socket+1, &fdset, NULL, NULL, &timeout);
+}
+*/
+void NET_Sleep (int msec)
+{
+	struct timeval timeout;
+	fd_set	fdset;
+
+	FD_ZERO (&fdset);
+	FD_SET(net_socket, &fdset); // network socket
+
+	timeout.tv_sec  = msec/1000;
+	timeout.tv_usec = (msec%1000)*1000;
+	
+	select (net_socket+1, &fdset, NULL, NULL, &timeout);
 }
 
 void Sys_Sleep(unsigned long ms)
@@ -708,12 +722,7 @@ int main (int argc, char **argv)
 		// the only reason we have a timeout at all is so that if the last
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
-		FD_ZERO(&fdset);
-		FD_SET(net_socket, &fdset);
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 100;
-		if (select (net_socket+1, &fdset, NULL, NULL, &timeout) == -1)
-			continue;
+		NET_Sleep (1);
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
@@ -784,12 +793,13 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 						int         nCmdShow)
 {
 
-	static MSG			msg;
+	static MSG		msg;
 	static quakeparms_t	parms;
 	static double		newtime, time, oldtime;
-	static char			cwd[1024];
+	static char		cwd[1024];
 	static struct		timeval	timeout;
 	static fd_set		fdset;
+	static int		timeout_tv_usec;
 	register int		sleep_msec;
 
 	//Added by VVD {
@@ -879,6 +889,9 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	// main loop
 	//
 	oldtime = Sys_DoubleTime () - 0.1;
+
+	timeout_tv_usec = 0;
+
 	while(1)
 	{
 		// get messeges sent to windows
@@ -925,8 +938,8 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 			}
 		}
 		// Added by VVD }
-		timeout.tv_sec  = ((int)sys_select_timeout.value) / 1000000;
-		timeout.tv_usec = ((int)sys_select_timeout.value) - timeout.tv_sec;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = timeout_tv_usec;
 
 		switch (select (++j, &fdset, NULL, NULL, &timeout))
 		{

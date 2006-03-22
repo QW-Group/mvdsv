@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.13 2006/03/10 18:48:07 vvd0 Exp $
+	$Id: bothdefs.h,v 1.14 2006/03/22 19:47:34 disconn3ct Exp $
 */
 
 // defs common to client and server
@@ -130,6 +130,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+#define bound(a,b,c) ((a) >= (c) ? (a) : \
+					(b) < (a) ? (a) : (b) > (c) ? (c) : (b))
 
 typedef unsigned char byte;
 

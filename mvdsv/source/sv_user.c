@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.35 2006/03/20 14:04:40 vvd0 Exp $
+	$Id: sv_user.c,v 1.36 2006/03/22 19:47:35 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -28,6 +28,8 @@ usercmd_t	cmd;
 
 cvar_t	sv_spectalk = {"sv_spectalk", "1"};
 cvar_t	sv_mapcheck = {"sv_mapcheck", "1"};
+cvar_t	sv_minping = {"sv_minping", "0"};
+cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
 
 cvar_t	sv_use_internal_cmd_dl = {"sv_use_internal_cmd_dl", "1"};
 
@@ -1944,8 +1946,7 @@ SV_MinPing_f
 */
 static void SV_MinPing_f (void)
 {
-	extern cvar_t	sv_minping, sv_enable_cmd_minping;
-	float		minping;
+	float minping;
 	switch (Cmd_Argc())
 	{
 	case 2:
@@ -2531,26 +2532,29 @@ void SV_ExecuteClientMessage (client_t *cl)
 	int		checksumIndex;
 	byte		checksum, calculatedChecksum;
 	int		seq_hash;
-	extern cvar_t sv_minping;
+
+	if (!Netchan_Process(&cl->netchan))
+		return;
+	if (cl->state == cs_zombie)
+		return;
+
+	// this is a valid, sequenced packet, so process it
+	svs.stats.packets++;
+	cl->send_message = true; // reply at end of frame
 
 	// calc ping time
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
 	frame->ping_time = realtime - frame->senttime;
 
+	// update delay based on ping and sv_minping
 	if (!cl->spectator && !sv.paused)
 	{
-		if (frame->ping_time * 1000 > sv_minping.value)
-		{
-			cl->delay -= 0.001;//0.5*(frame->ping_time - sv_minping.value*0.001);
-			if (cl->delay < 0)
-				cl->delay = 0;
-		}
+		if (frame->ping_time * 1000 > sv_minping.value + 1)
+			cl->delay -= 0.001;
 		else if (frame->ping_time * 1000 < sv_minping.value)
-		{
-			cl->delay += 0.001;//-0.5*(frame->ping_time - sv_minping.value*0.001);
-			if (cl->delay > 300)
-				cl->delay = 300;
-		}
+			cl->delay += 0.001;
+
+		cl->delay = bound(0, cl->delay, 1);
 	}
 
 	// make sure the reply sequence number matches the incoming
@@ -2685,6 +2689,8 @@ void SV_UserInit (void)
 {
 	Cvar_RegisterVariable (&sv_spectalk);
 	Cvar_RegisterVariable (&sv_mapcheck);
+	Cvar_RegisterVariable (&sv_minping);
+	Cvar_RegisterVariable (&sv_enable_cmd_minping);
 	Cvar_RegisterVariable (&sv_use_internal_cmd_dl);
 	Cvar_RegisterVariable (&sv_kickuserinfospamtime);
 	Cvar_RegisterVariable (&sv_kickuserinfospamcount);

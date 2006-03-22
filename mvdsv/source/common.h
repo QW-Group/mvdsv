@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.14 2006/03/07 07:20:02 disconn3ct Exp $
+	$Id: common.h,v 1.15 2006/03/22 19:47:34 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -36,9 +36,10 @@ typedef struct sizebuf_s
 } sizebuf_t;
 
 void SZ_Clear (sizebuf_t *buf);
+void SZ_Init (sizebuf_t *buf, byte *data, int length);
 void *SZ_GetSpace (sizebuf_t *buf, int length);
 void SZ_Write (sizebuf_t *buf, void *data, int length);
-void SZ_Print (sizebuf_t *buf, char *data);	// strcats onto the sizebuf
+void SZ_Print (sizebuf_t *buf, char *data); // strcats onto the sizebuf
 
 //============================================================================
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.44 2006/03/20 14:04:39 vvd0 Exp $
+	$Id: sv_main.c,v 1.45 2006/03/22 19:47:34 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -42,10 +42,6 @@ cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map 
 cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic
 
-cvar_t	sys_select_timeout = {"sys_select_timeout", "10000"};
-// MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
-// (else can occur packets lost if sv_minping > 0)
-// if set too low then occur higher CPU usage
 cvar_t	sys_restart_on_error = {"sys_restart_on_error", "0"};
 
 cvar_t	developer = {"developer","0"};		// show extra messages
@@ -123,8 +119,6 @@ cvar_t	sv_phs = {"sv_phs", "1"};
 cvar_t	pausable = {"pausable", "1"};
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
 cvar_t	sv_getrealip = {"sv_getrealip", "1"};
-cvar_t	sv_minping = {"sv_minping", "0"};
-cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
 cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
@@ -235,6 +229,21 @@ void SV_Error (char *error, ...)
 	SV_Shutdown ();
 
 	Sys_Error ("SV_Error: %s\n",string);
+}
+
+static void SV_FreeHeadDelayedPacket(client_t *cl) {
+	if (cl->packets) {
+		packet_t *next = cl->packets->next;
+		cl->packets->next = svs.free_packets;
+		svs.free_packets = cl->packets;
+		cl->packets = next;
+	}
+}
+
+
+void SV_FreeDelayedPackets (client_t *cl) {
+	while (cl->packets)
+		SV_FreeHeadDelayedPacket(cl);
 }
 
 /*
@@ -2023,16 +2032,37 @@ SV_ReadPackets
 */
 void SV_ReadPackets (void)
 {
-	int			i;
-	unsigned	seq;
-	client_t	*cl;
-	packet_t	*pack;
-	qboolean	good;
-	int			qport;
+	client_t *cl;
+	int qport;
+	int i;
 
-	good = false;
+
+	// first deal with delayed packets from connected clients
+	for (i = 0, cl=svs.clients; i < MAX_CLIENTS; i++, cl++)
+	{
+		if (cl->state == cs_free)
+			continue;
+
+		net_from = cl->netchan.remote_address;
+
+		while (cl->packets && realtime - cl->packets->time >= cl->delay)
+		{
+			SZ_Clear(&net_message);
+			SZ_Write(&net_message, cl->packets->msg.data, cl->packets->msg.cursize);
+			SV_ExecuteClientMessage(cl);
+			SV_FreeHeadDelayedPacket(cl);
+		}
+	}
+
+	// now deal with new packets
 	while (NET_GetPacket())
 	{
+		if (SV_FilterPacket ())
+		{
+			SV_SendBan ();	// tell them we aren't listening...
+			continue;
+		}
+
 		// check for connectionless packet (0xffffffff) first
 		if (*(int *)net_message.data == -1)
 		{
@@ -2040,21 +2070,15 @@ void SV_ReadPackets (void)
 			continue;
 		}
 
-		if (SV_FilterPacket ())
-		{
-			SV_SendBan ();	// tell them we aren't listening...
-			continue;
-		}
-
 		// read the qport out of the message so we can fix up
 		// stupid address translating routers
 		MSG_BeginReading ();
-		MSG_ReadLong ();		// sequence number
-		seq = MSG_ReadLong () & ~(1<<31);		// sequence number
+		MSG_ReadLong (); // sequence number
+		MSG_ReadLong (); // sequence number
 		qport = MSG_ReadShort () & 0xffff;
 
-		// check for packets from connected clients
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		// check which client sent this packet
+		for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 		{
 			if (cl->state == cs_free)
 				continue;
@@ -2068,91 +2092,40 @@ void SV_ReadPackets (void)
 				cl->netchan.remote_address.port = net_from.port;
 			}
 
-			if (svs.num_packets == MAX_DELAYED_PACKETS) // packet has to be dropped..
-			{
-				Sys_Printf("svs.num_packets == MAX_DELAYED_PACKETS\n");
+			break;
+		}
+
+		if (i == MAX_CLIENTS)
+			continue;
+
+		// ok, we know who sent this packet, but do we need to delay executing it?
+		if (cl->delay > 0)
+		{
+			if (!svs.free_packets) // packet has to be dropped..
 				break;
+
+			// insert at end of list
+			if (!cl->packets) {
+				cl->last_packet = cl->packets = svs.free_packets;
+			} else {
+				// this works because '=' associates from right to left
+				cl->last_packet = cl->last_packet->next = svs.free_packets;
 			}
 
-			pack = &svs.packets[svs.num_packets++];
-
-			pack->time = realtime;
-			pack->num = i;
-			SZ_Clear(&pack->sb);
-			SZ_Write(&pack->sb, net_message.data, net_message.cursize);
-			break;
-
-			/*			if (Netchan_Process(&cl->netchan))
-						{	// this is a valid, sequenced packet, so process it
-							svs.stats.packets++;
-							good = true;
-							cl->send_message = true;	// reply at end of frame
-							if (cl->state != cs_zombie)
-								SV_ExecuteClientMessage (cl);
-						}
-						break;
-			*/
+			svs.free_packets = svs.free_packets->next;
+			cl->last_packet->next = NULL;
+			
+			cl->last_packet->time = realtime;
+			SZ_Clear(&cl->last_packet->msg);
+			SZ_Write(&cl->last_packet->msg, net_message.data, net_message.cursize);
 		}
-
-		//		if (i != MAX_CLIENTS)
-		//			continue;
-
-		// packet is not from a known client
-		//	Con_Printf ("%s:sequenced packet without connection\n"
-		// ,NET_AdrToString(net_from));
+		else
+		{
+			SV_ExecuteClientMessage (cl);
+		}
 	}
 }
 
-/*
-=================
-SV_ReadDelayedPackets
-=================
-*/
-void SV_ReadDelayedPackets (void)
-{
-	int			i, j/*, num = 0*/;
-	client_t	*cl;
-	packet_t	*pack;
-
-	for (i = 0, pack = svs.packets; i < svs.num_packets; )
-	{
-		cl = &svs.clients[pack->num];
-		if (realtime < pack->time + cl->delay && !sv.paused)
-		{
-			i++;
-			pack++;
-			continue;
-		}
-
-		//num++;
-
-		SZ_Clear(&net_message);
-		SZ_Write(&net_message, pack->sb.data, pack->sb.cursize);
-		net_from = cl->netchan.remote_address;
-
-		if (Netchan_Process(&cl->netchan))
-		{	// this is a valid, sequenced packet, so process it
-			svs.stats.packets++;
-			cl->send_message = true;	// reply at end of frame
-			if (cl->state != cs_zombie)
-				SV_ExecuteClientMessage (cl);
-		}
-
-		for (j = i + 1; j < svs.num_packets; j++)
-		{
-			SZ_Clear(&svs.packets[j - 1].sb);
-			SZ_Write(&svs.packets[j - 1].sb, svs.packets[j].sb.data, svs.packets[j].sb.cursize);
-			svs.packets[j - 1].num = svs.packets[j].num;
-			svs.packets[j - 1].time = svs.packets[j].time;
-		}
-
-		svs.num_packets--;
-		//i = 0;
-		//pack = svs.packets;
-	}
-
-	//svs.num_packets -= num;
-}
 
 /*
 ==================
@@ -2380,18 +2353,12 @@ void SV_Frame (double time)
 	// get packets
 	SV_ReadPackets ();
 
-	// check delayed packets
-	SV_ReadDelayedPackets ();
-
 	// move autonomous things around if enough time has passed
 	if (!sv.paused)
 		SV_Physics ();
 
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
-
-	// check delayed messages back to the clients that had packets read this frame
-	//	SV_SendDelayedClientMessages ();
 
 	demo_start = Sys_DoubleTime ();
 	SV_SendDemoMessage();
@@ -2437,6 +2404,7 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_waterfriction;
 	extern	cvar_t	sv_bunnyspeedcap;
 	extern	cvar_t	sv_nailhack;
+	packet_t *packet_freeblock; // initialise delayed packet free block
 
 
 	Cvar_Init ();
@@ -2446,8 +2414,6 @@ void SV_InitLocal (void)
 
 	Cvar_RegisterVariable (&sv_getrealip);
 	Cvar_RegisterVariable (&sv_maxdownloadrate);
-	Cvar_RegisterVariable (&sv_minping);
-	Cvar_RegisterVariable (&sv_enable_cmd_minping);
 	Cvar_RegisterVariable (&sv_serverip);
 	Cvar_RegisterVariable (&sv_cpserver);
 	Cvar_RegisterVariable (&rcon_password);
@@ -2488,7 +2454,6 @@ void SV_InitLocal (void)
 
 	Cvar_RegisterVariable (&sv_mintic);
 	Cvar_RegisterVariable (&sv_maxtic);
-	Cvar_RegisterVariable (&sys_select_timeout);
 	Cvar_RegisterVariable (&sys_restart_on_error);
 
 	Cvar_RegisterVariable (&skill);
@@ -2596,16 +2561,14 @@ void SV_InitLocal (void)
 	svs.log[1].cursize = 0;
 	svs.log[1].allowoverflow = true;
 
-	for (i = 0; i < MAX_DELAYED_PACKETS; i++)
-	{
-		svs.packets[i].sb.data = svs.packets[i].buf;
-		svs.packets[i].sb.maxsize = sizeof(svs.packets[i].buf);
-		//		svs.packets_out[i].sb.data = svs.packets_out[i].buf;
-		//		svs.packets_out[i].sb.maxsize = sizeof(svs.packets_out[i].buf);
-	}
+	packet_freeblock = Hunk_AllocName(MAX_DELAYED_PACKETS * sizeof(packet_t), "delayed_packets");
 
-	svs.num_packets = 0;
-	//	svs.num_packets_out = 0;
+	for (i = 0; i < MAX_DELAYED_PACKETS; i++) {
+		SZ_Init (&packet_freeblock[i].msg, packet_freeblock[i].buf, sizeof(packet_freeblock[i].buf));
+		packet_freeblock[i].next = &packet_freeblock[i + 1];
+	}
+	packet_freeblock[MAX_DELAYED_PACKETS - 1].next = NULL;
+	svs.free_packets = &packet_freeblock[0];
 }
 
 
