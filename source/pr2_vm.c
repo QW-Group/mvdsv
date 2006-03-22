@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.10 2006/03/08 12:07:57 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.11 2006/03/22 15:13:51 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -278,13 +278,13 @@ void LoadMapFile( qvm_t*qvm, char* fname )
 
 		if( seg == 0 && off >= qvm->len_cs)
 		{
-			Con_DPrintf("bad cs off in map file %s.map",fname);
+			Con_DPrintf("bad cs off in map file %s.map\n",fname);
 			qvm->sym_info = NULL;
 			return;
 		}
 		if( seg >= 1 && off >= qvm->len_ds )
 		{
-			Con_DPrintf("bad ds off in map file %s.map",fname);
+			Con_DPrintf("bad ds off in map file %s.map\n",fname);
 			continue;
 		}
 
