@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.18 2006/03/22 19:47:35 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.19 2006/03/22 20:33:29 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -923,32 +923,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
 
-		FD_ZERO(&fdset);
-		FD_SET(j = net_socket, &fdset);
-		// Added by VVD {
-		if (telnetport)
-		{
-			Sys_Telnet();
-			FD_SET(net_telnetsocket, &fdset);
-			j = max(j, net_telnetsocket);
-			if (telnet_connected)
-			{
-				FD_SET(telnet_iosock, &fdset);
-				j = max(j, telnet_iosock);
-			}
-		}
-		// Added by VVD }
-		timeout.tv_sec = 0;
-		timeout.tv_usec = timeout_tv_usec;
-
-		switch (select (++j, &fdset, NULL, NULL, &timeout))
-		{
-		case -1: continue;
-		case 0: break;
-		default:
-			if (telnetport && telnet_connected)
-				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
-		}
+		NET_Sleep (1);
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
