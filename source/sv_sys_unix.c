@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.23 2006/03/20 13:24:04 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.24 2006/03/22 19:47:35 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -48,7 +48,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "version.h"
 // Added by VVD }
 
-extern cvar_t sys_select_timeout;
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
 extern cvar_t auth_timeout;
@@ -472,40 +471,43 @@ void Sys_Init (void)
 	Cvar_RegisterVariable (&sys_extrasleep);
 }
 
-int NET_Sleep(double sec)
+inline void Sys_Telnet (void);
+void NET_Sleep (int msec)
 {
-	struct timeval	timeout;
-	fd_set		fdset;
-	int		ret;
-	int		m;
+	struct timeval timeout;
+	fd_set	fdset;
+	int j;
 
-	FD_ZERO(&fdset);
-	FD_SET(m = net_socket, &fdset); // network socket
+	FD_ZERO (&fdset);
+	FD_SET(j = net_socket, &fdset); // network socket
+
+	// Added by VVD {
 	if (telnetport)
 	{
+		Sys_Telnet();
 		FD_SET(net_telnetsocket, &fdset);
-		m = max(m, net_telnetsocket);
+		j = max(j, net_telnetsocket);
 		if (telnet_connected)
 		{
 			FD_SET(telnet_iosock, &fdset);
-			m = max(m, telnet_iosock);
+			j = max(j, telnet_iosock);
 		}
 	}
+		// Added by VVD }
+
 	if (do_stdin)
-		FD_SET(0, &fdset); // stdin is processed too
+		FD_SET(0, &fdset);
 
-	timeout.tv_sec = (long) sec;
-	timeout.tv_usec = (sec - floor(sec))*1000000L;
+	timeout.tv_sec  = msec/1000;
+	timeout.tv_usec = (msec%1000)*1000;
 
-	ret = select (m + 1, &fdset, NULL, NULL, &timeout);
+	select (j + 1, &fdset, NULL, NULL, &timeout);
 
 	if (telnetport && telnet_connected)
 		iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 
 	if (do_stdin)
 		stdin_ready = FD_ISSET(0, &fdset);
-
-	return ret;
 }
 
 void Sys_Sleep(unsigned long ms)
@@ -754,44 +756,14 @@ int main (int argc, char *argv[])
 	// main loop
 	//
 	oldtime = Sys_DoubleTime () - 0.1;
-
+	
 	while (1)
 	{
 		// select on the net socket and stdin
 		// the only reason we have a timeout at all is so that if the last
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
-		FD_ZERO(&fdset);
-		FD_SET(j = net_socket, &fdset);
-		// Added by VVD {
-		if (telnetport)
-		{
-			Sys_Telnet();
-			FD_SET(net_telnetsocket, &fdset);
-			j = max(j, net_telnetsocket);
-			if (telnet_connected)
-			{
-				FD_SET(telnet_iosock, &fdset);
-				j = max(j, telnet_iosock);
-			}
-		}
-		// Added by VVD }
-		timeout.tv_sec  = ((int)sys_select_timeout.value) / 1000000;
-		timeout.tv_usec = ((int)sys_select_timeout.value) - timeout.tv_sec;
-
-		if (do_stdin)
-			FD_SET(0, &fdset);
-
-		switch (select (j + 1, &fdset, NULL, NULL, &timeout))
-		{
-		case -1: continue;
-		case 0: break;
-		default:
-			if (do_stdin)
-				stdin_ready = FD_ISSET(0, &fdset);
-			if (telnetport && telnet_connected)
-				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
-		}
+		NET_Sleep (10);
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
@@ -805,5 +777,5 @@ int main (int argc, char *argv[])
 			usleep (sys_extrasleep.value);
 	}
 
-	return 1;
+	return 0;
 }

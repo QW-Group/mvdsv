@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.62 2006/03/20 14:04:34 vvd0 Exp $
+$Id: changes.txt,v 1.63 2006/03/22 19:50:31 disconn3ct Exp $
 
 ----
 MVDSV v0.19.12-CVS build 22?? (2006.03.??)
@@ -8,6 +8,7 @@ MVDSV v0.19.12-CVS build 22?? (2006.03.??)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
+- ZQuake-like minping --> no more sys_select_timeout (by disconnect)
 - new cvar sv_kickuserinfospamtime - time in seconds for checking userinfo changes spam
   0 - disable kick of the userinfo spaming player
   default: 1

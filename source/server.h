@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.25 2006/03/20 14:04:38 vvd0 Exp $
+	$Id: server.h,v 1.26 2006/03/22 19:47:34 disconn3ct Exp $
 */
 // server.h
 
@@ -42,14 +42,12 @@ typedef enum {
 // some qc commands are only valid before the server has finished
 // initializing (precache commands, static sounds / objects, etc)
 
-typedef struct
+typedef struct packet_s
 {
 	double		time;
-	int		num;
-	sizebuf_t	sb;
-	// bugfix from 0.160b: possibility to crash server from client
-	// (Thanks to anm-zip)
-	byte		buf[/*MAX_MSGLEN*/MSG_BUF_SIZE];
+	sizebuf_t	msg;
+	byte		buf[MSG_BUF_SIZE]; // ?MAX_MSGLEN?
+	struct packet_s *next;
 } packet_t;
 
 #define MAX_DELAYED_PACKETS 512
@@ -97,10 +95,6 @@ typedef struct
 	sizebuf_t	multicast;
 	byte		multicast_buf[MAX_MSGLEN];
 
-	// the master buffer is used for building log packets
-	sizebuf_t	master;
-	byte		master_buf[MAX_DATAGRAM];
-
 	// the signon buffer will be sent to each client as they connect
 	// includes the entity baselines, the static entities, etc
 	// large levels will have >MAX_DATAGRAM sized signons, so 
@@ -143,31 +137,31 @@ typedef struct client_s
 {
 	sv_client_state_t	state;
 
-	int			spectator;			// non-interactive
-	int			vip;
+	int		spectator;			// non-interactive
+	int		vip;
 
 	qboolean	sendinfo;			// at end of frame, send info to all
 							// this prevents malicious multiple broadcasts
 	float		lastnametime;			// time of last name change
-	int			lastnamecount;			// time of last name change
+	int		lastnamecount;			// time of last name change
 	unsigned	checksum;			// checksum for calcs
 	qboolean	drop;				// lose this guy next opportunity
-	int			lossage;			// loss percentage
+	int		lossage;			// loss percentage
 
-	int			userid;				// identifying number
+	int		userid;				// identifying number
 	char		userinfo[MAX_INFO_STRING];	// infostring
 	char		userinfoshort[MAX_INFO_STRING];	// infostring
 
 	usercmd_t	lastcmd;			// for filling in big drops and partial predictions
 	double		localtime;			// of last message
-	int			oldbuttons;
+	int		oldbuttons;
 
 	float		maxspeed;			// localized maxspeed
 	float		entgravity;			// localized ent gravity
 
 	edict_t		*edict;				// EDICT_NUM(clientnum+1)
 #ifdef USE_PR2
-	int			isBot;
+	int		isBot;
 	usercmd_t	botcmd;				// bot movment
 	char		*name;				// in PR2 points to ent->v.netname
 #else
@@ -175,7 +169,7 @@ typedef struct client_s
 #endif
 	char		team[CLIENT_NAME_LEN];
 							// extracted from userinfo
-	int			messagelevel;			// for filtering printed messages
+	int		messagelevel;			// for filtering printed messages
 
 	// the datagram is written to after every frame, but only cleared
 	// when it is sent out to the client.  overflow is tolerated.
@@ -184,8 +178,8 @@ typedef struct client_s
 
 	// back buffers for client reliable data
 	sizebuf_t	backbuf;
-	int			num_backbuf;
-	int			backbuf_size[MAX_BACK_BUFFERS];
+	int		num_backbuf;
+	int		backbuf_size[MAX_BACK_BUFFERS];
 	byte		backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
 
 	byte		stufftext_buf[MAX_STUFFTEXT];
@@ -197,26 +191,26 @@ typedef struct client_s
 	float		spawn_parms[NUM_SPAWN_PARMS];
 
 // client known data for deltas	
-	int			old_frags;
+	int		old_frags;
 	
-	int			stats[MAX_CL_STATS];
+	int		stats[MAX_CL_STATS];
 
 
 	client_frame_t	frames[UPDATE_BACKUP];		// updates can be deltad from here
 
 	FILE		*download;			// file being downloaded
-	int			downloadsize;			// total bytes
-	int			downloadcount;			// bytes sent
+	int		downloadsize;			// total bytes
+	int		downloadcount;			// bytes sent
 // demo download list for internal cmd dl function
 //Added by VVD {
-	int			demonum[MAX_ARGS];
+	int		demonum[MAX_ARGS];
 	qboolean	demolist;
 // } Added by VVD
 
-	int			spec_track;			// entnum of player tracking
+	int		spec_track;			// entnum of player tracking
 
 	double		whensaid[10];			// JACK: For floodprots
- 	int			whensaidhead;			// Head value for floodprots
+ 	int		whensaidhead;			// Head value for floodprots
  	double		lockedtill;
 
 	FILE		*upload;
@@ -225,37 +219,38 @@ typedef struct client_s
 	qboolean	remote_snap;
 
 	char		login[CLIENT_LOGIN_LEN];
-	int			logged;
+	int		logged;
 
-	int			spawncount;			// for tracking map changes during downloading
+	int		spawncount;			// for tracking map changes during downloading
 
 //bliP: additional ->
-	int			file_percent;
+	int		file_percent;
 	qboolean	special;
-	int			logincount;
+	int		logincount;
 	float		lasttoptime;			// time of last topcolor change
-	int			lasttopcount;			// count of last topcolor change
-	int			lastconnect;
-	int			spec_print;
+	int		lasttopcount;			// count of last topcolor change
+	int		lastconnect;
+	int		spec_print;
 	double		cuff_time;
 //bliP: 24/9 anti speed ->
-	int			msecs;
+	int		msecs;
 	double		last_check;
 //<-
 //<-
-	float		lastuserinfotime;			// time of last userinfo change
-	int			lastuserinfocount;			// count of last userinfo change
+	float		lastuserinfotime;		// time of last userinfo change
+	int		lastuserinfocount;		// count of last userinfo change
  
 //===== NETWORK ============
-	int			chokecount;
-	int			delta_sequence;			// -1 = no compression
+	int		chokecount;
+	int		delta_sequence;			// -1 = no compression
 	netchan_t	netchan;
 	netadr_t	realip;				// client's ip, not latest proxy's
-	int			realip_num;			// random value
-	int			realip_count;
-	int			rip_vip;
+	int		realip_num;			// random value
+	int		realip_count;
+	int		rip_vip;
 	double		delay;
 	double		disable_updates_stop;		//Vladis
+	packet_t	*packets, *last_packet;
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -401,10 +396,7 @@ typedef struct
 
 	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
 
-	packet_t	packets[MAX_DELAYED_PACKETS];
-	int		num_packets;
-//	packet_t	packets_out[MAX_DELAYED_PACKETS];
-//	int		num_packets_out;
+	packet_t	*free_packets;
 } server_static_t;
 
 //=============================================================================
@@ -616,7 +608,6 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_BroadcastPrintf (int level, char *fmt, ...);
 void SV_BroadcastCommand (char *fmt, ...);
 void SV_SendClientMessages (void);
-//void SV_SendDelayedClientMessages (void);
 void SV_SendDemoMessage(void);
 void SV_SendMessagesToAll (void);
 void SV_FindModelNumbers (void);

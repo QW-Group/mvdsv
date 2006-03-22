@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.15 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: sv_init.c,v 1.16 2006/03/22 19:47:34 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -574,9 +574,6 @@ void SV_SpawnServer (char *server)
 
 	sv.multicast.maxsize = sizeof(sv.multicast_buf);
 	sv.multicast.data = sv.multicast_buf;
-
-	sv.master.maxsize = sizeof(sv.master_buf);
-	sv.master.data = sv.master_buf;
 
 	sv.signon.maxsize = sizeof(sv.signon_buffers[0]);
 	sv.signon.data = sv.signon_buffers[0];

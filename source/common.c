@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.23 2006/03/08 12:07:56 disconn3ct Exp $
+	$Id: common.c,v 1.24 2006/03/22 19:47:34 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -414,6 +414,13 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 
 //===========================================================================
+
+void SZ_Init (sizebuf_t *buf, byte *data, int length)
+{
+	memset (buf, 0, sizeof(*buf));
+	buf->data = data;
+	buf->maxsize = length;
+}
 
 void SZ_Clear (sizebuf_t *buf)
 {
