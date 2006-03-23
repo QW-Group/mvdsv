@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.12 2006/03/23 14:10:35 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.13 2006/03/23 14:30:22 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -210,24 +210,24 @@ void VM_PrintInfo( vm_t * vm)
 	if(!vm->name[0])
 		return;
 
-	Con_Printf("%s: ", vm->name);
+	Con_DPrintf("%s: ", vm->name);
 	switch(vm->type)
 	{
 	case VM_NATIVE:
-		Con_Printf("native\n");
+		Con_DPrintf("native\n");
 		break;
 	case VM_BYTECODE:
-		Con_Printf("bytecode interpreted\n");
+		Con_DPrintf("bytecode interpreted\n");
 		if((qvm=vm->hInst))
 		{
-			Con_Printf("     code  length: %8xh\n", qvm->len_cs*sizeof(qvm->cs[0]));
-			Con_Printf("instruction count: %8d\n", qvm->len_cs);
-			Con_Printf("     data  length: %8xh\n", qvm->len_ds);
-			Con_Printf("     stack length: %8xh\n", qvm->len_ss);
+			Con_DPrintf("     code  length: %8xh\n", qvm->len_cs*sizeof(qvm->cs[0]));
+			Con_DPrintf("instruction count: %8d\n", qvm->len_cs);
+			Con_DPrintf("     data  length: %8xh\n", qvm->len_ds);
+			Con_DPrintf("     stack length: %8xh\n", qvm->len_ss);
 		}
 		break;
 	default:
-		Con_Printf("unknown\n");
+		Con_DPrintf("unknown\n");
 		break;
 	}
 
