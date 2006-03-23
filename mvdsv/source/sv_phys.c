@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.13 2006/03/07 11:25:26 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.14 2006/03/23 14:10:36 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -40,17 +40,23 @@ solid_edge items only clip against bsp models.
 
 */
 
-cvar_t	sv_maxvelocity		= {"sv_maxvelocity","2000"};
+cvar_t	sv_maxvelocity		= { "sv_maxvelocity","2000"};
+
 cvar_t	sv_gravity		= { "sv_gravity", "800"};
 cvar_t	sv_stopspeed		= { "sv_stopspeed", "100"};
 cvar_t	sv_maxspeed		= { "sv_maxspeed", "320"};
-cvar_t	sv_spectatormaxspeed	= { "sv_spectatormaxspeed", "500"};
+cvar_t	sv_spectatormaxspeed 	= { "sv_spectatormaxspeed", "500"};
 cvar_t	sv_accelerate		= { "sv_accelerate", "10"};
 cvar_t	sv_airaccelerate	= { "sv_airaccelerate", "10"};
+
 cvar_t	sv_wateraccelerate	= { "sv_wateraccelerate", "10"};
 cvar_t	sv_friction		= { "sv_friction", "4"};
 cvar_t	sv_waterfriction	= { "sv_waterfriction", "4"};
-cvar_t	sv_bunnyspeedcap	= {"sv_bunnyspeedcap", "0"};
+cvar_t	pm_ktjump		= { "pm_ktjump", "1", CVAR_SERVERINFO};
+cvar_t	pm_bunnyspeedcap	= { "pm_bunnyspeedcap", "", CVAR_SERVERINFO};
+cvar_t	pm_slidefix		= { "pm_slidefix", "", CVAR_SERVERINFO};
+cvar_t	pm_airstep		= { "pm_airstep", "", CVAR_SERVERINFO};
+cvar_t	pm_pground		= { "pm_pground", "", CVAR_SERVERINFO};
 
 double	sv_frametime;
 

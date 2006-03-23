@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.19 2006/03/22 19:47:35 disconn3ct Exp $
+	$Id: sv_send.c,v 1.20 2006/03/23 14:10:36 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -120,17 +120,16 @@ void SV_EndRedirect (void)
 /*
 ================
 Con_Printf
- 
+
 Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
-//#define	SERVER_PRINTF	"MVDSV: "
-// FIXME: make a buffer size safe vs<n>printf? - FIXED.
+//#define SERVER_PRINTF "MVDSV: "
 void Con_Printf (char *fmt, ...)
 {
-	va_list		argptr;
-	char		msg[MAXPRINTMSG];
+	va_list argptr;
+	char msg[MAXPRINTMSG];
 
 	va_start (argptr,fmt);
 	vsnprintf (msg, MAXPRINTMSG, fmt, argptr);
@@ -349,10 +348,7 @@ void SV_Multicast (vec3_t origin, int to)
 	vec3_t		org;
 
 	leaf = Mod_PointInLeaf (origin, sv.worldmodel);
-	if (!leaf)
-		leafnum = 0;
-	else
-		leafnum = leaf - sv.worldmodel->leafs;
+	leafnum = leaf ? leaf - sv.worldmodel->leafs : 0;
 
 	reliable = false;
 
@@ -629,6 +625,20 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 				MSG_WriteAngle (&demo.datagram, demo.angles[clnum][i] );
 		}
 	}
+
+	// Z_EXT_TIME protocol extension
+	// every now and then, send an update so that extrapolation
+	// on client side doesn't stray too far off
+	if ((SERVER_EXTENSIONS & Z_EXT_SERVERTIME) && (client->extensions & Z_EXT_SERVERTIME))
+	{
+		if (realtime - client->lastservertimeupdate > 5) {
+			MSG_WriteByte(msg, svc_updatestatlong);
+			MSG_WriteByte(msg, STAT_TIME);
+			MSG_WriteLong(msg, (int) (sv.time * 1000));
+
+			client->lastservertimeupdate = realtime;
+		}
+	}
 }
 
 /*
@@ -641,9 +651,8 @@ when a reliable message can be delivered this frame.
 */
 void SV_UpdateClientStats (client_t *client)
 {
-	edict_t	*ent;
-	int		stats[MAX_CL_STATS];
-	int		i;
+	edict_t *ent;
+	int stats[MAX_CL_STATS], i;
 
 	ent = client->edict;
 	memset (stats, 0, sizeof(stats));
@@ -670,7 +679,10 @@ void SV_UpdateClientStats (client_t *client)
 	if (!client->spectator || client->spec_track > 0)
 		stats[STAT_ACTIVEWEAPON] = ent->v.weapon;
 	// stuff the sigil bits into the high bits of items for sbar
-	stats[STAT_ITEMS] = (int)ent->v.items | ((int)pr_global_struct->serverflags << 28);
+	stats[STAT_ITEMS] = (int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
+
+	if (ent->v.health > 0 || client->spectator) // viewheight for PF_DEAD & PF_GIB is hardwired
+		stats[STAT_VIEWHEIGHT] = ent->v.view_ofs[2];
 
 	for (i=0 ; i<MAX_CL_STATS ; i++)
 		if (stats[i] != client->stats[i])
@@ -1060,9 +1072,11 @@ void SV_SendDemoMessage(void)
 		stats[STAT_CELLS] = ent->v.ammo_cells;
 		stats[STAT_ACTIVEWEAPON] = ent->v.weapon;
 
+		if (ent->v.health > 0) // viewheight for PF_DEAD & PF_GIB is hardwired
+			stats[STAT_VIEWHEIGHT] = ent->v.view_ofs[2];
 
 		// stuff the sigil bits into the high bits of items for sbar
-		stats[STAT_ITEMS] = (int)ent->v.items | ((int)pr_global_struct->serverflags << 28);
+		stats[STAT_ITEMS] = (int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
 
 		for (j=0 ; j<MAX_CL_STATS ; j++)
 			if (stats[j] != demo.stats[i][j])

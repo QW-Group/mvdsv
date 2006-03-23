@@ -5,7 +5,7 @@ This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmovetst.c,v 1.7 2006/01/13 13:39:10 disconn3ct Exp $
+	$Id: pmovetst.c,v 1.8 2006/03/23 14:10:35 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -39,19 +39,19 @@ can just be stored out and get a proper hull_t structure.
 */
 void PM_InitBoxHull (void)
 {
-	int		i;
-	int		side;
+	int i, side;
+
 
 	box_hull.clipnodes = box_clipnodes;
 	box_hull.planes = box_planes;
 	box_hull.firstclipnode = 0;
 	box_hull.lastclipnode = 5;
 
-	for (i=0 ; i<6 ; i++)
+	for (i = 0; i < 6; i++)
 	{
 		box_clipnodes[i].planenum = i;
 
-		side = i&1;
+		side = i & 1;
 
 		box_clipnodes[i].children[side] = CONTENTS_EMPTY;
 		if (i != 5)
@@ -62,7 +62,7 @@ void PM_InitBoxHull (void)
 		box_planes[i].type = i>>1;
 		box_planes[i].normal[i>>1] = 1;
 	}
-
+	
 }
 
 
@@ -74,7 +74,7 @@ To keep everything totally uniform, bounding boxes are turned into small
 BSP trees instead of being compared directly.
 ===================
 */
-hull_t	*PM_HullForBox (vec3_t mins, vec3_t maxs)
+static hull_t *PM_HullForBox (vec3_t mins, vec3_t maxs)
 {
 	box_planes[0].dist = maxs[0];
 	box_planes[1].dist = mins[0];
@@ -95,28 +95,23 @@ PM_HullPointContents
 */
 int PM_HullPointContents (hull_t *hull, int num, vec3_t p)
 {
-	float		d;
-	dclipnode_t	*node;
-	mplane_t	*plane;
+	dclipnode_t *node;
+	mplane_t *plane;
+	float d;
+
 
 	while (num >= 0)
 	{
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
 			Sys_Error ("PM_HullPointContents: bad node number");
-
+	
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 
-		if (plane->type < 3)
-			d = p[plane->type] - plane->dist;
-		else
-			d = DotProduct (plane->normal, p) - plane->dist;
-		if (d < 0)
-			num = node->children[1];
-		else
-			num = node->children[0];
+		d = PlaneDiff(p, plane);
+		num = (d < 0) ? node->children[1] : node->children[0];
 	}
-
+	
 	return num;
 }
 
@@ -128,11 +123,12 @@ PM_PointContents
 */
 int PM_PointContents (vec3_t p)
 {
-	float		d;
-	dclipnode_t	*node;
-	mplane_t	*plane;
-	hull_t		*hull;
-	int			num;
+	dclipnode_t *node;
+	mplane_t *plane;
+	hull_t *hull;
+	float d;
+	int num;
+
 
 	hull = &pmove.physents[0].model->hulls[0];
 
@@ -145,15 +141,9 @@ int PM_PointContents (vec3_t p)
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
-
-		if (plane->type < 3)
-			d = p[plane->type] - plane->dist;
-		else
-			d = DotProduct (plane->normal, p) - plane->dist;
-		if (d < 0)
-			num = node->children[1];
-		else
-			num = node->children[0];
+		
+		d = PlaneDiff(p, plane);
+		num = (d < 0) ? node->children[1] : node->children[0];
 	}
 
 	return num;
@@ -168,7 +158,7 @@ LINE TESTING IN HULLS
 */
 
 // 1/32 epsilon to keep floating point happy
-#define	DIST_EPSILON	(0.03125)
+#define DIST_EPSILON (0.03125)
 
 /*
 ==================
@@ -176,16 +166,15 @@ PM_RecursiveHullCheck
 
 ==================
 */
-qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace)
+static qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+	vec3_t p1, vec3_t p2, trace_t *trace)
 {
-	dclipnode_t	*node;
-	mplane_t	*plane;
-	float		t1, t2;
-	float		frac;
-	int			i;
-	vec3_t		mid;
-	int			side;
-	float		midf;
+	float t1, t2, frac, midf;
+	dclipnode_t *node;
+	mplane_t *plane;
+	int side, i;
+	vec3_t mid;
+
 
 	// check for empty
 	if (num < 0)
@@ -223,31 +212,21 @@ qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 		t2 = DotProduct (plane->normal, p2) - plane->dist;
 	}
 
-#if 1
 	if (t1 >= 0 && t2 >= 0)
 		return PM_RecursiveHullCheck (hull, node->children[0], p1f, p2f, p1, p2, trace);
 	if (t1 < 0 && t2 < 0)
 		return PM_RecursiveHullCheck (hull, node->children[1], p1f, p2f, p1, p2, trace);
-#else
-	if ( (t1 >= DIST_EPSILON && t2 >= DIST_EPSILON) || (t2 > t1 && t1 >= 0) )
-		return PM_RecursiveHullCheck (hull, node->children[0], p1f, p2f, p1, p2, trace);
-	if ( (t1 <= -DIST_EPSILON && t2 <= -DIST_EPSILON) || (t2 < t1 && t1 <= 0) )
-		return PM_RecursiveHullCheck (hull, node->children[1], p1f, p2f, p1, p2, trace);
-#endif
 
 	// put the crosspoint DIST_EPSILON pixels on the near side
 	if (t1 < 0)
-		frac = (t1 + DIST_EPSILON)/(t1-t2);
+		frac = (t1 + DIST_EPSILON)/(t1 - t2);
 	else
-		frac = (t1 - DIST_EPSILON)/(t1-t2);
-	if (frac < 0)
-		frac = 0;
-	if (frac > 1)
-		frac = 1;
-
+		frac = (t1 - DIST_EPSILON)/(t1 - t2);
+	frac = bound(0, frac, 1);
+		
 	midf = p1f + (p2f - p1f)*frac;
-	for (i=0 ; i<3 ; i++)
-		mid[i] = p1[i] + frac*(p2[i] - p1[i]);
+	for (i = 0; i < 3; i++)
+		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 
 	side = (t1 < 0);
 
@@ -256,50 +235,41 @@ qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 		return false;
 
 #ifdef PARANOID
-	if (PM_HullPointContents (pm_hullmodel, mid, node->children[side])
-	        == CONTENTS_SOLID)
+	if (PM_HullPointContents (pm_hullmodel, mid, node->children[side]) == CONTENTS_SOLID)
 	{
-		Con_Printf ("mid PointInHullSolid\n");
-		return false;
+	Com_Printf ("mid PointInHullSolid\n");
+	return false;
 	}
 #endif
 
-	if (PM_HullPointContents (hull, node->children[side^1], mid)
-	        != CONTENTS_SOLID)
-		// go past the node
-		return PM_RecursiveHullCheck (hull, node->children[side^1], midf, p2f, mid, p2, trace);
+	if (PM_HullPointContents (hull, node->children[side ^ 1], mid) != CONTENTS_SOLID)	// go past the node
+		return PM_RecursiveHullCheck (hull, node->children[side ^ 1], midf, p2f, mid, p2, trace);
 
 	if (trace->allsolid)
 		return false;		// never got out of the solid area
 
-	//==================
 	// the other side of the node is solid, this is the impact point
-	//==================
-	if (!side)
-	{
+	if (!side) {
 		VectorCopy (plane->normal, trace->plane.normal);
 		trace->plane.dist = plane->dist;
-	}
-	else
-	{
-		VectorSubtract (vec3_origin, plane->normal, trace->plane.normal);
+	} else {
+		VectorNegate (plane->normal, trace->plane.normal);
 		trace->plane.dist = -plane->dist;
 	}
 
-	while (PM_HullPointContents (hull, hull->firstclipnode, mid)
-	        == CONTENTS_SOLID)
-	{ // shouldn't really happen, but does occasionally
+	while (PM_HullPointContents (hull, hull->firstclipnode, mid) == CONTENTS_SOLID)
+	{
+		// shouldn't really happen, but does occasionally
 		frac -= 0.1;
-		if (frac < 0)
-		{
+		if (frac < 0) {
 			trace->fraction = midf;
 			VectorCopy (mid, trace->endpos);
 			Con_DPrintf ("backup past 0\n");
 			return false;
 		}
-		midf = p1f + (p2f - p1f)*frac;
-		for (i=0 ; i<3 ; i++)
-			mid[i] = p1[i] + frac*(p2[i] - p1[i]);
+		midf = p1f + (p2f - p1f) * frac;
+		for (i = 0; i < 3; i++)
+			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 	}
 
 	trace->fraction = midf;
@@ -352,13 +322,12 @@ PM_PlayerTrace
 */
 trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 {
-	trace_t		trace, total;
-	vec3_t		offset;
-	vec3_t		start_l, end_l;
-	hull_t		*hull;
-	int		i;
-	physent_t	*pe;
-	vec3_t		mins, maxs;
+	vec3_t start_l, end_l, offset, mins, maxs;
+	trace_t trace, total;
+	physent_t *pe;
+	hull_t *hull;
+	int i;
+
 
 	// fill in a default trace
 	memset (&total, 0, sizeof(trace_t));
@@ -366,21 +335,23 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 	total.e.entnum = -1;
 	VectorCopy (end, total.endpos);
 
-	for (i=0 ; i< pmove.numphysent ; i++)
+	for (i = 0; i < pmove.numphysent; i++)
 	{
 		pe = &pmove.physents[i];
 		// get the clipping hull
 		if (pe->model)
+		{
 			hull = &pmove.physents[i].model->hulls[1];
+			VectorSubtract(hull->clip_mins, player_mins, offset);
+			VectorAdd(offset, pe->origin, offset);
+		}
 		else
 		{
 			VectorSubtract (pe->mins, player_maxs, mins);
 			VectorSubtract (pe->maxs, player_mins, maxs);
 			hull = PM_HullForBox (mins, maxs);
+			VectorCopy(pe->origin, offset);
 		}
-
-		// PM_HullForEntity (ent, mins, maxs, offset);
-		VectorCopy (pe->origin, offset);
 
 		VectorSubtract (start, offset, start_l);
 		VectorSubtract (end, offset, end_l);
@@ -389,10 +360,10 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 		memset (&trace, 0, sizeof(trace_t));
 		trace.fraction = 1;
 		trace.allsolid = true;
-		//		trace.startsolid = true;
+		//trace.startsolid = true;
 		VectorCopy (end, trace.endpos);
 
-		// trace a line through the apropriate clipping hull
+		// trace a line through the appropriate clipping hull
 		PM_RecursiveHullCheck (hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
 
 		if (trace.allsolid)
@@ -422,6 +393,7 @@ PM_TraceLine
 FIXME: merge with PM_PlayerTrace (PM_Move?)
 ================
 */
+#if 0
 trace_t PM_TraceLine (vec3_t start, vec3_t end)
 {
 	trace_t		trace, total;
@@ -437,10 +409,10 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 	total.e.entnum = -1;
 	VectorCopy (end, total.endpos);
 
-	for (i=0 ; i< pmove.numphysent ; i++)
+	for (i = 0; i < pmove.numphysent; i++)
 	{
 		pe = &pmove.physents[i];
-		// get the clipping hull
+	// get the clipping hull
 		if (pe->model)
 			hull = &pmove.physents[i].model->hulls[0];
 		else
@@ -456,7 +428,7 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 		memset (&trace, 0, sizeof(trace_t));
 		trace.fraction = 1;
 		trace.allsolid = true;
-		//		trace.startsolid = true;
+		//trace.startsolid = true;
 		VectorCopy (end, trace.endpos);
 
 		// trace a line through the apropriate clipping hull
@@ -468,8 +440,7 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 			trace.fraction = 0;
 
 		// did we clip the move?
-		if (trace.fraction < total.fraction)
-		{
+		if (trace.fraction < total.fraction) {
 			// fix trace up by the offset
 			VectorAdd (trace.endpos, offset, trace.endpos);
 			total = trace;
@@ -480,5 +451,4 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 
 	return total;
 }
-
-
+#endif

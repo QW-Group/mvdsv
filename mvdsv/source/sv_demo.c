@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.37 2006/03/13 16:53:16 vvd0 Exp $
+	$Id: sv_demo.c,v 1.38 2006/03/23 14:10:35 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -922,7 +922,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 		return NULL;
 	}
 
-	dst = (mvddest_t*) Q_Malloc(sizeof(mvddest_t));
+	dst = (mvddest_t*) Q_Malloc (sizeof(mvddest_t));
 
 	if (!sv_demoUseCache.value)
 	{
@@ -934,8 +934,8 @@ mvddest_t *SV_InitRecordFile (char *name)
 	{
 		dst->desttype = DEST_BUFFEREDFILE;
 		dst->file = file;
-		dst->maxcachesize = (int)sv_demoCacheSize.value; // 0x81000
-		dst->cache = (char *) Q_Malloc(dst->maxcachesize);
+		dst->maxcachesize = (int) sv_demoCacheSize.value; // 0x81000
+		dst->cache = (char *) Q_Malloc (dst->maxcachesize);
 	}
 
 	s = name + strlen(name);
@@ -976,7 +976,7 @@ mvddest_t *SV_InitStream(int socket)
 {
 	mvddest_t *dst;
 
-	dst = (mvddest_t *) Q_Malloc(sizeof(mvddest_t));
+	dst = (mvddest_t *) Q_Malloc (sizeof(mvddest_t));
 
 	dst->desttype = DEST_STREAM;
 	dst->socket = socket;
@@ -1695,7 +1695,7 @@ char *quote(char *str)
 	if (!*str)
 		return NULL;
 
-	s = out = (char *) Q_Malloc(strlen(str) * 2 + 1);
+	s = out = (char *) Q_Malloc (strlen(str) * 2 + 1);
 	while (*str)
 	{
 		if (!isdigit(*str) && !isalpha(*str))

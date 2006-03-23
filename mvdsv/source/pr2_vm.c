@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.11 2006/03/22 15:13:51 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.12 2006/03/23 14:10:35 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -348,9 +348,9 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	}
 	// create vitrual machine
 	if(vm->hInst)
-		qvm = (qvm_t  *)vm->hInst;
+		qvm = (qvm_t *)vm->hInst;
 	else
-		qvm = (qvm_t*) Q_Malloc( sizeof( qvm_t ) );
+		qvm = (qvm_t *) Q_Malloc (sizeof (qvm_t));
 
 	qvm->len_cs = header->instructionCount + 1;	//bad opcode padding.
 	qvm->len_ds = header->dataOffset + header->litLength + header->bssLength;
@@ -455,7 +455,7 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 	if ( vm )
 		VM_Unload(vm);
 
-	vm = (vm_t *) Q_Malloc( sizeof( vm_t ) );
+	vm = (vm_t *) Q_Malloc (sizeof (vm_t));
 
 
 

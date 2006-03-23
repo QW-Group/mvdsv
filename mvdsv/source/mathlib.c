@@ -16,12 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: mathlib.c,v 1.5 2006/01/05 14:59:14 disconn3ct Exp $
+	$Id: mathlib.c,v 1.6 2006/03/23 14:10:35 disconn3ct Exp $
 */
 // mathlib.c -- math primitives
 
 #include <math.h>
-
 #include "qwsvdef.h"
 
 

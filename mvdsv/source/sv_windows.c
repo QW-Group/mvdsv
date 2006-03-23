@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.12 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: sv_windows.c,v 1.13 2006/03/23 14:10:36 disconn3ct Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
@@ -298,7 +298,7 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 
 //		SendMessage(HEdit1, EM_LIMITTEXT, 1000, 0);
 		HEdit1_size = SendMessage(HEdit1, EM_GETLIMITTEXT, 0, 0) + 1;
-		HEdit1_buf = (char *) Q_Malloc(HEdit1_size);
+		HEdit1_buf = (char *) Q_Malloc (HEdit1_size);
 //Sys_Printf("%d\n", HEdit1_size);
 		break;
 
