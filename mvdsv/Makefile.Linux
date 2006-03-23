@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.25 2006/03/20 14:04:34 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.26 2006/03/23 14:14:37 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -32,7 +32,7 @@ endif
 LDFLAGS=-lm
 ifeq ($(UNAME),Linux)
 LDFLAGS+=-ldl
-STRIP=-strip mvdsv qwdtools
+STRIP=-strip --strip-unneeded --remove-section=.comment mvdsv qwdtools
 else
 ifeq ($(UNAME),SunOS)
 LDFLAGS+= -lsocket -lnsl
