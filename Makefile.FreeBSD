@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.23 2006/03/20 14:04:34 vvd0 Exp $
+#	$Id: Makefile.FreeBSD,v 1.24 2006/03/23 14:14:37 disconn3ct Exp $
 #
 
 CC=gcc
@@ -113,7 +113,7 @@ QWDTOOLS_OBJS = \
 		${CC} ${DO_CFLAGS} -DELF -x assembler-with-cpp -c $< -o $*.o
 		
 all:	mvdsv qwdtools
-		-strip mvdsv qwdtools
+		-strip --strip-unneeded --remove-section=.comment mvdsv qwdtools
 
 mvdsv:	${SV_OBJS} ${SV_AS_OBJS}
 		${CC} ${DO_CFLAGS} ${LDFLAGS} -o mvdsv ${SV_OBJS} ${SV_AS_OBJS}
