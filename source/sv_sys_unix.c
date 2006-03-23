@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.25 2006/03/22 21:04:15 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.26 2006/03/23 14:10:36 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -631,9 +631,6 @@ int main (int argc, char *argv[])
 	struct group	*gr;
 	char	*user_name, *group_name = NULL, *chroot_dir;
 	//Added by VVD }
-
-	struct timeval timeout;
-	fd_set	fdset;
 
 	argv0 = argv[0];
 	telnet_connected = 0;

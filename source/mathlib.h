@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: mathlib.h,v 1.6 2006/01/05 14:59:14 disconn3ct Exp $
+	$Id: mathlib.h,v 1.7 2006/03/23 14:10:35 disconn3ct Exp $
 */
 // mathlib.h
 #ifndef _MATHLIB_H_
@@ -42,6 +42,8 @@ struct mplane_s;
 
 extern vec3_t vec3_origin;
 
+#define DEG2RAD(a) (((a) * M_PI) / 180.0F)
+
 #define NANMASK (255<<23)
 #define IS_NAN(x) (((*(int *)&x)&NANMASK)==NANMASK)
 
@@ -65,6 +67,10 @@ void VectorScale (vec3_t in, vec_t scale, vec3_t out);
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
 float anglemod(float a);
+
+#define PlaneDiff(point, plane) (																			\
+	(((plane)->type < 3) ? (point)[(plane)->type] - (plane)->dist: DotProduct((point), (plane)->normal) - (plane)->dist) 	\
+)
 
 #define BOX_ON_PLANE_SIDE(emins, emaxs, p)	\
 	(((p)->type < 3)?						\

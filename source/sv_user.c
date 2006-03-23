@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.36 2006/03/22 19:47:35 disconn3ct Exp $
+	$Id: sv_user.c,v 1.37 2006/03/23 14:10:36 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -41,7 +41,11 @@ extern	vec3_t	player_mins;
 extern int	fp_messages, fp_persecond, fp_secondsdead;
 extern char	fp_msg[];
 extern cvar_t	pausable;
-extern cvar_t	sv_bunnyspeedcap; //bliP: 24/9
+extern cvar_t	pm_bunnyspeedcap;
+extern cvar_t	pm_ktjump;
+extern cvar_t	pm_slidefix;
+extern cvar_t	pm_airstep;
+extern cvar_t	pm_pground;
 extern double	sv_frametime;
 
 //bliP: init ->
@@ -739,7 +743,7 @@ static void SV_Begin_f (void)
 		SV_ClientPrintf(host_client, PRINT_HIGH, "Server is paused.\n");
 	}
 
-	//sv_client->lastservertimeupdate = -99; // update immediately
+	host_client->lastservertimeupdate = -99; // update immediately
 }
 
 //=============================================================================
@@ -1507,7 +1511,7 @@ void SV_TogglePause (const char *msg)
 		ClientReliableWrite_Begin (cl, svc_setpause, 2);
 		ClientReliableWrite_Byte (cl, sv.paused ? 1 : 0);
 
-		//cl->lastservertimeupdate = -99;	// force an update to be sent
+		cl->lastservertimeupdate = -99; // force an update to be sent
 	}
 }
 
@@ -1733,17 +1737,17 @@ Allow clients to change userinfo
 extern func_t UserInfo_Changed;
 
 char *shortinfotbl[] =
-    {
-        "name",
-        "team",
-        "skin",
-        "topcolor",
-        "bottomcolor",
-        //"*client",
-        //"*spectator",
-        //"*VIP",
-        NULL
-    };
+{
+	"name",
+	"team",
+	"skin",
+	"topcolor",
+	"bottomcolor",
+	//"*client",
+	//"*spectator",
+	//"*VIP",
+	NULL
+};
 
 static void SV_SetInfo_f (void)
 {
@@ -2226,7 +2230,7 @@ static void AddLinksToPmove ( areanode_t *node )
 		AddLinksToPmove ( node->children[1] );
 }
 
-/*int SV_PMTypeForClient (client_t *cl)
+int SV_PMTypeForClient (client_t *cl)
 {
 	if (cl->edict->v.movetype == MOVETYPE_NOCLIP) {
 		if (cl->extensions & Z_EXT_PM_TYPE_NEW)
@@ -2244,7 +2248,7 @@ static void AddLinksToPmove ( areanode_t *node )
 		return PM_DEAD;
 
 	return PM_NORMAL;
-}*/
+}
 
 /*
 ===========
@@ -2266,8 +2270,9 @@ SV_RunCmd
 */
 void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 {
-	int	i, n;
-	vec3_t	offset;
+	int i, n;
+	vec3_t originalvel, offset;
+	qboolean onground;
 	//bliP: 24/9 anti speed ->
 	int	tmp_time;
 
@@ -2321,11 +2326,9 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 		return;
 	}
 
-	sv_frametime = ucmd->msec * 0.001;
-
 	// copy humans' intentions to progs
 	sv_player->v.button0 = ucmd->buttons & 1;
-	sv_player->v.button2 = (ucmd->buttons & 2)>>1;
+	sv_player->v.button2 = (ucmd->buttons & 2) >>1;
 	sv_player->v.button1 = (ucmd->buttons & 4) >> 2;
 	if (ucmd->impulse)
 		sv_player->v.impulse = ucmd->impulse;
@@ -2342,8 +2345,7 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	if (!sv_player->v.fixangle)
 		VectorCopy (ucmd->angles, sv_player->v.v_angle);
 	
-	//
-	// angles
+	// model angles
 	// show 1/3 the pitch angle and all the roll angle
 	if (sv_player->v.health > 0)
 	{
@@ -2355,8 +2357,15 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 		sv_player->v.angles[ROLL] = 0;
 	}
 
+	sv_frametime = ucmd->msec * 0.001;
+	if (sv_frametime > 0.1)
+		sv_frametime = 0.1;
+
 	if (!host_client->spectator)
 	{
+		VectorCopy (sv_player->v.velocity, originalvel);
+		onground = (int) sv_player->v.flags & FL_ONGROUND;
+		
 		pr_global_struct->frametime = sv_frametime;
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -2367,6 +2376,13 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 #endif
 			PR_ExecuteProgram (pr_global_struct->PlayerPreThink);
 
+		if ( onground && originalvel[2] < 0 && sv_player->v.velocity[2] == 0 &&
+		originalvel[0] == sv_player->v.velocity[0] &&
+		originalvel[1] == sv_player->v.velocity[1] ) {
+			// don't let KTeams mess with physics
+			sv_player->v.velocity[2] = originalvel[2];
+		   }
+
 		SV_RunThink (sv_player);
 	}
 
@@ -2375,12 +2391,15 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	VectorAdd (sv_player->v.origin, offset, pmove.origin);
 	VectorCopy (sv_player->v.velocity, pmove.velocity);
 	VectorCopy (sv_player->v.v_angle, pmove.angles);
-	
-	pmove.spectator = host_client->spectator;
 	pmove.waterjumptime = sv_player->v.teleport_time;
 	pmove.cmd = *ucmd;
-	pmove.dead = sv_player->v.health <= 0;
-	pmove.oldbuttons = host_client->oldbuttons;
+	pmove.pm_type = SV_PMTypeForClient (host_client);
+	pmove.onground = ((int)sv_player->v.flags & FL_ONGROUND) != 0;
+	pmove.jump_held = host_client->jump_held;
+	
+	// let KTeams'/KTPro's "broken ankle" code work
+	if ((pmove.velocity[2] == -270) && (pmove.cmd.buttons & BUTTON_JUMP))
+		pmove.jump_held = true;
 
 	// build physent list
 	pmove.numphysent = 1;
@@ -2390,25 +2409,27 @@ void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
 	// fill in movevars
 	movevars.entgravity = host_client->entgravity;
 	movevars.maxspeed = host_client->maxspeed;
-	movevars.bunnyspeedcap = sv_bunnyspeedcap.value;
-
+	movevars.bunnyspeedcap = pm_bunnyspeedcap.value;
+	movevars.ktjump = pm_ktjump.value;
+	movevars.slidefix = (pm_slidefix.value != 0);
+	movevars.airstep = (pm_airstep.value != 0);
+	movevars.pground = (pm_pground.value != 0);
 	
 	// do the move
 	PM_PlayerMove ();
 
-	
 	// get player state back out of pmove
-	host_client->oldbuttons = pmove.oldbuttons;
+	host_client->jump_held = pmove.jump_held;
 	sv_player->v.teleport_time = pmove.waterjumptime;
-	sv_player->v.waterlevel = waterlevel;
-	sv_player->v.watertype = watertype;
-	if (onground != -1)
+	sv_player->v.waterlevel = pmove.waterlevel;
+	sv_player->v.watertype = pmove.watertype;
+	if (pmove.onground)
 	{
-		sv_player->v.flags = (int)sv_player->v.flags | FL_ONGROUND;
-		sv_player->v.groundentity = EDICT_TO_PROG(EDICT_NUM(pmove.physents[onground].info));
+		sv_player->v.flags = (int) sv_player->v.flags | FL_ONGROUND;
+		sv_player->v.groundentity = EDICT_TO_PROG(EDICT_NUM(pmove.physents[pmove.groundent].info));
+	} else {
+		sv_player->v.flags = (int) sv_player->v.flags & ~FL_ONGROUND;
 	}
-	else
-		sv_player->v.flags = (int)sv_player->v.flags & ~FL_ONGROUND;
 
 	VectorSubtract (pmove.origin, offset, sv_player->v.origin);
 	VectorCopy (pmove.velocity, sv_player->v.velocity);
@@ -2448,18 +2469,30 @@ Done after running a player command.
 */
 void SV_PostRunCmd(void)
 {
+	vec3_t originalvel;
+	qboolean onground;
 	// run post-think
 
 	if (!host_client->spectator)
 	{
+		onground = (int) sv_player->v.flags & FL_ONGROUND;
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		VectorCopy (sv_player->v.velocity, originalvel);
 #ifdef USE_PR2
 		if ( sv_vm )
 			PR2_GameClientPostThink(0);
 		else
 #endif
 			PR_ExecuteProgram (pr_global_struct->PlayerPostThink);
+
+		if ( onground && originalvel[2] < 0 && sv_player->v.velocity[2] == 0
+		&& originalvel[0] == sv_player->v.velocity[0]
+		&& originalvel[1] == sv_player->v.velocity[1] ) {
+			// don't let KTeams mess with physics
+			sv_player->v.velocity[2] = originalvel[2];
+		}
+
 		SV_RunNewmis ();
 	}
 	else if (SpectatorThink

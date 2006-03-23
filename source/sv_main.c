@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.45 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: sv_main.c,v 1.46 2006/03/23 14:10:36 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -173,13 +173,15 @@ qboolean GameStarted(void)
 /*
 ================
 SV_Shutdown
- 
+
 Quake calls this before calling Sys_Quit or Sys_Error
 ================
 */
 void SV_Shutdown (void)
 {
-	int		i;
+	int i;
+
+
 	Master_Shutdown ();
 	if (telnetport)
 		SV_Write_Log(TELNET_LOG, 1, "Server shutdown.\n");
@@ -200,16 +202,17 @@ void SV_Shutdown (void)
 /*
 ================
 SV_Error
- 
+
 Sends a datagram to all the clients informing them of the server crash,
 then exits
 ================
 */
 void SV_Error (char *error, ...)
 {
-	va_list		argptr;
-	static	char		string[1024];
-	static	qboolean inerror = false;
+	static qboolean inerror = false;
+	static char string[1024];
+	va_list argptr;
+
 
 	sv_error = true;
 
@@ -249,7 +252,7 @@ void SV_FreeDelayedPackets (client_t *cl) {
 /*
 ==================
 SV_FinalMessage
- 
+
 Used by SV_Error and SV_Quit_f to send a final message to all connected
 clients before the server goes down.  The messages are sent immediately,
 not just stuck on the outgoing message list, because the server is going
@@ -258,8 +261,8 @@ to totally exit after returning from this function.
 */
 void SV_FinalMessage (char *message)
 {
-	int			i;
-	client_t	*cl;
+	client_t *cl;
+	int i;
 
 	SZ_Clear (&net_message);
 	MSG_WriteByte (&net_message, svc_print);
@@ -278,7 +281,7 @@ void SV_FinalMessage (char *message)
 /*
 =====================
 SV_DropClient
- 
+
 Called when the player is totally leaving the server, either willingly
 or unwillingly.  This is NOT called if the entire server is quiting
 or crashing.
@@ -379,15 +382,15 @@ void SV_DropClient (client_t *drop)
 /*
 ===================
 SV_CalcPing
- 
+
 ===================
 */
 int SV_CalcPing (client_t *cl)
 {
-	float		ping;
-	int			i;
-	int			count;
-	register	client_frame_t *frame;
+	register client_frame_t *frame;
+	int count, i;
+	float ping;
+
 
 	//bliP: 999 ping for connecting players
 	if (cl->state != cs_spawned)
@@ -418,14 +421,14 @@ int SV_CalcPing (client_t *cl)
 /*
 ===================
 SV_FullClientUpdate
- 
+
 Writes all update values to a sizebuf
 ===================
 */
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
-	int		i;
-	char	info[MAX_INFO_STRING];
+	char info[MAX_INFO_STRING];
+	int i;
 
 	i = client - svs.clients;
 
@@ -459,7 +462,7 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 /*
 ===================
 SV_FullClientUpdateToClient
- 
+
 Writes all update values to a client's reliable stream
 ===================
 */
@@ -478,8 +481,9 @@ void SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 //Returns a unique userid in 1..<sv_maxuserid> range
 int SV_GenerateUserID (void)
 {
-	int i;
 	client_t *cl;
+	int i;
+
 
 	do {
 		svs.lastuserid++;
@@ -509,18 +513,18 @@ Responds with all the info that qplug or qspy can see
 This message can be up to around 5k with worst case string lengths.
 ================
 */
-#define STATUS_OLDSTYLE					0
-#define	STATUS_SERVERINFO				1
-#define	STATUS_PLAYERS					2
-#define	STATUS_SPECTATORS				4
+#define STATUS_OLDSTYLE			0
+#define	STATUS_SERVERINFO		1
+#define	STATUS_PLAYERS			2
+#define	STATUS_SPECTATORS		4
 #define	STATUS_SPECTATORS_AS_PLAYERS	8 //for ASE - change only frags: show as "S"
 
-void SVC_Status (void)
+static void SVC_Status (void)
 {
-	int		i, opt = 0;
-	client_t	*cl;
-	int		top, bottom, ping;
-	char		*name, *frags;
+	int top, bottom, ping, i, opt = 0;
+	char *name, *frags;
+	client_t *cl;
+
 
 	if (Cmd_Argc() > 1)
 		opt = Q_atoi(Cmd_Argv(1));
@@ -567,11 +571,11 @@ void SVC_Status (void)
 /*
 ===================
 SVC_LastScores
- 
+
 ===================
 */
 void SV_LastScores_f (void);
-void SVC_LastScores (void)
+static void SVC_LastScores (void)
 {
 	SV_BeginRedirect (RD_PACKET);
 	SV_LastScores_f ();
@@ -585,14 +589,14 @@ SVC_DemoListRegex
 ===================
 */
 void SV_DemoList_f (void);
-void SVC_DemoList (void)
+static void SVC_DemoList (void)
 {
 	SV_BeginRedirect (RD_PACKET);
 	SV_DemoList_f ();
 	SV_EndRedirect ();
 }
 void SV_DemoListRegex_f (void);
-void SVC_DemoListRegex (void)
+static void SVC_DemoListRegex (void)
 {
 	SV_BeginRedirect (RD_PACKET);
 	SV_DemoListRegex_f ();
@@ -602,14 +606,15 @@ void SVC_DemoListRegex (void)
 /*
 ===================
 SV_CheckLog
- 
+
 ===================
 */
 #define	LOG_HIGHWATER	(MAX_DATAGRAM - 128)
 #define	LOG_FLUSH		10*60
-void SV_CheckLog (void)
+static void SV_CheckLog (void)
 {
-	sizebuf_t	*sz;
+	sizebuf_t *sz;
+
 
 	sz = &svs.log[svs.logsequence&1];
 
@@ -631,17 +636,18 @@ void SV_CheckLog (void)
 /*
 ================
 SVC_Log
- 
+
 Responds with all the logged frags for ranking programs.
 If a sequence number is passed as a parameter and it is
 the same as the current sequence, an A2A_NACK will be returned
 instead of the data.
 ================
 */
-void SVC_Log (void)
+static void SVC_Log (void)
 {
-	int		seq;
-	char	data[MAX_DATAGRAM+64];
+	char data[MAX_DATAGRAM+64];
+	int seq;
+
 
 	if (Cmd_Argc() == 2)
 		seq = atoi(Cmd_Argv(1));
@@ -666,15 +672,13 @@ void SVC_Log (void)
 /*
 ================
 SVC_Ping
- 
+
 Just responds with an acknowledgement
 ================
 */
-void SVC_Ping (void)
+static void SVC_Ping (void)
 {
-	char	data;
-
-	data = A2A_ACK;
+	char data = A2A_ACK;
 
 	NET_SendPacket (1, &data, net_from);
 }
@@ -682,7 +686,7 @@ void SVC_Ping (void)
 /*
 =================
 SVC_GetChallenge
- 
+
 Returns a challenge number that can be used
 in a subsequent client_connect command.
 We do this to prevent denial of service attacks that
@@ -690,11 +694,10 @@ flood the server with invalid connection IPs.  With a
 challenge, they must give a valid IP address.
 =================
 */
-void SVC_GetChallenge (void)
+static void SVC_GetChallenge (void)
 {
-	int		i;
-	int		oldest;
-	int		oldestTime;
+	int oldestTime, oldest, i;
+
 
 	oldest = 0;
 	oldestTime = 0x7fffffff;
@@ -725,7 +728,7 @@ void SVC_GetChallenge (void)
 	                        svs.challenges[i].challenge);
 }
 
-qboolean ValidateUserInfo(char *userinfo)
+static qboolean ValidateUserInfo (char *userinfo)
 {
 	while (*userinfo)
 	{
@@ -743,7 +746,7 @@ qboolean ValidateUserInfo(char *userinfo)
 /*
 ==================
 SVC_DirectConnect
- 
+
 A connection request that did not come from the master
 ==================
 */
@@ -753,22 +756,17 @@ int SV_VIPbyPass (char *pass);
 #ifdef USE_PR2
 extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
 #endif
-void SVC_DirectConnect (void)
+extern char *shortinfotbl[];
+static void SVC_DirectConnect (void)
 {
-	char		userinfo[1024];
-	netadr_t	adr;
-	int		i;
-	client_t	*cl, *newcl;
-	edict_t		*ent;
-	int		edictnum;
-	char		*s, *key;
-	int		clients, spectators, vips;
-	qboolean	spectator;
-	int		qport;
-	int		version;
-	int		challenge;
-	qboolean	spass = false, vip;
-	extern char *shortinfotbl[];
+	int clients, spectators, vips, qport, version, challenge, i, edictnum;
+	qboolean spass = false, vip, spectator;
+	client_t *cl, *newcl;
+	char userinfo[1024];
+	char *s, *key;
+	netadr_t adr;
+	edict_t *ent;
+
 
 	version = atoi(Cmd_Argv(1));
 	if (version != PROTOCOL_VERSION)
@@ -976,6 +974,10 @@ void SVC_DirectConnect (void)
 	newcl->spectator = spectator;
 	newcl->vip = vip;
 
+	// extract extensions mask
+	newcl->extensions = atoi(Info_ValueForKey(newcl->userinfo, "*z_ext"));
+	Info_RemoveKey (newcl->userinfo, "*z_ext");
+
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
 	ent->free = false;
@@ -1051,7 +1053,7 @@ void SVC_DirectConnect (void)
 	newcl->sendinfo = true;
 }
 
-int char2int(int c)
+static int char2int (int c)
 {
 	if (c <= '9' && c >= '0')
 		return c - '0';
@@ -1078,10 +1080,10 @@ int char2int(int c)
  *	the 'final' error, but it doesn't make sense to solve the printing 
  *	delay with more complex code.
  */
-qboolean rcon_bandlim()
+static qboolean rcon_bandlim (void)
 {
-	static double	lticks = 0;
-	static int	lpackets = 0;
+	static double lticks = 0;
+	static int lpackets = 0;
 
 	/*
 	 * Return ok status if feature disabled or argument out of
@@ -1116,10 +1118,10 @@ qboolean rcon_bandlim()
 //bliP: master rcon/logging ->
 int Rcon_Validate (char *client_string, char *password)
 {
-	//	char	*sha1;
-	int		i;
-	time_t	server_time, client_time = 0;
-	double	difftime_server_client;
+	time_t server_time, client_time = 0;
+	double difftime_server_client;
+	int i;
+
 
 	if (rcon_bandlim())
 		return 0;
@@ -1172,12 +1174,13 @@ int Rcon_Validate (char *client_string, char *password)
 
 int Master_Rcon_Validate (void)
 {
-	char	*client_string;
-	int	i, client_string_len = Cmd_Argc() + 1;
+	int i, client_string_len = Cmd_Argc() + 1;
+	char *client_string;
+
 
 	for (i = 0; i < Cmd_Argc(); ++i)
 		client_string_len += strlen(Cmd_Argv(i));
-	client_string = (char *) Q_Malloc(client_string_len);
+	client_string = (char *) Q_Malloc (client_string_len);
 	*client_string = 0;
 	for (i = 0; i < Cmd_Argc(); ++i)
 	{
@@ -1194,13 +1197,13 @@ int Master_Rcon_Validate (void)
 /*
 ===============
 SVC_RemoteCommand
- 
+
 A client issued an rcon command.
 Shift down the remaining args
 Redirect all printfs
 ===============
 */
-void SVC_RemoteCommand (char *client_string)
+static void SVC_RemoteCommand (char *client_string)
 {
 	int		i;
 	char		str[1024];
@@ -1334,7 +1337,7 @@ void SVC_RemoteCommand (char *client_string)
 }
 //<-
 
-void SVC_IP(void)
+static void SVC_IP(void)
 {
 	int num;
 	client_t *client;
@@ -1371,7 +1374,7 @@ void SVC_IP(void)
 /*
 =================
 SV_ConnectionlessPacket
- 
+
 A connectionless packet has four leading 0xff
 characters to distinguish it from a game channel.
 Clients that are in the game can still send
@@ -1379,7 +1382,7 @@ connectionless packets.
 =================
 */
 
-void SV_ConnectionlessPacket (void)
+static void SV_ConnectionlessPacket (void)
 {
 	char	*s;
 	char	*c;
@@ -1471,14 +1474,14 @@ If 0, then only addresses matching the list will be allowed.  This lets you easi
 #define	MAX_IPFILTERS	1024
 
 ipfilter_t	ipfilters[MAX_IPFILTERS];
-int			numipfilters;
+int		numipfilters;
 
 ipfilter_t	ipvip[MAX_IPFILTERS];
-int			numipvips;
+int		numipvips;
 
 //bliP: cuff, mute ->
 penfilter_t	penfilters[MAX_PENFILTERS];
-int			numpenfilters;
+int		numpenfilters;
 //<-
 
 cvar_t	filterban = {"filterban", "1"};
@@ -1535,7 +1538,7 @@ qboolean StringToFilter (char *s, ipfilter_t *f)
 SV_AddIPVIP_f
 =================
 */
-void SV_AddIPVIP_f (void)
+static void SV_AddIPVIP_f (void)
 {
 	int		i, l;
 	ipfilter_t f;
@@ -1573,7 +1576,7 @@ void SV_AddIPVIP_f (void)
 SV_RemoveIPVIP_f
 =================
 */
-void SV_RemoveIPVIP_f (void)
+static void SV_RemoveIPVIP_f (void)
 {
 	ipfilter_t	f;
 	int		i, j;
@@ -1601,7 +1604,7 @@ void SV_RemoveIPVIP_f (void)
 SV_ListIP_f
 =================
 */
-void SV_ListIPVIP_f (void)
+static void SV_ListIPVIP_f (void)
 {
 	int		i;
 	byte	b[4];
@@ -1619,7 +1622,7 @@ void SV_ListIPVIP_f (void)
 SV_WriteIPVIP_f
 =================
 */
-void SV_WriteIPVIP_f (void)
+static void SV_WriteIPVIP_f (void)
 {
 	FILE	*f;
 	char	name[MAX_OSPATH];
@@ -1652,7 +1655,7 @@ void SV_WriteIPVIP_f (void)
 SV_AddIP_f
 =================
 */
-void SV_AddIP_f (void)
+static void SV_AddIP_f (void)
 {
 	int		i;
 	ipfilter_t f;
@@ -1685,7 +1688,7 @@ void SV_AddIP_f (void)
 SV_RemoveIP_f
 =================
 */
-void SV_RemoveIP_f (void)
+static void SV_RemoveIP_f (void)
 {
 	ipfilter_t	f;
 	int			i, j;
@@ -1714,7 +1717,7 @@ void SV_RemoveIP_f (void)
 SV_ListIP_f
 =================
 */
-void SV_ListIP_f (void)
+static void SV_ListIP_f (void)
 {
 	int		i;
 	byte	b[4];
@@ -1732,7 +1735,7 @@ void SV_ListIP_f (void)
 SV_WriteIP_f
 =================
 */
-void SV_WriteIP_f (void)
+static void SV_WriteIP_f (void)
 {
 	FILE	*f;
 	char	name[MAX_OSPATH];
@@ -1835,7 +1838,7 @@ int SV_VIPbyPass (char *pass)
 	return 0;
 }
 
-char *DecodeArgs(char *args)
+static char *DecodeArgs(char *args)
 {
 	static char string[1024];
 	char *p, key[32], *s, *value, ch;
@@ -1944,7 +1947,7 @@ void SV_RemoveIPFilter (int i)
 	numpenfilters--;
 }
 
-void SV_CleanIPList (void)
+static void SV_CleanIPList (void)
 {
 	int     i;
 
@@ -2030,7 +2033,7 @@ double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 SV_ReadPackets
 =================
 */
-void SV_ReadPackets (void)
+static void SV_ReadPackets (void)
 {
 	client_t *cl;
 	int qport;
@@ -2130,7 +2133,7 @@ void SV_ReadPackets (void)
 /*
 ==================
 SV_CheckTimeouts
- 
+
 If a packet has not been received from a client in timeout.value
 seconds, drop the conneciton.
  
@@ -2139,12 +2142,12 @@ for a few seconds to make sure any final reliable message gets resent
 if necessary
 ==================
 */
-void SV_CheckTimeouts (void)
+static void SV_CheckTimeouts (void)
 {
-	int		i;
-	client_t	*cl;
-	float	droptime;
-	int	nclients;
+	int i, nclients;
+	float droptime;
+	client_t *cl;
+
 
 	droptime = realtime - timeout.value;
 	nclients = 0;
@@ -2184,11 +2187,11 @@ void SV_CheckTimeouts (void)
 /*
 ===================
 SV_GetConsoleCommands
- 
+
 Add them exactly as if they had been typed at the console
 ===================
 */
-void SV_GetConsoleCommands (void)
+static void SV_GetConsoleCommands (void)
 {
 	char	*cmd;
 
@@ -2236,15 +2239,15 @@ int SV_BoundRate (qboolean dl, int rate)
 /*
 ===================
 SV_CheckVars
- 
+
 ===================
 */
 
-void SV_CheckVars (void)
+static void SV_CheckVars (void)
 {
 	static char pw[MAX_INFO_STRING]="", spw[MAX_INFO_STRING]="", vspw[MAX_INFO_STRING]="";
 	static float old_maxrate = 0, old_maxdlrate = 0;
-	int			v;
+	int v;
 
 	// check password and spectator_password
 	if (strcmp(password.string, pw) ||
@@ -2304,14 +2307,15 @@ void SV_CheckVars (void)
 /*
 ==================
 SV_Frame
- 
+
 ==================
 */
 void SV_Map (qboolean now);
 void SV_Frame (double time)
 {
-	static double	start, end;
-	double	demo_start, demo_end;
+	static double start, end;
+	double demo_start, demo_end;
+
 
 	start = Sys_DoubleTime ();
 	svs.stats.idle += start - end;
@@ -2402,8 +2406,13 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_wateraccelerate;
 	extern	cvar_t	sv_friction;
 	extern	cvar_t	sv_waterfriction;
-	extern	cvar_t	sv_bunnyspeedcap;
 	extern	cvar_t	sv_nailhack;
+
+	//extern	cvar_t	pm_airstep;
+	//extern	cvar_t	pm_pground;
+	//extern	cvar_t	pm_slidefix;
+	extern	cvar_t	pm_ktjump;
+	//extern	cvar_t	pm_bunnyspeedcap;
 	packet_t *packet_freeblock; // initialise delayed packet free block
 
 
@@ -2435,7 +2444,7 @@ void SV_InitLocal (void)
 
 	for (i = 0, len = 1; i < com_argc; i++)
 		len += strlen(com_argv[i]) + 1;
-	sys_command_line.string = (char *)Q_Malloc(len);
+	sys_command_line.string = (char *) Q_Malloc (len);
 	sys_command_line.string[0] = 0;
 	for (i = 0; i < com_argc; i++)
 	{
@@ -2486,8 +2495,13 @@ void SV_InitLocal (void)
 	Cvar_RegisterVariable (&sv_airaccelerate);
 	Cvar_RegisterVariable (&sv_wateraccelerate);
 	Cvar_RegisterVariable (&sv_friction);
-	Cvar_RegisterVariable (&sv_bunnyspeedcap);
 	Cvar_RegisterVariable (&sv_waterfriction);
+	
+	//Cvar_RegisterVariable (&pm_bunnyspeedcap);
+	Cvar_RegisterVariable (&pm_ktjump);
+	//Cvar_RegisterVariable (&pm_slidefix);
+	//Cvar_RegisterVariable (&pm_airstep);
+	//Cvar_RegisterVariable (&pm_pground);
 
 	Cvar_RegisterVariable (&filterban);
 
@@ -2547,7 +2561,7 @@ void SV_InitLocal (void)
 	Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*version", QW_VERSION, MAX_SERVERINFO_STRING);
 	//Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " QWE_VERSION, MAX_SERVERINFO_STRING);
-	//Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
+	Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
 
 	// init fraglog stuff
 	svs.logsequence = 1;
@@ -2561,7 +2575,7 @@ void SV_InitLocal (void)
 	svs.log[1].cursize = 0;
 	svs.log[1].allowoverflow = true;
 
-	packet_freeblock = Hunk_AllocName(MAX_DELAYED_PACKETS * sizeof(packet_t), "delayed_packets");
+	packet_freeblock = Hunk_AllocName (MAX_DELAYED_PACKETS * sizeof(packet_t), "delayed_packets");
 
 	for (i = 0; i < MAX_DELAYED_PACKETS; i++) {
 		SZ_Init (&packet_freeblock[i].msg, packet_freeblock[i].buf, sizeof(packet_freeblock[i].buf));
@@ -2577,14 +2591,14 @@ void SV_InitLocal (void)
 /*
 =================
 SV_ExtractFromUserinfo
- 
+
 Pull specific info from a newly changed userinfo string
 into a more C freindly form.
 =================
 */
 // Added by VVD {
 // ktpro crash if absolute value of userinfo keys "ls" or/and "lw" is to large
-void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qboolean warning_msg)
+static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qboolean warning_msg)
 {
 	if (warning_msg)
 		SV_ClientPrintf (cl, PRINT_HIGH, "WARNING: You can't set setinfo %s %s %i.\n",
@@ -2596,7 +2610,7 @@ void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qboolean warnin
 	MSG_WriteString (&cl->netchan.message, va("setinfo \"%s\" \"%i\"\n", key, limit));
 }
 
-void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
+static void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
 {
 	char *value_c = Info_ValueForKey (cl->userinfo, key);
 	int value = Q_atoi(value_c);
@@ -2806,7 +2820,7 @@ SV_InitNet
 ====================
 */
 void SetWindowText_(char*);
-void SV_InitNet (void)
+static void SV_InitNet (void)
 {
 	int	p;
 
@@ -3115,9 +3129,9 @@ Q_redtext
 returns extended quake names
 ==================
 */
-char *Q_redtext(unsigned char *str)
+char *Q_redtext (unsigned char *str)
 {
-	unsigned char	*i;
+	unsigned char *i;
 	for (i = str; *i; i++)
 		if (*i > 32 && *i < 128)
 			*i |= 128;
@@ -3131,9 +3145,9 @@ Q_yelltext
 returns extended quake names (yellow numbers)
 ==================
 */
-char *Q_yelltext(unsigned char *str)
+char *Q_yelltext (unsigned char *str)
 {
-	unsigned char	*i;
+	unsigned char *i;
 	for (i = str; *i; i++)
 	{
 		if (*i >= '0' && *i <= '9')

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.19 2006/03/22 20:33:29 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.20 2006/03/23 14:10:36 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -589,21 +589,6 @@ void Sys_Init (void)
 	Sys_InitDoubleTime ();
 }
 
-/*
-int NET_Sleep(double sec)
-{
-	struct timeval timeout;
-	fd_set	fdset;
-
-	FD_ZERO(&fdset);
-	FD_SET(net_socket, &fdset);
-
-	timeout.tv_sec = (long) sec;
-	timeout.tv_usec = (sec - floor(sec))*1000000L;
-	//Sys_Printf("%lf, %ld %ld\n", sec, timeout.tv_sec, timeout.tv_usec);
-	return select(net_socket+1, &fdset, NULL, NULL, &timeout);
-}
-*/
 void NET_Sleep (int msec)
 {
 	struct timeval timeout;
@@ -673,10 +658,6 @@ int main (int argc, char **argv)
 	quakeparms_t	parms;
 	double		newtime, time, oldtime;
 	static	char	cwd[1024];
-
-	struct timeval	timeout;
-	fd_set		fdset;
-
 	int		t;
 	int		sleep_msec;
 
@@ -797,9 +778,6 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	static quakeparms_t	parms;
 	static double		newtime, time, oldtime;
 	static char		cwd[1024];
-	static struct		timeval	timeout;
-	static fd_set		fdset;
-	static int		timeout_tv_usec;
 	register int		sleep_msec;
 
 	//Added by VVD {
@@ -811,7 +789,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	if (_argv[0][0] == '"')
 	{
 		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++);
-		argv0 = (char *) Q_Malloc(j);
+		argv0 = (char *) Q_Malloc (j);
 		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++)
 			argv0[j - 1] = _argv[0][j];
 		argv0[j] = 0;
@@ -889,8 +867,6 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	// main loop
 	//
 	oldtime = Sys_DoubleTime () - 0.1;
-
-	timeout_tv_usec = 0;
 
 	while(1)
 	{

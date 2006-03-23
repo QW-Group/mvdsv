@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.10 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: qwsvdef.h,v 1.11 2006/03/23 14:10:35 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <setjmp.h>
 #include <ctype.h>
+#include <assert.h>
 
 //#include "bothdefs.h" - included in common.h
 

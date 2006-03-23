@@ -1,46 +1,47 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: sv_ents.c,v 1.8 2005/12/24 22:40:39 disconn3ct Exp $
+
+	$Id: sv_ents.c,v 1.9 2006/03/23 14:10:36 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 
 /*
 =============================================================================
- 
+
 The PVS must include a small area around the client to allow head bobbing
 or other small motion on the client side.  Otherwise, a bob might cause an
 entity that should be visible to not show up, especially when the bob
 crosses a waterline.
- 
+
 =============================================================================
 */
 
-int		fatbytes;
-byte	fatpvs[MAX_MAP_LEAFS/8];
+static int fatbytes;
+static byte fatpvs[MAX_MAP_LEAFS/8];
 
-void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
+static void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
 {
-	int		i;
-	byte	*pvs;
-	mplane_t	*plane;
-	float	d;
+	mplane_t *plane;
+	byte *pvs;
+	float d;
+	int i;
+
 
 	while (1)
 	{
@@ -73,14 +74,15 @@ void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
 /*
 =============
 SV_FatPVS
- 
+
 Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
 given point.
 =============
 */
-byte *SV_FatPVS (vec3_t org, qboolean spectator_vis)
+static byte *SV_FatPVS (vec3_t org, qboolean spectator_vis)
 {
 	extern spec_worldmodel_t specworld;
+
 
 	fatbytes = (sv.worldmodel->numleafs+31)>>3;
 	memset (fatpvs, 0, fatbytes);
@@ -95,17 +97,17 @@ byte *SV_FatPVS (vec3_t org, qboolean spectator_vis)
 
 // because there can be a lot of nails, there is a special
 // network protocol for them
-#define	MAX_NAILS	32
-edict_t	*nails[MAX_NAILS];
-int		numnails;
-int		nailcount = 0;
+#define MAX_NAILS 32
+static edict_t *nails[MAX_NAILS];
+static int numnails;
+static int nailcount = 0;
 
-extern	int	sv_nailmodel, sv_supernailmodel, sv_playermodel;
+extern	int sv_nailmodel, sv_supernailmodel, sv_playermodel;
 
 cvar_t	sv_nailhack	= {"sv_nailhack", "1"};
 
 
-qboolean SV_AddNailUpdate (edict_t *ent)
+static qboolean SV_AddNailUpdate (edict_t *ent)
 {
 	if (sv_nailhack.value)
 		return false;
@@ -120,12 +122,12 @@ qboolean SV_AddNailUpdate (edict_t *ent)
 	return true;
 }
 
-void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
+static void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 {
-	byte bits[6];	// [48 bits] xyzpy 12 12 12 4 8
-	int n, i;
+	int x, y, z, p, yaw, n, i;
+	byte bits[6]; // [48 bits] xyzpy 12 12 12 4 8
 	edict_t *ent;
-	int x, y, z, p, yaw;
+
 
 	if (!numnails)
 		return;
@@ -175,15 +177,15 @@ void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
 /*
 ==================
 SV_WriteDelta
- 
+
 Writes part of a packetentities message.
 Can delta from either a baseline or a previous packet_entity
 ==================
 */
-void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force)
+static void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force)
 {
-	int		bits;
-	int		i;
+	int bits, i;
+
 
 	// send an update
 	bits = 0;
@@ -270,19 +272,18 @@ void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qb
 /*
 =============
 SV_EmitPacketEntities
- 
+
 Writes a delta update of a packet_entities_t to the message.
- 
+
 =============
 */
-void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
+static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 {
-	edict_t	*ent;
+	int oldindex, newindex, oldnum, newnum, oldmax;
 	client_frame_t	*fromframe;
 	packet_entities_t *from;
-	int		oldindex, newindex;
-	int		oldnum, newnum;
-	int		oldmax;
+	edict_t	*ent;
+
 
 	// this is the frame that we are going to delta update from
 	if (client->delta_sequence != -1)
@@ -362,25 +363,26 @@ SV_WritePlayersToClient
 #define DF_SKINNUM	(1<<7)
 #define DF_DEAD		(1<<8)
 #define DF_GIB		(1<<9)
-#define DF_WEAPONFRAME (1<<10)
+#define DF_WEAPONFRAME	(1<<10)
 #define DF_MODEL	(1<<11)
 
 #define TruePointContents(p) PM_HullPointContents(&sv.worldmodel->hulls[0], 0, p)
 
 #define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
 
-static qboolean		disable_updates;	// disables sending entities to the client
+static qboolean disable_updates; // disables sending entities to the client
 
-void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizebuf_t *msg)
+
+int SV_PMTypeForClient (client_t *cl);
+static void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizebuf_t *msg)
 {
-	int			i, j;
-	client_t	*cl;
-	edict_t		*ent;
-	int			msec;
-	usercmd_t	cmd;
-	int			pflags;
+	int msec, pflags, pm_type = 0, pm_code = 0, i, j;
 	demo_frame_t *demo_frame;
 	demo_client_t *dcl;
+	usercmd_t cmd;
+	client_t *cl;
+	edict_t *ent;
+
 
 	demo_frame = &demo.frames[demo.parsecount&DEMO_FRAMES_MASK];
 
@@ -480,6 +482,44 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 				pflags |= PF_WEAPONFRAME;
 		}
 
+		// Z_EXT_PM_TYPE protocol extension
+		// encode pm_type and jump_held into pm_code
+		pm_type = SV_PMTypeForClient (cl);
+		switch (pm_type)
+		{
+			case PM_DEAD:
+				pm_code = PMC_NORMAL; // plus PF_DEAD
+				break;
+			case PM_NORMAL:
+				pm_code = PMC_NORMAL;
+				if (cl->jump_held)
+					pm_code = PMC_NORMAL_JUMP_HELD;
+				break;
+			case PM_OLD_SPECTATOR:
+				pm_code = PMC_OLD_SPECTATOR;
+				break;
+			case PM_SPECTATOR:
+				pm_code = PMC_SPECTATOR;
+				break;
+			case PM_FLY:
+				pm_code = PMC_FLY;
+				break;
+			case PM_NONE:
+				pm_code = PMC_NONE;
+				break;
+			case PM_FREEZE:
+				pm_code = PMC_FREEZE;
+				break;
+			default:
+				assert (false);
+		}
+
+		pflags |= pm_code << PF_PMC_SHIFT;
+
+		// Z_EXT_PF_ONGROUND protocol extension
+		if ((int)ent->v.flags & FL_ONGROUND)
+			pflags |= PF_ONGROUND;
+
 		if (client->spec_track && client->spec_track - 1 == j &&
 		        ent->v.weaponframe)
 			pflags |= PF_WEAPONFRAME;
@@ -540,7 +580,7 @@ void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizeb
 /*
 =============
 SV_WriteEntitiesToClient
- 
+
 Encodes the current state of the world as
 a svc_packetentities messages and possibly
 a svc_nails message and
@@ -550,17 +590,16 @@ svc_playerinfo messages
 
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
 {
-	int		e, i, max_packet_entities = MAX_PACKET_ENTITIES;
-	byte	*pvs;
-	vec3_t	org;
-	edict_t	*ent;
-	packet_entities_t	*pack;
+	int e, i, max_packet_entities = MAX_PACKET_ENTITIES;
+	packet_entities_t *pack;
+	client_frame_t *frame;
+	entity_state_t *state;
 	edict_t	*clent;
-	client_frame_t	*frame;
-	entity_state_t	*state;
-	client_t	*cl;
-	extern	cvar_t	sv_demoNoVis;
-	//	int		max_edicts;
+	client_t *cl;
+	edict_t *ent;
+	vec3_t org;
+	byte *pvs;
+
 
 	// this is the frame we are creating
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];

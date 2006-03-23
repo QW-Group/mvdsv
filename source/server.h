@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.26 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: server.h,v 1.27 2006/03/23 14:10:35 disconn3ct Exp $
 */
 // server.h
 
@@ -137,6 +137,7 @@ typedef struct client_s
 {
 	sv_client_state_t	state;
 
+	int		extensions;			// what ZQuake extensions the client supports
 	int		spectator;			// non-interactive
 	int		vip;
 
@@ -154,7 +155,7 @@ typedef struct client_s
 
 	usercmd_t	lastcmd;			// for filling in big drops and partial predictions
 	double		localtime;			// of last message
-	int		oldbuttons;
+	qboolean	jump_held;
 
 	float		maxspeed;			// localized maxspeed
 	float		entgravity;			// localized ent gravity
@@ -195,6 +196,7 @@ typedef struct client_s
 	
 	int		stats[MAX_CL_STATS];
 
+	double		lastservertimeupdate;		// last realtime we sent STAT_TIME to the client
 
 	client_frame_t	frames[UPDATE_BACKUP];		// updates can be deltad from here
 
@@ -532,7 +534,6 @@ void SV_Shutdown (void);
 void SV_Frame (double time);
 void SV_FinalMessage (char *message);
 void SV_DropClient (client_t *drop);
-void SV_InitLocal (void);
 
 int SV_CalcPing (client_t *cl);
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
@@ -562,7 +563,6 @@ void SV_RemoveIPFilter (int i);
 //static void SV_IPCopy (byte *dest, byte *src);
 void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
 double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type);
-void SV_CleanIPList (void);
 
 qboolean SV_FilterPacket (void);
 void SV_SendBan (void);

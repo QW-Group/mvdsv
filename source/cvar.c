@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.9 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: cvar.c,v 1.10 2006/03/23 14:10:35 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -352,7 +352,7 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v = Cvar_FindVar(name);
 	if (v)
 		return v;
-	v = (cvar_t *) Q_Malloc(sizeof(cvar_t));
+	v = (cvar_t *) Q_Malloc (sizeof(cvar_t));
 	// Cvar doesn't exist, so we create it
 	v->next = cvar_vars;
 	cvar_vars = v;
@@ -361,7 +361,7 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v->hash_next = cvar_hash[key];
 	cvar_hash[key] = v;
 
-	v->name = (char *) Q_Malloc(strlen(name)+1);
+	v->name = (char *) Q_Malloc (strlen(name)+1);
 	strlcpy (v->name, name, strlen(name) + 1);
 	v->string = (char *) Q_Malloc (strlen(string)+1);
 	strlcpy (v->string, string, strlen(string) + 1);

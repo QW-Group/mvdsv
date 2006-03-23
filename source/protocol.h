@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.7 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: protocol.h,v 1.8 2006/03/23 14:10:35 disconn3ct Exp $
 */
 // protocol.h -- communications protocols
 #ifndef _PROTOCOL_H_
@@ -280,9 +280,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define Z_EXT_PF_ONGROUND	(1<<6)	// server: PF_ONGROUND is valid for all svc_playerinfo
 
 // what our server supports
-#define SERVER_EXTENSIONS (Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|	\
-		Z_EXT_VIEWHEIGHT|Z_EXT_SERVERTIME|Z_EXT_PITCHLIMITS|	\
-		Z_EXT_JOIN_OBSERVE|Z_EXT_PF_ONGROUND)
+#define SERVER_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME|Z_EXT_PF_ONGROUND)
 
 
 /*
@@ -345,6 +343,11 @@ typedef struct usercmd_s
 	byte	buttons;
 	byte	impulse;
 } usercmd_t;
+
+// usercmd button bits
+#define BUTTON_ATTACK	(1 << 0)
+#define BUTTON_JUMP	(1 << 1)
+#define BUTTON_USE	(1 << 2)
 
 #endif /* _PROTOCOL_H_ */
 
