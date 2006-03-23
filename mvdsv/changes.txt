@@ -1,8 +1,15 @@
 
-$Id: changes.txt,v 1.63 2006/03/22 19:50:31 disconn3ct Exp $
+$Id: changes.txt,v 1.64 2006/03/23 22:45:57 disconn3ct Exp $
 
 ----
-MVDSV v0.19.12-CVS build 22?? (2006.03.??)
+MVDSV v0.19.13-CVS build 22?? (2006.03.??)
+[server]
+- ZQuake's pmove code (by disconnect)
+- some ZQUake's Protocol Extensions: PM_TYPE, PM_TYPE_NEW, SERVERTIME, PF_ONGROUND (by disconnect)
+
+
+----
+MVDSV v0.19.12-CVS build 2283 (2006.03.23)
 - bugfix from 0.179b: SunOS on SPARC-64 didn't determine big endian
 (Thanks to Krok)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
