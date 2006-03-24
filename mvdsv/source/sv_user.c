@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.37 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_user.c,v 1.38 2006/03/24 22:18:56 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1388,7 +1388,19 @@ static void SV_Say (qboolean team)
 			}
 			else
 			{
-				if (strcmp(host_client->team, client->team) || client->spectator)
+				if (sv_vm)
+				{
+					if (client->spectator)
+					{
+						if(client->spec_track <= 0
+						   || strcmp(host_client->team, svs.clients[client->spec_track - 1].team)
+						  )
+						continue;	// on different teams, spec no track player or track player in different team
+					}
+					else if (strcmp(host_client->team, client->team))
+						continue;	// on different teams
+				}
+				else if (strcmp(host_client->team, client->team) || client->spectator)
 					continue;	// on different teams
 			}
 		}
