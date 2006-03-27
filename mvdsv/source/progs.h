@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.9 2006/01/05 15:02:25 disconn3ct Exp $
+	$Id: progs.h,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "pr_comp.h"			// defs shared with qcc
@@ -35,7 +35,7 @@ typedef union eval_s
 #define	MAX_ENT_LEAFS	16
 typedef struct edict_s
 {
-	qboolean	free;
+	qbool		free;
 	link_t		area;			// linked to a division node or leaf
 
 	int		num_leafs;
@@ -130,7 +130,7 @@ extern	int		pr_numbuiltins;
 
 extern	int		pr_argc;
 
-extern	qboolean	pr_trace;
+extern	qbool	pr_trace;
 extern	dfunction_t	*pr_xfunction;
 extern	int		pr_xstatement;
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.21 2006/03/27 16:18:16 vvd0 Exp $
+	$Id: sv_send.c,v 1.22 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -290,7 +290,7 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 			if ((fraglog = parse_mod_string(string2)))
 			{
 				SV_Write_Log(MOD_FRAG_LOG, 1, fraglog);
-				Q_Free(fraglog);
+				Q_free(fraglog);
 			}
 			string2[0] = 0;
 		}
@@ -340,9 +340,9 @@ void SV_Multicast (vec3_t origin, int to)
 	client_t	*client;
 	byte		*mask;
 	mleaf_t		*leaf;
-	int			leafnum;
-	int			j;
-	qboolean	reliable;
+	int		leafnum;
+	int		j;
+	qbool		reliable;
 	vec3_t		org;
 
 	leaf = Mod_PointInLeaf (origin, sv.worldmodel);
@@ -448,13 +448,13 @@ Larger attenuations will drop off.  (max 4 attenuation)
 void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
                     float attenuation)
 {
-	int         sound_num;
-	int			field_mask;
-	int			i;
-	int			ent;
-	vec3_t		origin;
-	qboolean	use_phs;
-	qboolean	reliable = false;
+	int	sound_num;
+	int	field_mask;
+	int	i;
+	int	ent;
+	vec3_t	origin;
+	qbool	use_phs;
+	qbool	reliable = false;
 
 	if (volume < 0 || volume > 255)
 		SV_Error ("SV_StartSound: volume = %i", volume);

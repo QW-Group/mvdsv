@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.13 2006/03/21 15:23:47 vvd0 Exp $
+	$Id: cmd.c,v 1.14 2006/03/27 22:54:38 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -153,15 +153,15 @@ void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text)
 Cbuf_Execute
 ============
 */
-qboolean SV_Check_ktpro(void);
+qbool SV_Check_ktpro(void);
 void Cbuf_ExecuteEx (cbuf_t *cbuf)
 {
-	int		i;
+	int	i;
 	char	*text;
 	char	line[1024];
-	int		quotes;
-	int		cursize;
-	qboolean semicolon = false;
+	int	quotes;
+	int	cursize;
+	qbool	semicolon = false;
 
 	cbuf_current = cbuf;
 
@@ -258,7 +258,7 @@ void Cmd_StuffCmds_f (void)
 	if (!s)
 		return;
 
-	text = (char *) Q_Malloc (s+1);
+	text = (char *) Q_malloc (s+1);
 	text[0] = 0;
 	for (i = 1; i < com_argc; i++)
 	{
@@ -268,7 +268,7 @@ void Cmd_StuffCmds_f (void)
 	}
 
 	// pull out the commands
-	build = (char *) Q_Malloc (s+1);
+	build = (char *) Q_malloc (s+1);
 	build[0] = 0;
 
 	for (i=0 ; i<s-1 ; i++)
@@ -293,8 +293,8 @@ void Cmd_StuffCmds_f (void)
 	if (build[0])
 		Cbuf_InsertText (build);
 
-	Q_Free (text);
-	Q_Free (build);
+	Q_free (text);
+	Q_free (build);
 }
 
 
@@ -396,7 +396,7 @@ char *CopyString (char *in)
 {
 	char	*out;
 
-	out = (char *) Q_Malloc (strlen(in)+1);
+	out = (char *) Q_malloc (strlen(in)+1);
 	strlcpy (out, in, strlen(in) + 1);
 	return out;
 }
@@ -446,14 +446,14 @@ void Cmd_Alias_f (void)
 	{
 		if (!strcasecmp(a->name, s))
 		{
-			Q_Free (a->value);
+			Q_free (a->value);
 			break;
 		}
 	}
 
 	if (!a)
 	{
-		a = (cmd_alias_t*) Q_Malloc (sizeof(cmd_alias_t));
+		a = (cmd_alias_t*) Q_malloc (sizeof(cmd_alias_t));
 		a->next = cmd_alias;
 		cmd_alias = a;
 		a->hash_next = cmd_alias_hash[key];
@@ -474,7 +474,7 @@ void Cmd_Alias_f (void)
 }
 
 
-qboolean Cmd_DeleteAlias (char *name)
+qbool Cmd_DeleteAlias (char *name)
 {
 	cmd_alias_t	*a, *prev;
 	int			key;
@@ -511,8 +511,8 @@ qboolean Cmd_DeleteAlias (char *name)
 				cmd_alias = a->next;
 
 			// free
-			Q_Free (a->value);
-			Q_Free (a);
+			Q_free (a->value);
+			Q_free (a);
 			return true;
 		}
 		prev = a;
@@ -552,8 +552,8 @@ void Cmd_UnAliasAll_f (void)
 	for (a=cmd_alias ; a ; a=next)
 	{
 		next = a->next;
-		Q_Free (a->value);
-		Q_Free (a);
+		Q_free (a->value);
+		Q_free (a);
 	}
 	cmd_alias = NULL;
 
@@ -717,7 +717,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 Cmd_Exists
 ============
 */
-qboolean Cmd_Exists (char *cmd_name)
+qbool Cmd_Exists (char *cmd_name)
 {
 	int	key;
 	cmd_function_t	*cmd;
@@ -841,7 +841,7 @@ A complete command line has been parsed, so try to execute it
 FIXME: lookupnoadd the token to speed search?
 ============
 */
-extern qboolean PR_ConsoleCmd(void);
+extern qbool PR_ConsoleCmd(void);
 
 void Cmd_ExecuteString (char *text)
 {
@@ -894,7 +894,7 @@ void Cmd_ExecuteString (char *text)
 }
 
 
-static qboolean is_numeric (char *c)
+static qbool is_numeric (char *c)
 {
 	return (*c >= '0' && *c <= '9') ||
 	       ((*c == '-' || *c == '+') && (c[1] == '.' || (c[1]>='0' && c[1]<='9'))) ||
@@ -909,7 +909,7 @@ void Cmd_If_f (void)
 {
 	int		i, c;
 	char	*op;
-	qboolean	result;
+	qbool	result;
 	char	buf[256];
 
 	c = Cmd_Argc ();

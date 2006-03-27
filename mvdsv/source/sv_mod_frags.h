@@ -21,7 +21,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_mod_frags.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: sv_mod_frags.h,v 1.6 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 extern cvar_t	sv_mod_msg_file;
@@ -63,7 +63,7 @@ typedef struct qw_message
     int id; // id of weapon id for WEAPON
     int pl_count; // count of players in each message
     char *str; // pointer to string
-    qboolean reverse; // reversing message? (a->b or b->a)
+    qbool reverse; // reversing message? (a->b or b->a)
 } qwmsg_t;
 // messages types
 enum {	MIN_TYPE = 0, WEAPON = 0, SYSTEM, MAX_TYPE};

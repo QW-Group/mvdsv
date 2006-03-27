@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.8 2006/01/05 15:02:25 disconn3ct Exp $
+	$Id: sys.h,v 1.9 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // sys.h -- non-portable functions
 
@@ -39,7 +39,7 @@ typedef struct
 	char	name[MAX_DEMO_NAME];
 	int	size;
 	int	time;
-	qboolean isdir; //bliP: list dir
+	qbool	isdir; //bliP: list dir
 } file_t;
 
 typedef struct
@@ -71,7 +71,7 @@ void Sys_Error (char *error, ...);
 void Sys_Printf (char *fmt, ...);
 // send text to the console
 
-void Sys_Quit (qboolean restart);
+void Sys_Quit (qbool restart);
 
 double Sys_DoubleTime (void);
 
@@ -97,7 +97,7 @@ typedef void *DL_t;
 #endif
 
 DL_t Sys_DLOpen(const char *path);
-qboolean Sys_DLClose(DL_t dl);
+qbool Sys_DLClose(DL_t dl);
 void *Sys_DLProc(DL_t dl, const char *name);
 
 #endif // _SYS_H_

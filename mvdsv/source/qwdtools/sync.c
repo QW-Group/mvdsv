@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sync.c,v 1.5 2006/01/05 15:14:52 disconn3ct Exp $
+	$Id: sync.c,v 1.6 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -28,7 +28,7 @@ typedef struct
 	float	time;
 	float	diff;
 	float	ratio;
-	qboolean synced;
+	qbool synced;
 }
 info_t;
 
@@ -70,7 +70,7 @@ void *FindEntity(int type, frame_t *f, int num, int frame)
 	}
 }
 
-qboolean app (vec3_t o1, vec3_t po1, vec3_t o2, vec3_t po2, float *sec, float t1, float t2)
+qbool app (vec3_t o1, vec3_t po1, vec3_t o2, vec3_t po2, float *sec, float t1, float t2)
 {
 	int i,j;
 
@@ -276,7 +276,7 @@ float demcmp(source_t *d1, source_t *d2)
 	return sr/c;
 }
 
-qboolean SetComparisionDemo(source_t *dem, float time)
+qbool SetComparisionDemo(source_t *dem, float time)
 {
 	int num;
 
@@ -307,14 +307,14 @@ qboolean SetComparisionDemo(source_t *dem, float time)
 }
 
 
-qboolean Synchronize (void)
+qbool Synchronize (void)
 {
 	int i, j, bad;
 	info_t *p;
 	source_t *dem1, *dem2;
 	float prevdesync, before, after = 0.0, diff, desync = 0.0, f, newdesync = 0.0, x, y, mindiff = 0.0, m, sr = 0.0, c, sr2 = 0.0, sec2, test = 0.0, test2 = 0.0;
 	byte buf[15*MAX_MSGLEN];
-	qboolean done;
+	qbool done;
 
 	if (sworld.fromcount == 1)
 		return true;

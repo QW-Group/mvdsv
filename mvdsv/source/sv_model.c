@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_model.c,v 1.9 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: sv_model.c,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // models.c -- model loading and caching
 
@@ -32,7 +32,7 @@ char	loadname[32];	// for hunk tags
 void Mod_LoadSpriteModel (qmodel_t *mod, void *buffer);
 void Mod_LoadBrushModel (qmodel_t *mod, void *buffer);
 void Mod_LoadAliasModel (qmodel_t *mod, void *buffer);
-qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash);
+qmodel_t *Mod_LoadModel (qmodel_t *mod, qbool crash);
 
 byte	mod_novis[MAX_MAP_LEAFS/8];
 
@@ -135,7 +135,7 @@ byte *Mod_DecompressVis (byte *in, int numleafs)
 	return decompressed;
 }
 
-byte *Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model, qboolean spectator_vis)
+byte *Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model, qbool spectator_vis)
 {
 	if (leaf == model->leafs)
 		return mod_novis;
@@ -200,7 +200,7 @@ Mod_LoadModel
 Loads a model into the cache
 ==================
 */
-qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
+qmodel_t *Mod_LoadModel (qmodel_t *mod, qbool crash)
 {
 	void	*d;
 	unsigned *buf;
@@ -255,7 +255,7 @@ Mod_ForName
 Loads in a model for the given name
 ==================
 */
-qmodel_t *Mod_ForName (char *name, qboolean crash)
+qmodel_t *Mod_ForName (char *name, qbool crash)
 {
 	qmodel_t	*mod;
 

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2.h,v 1.3 2005/12/04 07:46:59 disconn3ct Exp $
+ *  $Id: pr2.h,v 1.4 2006/03/27 22:54:39 disconn3ct Exp $
  */
 
 #ifndef __PR2_H__
@@ -43,13 +43,13 @@ void		PR2_GamePutClientInServer(int spec);
 void		PR2_GameClientDisconnect(int spec);
 void		PR2_GameClientPreThink(int spec);
 void		PR2_GameClientPostThink(int spec);
-qboolean	PR2_ClientCmd();
+qbool		PR2_ClientCmd();
 void		PR2_GameSetNewParms();
 void		PR2_GameSetChangeParms();
 void		PR2_EdictTouch();
 void		PR2_EdictThink();
 void		PR2_EdictBlocked();
-qboolean 	PR2_UserInfoChanged();
+qbool 		PR2_UserInfoChanged();
 void 		PR2_GameShutDown();
 void 		PR2_GameConsoleCommand(void);
 

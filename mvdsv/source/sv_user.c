@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.39 2006/03/27 16:18:16 vvd0 Exp $
+	$Id: sv_user.c,v 1.40 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -54,12 +54,12 @@ extern cvar_t	sv_kicktop;
 extern cvar_t	sv_speedcheck; //bliP: 24/9
 //<-
 
-static qboolean IsLocalIP(netadr_t a)
+static qbool IsLocalIP(netadr_t a)
 {
 	return a.ip.ip[0] == 10 || (a.ip.ip[0] == 172 && (a.ip.ip[1] & 0xF0) == 16)
 	       || (a.ip.ip[0] == 192 && a.ip.ip[1] == 168) || a.ip.ip[0] >= 224;
 }
-static qboolean IsInetIP(netadr_t a)
+static qbool IsInetIP(netadr_t a)
 {
 	return a.ip.ip[0] != 127 && !IsLocalIP(a);
 }
@@ -753,7 +753,7 @@ static void SV_Begin_f (void)
 SV_DownloadNextFile_f
 ==================
 */
-static qboolean SV_DownloadNextFile (void)
+static qbool SV_DownloadNextFile (void)
 {
 	int		num;
 	char		*name, n[MAX_OSPATH];
@@ -989,7 +989,7 @@ static void SV_BeginDownload_f(void)
 	extern	cvar_t	allow_download_other;
 	extern  cvar_t  download_map_url; //bliP: download url
 	extern	cvar_t	sv_demoDir;
-	extern	qboolean file_from_pak; // ZOID did file come from pak?
+	extern	qbool file_from_pak; // ZOID did file come from pak?
 	int i;
 
 	if (Cmd_Argc() != 2)
@@ -1181,7 +1181,7 @@ deny_download:
 SV_DemoDownload_f
 ==================
 */
-qboolean SV_ExecutePRCommand (void);
+qbool SV_ExecutePRCommand (void);
 static void SV_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
@@ -1272,7 +1272,7 @@ extern func_t ChatMessage;
 
 void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 
-static void SV_Say (qboolean team)
+static void SV_Say (qbool team)
 {
 	client_t *client;
 	int	j, tmp, cls = 0;
@@ -2097,7 +2097,7 @@ ucmd_t ucmds[] =
 SV_ExecuteUserCommand
 ==================
 */
-qboolean PR_UserCmd(void);
+qbool PR_UserCmd(void);
 static void SV_ExecuteUserCommand (char *s)
 {
 	ucmd_t	*u;
@@ -2120,8 +2120,8 @@ static void SV_ExecuteUserCommand (char *s)
 	SV_EndRedirect ();
 }
 
-qboolean SV_Check_ktpro(void);
-qboolean SV_ExecutePRCommand (void)
+qbool SV_Check_ktpro(void);
+qbool SV_ExecutePRCommand (void)
 {
 #ifdef USE_PR2
 	if ( sv_vm )
@@ -2280,11 +2280,11 @@ void SV_PreRunCmd(void)
 SV_RunCmd
 ===========
 */
-void SV_RunCmd (usercmd_t *ucmd, qboolean inside) //bliP: 24/9
+void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 {
 	int i, n;
 	vec3_t originalvel, offset;
-	qboolean onground;
+	qbool onground;
 	//bliP: 24/9 anti speed ->
 	int	tmp_time;
 
@@ -2482,7 +2482,7 @@ Done after running a player command.
 void SV_PostRunCmd(void)
 {
 	vec3_t originalvel;
-	qboolean onground;
+	qbool onground;
 	// run post-think
 
 	if (!host_client->spectator)
@@ -2573,7 +2573,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 	usercmd_t	oldest, oldcmd, newcmd;
 	client_frame_t	*frame;
 	vec3_t 		o;
-	qboolean	move_issued = false; //only allow one move command
+	qbool		move_issued = false; //only allow one move command
 	int		checksumIndex;
 	byte		checksum, calculatedChecksum;
 	int		seq_hash;
@@ -2732,11 +2732,11 @@ SV_UserInit
 */
 void SV_UserInit (void)
 {
-	Cvar_RegisterVariable (&sv_spectalk);
-	Cvar_RegisterVariable (&sv_mapcheck);
-	Cvar_RegisterVariable (&sv_minping);
-	Cvar_RegisterVariable (&sv_enable_cmd_minping);
-	Cvar_RegisterVariable (&sv_use_internal_cmd_dl);
-	Cvar_RegisterVariable (&sv_kickuserinfospamtime);
-	Cvar_RegisterVariable (&sv_kickuserinfospamcount);
+	Cvar_Register (&sv_spectalk);
+	Cvar_Register (&sv_mapcheck);
+	Cvar_Register (&sv_minping);
+	Cvar_Register (&sv_enable_cmd_minping);
+	Cvar_Register (&sv_use_internal_cmd_dl);
+	Cvar_Register (&sv_kickuserinfospamtime);
+	Cvar_Register (&sv_kickuserinfospamcount);
 }

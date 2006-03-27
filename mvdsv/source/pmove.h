@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.h,v 1.9 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: pmove.h,v 1.10 2006/03/27 22:54:38 disconn3ct Exp $
 */
 
 #ifndef __PMOVE_H__
@@ -48,7 +48,7 @@ typedef struct
 	vec3_t		origin;
 	vec3_t		angles;
 	vec3_t		velocity;
-	qboolean	jump_held;
+	qbool		jump_held;
 
 	float		waterjumptime;
 	int		pm_type;
@@ -63,7 +63,7 @@ typedef struct
 	// results
 	int		numtouch;
 	int		touchindex[MAX_PHYSENTS];
-	qboolean	onground;
+	qbool		onground;
 	int		groundent;		// index in physents array, only valid
 						// when onground is true
 	int		waterlevel;
@@ -83,9 +83,9 @@ typedef struct {
 	float	entgravity;
 	float	bunnyspeedcap;
 	float	ktjump;
-	qboolean	slidefix; // NQ-style movement down ramps
-	qboolean	airstep;
-	qboolean	pground; // NQ-style "onground" flag handling.
+	qbool	slidefix; // NQ-style movement down ramps
+	qbool	airstep;
+	qbool	pground; // NQ-style "onground" flag handling.
 } movevars_t;
 
 
@@ -98,7 +98,7 @@ void PM_Init (void);
 int PM_HullPointContents (hull_t *hull, int num, vec3_t p);
 
 int PM_PointContents (vec3_t point);
-qboolean PM_TestPlayerPosition (vec3_t point);
+qbool PM_TestPlayerPosition (vec3_t point);
 trace_t PM_PlayerTrace (vec3_t start, vec3_t end);
 
 #endif // __PMOVE_H__

@@ -1,21 +1,20 @@
 /*
- 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: defs.h,v 1.8 2006/02/26 05:32:01 vvd0 Exp $
+
+	$Id: defs.h,v 1.9 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #ifndef __DEFS_H__
@@ -60,7 +59,7 @@ typedef vec_t vec3_t[3];
 #define DF_SKINNUM	(1<<7)
 #define DF_DEAD		(1<<8)
 #define DF_GIB		(1<<9)
-#define DF_WEAPONFRAME (1<<10)
+#define DF_WEAPONFRAME	(1<<10)
 #define DF_MODEL	(1<<11)
 
 // QWDTools options
@@ -91,45 +90,42 @@ typedef vec_t vec3_t[3];
 
 extern	sizebuf_t	net_message;
 
-#define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
-#define	MAX_SOURCES		50
+#define	MAX_UDP_PACKET	(MAX_MSGLEN*2) // one more than msg + header
+#define	MAX_SOURCES	50
 
 typedef struct
 {
 	// bandwidth estimator
-	double		cleartime;			// if realtime > nc->cleartime, free to go
-	double		rate;				// seconds / byte
+	double	cleartime;			// if realtime > nc->cleartime, free to go
+	double	rate;				// seconds / byte
 
 	// sequencing variables
-	int			incoming_sequence;
-	int			incoming_acknowledged;
-	int			incoming_reliable_acknowledged;	// single bit
+	int	incoming_sequence;
+	int	incoming_acknowledged;
+	int	incoming_reliable_acknowledged;	// single bit
 
-	int			incoming_reliable_sequence;		// single bit, maintained local
+	int	incoming_reliable_sequence;	// single bit, maintained local
 
-	int			outgoing_sequence;
-	int			reliable_sequence;			// single bit
-	int			last_reliable_sequence;		// sequence number of last send
+	int	outgoing_sequence;
+	int	reliable_sequence;		// single bit
+	int	last_reliable_sequence;		// sequence number of last send
 
-	int			reliable_length;
+	int	reliable_length;
 
 }
 netchan_t;
 
 
-typedef enum {
-    qwd,
-    mvd
-} format_t;
+typedef enum {qwd, mvd} format_t;
 
 typedef struct
 {
 	sizebuf_t	datagram;
 	byte		datagram_data[MAX_DATAGRAM];
-	int			lastto;
-	int			lasttype;
+	int		lastto;
+	int		lasttype;
 	double		time, pingtime;
-	int			stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
+	int		stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
 	byte		buffer[15*MAX_MSGLEN];
 	dbuffer_t	dbuffer;
 }
@@ -142,22 +138,22 @@ typedef struct
 	float		worldtime;
 	format_t	format;
 	byte		type;
-	int			to;
-	int			parsecountmod, parsecount, oldparse;
+	int		to;
+	int		parsecountmod, parsecount, oldparse;
 	frame_t		frames[UPDATE_BACKUP];
 	player_info_t	players[MAX_CLIENTS];
 	netchan_t	netchan;
-	int			running;
+	int		running;
 	float		lastframe;
-	int			servercount;
-	int			playernum;
-	int			prevnum[MAX_CLIENTS];
-	int			validsequence;
-	qboolean	spectator;
-	int			framecount;
+	int		servercount;
+	int		playernum;
+	int		prevnum[MAX_CLIENTS];
+	int		validsequence;
+	qbool		spectator;
+	int		framecount;
 	float		latency;
-	int			spec_track;
-	qboolean	qwz;
+	int		spec_track;
+	qbool		qwz;
 	long		prevtime;
 	float		basetime;
 	float		lasttime;
@@ -168,7 +164,7 @@ typedef struct
 	sizebuf_t	signon_stats;
 	byte		signon_stats_buf[2*MAX_MSGLEN];
 	dbuffer_t	dbuffer;
-	qboolean	signonloaded;
+	qbool		signonloaded;
 	float		ratio;
 }
 source_t;
@@ -183,14 +179,14 @@ typedef enum
 typedef struct
 {
 
-	char	*name, *shname;
-	type_t	type;
+	char		*name, *shname;
+	type_t		type;
 	union opt {
 		char	*str;
-		int		*Int;
-		int		opt;
+		int	*Int;
+		int	opt;
 	} opt1;
-	int	opt2;
+	int		opt2;
 }
 param_t;
 
@@ -206,20 +202,20 @@ void Sys_Printf (char *fmt, ...);
 void Dem_Stop(source_t *s);
 
 extern sizebuf_t	net_message;
-extern byte			net_message_buffer[MAX_UDP_PACKET];
+extern byte		net_message_buffer[MAX_UDP_PACKET];
 extern sizebuf_t	stats_msg;
-extern byte			stats_buf[MAX_MSGLEN];
-extern char			currentDir[MAX_OSPATH];
+extern byte		stats_buf[MAX_MSGLEN];
+extern char		currentDir[MAX_OSPATH];
 #ifdef _WIN32
 extern HANDLE		ConsoleInHndl, ConsoleOutHndl;
 #endif
-extern char			sourceName[MAX_SOURCES][MAX_OSPATH];
+extern char		sourceName[MAX_SOURCES][MAX_OSPATH];
 
 extern demo_t	demo;
 extern source_t	*from;
 extern source_t	*sources;
-extern qboolean filter_spectalk;
-extern qboolean	filter_qizmotalk;
+extern qbool filter_spectalk;
+extern qbool filter_qizmotalk;
 
 //
 // dem_parse.c
@@ -256,7 +252,7 @@ void ReadIni(char *buf);
 //
 // qwz.c
 //
-qboolean OpenQWZ (char *files);
+qbool OpenQWZ (char *files);
 void StopQWZ (source_t *s);
 
 #endif //__DEFS_H__

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.28 2006/03/27 16:18:15 vvd0 Exp $
+	$Id: server.h,v 1.29 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // server.h
 
@@ -62,7 +62,7 @@ typedef struct
 	int		lastcheck;			// used by PF_checkclient
 	double		lastchecktime;			// for monster ai
 
-	qboolean	paused;				// are we paused?
+	qbool		paused;				// are we paused?
 
 	//check player/eyes models for hacks
 	unsigned	model_player_checksum;
@@ -104,7 +104,7 @@ typedef struct
 	int		signon_buffer_size[MAX_SIGNON_BUFFERS];
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
-	qboolean	mvdrecording;
+	qbool		mvdrecording;
 } server_t;
 
 #define	NUM_SPAWN_PARMS 16
@@ -141,12 +141,12 @@ typedef struct client_s
 	int		spectator;			// non-interactive
 	int		vip;
 
-	qboolean	sendinfo;			// at end of frame, send info to all
+	qbool		sendinfo;			// at end of frame, send info to all
 							// this prevents malicious multiple broadcasts
 	float		lastnametime;			// time of last name change
 	int		lastnamecount;			// time of last name change
 	unsigned	checksum;			// checksum for calcs
-	qboolean	drop;				// lose this guy next opportunity
+	qbool		drop;				// lose this guy next opportunity
 	int		lossage;			// loss percentage
 
 	int		userid;				// identifying number
@@ -155,7 +155,7 @@ typedef struct client_s
 
 	usercmd_t	lastcmd;			// for filling in big drops and partial predictions
 	double		localtime;			// of last message
-	qboolean	jump_held;
+	qbool		jump_held;
 
 	float		maxspeed;			// localized maxspeed
 	float		entgravity;			// localized ent gravity
@@ -186,7 +186,7 @@ typedef struct client_s
 	byte		stufftext_buf[MAX_STUFFTEXT];
 
 	double		connection_started;		// or time of disconnect for zombies
-	qboolean	send_message;			// set on frames a datagram arived on
+	qbool		send_message;			// set on frames a datagram arived on
 
 // spawn parms are carried from level to level
 	float		spawn_parms[NUM_SPAWN_PARMS];
@@ -206,7 +206,7 @@ typedef struct client_s
 // demo download list for internal cmd dl function
 //Added by VVD {
 	int		demonum[MAX_ARGS];
-	qboolean	demolist;
+	qbool		demolist;
 // } Added by VVD
 
 	int		spec_track;			// entnum of player tracking
@@ -218,7 +218,7 @@ typedef struct client_s
 	FILE		*upload;
 	char		uploadfn[MAX_QPATH];
 	netadr_t	snap_from;
-	qboolean	remote_snap;
+	qbool		remote_snap;
 
 	char		login[CLIENT_LOGIN_LEN];
 	int		logged;
@@ -227,7 +227,7 @@ typedef struct client_s
 
 //bliP: additional ->
 	int		file_percent;
-	qboolean	special;
+	qbool		special;
 	int		logincount;
 	float		lasttoptime;			// time of last topcolor change
 	int		lasttopcount;			// count of last topcolor change
@@ -276,7 +276,7 @@ typedef struct
 	demoinfo_t	info;
 	float		sec;
 	int		parsecount;
-	qboolean	fixangle;
+	qbool		fixangle;
 	vec3_t		angle;
 	float		cmdtime;
 	int		flags;
@@ -293,8 +293,8 @@ typedef struct {
 
 typedef struct
 {
-	qboolean	allowoverflow; // if false, do a Sys_Error
-	qboolean	overflowed; // set to true if the buffer size failed
+	qbool		allowoverflow; // if false, do a Sys_Error
+	qbool		overflowed; // set to true if the buffer size failed
 	byte		*data;
 	int		maxsize;
 	int		cursize;
@@ -330,7 +330,7 @@ typedef struct
 	double		time, pingtime;
 	int		stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
 	client_t	recorder;
-	qboolean	fixangle[MAX_CLIENTS];
+	qbool		fixangle[MAX_CLIENTS];
 	float		fixangletime[MAX_CLIENTS];
 	vec3_t		angles[MAX_CLIENTS];
 	char		name[MAX_OSPATH], path[MAX_OSPATH];
@@ -505,9 +505,9 @@ extern	char		localinfo[MAX_LOCALINFO_STRING+1];
 
 extern	int		host_hunklevel;
 
-extern	qboolean	sv_error;
+extern	qbool		sv_error;
 
-extern qboolean		server_cfg_done;
+extern qbool		server_cfg_done;
 extern char		master_rcon_password[128];
 
 //===========================================================
@@ -546,8 +546,8 @@ int SV_CalcPing (client_t *cl);
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
 void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 
-qboolean SV_CheckBottom (edict_t *ent);
-qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
+qbool SV_CheckBottom (edict_t *ent);
+qbool SV_movestep (edict_t *ent, vec3_t move, qbool relink);
 
 void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
@@ -556,8 +556,8 @@ void SV_MoveToGoal (void);
 void SV_InitOperatorCommands (void);
 
 void SV_SendServerinfo (client_t *client);
-void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged);
-int SV_BoundRate (qboolean dl, int rate);
+void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged);
+int SV_BoundRate (qbool dl, int rate);
 
 //bliP: init ->
 void SV_ListFiles_f (void);
@@ -566,14 +566,14 @@ void SV_RemoveDirectory_f (void);
 
 #define	MAX_PENFILTERS 512
 void SV_RemoveIPFilter (int i);
-//static qboolean SV_IPCompare (byte *a, byte *b);
+//static qbool SV_IPCompare (byte *a, byte *b);
 //static void SV_IPCopy (byte *dest, byte *src);
 void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
 double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type);
 
-qboolean SV_FilterPacket (void);
+qbool SV_FilterPacket (void);
 void SV_SendBan (void);
-qboolean GameStarted(void);
+qbool GameStarted(void);
 //<-
 void SV_Script_f (void);
 int SV_GenerateUserID (void);
@@ -594,7 +594,7 @@ void SV_ProgStartFrame (void);
 void SV_Physics (void);
 void SV_CheckVelocity (edict_t *ent);
 void SV_AddGravity (edict_t *ent, float scale);
-qboolean SV_RunThink (edict_t *ent);
+qbool SV_RunThink (edict_t *ent);
 void SV_Physics_Toss (edict_t *ent);
 void SV_RunNewmis (void);
 void SV_Impact (edict_t *e1, edict_t *e2);
@@ -637,7 +637,7 @@ void SV_SendServerInfoChange (char *key, char *value);
 //
 // sv_ents.c
 //
-void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder);
+void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder);
 
 //
 // sv_nchan.c
@@ -692,7 +692,7 @@ void SV_RemoveAccount_f(void);
 void SV_ListAccount_f (void);
 int checklogin(char *log, char *pass, int num, int use);
 void Login_Init (void);
-qboolean SV_Login(client_t *cl);
+qbool SV_Login(client_t *cl);
 void SV_Logout(client_t *cl);
 void SV_ParseLogin(client_t *cl);
 void SV_LoginCheckTimeOut(client_t *cl);

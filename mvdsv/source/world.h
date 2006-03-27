@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: world.h,v 1.7 2006/01/09 20:37:15 disconn3ct Exp $
+	$Id: world.h,v 1.8 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // world.h
 #ifndef _WORLD_H_
@@ -50,7 +50,7 @@ void SV_UnlinkEdict (edict_t *ent);
 // so it doesn't clip against itself
 // flags ent->v.modified
 
-void SV_LinkEdict (edict_t *ent, qboolean touch_triggers);
+void SV_LinkEdict (edict_t *ent, qbool touch_triggers);
 // Needs to be called any time an entity changes origin, mins, maxs, or solid
 // flags ent->v.modified
 // sets ent->v.absmin and ent->v.absmax

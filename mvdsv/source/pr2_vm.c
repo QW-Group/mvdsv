@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.13 2006/03/23 14:30:22 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.14 2006/03/27 22:54:39 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -137,7 +137,7 @@ void PR2_Profile_f()
 void VM_UnloadQVM( qvm_t * qvm )
 {
 	if(qvm)
-		Q_Free( qvm );
+		Q_free( qvm );
 }
 
 void VM_Unload( vm_t * vm )
@@ -160,10 +160,10 @@ void VM_Unload( vm_t * vm )
 		return;
 
 	}
-	Q_Free( vm );
+	Q_free( vm );
 }
 
-qboolean VM_LoadNative( vm_t * vm )
+qbool VM_LoadNative( vm_t * vm )
 {
 	char    name[MAX_OSPATH];
 	char   *gpath = NULL;
@@ -307,7 +307,7 @@ void LoadMapFile( qvm_t*qvm, char* fname )
 	Con_DPrintf("%i symbols loaded from %s\n",num_symbols,name);
 }
 
-qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
+qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 {
 	char    name[MAX_OSPATH];
 	byte   *buff;
@@ -350,7 +350,7 @@ qboolean VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	if(vm->hInst)
 		qvm = (qvm_t *)vm->hInst;
 	else
-		qvm = (qvm_t *) Q_Malloc (sizeof (qvm_t));
+		qvm = (qvm_t *) Q_malloc (sizeof (qvm_t));
 
 	qvm->len_cs = header->instructionCount + 1;	//bad opcode padding.
 	qvm->len_ds = header->dataOffset + header->litLength + header->bssLength;
@@ -455,7 +455,7 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 	if ( vm )
 		VM_Unload(vm);
 
-	vm = (vm_t *) Q_Malloc (sizeof (vm_t));
+	vm = (vm_t *) Q_malloc (sizeof (vm_t));
 
 
 
@@ -478,7 +478,7 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 		if ( VM_LoadBytecode( vm, syscallex ) )
 			break;
 	default:
-		Q_Free(vm);
+		Q_free(vm);
 		return NULL;
 		break;
 	}

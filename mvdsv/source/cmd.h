@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmd.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: cmd.h,v 1.6 2006/03/27 22:54:38 disconn3ct Exp $
 */
 
 // cmd.h -- Command buffer and command execution
@@ -39,9 +39,9 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 
 typedef struct cbuf_s {
 	char	text_buf[MAXCMDBUF];
-	int		text_start;
-	int		text_end;
-	qboolean	wait;
+	int	text_start;
+	int	text_end;
+	qbool	wait;
 } cbuf_t;
 
 extern cbuf_t	cbuf_main;
@@ -97,7 +97,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function);
 // if function is NULL, the command will be forwarded to the server
 // as a clc_stringcmd instead of executed locally
 
-qboolean Cmd_Exists (char *cmd_name);
+qbool Cmd_Exists (char *cmd_name);
 // used by the cvar code to check for cvar / command name overlap
 
 int Cmd_Argc (void);
@@ -134,6 +134,6 @@ typedef struct cmd_alias_s
 	char	*value;
 } cmd_alias_t;
 
-qboolean Cmd_DeleteAlias (char *name);	// return true if successful
+qbool Cmd_DeleteAlias (char *name);	// return true if successful
 
 #define MAX_ARGS 80

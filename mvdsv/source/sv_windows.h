@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_windows.h,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: sv_windows.h,v 1.5 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #ifndef _CONSOLE
@@ -32,7 +32,7 @@ extern HINSTANCE	global_hInstance;
 extern HWND			DlgHwnd, mainWindow;
 extern HWND			HEdit1, HEdit2;
 extern HMENU		Menu;
-extern qboolean		minimized;
+extern qbool		minimized;
 
 BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 BOOL CreateMainWindow(HINSTANCE hInstance, int nCmdShow);

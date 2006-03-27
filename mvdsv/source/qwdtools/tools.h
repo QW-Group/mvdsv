@@ -1,21 +1,20 @@
 /*
- 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: tools.h,v 1.8 2006/02/27 10:48:39 disconn3ct Exp $
+
+	$Id: tools.h,v 1.9 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #ifndef __TOOLS_H__
@@ -36,9 +35,9 @@ header_t;
 typedef struct sizebuf_s
 {
 	byte	*data;
-	int		maxsize;
-	int		cursize;
-	int		bufsize;
+	int	maxsize;
+	int	cursize;
+	int	bufsize;
 	header_t *h;
 }
 sizebuf_t;
@@ -46,13 +45,13 @@ sizebuf_t;
 typedef struct
 {
 	byte	*data;
-	int		start, end, last;
-	int		maxsize;
+	int	start, end, last;
+	int	maxsize;
 	sizebuf_t *msgbuf;
 }
 dbuffer_t;
 
-extern sizebuf_t	*msgbuf;
+extern sizebuf_t *msgbuf;
 
 typedef struct
 {
@@ -71,13 +70,13 @@ void SZ_Print (sizebuf_t *buf, char *data);	// strcats onto the sizebuf
 
 #define Q_MAXCHAR ((char)0x7f)
 #define Q_MAXSHORT ((short)0x7fff)
-#define Q_MAXINT	((int)0x7fffffff)
+#define Q_MAXINT ((int)0x7fffffff)
 #define Q_MAXLONG ((int)0x7fffffff)
 #define Q_MAXFLOAT ((int)0x7fffffff)
 
 #define Q_MINCHAR ((char)0x80)
 #define Q_MINSHORT ((short)0x8000)
-#define Q_MININT 	((int)0x80000000)
+#define Q_MININT ((int)0x80000000)
 #define Q_MINLONG ((int)0x80000000)
 #define Q_MINFLOAT ((int)0x7fffffff)
 
@@ -95,10 +94,10 @@ void MSG_WriteCoord (sizebuf_t *sb, float f);
 void MSG_WriteAngle (sizebuf_t *sb, float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, float f);
 void MSG_WriteDeltaUsercmd (sizebuf_t *sb, struct usercmd_s *from, struct usercmd_s *cmd);
-qboolean MSG_Forward (sizebuf_t *sb, int start, int count);
+qbool MSG_Forward (sizebuf_t *sb, int start, int count);
 
-extern	int			msg_readcount;
-extern	qboolean	msg_badread;		// set if a read goes beyond end of message
+extern	int	msg_readcount;
+extern	qbool	msg_badread; // set if a read goes beyond end of message
 
 void MSG_BeginReading (void);
 int MSG_GetReadCount(void);
@@ -117,7 +116,7 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 char *Info_ValueForKey (char *s, char *key);
 
-extern	int		com_argc;
+extern	int	com_argc;
 extern	char	*com_argv[MAX_NUM_ARGVS];
 
 int CheckParm (char *parm);
@@ -138,7 +137,7 @@ int fileLength (FILE *f);
 int FileOpenRead (char *path, FILE **hndl);
 byte *LoadFile(char *path);
 
-#define DemoBuffer_Clear(b)	{(b)->start = (b)->end = (b)->last = 0;(b)->msgbuf = NULL;}
+#define DemoBuffer_Clear(b) {(b)->start = (b)->end = (b)->last = 0;(b)->msgbuf = NULL;}
 
 void MVDBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size, sizebuf_t *msg);
 void DemoBuffer_Set(dbuffer_t *dbuffer);

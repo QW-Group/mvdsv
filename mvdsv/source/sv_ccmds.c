@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.25 2006/03/27 16:18:15 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.26 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/stat.h>
 #include <time.h>
 
-qboolean	sv_allow_cheats;
+qbool sv_allow_cheats;
 
 int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
@@ -46,7 +46,7 @@ These commands can only be entered from stdin or by a remote operator datagram
 SV_Quit
 ==================
 */
-void SV_Quit (qboolean restart)
+void SV_Quit (qbool restart)
 {
 	SV_FinalMessage ("server shutdown\n");
 	Con_Printf ("Shutting down.\n");
@@ -79,7 +79,7 @@ void SV_Restart_f (void)
 SV_Logfile
 ============
 */
-void SV_Logfile (int sv_log, qboolean newlog)
+void SV_Logfile (int sv_log, qbool newlog)
 {
 	extern int	sv_port;
 	char	name[MAX_OSPATH];
@@ -249,7 +249,7 @@ SV_SetPlayer
 Sets host_client and sv_player to the player with idnum Cmd_Argv(1)
 ==================
 */
-qboolean SV_SetPlayer (void)
+qbool SV_SetPlayer (void)
 {
 	client_t	*cl;
 	int			i;
@@ -386,11 +386,11 @@ map <mapname>
 command from the console or progs.
 ======================
 */
-void SV_Map (qboolean now)
+void SV_Map (qbool now)
 {
 	static char	level[MAX_QPATH];
 	static char	expanded[MAX_QPATH];
-	static qboolean changed = false;
+	static qbool changed = false;
 	// -> scream
 	FILE	*f;
 	char	*s;
@@ -848,8 +848,8 @@ void SV_Cuff_f (void)
 {
 	int         c, i, uid;
 	double      mins = 0.5;
-	qboolean    done = false;
-	qboolean    print = true;
+	qbool    done = false;
+	qbool    print = true;
 	client_t    *cl;
 	char        reason[80];
 	char        text[100];
@@ -932,8 +932,8 @@ void SV_Mute_f (void)
 {
 	int         c, i, uid;
 	double      mins = 0.5;
-	qboolean    done = false;
-	qboolean    print = true;
+	qbool    done = false;
+	qbool    print = true;
 	client_t    *cl;
 	char        reason[1024];
 	char        text[1024];
@@ -1132,7 +1132,7 @@ void SV_Nslookup_f (void)
 SV_Status_f
 ================
 */
-qboolean SV_Check_ktpro(void);
+qbool SV_Check_ktpro(void);
 void SV_Status_f (void)
 {
 	int			i;
@@ -1268,7 +1268,7 @@ void SV_Status_f (void)
 SV_Check_ktpro
 ==================
 */
-qboolean SV_Check_ktpro(void)
+qbool SV_Check_ktpro(void)
 {
 	return	*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION) &&
 			*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD);

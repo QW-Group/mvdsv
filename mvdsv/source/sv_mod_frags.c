@@ -24,14 +24,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_mod_frags.c,v 1.9 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_mod_frags.c,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 #include "sv_mod_frags.h"
 
 qwmsg_t *qwmsg[MOD_MSG_MAX + 1];
-static qboolean qwm_static = true;
+static qbool qwm_static = true;
 
 void free_qwmsg_t(qwmsg_t **qwmsg)
 {
@@ -39,12 +39,12 @@ void free_qwmsg_t(qwmsg_t **qwmsg)
 	if (!qwm_static)
 		for (i = 0; qwmsg[i]; i++)
 		{
-			free(qwmsg[i]->str);
-			free(qwmsg[i]);
+			Q_free(qwmsg[i]->str);
+			Q_free(qwmsg[i]);
 		}
 }
 
-qboolean sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
+qbool sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
 {
 	FILE *fp = NULL;
 	char *str_tok, buf[128];
@@ -64,7 +64,7 @@ qboolean sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
 		}
 		for (i = 0; i < MOD_MSG_MAX && qwmsg_def[i].str; i++)
 		{
-			qwmsg[i] = (qwmsg_t *) Q_Malloc (sizeof(qwmsg_t));
+			qwmsg[i] = (qwmsg_t *) Q_malloc (sizeof(qwmsg_t));
 			qwmsg[i] = &qwmsg_def[i];
 			//            Sys_Printf("msg_type = %d, id = %d, pl_count = %d, str = %s, reverse = %d\n",
 			//	qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
@@ -78,7 +78,7 @@ qboolean sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
 		{
 			if (fgets(buf, sizeof(buf), fp))
 			{
-				qwmsg[i] = (qwmsg_t *) Q_Malloc (sizeof(qwmsg_t));
+				qwmsg[i] = (qwmsg_t *) Q_malloc (sizeof(qwmsg_t));
 				// fill system_id
 				str_tok = (char *)strtok(buf, "#");
 				qwmsg[i]->msg_type = Q_atoi(str_tok);
@@ -93,7 +93,7 @@ qboolean sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
 				qwmsg[i]->reverse = Q_atoi(str_tok) ? true : false;
 				// fill str
 				str_tok = (char *)strtok(NULL, "#");
-				qwmsg[i]->str =  (char *) Q_Malloc (strlen(str_tok) + 1);
+				qwmsg[i]->str =  (char *) Q_malloc (strlen(str_tok) + 1);
 				strlcpy(qwmsg[i]->str, str_tok, strlen(str_tok) + 1);
 			}
 			else
@@ -125,7 +125,7 @@ const char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
 	}
 
 	stringcount = pcre_exec(reg, 0, str, str_len, 0, 0, (int *)&ovector[0], 32);
-	Q_Free(reg);
+	Q_free(reg);
 	if (stringcount <= 0)
 		return NULL;
 
@@ -155,7 +155,7 @@ char *parse_mod_string(char *str)
 					pl1 = 3 - pl2;
 				case 1:
 					str_len = strlen(buf[pl1]) + strlen(buf[pl2]) + strlen(qw_weapon[qwmsg[i]->id]) + 5 + 10;
-					ret = (char *) Q_Malloc (str_len);
+					ret = (char *) Q_malloc (str_len);
 					snprintf(ret, str_len, "%s\\%s\\%s\\%d\n", buf[pl1], buf[pl2], qw_weapon[qwmsg[i]->id], (int)time(NULL));
 					break;
 				default: ret = NULL;
@@ -163,7 +163,7 @@ char *parse_mod_string(char *str)
 				break;
 			case SYSTEM:
 				str_len = strlen(buf[1]) * 2 + strlen(qw_system[qwmsg[i]->id]) + 4 + 10;
-				ret = (char *) Q_Malloc (str_len);
+				ret = (char *) Q_malloc (str_len);
 				snprintf(ret, str_len, "%s\\%s\\%d\n", buf[1], qw_system[qwmsg[i]->id], (int)time(NULL));
 				break;
 			default: ret = NULL;

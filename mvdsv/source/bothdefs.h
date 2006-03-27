@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.14 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: bothdefs.h,v 1.15 2006/03/27 22:54:38 disconn3ct Exp $
 */
 
 // defs common to client and server
@@ -138,7 +138,7 @@ typedef unsigned char byte;
 // KJB Undefined true and false defined in SciTech's DEBUG.H header
 #undef true
 #undef false
-typedef enum {false, true} qboolean;
+typedef enum {false, true} qbool;
 
 #define	MAX_INFO_STRING		196
 #define	MAX_SERVERINFO_STRING	512
@@ -200,8 +200,8 @@ float	Q_atof (char *str);
 // does a varargs printf into a temp buffer
 char	*va(char *format, ...);
 
-void	*Q_Malloc (size_t size);
-#define	Q_Free(ptr)	free(ptr)
+void	*Q_malloc (size_t size);
+#define	Q_free(ptr)	free(ptr)
 
 void	COM_StripExtension (char *in, char *out);
 char	*COM_FileExtension (char *in);
