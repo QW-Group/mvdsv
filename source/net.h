@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.12 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: net.h,v 1.13 2006/03/27 16:18:15 vvd0 Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
@@ -108,7 +108,7 @@ extern	int	net_telnetsocket;
 extern	int	telnetport;
 extern	int	sv_port;
 extern	int	telnet_iosock;
-extern	int	telnet_connected;
+extern	qboolean	telnet_connected;
 extern	cvar_t	not_auth_timeout;
 extern	cvar_t	auth_timeout;
 
@@ -116,7 +116,7 @@ void NET_Init	(int *serverport, int *telnetport);
 void		NET_Shutdown (void);
 qboolean	NET_GetPacket (void);
 void		NET_SendPacket (int length, void *data, netadr_t to);
-void		NET_Sleep (int msec);
+//qboolean	NET_Sleep ();
 
 qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
 qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);

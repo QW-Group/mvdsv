@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: main.c,v 1.10 2006/02/27 11:03:37 disconn3ct Exp $
+	$Id: main.c,v 1.11 2006/03/27 16:18:16 vvd0 Exp $
 */
 
 #include "defs.h"
@@ -93,7 +93,7 @@ void Sys_Exit (int i)
 	if ( sworld.options & O_WAITFORKBHIT)
 	{
 		if (i != 2)
-			SetConsoleTitle("qwdtools  Done");
+			SetConsoleTitle(QWDTOOLS_NAME " Done");
 
 		Sys_Printf("\nPress any key to continue\n");
 		do ReadConsoleInput( ConsoleInHndl, &in, 1, &r); while(in.EventType != KEY_EVENT);
@@ -1090,10 +1090,11 @@ void QWDToolsMsg(void)
 {
 	char str[1024];
 
-	strcpy(str, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n"
+	strlcpy(str, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n"
 	       " This demo was converted\n"
-	       " from QWD by QWDTools\n"
-	       "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n");
+	       " from QWD by " QWDTOOLS_NAME " " QWE_VERSION"\n"
+	       "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n",
+			sizeof(str));
 
 	MVDWrite_Begin(dem_all, 0, strlen(str) + 3);
 	MSG_WriteByte(msgbuf, svc_print);
@@ -1186,7 +1187,7 @@ int main (int argc, char **argv)
 
 	//	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
 	Sys_Printf(QWDTOOLS_NAME " version " QWE_VERSION " (c) 2001-2003 Bartlomiej Rychtarski\n");
-	Sys_Printf("Unix port by David (hexum) Balcom and VVD, 2004, 2005\n");
+	Sys_Printf("Unix port by David (hexum) Balcom and VVD, 2004-2006\n");
 	Sys_Printf("Part of the " PROJECT_NAME " project: " PROJECT_URL "\n\n");
 
 	Tools_Init();

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.16 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: sv_init.c,v 1.17 2006/03/27 16:18:15 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -675,7 +675,7 @@ void SV_SpawnServer (char *server)
 
 	// information about the server
 	ent->v.netname = PR_SetString(version.string);
-	ent->v.targetname = PR_SetString("mvdsv");
+	ent->v.targetname = PR_SetString(SERVER_NAME);
 	ent->v.impulse = QWE_VERNUM;
 	ent->v.items = pr_numbuiltins - 1;
 

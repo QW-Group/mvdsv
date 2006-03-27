@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.46 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_main.c,v 1.47 2006/03/27 16:18:15 vvd0 Exp $
 */
 
 #include "version.h"
@@ -41,6 +41,12 @@ cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map 
 
 cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic
+
+qboolean OnChange_sysselecttimeout_var (cvar_t *var, char *string);
+cvar_t	sys_select_timeout = {"sys_select_timeout", "10000", 0, OnChange_sysselecttimeout_var};
+// MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
+// (else can occur packets lost if sv_minping > 0)
+// if set too low then occur higher CPU usage
 
 cvar_t	sys_restart_on_error = {"sys_restart_on_error", "0"};
 
@@ -148,7 +154,7 @@ cvar_t	coop = {"coop", "0"};
 
 cvar_t	version = {"version", full_version, CVAR_ROM};
 
-cvar_t	hostname = {"hostname","unnamed",CVAR_SERVERINFO};
+cvar_t	hostname = {"hostname", "unnamed", CVAR_SERVERINFO};
 
 cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
 cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login"
@@ -156,6 +162,9 @@ cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "
 cvar_t sv_maxuserid = {"sv_maxuserid", "99"};
 
 cvar_t sv_old_status_for_ktpro = {"sv_old_status_for_ktpro", "1"};
+
+cvar_t registered = {"registered", "1", CVAR_ROM};
+// We need this cvar, because ktpro didn't allow to go at some placeses of, for example, start map.
 
 log_t	logs[MAX_LOG];
 
@@ -2463,6 +2472,7 @@ void SV_InitLocal (void)
 
 	Cvar_RegisterVariable (&sv_mintic);
 	Cvar_RegisterVariable (&sv_maxtic);
+	Cvar_RegisterVariable (&sys_select_timeout);
 	Cvar_RegisterVariable (&sys_restart_on_error);
 
 	Cvar_RegisterVariable (&skill);
@@ -2544,6 +2554,8 @@ void SV_InitLocal (void)
 
 	Cvar_RegisterVariable (&sv_maxuserid);
 	Cvar_RegisterVariable (&sv_old_status_for_ktpro);
+
+	Cvar_RegisterVariable (&registered);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
@@ -2779,6 +2791,18 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 
 //============================================================================
 
+qboolean OnChange_sysselecttimeout_var (cvar_t *var, char *value)
+{
+	extern struct timeval select_timeout;
+	int t = Q_atoi(value);
+	if (t)
+	{
+		select_timeout.tv_sec  = t / 1000000;
+		select_timeout.tv_usec = t - select_timeout.tv_sec;
+		return false;
+	}
+	return true;
+}
 //bliP: 24/9 logdir ->
 qboolean OnChange_logdir_var (cvar_t *var, char *value)
 {

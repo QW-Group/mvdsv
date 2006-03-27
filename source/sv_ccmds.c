@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.24 2006/03/20 14:04:38 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.25 2006/03/27 16:18:15 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1274,25 +1274,33 @@ qboolean SV_Check_ktpro(void)
 			*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD);
 }
 
-void SV_Check_ktpro_maps(void)
+void SV_Check_localinfo_maps_support(void)
 {
 	float	k_version;
 	char	*k_version_s;
 	int		k_build;
 	char	*k_build_s;
 
+	char	*x_version;
+	char	*x_build;
+
 	k_version = Q_atof(k_version_s = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION));
 	k_build   = Q_atoi(k_build_s   = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD));
-	if (k_version < LOCALINFO_MAPS_KTPRO_VERSION || k_build < LOCALINFO_MAPS_KTPRO_BUILD)
+
+	x_version = Info_ValueForKey(svs.info, SERVERINFO_KTX_VERSION);
+	x_build   = Info_ValueForKey(svs.info, SERVERINFO_KTX_BUILD);
+
+	if ((k_version < LOCALINFO_MAPS_KTPRO_VERSION || k_build < LOCALINFO_MAPS_KTPRO_BUILD) &&
+		!(*x_version && *x_build))
 	{
 		Con_Printf("WARNING: Storing maps list in LOCALINFO supported only by ktpro version "
-		           LOCALINFO_MAPS_KTPRO_VERSION_S " build %i and newer.\n",
+		           LOCALINFO_MAPS_KTPRO_VERSION_S " build %i and newer and by ktx.\n",
 		           LOCALINFO_MAPS_KTPRO_BUILD);
 		if (k_version && k_build)
 			Con_Printf("Current running ktpro version %s build %s.\n",
 			           k_version_s, k_build_s);
 		else
-			Con_Printf("Current running non ktpro mod.\n");
+			Con_Printf("Current running mod is not ktpro and is not ktx.\n");
 	}
 }
 /*
@@ -1308,7 +1316,7 @@ void SV_Check_maps_f(void)
 	int i, j, maps_id1;
 	char *s=NULL, *key;
 
-	SV_Check_ktpro_maps();
+	SV_Check_localinfo_maps_support();
 
 	d = Sys_listdir("id1/maps", ".bsp$", SORT_BY_NAME);
 	list = d.files;

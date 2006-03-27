@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.27 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: server.h,v 1.28 2006/03/27 16:18:15 vvd0 Exp $
 */
 // server.h
 
@@ -455,13 +455,20 @@ typedef struct
 #define	MULTICAST_PHS_R			4
 #define	MULTICAST_PVS_R			5
 
-#define LOCALINFO_MAPS_LIST_START	1000
-#define LOCALINFO_MAPS_LIST_END		1999
+// maps in localinfo supported only by ktpro & ktx mods {
+#define LOCALINFO_MAPS_LIST_START		1000
+#define LOCALINFO_MAPS_LIST_END			1999
+
 #define LOCALINFO_MAPS_KTPRO_VERSION	1.63
 #define LOCALINFO_MAPS_KTPRO_VERSION_S	"1.63"
-#define LOCALINFO_MAPS_KTPRO_BUILD	42795
-#define SERVERINFO_KTPRO_VERSION	"kmod"
-#define SERVERINFO_KTPRO_BUILD		"build"
+#define LOCALINFO_MAPS_KTPRO_BUILD		42795
+#define SERVERINFO_KTPRO_VERSION		"kmod"
+#define SERVERINFO_KTPRO_BUILD			"build"
+
+// all versions of ktx with such serverinfo's keys support maps in localinfo
+#define SERVERINFO_KTX_VERSION			"xmod"
+#define SERVERINFO_KTX_BUILD			"xbuild"
+// }
 
 #define MAX_REDIRECTMESSAGES	128
 #define OUTPUTBUF_SIZE		8000

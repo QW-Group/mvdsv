@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.10 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: cvar.c,v 1.11 2006/03/27 16:18:15 vvd0 Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -173,7 +173,7 @@ void Cvar_SetByName (char *var_name, char *value)
 	var = Cvar_FindVar (var_name);
 	if (!var)
 	{	// there is an error in C code if this happens
-		Con_Printf ("Cvar_Set: variable %s not found\n", var_name);
+		Con_DPrintf ("Cvar_Set: variable %s not found\n", var_name);
 		return;
 	}
 
