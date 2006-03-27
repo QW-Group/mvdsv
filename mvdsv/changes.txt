@@ -1,20 +1,30 @@
 
-$Id: changes.txt,v 1.64 2006/03/23 22:45:57 disconn3ct Exp $
+$Id: changes.txt,v 1.65 2006/03/27 16:18:15 vvd0 Exp $
 
 ----
-MVDSV v0.19.13-CVS build 22?? (2006.03.??)
-[server]
-- ZQuake's pmove code (by disconnect)
-- some ZQUake's Protocol Extensions: PM_TYPE, PM_TYPE_NEW, SERVERTIME, PF_ONGROUND (by disconnect)
-
-
-----
-MVDSV v0.19.12-CVS build 2283 (2006.03.23)
+MVDSV v0.19.14-CVS build 22?? (2006.03.??)
 - bugfix from 0.179b: SunOS on SPARC-64 didn't determine big endian
 (Thanks to Krok)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
+- returned back sys_select_timeout:
+   MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
+  (else can occur packets lost if sv_minping > 0)
+  if set too low then occur higher CPU usage
+  Example: 
+    1. sys_select_timeout 10000 + FreeBSD 4 = 
+       4-5% of CPU usage on empty server + sv_minping 39 + low packets lost
+    2. sys_select_timeout 1000000 + FreeBSD 4 = 
+       0% of CPU usage on empty server + sv_minping 39 + ~20 packets lost
+  Administrator can tune this cvar self.
+  May be to make auto change sys_select_timeout on connect 1st user and disconnect last
+  or/and set sv_minping...
+- returned back and made cvar registered CVAR_ROM and seted value to 1;
+  can't delete it because ktpro didn't allow to go at some placeses of, for example, start map
+- bugfix: spectators can't hear say_team in qvm, qc-based mods not affected by this fix (by qqshka)
+- ZQuake's pmove code (by disconnect)
+- some ZQUake's Protocol Extensions: PM_TYPE, PM_TYPE_NEW, SERVERTIME, PF_ONGROUND (by disconnect)
 - ZQuake-like minping --> no more sys_select_timeout (by disconnect)
 - new cvar sv_kickuserinfospamtime - time in seconds for checking userinfo changes spam
   0 - disable kick of the userinfo spaming player
@@ -82,8 +92,8 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
   default: 99
 (by disconnect)
 - server-side flash for TeamFortress (oldgrens mode) (ported by Angel from QW262)
-- added possibility to set small speed for objects on map (by ivan)
-- added possibility to set non integer volume for sounds from mods (by ivan)
+- added possibility to set small speed for objects on map (by qqshka)
+- added possibility to set non integer volume for sounds from mods (by qqshka)
 - added possibility to record multiple demos at same time (from FTE by disconnect)
 - FTE's QTV (FTV) support (from FTE by disconnect) :
   - mvd_streamport - cvar, to control a port for MVD data streaming

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.26 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.27 2006/03/27 16:18:16 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -52,15 +52,17 @@ extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
 extern cvar_t auth_timeout;
 
+struct timeval select_timeout;
+
 cvar_t	sys_nostdout = {"sys_nostdout", "0"};
 cvar_t	sys_extrasleep = {"sys_extrasleep", "0"};
 
 static qboolean	stdin_ready = false;
 // Added by VVD {
 static qboolean	iosock_ready = false;
-static int	authenticated = 0;
+static qboolean	authenticated = false;
 static double	cur_time_auth;
-static qboolean	isdaemon = 0;
+static qboolean	isdaemon = false;
 // Added by VVD }
 
 /*
@@ -329,7 +331,7 @@ char *Sys_ConsoleInput (void)
 			switch (read (telnet_iosock, text + len, 1))
 			{
 			case 0:
-				len = telnet_connected = authenticated = 0;
+				len = telnet_connected = authenticated = flase;
 				close (telnet_iosock);
 				SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 				return NULL;
@@ -344,9 +346,9 @@ char *Sys_ConsoleInput (void)
 			default:
 				if (qerrno != EAGAIN) // demand for M$ WIN 2K telnet support
 				{
-					len = telnet_connected = authenticated = 0;
+					len = telnet_connected = authenticated = false;
 					close (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: %s.\n", strerror(qerrno)));
+					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: (%i): %s.\n", qerrno, strerror(qerrno)));
 				}
 				return NULL;
 			}// switch
@@ -380,7 +382,7 @@ char *Sys_ConsoleInput (void)
 			else
 				if (strlen(text) == 1 && text[0] == 4)
 				{
-					len = telnet_connected = authenticated = 0;
+					len = telnet_connected = authenticated = false;
 					close (telnet_iosock);
 					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 				}
@@ -392,7 +394,7 @@ char *Sys_ConsoleInput (void)
 
 		if (strlen(text) == 1  && text[0] == 4)
 		{
-			len = telnet_connected = authenticated = 0;
+			len = telnet_connected = authenticated = false;
 			close (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 			len = 0;
@@ -472,9 +474,9 @@ void Sys_Init (void)
 }
 
 inline void Sys_Telnet (void);
-void NET_Sleep (int msec)
+qboolean NET_Sleep ()
 {
-	struct timeval timeout;
+	struct timeval timeout_cur;
 	fd_set	fdset;
 	int j;
 
@@ -493,21 +495,25 @@ void NET_Sleep (int msec)
 			j = max(j, telnet_iosock);
 		}
 	}
-		// Added by VVD }
+	// Added by VVD }
 
 	if (do_stdin)
 		FD_SET(0, &fdset);
 
-	timeout.tv_sec  = msec/1000;
-	timeout.tv_usec = (msec%1000)*1000;
+	timeout_cur.tv_sec  = select_timeout.tv_sec;
+	timeout_cur.tv_usec = select_timeout.tv_usec;
 
-	select (j + 1, &fdset, NULL, NULL, &timeout);
-
-	if (telnetport && telnet_connected)
-		iosock_ready = FD_ISSET(telnet_iosock, &fdset);
-
-	if (do_stdin)
-		stdin_ready = FD_ISSET(0, &fdset);
+	switch (select (++j, &fdset, NULL, NULL, &timeout_cur))
+	{
+		case -1: return true;
+		case 0: break;
+		default:
+			if (telnetport && telnet_connected)
+				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
+			if (do_stdin)
+				stdin_ready = FD_ISSET(0, &fdset);
+	}
+	return false;
 }
 
 void Sys_Sleep(unsigned long ms)
@@ -584,7 +590,7 @@ inline void Sys_Telnet (void)
 		        (authenticated && auth_timeout.value &&
 		         realtime - cur_time_auth > auth_timeout.value))
 		{
-			telnet_connected = 0;
+			telnet_connected = false;
 			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
 			closesocket (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
@@ -597,7 +603,7 @@ inline void Sys_Telnet (void)
 		{
 			//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 			//			{
-			telnet_connected = 1;
+			telnet_connected = true;
 			cur_time_not_auth = realtime;
 			SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 			send (telnet_iosock, "# ", 2, 0);
@@ -632,8 +638,9 @@ int main (int argc, char *argv[])
 	char	*user_name, *group_name = NULL, *chroot_dir;
 	//Added by VVD }
 
+	telnet_connected = false;
+
 	argv0 = argv[0];
-	telnet_connected = 0;
 
 	memset (&parms, 0, sizeof(parms));
 
@@ -683,7 +690,7 @@ int main (int argc, char *argv[])
 			(void)dup2(j, STDERR_FILENO);
 			if (j > 2)
 				(void)close(j);
-			isdaemon = 1;
+			isdaemon = true;
 		}
 	}
 
@@ -758,7 +765,8 @@ int main (int argc, char *argv[])
 		// the only reason we have a timeout at all is so that if the last
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
-		NET_Sleep (10);
+		if (NET_Sleep ())
+			continue;
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.5 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: net.c,v 1.6 2006/03/27 16:18:15 vvd0 Exp $
 */
 // net_wins.c
 
@@ -32,7 +32,7 @@ int		net_telnetsocket;
 int		sv_port;
 int		telnetport;
 int		telnet_iosock;
-int		telnet_connected;
+qboolean	telnet_connected;
 
 byte		net_message_buffer[MSG_BUF_SIZE];
 
@@ -224,16 +224,15 @@ int UDP_OpenSocket (int port)
 {
 	int	i;
 	struct sockaddr_in address;
-	int	_true = true; // disconnect: WTF?
+	unsigned long _true = true;
 
 	if ((net_socket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
-	{
 		Sys_Error ("UDP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
-		return INVALID_SOCKET;
-	}
 
-	if (setsockopt (net_socket, SOL_SOCKET, SO_REUSEADDR, &_true, sizeof(_true)))
+#ifndef _WIN32
+	if (setsockopt (net_socket, SOL_SOCKET, SO_REUSEADDR, (void *)&_true, sizeof(_true)))
 		Sys_Error ("UDP_OpenSocket: setsockopt SO_REUSEADDR: (%i): %s\n", qerrno, strerror(qerrno));
+#endif
 
 	if (ioctlsocket (net_socket, FIONBIO, &_true) == -1)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
@@ -284,16 +283,15 @@ int TCP_OpenSocket (int port, int udp_port)
 {
 	int	i;
 	struct sockaddr_in address;
-	int	_true = true;
+	unsigned long _true = true;
 
 	if ((net_telnetsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
-	{
 		Sys_Error ("TCP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
-		return INVALID_SOCKET;
-	}
 
-	if (setsockopt (net_telnetsocket, SOL_SOCKET, SO_REUSEADDR, (char*)&_true, sizeof(_true)))
+#ifndef _WIN32
+	if (setsockopt (net_telnetsocket, SOL_SOCKET, SO_REUSEADDR, (void*)&_true, sizeof(_true)))
 		Sys_Error ("TCP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
+#endif
 
 	if (ioctlsocket (net_telnetsocket, FIONBIO, &_true) == -1)
 		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
@@ -339,7 +337,7 @@ int TCP_OpenSocket (int port, int udp_port)
 	}
 #endif //ENABLE_TELNET_BY_DEFAULT
 
-	if (listen(net_telnetsocket, 1) == INVALID_SOCKET) {
+	if (listen(net_telnetsocket, 1)) {
 		closesocket(net_telnetsocket);
 		Sys_Error ("TCP_OpenSocket: listen: (%i): %s\n", qerrno, strerror(qerrno));
 	}
@@ -395,7 +393,7 @@ void NET_Init (int *serverport, int *telnetport)
 	
 #ifdef _WIN32
 	// Why we need version 2.0? Trying 1.1...  Work with 1.0 too.
-	if (WSAStartup (MAKEWORD(1, 1), &winsockdata))
+	if (WSAStartup (MAKEWORD(1, 0), &winsockdata))
 		Sys_Error ("WinSock initialization failed.");
 
 	Sys_Printf("WinSock version is: %d.%d\n",

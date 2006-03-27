@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.20 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_send.c,v 1.21 2006/03/27 16:18:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -125,7 +125,6 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 #define	MAXPRINTMSG	4096
-//#define SERVER_PRINTF "MVDSV: "
 void Con_Printf (char *fmt, ...)
 {
 	va_list argptr;
@@ -137,7 +136,6 @@ void Con_Printf (char *fmt, ...)
 	// add to redirected message
 	if (sv_redirected)
 	{
-		//		strlcpy (msg, va(SERVER_PRINTF"%s", msg), MAXPRINTMSG);
 		if (strlen (msg) + strlen(outputbuf) > /*sizeof(outputbuf) - 1*/ MAX_MSGLEN - 10)
 			SV_FlushRedirect ();
 		strlcat (outputbuf, msg, sizeof(outputbuf));

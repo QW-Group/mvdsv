@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.38 2006/03/24 22:18:56 qqshka Exp $
+	$Id: sv_user.c,v 1.39 2006/03/27 16:18:16 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1991,7 +1991,7 @@ static void SV_MinPing_f (void)
 SV_ShowMapsList_f
 ==============
 */
-void SV_Check_ktpro_maps(void);
+void SV_Check_localinfo_maps_support(void);
 static void SV_ShowMapsList_f(void)
 {
 	char	*value, *key;
@@ -2000,7 +2000,7 @@ static void SV_ShowMapsList_f(void)
 	unsigned char	list_of_custom_maps[] = "list of custom maps";
 	unsigned char	end_of_list[] = "end of list";
 
-	SV_Check_ktpro_maps();
+	SV_Check_localinfo_maps_support();
 
 	Con_Printf("Vote for maps by typing the mapname, for example \"%s\"\n\n---%s\n",
 	           Q_redtext(ztndm3), Q_redtext(list_of_custom_maps));
