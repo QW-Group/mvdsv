@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: main.c,v 1.11 2006/03/27 16:18:16 vvd0 Exp $
+	$Id: main.c,v 1.12 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -87,7 +87,7 @@ void Sys_Exit (int i)
 	Sys_fclose(&sworld.analyse.file);
 
 	FreeFileList(sworld.filelist);
-	free(sources);
+	Q_free(sources);
 
 #ifdef _WIN32
 	if ( sworld.options & O_WAITFORKBHIT)
@@ -190,7 +190,7 @@ modifies net_message so that it points to the packet payload
 =================
 */
 
-qboolean Netchan_Process (netchan_t *chan)
+qbool Netchan_Process (netchan_t *chan)
 {
 	unsigned		sequence, sequence_ack;
 	unsigned		reliable_ack, reliable_message;
@@ -356,7 +356,7 @@ GetDemoMessage
 ====================
 */
 
-qboolean GetDemoMessage (void)
+qbool GetDemoMessage (void)
 {
 	int		r, i, j, num;
 	float	f, demotime;
@@ -887,7 +887,7 @@ void Update_SignonStats(void)
 	}
 }
 
-qboolean Synchronize (void);
+qbool Synchronize (void);
 void MainLoop(void)
 {
 	frame_t	*fframe, *tframe, *pframe;
@@ -1102,7 +1102,7 @@ void QWDToolsMsg(void)
 	MSG_WriteString(msgbuf, str);
 }
 
-qboolean ClearWorld(void)
+qbool ClearWorld(void)
 {
 	char *ext;
 	extern char stdintype[32];

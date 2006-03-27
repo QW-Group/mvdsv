@@ -1,21 +1,20 @@
 /*
- 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: dem_send.c,v 1.5 2005/12/04 05:39:33 disconn3ct Exp $
+
+	$Id: dem_send.c,v 1.6 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -49,7 +48,7 @@ void Interpolate(int num, frame_t *frame, demoinfo_t *demoinfo)
 	float	exacttime, nexttime, f;
 	int		i,j;
 	frame_t	*nextframe;
-	qboolean good;
+	qbool good;
 	player_state_t *state, *nextstate, *prevstate;
 
 	good = false;
@@ -146,7 +145,7 @@ void Interpolate(int num, frame_t *frame, demoinfo_t *demoinfo)
 /*
 ==================
 WritePlayers
- 
+
 Writes an update of players state
 ==================
 */
@@ -263,12 +262,12 @@ void WritePlayers (sizebuf_t *msg, frame_t *frame)
 /*
 ==================
 WriteDelta
- 
+
 Writes part of a packetentities message.
 Can delta from either a baseline or a previous packet_entity
 ==================
 */
-void WriteDelta (entity_state_t *efrom, entity_state_t *to, sizebuf_t *msg, qboolean force)
+void WriteDelta (entity_state_t *efrom, entity_state_t *to, sizebuf_t *msg, qbool force)
 {
 	int		bits;
 	int		i;
@@ -368,11 +367,10 @@ void WriteDelta (entity_state_t *efrom, entity_state_t *to, sizebuf_t *msg, qboo
 /*
 =============
 EmitPacketEntities
- 
+
 Writes a delta update of a packet_entities_t to the message.
 =============
 */
-
 void EmitPacketEntities (sizebuf_t *msg, packet_entities_t *to)
 {
 	frame_t	*fromframe;

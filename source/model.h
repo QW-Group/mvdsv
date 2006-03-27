@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: model.h,v 1.9 2006/01/09 20:37:14 disconn3ct Exp $
+	$Id: model.h,v 1.10 2006/03/27 22:54:38 disconn3ct Exp $
 */
 
 #ifndef __MODEL__
@@ -54,9 +54,9 @@ typedef struct
 
 typedef struct
 {
-	qboolean	allsolid;	// if true, plane is not valid
-	qboolean	startsolid;	// if true, the initial point was in a solid area
-	qboolean	inopen, inwater;
+	qbool		allsolid;	// if true, plane is not valid
+	qbool		startsolid;	// if true, the initial point was in a solid area
+	qbool		inopen, inwater;
 	float		fraction;	// time completed, 1.0 = didn't hit anything
 	vec3_t		endpos;		// final position
 	plane_t		plane;		// surface normal at impact
@@ -189,7 +189,7 @@ typedef enum {MOD_NORMAL, MOD_PLAYER, MOD_EYES, MOD_FLAME, MOD_THUNDERBOLT} modh
 typedef struct model_s
 {
 	char		name[MAX_QPATH];
-	qboolean	needload; // bmodels and sprites don't cache normally
+	qbool		needload; // bmodels and sprites don't cache normally
 
 	modhint_t	modhint;
 
@@ -208,7 +208,7 @@ typedef struct model_s
 //
 // solid volume for clipping (sent from server)
 //
-	qboolean	clipbox;
+	qbool		clipbox;
 	vec3_t		clipmins, clipmaxs;
 
 //
@@ -284,8 +284,8 @@ typedef struct {
 
 void	Mod_Init (void);
 void	Mod_ClearAll (void);
-qmodel_t *Mod_ForName (char *name, qboolean crash);
+qmodel_t *Mod_ForName (char *name, qbool crash);
 mleaf_t *Mod_PointInLeaf (float *p, qmodel_t *model);
-byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model, qboolean);
+byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model, qbool);
 
 #endif	// __MODEL__

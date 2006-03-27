@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.47 2006/03/27 16:18:15 vvd0 Exp $
+	$Id: sv_main.c,v 1.48 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "version.h"
@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 quakeparms_t host_parms;
 
-qboolean	host_initialized;		// true if into command execution (compatability)
+qbool		host_initialized;		// true if into command execution (compatability)
 
 double		realtime;			// without any filtering or bounding
 
@@ -42,7 +42,7 @@ cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map 
 cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic
 
-qboolean OnChange_sysselecttimeout_var (cvar_t *var, char *string);
+qbool OnChange_sysselecttimeout_var (cvar_t *var, char *string);
 cvar_t	sys_select_timeout = {"sys_select_timeout", "10000", 0, OnChange_sysselecttimeout_var};
 // MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
 // (else can occur packets lost if sv_minping > 0)
@@ -73,7 +73,7 @@ cvar_t	sv_rconlim = {"sv_rconlim", "10"};	// rcon bandwith limit: requests per s
 
 //bliP: telnet log level
 //cvar_t	telnet_log_level = {"telnet_log_level", "0"}; // logging level telnet console
-qboolean OnChange_telnetloglevel_var (cvar_t *var, char *string);
+qbool OnChange_telnetloglevel_var (cvar_t *var, char *string);
 cvar_t  telnet_log_level = {"telnet_log_level", "0", 0, OnChange_telnetloglevel_var};
 //<-
 
@@ -82,7 +82,7 @@ cvar_t	frag_log_type = {"frag_log_type", "0"};
 //		0 - old style (  qwsv - v0.165)
 //		1 - new style (v0.168 - v0.172)
 
-qboolean OnChange_qconsolelogsay_var (cvar_t *var, char *string);
+qbool OnChange_qconsolelogsay_var (cvar_t *var, char *string);
 cvar_t	qconsole_log_say = {"qconsole_log_say", "0", 0, OnChange_qconsolelogsay_var};
 // logging "say" and "say_team" messages to the qconsole_PORT.log file
 
@@ -106,7 +106,7 @@ cvar_t	download_map_url = {"download_map_url", ""};
 cvar_t	sv_specprint = {"sv_specprint", "0"};
 cvar_t	sv_reconnectlimit = {"sv_reconnectlimit", "0"};
 
-qboolean OnChange_admininfo_var (cvar_t *var, char *string);
+qbool OnChange_admininfo_var (cvar_t *var, char *string);
 cvar_t  sv_admininfo = {"sv_admininfo", "", 0, OnChange_admininfo_var};
 
 cvar_t	sv_unfake = {"sv_unfake", "0"}; //bliP: 24/9 kickfake to unfake
@@ -114,7 +114,7 @@ cvar_t	sv_kicktop = {"sv_kicktop", "0"};
 
 cvar_t	sv_maxlogsize = {"sv_maxlogsize", "0"};
 //bliP: 24/9 ->
-qboolean OnChange_logdir_var (cvar_t *var, char *string);
+qbool OnChange_logdir_var (cvar_t *var, char *string);
 cvar_t  sv_logdir = {"sv_logdir", ".", 0, OnChange_logdir_var};
 
 cvar_t  sv_speedcheck = {"sv_speedcheck", "0"};
@@ -131,7 +131,7 @@ cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 cvar_t	sv_default_name = {"sv_default_name", "unnamed"};
 
-qboolean sv_mod_msg_file_OnChange(cvar_t *cvar, char *value);
+qbool sv_mod_msg_file_OnChange(cvar_t *cvar, char *value);
 cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", 0, sv_mod_msg_file_OnChange};
 
 //
@@ -168,14 +168,14 @@ cvar_t registered = {"registered", "1", CVAR_ROM};
 
 log_t	logs[MAX_LOG];
 
-qboolean sv_error = 0;
-qboolean server_cfg_done = false;
+qbool sv_error = 0;
+qbool server_cfg_done = false;
 
 void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 
 //============================================================================
 
-qboolean GameStarted(void)
+qbool GameStarted(void)
 {
 	return sv.mvdrecording || strncasecmp(Info_ValueForKey(svs.info, "status"), "Standby", 8);
 }
@@ -218,7 +218,7 @@ then exits
 */
 void SV_Error (char *error, ...)
 {
-	static qboolean inerror = false;
+	static qbool inerror = false;
 	static char string[1024];
 	va_list argptr;
 
@@ -737,7 +737,7 @@ static void SVC_GetChallenge (void)
 	                        svs.challenges[i].challenge);
 }
 
-static qboolean ValidateUserInfo (char *userinfo)
+static qbool ValidateUserInfo (char *userinfo)
 {
 	while (*userinfo)
 	{
@@ -769,7 +769,7 @@ extern char *shortinfotbl[];
 static void SVC_DirectConnect (void)
 {
 	int clients, spectators, vips, qport, version, challenge, i, edictnum;
-	qboolean spass = false, vip, spectator;
+	qbool spass = false, vip, spectator;
 	client_t *cl, *newcl;
 	char userinfo[1024];
 	char *s, *key;
@@ -1089,7 +1089,7 @@ static int char2int (int c)
  *	the 'final' error, but it doesn't make sense to solve the printing 
  *	delay with more complex code.
  */
-static qboolean rcon_bandlim (void)
+static qbool rcon_bandlim (void)
 {
 	static double lticks = 0;
 	static int lpackets = 0;
@@ -1189,7 +1189,7 @@ int Master_Rcon_Validate (void)
 
 	for (i = 0; i < Cmd_Argc(); ++i)
 		client_string_len += strlen(Cmd_Argv(i));
-	client_string = (char *) Q_Malloc (client_string_len);
+	client_string = (char *) Q_malloc (client_string_len);
 	*client_string = 0;
 	for (i = 0; i < Cmd_Argc(); ++i)
 	{
@@ -1199,7 +1199,7 @@ int Master_Rcon_Validate (void)
 	//	Sys_Printf("client_string = %s\nclient_string_len = %d, strlen(client_string) = %d\n",
 	//		client_string, client_string_len, strlen(client_string));
 	i = Rcon_Validate (client_string, master_rcon_password);
-	Q_Free(client_string);
+	Q_free(client_string);
 	return i;
 }
 
@@ -1219,10 +1219,10 @@ static void SVC_RemoteCommand (char *client_string)
 	char		plain[32];
 	char		*hide, *p;
 	client_t	*cl;
-	qboolean	admin_cmd = false;
-	qboolean	do_cmd = false;
-	qboolean	bad_cmd = false;
-	qboolean	banned = false;
+	qbool		admin_cmd = false;
+	qbool		do_cmd = false;
+	qbool		bad_cmd = false;
+	qbool		banned = false;
 
 
 	if (Rcon_Validate (client_string, master_rcon_password))
@@ -1500,7 +1500,7 @@ cvar_t	filterban = {"filterban", "1"};
 StringToFilter
 =================
 */
-qboolean StringToFilter (char *s, ipfilter_t *f)
+qbool StringToFilter (char *s, ipfilter_t *f)
 {
 	char	num[128];
 	int		i, j;
@@ -1793,7 +1793,7 @@ void SV_SendBan (void)
 SV_FilterPacket
 =================
 */
-qboolean SV_FilterPacket (void)
+qbool SV_FilterPacket (void)
 {
 	int		i;
 	unsigned	in;
@@ -1971,7 +1971,7 @@ static void SV_CleanIPList (void)
 	}
 }
 
-static qboolean SV_IPCompare (byte *a, byte *b)
+static qbool SV_IPCompare (byte *a, byte *b)
 {
 	int i;
 
@@ -2220,7 +2220,7 @@ static void SV_GetConsoleCommands (void)
 SV_BoundRate
 ===================
 */
-int SV_BoundRate (qboolean dl, int rate)
+int SV_BoundRate (qbool dl, int rate)
 {
 	if (!rate)
 		rate = 2500;
@@ -2319,7 +2319,7 @@ SV_Frame
 
 ==================
 */
-void SV_Map (qboolean now);
+void SV_Map (qbool now);
 void SV_Frame (double time)
 {
 	static double start, end;
@@ -2430,132 +2430,132 @@ void SV_InitLocal (void)
 	SV_InitOperatorCommands	();
 	SV_UserInit ();
 
-	Cvar_RegisterVariable (&sv_getrealip);
-	Cvar_RegisterVariable (&sv_maxdownloadrate);
-	Cvar_RegisterVariable (&sv_serverip);
-	Cvar_RegisterVariable (&sv_cpserver);
-	Cvar_RegisterVariable (&rcon_password);
-	Cvar_RegisterVariable (&password);
-	Cvar_RegisterVariable (&sv_hashpasswords);
+	Cvar_Register (&sv_getrealip);
+	Cvar_Register (&sv_maxdownloadrate);
+	Cvar_Register (&sv_serverip);
+	Cvar_Register (&sv_cpserver);
+	Cvar_Register (&rcon_password);
+	Cvar_Register (&password);
+	Cvar_Register (&sv_hashpasswords);
 	//Added by VVD {
-	Cvar_RegisterVariable (&sv_crypt_rcon);
-	Cvar_RegisterVariable (&sv_timestamplen);
-	Cvar_RegisterVariable (&sv_rconlim);
+	Cvar_Register (&sv_crypt_rcon);
+	Cvar_Register (&sv_timestamplen);
+	Cvar_Register (&sv_rconlim);
 
-	Cvar_RegisterVariable (&telnet_password);
-	Cvar_RegisterVariable (&telnet_log_level);
-	Cvar_RegisterVariable (&not_auth_timeout);
-	Cvar_RegisterVariable (&auth_timeout);
+	Cvar_Register (&telnet_password);
+	Cvar_Register (&telnet_log_level);
+	Cvar_Register (&not_auth_timeout);
+	Cvar_Register (&auth_timeout);
 
-	Cvar_RegisterVariable (&frag_log_type);
-	Cvar_RegisterVariable (&qconsole_log_say);
-	Cvar_RegisterVariable (&sv_use_dns);
+	Cvar_Register (&frag_log_type);
+	Cvar_Register (&qconsole_log_say);
+	Cvar_Register (&sv_use_dns);
 
 	for (i = 0, len = 1; i < com_argc; i++)
 		len += strlen(com_argv[i]) + 1;
-	sys_command_line.string = (char *) Q_Malloc (len);
+	sys_command_line.string = (char *) Q_malloc (len);
 	sys_command_line.string[0] = 0;
 	for (i = 0; i < com_argc; i++)
 	{
 		strlcat(sys_command_line.string, com_argv[i], len);
 		strlcat(sys_command_line.string, " ", len);
 	}
-	Cvar_RegisterVariable (&sys_command_line);
+	Cvar_Register (&sys_command_line);
 
 	snprintf(full_version, SIZEOF_FULL_VERSION, FULL_VERSION "\n" BUILD_DATE "\n", build_number());
-	Cvar_RegisterVariable (&version);
+	Cvar_Register (&version);
 	//Added by VVD }
-	Cvar_RegisterVariable (&spectator_password);
-	Cvar_RegisterVariable (&vip_password);
+	Cvar_Register (&spectator_password);
+	Cvar_Register (&vip_password);
 
-	Cvar_RegisterVariable (&sv_nailhack);
+	Cvar_Register (&sv_nailhack);
 
-	Cvar_RegisterVariable (&sv_mintic);
-	Cvar_RegisterVariable (&sv_maxtic);
-	Cvar_RegisterVariable (&sys_select_timeout);
-	Cvar_RegisterVariable (&sys_restart_on_error);
+	Cvar_Register (&sv_mintic);
+	Cvar_Register (&sv_maxtic);
+	Cvar_Register (&sys_select_timeout);
+	Cvar_Register (&sys_restart_on_error);
 
-	Cvar_RegisterVariable (&skill);
-	Cvar_RegisterVariable (&coop);
+	Cvar_Register (&skill);
+	Cvar_Register (&coop);
 
-	Cvar_RegisterVariable (&fraglimit);
-	Cvar_RegisterVariable (&timelimit);
-	Cvar_RegisterVariable (&teamplay);
-	Cvar_RegisterVariable (&samelevel);
-	Cvar_RegisterVariable (&maxclients);
-	Cvar_RegisterVariable (&maxspectators);
-	Cvar_RegisterVariable (&maxvip_spectators);
-	Cvar_RegisterVariable (&hostname);
-	Cvar_RegisterVariable (&deathmatch);
-	Cvar_RegisterVariable (&spawn);
-	Cvar_RegisterVariable (&watervis);
-	Cvar_RegisterVariable (&serverdemo);
+	Cvar_Register (&fraglimit);
+	Cvar_Register (&timelimit);
+	Cvar_Register (&teamplay);
+	Cvar_Register (&samelevel);
+	Cvar_Register (&maxclients);
+	Cvar_Register (&maxspectators);
+	Cvar_Register (&maxvip_spectators);
+	Cvar_Register (&hostname);
+	Cvar_Register (&deathmatch);
+	Cvar_Register (&spawn);
+	Cvar_Register (&watervis);
+	Cvar_Register (&serverdemo);
 
-	Cvar_RegisterVariable (&developer);
+	Cvar_Register (&developer);
 
-	Cvar_RegisterVariable (&timeout);
-	Cvar_RegisterVariable (&zombietime);
+	Cvar_Register (&timeout);
+	Cvar_Register (&zombietime);
 
-	Cvar_RegisterVariable (&sv_maxvelocity);
-	Cvar_RegisterVariable (&sv_gravity);
-	Cvar_RegisterVariable (&sv_stopspeed);
-	Cvar_RegisterVariable (&sv_maxspeed);
-	Cvar_RegisterVariable (&sv_spectatormaxspeed);
-	Cvar_RegisterVariable (&sv_accelerate);
-	Cvar_RegisterVariable (&sv_airaccelerate);
-	Cvar_RegisterVariable (&sv_wateraccelerate);
-	Cvar_RegisterVariable (&sv_friction);
-	Cvar_RegisterVariable (&sv_waterfriction);
+	Cvar_Register (&sv_maxvelocity);
+	Cvar_Register (&sv_gravity);
+	Cvar_Register (&sv_stopspeed);
+	Cvar_Register (&sv_maxspeed);
+	Cvar_Register (&sv_spectatormaxspeed);
+	Cvar_Register (&sv_accelerate);
+	Cvar_Register (&sv_airaccelerate);
+	Cvar_Register (&sv_wateraccelerate);
+	Cvar_Register (&sv_friction);
+	Cvar_Register (&sv_waterfriction);
 	
-	//Cvar_RegisterVariable (&pm_bunnyspeedcap);
-	Cvar_RegisterVariable (&pm_ktjump);
-	//Cvar_RegisterVariable (&pm_slidefix);
-	//Cvar_RegisterVariable (&pm_airstep);
-	//Cvar_RegisterVariable (&pm_pground);
+	//Cvar_Register (&pm_bunnyspeedcap);
+	Cvar_Register (&pm_ktjump);
+	//Cvar_Register (&pm_slidefix);
+	//Cvar_Register (&pm_airstep);
+	//Cvar_Register (&pm_pground);
 
-	Cvar_RegisterVariable (&filterban);
+	Cvar_Register (&filterban);
 
-	Cvar_RegisterVariable (&allow_download);
-	Cvar_RegisterVariable (&allow_download_skins);
-	Cvar_RegisterVariable (&allow_download_models);
-	Cvar_RegisterVariable (&allow_download_sounds);
-	Cvar_RegisterVariable (&allow_download_maps);
-	Cvar_RegisterVariable (&allow_download_pakmaps);
-	Cvar_RegisterVariable (&allow_download_demos);
-	Cvar_RegisterVariable (&allow_download_other);
+	Cvar_Register (&allow_download);
+	Cvar_Register (&allow_download_skins);
+	Cvar_Register (&allow_download_models);
+	Cvar_Register (&allow_download_sounds);
+	Cvar_Register (&allow_download_maps);
+	Cvar_Register (&allow_download_pakmaps);
+	Cvar_Register (&allow_download_demos);
+	Cvar_Register (&allow_download_other);
 	//bliP: init ->
-	Cvar_RegisterVariable (&download_map_url);
+	Cvar_Register (&download_map_url);
 
-	Cvar_RegisterVariable (&sv_specprint);
-	Cvar_RegisterVariable (&sv_admininfo);
-	Cvar_RegisterVariable (&sv_reconnectlimit);
-	Cvar_RegisterVariable (&sv_maxlogsize);
+	Cvar_Register (&sv_specprint);
+	Cvar_Register (&sv_admininfo);
+	Cvar_Register (&sv_reconnectlimit);
+	Cvar_Register (&sv_maxlogsize);
 	//bliP: 24/9 ->
-	Cvar_RegisterVariable (&sv_logdir);
-	Cvar_RegisterVariable (&sv_speedcheck);
-	Cvar_RegisterVariable (&sv_unfake); // kickfake to unfake
+	Cvar_Register (&sv_logdir);
+	Cvar_Register (&sv_speedcheck);
+	Cvar_Register (&sv_unfake); // kickfake to unfake
 	//<-
-	Cvar_RegisterVariable (&sv_kicktop);
+	Cvar_Register (&sv_kicktop);
 	//<-
 
-	Cvar_RegisterVariable (&sv_highchars);
+	Cvar_Register (&sv_highchars);
 
-	Cvar_RegisterVariable (&sv_phs);
+	Cvar_Register (&sv_phs);
 
-	Cvar_RegisterVariable (&pausable);
+	Cvar_Register (&pausable);
 
-	Cvar_RegisterVariable (&sv_maxrate);
+	Cvar_Register (&sv_maxrate);
 
-	Cvar_RegisterVariable (&sv_loadentfiles);
-	Cvar_RegisterVariable (&sv_default_name);
-	Cvar_RegisterVariable (&sv_mod_msg_file);
-	Cvar_RegisterVariable (&sv_forcenick);
-	Cvar_RegisterVariable (&sv_registrationinfo);
+	Cvar_Register (&sv_loadentfiles);
+	Cvar_Register (&sv_default_name);
+	Cvar_Register (&sv_mod_msg_file);
+	Cvar_Register (&sv_forcenick);
+	Cvar_Register (&sv_registrationinfo);
 
-	Cvar_RegisterVariable (&sv_maxuserid);
-	Cvar_RegisterVariable (&sv_old_status_for_ktpro);
+	Cvar_Register (&sv_maxuserid);
+	Cvar_Register (&sv_old_status_for_ktpro);
 
-	Cvar_RegisterVariable (&registered);
+	Cvar_Register (&registered);
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
@@ -2610,7 +2610,7 @@ into a more C freindly form.
 */
 // Added by VVD {
 // ktpro crash if absolute value of userinfo keys "ls" or/and "lw" is to large
-static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qboolean warning_msg)
+static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qbool warning_msg)
 {
 	if (warning_msg)
 		SV_ClientPrintf (cl, PRINT_HIGH, "WARNING: You can't set setinfo %s %s %i.\n",
@@ -2638,7 +2638,7 @@ static void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
 
 extern func_t UserInfo_Changed;
 
-void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
+void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 {
 	char	*val, *p, *q;
 	int		i, limit;
@@ -2791,7 +2791,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qboolean namechanged)
 
 //============================================================================
 
-qboolean OnChange_sysselecttimeout_var (cvar_t *var, char *value)
+qbool OnChange_sysselecttimeout_var (cvar_t *var, char *value)
 {
 	extern struct timeval select_timeout;
 	int t = Q_atoi(value);
@@ -2804,7 +2804,7 @@ qboolean OnChange_sysselecttimeout_var (cvar_t *var, char *value)
 	return true;
 }
 //bliP: 24/9 logdir ->
-qboolean OnChange_logdir_var (cvar_t *var, char *value)
+qbool OnChange_logdir_var (cvar_t *var, char *value)
 {
 	if (strstr(value, ".."))
 		return true;
@@ -2815,7 +2815,7 @@ qboolean OnChange_logdir_var (cvar_t *var, char *value)
 //<-
 
 //bliP: admininfo ->
-qboolean OnChange_admininfo_var (cvar_t *var, char *value)
+qbool OnChange_admininfo_var (cvar_t *var, char *value)
 {
 	if (value[0])
 		Info_SetValueForStarKey (svs.info, "*admin", value, MAX_SERVERINFO_STRING);
@@ -2826,13 +2826,13 @@ qboolean OnChange_admininfo_var (cvar_t *var, char *value)
 //<-
 
 //bliP: telnet log level ->
-qboolean OnChange_telnetloglevel_var (cvar_t *var, char *value)
+qbool OnChange_telnetloglevel_var (cvar_t *var, char *value)
 {
 	logs[TELNET_LOG].log_level = atoi(value);
 	return false;
 }
 //<-
-qboolean OnChange_qconsolelogsay_var (cvar_t *var, char *value)
+qbool OnChange_qconsolelogsay_var (cvar_t *var, char *value)
 {
 	logs[CONSOLE_LOG].log_level = atoi(value);
 	return false;

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.13 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_windows.c,v 1.14 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
@@ -35,9 +35,9 @@ HWND		HEdit1 = NULL, HEdit2 = NULL;
 HMENU		Menu;
 unsigned int	HEdit1_size = 0;
 char		*HEdit1_buf = NULL;
-qboolean minimized = false;
+qbool minimized = false;
 
-qboolean DrawConsole = false;
+qbool DrawConsole = false;
 
 /*
 =================
@@ -213,7 +213,7 @@ Tracks popup menu, this is called as thread, so it doesn't lag server
 
 DWORD WINAPI TrackPopup(LPVOID param)
 {
-	static qboolean running = false;
+	static qbool running = false;
 	POINT point;
 	HWND win;
 	int result;
@@ -298,7 +298,7 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 
 //		SendMessage(HEdit1, EM_LIMITTEXT, 1000, 0);
 		HEdit1_size = SendMessage(HEdit1, EM_GETLIMITTEXT, 0, 0) + 1;
-		HEdit1_buf = (char *) Q_Malloc (HEdit1_size);
+		HEdit1_buf = (char *) Q_malloc (HEdit1_size);
 //Sys_Printf("%d\n", HEdit1_size);
 		break;
 

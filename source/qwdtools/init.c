@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: init.c,v 1.8 2006/02/27 11:03:37 disconn3ct Exp $
+	$Id: init.c,v 1.9 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -629,5 +629,5 @@ void Load_ini (void)
 
 	ReadIni(buf);
 
-	free(buf);
+	Q_free(buf);
 }

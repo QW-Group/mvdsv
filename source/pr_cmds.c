@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.18 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.19 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1015,7 +1015,7 @@ void PF_newstr (void)
 	if (pr_argc == 2 && (int) G_FLOAT(OFS_PARM1) > size)
 		size = (int) G_FLOAT(OFS_PARM1);
 
-	pr_newstrtbl[i] = (char *) Q_Malloc(size);
+	pr_newstrtbl[i] = (char *) Q_malloc(size);
 	strlcpy(pr_newstrtbl[i], s, size);
 
 	G_INT(OFS_RETURN) = -(i+MAX_PRSTR);
@@ -1038,7 +1038,7 @@ void PF_freestr (void)
 		PR_RunError("freestr: Bad pointer");
 
 	num = - (num + MAX_PRSTR);
-	Q_Free(pr_newstrtbl[num]);
+	Q_free(pr_newstrtbl[num]);
 	pr_newstrtbl[num] = NULL;
 }
 
@@ -1050,7 +1050,7 @@ void PF_clear_strtbl(void)
 	{
 		if (pr_newstrtbl[i] != NULL)
 		{
-			Q_Free(pr_newstrtbl[i]);
+			Q_free(pr_newstrtbl[i]);
 			pr_newstrtbl[i] = NULL;
 		}
 	}

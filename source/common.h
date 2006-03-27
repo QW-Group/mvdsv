@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.15 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: common.h,v 1.16 2006/03/27 22:54:38 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -28,11 +28,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //============================================================================
 typedef struct sizebuf_s
 {
-	qboolean	allowoverflow;	// if false, do a Sys_Error
-	qboolean	overflowed;	// set to true if the buffer size failed
-	byte		*data;
-	int		maxsize;
-	int		cursize;
+	qbool	allowoverflow;	// if false, do a Sys_Error
+	qbool	overflowed;	// set to true if the buffer size failed
+	byte	*data;
+	int	maxsize;
+	int	cursize;
 } sizebuf_t;
 
 void SZ_Clear (sizebuf_t *buf);
@@ -67,7 +67,7 @@ void MSG_WriteAngle16 (sizebuf_t *sb, float f);
 void MSG_WriteDeltaUsercmd (sizebuf_t *sb, struct usercmd_s *from, struct usercmd_s *cmd);
 
 extern	int		msg_readcount;
-extern	qboolean	msg_badread; // set if a read goes beyond end of message
+extern	qbool	msg_badread; // set if a read goes beyond end of message
 
 void MSG_BeginReading (void);
 int MSG_GetReadCount(void);

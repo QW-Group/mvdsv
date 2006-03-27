@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: cvar.h,v 1.6 2006/03/27 22:54:38 disconn3ct Exp $
 */
 // cvar.h
 
@@ -33,7 +33,7 @@ cvar_t	r_draworder = {"r_draworder","1"};
 cvar_t	scr_screensize = {"screensize","1",CVAR_ARCHIVE};
 
 Cvars must be registered before use, or they will have a 0 value instead of the float interpretation of the string.  Generally, all cvar_t declarations should be registered in the apropriate init function before any console commands are executed:
-Cvar_RegisterVariable (&host_framerate);
+Cvar_Register (&host_framerate);
 
 
 C code usually just references a cvar in place:
@@ -65,15 +65,15 @@ typedef struct cvar_s
 {
 	char	*name;
 	char	*string;
-	int		flags;
-	qboolean	(*OnChange)(struct cvar_s *var, char *value);
+	int	flags;
+	qbool	(*OnChange)(struct cvar_s *var, char *value);
 	float	value;
 	struct cvar_s *hash_next;
 	struct cvar_s *next;
 } cvar_t;
 
 
-void  Cvar_RegisterVariable (cvar_t *variable);
+void  Cvar_Register (cvar_t *variable);
 // registers a cvar that already has the name, string, and optionally the
 // archive elements set.
 
@@ -98,13 +98,13 @@ float Cvar_VariableValue (char *var_name);
 char *Cvar_VariableString (char *var_name);
 // returns an empty string if not defined
 
-qboolean Cvar_Command (void);
+qbool Cvar_Command (void);
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
 
 cvar_t *Cvar_FindVar (char *var_name);
-qboolean Cvar_Delete (char *name);
+qbool Cvar_Delete (char *name);
 
 cvar_t *Cvar_Create (char *name, char *string, int cvarflags);
 

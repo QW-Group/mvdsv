@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.10 2006/03/08 12:07:57 disconn3ct Exp $
+	$Id: pr_edict.c,v 1.11 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -36,7 +36,7 @@ int				pr_teamfield = 0;	// field for team storage
 int		type_size[8] = {1,sizeof(void *)/4,1,3,1,1,sizeof(void *)/4,sizeof(void *)/4};
 
 ddef_t *ED_FieldAtOfs (int ofs);
-qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s);
+qbool ED_ParseEpair (void *base, ddef_t *key, char *s);
 
 #define	MAX_FIELD_LEN	64
 #define GEFV_CACHESIZE	2
@@ -730,7 +730,7 @@ Can parse either fields or globals
 returns false if error
 =============
 */
-qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
+qbool ED_ParseEpair (void *base, ddef_t *key, char *s)
 {
 	int		i;
 	char	string[128];
@@ -807,8 +807,8 @@ Used for initial level load and for savegames.
 char *ED_ParseEdict (char *data, edict_t *ent)
 {
 	ddef_t		*key;
-	qboolean	anglehack;
-	qboolean	init;
+	qbool		anglehack;
+	qbool		init;
 	char		keyname[256];
 
 	init = false;
@@ -973,7 +973,7 @@ void ED_LoadFromFile (char *data)
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
 }
 extern redirect_t	sv_redirected;
-qboolean PR_ConsoleCmd(void)
+qbool PR_ConsoleCmd(void)
 {
 	if (mod_ConsoleCmd)
 	{
@@ -989,7 +989,7 @@ qboolean PR_ConsoleCmd(void)
 	return false;
 }
 
-qboolean PR_UserCmd(void)
+qbool PR_UserCmd(void)
 {
 	/*if (!strcmp(Cmd_Argv(0), "admin") || !strcmp(Cmd_Argv(0), "judge"))
 	{
@@ -1148,7 +1148,7 @@ PR_Init
 //void PR_CleanLogText_Init();
 void PR_Init (void)
 {
-	Cvar_RegisterVariable(&sv_progsname);
+	Cvar_Register(&sv_progsname);
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f);
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);

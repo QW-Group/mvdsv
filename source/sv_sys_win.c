@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.21 2006/03/27 16:18:16 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.22 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -40,10 +40,10 @@ cvar_t	sys_sleep = {"sys_sleep", "8"};
 
 static char title[16];
 
-static qboolean	iosock_ready = false;
-static qboolean	authenticated = false;
+static qbool	iosock_ready = false;
+static qbool	authenticated = false;
 static double	cur_time_auth;
-static qboolean isdaemon = false;
+static qbool	isdaemon = false;
 
 /*
 ================
@@ -105,7 +105,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	HANDLE	h;
 	WIN32_FIND_DATA fd;
 	char	pathname[MAX_DEMO_NAME];
-	qboolean all;
+	qbool all;
 
 	int	r;
 	pcre	*preg;
@@ -121,7 +121,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		{
 			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
 			           ext, errbuf, r);
-			Q_Free(preg);
+			Q_free(preg);
 			return dir;
 		}
 
@@ -129,7 +129,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	if ((h = FindFirstFile (pathname , &fd)) == INVALID_HANDLE_VALUE)
 	{
 		if (!all)
-			Q_Free(preg);
+			Q_free(preg);
 		return dir;
 	}
 
@@ -148,7 +148,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 				Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
 				           ext, fd.cFileName, r);
 				if (!all)
-					Q_Free(preg);
+					Q_free(preg);
 				return dir;
 			}
 		}
@@ -177,7 +177,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 
 	FindClose (h);
 	if (!all)
-		Q_Free(preg);
+		Q_free(preg);
 
 	switch (sort_type)
 	{
@@ -211,7 +211,7 @@ Sys_Quit
 ================
 */
 char *argv0;
-void Sys_Quit (qboolean restart)
+void Sys_Quit (qbool restart)
 {
 	if (restart)
 		if (execv(argv0, com_argv) == -1)
@@ -262,7 +262,7 @@ void Sys_Error (char *error, ...)
 }
 
 static double pfreq;
-static qboolean hwtimer = false;
+static qbool hwtimer = false;
 static __int64 startcount;
 void Sys_InitDoubleTime (void)
 {
@@ -289,7 +289,7 @@ double Sys_DoubleTime (void)
 	__int64 pcount;
 
 	static DWORD starttime;
-	static qboolean first = true;
+	static qbool first = true;
 	DWORD now;
 
 	if (hwtimer)
@@ -546,7 +546,7 @@ is marked
 */
 void Sys_Init (void)
 {
-	qboolean	WinNT;
+	qbool	WinNT;
 	OSVERSIONINFO	vinfo;
 
 	// make sure the timer is high precision, otherwise
@@ -566,8 +566,8 @@ void Sys_Init (void)
 	else
 		WinNT = false;
 
-	Cvar_RegisterVariable (&sys_nostdout);
-	Cvar_RegisterVariable (&sys_sleep);
+	Cvar_Register (&sys_nostdout);
+	Cvar_Register (&sys_sleep);
 
 	if (COM_CheckParm ("-nopriority"))
 	{
@@ -589,7 +589,7 @@ void Sys_Init (void)
 }
 
 __inline void Sys_Telnet (void);
-qboolean NET_Sleep ()
+qbool NET_Sleep ()
 {
 	struct timeval timeout_cur;
 	fd_set	fdset;
@@ -660,7 +660,7 @@ DL_t Sys_DLOpen(const char *path)
 	return LoadLibrary(path);
 }
 
-qboolean Sys_DLClose(DL_t dl)
+qbool Sys_DLClose(DL_t dl)
 {
 	return FreeLibrary(dl);
 }
@@ -755,7 +755,7 @@ int main (int argc, char **argv)
 	        t + 1 < com_argc)
 		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024 * 1024;
 
-	parms.membase = Q_Malloc (parms.memsize);
+	parms.membase = Q_malloc (parms.memsize);
 
 	SV_Init (&parms);
 
@@ -823,7 +823,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	if (_argv[0][0] == '"')
 	{
 		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++);
-		argv0 = (char *) Q_Malloc (j);
+		argv0 = (char *) Q_malloc (j);
 		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++)
 			argv0[j - 1] = _argv[0][j];
 		argv0[j] = 0;
@@ -885,7 +885,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		//close(0); close(1); close(2);
 	}
 
-	parms.membase = Q_Malloc (parms.memsize);
+	parms.membase = Q_malloc (parms.memsize);
 	
 	SV_Init (&parms);
 

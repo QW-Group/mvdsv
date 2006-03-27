@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.11 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: qwsvdef.h,v 1.12 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -104,7 +104,7 @@ extern	quakeparms_t host_parms;
 extern	cvar_t	sys_nostdout;
 extern	cvar_t	developer;
 
-extern	qboolean host_initialized; // true if into command execution
+extern	qbool host_initialized; // true if into command execution
 extern	double	realtime; // not bounded in any way, changed at start of every frame, never reset
 
 void SV_Error (char *error, ...);

@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: dem_parse.c,v 1.7 2006/02/27 10:31:03 disconn3ct Exp $
+
+	$Id: dem_parse.c,v 1.8 2006/03/27 22:55:10 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -107,11 +107,11 @@ char *svc_strings[] =
 int	parsecountmod;
 double	parsecounttime;
 
-int		cl_spikeindex, cl_playerindex, cl_flagindex;
-int		cl_telemin = 9999, cl_telemax = 0;
+int	cl_spikeindex, cl_playerindex, cl_flagindex;
+int	cl_telemin = 9999, cl_telemax = 0;
 
-projectile_t	cl_projectiles[MAX_PROJECTILES];
-int				cl_num_projectiles;
+int	cl_num_projectiles;
+projectile_t cl_projectiles[MAX_PROJECTILES];
 
 //=============================================================================
 
@@ -133,14 +133,13 @@ int To(void)
 /*
 =====================
 Dem_ParseDownload
- 
+
 A download message has been received from the server
 =====================
 */
-
 void Dem_ParseDownload (void)
 {
-	int		size, percent;
+	int size, percent;
 
 	msg_startcount = msg_readcount;
 	// read the data
@@ -168,11 +167,10 @@ void Dem_ParseDownload (void)
 Dem_ParseServerData
 ==================
 */
-
 void Dem_ParseServerData (void)
 {
 	char	str[MAX_INFO_STRING], str2[MAX_INFO_STRING];
-	int		protover, count;
+	int	protover, count;
 
 	count = 0;
 
@@ -258,10 +256,9 @@ void Dem_ParseServerData (void)
 Dem_Parselist
 ==================
 */
-
 void Dem_Parselist (byte type)
 {
-	char	*str;
+	char *str;
 	int n;
 
 	msg_startcount = msg_readcount;
@@ -313,7 +310,7 @@ void Dem_ParseStartSoundPacket(void)
 {
 	int		channel, sound_num, i, j, k;
 	vec3_t	pos, dist;
-	qboolean found = false;
+	qbool found = false;
 
 	msg_startcount = msg_readcount;
 	channel = MSG_ReadShort();
@@ -497,7 +494,7 @@ char *CleanName (unsigned char *name)
 	return text;
 }
 
-qboolean findPlayer(char *name)
+qbool findPlayer(char *name)
 {
 	int i;
 
@@ -747,13 +744,13 @@ rest of the data stream.
 ==================
 */
 
-void Dem_ParsePacketEntities (qboolean delta)
+void Dem_ParsePacketEntities (qbool delta)
 {
 	int			oldpacket, newpacket;
 	packet_entities_t	*oldp, *newp, dummy;
 	int			oldindex, newindex;
 	int			word, newnum, oldnum;
-	qboolean	full;
+	qbool	full;
 	byte		deltafrom;
 
 	newpacket = from->netchan.incoming_sequence&UPDATE_MASK;
@@ -1098,7 +1095,7 @@ Dem_ParseProjectiles
 Nails are passed as efficient temporary entities
 =====================
 */
-void Dem_ParseProjectiles (qboolean nails2)
+void Dem_ParseProjectiles (qbool nails2)
 {
 	int		i, c, j, num;
 	byte	bits[6];

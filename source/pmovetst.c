@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmovetst.c,v 1.8 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: pmovetst.c,v 1.9 2006/03/27 22:54:38 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -166,7 +166,7 @@ PM_RecursiveHullCheck
 
 ==================
 */
-static qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
+static qbool PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f,
 	vec3_t p1, vec3_t p2, trace_t *trace)
 {
 	float t1, t2, frac, midf;
@@ -286,7 +286,7 @@ PM_TestPlayerPosition
 Returns false if the given player position is not valid (in solid)
 ================
 */
-qboolean PM_TestPlayerPosition (vec3_t pos)
+qbool PM_TestPlayerPosition (vec3_t pos)
 {
 	int			i;
 	physent_t	*pe;

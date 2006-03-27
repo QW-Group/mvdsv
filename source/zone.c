@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: zone.c,v 1.10 2006/03/21 13:52:37 vvd0 Exp $
+	$Id: zone.c,v 1.11 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // zone.c - memory management
 
@@ -42,7 +42,7 @@ int		hunk_size;
 int		hunk_low_used;
 int		hunk_high_used;
 
-qboolean	hunk_tempactive;
+qbool		hunk_tempactive;
 int		hunk_tempmark;
 
 /*
@@ -74,7 +74,7 @@ If "all" is specified, every single allocation is printed.
 Otherwise, allocations with the same name will be totaled up before printing.
 ==============
 */
-void Hunk_Print (qboolean all)
+void Hunk_Print (qbool all)
 {
 	hunk_t	*h, *next, *endlow, *starthigh, *endhigh;
 	int	count, sum;
@@ -158,7 +158,7 @@ void Hunk_Print (qboolean all)
 Hunk_AllocName
 ===================
 */
-void *Hunk_AllocName_f (int size, char *name, qboolean clean)
+void *Hunk_AllocName_f (int size, char *name, qbool clean)
 {
 	hunk_t	*h;
 
@@ -333,7 +333,7 @@ typedef struct cache_system_s
 	struct cache_system_s	*lru_prev, *lru_next;	// for LRU flushing
 } cache_system_t;
 
-cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
+cache_system_t *Cache_TryAlloc (int size, qbool nobottom);
 
 cache_system_t	cache_head;
 
@@ -447,7 +447,7 @@ Looks for a free block of memory between the high and low hunk marks
 Size should already include the header and padding
 ============
 */
-cache_system_t *Cache_TryAlloc (int size, qboolean nobottom)
+cache_system_t *Cache_TryAlloc (int size, qbool nobottom)
 {
 	cache_system_t	*cs, *new;
 

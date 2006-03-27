@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_login.c,v 1.11 2006/01/11 17:24:29 vvd0 Exp $
+	$Id: sv_login.c,v 1.12 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -50,7 +50,7 @@ account_t;
 static account_t	accounts[MAX_ACCOUNTS];
 static int			num_accounts = 0;
 
-static qboolean validAcc(char *acc)
+static qbool validAcc(char *acc)
 {
 	char *s = acc;
 
@@ -109,7 +109,7 @@ SV_LoadAccounts
 loads account list from disk
 =================
 */
-qboolean StringToFilter (char *s, ipfilter_t *f);
+qbool StringToFilter (char *s, ipfilter_t *f);
 void SV_LoadAccounts(void)
 {
 	int i;
@@ -368,7 +368,7 @@ blocks/unblocks an account
 =================
 */
 
-void SV_blockAccount(qboolean block)
+void SV_blockAccount(qbool block)
 {
 	int i, c;
 
@@ -484,7 +484,7 @@ int checklogin(char *log, char *pass, int num, int use)
 
 void Login_Init (void)
 {
-	Cvar_RegisterVariable (&sv_login);
+	Cvar_Register (&sv_login);
 
 	Cmd_AddCommand ("acc_create",SV_CreateAccount_f);
 	Cmd_AddCommand ("acc_remove",SV_RemoveAccount_f);
@@ -504,7 +504,7 @@ called on connect after cmd new is issued
 ===============
 */
 
-qboolean SV_Login(client_t *cl)
+qbool SV_Login(client_t *cl)
 {
 	extern cvar_t sv_registrationinfo;
 	char info[256];

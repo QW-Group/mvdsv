@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.28 2006/03/27 16:51:43 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.29 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -57,12 +57,12 @@ struct timeval select_timeout;
 cvar_t	sys_nostdout = {"sys_nostdout", "0"};
 cvar_t	sys_extrasleep = {"sys_extrasleep", "0"};
 
-static qboolean	stdin_ready = false;
+static qbool	stdin_ready = false;
 // Added by VVD {
-static qboolean	iosock_ready = false;
-static qboolean	authenticated = false;
+static qbool	iosock_ready = false;
+static qbool	authenticated = false;
 static double	cur_time_auth;
-static qboolean	isdaemon = false;
+static qbool	isdaemon = false;
 // Added by VVD }
 
 /*
@@ -152,7 +152,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	DIR	*d;
 	DIR	*testdir; //bliP: list dir
 	struct dirent *oneentry;
-	qboolean all;
+	qbool all;
 
 	int	r;
 	pcre	*preg=NULL;
@@ -168,14 +168,14 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		{
 			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
 			           ext, errbuf, r);
-			Q_Free(preg);
+			Q_free(preg);
 			return dir;
 		}
 
 	if (!(d = opendir(path)))
 	{
 		if (!all)
-			Q_Free(preg);
+			Q_free(preg);
 		return dir;
 	}
 	while ((oneentry = readdir(d)))
@@ -192,7 +192,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 			default:
 				Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
 				           ext, oneentry->d_name, r);
-				Q_Free(preg);
+				Q_free(preg);
 				return dir;
 			}
 		}
@@ -218,7 +218,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	}
 	closedir(d);
 	if (!all)
-		Q_Free(preg);
+		Q_free(preg);
 
 	switch (sort_type)
 	{
@@ -250,7 +250,7 @@ Sys_Quit
 ================
 */
 char	*argv0;
-void Sys_Quit (qboolean restart)
+void Sys_Quit (qbool restart)
 {
 	if (restart)
 		if (execv(argv0, com_argv) == -1)
@@ -469,12 +469,12 @@ is marked
 */
 void Sys_Init (void)
 {
-	Cvar_RegisterVariable (&sys_nostdout);
-	Cvar_RegisterVariable (&sys_extrasleep);
+	Cvar_Register (&sys_nostdout);
+	Cvar_Register (&sys_extrasleep);
 }
 
 inline void Sys_Telnet (void);
-qboolean NET_Sleep ()
+qbool NET_Sleep ()
 {
 	struct timeval timeout_cur;
 	fd_set	fdset;
@@ -544,7 +544,7 @@ DL_t Sys_DLOpen(const char *path)
 	             );
 }
 
-qboolean Sys_DLClose(DL_t dl)
+qbool Sys_DLClose(DL_t dl)
 {
 	return !dlclose(dl);
 }
@@ -660,7 +660,7 @@ int main (int argc, char *argv[])
 	if (j && j + 1 < com_argc)
 		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
-	parms.membase = Q_Malloc (parms.memsize);
+	parms.membase = Q_malloc (parms.memsize);
 
 	SV_Init (&parms);
 

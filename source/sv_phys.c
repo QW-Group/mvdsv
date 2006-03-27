@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.14 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.15 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -127,7 +127,7 @@ in a frame.  Not used for pushmove objects, because they must be exact.
 Returns false if the entity removed itself.
 =============
 */
-qboolean SV_RunThink (edict_t *ent)
+qbool SV_RunThink (edict_t *ent)
 {
 	float thinktime;
 
@@ -435,7 +435,7 @@ SV_Push
 
 ============
 */
-qboolean SV_Push (edict_t *pusher, vec3_t move)
+qbool SV_Push (edict_t *pusher, vec3_t move)
 {
 	int			i, e;
 	edict_t		*check, *block;
@@ -819,7 +819,7 @@ FIXME: is this true?
 */
 void SV_Physics_Step (edict_t *ent)
 {
-	qboolean hitsound;
+	qbool hitsound;
 
 	// frefall if not onground
 	if ( ! ((int)ent->v.flags & (FL_ONGROUND | FL_FLY | FL_SWIM) ) )
@@ -936,7 +936,7 @@ SV_Physics
 */
 #ifdef USE_PR2
 void SV_PreRunCmd(void);
-void SV_RunCmd (usercmd_t *ucmd, qboolean inside);
+void SV_RunCmd (usercmd_t *ucmd, qbool inside);
 void SV_PostRunCmd(void);
 #endif
 void SV_Physics (void)

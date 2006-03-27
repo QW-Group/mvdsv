@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_chan.c,v 1.10 2006/02/27 12:01:58 disconn3ct Exp $
+	$Id: net_chan.c,v 1.11 2006/03/27 22:54:38 disconn3ct Exp $
 */
 
 #include <stdlib.h>
@@ -102,9 +102,9 @@ void Netchan_Init (void)
 		port = ((int)(getpid()+getuid()*1000) * time(NULL)) & 0xffff;
 	#endif
 	*/
-	Cvar_RegisterVariable (&showpackets);
-	Cvar_RegisterVariable (&showdrop);
-	Cvar_RegisterVariable (&qport);
+	Cvar_Register (&showpackets);
+	Cvar_Register (&showdrop);
+	Cvar_Register (&qport);
 	Cvar_SetValue(&qport, port);
 }
 
@@ -185,7 +185,7 @@ Returns true if the bandwidth choke isn't active
 ================
 */
 #define	MAX_BACKUP	400
-qboolean Netchan_CanPacket (netchan_t *chan)
+qbool Netchan_CanPacket (netchan_t *chan)
 {
 	if (chan->cleartime < realtime + MAX_BACKUP*chan->rate)
 		return true;
@@ -200,7 +200,7 @@ Netchan_CanReliable
 Returns true if the bandwidth choke isn't 
 ================
 */
-qboolean Netchan_CanReliable (netchan_t *chan)
+qbool Netchan_CanReliable (netchan_t *chan)
 {
 	if (chan->reliable_length)
 		return false;			// waiting for ack
@@ -221,7 +221,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 {
 	sizebuf_t	send;
 	byte		send_buf[MAX_MSGLEN + PACKET_HEADER];
-	qboolean	send_reliable;
+	qbool		send_reliable;
 	unsigned	w1, w2;
 	int			i;
 	static double	last_error_time = 0;
@@ -315,7 +315,7 @@ called when the current net_message is from remote_address
 modifies net_message so that it points to the packet payload
 =================
 */
-qboolean Netchan_Process (netchan_t *chan)
+qbool Netchan_Process (netchan_t *chan)
 {
 	unsigned		sequence, sequence_ack;
 	unsigned		reliable_ack, reliable_message;

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.24 2006/03/08 12:07:57 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.25 2006/03/27 22:54:38 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -2026,7 +2026,7 @@ void PF2_FS_GetFileList(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 		int size;
 		int namelen;
 		char* filename;
-		qboolean	is_dir;
+		qbool	is_dir;
 #ifdef _WIN32
 		filename = fd.cFileName;
 		is_dir = fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;

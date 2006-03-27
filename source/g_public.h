@@ -20,7 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: g_public.h,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+ *  $Id: g_public.h,v 1.7 2006/03/27 22:54:38 disconn3ct Exp $
  */
 
 #ifndef __G_PUBLIC_H__
@@ -146,7 +146,7 @@ typedef enum
 	GAME_SHUTDOWN,	// (void);
 
 	GAME_CLIENT_CONNECT,	 	// ( int clientNum ,int isSpectator);
-	// ( int clientNum, qboolean firstTime, qboolean isBot );
+	// ( int clientNum, qbool firstTime, qbool isBot );
 	// return NULL if the client is allowed to connect, otherwise return
 	// a text string with the reason for denial
 	GAME_PUT_CLIENT_IN_SERVER,

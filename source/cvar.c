@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.11 2006/03/27 16:18:15 vvd0 Exp $
+	$Id: cvar.c,v 1.12 2006/03/27 22:54:38 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -107,7 +107,7 @@ Cvar_Set
 */
 void Cvar_Set (cvar_t *var, char *value)
 {
-	static qboolean	changing = false;
+	static qbool changing = false;
 
 	if (!var)
 		return;
@@ -126,9 +126,9 @@ void Cvar_Set (cvar_t *var, char *value)
 		changing = false;
 	}
 
-	Q_Free (var->string);	// free the old value string
+	Q_free (var->string);	// free the old value string
 
-	var->string = (char *) Q_Malloc (strlen(value)+1);
+	var->string = (char *) Q_malloc (strlen(value)+1);
 	strlcpy (var->string, value, strlen(value) + 1);
 	var->value = Q_atof (var->string);
 
@@ -214,12 +214,12 @@ void Cvar_SetValueByName (char *var_name, float value)
 
 /*
 ============
-Cvar_RegisterVariable
+Cvar_Register
  
 Adds a freestanding variable to the variable list.
 ============
 */
-void Cvar_RegisterVariable (cvar_t *variable)
+void Cvar_Register (cvar_t *variable)
 {
 	char	value[512];
 	int		key;
@@ -234,7 +234,7 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	// check for overlap with a command
 	if (Cmd_Exists (variable->name))
 	{
-		Con_Printf ("Cvar_RegisterVariable: %s is a command\n", variable->name);
+		Con_Printf ("Cvar_Register: %s is a command\n", variable->name);
 		return;
 	}
 
@@ -245,9 +245,9 @@ void Cvar_RegisterVariable (cvar_t *variable)
 	variable->next = cvar_vars;
 	cvar_vars = variable;
 
-	// copy the value off, because future sets will Q_Free it
+	// copy the value off, because future sets will Q_free it
 	strlcpy (value, variable->string, sizeof(value));
-	variable->string = (char *) Q_Malloc (1);
+	variable->string = (char *) Q_malloc (1);
 
 	// set it through the function to be consistent
 	Cvar_SetROM (variable, value);
@@ -261,7 +261,7 @@ Cvar_Command
 Handles variable inspection and changing from the console
 ============
 */
-qboolean Cvar_Command (void)
+qbool Cvar_Command (void)
 {
 	int		i, c;
 	cvar_t		*v;
@@ -352,7 +352,7 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v = Cvar_FindVar(name);
 	if (v)
 		return v;
-	v = (cvar_t *) Q_Malloc (sizeof(cvar_t));
+	v = (cvar_t *) Q_malloc (sizeof(cvar_t));
 	// Cvar doesn't exist, so we create it
 	v->next = cvar_vars;
 	cvar_vars = v;
@@ -361,9 +361,9 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v->hash_next = cvar_hash[key];
 	cvar_hash[key] = v;
 
-	v->name = (char *) Q_Malloc (strlen(name)+1);
+	v->name = (char *) Q_malloc (strlen(name)+1);
 	strlcpy (v->name, name, strlen(name) + 1);
-	v->string = (char *) Q_Malloc (strlen(string)+1);
+	v->string = (char *) Q_malloc (strlen(string)+1);
 	strlcpy (v->string, string, strlen(string) + 1);
 	v->flags = cvarflags;
 	v->value = Q_atof (v->string);
@@ -378,7 +378,7 @@ Cvar_Delete
 ===========
 returns true if the cvar was found (and deleted)
 */
-qboolean Cvar_Delete (char *name)
+qbool Cvar_Delete (char *name)
 {
 	cvar_t	*var, *prev;
 	int		key;
@@ -415,9 +415,9 @@ qboolean Cvar_Delete (char *name)
 				cvar_vars = var->next;
 
 			// free
-			Q_Free (var->string);
-			Q_Free (var->name);
-			Q_Free (var);
+			Q_free (var->string);
+			Q_free (var->name);
+			Q_free (var);
 			return true;
 		}
 		prev = var;

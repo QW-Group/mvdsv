@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: qwz.c,v 1.5 2006/02/26 05:32:01 vvd0 Exp $
+	$Id: qwz.c,v 1.6 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static HANDLE	hQizmoProcess = NULL;
 static DWORD ExitCode;
 
-static qboolean QizmoRunning ()
+static qbool QizmoRunning ()
 {
 	if (sworld.options & O_SHUTDOWN)
 		Sys_Exit(2);
@@ -70,7 +70,7 @@ void StopQWZ (source_t *s)
 }
 
 
-qboolean OpenQWZ (char *files)
+qbool OpenQWZ (char *files)
 {
 #ifdef _WIN32
 	STARTUPINFO			si;

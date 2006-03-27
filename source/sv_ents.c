@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.9 2006/03/23 14:10:36 disconn3ct Exp $
+	$Id: sv_ents.c,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -35,7 +35,7 @@ crosses a waterline.
 static int fatbytes;
 static byte fatpvs[MAX_MAP_LEAFS/8];
 
-static void SV_AddToFatPVS (vec3_t org, mnode_t *node, qboolean spectator_vis)
+static void SV_AddToFatPVS (vec3_t org, mnode_t *node, qbool spectator_vis)
 {
 	mplane_t *plane;
 	byte *pvs;
@@ -79,7 +79,7 @@ Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
 given point.
 =============
 */
-static byte *SV_FatPVS (vec3_t org, qboolean spectator_vis)
+static byte *SV_FatPVS (vec3_t org, qbool spectator_vis)
 {
 	extern spec_worldmodel_t specworld;
 
@@ -107,7 +107,7 @@ extern	int sv_nailmodel, sv_supernailmodel, sv_playermodel;
 cvar_t	sv_nailhack	= {"sv_nailhack", "1"};
 
 
-static qboolean SV_AddNailUpdate (edict_t *ent)
+static qbool SV_AddNailUpdate (edict_t *ent)
 {
 	if (sv_nailhack.value)
 		return false;
@@ -122,7 +122,7 @@ static qboolean SV_AddNailUpdate (edict_t *ent)
 	return true;
 }
 
-static void SV_EmitNailUpdate (sizebuf_t *msg, qboolean recorder)
+static void SV_EmitNailUpdate (sizebuf_t *msg, qbool recorder)
 {
 	int x, y, z, p, yaw, n, i;
 	byte bits[6]; // [48 bits] xyzpy 12 12 12 4 8
@@ -182,7 +182,7 @@ Writes part of a packetentities message.
 Can delta from either a baseline or a previous packet_entity
 ==================
 */
-static void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force)
+static void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force)
 {
 	int bits, i;
 
@@ -370,7 +370,7 @@ SV_WritePlayersToClient
 
 #define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
 
-static qboolean disable_updates; // disables sending entities to the client
+static qbool disable_updates; // disables sending entities to the client
 
 
 int SV_PMTypeForClient (client_t *cl);
@@ -588,7 +588,7 @@ svc_playerinfo messages
 =============
 */
 
-void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qboolean recorder)
+void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 {
 	int e, i, max_packet_entities = MAX_PACKET_ENTITIES;
 	packet_entities_t *pack;

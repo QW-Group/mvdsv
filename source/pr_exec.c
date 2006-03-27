@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_exec.c,v 1.5 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: pr_exec.c,v 1.6 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -24,23 +24,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef struct
 {
-	int				s;
-	dfunction_t		*f;
+	int		s;
+	dfunction_t	*f;
 }
 prstack_t;
 
 #define	MAX_STACK_DEPTH		32
 prstack_t	pr_stack[MAX_STACK_DEPTH];
-int			pr_depth;
+int		pr_depth;
 
 #define	LOCALSTACK_SIZE		2048
-int			localstack[LOCALSTACK_SIZE];
-int			localstack_used;
+int		localstack[LOCALSTACK_SIZE];
+int		localstack_used;
 
 
-qboolean	pr_trace;
+qbool		pr_trace;
 dfunction_t	*pr_xfunction;
-int			pr_xstatement;
+int		pr_xstatement;
 
 
 int		pr_argc;

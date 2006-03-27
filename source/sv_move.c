@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_move.c,v 1.6 2006/01/09 20:37:15 disconn3ct Exp $
+	$Id: sv_move.c,v 1.7 2006/03/27 22:54:39 disconn3ct Exp $
 */
 // sv_move.c -- monster movement
 
@@ -33,7 +33,7 @@ is not a staircase.
  
 =============
 */
-qboolean SV_CheckBottom (edict_t *ent)
+qbool SV_CheckBottom (edict_t *ent)
 {
 	vec3_t	mins, maxs, start, stop;
 	trace_t	trace;
@@ -101,7 +101,7 @@ possible, no move is done, false is returned, and
 pr_global_struct->trace_normal is set to the normal of the blocking wall
 =============
 */
-qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
+qbool SV_movestep (edict_t *ent, vec3_t move, qbool relink)
 {
 	float		dz;
 	vec3_t		oldorg, neworg, end;
@@ -224,7 +224,7 @@ facing it.
 ======================
 */
 void PF_changeyaw (void);
-qboolean SV_StepDirection (edict_t *ent, float yaw, float dist)
+qbool SV_StepDirection (edict_t *ent, float yaw, float dist)
 {
 	vec3_t		move, oldorigin;
 	float		delta;
@@ -364,7 +364,7 @@ SV_CloseEnough
  
 ======================
 */
-qboolean SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
+qbool SV_CloseEnough (edict_t *ent, edict_t *goal, float dist)
 {
 	int		i;
 

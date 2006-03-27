@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.4 2005/12/04 05:37:44 disconn3ct Exp $
+ *  $Id: pr2_exec.c,v 1.5 2006/03/27 22:54:39 disconn3ct Exp $
  */
 
 #include <stdarg.h>
@@ -46,10 +46,10 @@ void PR2_Init(void)
 {
 	int p;
 	int usedll;
-	Cvar_RegisterVariable(&sv_progtype);
-	Cvar_RegisterVariable(&sv_progsname);
+	Cvar_Register(&sv_progtype);
+	Cvar_Register(&sv_progsname);
 #ifdef QVM_PROFILE
-	Cvar_RegisterVariable(&sv_enableprofile);
+	Cvar_Register(&sv_enableprofile);
 #endif
 
 	p = COM_CheckParm ("-progtype");
@@ -209,7 +209,7 @@ void PR2_GameClientPostThink(int spec)
 //===========================================================================
 // ClientCmd return false on unknown command
 //===========================================================================
-qboolean PR2_ClientCmd()
+qbool PR2_ClientCmd()
 {
 	return VM_Call(sv_vm, GAME_CLIENT_COMMAND, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -259,7 +259,7 @@ void PR2_EdictBlocked()
 //===========================================================================
 // UserInfoChanged
 //===========================================================================
-qboolean PR2_UserInfoChanged()
+qbool PR2_UserInfoChanged()
 {
 	return VM_Call(sv_vm, GAME_CLIENT_USERINFO_CHANGED, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }

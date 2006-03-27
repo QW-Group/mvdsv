@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.38 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.39 2006/03/27 22:54:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 typedef struct mvddest_s
 {
-	qboolean error; //disables writers, quit ASAP.
+	qbool error; //disables writers, quit ASAP.
 
 	enum {DEST_NONE, DEST_FILE, DEST_BUFFEREDFILE, DEST_STREAM} desttype;
 
@@ -55,7 +55,7 @@ cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
 cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
 cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
 cvar_t	sv_demoClearOld = {"sv_demoClearOld", "0"}; //bliP: 24/9 clear old demos
-qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value);
+qbool sv_demoDir_OnChange(cvar_t *cvar, char *value);
 cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
 cvar_t	sv_demofps = {"sv_demofps", "20"};
 cvar_t	sv_demoPings = {"sv_demopings", "3"};
@@ -84,7 +84,7 @@ entity_state_t demo_entities[UPDATE_MASK+1][MAX_DEMO_PACKET_ENTITIES];
 client_frame_t demo_frames[UPDATE_MASK+1];
 
 // only one .. is allowed (security)
-qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value)
+qbool sv_demoDir_OnChange(cvar_t *cvar, char *value)
 {
 	if (!value[0])
 		return true;
@@ -97,12 +97,12 @@ qboolean sv_demoDir_OnChange(cvar_t *cvar, char *value)
 	return false;
 }
 
-void DestClose(mvddest_t *d, qboolean destroyfiles)
+void DestClose(mvddest_t *d, qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
 
 	if (d->cache)
-		Q_Free(d->cache);
+		Q_free(d->cache);
 	if (d->file)
 		fclose(d->file);
 	if (d->socket)
@@ -116,10 +116,10 @@ void DestClose(mvddest_t *d, qboolean destroyfiles)
 		Sys_remove(path);
 	}
 
-	Q_Free(d);
+	Q_free(d);
 }
 
-void DestFlush(qboolean compleate)
+void DestFlush(qbool compleate)
 {
 	int len;
 	mvddest_t *d, *t;
@@ -195,7 +195,7 @@ void DestFlush(qboolean compleate)
 }
 
 static char *SV_PrintTeams(void);
-void DestCloseAllFlush(qboolean destroyfiles)
+void DestCloseAllFlush(qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
 	mvddest_t *d;
@@ -460,7 +460,7 @@ void MVDMoveBuf(void)
 void MVDWrite_Begin(byte type, int to, int size)
 {
 	byte *p;
-	qboolean move = false;
+	qbool move = false;
 
 	// will it fit?
 	while (demo.dbuf->bufsize + size + header > demo.dbuf->maxsize)
@@ -609,14 +609,14 @@ void SV_MVDWritePackets (int num)
 {
 	demo_frame_t	*frame, *nextframe;
 	demo_client_t	*cl, *nextcl = NULL;
-	int				i, j, flags;
-	qboolean		valid;
-	double			time, playertime, nexttime;
-	float			f;
-	vec3_t			origin, angles;
-	sizebuf_t		msg;
-	byte			msg_buf[MAX_MSGLEN];
-	demoinfo_t		*demoinfo;
+	int		i, j, flags;
+	qbool		valid;
+	double		time, playertime, nexttime;
+	float		f;
+	vec3_t		origin, angles;
+	sizebuf_t	msg;
+	byte		msg_buf[MAX_MSGLEN];
+	demoinfo_t	*demoinfo;
 
 	if (!sv.mvdrecording)
 		return;
@@ -768,22 +768,22 @@ void MVD_Init (void)
 {
 	int p, size = MIN_DEMO_MEMORY;
 	
-	Cvar_RegisterVariable (&sv_demofps);
-	Cvar_RegisterVariable (&sv_demoPings);
-	Cvar_RegisterVariable (&sv_demoNoVis);
-	Cvar_RegisterVariable (&sv_demoUseCache);
-	Cvar_RegisterVariable (&sv_demoCacheSize);
-	Cvar_RegisterVariable (&sv_demoMaxSize);
-	Cvar_RegisterVariable (&sv_demoMaxDirSize);
-	Cvar_RegisterVariable (&sv_demoClearOld); //bliP: 24/9 clear old demos
-	Cvar_RegisterVariable (&sv_demoDir);
-	Cvar_RegisterVariable (&sv_demoPrefix);
-	Cvar_RegisterVariable (&sv_demoSuffix);
-	Cvar_RegisterVariable (&sv_onrecordfinish);
-	Cvar_RegisterVariable (&sv_ondemoremove);
-	Cvar_RegisterVariable (&sv_demotxt);
-	Cvar_RegisterVariable (&sv_demoExtraNames);
-	Cvar_RegisterVariable (&sv_demoRegexp);
+	Cvar_Register (&sv_demofps);
+	Cvar_Register (&sv_demoPings);
+	Cvar_Register (&sv_demoNoVis);
+	Cvar_Register (&sv_demoUseCache);
+	Cvar_Register (&sv_demoCacheSize);
+	Cvar_Register (&sv_demoMaxSize);
+	Cvar_Register (&sv_demoMaxDirSize);
+	Cvar_Register (&sv_demoClearOld); //bliP: 24/9 clear old demos
+	Cvar_Register (&sv_demoDir);
+	Cvar_Register (&sv_demoPrefix);
+	Cvar_Register (&sv_demoSuffix);
+	Cvar_Register (&sv_onrecordfinish);
+	Cvar_Register (&sv_ondemoremove);
+	Cvar_Register (&sv_demotxt);
+	Cvar_Register (&sv_demoExtraNames);
+	Cvar_Register (&sv_demoRegexp);
 
 	p = COM_CheckParm ("-democache");
 	if (p)
@@ -922,7 +922,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 		return NULL;
 	}
 
-	dst = (mvddest_t*) Q_Malloc (sizeof(mvddest_t));
+	dst = (mvddest_t*) Q_malloc (sizeof(mvddest_t));
 
 	if (!sv_demoUseCache.value)
 	{
@@ -935,7 +935,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 		dst->desttype = DEST_BUFFEREDFILE;
 		dst->file = file;
 		dst->maxcachesize = (int) sv_demoCacheSize.value; // 0x81000
-		dst->cache = (char *) Q_Malloc (dst->maxcachesize);
+		dst->cache = (char *) Q_malloc (dst->maxcachesize);
 	}
 
 	s = name + strlen(name);
@@ -976,12 +976,12 @@ mvddest_t *SV_InitStream(int socket)
 {
 	mvddest_t *dst;
 
-	dst = (mvddest_t *) Q_Malloc (sizeof(mvddest_t));
+	dst = (mvddest_t *) Q_malloc (sizeof(mvddest_t));
 
 	dst->desttype = DEST_STREAM;
 	dst->socket = socket;
 	dst->maxcachesize = 0x8000;	//is this too small?
-	dst->cache = (char *) Q_Malloc(dst->maxcachesize);
+	dst->cache = (char *) Q_malloc(dst->maxcachesize);
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
 
@@ -1122,7 +1122,7 @@ void SV_WriteSetMVDMessage (void)
 	DestFlush(false);
 }
 
-static qboolean SV_MVD_Record (mvddest_t *dest)
+static qbool SV_MVD_Record (mvddest_t *dest)
 {
 	sizebuf_t	buf;
 	char buf_data[MAX_MSGLEN];
@@ -1483,7 +1483,7 @@ SV_DirSizeCheck
 Deletes sv_demoClearOld files from demo dir if out of space
 ====================
 */
-qboolean SV_DirSizeCheck (void)
+qbool SV_DirSizeCheck (void)
 {
 	dir_t	dir;
 	file_t	*list;
@@ -1598,7 +1598,7 @@ char *Dem_Team(int num)
 {
 	int i;
 	static char *lastteam[2];
-	qboolean first = true;
+	qbool first = true;
 	client_t *client;
 	static int index = 0;
 
@@ -1695,7 +1695,7 @@ char *quote(char *str)
 	if (!*str)
 		return NULL;
 
-	s = out = (char *) Q_Malloc (strlen(str) * 2 + 1);
+	s = out = (char *) Q_malloc (strlen(str) * 2 + 1);
 	while (*str)
 	{
 		if (!isdigit(*str) && !isalpha(*str))
@@ -1814,7 +1814,7 @@ void SV_MVDEasyRecord_f (void)
 		return;
 	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
 					  va("^%s%s", name3, sv_demoRegexp.string), SORT_NO);
-	Q_Free(name3);
+	Q_free(name3);
 	for (i = 1; dir.numfiles; )
 	{
 		snprintf(name2, sizeof(name2), "%s_%02i", name, i++);
@@ -1822,7 +1822,7 @@ void SV_MVDEasyRecord_f (void)
 			return;
 		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
 						  va("^%s%s", name3, sv_demoRegexp.string), SORT_NO);
-		Q_Free(name3);
+		Q_free(name3);
 	}
 
 /*	strlcat (name2, ".mvd", sizeof(name2));
@@ -1897,7 +1897,7 @@ void SV_MVDStream_Poll(void)
 	struct sockaddr_qstorage addr;
 	int addrlen;
 	int count;
-	qboolean wanted;
+	qbool wanted;
 	mvddest_t *dest;
 
 	if (!sv.state || !mvd_streamport.value)
@@ -1965,7 +1965,7 @@ void SV_MVDStream_Poll(void)
 	SV_MVD_Record (SV_InitStream(client));
 }
 
-void SV_DemoList (qboolean use_regex)
+void SV_DemoList (qbool use_regex)
 {
 	mvddest_t *d;
 	dir_t	dir;
@@ -1998,14 +1998,14 @@ void SV_DemoList (qboolean use_regex)
 				{
 					Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
 					           Cmd_Argv(j), errbuf, r);
-					Q_Free(preg);
+					Q_free(preg);
 					break;
 				}
 				switch (r = pcre_exec(preg, NULL, list->name,
 				                      strlen(list->name), 0, 0, NULL, 0))
 				{
 				case 0:
-					Q_Free(preg);
+					Q_free(preg);
 					continue;
 				case PCRE_ERROR_NOMATCH:
 					break;
@@ -2013,7 +2013,7 @@ void SV_DemoList (qboolean use_regex)
 					Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
 					           Cmd_Argv(j), list->name, r);
 				}
-				Q_Free(preg);
+				Q_free(preg);
 				break;
 			}
 			else
@@ -2110,11 +2110,11 @@ char *SV_MVDName2Txt(char *name)
 	{
 		Con_Printf("SV_MVDName2Txt: pcre_compile(%s) error: %s at offset %d\n",
 					sv_demoRegexp.string, errbuf, r);
-		Q_Free(preg);
+		Q_free(preg);
 		return NULL;
 	}
 	r = pcre_exec(preg, NULL, s, len, 0, 0, ovector, OVECCOUNT);
-	Q_Free(preg);
+	Q_free(preg);
 	if (r < 0)
 	{
 		switch (r)
@@ -2504,7 +2504,7 @@ void SV_MVDInit (void)
 	Cmd_AddCommand ("demoInfoRemove", SV_MVDInfoRemove_f);
 	Cmd_AddCommand ("demoInfo", SV_MVDInfo_f);
 
-	Cvar_RegisterVariable (&mvd_streamport);
-	Cvar_RegisterVariable (&mvd_maxstreams);
+	Cvar_Register (&mvd_streamport);
+	Cvar_Register (&mvd_maxstreams);
 
 }

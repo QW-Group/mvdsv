@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.13 2006/03/27 16:18:15 vvd0 Exp $
+	$Id: net.h,v 1.14 2006/03/27 22:54:38 disconn3ct Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
@@ -108,21 +108,21 @@ extern	int	net_telnetsocket;
 extern	int	telnetport;
 extern	int	sv_port;
 extern	int	telnet_iosock;
-extern	qboolean	telnet_connected;
+extern	qbool	telnet_connected;
 extern	cvar_t	not_auth_timeout;
 extern	cvar_t	auth_timeout;
 
-void NET_Init	(int *serverport, int *telnetport);
-void		NET_Shutdown (void);
-qboolean	NET_GetPacket (void);
-void		NET_SendPacket (int length, void *data, netadr_t to);
-//qboolean	NET_Sleep ();
+void	NET_Init (int *serverport, int *telnetport);
+void	NET_Shutdown (void);
+qbool	NET_GetPacket (void);
+void	NET_SendPacket (int length, void *data, netadr_t to);
+//qbool	NET_Sleep ();
 
-qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
-qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);
-char		*NET_AdrToString (netadr_t a);
-char		*NET_BaseAdrToString (netadr_t a);
-qboolean	NET_StringToAdr (char *s, netadr_t *a);
+qbool	NET_CompareAdr (netadr_t a, netadr_t b);
+qbool	NET_CompareBaseAdr (netadr_t a, netadr_t b);
+char	*NET_AdrToString (netadr_t a);
+char	*NET_BaseAdrToString (netadr_t a);
+qbool	NET_StringToAdr (char *s, netadr_t *a);
 
 //============================================================================
 
@@ -132,7 +132,7 @@ qboolean	NET_StringToAdr (char *s, netadr_t *a);
 
 typedef struct
 {
-	qboolean	fatal_error;
+	qbool		fatal_error;
 
 	int		dropped;		// between last packet and previous
 
@@ -180,11 +180,11 @@ void Netchan_Init (void);
 void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
 void Netchan_OutOfBandPrint (netadr_t adr, char *format, ...);
-qboolean Netchan_Process (netchan_t *chan);
+qbool Netchan_Process (netchan_t *chan);
 void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport);
 
-qboolean Netchan_CanPacket (netchan_t *chan);
-qboolean Netchan_CanReliable (netchan_t *chan);
+qbool Netchan_CanPacket (netchan_t *chan);
+qbool Netchan_CanReliable (netchan_t *chan);
 
 void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a);
 

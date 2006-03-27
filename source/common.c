@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.24 2006/03/22 19:47:34 disconn3ct Exp $
+	$Id: common.c,v 1.25 2006/03/27 22:54:38 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -30,7 +30,7 @@ usercmd_t nullcmd; // guarenteed to be zero
 
 static char *largv[MAX_NUM_ARGVS + 1];
 
-qboolean msg_suppress_1 = 0;
+qbool msg_suppress_1 = 0;
 
 void COM_InitFilesystem (void);
 void COM_Path_f (void);
@@ -200,7 +200,7 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 // reading functions
 
 int msg_readcount;
-qboolean msg_badread;
+qbool msg_badread;
 
 void MSG_BeginReading (void)
 {
@@ -862,7 +862,7 @@ Finds the file in the search path.
 Sets com_filesize and one of handle or file
 ===========
 */
-qboolean file_from_pak; // global indicating file came from pack file ZOID
+qbool file_from_pak; // global indicating file came from pack file ZOID
 
 int COM_FOpenFile (char *filename, FILE **file)
 {
@@ -931,7 +931,7 @@ Always appends a 0 byte to the loaded data.
 cache_user_t *loadcache;
 byte *loadbuf;
 int loadsize;
-void *Hunk_AllocName_f (int size, char *name, qboolean clean);
+void *Hunk_AllocName_f (int size, char *name, qbool clean);
 byte *COM_LoadFile (char *path, int usehunk)
 {
 	FILE *h;
@@ -1054,7 +1054,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 	if (numpackfiles > MAX_FILES_IN_PACK)
 		Sys_Error ("%s has %i files", packfile, numpackfiles);
 
-	newfiles = (packfile_t *) Q_Malloc (numpackfiles * sizeof(packfile_t));
+	newfiles = (packfile_t *) Q_malloc (numpackfiles * sizeof(packfile_t));
 
 	fseek (packhandle, header.dirofs, SEEK_SET);
 	fread (&info, 1, header.dirlen, packhandle);
@@ -1067,7 +1067,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 		newfiles[i].filelen = LittleLong(info[i].filelen);
 	}
 
-	pack = (pack_t *) Q_Malloc (sizeof (pack_t));
+	pack = (pack_t *) Q_malloc (sizeof (pack_t));
 	strlcpy (pack->filename, packfile, MAX_OSPATH);
 	pack->handle = packhandle;
 	pack->numfiles = numpackfiles;
@@ -1174,11 +1174,11 @@ void COM_Gamedir (char *dir)
 		if (com_searchpaths->pack)
 		{
 			fclose (com_searchpaths->pack->handle);
-			Q_Free (com_searchpaths->pack->files);
-			Q_Free (com_searchpaths->pack);
+			Q_free (com_searchpaths->pack->files);
+			Q_free (com_searchpaths->pack);
 		}
 		next = com_searchpaths->next;
-		Q_Free (com_searchpaths);
+		Q_free (com_searchpaths);
 		com_searchpaths = next;
 	}
 
@@ -1191,7 +1191,7 @@ void COM_Gamedir (char *dir)
 		return;
 
 	// add the directory to the search path
-	search = (searchpath_t *) Q_Malloc (sizeof(searchpath_t));
+	search = (searchpath_t *) Q_malloc (sizeof(searchpath_t));
 	strlcpy (search->filename, com_gamedir, MAX_OSPATH);
 	search->pack = NULL;
 	search->next = com_searchpaths;
@@ -1204,7 +1204,7 @@ void COM_Gamedir (char *dir)
 		pak = COM_LoadPackFile (pakfile);
 		if (!pak)
 			break;
-		search = (searchpath_t *) Q_Malloc (sizeof(searchpath_t));
+		search = (searchpath_t *) Q_malloc (sizeof(searchpath_t));
 		search->pack = pak;
 		search->next = com_searchpaths;
 		com_searchpaths = search;

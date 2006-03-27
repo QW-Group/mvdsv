@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.5 2006/03/10 18:48:07 vvd0 Exp $
+	$Id: bothtools.c,v 1.6 2006/03/27 22:54:38 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -400,7 +400,7 @@ float FloatSwap (float f)
 
 /*
 ===================
-Q_Malloc
+Q_malloc
 
 Use it instead of malloc so that if memory allocation fails,
 the program exits with a message saying there's not enough memory
@@ -408,7 +408,7 @@ instead of crashing after trying to use a NULL pointer.
 It also sets memory to zero.
 ===================
 */
-void *Q_Malloc (size_t size)
+void *Q_malloc (size_t size)
 {
 	void *p = malloc(size);
 	//p = calloc(1, size); //malloc & memset or just calloc?

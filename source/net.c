@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.6 2006/03/27 16:18:15 vvd0 Exp $
+	$Id: net.c,v 1.7 2006/03/27 22:54:38 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -32,7 +32,7 @@ int		net_telnetsocket;
 int		sv_port;
 int		telnetport;
 int		telnet_iosock;
-qboolean	telnet_connected;
+qbool		telnet_connected;
 
 byte		net_message_buffer[MSG_BUF_SIZE];
 
@@ -58,14 +58,14 @@ void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a)
 	return;
 }
 
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b)
+qbool NET_CompareBaseAdr (netadr_t a, netadr_t b)
 {
 	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] && a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3])
 		return true;
 	return false;
 }
 
-qboolean NET_CompareAdr (netadr_t a, netadr_t b)
+qbool NET_CompareAdr (netadr_t a, netadr_t b)
 {
 	if (a.ip.ip[0] == b.ip.ip[0] && a.ip.ip[1] == b.ip.ip[1] && a.ip.ip[2] == b.ip.ip[2] && a.ip.ip[3] == b.ip.ip[3] && a.port == b.port)
 		return true;
@@ -100,7 +100,7 @@ idnewt:28000
 192.246.40.70:28000
 =============
 */
-qboolean NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
+qbool NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 {
 	struct hostent	*h;
 	char	*colon;
@@ -140,7 +140,7 @@ qboolean NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 	return true;
 }
 
-qboolean NET_StringToAdr (char *s, netadr_t *a)
+qbool NET_StringToAdr (char *s, netadr_t *a)
 {
 	struct sockaddr_qstorage sadr;
 
@@ -162,7 +162,7 @@ qboolean NET_StringToAdr (char *s, netadr_t *a)
 
 //=============================================================================
 
-qboolean NET_GetPacket (void)
+qbool NET_GetPacket (void)
 {
 	int ret;
 	struct sockaddr_qstorage from;
@@ -348,7 +348,7 @@ int TCP_OpenSocket (int port, int udp_port)
 void NET_GetLocalAddress (netadr_t *out)
 {
 	struct sockaddr_qstorage address;
-	qboolean notvalid = false;
+	qbool notvalid = false;
 	netadr_t adr = {0};
 	char buff[512];
 	int namelen;

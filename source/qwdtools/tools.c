@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.11 2006/03/23 14:12:17 disconn3ct Exp $
+	$Id: tools.c,v 1.12 2006/03/27 22:55:10 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -174,10 +174,10 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 //
 // reading functions
 //
-int			msg_readcount;
-qboolean	msg_badread;
+int	msg_readcount;
+qbool	msg_badread;
 
-qboolean MSG_Forward (sizebuf_t *sb, int start, int count)
+qbool MSG_Forward (sizebuf_t *sb, int start, int count)
 {
 	msg_readcount = start;
 
@@ -602,7 +602,7 @@ void MVDMoveBuf(void)
 
 void DemoWrite_Cat(sizebuf_t *buf)
 {
-	qboolean move = false;
+	qbool move = false;
 	// will it fit?
 	while (msgbuf->bufsize + buf->cursize > msgbuf->maxsize)
 	{
@@ -630,7 +630,7 @@ void DemoWrite_Cat(sizebuf_t *buf)
 void MVDWrite_Begin(byte type, int to, int size)
 {
 	byte *p;
-	qboolean move = false;
+	qbool move = false;
 
 	if (!(sworld.options & (O_CONVERT | O_MARGE)))
 		return;
@@ -872,7 +872,7 @@ int AddToFileList(flist_t *filelist, char *file)
 			Sys_Error("faild to alloc memory for file list\n");
 
 		// alloc memory for file name
-		p = (char*) Q_Malloc (strlen(c_file.name)+1);
+		p = (char*) Q_malloc (strlen(c_file.name)+1);
 
 		// copy the name
 		strcpy(p, c_file.name);
@@ -897,19 +897,19 @@ int AddToFileList(flist_t *filelist, char *file)
 	while (filelist->list != NULL)
 		filelist++;
 
-	tmp = (char *) Q_Malloc (strlen(file)+1);
+	tmp = (char *) Q_malloc (strlen(file)+1);
 	strcpy(tmp, file);
 	name = basename(tmp);
 
 	strcpy(filelist->path, getPath(file));
 
-	filelist->list = (char **) Q_Malloc (sizeof(char *));
-	filelist->list[0] = (char *) Q_Malloc (strlen(name)+1);
+	filelist->list = (char **) Q_malloc (sizeof(char *));
+	filelist->list[0] = (char *) Q_malloc (strlen(name)+1);
 	strcpy(filelist->list[0], name);
 
 	filelist->count = 1;
 
-	free(tmp);
+	Q_free(tmp);
 
 	return 1;
 }
@@ -922,9 +922,9 @@ void FreeFileList(flist_t *flist)
 	for ( ; flist->list != NULL; flist++)
 	{
 		for (p = flist->list; flist->count; p++, flist->count--)
-			free(*p);
+			Q_free(*p);
 
-		free(flist->list);
+		Q_free(flist->list);
 		flist->list = NULL;
 	}
 }
@@ -1090,7 +1090,7 @@ byte *LoadFile(char *path)
 	if ((len = FileOpenRead(path, &f)) == -1)
 		return NULL;
 
-	buf = (byte *) Q_Malloc (len+1);
+	buf = (byte *) Q_malloc (len+1);
 
 	fread(buf, 1, len, f);
 	Sys_fclose(&f);
