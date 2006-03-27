@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.27 2006/03/27 16:18:16 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.28 2006/03/27 16:51:43 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -331,7 +331,7 @@ char *Sys_ConsoleInput (void)
 			switch (read (telnet_iosock, text + len, 1))
 			{
 			case 0:
-				len = telnet_connected = authenticated = flase;
+				len = telnet_connected = authenticated = false;
 				close (telnet_iosock);
 				SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 				return NULL;
