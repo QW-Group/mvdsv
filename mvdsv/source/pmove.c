@@ -16,12 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pmove.c,v 1.11 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: pmove.c,v 1.12 2006/04/06 18:38:06 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 
-#define NEW_JUMPFIX	// new (Jan 2006) fix for the jump bug that doesn't
+// disconnect: commented out, since KTeams/KTPro "broken ankle" fixed other other way
+// and NEW_JUMPFIX cause to some weird bugs with slopes :E
+
+//#define NEW_JUMPFIX	// new (Jan 2006) fix for the jump bug that doesn't
 			// interfere with KTeams/KTPro "broken ankle" code
 
 movevars_t	movevars;
