@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.41 2006/04/06 19:00:14 disconn3ct Exp $
+	$Id: sv_user.c,v 1.42 2006/04/06 23:25:15 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2411,12 +2411,16 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 	
 	// let KTeams'/KTPro's "broken ankle" code work
 	if (
+#if 0
+FIXME
 #ifdef USE_PR2
 	PR2_GetEdictFieldValue(sv_player, "brokenankle")
 #else
 	GetEdictFieldValue(sv_player, "brokenankle")
 #endif
-	&& (pmove.velocity[2] == -270) && (pmove.cmd.buttons & BUTTON_JUMP))
+	&&
+#endif
+	(pmove.velocity[2] == -270) && (pmove.cmd.buttons & BUTTON_JUMP))
 		pmove.jump_held = true;
 
 	// build physent list
