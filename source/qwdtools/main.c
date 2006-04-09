@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: main.c,v 1.12 2006/03/27 22:55:10 disconn3ct Exp $
+	$Id: main.c,v 1.13 2006/04/09 22:16:36 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -1141,7 +1141,7 @@ qbool ClearWorld(void)
 
 		if (sworld.options & O_STDIN)
 		{
-			strcpy(sworld.from[i].name, "stdin");
+			strlcpy(sworld.from[i].name, "stdin", MAX_OSPATH);
 			ext = va(".%s", stdintype);
 		}
 		else
@@ -1232,8 +1232,8 @@ int main (int argc, char **argv)
 		for (; sworld.fromcount < count && (i < source->count || ((i=0) < (++source)->count));
 		        i++, fromfiles++, sworld.fromcount++)
 		{
-			strcpy(fromfiles->path, source->path);
-			strcpy(fromfiles->name, source->list[i]);
+			strlcpy(fromfiles->path, source->path, sizeof(fromfiles->path));
+			strlcpy(fromfiles->name, source->list[i], sizeof(fromfiles->name));
 		}
 
 		if (!sworld.fromcount)

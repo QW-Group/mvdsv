@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_parse.c,v 1.8 2006/03/27 22:55:10 disconn3ct Exp $
+	$Id: dem_parse.c,v 1.9 2006/04/09 22:16:36 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -190,7 +190,7 @@ void Dem_ParseServerData (void)
 	count += 4;
 
 	// game directory
-	strcpy(str,MSG_ReadString ());
+	strlcpy(str,MSG_ReadString (), sizeof(str));
 	count += strlen(str)+1;
 
 	if (from->format == mvd)
@@ -220,7 +220,7 @@ void Dem_ParseServerData (void)
 	count += 4;
 
 	// get the full level name
-	strcpy(str2,MSG_ReadString ());
+	strlcpy(str2,MSG_ReadString (), sizeof(str2));
 	count += strlen(str2)+1;
 
 	MVDWrite_Begin(dem_all, 0, count + 40+1);
@@ -239,7 +239,7 @@ void Dem_ParseServerData (void)
 	if (from == sources)
 	{
 		world.servercount = from->servercount;
-		strcpy(world.mapname, str2);
+		strlcpy(world.mapname, str2, sizeof(world.mapname));
 	}
 	else
 	{
@@ -625,8 +625,8 @@ void Dem_UpdateUserinfo (void)
 	MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf, svc_updateuserinfo);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
-	strcpy(world.players[slot].name, player->name);
-	strcpy(world.players[slot].userinfo, player->userinfo);
+	strlcpy(world.players[slot].name, player->name, MAX_SCOREBOARDNAME);
+	strlcpy(world.players[slot].userinfo, player->userinfo, MAX_INFO_STRING);
 	world.players[slot].spectator = player->spectator;
 }
 
@@ -1342,7 +1342,7 @@ void Dem_ParseDemoMessage (void)
 				Dem_Stop(from);
 				return;
 			}
-			strcpy (lightstyle[i].map,  MSG_ReadString());
+			strlcpy (lightstyle[i].map,  MSG_ReadString(), MAX_STYLESTRING);
 			lightstyle[i].length = strlen(lightstyle[i].map);
 
 			MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);

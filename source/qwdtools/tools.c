@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.12 2006/03/27 22:55:10 disconn3ct Exp $
+	$Id: tools.c,v 1.13 2006/04/09 22:16:36 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -814,7 +814,7 @@ char *getPath(char *path)
 	static char dir[MAX_OSPATH];
 	char *p;
 
-	strcpy(dir, path);
+	strlcpy(dir, path, sizeof(dir));
 	p = dir + strlen(dir);
 	while (p > dir)
 	{
@@ -856,13 +856,13 @@ int AddToFileList(flist_t *filelist, char *file)
 	if (hFile == -1L)
 		filelist->path[0] = 0;
 	else
-		strcpy(filelist->path, getPath(file));
+		strlcpy(filelist->path, getPath(file), sizeof(filelist->path));
 
 	do
 	{
 		if (hFile == -1L)
 		{
-			strcpy(c_file.name, file);
+			strlcpy(c_file.name, file, sizeof(c_file.name));
 		}
 		else if (c_file.attrib & _A_SUBDIR || c_file.attrib & _A_SYSTEM)
 			continue;
@@ -875,12 +875,12 @@ int AddToFileList(flist_t *filelist, char *file)
 		p = (char*) Q_malloc (strlen(c_file.name)+1);
 
 		// copy the name
-		strcpy(p, c_file.name);
+		strlcpy(p, c_file.name, strlen(c_file.name)+1);
 
 		flist[count++] = p;
 	}
 	while ( hFile != -1L && _findnext( hFile, &c_file ) == 0 );
-	_findclose( hFile );
+		_findclose( hFile );
 
 	filelist->list = flist;
 	filelist->count = count;
@@ -898,14 +898,14 @@ int AddToFileList(flist_t *filelist, char *file)
 		filelist++;
 
 	tmp = (char *) Q_malloc (strlen(file)+1);
-	strcpy(tmp, file);
+	strlcpy(tmp, file, (strlen(file)+1));
 	name = basename(tmp);
 
-	strcpy(filelist->path, getPath(file));
+	strlcpy(filelist->path, getPath(file), sizeof(filelist->path));
 
 	filelist->list = (char **) Q_malloc (sizeof(char *));
 	filelist->list[0] = (char *) Q_malloc (strlen(name)+1);
-	strcpy(filelist->list[0], name);
+	strlcpy(filelist->list[0], name, (strlen(name)+1));
 
 	filelist->count = 1;
 
@@ -918,6 +918,7 @@ int AddToFileList(flist_t *filelist, char *file)
 void FreeFileList(flist_t *flist)
 {
 	char **p;
+
 
 	for ( ; flist->list != NULL; flist++)
 	{
@@ -938,6 +939,7 @@ char *Info_ValueForKey (char *s, char *key)
 	// work without stomping on each other
 	static	int	valueindex;
 	char	*o;
+
 
 	valueindex = (valueindex + 1) % 4;
 	if (*s == '\\')
@@ -1009,7 +1011,7 @@ void AddParm (char *parm)
 	static char parmbuf[2048];
 	static char *p = parmbuf;
 
-	strcpy(p ,parm);
+	strlcpy(p, parm, sizeof(parmbuf));
 	com_argv[com_argc++] = p;
 	p += strlen(parm) + 1;
 }
