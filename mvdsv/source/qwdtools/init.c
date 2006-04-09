@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: init.c,v 1.9 2006/03/27 22:55:10 disconn3ct Exp $
+	$Id: init.c,v 1.10 2006/04/09 22:30:58 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -134,15 +134,15 @@ void World_Init(void)
 
 	memset(sourceName, 0, sizeof(sourceName));
 
-	strcpy(qizmoDir, "");
-	strcpy(outputDir, "");
+	strlcpy(qizmoDir, "", sizeof(qizmoDir));
+	strlcpy(outputDir, "", sizeof(outputDir));
 
 	sworld.fps = DEFAULT_FPS;
 	sworld.range = 5;
-	strcpy (sworld.debug.name, DEBUG_FILE);
-	strcpy (sworld.log.name, LOG_FILE);
-	strcpy (sworld.demo.name, "*");
-	strcpy (sworld.analyse.name, "*.txt");
+	strlcpy (sworld.debug.name, DEBUG_FILE, MAX_OSPATH);
+	strlcpy (sworld.log.name, LOG_FILE, MAX_OSPATH);
+	strlcpy (sworld.demo.name, "*", MAX_OSPATH);
+	strlcpy (sworld.analyse.name, "*.txt", MAX_OSPATH);
 
 	net_message.maxsize = sizeof(net_message_buffer);
 	net_message.data = net_message_buffer;
@@ -256,7 +256,7 @@ void ParseArgv(void)
 		i = CheckParm("-qizmo_dir");
 
 	if (i && i + 1 < com_argc)
-		strcpy(qizmoDir, com_argv[i+1]);
+		strlcpy(qizmoDir, com_argv[i+1], sizeof(qizmoDir));
 
 	// parse args
 	for (i = 1; i < com_argc; i++)
@@ -278,7 +278,7 @@ void ParseArgv(void)
 
 			// it's a file name, first add default extension if needed
 			// then add to file list
-			strcpy(tmp, arg);
+			strlcpy(tmp, arg, sizeof(tmp));
 			COM_DefaultExtension(tmp, ".qwd");
 			sworld.sources += AddToFileList(sworld.filelist, tmp);
 
@@ -312,6 +312,7 @@ void ParseArgv(void)
 			i++;
 			if (i < com_argc && com_argv[i][0] != '-')
 			{
+				// FIXME
 				strcpy(param->opt1.str, com_argv[i]);
 			}
 			else
@@ -319,6 +320,7 @@ void ParseArgv(void)
 				// if it's stdin assume qwd
 				if (param->opt2 == O_STDIN)
 				{
+					// FIXME
 					strcpy(param->opt1.str, "qwd");
 					i--;
 				}
@@ -468,11 +470,11 @@ int Files_Init (int options)
 	int job = 0, i;
 
 	if (!strcmp(currentDir, sworld.from->path))
-		strcpy(d, ".");
+		strlcpy(d, ".", sizeof(d));
 	else
-		strcpy(d, sworld.from->path);
+		strlcpy(d, sworld.from->path, sizeof(d));
 
-	strcpy(out, TemplateName(d, outputDir, "@"));
+	strlcpy(out, TemplateName(d, outputDir, "@"), sizeof(out));
 	//Sys_Printf("%s, %s, %s, %s\n", sworld.from->path, d, outputDir, out);
 
 	if (options & O_MARGE)
@@ -481,13 +483,13 @@ int Files_Init (int options)
 		p = sworld.from->name;
 
 
-	strcpy(convert, TemplateName(p, sworld.demo.name, "*"));
+	strlcpy(convert, TemplateName(p, sworld.demo.name, "*"), sizeof(convert));
 	ForceExtension(convert, ".mvd");
 
-	strcpy(log, TemplateName(p, sworld.log.name, "*"));
-	strcpy(debug, TemplateName(p, sworld.debug.name, "*"));
-	strcpy(out, TemplateName(p, out, "*"));
-	strcpy(analyse, TemplateName(p, sworld.analyse.name, "*"));
+	strlcpy(log, TemplateName(p, sworld.log.name, "*"), sizeof(log));
+	strlcpy(debug, TemplateName(p, sworld.debug.name, "*"), sizeof(debug));
+	strlcpy(out, TemplateName(p, out, "*"), sizeof(out));
+	strlcpy(analyse, TemplateName(p, sworld.analyse.name, "*"), sizeof(analyse));
 
 	if (out[0])
 	{
@@ -509,7 +511,7 @@ int Files_Init (int options)
 	for (i = 0, from = sources; i < sworld.fromcount; i++, from++)
 	{
 		if (strcmp(currentDir, sworld.from[i].path))
-			strcpy(sworld.from[i].name, va("%s%s", sworld.from[i].path, sworld.from[i].name));
+			strlcpy(sworld.from[i].name, va("%s%s", sworld.from[i].path, sworld.from[i].name), MAX_OSPATH);
 
 		if (!strcmp(convert, sworld.from[i].name) && options & O_CONVERT)
 		{
@@ -592,12 +594,12 @@ void Load_ini (void)
 		return;
 
 	//get path to program
-	strcpy(path, getPath(com_argv[0]));
+	strlcpy(path, getPath(com_argv[0]), sizeof(path));
 	// if path == current dir, use short name
 	if (!strcasecmp(path, va("%s/", currentDir)))
-		strcpy(name, com_argv[0] + strlen(path));
+		strlcpy(name, com_argv[0] + strlen(path), sizeof(name));
 	else
-		strcpy(name, com_argv[0]);
+		strlcpy(name, com_argv[0], sizeof(name));
 
 	COM_StripExtension(name, name);
 	ForceExtension(name, ".ini");
@@ -608,7 +610,7 @@ void Load_ini (void)
 	{
 		if (i+1 < com_argc)
 		{
-			strcpy(name,com_argv[i+1]);
+			strlcpy(name,com_argv[i+1], sizeof(name));
 			RemoveParm(i);
 		}
 		else

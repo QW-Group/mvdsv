@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.7 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: net.c,v 1.8 2006/04/09 22:31:37 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -353,7 +353,7 @@ void NET_GetLocalAddress (netadr_t *out)
 	char buff[512];
 	int namelen;
 
-	strcpy(buff, "localhost");
+	strlcpy(buff, "localhost", sizeof(buff));
 	gethostname(buff, 512);
 	buff[512-1] = 0;
 
