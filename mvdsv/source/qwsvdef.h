@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.12 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: qwsvdef.h,v 1.13 2006/04/12 17:08:57 vvd0 Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -60,6 +60,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "world.h"
 #include "pmove.h"
 #include "log.h"
+
+#include "version.h"
 
 #include "pcre/pcre.h"
 

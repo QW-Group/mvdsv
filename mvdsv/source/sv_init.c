@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.17 2006/03/27 16:18:15 vvd0 Exp $
+	$Id: sv_init.c,v 1.18 2006/04/12 17:08:57 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
-#include "version.h"
 
 server_static_t	svs;				// persistent server info
 server_t		sv;					// local server
