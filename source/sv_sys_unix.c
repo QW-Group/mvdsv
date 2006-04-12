@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.29 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.30 2006/04/12 17:08:57 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -44,8 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <paths.h>
 #endif
-
-#include "version.h"
 // Added by VVD }
 
 extern cvar_t sys_restart_on_error;

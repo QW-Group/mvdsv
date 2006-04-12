@@ -23,11 +23,10 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c,v 1.6 2006/02/07 12:52:36 vvd0 Exp $
+	$Id: version.c,v 1.7 2006/04/12 17:08:57 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
-#include "version.h"
 
 // char *date = "Oct 24 1996";
 static char *date = __DATE__ ;

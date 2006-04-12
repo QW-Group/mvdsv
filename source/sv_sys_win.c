@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.23 2006/04/06 18:29:48 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.24 2006/04/12 17:08:57 vvd0 Exp $
 */
 
 #include <conio.h>
@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 #include "sv_windows.h"
-#include "version.h"
 
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
