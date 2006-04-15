@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.42 2006/04/06 23:25:15 disconn3ct Exp $
+	$Id: sv_user.c,v 1.43 2006/04/15 09:29:26 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -681,6 +681,17 @@ static void SV_Begin_f (void)
 			else
 #endif
 				PR_ExecuteProgram (SpectatorConnect);
+
+#ifdef USE_PR2
+			// qqshka:	seems spectator is sort of hack in QW
+			//			I let qvm mods serve spectator like we do for normal player
+			if ( sv_vm )
+			{
+				pr_global_struct->time = sv.time;
+				pr_global_struct->self = EDICT_TO_PROG(sv_player);
+				PR2_GamePutClientInServer(1); // let mod know we put spec not player
+			}
+#endif
 		}
 	}
 	else
