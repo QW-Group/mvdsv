@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.49 2006/04/12 17:08:57 vvd0 Exp $
+	$Id: sv_main.c,v 1.50 2006/04/19 17:39:28 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -785,9 +785,9 @@ static void SVC_DirectConnect (void)
 		return;
 	}
 
-	qport = atoi(Cmd_Argv(2));
+	qport = Q_atoi(Cmd_Argv(2));
 
-	challenge = atoi(Cmd_Argv(3));
+	challenge = Q_atoi(Cmd_Argv(3));
 
 	// note an extra byte is needed to replace spectator key
 	strlcpy (userinfo, Cmd_Argv(4), sizeof(userinfo));
@@ -798,7 +798,7 @@ static void SVC_DirectConnect (void)
 	}
 
 	// see if the challenge is valid
-	for (i=0 ; i<MAX_CHALLENGES ; i++)
+	for (i = 0; i < MAX_CHALLENGES; i++)
 	{
 		if (NET_CompareBaseAdr (net_from, svs.challenges[i].adr))
 		{
@@ -867,7 +867,7 @@ static void SVC_DirectConnect (void)
 	adr = net_from;
 
 	// if there is already a slot for this ip, reuse (changed from drop) it
-	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
 		if (cl->state == cs_free)
 			continue;
@@ -903,7 +903,7 @@ static void SVC_DirectConnect (void)
 	// count up the clients and spectators
 	clients = spectators = vips = 0;
 	newcl = NULL;
-	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
 		if (cl->state == cs_free)
 		{
