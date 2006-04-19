@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.43 2006/04/15 09:29:26 qqshka Exp $
+	$Id: sv_user.c,v 1.44 2006/04/19 17:39:28 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -33,8 +33,8 @@ cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
 
 cvar_t	sv_use_internal_cmd_dl = {"sv_use_internal_cmd_dl", "1"};
 
-cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "1"};
-cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "10"};
+cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "3"};
+cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "30"};
 
 extern	vec3_t	player_mins;
 

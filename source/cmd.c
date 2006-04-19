@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.14 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: cmd.c,v 1.15 2006/04/19 17:39:28 vvd0 Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -161,7 +161,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 	char	line[1024];
 	int	quotes;
 	int	cursize;
-	qbool	semicolon = false;
+//	qbool	semicolon = false;
 
 	cbuf_current = cbuf;
 
@@ -176,11 +176,14 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		{
 			if (text[i] == '"')
 				quotes++;
-			if ( !(quotes&1) &&  text[i] == ';')
+/* EXPERIMENTAL: Forbid ';' as commands separator, because ktpro didn't quote arguments
+   from admin users. Example: cmd kick "N;quit" => kick N;quit => server will exit.
+			if ( !(quotes&1) && text[i] == ';')
 			{
 				semicolon = true;
 				break;	// don't break if inside a quoted string
 			}
+*/
 			if (text[i] == '\n')
 				break;
 		}
@@ -208,9 +211,9 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		}
 
 		// security bugfix in ktpro
-		if (SV_Check_ktpro() && semicolon && strcasestr(line, "rcon_password"))
+/*		if (SV_Check_ktpro() && semicolon && strcasestr(line, "rcon_password"))
 			Sys_Printf("ATTENTION: possibly tried to use ktpro's security hole, rcon_password command must be before ';'!\n");
-		else
+		else*/
 			// execute the command line
 			Cmd_ExecuteString (line);
 
