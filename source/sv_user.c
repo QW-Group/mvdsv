@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.44 2006/04/19 17:39:28 vvd0 Exp $
+	$Id: sv_user.c,v 1.45 2006/04/21 17:39:23 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -113,20 +113,22 @@ static void SV_New_f (void)
 		}
 		else
 		{
-			host_client->state = cs_preconnected;
-			MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-			MSG_WriteString (&host_client->netchan.message,
-			                 va("packet %s \"ip %d %d\"\ncmd new\n", server_ip,
-			                    host_client - svs.clients, host_client->realip_num));
-			if (realtime - host_client->connection_started > 3)
+			if (host_client->realip_count++ < 10)
+			{
+				host_client->state = cs_preconnected;
+				MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
+				MSG_WriteString (&host_client->netchan.message,
+								 va("packet %s \"ip %d %d\"\ncmd new\n", server_ip,
+									host_client - svs.clients, host_client->realip_num));
+			}
+			if (realtime - host_client->connection_started > 3 || host_client->realip_count > 10)
 			{
 				if (sv_getrealip.value == 2)
 				{
 					Netchan_OutOfBandPrint (net_from,
-					                        "%c\nFaild to validate client's IP.\n\n", A2C_PRINT);
+						"%c\nFailed to validate client's IP.\n\n", A2C_PRINT);
 					host_client->rip_vip = 2;
 				}
-
 				host_client->state = cs_connected;
 			}
 			else

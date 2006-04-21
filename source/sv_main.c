@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.50 2006/04/19 17:39:28 vvd0 Exp $
+	$Id: sv_main.c,v 1.51 2006/04/21 17:39:23 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -776,7 +776,7 @@ static void SVC_DirectConnect (void)
 	edict_t *ent;
 
 
-	version = atoi(Cmd_Argv(1));
+	version = Q_atoi(Cmd_Argv(1));
 	if (version != PROTOCOL_VERSION)
 	{
 //		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
@@ -823,7 +823,7 @@ static void SVC_DirectConnect (void)
 		spass = true;
 
 		if ((vip = SV_VIPbyPass(s)) == 0 &&
-		        (vip = SV_VIPbyPass(Info_ValueForKey (userinfo, "password"))) == 0) // first the pass, then ip
+			(vip = SV_VIPbyPass(Info_ValueForKey (userinfo, "password"))) == 0) // first the pass, then ip
 			vip = SV_VIPbyIP(net_from);
 
 		if (spectator_password.string[0] &&
@@ -842,7 +842,7 @@ static void SVC_DirectConnect (void)
 
 		Info_RemoveKey (userinfo, "spectator"); // remove passwd
 		Info_SetValueForStarKey (userinfo, "*spectator", "1", MAX_INFO_STRING);
-		if ((spectator = atoi(s)) == 0)
+		if ((spectator = Q_atoi(s)) == 0)
 			spectator = true;
 	}
 	else
@@ -871,9 +871,8 @@ static void SVC_DirectConnect (void)
 	{
 		if (cl->state == cs_free)
 			continue;
-		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address)
-		        && ( cl->netchan.qport == qport
-		             || adr.port == cl->netchan.remote_address.port ))
+		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) &&
+			(cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port))
 		{
 			//bliP: reconnect limit
 			if ((realtime - cl->lastconnect) < ((int)sv_reconnectlimit.value * 1000))
@@ -908,7 +907,7 @@ static void SVC_DirectConnect (void)
 		if (cl->state == cs_free)
 		{
 			if (!newcl)
-				newcl = cl; // grab first available slot
+				memset ((newcl = cl), 0, sizeof(*newcl)); // grab first available slot
 			continue;
 		}
 
@@ -952,7 +951,6 @@ static void SVC_DirectConnect (void)
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
 			Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
-			newcl->rip_vip = 3; // added drop client after "server is full" message
 			return;
 		}
 	}
@@ -960,7 +958,8 @@ static void SVC_DirectConnect (void)
 	// build a new connection
 	// accept the new client
 	// this is the only place a client_t is ever initialized
-	memset (newcl, 0, sizeof(*newcl));
+	//memset (newcl, 0, sizeof(*newcl));
+	//we first set newcl->rip_vip and then clean newcl - nice! :-[=]
 	newcl->userid = SV_GenerateUserID();
 
 	strlcpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
