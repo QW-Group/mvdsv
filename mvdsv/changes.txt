@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.66 2006/04/19 17:39:27 vvd0 Exp $
+$Id: changes.txt,v 1.67 2006/04/21 17:39:23 vvd0 Exp $
 
 ----
 MVDSV v0.19.14-CVS build 23?? (2006.04.??)
@@ -8,8 +8,10 @@ MVDSV v0.19.14-CVS build 23?? (2006.04.??)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
-- improved spectator support in qvm mods - qqshka:
+- fixed number of sended packets while connect with sv_getrealip > 0 to 10
+- improved spectator support in qvm mods:
   "seems spectator is sort of hack in QW, I let qvm mods serve spectator like we do for normal player"
+(by qqshka)
 - bugfix ktpro: forbid ';' as commands separator, because ktpro didn't quote arguments
   from admin users; example: cmd kick "X;quit" => kick X;quit => server will exit (EXPERIMENTAL)
 - returned back sys_select_timeout:
@@ -59,6 +61,9 @@ MVDSV v0.19.14-CVS build 23?? (2006.04.??)
 (Thanks to 100Nosao)
 - fixed insanly dangerous bug with master_rcon_password :E. Now it can be set only from
   server configs. (by disconnect)
+- replaced bliP's fix for 'connecting...challenge' with Tonik's.
+  In some cases i can't connect for 60 secs to mvdsv servers, never have this problem with
+  zq/fq/ezq servers; recent qw262 server versions use Tonik's fix too. (by disconnect)
 - added "scroll" console output on Win32
 - bugfix from 0.19.10-develop: incorrect demo numbering while game proceed if used extracts by
   substrings in command 'cmd dlist', example: 'cmd dlist aerowalk'
