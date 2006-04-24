@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.39 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.40 2006/04/24 20:50:55 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1526,7 +1526,7 @@ record <demoname>
 */
 void SV_MVD_Record_f (void)
 {
-	int		c;
+	int	c;
 	char	name[MAX_OSPATH+MAX_DEMO_NAME];
 	char	newname[MAX_DEMO_NAME];
 
@@ -1925,7 +1925,7 @@ void SV_MVDStream_Poll(void)
 		return;
 
 	addrlen = sizeof(addr);
-	client = accept(listensocket, (struct sockaddr *)&addr, &addrlen);
+	client = accept(listensocket, (struct sockaddr *)&addr, (socklen_t *)&addrlen);
 
 	if (client == INVALID_SOCKET)
 		return;

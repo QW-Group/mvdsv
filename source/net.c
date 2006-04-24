@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.8 2006/04/09 22:31:37 disconn3ct Exp $
+	$Id: net.c,v 1.9 2006/04/24 20:50:55 disconn3ct Exp $
 */
 // net_wins.c
 
@@ -170,7 +170,7 @@ qbool NET_GetPacket (void)
 
 
 	fromlen = sizeof(from);
-	ret = recvfrom (net_socket, (char *)net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, &fromlen);
+	ret = recvfrom (net_socket, (char *)net_message_buffer, sizeof(net_message_buffer), 0, (struct sockaddr *)&from, (socklen_t *)&fromlen);
 	SockadrToNetadr (&from, &net_from);
 	if (ret == -1)
 	{
@@ -362,7 +362,7 @@ void NET_GetLocalAddress (netadr_t *out)
 
 
 	namelen = sizeof(address);
-	if (getsockname (net_socket, (struct sockaddr *)&address, &namelen) == -1)
+	if (getsockname (net_socket, (struct sockaddr *)&address, (socklen_t *)&namelen) == -1)
 	{
 		notvalid = true;
 		NET_StringToSockaddr("0.0.0.0", (struct sockaddr_qstorage *)&address);

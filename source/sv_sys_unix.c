@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.30 2006/04/12 17:08:57 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.31 2006/04/24 20:50:55 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -568,14 +568,13 @@ static int only_digits(const char *s)
 
 inline void Sys_Telnet (void)
 {
-	static int			tempsock;
-	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
-	static int			sockaddr_len = sizeof(struct sockaddr_in);
-	static double		cur_time_not_auth;
+	static int	tempsock;
+	static struct	sockaddr_in remoteaddr, remoteaddr_temp;
+	static int	sockaddr_len = sizeof(struct sockaddr_in);
+	static double	cur_time_not_auth;
 	if (telnet_connected)
 	{
-		if ((tempsock =
-		            accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
+		if ((tempsock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, (socklen_t *)&sockaddr_len)) > 0)
 		{
 			//			if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 			send (tempsock, "Console busy by another user.\n", 31, 0);
@@ -596,8 +595,7 @@ inline void Sys_Telnet (void)
 	}
 	else
 	{
-		if ((telnet_iosock =
-		            accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
+		if ((telnet_iosock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, (socklen_t *)&sockaddr_len)) > 0)
 		{
 			//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 			//			{
