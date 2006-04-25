@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.68 2006/04/25 16:15:03 vvd0 Exp $
+$Id: changes.txt,v 1.69 2006/04/25 18:22:05 vvd0 Exp $
 
 ----
 MVDSV v0.19.14-develop build 2316 (2006.04.25)
@@ -8,6 +8,13 @@ MVDSV v0.19.14-develop build 2316 (2006.04.25)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
   to bothtools.c and bothdefs.h
 [server]
+- new cvar sv_forcespec_onfull:
+  0 - old connect algorithm, i.e you got full connect message and continue trying connect
+      to server as player
+  1 - force player enter server as spectator if all players's slots are busy and
+      if there are empty slots for spectators
+  default: 0
+(Thanks to qqshka)
 - added kqueue instead select for FreeBSD target: 'make -DKQUEUE' (EXPERIMENTAL)
 - fixed number of sended packets while connect with sv_getrealip > 0 to 10
 - improved spectator support in qvm mods:

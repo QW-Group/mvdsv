@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.52 2006/04/25 16:15:06 vvd0 Exp $
+	$Id: sv_main.c,v 1.53 2006/04/25 18:21:34 vvd0 Exp $
 */
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -129,6 +129,7 @@ cvar_t	pausable = {"pausable", "1"};
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
 cvar_t	sv_getrealip = {"sv_getrealip", "1"};
 cvar_t	sv_serverip = {"sv_serverip", ""};
+cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "0"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
@@ -954,8 +955,16 @@ static void SVC_DirectConnect (void)
 		else
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
-			Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
-			return;
+			if (spectator == 0 && sv_forcespec_onfull.value && maxspectators.value > spectators)
+			{
+				Netchan_OutOfBandPrint (adr, "%c\nconnecting as spectator\n\n", A2C_PRINT);
+				newcl->rip_vip = 2;
+			}
+			else
+			{
+				Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
+				return;
+			}
 		}
 	}
 
@@ -2435,6 +2444,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_getrealip);
 	Cvar_Register (&sv_maxdownloadrate);
 	Cvar_Register (&sv_serverip);
+	Cvar_Register (&sv_forcespec_onfull);
 	Cvar_Register (&sv_cpserver);
 	Cvar_Register (&rcon_password);
 	Cvar_Register (&password);
