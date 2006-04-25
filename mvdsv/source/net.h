@@ -16,15 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.15 2006/04/25 16:57:23 vvd0 Exp $
+	$Id: net.h,v 1.16 2006/04/25 18:21:34 vvd0 Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
 #define __NET_H__
-
-#ifndef socklen_t
-#define socklen_t	size_t
-#endif
 
 #ifdef _WIN32
 #include <Winsock2.h>
@@ -69,6 +65,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INVALID_SOCKET	-1
 #endif
 
+#ifndef socklen_t
+#define socklen_t	size_t
+#endif
 
 #define	PORT_ANY	-1
 
