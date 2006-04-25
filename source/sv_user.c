@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.46 2006/04/25 18:21:34 vvd0 Exp $
+	$Id: sv_user.c,v 1.47 2006/04/25 18:50:40 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -92,7 +92,7 @@ static void SV_New_f (void)
 	if (host_client->rip_vip == 2)
 	{
 		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message, "spectator 1;reconnect\n");
+		MSG_WriteString (&host_client->netchan.message, "disconnect;spectator 1;reconnect\n");
 		SV_DropClient (host_client);
 		return;
 	}
