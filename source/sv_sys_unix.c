@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.31 2006/04/24 20:50:55 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.32 2006/04/25 16:15:06 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -25,15 +25,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
+#ifdef KQUEUE
+#include <sys/types.h>
+#include <sys/event.h>
+#endif
 #include <sys/time.h>
 #include <sys/stat.h>
 #else
 #include <sys/dir.h>
 #endif
 
-#include <time.h>
-
 // Added by VVD {
+#include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <pwd.h>
@@ -60,7 +63,8 @@ static qbool	stdin_ready = false;
 static qbool	iosock_ready = false;
 static qbool	authenticated = false;
 static double	cur_time_auth;
-static qbool	isdaemon = false;
+//static qbool	isdaemon = false;
+static qbool	do_stdin = true;
 // Added by VVD }
 
 /*
@@ -302,7 +306,19 @@ double Sys_DoubleTime (void)
 	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
 }
 
-static int do_stdin = 1;
+#if defined(__FreeBSD__) && defined(KQUEUE)
+static const struct timespec zerotime = { 0, 0 };
+static int kq;
+static struct kevent kevs[4];
+void closesocket_k (int socket)
+{
+	EV_SET(&kevs[3], (intptr_t) socket, EVFILT_READ, EV_DELETE, 0, 0, 0);
+	kevent(kq, &kevs[3], 1, NULL, 0, &zerotime);
+	closesocket(socket);
+}
+#else
+#define closesocket_k(socket)	closesocket(socket)
+#endif
 
 /*
 ================
@@ -330,7 +346,7 @@ char *Sys_ConsoleInput (void)
 			{
 			case 0:
 				len = telnet_connected = authenticated = false;
-				close (telnet_iosock);
+				closesocket_k (telnet_iosock);
 				SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 				return NULL;
 			case 1:
@@ -345,7 +361,7 @@ char *Sys_ConsoleInput (void)
 				if (qerrno != EAGAIN) // demand for M$ WIN 2K telnet support
 				{
 					len = telnet_connected = authenticated = false;
-					close (telnet_iosock);
+					closesocket_k (telnet_iosock);
 					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: (%i): %s.\n", qerrno, strerror(qerrno)));
 				}
 				return NULL;
@@ -381,7 +397,7 @@ char *Sys_ConsoleInput (void)
 				if (strlen(text) == 1 && text[0] == 4)
 				{
 					len = telnet_connected = authenticated = false;
-					close (telnet_iosock);
+					closesocket_k (telnet_iosock);
 					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 				}
 				else
@@ -390,10 +406,10 @@ char *Sys_ConsoleInput (void)
 			return NULL;
 		}
 
-		if (strlen(text) == 1  && text[0] == 4)
+		if (strlen(text) == 1 && text[0] == 4)
 		{
 			len = telnet_connected = authenticated = false;
-			close (telnet_iosock);
+			closesocket_k (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
 			len = 0;
 			return NULL;
@@ -404,10 +420,10 @@ char *Sys_ConsoleInput (void)
 	if (do_stdin && stdin_ready)
 	{
 		stdin_ready = false;
-		len = read (0, text, sizeof(text));
+		len = read (STDIN_FILENO, text, sizeof(text));
 		if (len == 0)
 		{	// end of file
-			do_stdin = 0;
+			do_stdin = false;
 			return NULL;
 		}
 		if (len < 1)
@@ -472,6 +488,65 @@ void Sys_Init (void)
 }
 
 inline void Sys_Telnet (void);
+#if defined(__FreeBSD__) && defined(KQUEUE)
+void Sys_NET_Init()
+{
+	int i = 0;
+
+	if ((kq = kqueue()) == -1)
+		SV_Error("IO_Engine_Init: kqueue() failed");
+	EV_SET(&kevs[i++], (intptr_t) net_socket, EVFILT_READ, EV_ADD, 0, 0, 0);
+
+	if (telnetport)
+		EV_SET(&kevs[i++], (intptr_t) net_telnetsocket, EVFILT_READ, EV_ADD, 0, 0, 0);
+
+	if (do_stdin)
+		EV_SET(&kevs[i++], (intptr_t) STDIN_FILENO, EVFILT_READ, EV_ADD, 0, 0, 0);
+
+	if (kevent(kq, kevs, i, NULL, 0, &zerotime) == -1)
+		SV_Error("IO_Engine_Init: kevent() failed");
+}
+qbool NET_Sleep ()
+{
+	int num, i, fd;
+
+	struct timespec timeout_cur;
+	if (telnetport)
+		Sys_Telnet();
+
+	timeout_cur.tv_sec  = select_timeout.tv_sec;
+	timeout_cur.tv_nsec = select_timeout.tv_usec * 1000;
+
+	do
+	{
+		switch ((num = kevent(kq, NULL, 0, kevs, 4, &timeout_cur)))
+		{
+			case -1:
+				if (errno != EINTR)
+				{
+					/*SV_Write_Log(SV_ERRORLOG, "IO_Engine_Query: "
+						"kevent() failed -- %d, %s\n", errno, strerror(errno));*/
+					return true;
+				}
+				break;
+			case 0:
+				break;
+			default:
+				for (i = 0; i < num; i++)
+				{
+					fd = (int)kevs[i].ident;
+					if (do_stdin && fd == STDIN_FILENO)
+						stdin_ready = true;
+					else if (telnetport && telnet_connected && fd == telnet_iosock)
+						iosock_ready = true;
+				}
+		}
+	} while (num == -1);
+
+	return false;
+}
+#else
+#define Sys_NET_Init()
 qbool NET_Sleep ()
 {
 	struct timeval timeout_cur;
@@ -496,10 +571,11 @@ qbool NET_Sleep ()
 	// Added by VVD }
 
 	if (do_stdin)
-		FD_SET(0, &fdset);
+		FD_SET(STDIN_FILENO, &fdset);
 
-	timeout_cur.tv_sec  = select_timeout.tv_sec;
-	timeout_cur.tv_usec = select_timeout.tv_usec;
+	timeout_cur = select_timeout;
+/*	timeout_cur.tv_sec  = select_timeout.tv_sec;
+	timeout_cur.tv_usec = select_timeout.tv_usec;*/
 
 	switch (select (++j, &fdset, NULL, NULL, &timeout_cur))
 	{
@@ -509,10 +585,11 @@ qbool NET_Sleep ()
 			if (telnetport && telnet_connected)
 				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 			if (do_stdin)
-				stdin_ready = FD_ISSET(0, &fdset);
+				stdin_ready = FD_ISSET(STDIN_FILENO, &fdset);
 	}
 	return false;
 }
+#endif
 
 void Sys_Sleep(unsigned long ms)
 {
@@ -568,28 +645,28 @@ static int only_digits(const char *s)
 
 inline void Sys_Telnet (void)
 {
-	static int	tempsock;
-	static struct	sockaddr_in remoteaddr, remoteaddr_temp;
-	static int	sockaddr_len = sizeof(struct sockaddr_in);
-	static double	cur_time_not_auth;
+	static int			tempsock;
+	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
+	static int			sockaddr_len = sizeof(struct sockaddr_in);
+	static double		cur_time_not_auth;
 	if (telnet_connected)
 	{
 		if ((tempsock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, (socklen_t *)&sockaddr_len)) > 0)
 		{
-			//			if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+			//if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 			send (tempsock, "Console busy by another user.\n", 31, 0);
 			closesocket (tempsock);
 			SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
 			                               inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
 		}
-		if (	(!authenticated && not_auth_timeout.value &&
-		        realtime - cur_time_not_auth > not_auth_timeout.value) ||
-		        (authenticated && auth_timeout.value &&
-		         realtime - cur_time_auth > auth_timeout.value))
+		if ((!authenticated && not_auth_timeout.value &&
+			 realtime - cur_time_not_auth > not_auth_timeout.value) ||
+			(authenticated && auth_timeout.value &&
+			 realtime - cur_time_auth > auth_timeout.value))
 		{
 			telnet_connected = false;
 			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
-			closesocket (telnet_iosock);
+			closesocket_k (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 		}
 	}
@@ -597,18 +674,23 @@ inline void Sys_Telnet (void)
 	{
 		if ((telnet_iosock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, (socklen_t *)&sockaddr_len)) > 0)
 		{
-			//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-			//			{
+			//if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
+			//{
 			telnet_connected = true;
 			cur_time_not_auth = realtime;
 			SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 			send (telnet_iosock, "# ", 2, 0);
-			/*			}
-						else
-						{
-							closesocket (telnet_iosock);
-							SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-						}
+#if defined(__FreeBSD__) && defined(KQUEUE)
+			EV_SET(&kevs[3], (intptr_t) telnet_iosock, EVFILT_READ, EV_ADD, 0, 0, 0);
+			if (kevent(kq, &kevs[3], 1, NULL, 0, &zerotime) == -1)
+				SV_Error("IO_Engine_Init: kevent() failed");
+#endif
+			/*}
+			else
+			{
+				closesocket (telnet_iosock);
+				SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+			}
 			*/
 		}
 	}
@@ -628,7 +710,7 @@ int main (int argc, char *argv[])
 	//Added by VVD {
 	int	j;
 	uid_t   user_id;
-	gid_t   group_id;
+	gid_t   group_id = 0;
 	struct passwd	*pw;
 	struct group	*gr;
 	char	*user_name, *group_name = NULL, *chroot_dir;
@@ -686,7 +768,8 @@ int main (int argc, char *argv[])
 			(void)dup2(j, STDERR_FILENO);
 			if (j > 2)
 				(void)close(j);
-			isdaemon = true;
+			//isdaemon = true;
+			do_stdin = false;
 		}
 	}
 
@@ -712,11 +795,16 @@ int main (int argc, char *argv[])
 		else
 		{
 			if ((gr = getgrnam(group_name)) == NULL)
+			{
 				Sys_Printf("group \"%s\" unknown\n", group_name);
-			group_id = gr->gr_gid;
+				group_id = -1;
+			}
+			else
+				group_id = gr->gr_gid;
 		}
-		if (setgid(group_id) < 0)
-			Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(qerrno));
+		if (group_id != -1)
+			if (setgid(group_id) < 0)
+				Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(qerrno));
 	}
 	// setuid
 	j = COM_CheckParm ("-u");
@@ -754,7 +842,9 @@ int main (int argc, char *argv[])
 	// main loop
 	//
 	oldtime = Sys_DoubleTime () - 0.1;
-	
+
+	Sys_NET_Init();
+
 	while (1)
 	{
 		// select on the net socket and stdin
