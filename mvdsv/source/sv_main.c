@@ -16,8 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.51 2006/04/21 17:39:23 vvd0 Exp $
+	$Id: sv_main.c,v 1.52 2006/04/25 16:15:06 vvd0 Exp $
 */
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
+#include <sys/time.h>
+#endif
 
 #include "qwsvdef.h"
 
@@ -2793,12 +2797,13 @@ qbool OnChange_sysselecttimeout_var (cvar_t *var, char *value)
 {
 	extern struct timeval select_timeout;
 	int t = Q_atoi(value);
-	if (t)
+	if (t <= 1000000 && t >= 10)
 	{
 		select_timeout.tv_sec  = t / 1000000;
 		select_timeout.tv_usec = t - select_timeout.tv_sec;
 		return false;
 	}
+	Sys_Printf("WARNING: sys_select_timeout can't be less then 10 (10 microseconds) and more then 1 000 000 (1 second).\n");
 	return true;
 }
 //bliP: 24/9 logdir ->
