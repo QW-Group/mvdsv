@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.16 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: cmd.c,v 1.17 2006/04/28 17:24:27 vvd0 Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -185,7 +185,10 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 			}
 
 			if (text[i] == '\n')
+			{
+				semicolon = false;
 				break;
+			}
 		}
 
 		// don't execute lines without ending \n; this fixes problems with
@@ -212,7 +215,8 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 		// security bugfix in ktpro
 		if (SV_Check_ktpro() && semicolon/* && strcasestr(line, "rcon_password")*/)
-			Sys_Printf("ATTENTION: possibly tried to use ktpro's security hole, server don't run command after ';'!\n");
+			Sys_Printf("ATTENTION: possibly tried to use ktpro's security hole, "
+						"server don't run command after ';'!\nCommand: %s\n", line);
 		else
 			// execute the command line
 			Cmd_ExecuteString (line);
