@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.48 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: sv_user.c,v 1.49 2006/04/28 17:32:28 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -951,7 +951,7 @@ static void SV_NextUpload (void)
 	if (host_client->upload)
 	{
 		long pos = ftell(host_client->upload);
-		if (pos == -1 || host_client->remote_snap && (float)pos + (float)size > sv_maxuploadsize.value)
+		if (pos == -1 || (host_client->remote_snap && (float)pos + (float)size > sv_maxuploadsize.value))
 		{
 			msg_readcount += size;
 			SV_CancelUpload();
