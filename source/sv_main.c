@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.53 2006/04/25 18:21:34 vvd0 Exp $
+	$Id: sv_main.c,v 1.54 2006/04/28 17:12:44 vvd0 Exp $
 */
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -129,7 +129,6 @@ cvar_t	pausable = {"pausable", "1"};
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
 cvar_t	sv_getrealip = {"sv_getrealip", "1"};
 cvar_t	sv_serverip = {"sv_serverip", ""};
-cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "0"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
@@ -553,8 +552,8 @@ static void SVC_Status (void)
 			        ( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
 			          ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
 			{
-				top    = atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
-				bottom = atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
+				top    = Q_atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
+				bottom = Q_atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
 				top    = (top    < 0) ? 0 : ((top    > 13) ? 13 : top);
 				bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
 				ping   = SV_CalcPing (cl);
@@ -663,7 +662,7 @@ static void SVC_Log (void)
 
 
 	if (Cmd_Argc() == 2)
-		seq = atoi(Cmd_Argv(1));
+		seq = Q_atoi(Cmd_Argv(1));
 	else
 		seq = -1;
 
@@ -946,19 +945,19 @@ static void SVC_DirectConnect (void)
 	        || (!spectator && clients >= (int)maxclients.value)
                 || !newcl)
 	{
+		Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
 		if (spectator == 2 && maxvip_spectators.value > vips && !vip)
 		{
-			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
 			newcl->rip_vip = 1; // yet can be connected if realip is on vip list
 			newcl->vip = 1; // :)
 		}
 		else
 		{
-			Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
-			if (spectator == 0 && sv_forcespec_onfull.value && maxspectators.value > spectators)
+			if (!spectator && spectators < (int)maxspectators.value)
 			{
-				Netchan_OutOfBandPrint (adr, "%c\nconnecting as spectator\n\n", A2C_PRINT);
-				newcl->rip_vip = 2;
+				Netchan_OutOfBandPrint (adr, "%c\nserver is full: connecting as spectator\n", A2C_PRINT);
+				Info_SetValueForStarKey (userinfo, "*spectator", "1", MAX_INFO_STRING);
+				spectator = true;
 			}
 			else
 			{
@@ -995,7 +994,7 @@ static void SVC_DirectConnect (void)
 	newcl->vip = vip;
 
 	// extract extensions mask
-	newcl->extensions = atoi(Info_ValueForKey(newcl->userinfo, "*z_ext"));
+	newcl->extensions = Q_atoi(Info_ValueForKey(newcl->userinfo, "*z_ext"));
 	Info_RemoveKey (newcl->userinfo, "*z_ext");
 
 	edictnum = (newcl-svs.clients)+1;
@@ -1365,7 +1364,7 @@ static void SVC_IP(void)
 	if (Cmd_Argc() < 3)
 		return;
 
-	num = atoi(Cmd_Argv(1));
+	num = Q_atoi(Cmd_Argv(1));
 
 	if (num < 0 || num >= MAX_CLIENTS)
 		return;
@@ -1375,7 +1374,7 @@ static void SVC_IP(void)
 		return;
 
 	// prevent cheating
-	if (client->realip_num != atoi(Cmd_Argv(2)))
+	if (client->realip_num != Q_atoi(Cmd_Argv(2)))
 		return;
 
 	// don't override previously set ip
@@ -1538,7 +1537,7 @@ qbool StringToFilter (char *s, ipfilter_t *f)
 			num[j++] = *s++;
 		}
 		num[j] = 0;
-		b[i] = atoi(num);
+		b[i] = Q_atoi(num);
 		if (b[i] != 0)
 			m[i] = 255;
 
@@ -1569,7 +1568,7 @@ static void SV_AddIPVIP_f (void)
 		return;
 	}
 
-	l = atoi(Cmd_Argv(2));
+	l = Q_atoi(Cmd_Argv(2));
 
 	if (l < 1) l = 1;
 
@@ -2271,7 +2270,7 @@ static void SV_CheckVars (void)
 
 	// check password and spectator_password
 	if (strcmp(password.string, pw) ||
-	        strcmp(spectator_password.string, spw) || strcmp(vip_password.string, vspw))
+		strcmp(spectator_password.string, spw) || strcmp(vip_password.string, vspw))
 	{
 		strlcpy (pw, password.string, MAX_INFO_STRING);
 		strlcpy (spw, spectator_password.string, MAX_INFO_STRING);
@@ -2319,7 +2318,7 @@ static void SV_CheckVars (void)
 			else
 				val = Info_ValueForKey (cl->userinfo, "rate");
 
-			cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, atoi(val));
+			cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(val));
 		}
 	}
 }
@@ -2444,7 +2443,6 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_getrealip);
 	Cvar_Register (&sv_maxdownloadrate);
 	Cvar_Register (&sv_serverip);
-	Cvar_Register (&sv_forcespec_onfull);
 	Cvar_Register (&sv_cpserver);
 	Cvar_Register (&rcon_password);
 	Cvar_Register (&password);
@@ -2841,13 +2839,13 @@ qbool OnChange_admininfo_var (cvar_t *var, char *value)
 //bliP: telnet log level ->
 qbool OnChange_telnetloglevel_var (cvar_t *var, char *value)
 {
-	logs[TELNET_LOG].log_level = atoi(value);
+	logs[TELNET_LOG].log_level = Q_atoi(value);
 	return false;
 }
 //<-
 qbool OnChange_qconsolelogsay_var (cvar_t *var, char *value)
 {
-	logs[CONSOLE_LOG].log_level = atoi(value);
+	logs[CONSOLE_LOG].log_level = Q_atoi(value);
 	return false;
 }
 
@@ -2867,14 +2865,14 @@ static void SV_InitNet (void)
 	p = COM_CheckParm ("-port");
 	if (p && p + 1 < com_argc)
 	{
-		sv_port = atoi(com_argv[p + 1]);
+		sv_port = Q_atoi(com_argv[p + 1]);
 		Con_Printf ("Port: %i\n", sv_port);
 	}
 
 	p = COM_CheckParm ("-telnetport");
 	if (p && p + 1 < com_argc)
 	{
-		telnetport = atoi(com_argv[p + 1]);
+		telnetport = Q_atoi(com_argv[p + 1]);
 		Con_Printf ("Telnet port: %i\n", telnetport);
 	}
 	else

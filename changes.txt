@@ -1,8 +1,11 @@
 
-$Id: changes.txt,v 1.69 2006/04/25 18:22:05 vvd0 Exp $
+$Id: changes.txt,v 1.70 2006/04/28 17:12:34 vvd0 Exp $
 
 ----
-MVDSV v0.19.14-develop build 2316 (2006.04.25)
+MVDSV v0.19.20-develop build 2320 (2006.04.28)
+- replaced all:
+    atoi -> Q_atoi
+    atof -> Q_atof
 - bugfix from 0.179b: SunOS on SPARC-64 didn't determine big endian
 (Thanks to Krok)
 - for developers: move all common tools functions from common.{c|h} and qwdtools/tools.{c|h}
@@ -15,12 +18,14 @@ MVDSV v0.19.14-develop build 2316 (2006.04.25)
       if there are empty slots for spectators
   default: 0
 (Thanks to qqshka)
+- bugfix from 0.1727b: possibility to crash server from client via upload function
+(Thanks to jhodge)
 - added kqueue instead select for FreeBSD target: 'make -DKQUEUE' (EXPERIMENTAL)
 - fixed number of sended packets while connect with sv_getrealip > 0 to 10
 - improved spectator support in qvm mods:
   "seems spectator is sort of hack in QW, I let qvm mods serve spectator like we do for normal player"
 (by qqshka)
-- bugfix ktpro: forbid ';' as commands separator, because ktpro didn't quote arguments
+- bugfix ktpro: forbid ';' as commands separator if mod is ktpro, because it don't quote arguments
   from admin users; example: cmd kick "X;quit" => kick X;quit => server will exit (EXPERIMENTAL)
 - returned back sys_select_timeout:
   MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000

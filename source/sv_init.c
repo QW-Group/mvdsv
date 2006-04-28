@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.18 2006/04/12 17:08:57 vvd0 Exp $
+	$Id: sv_init.c,v 1.19 2006/04/28 17:12:44 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -448,7 +448,9 @@ void Load_SpecVisData(char *visname)
 	memset(&specworld, 0, sizeof(specworld));
 
 	// disconnect: why we use serverinfo for spec_watervis? IMHO localinfo better // FIXME
-	if ((!atoi(Info_ValueForKey (svs.info, "watervis")) && !atoi(Info_ValueForKey (svs.info, "spec_watervis"))) || (base = COM_LoadHunkFile (visname)) == NULL)
+	if ((!Q_atoi(Info_ValueForKey (svs.info, "watervis")) &&
+		 !Q_atoi(Info_ValueForKey (svs.info, "spec_watervis"))) ||
+		(base = COM_LoadHunkFile (visname)) == NULL)
 	{
 		specworld.visdata = sv.worldmodel->visdata;
 		specworld.nodes = sv.worldmodel->nodes;

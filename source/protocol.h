@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.8 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: protocol.h,v 1.9 2006/04/28 17:12:44 vvd0 Exp $
 */
 // protocol.h -- communications protocols
 #ifndef _PROTOCOL_H_
@@ -146,7 +146,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	clc_stringcmd		4	// [string] message
 #define	clc_delta		5	// [byte] sequence number, requests delta compression of message
 #define clc_tmove		6	// teleport request, spectator only
-#define clc_upload		7	// teleport request, spectator only
+#define clc_upload		7	//
 
 
 //==============================================

@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c,v 1.7 2006/04/12 17:08:57 vvd0 Exp $
+	$Id: version.c,v 1.8 2006/04/28 17:12:45 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -55,8 +55,8 @@ int build_number (void)
 		d += mond[m];
 	}
 
-	d += atoi( &date[4] ) - 1;
-	y = atoi( &date[7] ) - 1900;
+	d += Q_atoi( &date[4] ) - 1;
+	y = Q_atoi( &date[7] ) - 1900;
 	b = d + (int)((y - 1) * 365.25);
 
 	if (((y % 4) == 0) && m > 1)
