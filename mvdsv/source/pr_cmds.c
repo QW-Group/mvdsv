@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.19 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.20 2006/04/28 17:12:44 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -2445,7 +2445,7 @@ void PF_stof (void)
 
 	s = G_STRING(OFS_PARM0);
 
-	G_FLOAT(OFS_RETURN) = atof(s);
+	G_FLOAT(OFS_RETURN) = Q_atof(s);
 }
 
 

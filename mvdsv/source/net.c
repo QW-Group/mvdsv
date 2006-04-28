@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.10 2006/04/25 16:57:23 vvd0 Exp $
+	$Id: net.c,v 1.11 2006/04/28 17:12:44 vvd0 Exp $
 */
 // net_wins.c
 
@@ -119,7 +119,7 @@ qbool NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 			if (*colon == ':')
 			{
 				*colon = 0;
-				((struct sockaddr_in *)sadr)->sin_port = htons((short)atoi(colon+1));
+				((struct sockaddr_in *)sadr)->sin_port = htons((short)Q_atoi(colon+1));
 			}
 
 		//this is the wrong way to test. a server name may start with a number.

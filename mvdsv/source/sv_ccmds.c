@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.26 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.27 2006/04/28 17:12:44 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -255,7 +255,7 @@ qbool SV_SetPlayer (void)
 	int			i;
 	int			idnum;
 
-	idnum = atoi(Cmd_Argv(1));
+	idnum = Q_atoi(Cmd_Argv(1));
 
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
@@ -343,7 +343,7 @@ void SV_Give_f (void)
 		return;
 
 	t = Cmd_Argv(2);
-	v = atoi (Cmd_Argv(3));
+	v = Q_atoi (Cmd_Argv(3));
 
 	switch (t[0])
 	{
@@ -784,7 +784,7 @@ void SV_Kick_f (void)
 		return;
 	}
 
-	uid = atoi(Cmd_Argv(1));
+	uid = Q_atoi(Cmd_Argv(1));
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
@@ -1023,7 +1023,7 @@ void SV_RemovePenalty_f (void)
 		return;
 	}
 
-	num = atoi(Cmd_Argv(1));
+	num = Q_atoi(Cmd_Argv(1));
 
 	for (i = 0; i < numpenfilters; i++)
 	{
@@ -1648,9 +1648,9 @@ void SV_Floodprot_f (void)
 		return;
 	}
 
-	arg1 = atoi(Cmd_Argv(1));
-	arg2 = atoi(Cmd_Argv(2));
-	arg3 = atoi(Cmd_Argv(3));
+	arg1 = Q_atoi(Cmd_Argv(1));
+	arg2 = Q_atoi(Cmd_Argv(2));
+	arg3 = Q_atoi(Cmd_Argv(3));
 
 	if (arg1<=0 || arg2 <= 0 || arg3<=0)
 	{
@@ -1793,7 +1793,7 @@ void SV_Snap_f (void)
 		return;
 	}
 
-	uid = atoi(Cmd_Argv(1));
+	uid = Q_atoi(Cmd_Argv(1));
 
 	SV_Snap(uid);
 }

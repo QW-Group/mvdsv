@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.11 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: pr_edict.c,v 1.12 2006/04/28 17:12:44 vvd0 Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -748,7 +748,7 @@ qbool ED_ParseEpair (void *base, ddef_t *key, char *s)
 		break;
 
 	case ev_float:
-		*(float *)d = atof (s);
+		*(float *)d = Q_atof (s);
 		break;
 
 	case ev_vector:
@@ -760,13 +760,13 @@ qbool ED_ParseEpair (void *base, ddef_t *key, char *s)
 			while (*v && *v != ' ')
 				v++;
 			*v = 0;
-			((float *)d)[i] = atof (w);
+			((float *)d)[i] = Q_atof (w);
 			w = v = v+1;
 		}
 		break;
 
 	case ev_entity:
-		*(int *)d = EDICT_TO_PROG(EDICT_NUM(atoi (s)));
+		*(int *)d = EDICT_TO_PROG(EDICT_NUM(Q_atoi (s)));
 		break;
 
 	case ev_field:

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.5 2006/03/27 22:54:39 disconn3ct Exp $
+ *  $Id: pr2_exec.c,v 1.6 2006/04/28 17:12:44 vvd0 Exp $
  */
 
 #include <stdarg.h>
@@ -56,7 +56,7 @@ void PR2_Init(void)
 
 	if (p && p < com_argc)
 	{
-		usedll = atoi(com_argv[p + 1]);
+		usedll = Q_atoi(com_argv[p + 1]);
 
 		if (usedll > 2)
 			usedll = VM_NONE;

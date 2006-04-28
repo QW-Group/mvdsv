@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.47 2006/04/25 18:50:40 qqshka Exp $
+	$Id: sv_user.c,v 1.48 2006/04/28 17:12:44 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -35,6 +35,8 @@ cvar_t	sv_use_internal_cmd_dl = {"sv_use_internal_cmd_dl", "1"};
 
 cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "3"};
 cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "30"};
+
+cvar_t	sv_maxuploadsize = {"sv_maxuploadsize", "1048576"};
 
 extern	vec3_t	player_mins;
 
@@ -89,14 +91,6 @@ static void SV_New_f (void)
 	extern cvar_t sv_serverip;
 	extern cvar_t sv_getrealip;
 
-	if (host_client->rip_vip == 2)
-	{
-		MSG_WriteByte (&host_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&host_client->netchan.message, "disconnect;spectator 1;reconnect\n");
-		SV_DropClient (host_client);
-		return;
-	}
-
 	if (host_client->state == cs_spawned)
 		return;
 
@@ -105,7 +99,7 @@ static void SV_New_f (void)
 
 	host_client->spawncount = svs.spawncount;
 	// do not proceed if realip is unknown
-	if (host_client->state == cs_preconnected && host_client->realip.ip.ip[0] == 0 && sv_getrealip.value)
+    if (host_client->state == cs_preconnected && !host_client->realip.ip.ip[0] && sv_getrealip.value)
 	{
 		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr);
 
@@ -281,7 +275,7 @@ static void SV_Soundlist_f (void)
 	}
 
 	// handle the case of a level changing while a client was connecting
-	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
+	if (Q_atoi(Cmd_Argv(1)) != svs.spawncount)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Soundlist_f from different level\n");
@@ -289,7 +283,7 @@ static void SV_Soundlist_f (void)
 		return;
 	}
 
-	n = atoi(Cmd_Argv(2));
+	n = Q_atoi(Cmd_Argv(2));
 	if (n >= MAX_SOUNDS)
 	{
 		SV_ClearReliable (host_client);
@@ -341,7 +335,7 @@ static void SV_Modellist_f (void)
 	}
 
 	// handle the case of a level changing while a client was connecting
-	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
+	if (Q_atoi(Cmd_Argv(1)) != svs.spawncount)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Modellist_f from different level\n");
@@ -349,7 +343,7 @@ static void SV_Modellist_f (void)
 		return;
 	}
 
-	n = atoi(Cmd_Argv(2));
+	n = Q_atoi(Cmd_Argv(2));
 	if (n >= MAX_MODELS)
 	{
 		SV_ClearReliable (host_client);
@@ -401,7 +395,7 @@ static void SV_PreSpawn_f (void)
 	}
 
 	// handle the case of a level changing while a client was connecting
-	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
+	if (Q_atoi(Cmd_Argv(1)) != svs.spawncount)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_PreSpawn_f from different level\n");
@@ -409,14 +403,14 @@ static void SV_PreSpawn_f (void)
 		return;
 	}
 
-	buf = atoi(Cmd_Argv(2));
+	buf = Q_atoi(Cmd_Argv(2));
 	if (buf >= sv.num_signon_buffers)
 		buf = 0;
 
 	if (!buf)
 	{
 		// should be three numbers following containing checksums
-		check = atoi(Cmd_Argv(3));
+		check = Q_atoi(Cmd_Argv(3));
 
 		//		Con_DPrintf("Client check = %d\n", check);
 
@@ -483,7 +477,7 @@ static void SV_Spawn_f (void)
 	}
 
 	// handle the case of a level changing while a client was connecting
-	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
+	if (Q_atoi(Cmd_Argv(1)) != svs.spawncount)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Spawn_f from different level\n");
@@ -491,7 +485,7 @@ static void SV_Spawn_f (void)
 		return;
 	}
 
-	n = atoi(Cmd_Argv(2));
+	n = Q_atoi(Cmd_Argv(2));
 	if (n >= MAX_CLIENTS)
 	{
 		SV_ClientPrintf (host_client, PRINT_HIGH,
@@ -657,7 +651,7 @@ static void SV_Begin_f (void)
 		return; // don't begin again
 
 	// handle the case of a level changing while a client was connecting
-	if ( atoi(Cmd_Argv(1)) != svs.spawncount )
+	if (Q_atoi(Cmd_Argv(1)) != svs.spawncount)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Begin_f from different level\n");
@@ -746,8 +740,8 @@ static void SV_Begin_f (void)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: missing player/eyes model checksum\n", host_client->name);
 		else
 		{
-			pmodel = atoi(Info_ValueForKey (host_client->userinfo, "pmodel"));
-			emodel = atoi(Info_ValueForKey (host_client->userinfo, "emodel"));
+			pmodel = Q_atoi(Info_ValueForKey (host_client->userinfo, "pmodel"));
+			emodel = Q_atoi(Info_ValueForKey (host_client->userinfo, "emodel"));
 
 			if (pmodel != sv.model_player_checksum || emodel != sv.eyes_player_checksum)
 				SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: non standard player/eyes model detected\n", host_client->name);
@@ -910,6 +904,18 @@ SV_NextUpload
 ==================
 */
 void SV_ReplaceChar(char *s, char from, char to);
+void SV_CancelUpload()
+{
+	SV_ClientPrintf(host_client, PRINT_HIGH, "Upload denied\n");
+	ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
+	ClientReliableWrite_String (host_client, "stopul");
+	if (host_client->upload)
+	{
+		fclose (host_client->upload);
+		host_client->upload = NULL;
+		host_client->file_percent = 0; //bliP: file percent
+	}
+}
 static void SV_NextUpload (void)
 {
 	int	percent;
@@ -920,26 +926,39 @@ static void SV_NextUpload (void)
 	SV_ReplaceChar(name, '\\', '/');
 	if (!*name || !strncmp(name, "../", 3) || strstr(name, "/../") || *name == '/'
 #ifdef _WIN32
-	        || (name[1] == ':' && (*name >= 'a' && *name <= 'z' || *name >= 'A' && *name <= 'Z'))
+	        || (isalpha(*name) && name[1] == ':')
 #endif //_WIN32
 	   )
 	{ //bliP: can't upload back a directory
-		SV_ClientPrintf(host_client, PRINT_HIGH, "Upload denied\n");
-		ClientReliableWrite_Begin (host_client, svc_stufftext, 8);
-		ClientReliableWrite_String (host_client, "stopul");
-
+		SV_CancelUpload();
 		// suck out rest of packet
 		size = MSG_ReadShort ();
 		MSG_ReadByte ();
-		msg_readcount += size;
+		if (size > 0)
+			msg_readcount += size;
 		return;
 	}
 
 	size = MSG_ReadShort ();
-	percent = MSG_ReadByte ();
-	host_client->file_percent = percent;
+	host_client->file_percent = percent = MSG_ReadByte ();
 
-	if (!host_client->upload)
+	if (size <= 0 || size >= MAX_DATAGRAM || percent < 0 || percent > 100)
+	{
+		SV_CancelUpload();
+		return;
+	}
+
+	if (host_client->upload)
+	{
+		long pos = ftell(host_client->upload);
+		if (pos == -1 || host_client->remote_snap && (float)pos + (float)size > sv_maxuploadsize.value)
+		{
+			msg_readcount += size;
+			SV_CancelUpload();
+			return;
+		}
+	}
+	else
 	{
 		host_client->upload = fopen(name, "wb");
 		if (!host_client->upload)
@@ -1080,7 +1099,7 @@ static void SV_BeginDownload_f(void)
 		fclose (host_client->download);
 		host_client->download = NULL;
 		val = Info_ValueForKey (host_client->userinfo, "rate");
-		host_client->netchan.rate = 1.0/SV_BoundRate(false, atoi(val));
+		host_client->netchan.rate = 1.0/SV_BoundRate(false, Q_atoi(val));
 	}
 
 	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0])
@@ -1091,7 +1110,7 @@ static void SV_BeginDownload_f(void)
 	else if (!strncmp(name, "demonum/", 8))
 	{
 		int num;
-		if ((num = atoi(name + 8)) == 0 && name[8] != '0')
+		if ((num = Q_atoi(name + 8)) == 0 && name[8] != '0')
 		{
 			char *num_s = name + 8;
 			int num_s_len = strlen(num_s);
@@ -1158,8 +1177,8 @@ static void SV_BeginDownload_f(void)
 	}
 
 	val = Info_ValueForKey (host_client->userinfo, "drate");
-	if (atoi(val))
-		host_client->netchan.rate = 1.0/SV_BoundRate(true, atoi(val));
+	if (Q_atoi(val))
+		host_client->netchan.rate = 1.0/SV_BoundRate(true, Q_atoi(val));
 
 	// all checks passed, start downloading
 	SV_NextDownload_f ();
@@ -1619,7 +1638,7 @@ static void SV_PTrack_f (void)
 		return;
 	}
 
-	i = atoi(Cmd_Argv(1));
+	i = Q_atoi(Cmd_Argv(1));
 	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i].state != cs_spawned || svs.clients[i].spectator)
 	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Invalid client to track\n");
@@ -1655,7 +1674,7 @@ static void SV_Rate_f (void)
 		return;
 	}
 
-	rate = SV_BoundRate (host_client->download != NULL, atoi(Cmd_Argv(1)));
+	rate = SV_BoundRate (host_client->download != NULL, Q_atoi(Cmd_Argv(1)));
 
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
 	host_client->netchan.rate = 1.0/rate;
@@ -1678,7 +1697,7 @@ static void SV_Msg_f (void)
 		return;
 	}
 
-	host_client->messagelevel = atoi(Cmd_Argv(1));
+	host_client->messagelevel = Q_atoi(Cmd_Argv(1));
 
 	SV_ClientPrintf (host_client, PRINT_HIGH, "Msg level set to %i\n", host_client->messagelevel);
 }
@@ -2770,4 +2789,5 @@ void SV_UserInit (void)
 	Cvar_Register (&sv_use_internal_cmd_dl);
 	Cvar_Register (&sv_kickuserinfospamtime);
 	Cvar_Register (&sv_kickuserinfospamcount);
+	Cvar_Register (&sv_maxuploadsize);
 }

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.25 2006/03/27 22:54:38 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.26 2006/04/28 17:12:44 vvd0 Exp $
  */
 
 #ifdef USE_PR2
@@ -2150,7 +2150,7 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 	if ( maxspectators.value > MAX_CLIENTS )
 		Cvar_SetValue( &maxspectators, MAX_CLIENTS );
 	if ( maxspectators.value + maxclients.value > MAX_CLIENTS )
-		Cvar_SetValue( &maxspectators, MAX_CLIENTS - maxspectators.value + maxclients.value );
+		Cvar_SetValue( &maxspectators, MAX_CLIENTS - maxclients.value );
 
 	if ( clients >= ( int ) maxclients.value )
 	{

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cvar.c,v 1.12 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: cvar.c,v 1.13 2006/04/28 17:12:44 vvd0 Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -483,7 +483,7 @@ void Cvar_Inc_f (void)
 	}
 
 	if (c == 3)
-		delta = atof (Cmd_Argv(2));
+		delta = Q_atof (Cmd_Argv(2));
 	else
 		delta = 1;
 

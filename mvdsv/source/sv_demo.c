@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.41 2006/04/25 16:57:23 vvd0 Exp $
+	$Id: sv_demo.c,v 1.42 2006/04/28 17:12:44 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -2245,7 +2245,7 @@ void SV_MVDRemoveNum_f (void)
 	}
 
 	val = Cmd_Argv(1);
-	if ((num = atoi(val)) == 0 && val[0] != '0')
+	if ((num = Q_atoi(val)) == 0 && val[0] != '0')
 	{
 		Con_Printf("rmdemonum <#>\n");
 		return;
