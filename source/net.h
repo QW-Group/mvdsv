@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.17 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: net.h,v 1.18 2006/04/28 17:31:08 vvd0 Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
@@ -66,7 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #ifndef socklen_t
-typedef int	socklen_t;
+#define socklen_t	int
 #endif
 
 #define	PORT_ANY	-1
