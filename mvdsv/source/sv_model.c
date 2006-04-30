@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_model.c,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_model.c,v 1.11 2006/04/30 11:27:15 disconn3ct Exp $
 */
 // models.c -- model loading and caching
 
@@ -1059,9 +1059,9 @@ Mod_LoadBrushModel
 */
 void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 {
-	int			i, j;
-	dheader_t	*header;
-	dmodel_t 	*bm;
+	int i, j;
+	dheader_t *header;
+	dmodel_t *bm;
 
 	loadmodel->type = mod_brush;
 
@@ -1076,7 +1076,7 @@ void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	// swap all the lumps
 	mod_base = (byte *)header;
 
-	for (i=0 ; i<sizeof(dheader_t)/4 ; i++)
+	for (i=0 ; i< (int) sizeof(dheader_t)/4 ; i++)
 		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
 
 	// load into heap

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: cmd.c,v 1.17 2006/04/28 17:24:27 vvd0 Exp $
+	$Id: cmd.c,v 1.18 2006/04/30 11:27:14 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -634,8 +634,8 @@ Parses the given string into command line tokens.
 */
 void Cmd_TokenizeString (char *text)
 {
-	int			idx;
-	static char	argv_buf[MAX_MSGLEN + MAX_ARGS];
+	size_t idx;
+	static char argv_buf[MAX_MSGLEN + MAX_ARGS];
 
 	idx = 0;
 

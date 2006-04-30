@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.h,v 1.6 2005/12/04 07:46:59 disconn3ct Exp $
+ *  $Id: pr2_vm.h,v 1.7 2006/04/30 11:27:14 disconn3ct Exp $
  */
 
 #ifndef __PR2_VM_H__
@@ -187,22 +187,22 @@ typedef struct symbols_s
 typedef struct {
 // segments
 	qvm_instruction_t *cs;
-	byte   *ds;		//DATASEG + LITSEG + BSSSEG
-	byte   *ss;		// q3asm add stack at end of BSSSEG, defaultsize = 0x10000
+	unsigned char *ds;	// DATASEG + LITSEG + BSSSEG
+	unsigned char *ss;	// q3asm add stack at end of BSSSEG, defaultsize = 0x10000
 
 // pointer registers
-	int PC;	// program counter, points to cs, goes up
-	int SP;	// operation stack pointer, initially 0, goes up index of opStack in QVM_Exec
-	int LP;	// subroutine stack/local vars space, initially points to end of ss
+	int	PC;		// program counter, points to cs, goes up
+	int	SP;		// operation stack pointer, initially 0, goes up index of opStack in QVM_Exec
+	int	LP;		// subroutine stack/local vars space, initially points to end of ss
 
 // status
-	int     len_cs;		// size of cs
-	int     len_ds;		// size of ds align up to power of 2
-	unsigned int	ds_mask;	// bit mask of len_ds
-	int     len_ss;		// size of ss
+	int	len_cs;		// size of cs
+	int	len_ds;		// size of ds align up to power of 2
+	int	ds_mask;	// bit mask of len_ds
+	int	len_ss;		// size of ss
 
-	int     cycles;		// command cicles executed
-	int     reenter;
+	int	cycles;		// command cicles executed
+	int	reenter;
 	symbols_t* sym_info;
 	sys_callex_t syscall;
 } qvm_t;

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.33 2006/04/25 16:57:23 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.34 2006/04/30 11:27:15 disconn3ct Exp $
 */
 
 #include <dirent.h>
@@ -330,8 +330,8 @@ it to the host command processor
 */
 char *Sys_ConsoleInput (void)
 {
-	static char	text[256], *t;
-	static int	len = 0;
+	static char text[256], *t;
+	static unsigned int len = 0;
 
 
 	if (!(telnetport && iosock_ready && telnet_connected) && !(do_stdin && stdin_ready))
@@ -704,16 +704,16 @@ main
 void PR_CleanLogText_Init(void);
 int main (int argc, char *argv[])
 {
-	double		time, oldtime, newtime;
-	quakeparms_t	parms;
+	double time, oldtime, newtime;
+	quakeparms_t parms;
 
 	//Added by VVD {
-	int	j;
-	uid_t   user_id;
-	gid_t   group_id = 0;
-	struct passwd	*pw;
-	struct group	*gr;
-	char	*user_name, *group_name = NULL, *chroot_dir;
+	int j;
+	uid_t user_id;
+	gid_t group_id = 0;
+	struct passwd *pw;
+	struct group *gr;
+	char *user_name, *group_name = NULL, *chroot_dir;
 	//Added by VVD }
 
 	telnet_connected = false;
@@ -797,12 +797,12 @@ int main (int argc, char *argv[])
 			if ((gr = getgrnam(group_name)) == NULL)
 			{
 				Sys_Printf("group \"%s\" unknown\n", group_name);
-				group_id = -1;
+				group_id = -1; // disconnect: FIXME: gid_t cant be -1
 			}
 			else
 				group_id = gr->gr_gid;
 		}
-		if (group_id != -1)
+		if (group_id != -1) // disconnect: FIXME: gid_t cant be -1
 			if (setgid(group_id) < 0)
 				Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(qerrno));
 	}
@@ -838,9 +838,7 @@ int main (int argc, char *argv[])
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
 
-	//
 	// main loop
-	//
 	oldtime = Sys_DoubleTime () - 0.1;
 
 	Sys_NET_Init();

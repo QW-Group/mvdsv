@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.42 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: sv_demo.c,v 1.43 2006/04/30 11:27:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1126,7 +1126,8 @@ static qbool SV_MVD_Record (mvddest_t *dest)
 {
 	sizebuf_t	buf;
 	char buf_data[MAX_MSGLEN];
-	int n, i;
+	int i;
+	unsigned int n;
 	char *s, info[MAX_INFO_STRING];
 
 	client_t *player;
@@ -1466,7 +1467,7 @@ char *SV_CleanName (unsigned char *name)
 
 	*out = chartbl[*name++];
 
-	while (*name && out - text < sizeof(text))
+	while (*name && ((out - text) < (int) sizeof(text)))
 		if (*out == '_' && chartbl[*name] == '_')
 			name++;
 		else *++out = chartbl[*name++];
@@ -1520,7 +1521,7 @@ qbool SV_DirSizeCheck (void)
 /*
 ====================
 SV_MVD_Record_f
- 
+
 record <demoname>
 ====================
 */
