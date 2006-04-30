@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.25 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: common.c,v 1.26 2006/04/30 11:27:14 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -307,9 +307,9 @@ float MSG_ReadFloat (void)
 char *MSG_ReadString (void)
 {
 	static char string[2048];
-	int l,c;
+	int c;
+	size_t l = 0;
 
-	l = 0;
 	do
 	{
 		c = MSG_ReadByte ();
@@ -320,7 +320,7 @@ char *MSG_ReadString (void)
 		string[l] = c;
 		l++;
 	}
-	while (l < sizeof(string)-1);
+	while (l < sizeof(string) - 1);
 
 	string[l] = 0;
 
@@ -330,9 +330,9 @@ char *MSG_ReadString (void)
 char *MSG_ReadStringLine (void)
 {
 	static char string[2048];
-	int l,c;
+	int c;
+	size_t l = 0;
 
-	l = 0;
 	do
 	{
 		c = MSG_ReadByte ();
@@ -343,7 +343,7 @@ char *MSG_ReadStringLine (void)
 		string[l] = c;
 		l++;
 	}
-	while (l < sizeof(string)-1);
+	while (l < sizeof(string) - 1);
 
 	string[l] = 0;
 
@@ -816,42 +816,6 @@ void COM_CreatePath (char *path)
 			*ofs = '/';
 		}
 	}
-}
-
-
-/*
-===========
-COM_CopyFile
-
-Copies a file over from the net to the local cache, creating any directories
-needed. This is for the convenience of developers using ISDN from home.
-===========
-*/
-void COM_CopyFile (char *netpath, char *cachepath)
-{
-	FILE *in, *out;
-	int remaining, count;
-	char buf[4096];
-
-	remaining = COM_FileOpenRead (netpath, &in);
-	COM_CreatePath (cachepath); // create directories up to the cache file
-	out = fopen(cachepath, "wb");
-	if (!out)
-		Sys_Error ("Error opening %s", cachepath);
-
-	while (remaining)
-	{
-		if (remaining < sizeof(buf))
-			count = remaining;
-		else
-			count = sizeof(buf);
-		fread (buf, 1, count, in);
-		fwrite (buf, 1, count, out);
-		remaining -= count;
-	}
-
-	fclose (in);
-	fclose (out);
 }
 
 /*
@@ -1439,7 +1403,7 @@ void Info_RemovePrefixedKeys (char *start, char prefix)
 }
 
 
-void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
+void Info_SetValueForStarKey (char *s, char *key, char *value, unsigned int maxsize)
 {
 	char _new[1024], *v;
 	int c;
@@ -1507,7 +1471,7 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
 	*s = 0;
 }
 
-void Info_SetValueForKey (char *s, char *key, char *value, int maxsize)
+void Info_SetValueForKey (char *s, char *key, char *value, unsigned int maxsize)
 {
 	if (key[0] == '*')
 	{

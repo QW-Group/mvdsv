@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_mod_frags.c,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_mod_frags.c,v 1.11 2006/04/30 11:27:15 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -124,7 +124,7 @@ const char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
 		return NULL;
 	}
 
-	stringcount = pcre_exec(reg, 0, str, str_len, 0, 0, (int *)&ovector[0], 32);
+	stringcount = pcre_exec(reg, NULL, str, str_len, 0, 0, (int *)&ovector[0], 32);
 	Q_free(reg);
 	if (stringcount <= 0)
 		return NULL;

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.13 2006/04/09 22:16:36 disconn3ct Exp $
+	$Id: tools.c,v 1.14 2006/04/30 11:26:57 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -297,19 +297,21 @@ float MSG_ReadFloat (void)
 
 char *MSG_ReadString (void)
 {
-	static char	string[2048];
-	int		l,c;
+	static char string[2048];
+	int c;
+	size_t l = 0;
 
-	l = 0;
 	do
 	{
-		c = MSG_ReadChar ();
+		c = MSG_ReadByte ();
+		if (c == 255) // skip these to avoid security problems
+			continue; // with old clients and servers
 		if (c == -1 || c == 0)
 			break;
 		string[l] = c;
 		l++;
 	}
-	while (l < sizeof(string)-1);
+	while (l < sizeof(string) - 1);
 
 	string[l] = 0;
 
@@ -318,19 +320,21 @@ char *MSG_ReadString (void)
 
 char *MSG_ReadStringLine (void)
 {
-	static char	string[2048];
-	int		l,c;
+	static char string[2048];
+	int c;
+	size_t l = 0;
 
-	l = 0;
 	do
 	{
-		c = MSG_ReadChar ();
+		c = MSG_ReadByte ();
+		if (c == 255)
+			continue;
 		if (c == -1 || c == 0 || c == '\n')
 			break;
 		string[l] = c;
 		l++;
 	}
-	while (l < sizeof(string)-1);
+	while (l < sizeof(string) - 1);
 
 	string[l] = 0;
 

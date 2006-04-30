@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.26 2006/04/28 17:12:44 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.27 2006/04/30 11:27:14 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -1527,7 +1527,7 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 	char		*key	= VM_POINTER(base,mask,stack[1].string);
 	char		*valbuff= VM_POINTER(base,mask,stack[2].string);
 	char		*value;
-	int	 	sizebuff= stack[3]._int;
+	int		sizebuff= stack[3]._int;
 
 	//	e = G_EDICT(OFS_PARM0);
 	//	e1 = NUM_FOR_EDICT(e);
@@ -1571,8 +1571,9 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 	else
 		value = "";
 
-	if (strlen(value) > sizebuff)
+	if ((int) strlen(value) > sizebuff)
 		Con_DPrintf("PR2_infokey: buffer size too small\n");
+
 	strlcpy(valbuff, value, sizebuff);
 	//	RETURN_STRING(value);
 }

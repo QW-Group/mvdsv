@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.12 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: pr_edict.c,v 1.13 2006/04/30 11:27:14 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -1028,7 +1028,7 @@ void PF_clear_strtbl(void);
 
 void PR_LoadProgs (void)
 {
-	int		i;
+	int	i;
 	char	num[32];
 	char	name[MAX_OSPATH];
 	dfunction_t *f;
@@ -1059,7 +1059,7 @@ void PR_LoadProgs (void)
 	Info_SetValueForStarKey (svs.info, "*progs", num, MAX_SERVERINFO_STRING);
 
 	// byte swap the header
-	for (i=0 ; i<sizeof(*progs)/4 ; i++)
+	for (i=0 ; i < (int) sizeof(*progs)/4 ; i++)
 		((int *)progs)[i] = LittleLong ( ((int *)progs)[i] );
 
 	if (progs->version != PROG_VERSION)

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_login.c,v 1.12 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_login.c,v 1.13 2006/04/30 11:27:15 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -39,16 +39,15 @@ typedef struct
 {
 	char		login[MAX_LOGINNAME];
 	char		pass[MAX_LOGINNAME];
-	int			failures;
-	int			inuse;
+	int		failures;
+	int		inuse;
 	ipfilter_t	adress;
-	acc_state_t state;
+	acc_state_t	state;
 	quse_t		use;
-}
-account_t;
+} account_t;
 
 static account_t	accounts[MAX_ACCOUNTS];
-static int			num_accounts = 0;
+static int		num_accounts = 0;
 
 static qbool validAcc(char *acc)
 {
@@ -431,13 +430,12 @@ void SV_BlockAccount_f(void)
 /*
 =================
 checklogin
- 
+
 returns positive value if login/pass are valid
 values <= 0 indicates a failure
 =================
 */
-
-int checklogin(char *log, char *pass, int num, int use)
+static int checklogin(char *log, char *pass, int num, quse_t use)
 {
 	int i,c;
 

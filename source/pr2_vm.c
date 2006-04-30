@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.14 2006/03/27 22:54:39 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.15 2006/04/30 11:27:14 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -548,7 +548,7 @@ void  QVM_StackTrace( qvm_t * qvm )
 	if ( sym )
 		Con_Printf( "PC-%8x %s + %d\n", sym->off, sym->name, qvm->PC - sym->off );
 
-	while ( LP < qvm->len_ds - sizeof( int ) )
+	while ( LP < qvm->len_ds - (int) sizeof ( int ) )
 	{
 		off = *( int * ) ( qvm->ds + LP );
 		num = *( int * ) ( qvm->ds + LP + sizeof( int ) );

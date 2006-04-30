@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.19 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: sv_init.c,v 1.20 2006/04/30 11:27:15 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -39,12 +39,12 @@ extern spec_worldmodel_t specworld;
 /*
 ================
 SV_ModelIndex
- 
+
 ================
 */
 int SV_ModelIndex (char *name)
 {
-	int		i;
+	int i;
 
 	if (!name || !name[0])
 		return 0;
@@ -60,7 +60,7 @@ int SV_ModelIndex (char *name)
 /*
 ================
 SV_FlushSignon
- 
+
 Moves to the next signon buffer if needed
 ================
 */
@@ -81,13 +81,13 @@ void SV_FlushSignon (void)
 /*
 ================
 SV_CreateBaseline
- 
+
 Entity baselines are used to compress the update messages
 to the clients -- only the fields that differ from the
 baseline will be transmitted
 ================
 */
-void SV_CreateBaseline (void)
+static void SV_CreateBaseline (void)
 {
 	int			i;
 	edict_t			*svent;
@@ -120,9 +120,9 @@ void SV_CreateBaseline (void)
 			svent->baseline.colormap = 0;
 			svent->baseline.modelindex = SV_ModelIndex(
 #ifdef USE_PR2
-			                                 PR2_GetString(svent->v.model)
+				PR2_GetString(svent->v.model)
 #else
-											 PR_GetString(svent->v.model)
+				PR_GetString(svent->v.model)
 #endif
 			                             );
 		}
@@ -155,15 +155,15 @@ void SV_CreateBaseline (void)
 /*
 ================
 SV_SaveSpawnparms
- 
+
 Grabs the current state of the progs serverinfo flags 
 and each client for saving across the
 transition to another level
 ================
 */
-void SV_SaveSpawnparms (void)
+static void SV_SaveSpawnparms (void)
 {
-	int		i, j;
+	int i, j;
 
 	if (!sv.state)
 		return;		// no progs loaded yet
@@ -196,19 +196,19 @@ void SV_SaveSpawnparms (void)
 /*
 ================
 SV_CalcPHS
- 
+
 Expands the PVS and calculates the PHS
 (Potentially Hearable Set)
 ================
 */
-void SV_CalcPHS (void)
+static void SV_CalcPHS (void)
 {
-	int		rowbytes, rowwords;
-	int		i, j, k, l, index, num;
-	int		bitbyte;
-	unsigned	*dest, *src;
-	byte	*scan;
-	int		count, vcount;
+	int rowbytes, rowwords;
+	int i, j, k, l, index, num;
+	int bitbyte;
+	unsigned *dest, *src;
+	unsigned char *scan;
+	int count, vcount;
 
 	Con_Printf ("Building PHS...\n");
 
@@ -273,10 +273,10 @@ void SV_CalcPHS (void)
 	            , vcount/num, count/num, num);
 }
 
-unsigned SV_CheckModel(char *mdl)
+static unsigned SV_CheckModel(char *mdl)
 {
-	byte	stackbuf[1024];		// avoid dirtying the cache heap
-	byte *buf;
+	unsigned char stackbuf[1024]; // avoid dirtying the cache heap
+	unsigned char *buf;
 	unsigned short crc;
 
 	buf = (byte *)COM_LoadStackFile (mdl, stackbuf, sizeof(stackbuf));
@@ -297,7 +297,7 @@ unsigned SV_CheckModel(char *mdl)
 /*
 ================
 Load_SpecVisData
- 
+
 Loads visibility data of the map for spectators
 ================
 */
@@ -305,24 +305,24 @@ Loads visibility data of the map for spectators
 typedef struct
 {
 	char		qvis[4];
-	int			version;
-	int			visleafs;
+	int		version;
+	int		visleafs;
 	lump_t		lumps[4];
 }
 visheader_t;
 
-#define VIS_LUMP_VISIBILITY 0
+#define VIS_LUMP_VISIBILITY	0
 #define VIS_LUMP_LEAFS		1
 #define VIS_LUMP_PLANES		2
 #define VIS_LUMP_NODES		3
 
-void VIS_LoadPlanes(lump_t *l, byte *base, char *allocname)
+static void VIS_LoadPlanes(lump_t *l, byte *base, char *allocname)
 {
-	int			i, j;
-	mplane_t	*out;
-	dplane_t 	*in;
-	int			count;
-	int			bits;
+	int i, j;
+	mplane_t *out;
+	dplane_t *in;
+	int count;
+	int bits;
 
 	in = (void *)(base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -349,7 +349,7 @@ void VIS_LoadPlanes(lump_t *l, byte *base, char *allocname)
 	}
 }
 
-void VIS_LoadVisibility (lump_t *l, byte *base, char *allocname)
+static void VIS_LoadVisibility (lump_t *l, byte *base, char *allocname)
 {
 	if (!l->filelen)
 	{
@@ -362,16 +362,16 @@ void VIS_LoadVisibility (lump_t *l, byte *base, char *allocname)
 	memcpy (specworld.visdata, base + l->fileofs, l->filelen);
 }
 
-void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
+static void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
 {
 	struct vdleaf_s
 	{
 		int contents;
 		int visofs;
-	}
-	*in;
-	mleaf_t 	*out;
-	int			i, count, p;
+	} *in;
+
+	mleaf_t  *out;
+	int i, count, p;
 
 	in = (void *)(base + l->fileofs);
 	count = l->filelen / sizeof(*in);
@@ -395,11 +395,11 @@ void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
 }
 
 void Mod_SetParent (mnode_t *node, mnode_t *parent);
-void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
+static void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
 {
-	int			i, j, count, p;
-	dnode_t		*in;
-	mnode_t 	*out;
+	int i, j, count, p;
+	dnode_t *in;
+	mnode_t *out;
 
 	in = (void *)(base + l->fileofs);
 	count = l->filelen / sizeof(*in);
@@ -438,11 +438,11 @@ void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
 }
 
 
-void Load_SpecVisData(char *visname)
+static void Load_SpecVisData(char *visname)
 {
 	byte *base;
 	visheader_t *header;
-	int i;
+	unsigned int i;
 	char loadname[32];
 
 	memset(&specworld, 0, sizeof(specworld));
@@ -495,20 +495,19 @@ void Load_SpecVisData(char *visname)
 /*
 ================
 SV_SpawnServer
- 
+
 Change the server to a new map, taking all connected
 clients along with it.
- 
+
 This is only called from the SV_Map_f() function.
 ================
 */
-void D_FlushCaches ();
 dfunction_t *ED_FindFunction (char *name);
 
 void SV_SpawnServer (char *server)
 {
-	edict_t		*ent;
-	int			i;
+	edict_t *ent;
+	int i;
 #ifdef USE_PR2
 	char savenames[MAX_CLIENTS][CLIENT_NAME_LEN];
 #endif

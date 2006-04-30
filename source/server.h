@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.29 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: server.h,v 1.30 2006/04/30 11:27:14 disconn3ct Exp $
 */
 // server.h
 
@@ -100,7 +100,7 @@ typedef struct
 	// large levels will have >MAX_DATAGRAM sized signons, so 
 	// multiple signon messages are kept
 	sizebuf_t	signon;
-	int		num_signon_buffers;
+	unsigned int	num_signon_buffers;
 	int		signon_buffer_size[MAX_SIGNON_BUFFERS];
 	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
@@ -583,7 +583,6 @@ int SV_GenerateUserID (void);
 //
 int SV_ModelIndex (char *name);
 void SV_FlushSignon (void);
-void SV_SaveSpawnparms (void);
 void SV_SpawnServer (char *server);
 
 
@@ -690,7 +689,6 @@ void SV_LoadAccounts(void);
 void SV_CreateAccount_f(void);
 void SV_RemoveAccount_f(void);
 void SV_ListAccount_f (void);
-int checklogin(char *log, char *pass, int num, int use);
 void Login_Init (void);
 qbool SV_Login(client_t *cl);
 void SV_Logout(client_t *cl);

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.16 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: common.h,v 1.17 2006/04/30 11:27:14 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -132,8 +132,8 @@ char *Info_ValueForKey (char *s, char *key);
 char *Info_KeyNameForKeyNum (char *s, int key);
 void Info_RemoveKey (char *s, char *key);
 void Info_RemovePrefixedKeys (char *start, char prefix);
-void Info_SetValueForKey (char *s, char *key, char *value, int maxsize);
-void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize);
+void Info_SetValueForKey (char *s, char *key, char *value, unsigned int maxsize);
+void Info_SetValueForStarKey (char *s, char *key, char *value, unsigned int maxsize);
 void Info_Print (char *s);
 void Info_CopyStarKeys (char *from, char *to);
 

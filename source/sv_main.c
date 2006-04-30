@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.54 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: sv_main.c,v 1.55 2006/04/30 11:27:15 disconn3ct Exp $
 */
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -1139,7 +1139,7 @@ int Rcon_Validate (char *client_string, char *password)
 {
 	time_t server_time, client_time = 0;
 	double difftime_server_client;
-	int i;
+	unsigned int i;
 
 
 	if (rcon_bandlim())
@@ -1173,7 +1173,7 @@ int Rcon_Validate (char *client_string, char *password)
 		SHA1_Update(Cmd_Argv(1) + DIGEST_SIZE * 2);
 		SHA1_Update(" ");
 		//		SHA1_Update(va("%s %s%s ", Cmd_Argv(0), password, Cmd_Argv(1) + DIGEST_SIZE * 2));
-		for (i = 2; i < Cmd_Argc(); i++)
+		for (i = 2; (int) i < Cmd_Argc(); i++)
 		{
 			//			SHA1_Update(va("%s ", Cmd_Argv(i)));
 			SHA1_Update(Cmd_Argv(i));
