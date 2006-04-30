@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.26 2006/03/23 14:14:37 disconn3ct Exp $
+#	$Id: Makefile.Linux,v 1.27 2006/04/30 11:34:47 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -15,7 +15,7 @@ QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 CC=gcc
 BASE_CFLAGS=-Wall -pipe -funsigned-char -DUSE_PR2
 WITH_OPTIMIZED_CFLAGS=YES
-#DEBUG_CFLAGS=$(BASE_CFLAGS) -g
+#DEBUG_CFLAGS=$(BASE_CFLAGS) -Wsign-compare -g
 
 USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
