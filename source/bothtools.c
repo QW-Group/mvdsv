@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.6 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: bothtools.c,v 1.7 2006/04/30 22:33:15 oldmanuk Exp $
 */
 
 #include "qwsvdef.h"
@@ -289,7 +289,7 @@ size_t strlcat(char *dst, char *src, size_t siz)
 }
 #endif
 
-#ifndef __FreeBSD__
+#if !defined(__FreeBSD__) && !defined(__APPLE__)
 char *strnstr(char *s, char *find, size_t slen)
 {
 	char c, sc;
