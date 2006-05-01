@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.55 2006/04/30 11:27:15 disconn3ct Exp $
+	$Id: sv_main.c,v 1.56 2006/05/01 22:37:43 oldmanuk Exp $
 */
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -996,6 +996,11 @@ static void SVC_DirectConnect (void)
 	// extract extensions mask
 	newcl->extensions = Q_atoi(Info_ValueForKey(newcl->userinfo, "*z_ext"));
 	Info_RemoveKey (newcl->userinfo, "*z_ext");
+
+#ifdef VWEP_TEST
+	newcl->extensions |= atoi(Info_ValueForKey(newcl->userinfo, "*vwtest")) ? Z_EXT_VWEP : 0;
+	Info_RemoveKey (newcl->userinfo, "*vwtest");
+#endif
 
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
@@ -2584,6 +2589,9 @@ void SV_InitLocal (void)
 	Info_SetValueForStarKey (svs.info, "*version", QW_VERSION, MAX_SERVERINFO_STRING);
 	//Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " QWE_VERSION, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
+#ifdef VWEP_TEST
+	Info_SetValueForStarKey (svs.info, "*vwtest", "1", MAX_SERVERINFO_STRING);
+#endif
 
 	// init fraglog stuff
 	svs.logsequence = 1;

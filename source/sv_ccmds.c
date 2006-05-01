@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.27 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.28 2006/05/01 22:37:43 oldmanuk Exp $
 */
 
 #include "qwsvdef.h"
@@ -1453,6 +1453,7 @@ void SV_Serverinfo_f (void)
 {
 	cvar_t	*var;
 	char *s;
+	char	*key, *value;
 
 	if (Cmd_Argc() == 1)
 	{
@@ -1480,26 +1481,35 @@ void SV_Serverinfo_f (void)
 		return;
 	}
 
-	if (Cmd_Argv(1)[0] == '*')
+	key = Cmd_Argv(1);
+	value = Cmd_Argv(2);
+
+	if (key[0] == '*')
 	{
 		Con_Printf ("Star variables cannot be changed.\n");
 		return;
 	}
-	Info_SetValueForKey (svs.info, Cmd_Argv(1), Cmd_Argv(2), MAX_SERVERINFO_STRING);
+
+#ifdef VWEP_TEST
+	if (!strcmp(key, "#vw"))
+		return;		// reserved for VWep precaches
+#endif
+
+	Info_SetValueForKey (svs.info, key, value, MAX_SERVERINFO_STRING);
 
 	// if the key is also a serverinfo cvar, change it too
-	var = Cvar_FindVar (Cmd_Argv(1));
+	var = Cvar_FindVar (key);
 	if (var && (var->flags & CVAR_SERVERINFO))
 	{
 		// a hack - strip the serverinfo flag so that the Cvar_Set
 		// doesn't trigger SV_SendServerInfoChange
 		var->flags &= ~CVAR_SERVERINFO;
-		Cvar_Set (var, Cmd_Argv(2));
+		Cvar_Set (var, value);
 		var->flags |= CVAR_SERVERINFO; // put it back
 	}
 
 	// FIXME, don't send if the key hasn't changed
-	SV_SendServerInfoChange(Cmd_Argv(1), Cmd_Argv(2));
+	SV_SendServerInfoChange(key, value);
 }
 
 

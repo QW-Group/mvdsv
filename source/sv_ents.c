@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_ents.c,v 1.11 2006/05/01 22:37:43 oldmanuk Exp $
 */
 
 #include "qwsvdef.h"
@@ -554,6 +554,15 @@ static void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs
 
 			cmd.buttons = 0;	// never send buttons
 			cmd.impulse = 0;	// never send impulses
+
+#ifdef VWEP_TEST
+			// @@VWep test
+			if ((client->extensions & Z_EXT_VWEP) && sv.vw_model_name[0]
+					&& fofs_vw_index && fofs_vw_frame) {
+				cmd.impulse = EdictFieldFloat (ent, fofs_vw_index);
+				cmd.msec = EdictFieldFloat (ent, fofs_vw_frame);
+			}
+#endif
 
 			MSG_WriteDeltaUsercmd (msg, &nullcmd, &cmd);
 		}

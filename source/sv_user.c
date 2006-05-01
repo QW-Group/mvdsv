@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.50 2006/04/30 11:27:15 disconn3ct Exp $
+	$Id: sv_user.c,v 1.51 2006/05/01 22:37:43 oldmanuk Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -318,6 +318,28 @@ static void SV_Soundlist_f (void)
 		MSG_WriteByte (&host_client->netchan.message, 0);
 }
 
+#ifdef VWEP_TEST
+static char *TrimModelName (char *full)
+{
+	static char shortn[MAX_QPATH];
+	int len;
+
+	if (!strncmp(full, "progs/", 6) && !strchr(full + 6, '/'))
+		strlcpy (shortn, full + 6, sizeof(shortn));		// strip progs/
+	else
+		strlcpy (shortn, full, sizeof(shortn));
+
+	len = strlen(shortn);
+	if (len > 4 && !strcmp(shortn + len - 4, ".mdl")
+		&& strchr(shortn, '.') == shortn + len - 4)
+	{	// strip .mdl
+		shortn[len - 4] = '\0';
+	}
+
+	return shortn;
+}
+#endif
+
 /*
 ==================
 SV_Modellist_f
@@ -352,6 +374,26 @@ static void SV_Modellist_f (void)
 		SV_DropClient (host_client);
 		return;
 	}
+
+#ifdef VWEP_TEST
+	if (n == 0 && (host_client->extensions & Z_EXT_VWEP) && sv.vw_model_name[0]) {
+		int i;
+		// send VWep precaches
+		for (i = 0, s = sv.vw_model_name; i < MAX_VWEP_MODELS; s++, i++) {
+			if (!sv.vw_model_name[i] || !sv.vw_model_name[i][0])
+				continue;
+			ClientReliableWrite_Begin (host_client, svc_serverinfo, 20);
+			ClientReliableWrite_String (host_client, "#vw");
+			ClientReliableWrite_String (host_client, va("%i %s", i, TrimModelName(*s)));
+			/* ClientReliableWrite_End(); */
+		}
+		// send end-of-list messsage
+		ClientReliableWrite_Begin (host_client, svc_serverinfo, 4);
+		ClientReliableWrite_String (host_client, "#vw");
+		ClientReliableWrite_String (host_client, "");
+		/* ClientReliableWrite_End(); */
+	}
+#endif
 
 	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 	//spawns.  These functions are written to not overflow

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.16 2006/04/30 22:33:16 oldmanuk Exp $
+	$Id: bothdefs.h,v 1.17 2006/05/01 22:37:43 oldmanuk Exp $
 */
 
 // defs common to client and server
@@ -47,6 +47,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_EDICTS		512		// FIXME: ouch! ouch! ouch! - trying to fix...
 #define	MAX_LIGHTSTYLES		64
 #define	MAX_MODELS		256		// these are sent over the net as bytes
+#ifdef VWEP_TEST
+#define MAX_VWEP_MODELS		32		// could be increased to 256
+#endif
 #define	MAX_SOUNDS		256		// so they cannot be blindly increased
 
 #define	MAX_STYLESTRING		64

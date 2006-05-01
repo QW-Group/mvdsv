@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.30 2006/04/30 11:27:14 disconn3ct Exp $
+	$Id: server.h,v 1.31 2006/05/01 22:37:43 oldmanuk Exp $
 */
 // server.h
 
@@ -72,6 +72,10 @@ typedef struct
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	struct model_s 	*worldmodel;
 	char		*model_precache[MAX_MODELS];	// NULL terminated
+#ifdef VWEP_TEST
+	// TODO: rename to precache to match mvdsv naming?
+	char		*vw_model_name[MAX_VWEP_MODELS];	// NULL terminated
+#endif
 	char		*sound_precache[MAX_SOUNDS];	// NULL terminated
 	char		*lightstyles[MAX_LIGHTSTYLES];
 	struct model_s	*models[MAX_MODELS];
