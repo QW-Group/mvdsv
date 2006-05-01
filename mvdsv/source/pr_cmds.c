@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.20 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: pr_cmds.c,v 1.21 2006/05/01 22:37:43 oldmanuk Exp $
 */
 
 #include "qwsvdef.h"
@@ -1544,6 +1544,27 @@ void PF_precache_model (void)
 	PR_RunError ("PF_precache_model: overflow");
 }
 
+#ifdef VWEP_TEST
+static void PF_precache_vwep_model (void)
+{
+	char	*s;
+	int		i;
+	
+	if (sv.state != ss_loading)
+		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
+		
+	i = G_FLOAT(OFS_PARM0);
+	s = G_STRING(OFS_PARM1);
+	G_INT(OFS_RETURN) = G_INT(OFS_PARM1);	// FIXME, remove?
+	PR_CheckEmptyString (s);
+
+	if (i < 0 || i >= MAX_VWEP_MODELS)
+		PR_RunError ("PF_precache_vwep_model: bad index %i", i);
+
+	sv.vw_model_name[i] = s;
+}
+#endif
+
 
 void PF_coredump (void)
 {
@@ -2651,6 +2672,9 @@ builtin_t pr_builtin[] =
         PF_listmaps,		//#105
         PF_findmapname,		//#106
         //<-
+#ifdef VWEP_TEST // FIXME: random builtin number
+		PF_precache_vwep_model,	// #107 but should be #0x5a09
+#endif
     };
 
 builtin_t *pr_builtins = pr_builtin;

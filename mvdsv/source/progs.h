@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.10 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: progs.h,v 1.11 2006/05/01 22:37:43 oldmanuk Exp $
 */
 
 #include "pr_comp.h"			// defs shared with qcc
@@ -134,9 +134,12 @@ extern	qbool	pr_trace;
 extern	dfunction_t	*pr_xfunction;
 extern	int		pr_xstatement;
 
-extern	func_t		SpectatorConnect;
-extern	func_t		SpectatorThink;
-extern	func_t		SpectatorDisconnect;
+extern func_t SpectatorConnect, SpectatorDisconnect, SpectatorThink;
+
+#ifdef VWEP_TEST
+extern int	fofs_vw_index, fofs_vw_frame;
+#define EdictFieldFloat(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->_float
+#endif
 
 void PR_RunError (char *error, ...);
 

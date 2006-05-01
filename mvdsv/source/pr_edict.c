@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.13 2006/04/30 11:27:14 disconn3ct Exp $
+	$Id: pr_edict.c,v 1.14 2006/05/01 22:37:43 oldmanuk Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -50,14 +50,15 @@ gefv_cache;
 
 static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 
-func_t SpectatorConnect;
-func_t SpectatorThink;
-func_t SpectatorDisconnect;
+func_t SpectatorConnect, SpectatorThink, SpectatorDisconnect;
+
+func_t mod_ConsoleCmd, mod_UserCmd;
+func_t UserInfo_Changed, localinfoChanged;
 func_t ChatMessage;
-func_t UserInfo_Changed;
-func_t mod_ConsoleCmd;
-func_t mod_UserCmd;
-func_t localinfoChanged;
+
+#ifdef VWEP_TEST
+int		fofs_vw_index, fofs_vw_frame;
+#endif
 
 cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
 /*
@@ -1121,6 +1122,7 @@ void PR_LoadProgs (void)
 	// Zoid, find the spectator functions
 	localinfoChanged = mod_UserCmd = mod_ConsoleCmd = UserInfo_Changed = ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
 
+	// TODO: port ED_FindFunctionOffset from ZQuake and clean these up
 	if ((f = ED_FindFunction ("SpectatorConnect")) != NULL)
 		SpectatorConnect = (func_t)(f - pr_functions);
 	if ((f = ED_FindFunction ("SpectatorThink")) != NULL)
@@ -1137,6 +1139,12 @@ void PR_LoadProgs (void)
 		mod_UserCmd = (func_t)(f - pr_functions);
 	if ((f = ED_FindFunction ("localinfoChanged")) != NULL)
 		localinfoChanged = (func_t)(f - pr_functions);
+#ifdef VWEP_TEST
+	if ((f = ED_FindFunction ("vw_index")) != NULL)
+		fofs_vw_index = (func_t)(f - pr_functions);
+	if ((f = ED_FindFunction ("vw_frame")) != NULL)
+		fofs_vw_frame = (func_t)(f - pr_functions);
+#endif
 }
 
 
