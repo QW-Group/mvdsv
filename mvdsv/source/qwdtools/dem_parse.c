@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_parse.c,v 1.9 2006/04/09 22:16:36 disconn3ct Exp $
+	$Id: dem_parse.c,v 1.10 2006/05/02 14:13:51 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
@@ -1275,7 +1275,7 @@ void Dem_ParseDemoMessage (void)
 			s = MSG_ReadString ();
 
 			if (sworld.options & O_DEBUG)
-				fprintf(sworld.debug.file, "text(%d):%s\n", strlen(s), s);
+				fprintf(sworld.debug.file, "text(%d):%s\n", (int) strlen(s), s);
 
 			if (!strncmp(s, "reconnect", 9))
 			{

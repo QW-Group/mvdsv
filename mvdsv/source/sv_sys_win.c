@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.26 2006/04/25 16:57:23 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.27 2006/05/02 14:14:02 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -593,10 +593,10 @@ qbool NET_Sleep ()
 {
 	struct timeval timeout_cur;
 	fd_set	fdset;
-	int j;
+	int j = net_socket;
 
 	FD_ZERO (&fdset);
-	FD_SET(j = net_socket, &fdset); // network socket
+	FD_SET(j, &fdset); // network socket
 
 	// Added by VVD {
 	if (telnetport)

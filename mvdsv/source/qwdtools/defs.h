@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: defs.h,v 1.9 2006/03/27 22:55:10 disconn3ct Exp $
+	$Id: defs.h,v 1.10 2006/05/02 14:13:51 disconn3ct Exp $
 */
 
 #ifndef __DEFS_H__
@@ -205,7 +205,7 @@ extern sizebuf_t	net_message;
 extern byte		net_message_buffer[MAX_UDP_PACKET];
 extern sizebuf_t	stats_msg;
 extern byte		stats_buf[MAX_MSGLEN];
-extern char		currentDir[MAX_OSPATH];
+extern char		currentDir[1024]; // MAX_OSPATH
 #ifdef _WIN32
 extern HANDLE		ConsoleInHndl, ConsoleOutHndl;
 #endif
