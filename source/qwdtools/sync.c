@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sync.c,v 1.6 2006/03/27 22:55:10 disconn3ct Exp $
+	$Id: sync.c,v 1.7 2006/05/02 14:13:51 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -283,7 +283,7 @@ qbool SetComparisionDemo(source_t *dem, float time)
 	from = dem;
 	num = from - sources;
 
-	dem->running = 1 << dem - sources;
+	dem->running = (1 << (dem - sources));
 	if (from->lastframe > time) // rewind
 	{
 		from->netchan.incoming_sequence = 0;
@@ -312,7 +312,7 @@ qbool Synchronize (void)
 	int i, j, bad;
 	info_t *p;
 	source_t *dem1, *dem2;
-	float prevdesync, before, after = 0.0, diff, desync = 0.0, f, newdesync = 0.0, x, y, mindiff = 0.0, m, sr = 0.0, c, sr2 = 0.0, sec2, test = 0.0, test2 = 0.0;
+	float prevdesync = 0.0, before = 0.0, after = 0.0, diff, desync = 0.0, f = 0.0, newdesync = 0.0, x = 0.0, y = 0.0, mindiff = 0.0, m = 0.0, sr = 0.0, c = 0.0, sr2 = 0.0, sec2 = 0.0, test = 0.0, test2 = 0.0;
 	byte buf[15*MAX_MSGLEN];
 	qbool done;
 
