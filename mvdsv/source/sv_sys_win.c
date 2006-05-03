@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.28 2006/05/03 12:56:31 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.29 2006/05/03 13:09:11 vvd0 Exp $
 */
 
 #include <conio.h>
@@ -811,6 +811,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	//Added by VVD {
 	static int			j;
 	char				*_argv[MAX_NUM_ARGVS];
+	static qbool		disable_gpf = false;
 
 	// get the command line parameters
 	_argv[0] = GetCommandLine();
@@ -873,17 +874,18 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
 	if (COM_CheckParm("-noerrormsgbox"))
-	{
-		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
-		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
-	}
+		disable_gpf = true;
 
 	if (COM_CheckParm ("-d"))
 	{
-		isdaemon = true;
+		isdaemon = disable_gpf = true;
+		//close(0); close(1); close(2);
+	}
+
+	if (disable_gpf)
+	{
 		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
 		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
-		//close(0); close(1); close(2);
 	}
 
 	parms.membase = Q_malloc (parms.memsize);
