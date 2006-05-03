@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.35 2006/05/02 14:14:02 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.36 2006/05/03 12:56:31 vvd0 Exp $
 */
 
 #include <dirent.h>
@@ -716,8 +716,6 @@ int main (int argc, char *argv[])
 	char *user_name, *group_name = NULL, *chroot_dir;
 	//Added by VVD }
 
-	telnet_connected = false;
-
 	argv0 = argv[0];
 
 	memset (&parms, 0, sizeof(parms));
@@ -728,7 +726,7 @@ int main (int argc, char *argv[])
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
-	parms.memsize = 16*1024*1024;
+	parms.memsize = DEFAULT_MEM_SIZE;
 
 	j = COM_CheckParm ("-heapsize");
 	if (j && j + 1 < com_argc)
@@ -745,8 +743,7 @@ int main (int argc, char *argv[])
 // Daemon, chroot, setgid and setuid code (-d, -t, -g, -u)
 // was copied from bind (DNS server) sources.
 	// daemon
-	j = COM_CheckParm ("-d");
-	if (j && j < com_argc)
+	if (COM_CheckParm ("-d"))
 	{
 		switch (fork())
 		{
