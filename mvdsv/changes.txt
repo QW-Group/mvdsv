@@ -1,5 +1,20 @@
 
-$Id: changes.txt,v 1.70 2006/04/28 17:12:34 vvd0 Exp $
+$Id: changes.txt,v 1.71 2006/05/03 12:56:31 vvd0 Exp $
+
+----
+MVDSV v0.19.21-CVS build 23?? (2006.05.??)
+[server]
+* VVD (vvd0@users.sourceforge.net)
+- disabled general-protection-fault window box on Win32 if there are command line options
+  "-noerrormsgbox" or "-d"
+(Thanks to schm)
+- added new value for sv_forcespec_onfull
+  2 - same as 1 (look at 0.19.20-develop changes) if player's "svf" userinfo key == 1
+  changed default value from 0 to 2
+  example: setinfo svf 1
+- bugfix from 0.19.20-develop: didn't added sv_forcespec_onfull
+  and behavior was like with value 1 (careless mistake)
+
 
 ----
 MVDSV v0.19.20-develop build 2320 (2006.04.28)
@@ -66,8 +81,6 @@ MVDSV v0.19.20-develop build 2320 (2006.04.28)
   1 - show old status in server console if ktpro was detected (need for correct 'klist''s output)
   default: 1
   Note: 'rcon status' show new status always
-- bugfix: didn't compile on AMD64/EM64T - disabled assembler optimization for this platform
-(Thanks to Renzo and kingiz)
 - no more ".gz" strings in sources - used sv_demoRegexp
 - bugfix from 0.19.10-develop: didn't close files not from paks (by disconnect)
 - removed cvar registered (by disconnect)
@@ -88,6 +101,9 @@ MVDSV v0.19.20-develop build 2320 (2006.04.28)
   (EXPERIMENTAL)', because ktpro can't determine version of the server and said
   "<COMMAND NAME> command is only for qwe > 2.40" (commands: autotrack, tracklist and etc.)
 (Thanks to Renzo)
+[unix]
+- added AMD64/EM64T targets (Makefile.Linux) - disabled assembler optimization for this platform
+(Thanks to Renzo and kingiz)
 [qwdtools]
 - bugfix from 0.19.10-develop: crashed
 

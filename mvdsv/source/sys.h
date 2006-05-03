@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.9 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sys.h,v 1.10 2006/05/03 12:56:31 vvd0 Exp $
 */
 // sys.h -- non-portable functions
 
@@ -25,8 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // file IO
 //
 
-#ifndef _SYS_H_
-#define _SYS_H_
+#ifndef __SYS_H__
+#define __SYS_H__
+
+#define DEFAULT_MEM_SIZE	(16 * 1024 * 1024) // 16 Mb
 
 // returns the file size
 // return -1 if file is not present
@@ -100,4 +102,4 @@ DL_t Sys_DLOpen(const char *path);
 qbool Sys_DLClose(DL_t dl);
 void *Sys_DLProc(DL_t dl, const char *name);
 
-#endif // _SYS_H_
+#endif // !__SYS_H__

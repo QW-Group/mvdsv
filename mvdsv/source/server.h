@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.31 2006/05/01 22:37:43 oldmanuk Exp $
+	$Id: server.h,v 1.32 2006/05/03 12:56:31 vvd0 Exp $
 */
 // server.h
 
@@ -475,7 +475,16 @@ typedef struct
 // }
 
 #define MAX_REDIRECTMESSAGES	128
-#define OUTPUTBUF_SIZE		8000
+#define OUTPUTBUF_SIZE			8000
+
+// { server flags
+
+// force player enter server as spectator if all players's slots are busy and
+// if there are empty slots for spectators and sv_forcespec_onfull == 2
+#define SVF_SPEC_ONFULL			(1<<0)	
+
+// } server flags
+
 //============================================================================
 
 extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
@@ -705,4 +714,4 @@ void SV_Heartbeat_f (void);
 void Master_Shutdown (void);
 void Master_Heartbeat (void);
 
-#endif // __SERVER_H__
+#endif /* !__SERVER_H__ */

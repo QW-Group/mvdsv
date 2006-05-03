@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.56 2006/05/01 22:37:43 oldmanuk Exp $
+	$Id: sv_main.c,v 1.57 2006/05/03 12:56:31 vvd0 Exp $
 */
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -129,6 +129,7 @@ cvar_t	pausable = {"pausable", "1"};
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
 cvar_t	sv_getrealip = {"sv_getrealip", "1"};
 cvar_t	sv_serverip = {"sv_serverip", ""};
+cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "2"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
@@ -953,7 +954,9 @@ static void SVC_DirectConnect (void)
 		}
 		else
 		{
-			if (!spectator && spectators < (int)maxspectators.value)
+			if (!spectator && spectators < (int)maxspectators.value &&
+				( (Q_atoi(Info_ValueForKey (userinfo, "svf")) & SVF_SPEC_ONFULL &&
+				   sv_forcespec_onfull.value == 2) || sv_forcespec_onfull.value == 1))
 			{
 				Netchan_OutOfBandPrint (adr, "%c\nserver is full: connecting as spectator\n", A2C_PRINT);
 				Info_SetValueForStarKey (userinfo, "*spectator", "1", MAX_INFO_STRING);
@@ -2448,6 +2451,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_getrealip);
 	Cvar_Register (&sv_maxdownloadrate);
 	Cvar_Register (&sv_serverip);
+	Cvar_Register (&sv_forcespec_onfull);
 	Cvar_Register (&sv_cpserver);
 	Cvar_Register (&rcon_password);
 	Cvar_Register (&password);

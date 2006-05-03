@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.27 2006/05/02 14:14:02 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.28 2006/05/03 12:56:31 vvd0 Exp $
 */
 
 #include <conio.h>
@@ -735,15 +735,13 @@ int main (int argc, char **argv)
 	int		t;
 	int		sleep_msec;
 
-	telnet_connected = false;
-
 	GetConsoleTitle(title, sizeof(title));
 	COM_InitArgv (argc, argv);
 	argv0 = com_argv[0];
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
-	parms.memsize = 16*1024*1024;
+	parms.memsize = DEFAULT_MEM_SIZE;
 
 	if ((t = COM_CheckParm ("-heapsize")) != 0 &&
 	        t + 1 < com_argc)
@@ -814,8 +812,6 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	static int			j;
 	char				*_argv[MAX_NUM_ARGVS];
 
-	telnet_connected = false;
-
 	// get the command line parameters
 	_argv[0] = GetCommandLine();
 	if (_argv[0][0] == '"')
@@ -866,7 +862,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	if (!CreateMainWindow(hInstance, nCmdShow))
 		return 1;
 
-	parms.memsize = 16*1024*1024;
+	parms.memsize = DEFAULT_MEM_SIZE;
 
 	j = COM_CheckParm ("-heapsize");
 	if (j && j + 1 < com_argc)
@@ -876,10 +872,17 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	if (j && j + 1 < com_argc)
 		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
-	j = COM_CheckParm ("-d");
-	if (j && j + 1 < com_argc)
+	if (COM_CheckParm("-noerrormsgbox"))
+	{
+		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
+		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
+	}
+
+	if (COM_CheckParm ("-d"))
 	{
 		isdaemon = true;
+		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
+		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
 		//close(0); close(1); close(2);
 	}
 

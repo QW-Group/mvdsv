@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.10 2006/05/01 22:37:43 oldmanuk Exp $
+	$Id: protocol.h,v 1.11 2006/05/03 12:56:31 vvd0 Exp $
 */
 // protocol.h -- communications protocols
-#ifndef _PROTOCOL_H_
-#define _PROTOCOL_H_
+#ifndef __PROTOCOL_H__
+#define __PROTOCOL_H__
 
 #define	PROTOCOL_VERSION	28
 
@@ -355,5 +355,4 @@ typedef struct usercmd_s
 #define BUTTON_JUMP	(1 << 1)
 #define BUTTON_USE	(1 << 2)
 
-#endif /* _PROTOCOL_H_ */
-
+#endif /* !__PROTOCOL_H__ */
