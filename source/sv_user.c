@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.52 2006/05/06 21:37:59 qqshka Exp $
+	$Id: sv_user.c,v 1.53 2006/05/06 23:11:13 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1471,14 +1471,12 @@ static void SV_Say (qbool team)
 			}
 			else
 			{
-				if (client->spectator && !sv_sayteam_to_spec.value)
-					continue;	// no players say_team to specs in this case
-
 				if (sv_vm)
 				{
 					if (client->spectator)
 					{
-						if(   (   client->spec_track <= 0
+						if(   !sv_sayteam_to_spec.value // player can't say_team to spec in this case
+						   || (   client->spec_track <= 0
 							   && strcmp(host_client->team, client->team)
 							  ) // spec do not track player and on different team
 						   || (   client->spec_track  > 0
@@ -1487,7 +1485,9 @@ static void SV_Say (qbool team)
 						  )
 						continue;	// on different teams
 					}
-					else if (!(int)teamplay.value || strcmp(host_client->team, client->team))
+					else if (   host_client != client // send msg to self anyway
+							 && (!(int)teamplay.value || strcmp(host_client->team, client->team))
+							)
 						continue;	// on different teams
 				}
 				else if (strcmp(host_client->team, client->team) || client->spectator)
