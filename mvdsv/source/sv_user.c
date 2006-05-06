@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.51 2006/05/01 22:37:43 oldmanuk Exp $
+	$Id: sv_user.c,v 1.52 2006/05/06 21:37:59 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -27,6 +27,7 @@ edict_t	*sv_player;
 usercmd_t	cmd;
 
 cvar_t	sv_spectalk = {"sv_spectalk", "1"};
+cvar_t	sv_sayteam_to_spec = {"sv_sayteam_to_spec", "1"};
 cvar_t	sv_mapcheck = {"sv_mapcheck", "1"};
 cvar_t	sv_minping = {"sv_minping", "0"};
 cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
@@ -1470,16 +1471,23 @@ static void SV_Say (qbool team)
 			}
 			else
 			{
+				if (client->spectator && !sv_sayteam_to_spec.value)
+					continue;	// no players say_team to specs in this case
+
 				if (sv_vm)
 				{
 					if (client->spectator)
 					{
-						if(client->spec_track <= 0
-						   || strcmp(host_client->team, svs.clients[client->spec_track - 1].team)
+						if(   (   client->spec_track <= 0
+							   && strcmp(host_client->team, client->team)
+							  ) // spec do not track player and on different team
+						   || (   client->spec_track  > 0
+							   && strcmp(host_client->team, svs.clients[client->spec_track - 1].team)
+							  ) // spec track player on different team
 						  )
-						continue;	// on different teams, spec no track player or track player in different team
+						continue;	// on different teams
 					}
-					else if (strcmp(host_client->team, client->team))
+					else if (!(int)teamplay.value || strcmp(host_client->team, client->team))
 						continue;	// on different teams
 				}
 				else if (strcmp(host_client->team, client->team) || client->spectator)
@@ -2825,6 +2833,7 @@ SV_UserInit
 void SV_UserInit (void)
 {
 	Cvar_Register (&sv_spectalk);
+	Cvar_Register (&sv_sayteam_to_spec);
 	Cvar_Register (&sv_mapcheck);
 	Cvar_Register (&sv_minping);
 	Cvar_Register (&sv_enable_cmd_minping);
