@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.28 2006/05/01 22:37:43 oldmanuk Exp $
+	$Id: sv_ccmds.c,v 1.29 2006/05/12 18:02:11 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1163,54 +1163,90 @@ void SV_Status_f (void)
 				(int)avg,
 				pak, num_prstr);
 
-	// min fps lat drp
-	if (sv_redirected != RD_NONE && sv_redirected != RD_MOD)
+	switch (sv_redirected)
 	{
-		// most remote clients are 40 columns
-		//           01234567890123456789012345678901234567890123456789
-		Con_Printf ("name               ping frags   id\n");
-		Con_Printf ("  address\n");
-		Con_Printf ("  real ip\n");
-		Con_Printf ("------------------ ---- ----- ------\n");
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-		{
-			if (!cl->state)
-				continue;
-
-			s = NET_BaseAdrToString(cl->netchan.remote_address);
-			Con_Printf ("%-18s %4i %5i %6s %s\n%-36s\n", cl->name, (int)SV_CalcPing(cl),
-			            (int)cl->edict->v.frags, Q_yelltext(va("%d", cl->userid)),
-			            cl->spectator ? " (s)" : "", sv_use_dns.value ? SV_Resolve(s) : s);
-
-			if (cl->realip.ip.ip[0])
-				Con_Printf ("%-36s\n", NET_BaseAdrToString (cl->realip));
-
-			switch (cl->state)
+		case RD_MOD:
+			if (SV_Check_ktpro() && sv_old_status_for_ktpro.value)
 			{
-			case cs_connected:
-			case cs_preconnected:
-				Con_Printf ("CONNECTING\n");
-				continue;
-			case cs_zombie:
-				Con_Printf ("ZOMBIE\n");
-				continue;
-			default:;
-			}
-		}
-	}
-	else
-	{
-		if (SV_Check_ktpro() && sv_old_status_for_ktpro.value)
-		{
-			Con_Printf ("frags id  address         name            rate ping drop  real ip\n"
-						"----- --- --------------- --------------- ---- ---- ----- ---------------\n");
+				Con_Printf ("frags id  address         name            rate ping drop  real ip\n"
+							"----- --- --------------- --------------- ---- ---- ----- ---------------\n");
+				for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+				{
+					if (!cl->state)
+						continue;
+					s = NET_BaseAdrToString(cl->netchan.remote_address);
+					Con_Printf ("%5i %3i %-15s %-15s ", (int)cl->edict->v.frags, cl->userid,
+								sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
+					switch (cl->state)
+					{
+						case cs_connected:
+						case cs_preconnected:
+							Con_Printf ("CONNECTING\n");
+							continue;
+						case cs_zombie:
+							Con_Printf ("ZOMBIE\n");
+							continue;
+						default:;
+					}
+					Con_Printf ("%4i %4i %5.1f %s %s\n",
+								(int)(1000 * cl->netchan.frame_rate),
+								(int)SV_CalcPing (cl),
+								100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence,
+								cl->realip.ip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
+								cl->spectator ? "(s)" : "");
+				}
+				break;
+			} // if
+		case RD_NONE:
+			Con_Printf ("name             ping frags   id   address                real ip\n"
+						"---------------- ---- ----- ------ ---------------------- ---------------\n");
 			for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 			{
 				if (!cl->state)
 					continue;
 				s = NET_BaseAdrToString(cl->netchan.remote_address);
-				Con_Printf ("%5i %3i %-15s %-15s ", (int)cl->edict->v.frags, cl->userid,
-							sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
+				Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, (int)SV_CalcPing(cl),
+						(int)cl->edict->v.frags, cl->userid, sv_use_dns.value ? SV_Resolve(s) : s);
+				if (cl->realip.ip.ip[0])
+					Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
+				Con_Printf (cl->spectator ? "(s)" : "");
+
+				switch (cl->state)
+				{
+					case cs_connected:
+					case cs_preconnected:
+						Con_Printf (" CONNECTING\n");
+						continue;
+					case cs_zombie:
+						Con_Printf (" ZOMBIE\n");
+						continue;
+					default:
+						Con_Printf ("\n");
+				}
+			}
+			break;
+		//case RD_CLIENT:
+		//case RD_PACKET:
+		default:
+			// most remote clients are 40 columns
+			//           01234567890123456789012345678901234567890123456789
+			Con_Printf ("name               ping frags   id\n");
+			Con_Printf ("  address\n");
+			Con_Printf ("  real ip\n");
+			Con_Printf ("------------------ ---- ----- ------\n");
+			for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+			{
+				if (!cl->state)
+					continue;
+
+				s = NET_BaseAdrToString(cl->netchan.remote_address);
+				Con_Printf ("%-18s %4i %5i %6s %s\n%-36s\n", cl->name, (int)SV_CalcPing(cl),
+							(int)cl->edict->v.frags, Q_yelltext(va("%d", cl->userid)),
+							cl->spectator ? " (s)" : "", sv_use_dns.value ? SV_Resolve(s) : s);
+
+				if (cl->realip.ip.ip[0])
+					Con_Printf ("%-36s\n", NET_BaseAdrToString (cl->realip));
+
 				switch (cl->state)
 				{
 					case cs_connected:
@@ -1222,44 +1258,8 @@ void SV_Status_f (void)
 						continue;
 					default:;
 				}
-				Con_Printf ("%4i %4i %5.1f %s %s\n",
-							(int)(1000 * cl->netchan.frame_rate),
-							(int)SV_CalcPing (cl),
-							100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence,
-							cl->realip.ip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
-							cl->spectator ? "(s)" : "");
 			}
-		} // if
-		else
-		{
-			Con_Printf ("name             ping frags   id   address                real ip\n"
-						"---------------- ---- ----- ------ ---------------------- ---------------\n");
-			for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-			{
-				if (!cl->state)
-					continue;
-				s = NET_BaseAdrToString(cl->netchan.remote_address);
-				Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, cl->userid, (int)SV_CalcPing(cl),
-							(int)cl->edict->v.frags, sv_use_dns.value ? SV_Resolve(s) : s);
-				if (cl->realip.ip.ip[0])
-					Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
-				Con_Printf (cl->spectator ? "(s)" : "");
-
-				switch (cl->state)
-				{
-				case cs_connected:
-				case cs_preconnected:
-					Con_Printf (" CONNECTING\n");
-					continue;
-				case cs_zombie:
-					Con_Printf (" ZOMBIE\n");
-					continue;
-				default:
-					Con_Printf ("\n");
-				}
-			}
-		} // else
-	}
+	} // switch
 	Con_Printf ("\n");
 }
 

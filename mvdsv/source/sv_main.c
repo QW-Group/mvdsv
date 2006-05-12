@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.57 2006/05/03 12:56:31 vvd0 Exp $
+	$Id: sv_main.c,v 1.58 2006/05/12 18:02:11 vvd0 Exp $
 */
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -890,7 +890,10 @@ static void SVC_DirectConnect (void)
 			if (cl->state == cs_connected || cl->state == cs_preconnected)
 			{
 				Con_Printf("%s:dup connect\n", NET_AdrToString (adr));
-				return;
+				// if client core dumped, then allow to reuse slot (EXPERIMENTAL)
+				SV_DropClient (cl);
+				SV_ClearReliable (cl);	// don't send the disconnect
+				//return;
 			}
 
 			Con_Printf ("%s:reconnect\n", NET_AdrToString (adr));
