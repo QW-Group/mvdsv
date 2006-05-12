@@ -1,10 +1,12 @@
 
-$Id: changes.txt,v 1.71 2006/05/03 12:56:31 vvd0 Exp $
+$Id: changes.txt,v 1.72 2006/05/12 18:02:11 vvd0 Exp $
 
 ----
 MVDSV v0.19.21-CVS build 23?? (2006.05.??)
 [server]
-* VVD (vvd0@users.sourceforge.net)
+* VVD <vvd0@users.sourceforge.net>
+- improved connection algorithm: if client core dumped, then allow to reuse slot (EXPERIMENTAL)
+- improved status command output with ktpro in server console - always write new status
 - disabled general-protection-fault window box on Win32 if there are command line options
   "-noerrormsgbox" or "-d"
 (Thanks to schm)
@@ -77,8 +79,9 @@ MVDSV v0.19.20-develop build 2320 (2006.04.28)
   "Not full connected clients"
 (Thanks to Renzo)
 - new cvar sv_old_status_for_ktpro:
-  0 - always show new status
-  1 - show old status in server console if ktpro was detected (need for correct 'klist''s output)
+  0 - always write new status
+  1 - write old status on server console and redirected to mod if ktpro was detected
+  (need for correct 'klist''s output)
   default: 1
   Note: 'rcon status' show new status always
 - no more ".gz" strings in sources - used sv_demoRegexp
@@ -117,7 +120,10 @@ MVDSV v0.19.10-develop build 2227 (2006.01.25)
 - serverinfo key *version changed from "2.40" to "mvdsv QWE_VERSION" and *qwe_version was removed
   (EXPERIMENTAL) (QWE_VERSION = "0.19.10-develop") (by disconnect)
 - bugfix: disabled download from gamedir. So only subdirs of gamedir are allowed.
-- new variable: allow_download_other (0 by default) - allows/disallows downloading of stuff
+- new cvar allow_download_other
+  0 - disallows downloading of stuff
+  1 - allows downloading of stuff
+  default: 0
 - improved timer accuracy for win32. use -nohwtimer to use old-style timing
 (by disconnect from ZQuake)
 - bugfix to bliP's sv_speedcheck: round to nearest value instead of rounding down
