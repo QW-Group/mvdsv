@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.29 2006/05/12 18:02:11 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.30 2006/05/15 15:11:14 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1139,7 +1139,7 @@ void SV_Status_f (void)
 	client_t	*cl;
 	float		cpu, avg, pak, demo = 0;
 	char		*s;
-	extern cvar_t	sv_use_dns, sv_old_status_for_ktpro;
+	extern cvar_t	sv_use_dns;
 
 	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
 
@@ -1166,7 +1166,7 @@ void SV_Status_f (void)
 	switch (sv_redirected)
 	{
 		case RD_MOD:
-			if (SV_Check_ktpro() && sv_old_status_for_ktpro.value)
+			if (SV_Check_ktpro())
 			{
 				Con_Printf ("frags id  address         name            rate ping drop  real ip\n"
 							"----- --- --------------- --------------- ---- ---- ----- ---------------\n");

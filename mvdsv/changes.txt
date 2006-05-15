@@ -1,10 +1,11 @@
 
-$Id: changes.txt,v 1.72 2006/05/12 18:02:11 vvd0 Exp $
+$Id: changes.txt,v 1.73 2006/05/15 15:11:13 vvd0 Exp $
 
 ----
-MVDSV v0.19.21-CVS build 23?? (2006.05.??)
+MVDSV v0.19.22-CVS build 23?? (2006.05.??)
 [server]
 * VVD <vvd0@users.sourceforge.net>
+- removed cvar sv_old_status_for_ktpro - not needed after "improved connection algorithm..."
 - improved connection algorithm: if client core dumped, then allow to reuse slot (EXPERIMENTAL)
 - improved status command output with ktpro in server console - always write new status
 - disabled general-protection-fault window box on Win32 if there are command line options
