@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.74 2006/05/15 17:35:14 vvd0 Exp $
+$Id: changes.txt,v 1.75 2006/05/15 18:51:25 qqshka Exp $
 
 ----
 MVDSV v0.19.22-CVS build 23?? (2006.05.??)
@@ -8,6 +8,12 @@ MVDSV v0.19.22-CVS build 23?? (2006.05.??)
 * qqshka <qqshka@users.sourceforge.net>
 - switching GAME_API_VERSION to 9.
   Only one change, added GAME_CLIENT_SAY, so now qvm mods can handle say/say_team.
+- For developers only: now qvm mods can get client state via
+  trap_infokey( int edn, "*state", char *valbuff, int sizebuff ).
+  Possible states: "free", "zombie", "preconnected", "connected", "spawned", "unknown".
+  So u can spot not yet connected clients. Personally, i'm using this in KTX for
+  /klist or /fkick. ktpro do this via parsing output of server /status command.
+  I'm dislike ktpro way here.
 
 * oldman <oldmanuk@users.sourceforge.net>
 - added VWEP support (from ZQuake)
