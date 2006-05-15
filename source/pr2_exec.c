@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.6 2006/04/28 17:12:44 vvd0 Exp $
+ *  $Id: pr2_exec.c,v 1.7 2006/05/15 00:00:46 qqshka Exp $
  */
 
 #include <stdarg.h>
@@ -212,6 +212,14 @@ void PR2_GameClientPostThink(int spec)
 qbool PR2_ClientCmd()
 {
 	return VM_Call(sv_vm, GAME_CLIENT_COMMAND, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+//===========================================================================
+// ClientSay return false if say unhandled by mod
+//===========================================================================
+qbool PR2_ClientSay(int isTeamSay)
+{
+	return VM_Call(sv_vm, GAME_CLIENT_SAY, isTeamSay, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 

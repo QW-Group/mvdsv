@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.53 2006/05/06 23:11:13 qqshka Exp $
+	$Id: sv_user.c,v 1.54 2006/05/15 00:00:46 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1401,6 +1401,25 @@ static void SV_Say (qbool team)
 	}
 #endif
 
+#ifdef USE_PR2
+	if ( sv_vm )
+	{
+		qbool ret;
+
+		SV_EndRedirect ();
+
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+
+		ret = PR2_ClientSay(team);
+
+		SV_BeginRedirect (RD_CLIENT);
+
+		if (ret)
+			return; // say/say_team was handled by mod
+	}
+#endif
+
 	if (host_client->spectator && (!sv_spectalk.value || team))
 		strlcpy(text, va("[SPEC] %s: %s", host_client->name, text), sizeof(text));
 	else if (team)
@@ -1471,6 +1490,7 @@ static void SV_Say (qbool team)
 			}
 			else
 			{
+#ifdef USE_PR2
 				if (sv_vm)
 				{
 					if (client->spectator)
@@ -1490,8 +1510,10 @@ static void SV_Say (qbool team)
 							)
 						continue;	// on different teams
 				}
-				else if (strcmp(host_client->team, client->team) || client->spectator)
-					continue;	// on different teams
+				else
+#endif
+ 					if (strcmp(host_client->team, client->team) || client->spectator)
+						continue;	// on different teams
 			}
 		}
 
