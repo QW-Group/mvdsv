@@ -1,9 +1,18 @@
 
-$Id: changes.txt,v 1.73 2006/05/15 15:11:13 vvd0 Exp $
+$Id: changes.txt,v 1.74 2006/05/15 17:35:14 vvd0 Exp $
 
 ----
 MVDSV v0.19.22-CVS build 23?? (2006.05.??)
 [server]
+
+* qqshka <qqshka@users.sourceforge.net>
+- switching GAME_API_VERSION to 9.
+  Only one change, added GAME_CLIENT_SAY, so now qvm mods can handle say/say_team.
+
+* oldman <oldmanuk@users.sourceforge.net>
+- added VWEP support (from ZQuake)
+- improved MacOS X/Darwin support
+
 * VVD <vvd0@users.sourceforge.net>
 - removed cvar sv_old_status_for_ktpro - not needed after "improved connection algorithm..."
 - improved connection algorithm: if client core dumped, then allow to reuse slot (EXPERIMENTAL)
