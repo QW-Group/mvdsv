@@ -20,7 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: g_public.h,v 1.7 2006/03/27 22:54:38 disconn3ct Exp $
+ *  $Id: g_public.h,v 1.8 2006/05/15 00:00:46 qqshka Exp $
  */
 
 #ifndef __G_PUBLIC_H__
@@ -31,7 +31,7 @@
 //
 // g_public.h -- game module information visible to server
 
-#define	GAME_API_VERSION	8
+#define	GAME_API_VERSION	9
 
 
 //===============================================================
@@ -173,6 +173,7 @@ typedef enum
 	// that is not recognized as a builtin function.
 	// The game can issue trap_argc() / trap_argv() commands to get the command
 	// and parameters.  Return qfalse if the game doesn't recognize it as a command.
+	GAME_CLIENT_SAY,			// ( int isTeamSay );
 
 } gameExport_t;
 
