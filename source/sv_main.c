@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.58 2006/05/12 18:02:11 vvd0 Exp $
+	$Id: sv_main.c,v 1.59 2006/05/15 15:11:14 vvd0 Exp $
 */
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -164,8 +164,6 @@ cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
 cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login"
 
 cvar_t sv_maxuserid = {"sv_maxuserid", "99"};
-
-cvar_t sv_old_status_for_ktpro = {"sv_old_status_for_ktpro", "1"};
 
 cvar_t registered = {"registered", "1", CVAR_ROM};
 // We need this cvar, because ktpro didn't allow to go at some placeses of, for example, start map.
@@ -2575,7 +2573,6 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_registrationinfo);
 
 	Cvar_Register (&sv_maxuserid);
-	Cvar_Register (&sv_old_status_for_ktpro);
 
 	Cvar_Register (&registered);
 
