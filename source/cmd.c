@@ -1,38 +1,36 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: cmd.c,v 1.18 2006/04/30 11:27:14 disconn3ct Exp $
+
+    $Id: cmd.c,v 1.19 2006/05/16 02:15:17 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
 #include "qwsvdef.h"
 
-cvar_t cl_warncmd = {"cl_warncmd", "0"};
-
-cbuf_t	cbuf_main;
-cbuf_t	*cbuf_current = NULL;
+cbuf_t cbuf_main;
+cbuf_t *cbuf_current = NULL;
 
 //=============================================================================
 
 /*
 ============
 Cmd_Wait_f
- 
+
 Causes execution of the remainder of the command buffer to be delayed until
 next frame.  This allows commands like:
 bind g "impulse 5 ; +attack ; wait ; -attack ; impulse 2"
@@ -71,7 +69,7 @@ void Cbuf_Init (void)
 /*
 ============
 Cbuf_AddText
- 
+
 Adds command text at the end of the buffer
 ============
 */
@@ -110,7 +108,7 @@ void Cbuf_AddTextEx (cbuf_t *cbuf, char *text)
 /*
 ============
 Cbuf_InsertText
- 
+
 Adds command text immediately after the current command
 Adds a \n to the text
 ============
@@ -329,7 +327,7 @@ void Cmd_Exec_f (void)
 		Con_Printf ("couldn't exec %s\n",Cmd_Argv(1));
 		return;
 	}
-	if (!Cvar_Command () && (cl_warncmd.value || developer.value))
+	if (!Cvar_Command ())
 		Con_Printf ("execing %s\n",Cmd_Argv(1));
 
 	Cbuf_InsertText (f);
@@ -340,7 +338,7 @@ void Cmd_Exec_f (void)
 /*
 ===============
 Cmd_Echo_f
- 
+
 Just prints the rest of the line to the console
 ===============
 */
@@ -401,7 +399,7 @@ Creates a new command that executes a command string (possibly ; seperated)
 
 char *CopyString (char *in)
 {
-	char	*out;
+	char *out;
 
 	out = (char *) Q_malloc (strlen(in)+1);
 	strlcpy (out, in, strlen(in) + 1);
@@ -896,8 +894,7 @@ void Cmd_ExecuteString (char *text)
 	if (PR_ConsoleCmd())
 		return;
 
-	if (cl_warncmd.value || developer.value)
-		Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
+	Con_Printf ("Unknown command \"%s\"\n", Cmd_Argv(0));
 }
 
 

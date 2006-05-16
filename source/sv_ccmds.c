@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.30 2006/05/15 15:11:14 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.31 2006/05/16 02:15:17 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -28,7 +28,6 @@ qbool sv_allow_cheats;
 
 int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
-extern	cvar_t		cl_warncmd;
 extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
 extern	redirect_t	sv_redirected;
 
@@ -1925,6 +1924,4 @@ void SV_InitOperatorCommands (void)
 For development purposes only
 //VVD
 */
-
-	cl_warncmd.value = 1;
 }
