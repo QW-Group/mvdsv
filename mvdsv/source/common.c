@@ -16,15 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: common.c,v 1.26 2006/04/30 11:27:14 disconn3ct Exp $
+	$Id: common.c,v 1.27 2006/05/23 14:47:54 vvd0 Exp $
 */
 // common.c -- misc functions used in client and server
 
-#include <ctype.h>
-#include <limits.h>
-
 #include "qwsvdef.h"
-#include "mdfour.h"
 
 usercmd_t nullcmd; // guarenteed to be zero
 

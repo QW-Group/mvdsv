@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.13 2006/04/12 17:08:57 vvd0 Exp $
+	$Id: qwsvdef.h,v 1.14 2006/05/23 14:47:54 vvd0 Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018)
 #endif
 
+#include <time.h>
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
@@ -37,9 +38,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <setjmp.h>
 #include <ctype.h>
 #include <assert.h>
+#include <sys/stat.h>
+#include <limits.h>
 
-//#include "bothdefs.h" - included in common.h
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
+#if defined(__FreeBSD__) && defined(KQUEUE)
+#include <sys/types.h>
+#include <sys/event.h>
+#endif
+#include <sys/time.h>
+#endif
 
+#ifndef _WIN32
+#include <dirent.h>
+#endif
+
+#include "bothdefs.h"
 #include "common.h"
 #include "bspfile.h"
 #include "sys.h"
@@ -55,6 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "crc.h"
 #include "sha1.h"
+#include "mdfour.h"
 
 #include "server.h"
 #include "world.h"
@@ -115,4 +130,4 @@ void SV_Init (quakeparms_t *parms);
 void Con_Printf (char *fmt, ...);
 void Con_DPrintf (char *fmt, ...);
 
-#endif //__QWSVDEF_H__
+#endif /* !__QWSVDEF_H__ */

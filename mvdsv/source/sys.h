@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.10 2006/05/03 12:56:31 vvd0 Exp $
+	$Id: sys.h,v 1.11 2006/05/23 14:47:54 vvd0 Exp $
 */
 // sys.h -- non-portable functions
 
@@ -52,17 +52,22 @@ typedef struct
 	int	numdirs;
 } dir_t;
 
-int Sys_FileTime (char *path);
-void Sys_mkdir (char *path);
-int Sys_rmdir (char *path);
-int Sys_remove (char *path);
-dir_t Sys_listdir (char *path, char *ext, int sort_type);
-int Sys_compare_by_date(const void *a, const void *b);
-int Sys_compare_by_name(const void *a, const void *b);
-#define SORT_NO		0
+int		Sys_FileTime (char *path);
+void	Sys_mkdir (char *path);
+int		Sys_rmdir (char *path);
+int		Sys_remove (char *path);
+dir_t	Sys_listdir (char *path, char *ext, int sort_type);
+int		Sys_compare_by_date (const void *a, const void *b);
+int		Sys_compare_by_name (const void *a, const void *b);
+#define SORT_NO			0
 #define SORT_BY_DATE	1
 #define SORT_BY_NAME	2
 
+#if defined(__FreeBSD__) && defined(KQUEUE)
+	extern struct timespec select_timeout;
+#else
+	extern struct timeval  select_timeout;
+#endif
 
 //
 // system IO

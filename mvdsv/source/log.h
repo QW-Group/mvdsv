@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: log.h,v 1.9 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: log.h,v 1.10 2006/05/23 14:47:54 vvd0 Exp $
 */
 
 #ifndef __LOG_H__
 #define __LOG_H__
-#include <time.h>
+
 enum {	MIN_LOG = 0, CONSOLE_LOG = 0, ERROR_LOG,  RCON_LOG,
-	TELNET_LOG,  FRAG_LOG,        PLAYER_LOG, MOD_FRAG_LOG, MAX_LOG};
+		TELNET_LOG,  FRAG_LOG,        PLAYER_LOG, MOD_FRAG_LOG, MAX_LOG};
 
 typedef struct log_s {
 	FILE		*sv_logfile;
@@ -45,4 +45,4 @@ void	SV_LogPlayer(client_t *cl, char *msg, int level);
 //<-
 void	SV_Write_Log(int sv_log, int level, char *msg);
 
-#endif //__LOG_H__
+#endif /* !__LOG_H__ */

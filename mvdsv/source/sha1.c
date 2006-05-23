@@ -11,17 +11,14 @@ Test Vectors (from FIPS PUB 180-1)
 A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
  
-	$Id: sha1.c,v 1.6 2005/12/04 05:37:44 disconn3ct Exp $
+	$Id: sha1.c,v 1.7 2006/05/23 14:47:54 vvd0 Exp $
 */
 
 /* #define LITTLE_ENDIAN * This should be #define'd if true. */
 /* Changed LITTLE_ENDIAN to __BIG_ENDIAN__ define checking (unification of defines) */
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
 
-#include <stdio.h>
-#include <string.h>
-#include "sha1.h"
-#include "common.h"
+#include "qwsvdef.h"
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 

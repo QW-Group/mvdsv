@@ -16,10 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_chan.c,v 1.11 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: net_chan.c,v 1.12 2006/05/23 14:47:54 vvd0 Exp $
 */
-
-#include <stdlib.h>
 
 #include "qwsvdef.h"
 
