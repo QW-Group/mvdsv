@@ -1,8 +1,8 @@
 
-$Id: changes.txt,v 1.75 2006/05/15 18:51:25 qqshka Exp $
+$Id: changes.txt,v 1.76 2006/05/23 14:47:54 vvd0 Exp $
 
 ----
-MVDSV v0.19.22-CVS build 23?? (2006.05.??)
+MVDSV v0.19.23-CVS build 23?? (2006.05.??)
 [server]
 
 * qqshka <qqshka@users.sourceforge.net>
@@ -20,6 +20,8 @@ MVDSV v0.19.22-CVS build 23?? (2006.05.??)
 - improved MacOS X/Darwin support
 
 * VVD <vvd0@users.sourceforge.net>
+- improved OpenBSD support
+- improved sys_select_timeout with kqueue on FreeBSD
 - removed cvar sv_old_status_for_ktpro - not needed after "improved connection algorithm..."
 - improved connection algorithm: if client core dumped, then allow to reuse slot (EXPERIMENTAL)
 - improved status command output with ktpro in server console - always write new status

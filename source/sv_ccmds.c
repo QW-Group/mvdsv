@@ -16,13 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.31 2006/05/16 02:15:17 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.32 2006/05/23 14:47:54 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
-#include "log.h"
-#include <sys/stat.h>
-#include <time.h>
 
 qbool sv_allow_cheats;
 

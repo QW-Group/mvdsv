@@ -15,13 +15,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: tools.c,v 1.14 2006/04/30 11:26:57 disconn3ct Exp $
+	$Id: tools.c,v 1.15 2006/05/23 14:47:54 vvd0 Exp $
 */
 
 #include "defs.h"
-#ifndef _WIN32
-#include <libgen.h>	// basename
-#endif
 
 int com_argc;
 char *com_argv[MAX_NUM_ARGVS];

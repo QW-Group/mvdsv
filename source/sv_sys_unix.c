@@ -16,21 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.36 2006/05/03 12:56:31 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.37 2006/05/23 14:47:54 vvd0 Exp $
 */
 
-#include <dirent.h>
 #include <dlfcn.h>
 #include <signal.h>
 #include "qwsvdef.h"
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
-#ifdef KQUEUE
-#include <sys/types.h>
-#include <sys/event.h>
-#endif
-#include <sys/time.h>
-#include <sys/stat.h>
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
+/*#include <sys/time.h>
+#include <sys/stat.h>*/
 #else
 #include <sys/dir.h>
 #endif
@@ -38,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Added by VVD {
 #include <unistd.h>
 #include <fcntl.h>
-#include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
 
@@ -52,8 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
 extern cvar_t auth_timeout;
-
-struct timeval select_timeout;
 
 cvar_t	sys_nostdout = {"sys_nostdout", "0"};
 cvar_t	sys_extrasleep = {"sys_extrasleep", "0"};
@@ -489,6 +481,7 @@ void Sys_Init (void)
 
 inline void Sys_Telnet (void);
 #if defined(__FreeBSD__) && defined(KQUEUE)
+struct timespec select_timeout;
 void Sys_NET_Init()
 {
 	int i = 0;
@@ -508,14 +501,13 @@ void Sys_NET_Init()
 }
 qbool NET_Sleep ()
 {
+	struct timespec timeout_cur;
 	int num, i, fd;
 
-	struct timespec timeout_cur;
 	if (telnetport)
 		Sys_Telnet();
 
-	timeout_cur.tv_sec  = select_timeout.tv_sec;
-	timeout_cur.tv_nsec = select_timeout.tv_usec * 1000;
+	timeout_cur = select_timeout;
 
 	do
 	{
@@ -546,6 +538,7 @@ qbool NET_Sleep ()
 	return false;
 }
 #else
+struct timeval select_timeout;
 #define Sys_NET_Init()
 qbool NET_Sleep ()
 {
@@ -574,8 +567,6 @@ qbool NET_Sleep ()
 		FD_SET(STDIN_FILENO, &fdset);
 
 	timeout_cur = select_timeout;
-/*	timeout_cur.tv_sec  = select_timeout.tv_sec;
-	timeout_cur.tv_usec = select_timeout.tv_usec;*/
 
 	switch (select (++j, &fdset, NULL, NULL, &timeout_cur))
 	{

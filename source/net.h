@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.18 2006/04/28 17:31:08 vvd0 Exp $
+	$Id: net.h,v 1.19 2006/05/23 14:47:54 vvd0 Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
@@ -25,9 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #include <Winsock2.h>
 
-#define EWOULDBLOCK	WSAEWOULDBLOCK
-#define EMSGSIZE	WSAEMSGSIZE
-#define ECONNRESET	WSAECONNRESET
+#define EWOULDBLOCK		WSAEWOULDBLOCK
+#define EMSGSIZE		WSAEMSGSIZE
+#define ECONNRESET		WSAECONNRESET
 #define ECONNABORTED	WSAECONNABORTED
 #define ECONNREFUSED	WSAECONNREFUSED
 #define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
@@ -171,11 +171,11 @@ typedef struct
 	sizebuf_t	message;		// writing buffer to send to server
 	byte		message_buf[MAX_MSGLEN];
 
-	int		reliable_length;
+	int			reliable_length;
 	byte		reliable_buf[MAX_MSGLEN];	// unacked reliable message
 
 // time and size data to calculate bandwidth
-	int		outgoing_size[MAX_LATENT];
+	int			outgoing_size[MAX_LATENT];
 	double		outgoing_time[MAX_LATENT];
 } netchan_t;
 
@@ -191,4 +191,4 @@ qbool Netchan_CanReliable (netchan_t *chan);
 
 void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a);
 
-#endif /* __NET_H__ */
+#endif /* !__NET_H__ */

@@ -16,15 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.29 2006/05/03 13:09:11 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.30 2006/05/23 14:47:54 vvd0 Exp $
 */
 
 #include <conio.h>
-#include <limits.h>
 #include <direct.h>		// _mkdir
-#include <time.h>
 #include <process.h>
-#include <sys/stat.h>
 
 #include "qwsvdef.h"
 #include "sv_windows.h"
@@ -561,10 +558,7 @@ void Sys_Init (void)
 	if (vinfo.dwMajorVersion < 4 || vinfo.dwPlatformId == VER_PLATFORM_WIN32s)
 		Sys_Error (SERVER_NAME " requires at least Win95 or NT 4.0");
 
-	if (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
-		WinNT = true;
-	else
-		WinNT = false;
+	WinNT = (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT ? true : false);
 
 	Cvar_Register (&sys_nostdout);
 	Cvar_Register (&sys_sleep);

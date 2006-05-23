@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: defs.h,v 1.10 2006/05/02 14:13:51 disconn3ct Exp $
+	$Id: defs.h,v 1.11 2006/05/23 14:47:54 vvd0 Exp $
 */
 
 #ifndef __DEFS_H__
@@ -25,12 +25,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <direct.h>
 #include <windows.h>
 #include <io.h>
+#include <malloc.h>
+#include <float.h>
+#include <process.h>
 #pragma warning( disable : 4244)
 #else
 #include <unistd.h>
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <libgen.h>	// basename
 #define _O_TEXT 0
 #define _O_BINARY 1
 #endif
