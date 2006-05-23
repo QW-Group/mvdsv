@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.76 2006/05/23 14:47:54 vvd0 Exp $
+$Id: changes.txt,v 1.77 2006/05/23 16:25:28 vvd0 Exp $
 
 ----
 MVDSV v0.19.23-CVS build 23?? (2006.05.??)
@@ -20,6 +20,8 @@ MVDSV v0.19.23-CVS build 23?? (2006.05.??)
 - improved MacOS X/Darwin support
 
 * VVD <vvd0@users.sourceforge.net>
+- new value in extension of connectionless command status:
+  16 - add information about teams
 - improved OpenBSD support
 - improved sys_select_timeout with kqueue on FreeBSD
 - removed cvar sv_old_status_for_ktpro - not needed after "improved connection algorithm..."
