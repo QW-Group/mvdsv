@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.60 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: sv_main.c,v 1.61 2006/05/23 16:25:28 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -520,11 +520,12 @@ Responds with all the info that qplug or qspy can see
 This message can be up to around 5k with worst case string lengths.
 ================
 */
-#define STATUS_OLDSTYLE			0
-#define	STATUS_SERVERINFO		1
-#define	STATUS_PLAYERS			2
-#define	STATUS_SPECTATORS		4
+#define STATUS_OLDSTYLE					0
+#define	STATUS_SERVERINFO				1
+#define	STATUS_PLAYERS					2
+#define	STATUS_SPECTATORS				4
 #define	STATUS_SPECTATORS_AS_PLAYERS	8 //for ASE - change only frags: show as "S"
+#define STATUS_SHOWTEAMS				16
 
 static void SVC_Status (void)
 {
@@ -567,9 +568,10 @@ static void SVC_Status (void)
 				else
 					frags = va("%i", cl->old_frags);
 
-				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i\n", cl->userid, frags,
+				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i %s\n", cl->userid, frags,
 				            (int)(realtime - cl->connection_started)/60, ping, name,
-				            Info_ValueForKey (cl->userinfo, "skin"), top, bottom);
+				            Info_ValueForKey (cl->userinfo, "skin"), top, bottom,
+							(opt & STATUS_SHOWTEAMS) ? cl->team : "");
 			}
 		}
 	SV_EndRedirect ();
