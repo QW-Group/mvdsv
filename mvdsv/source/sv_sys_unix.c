@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.37 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.38 2006/05/24 00:29:58 disconn3ct Exp $
 */
 
 #include <dlfcn.h>
@@ -591,7 +591,7 @@ int Sys_Script(char *path, char *args)
 {
 	char str[1024];
 
-	snprintf(str, sizeof(str), "cd %s\n./%s.qws %s &\ncd ..", com_gamedir, path, args);
+	snprintf(str, sizeof(str), "cd %s\n./%s.qws %s &\ncd ..", fs_gamedir, path, args);
 
 	if (system(str) == -1)
 		return 0;

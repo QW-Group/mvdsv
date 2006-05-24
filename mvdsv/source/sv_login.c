@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_login.c,v 1.13 2006/04/30 11:27:15 disconn3ct Exp $
+	$Id: sv_login.c,v 1.14 2006/05/24 00:29:58 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -79,7 +79,7 @@ static void WriteAccounts()
 	account_t *acc;
 
 	//Sys_mkdir(ACC_DIR);
-	if ( (f = fopen( va("%s/" ACC_FILE, com_gamedir) ,"wt")) == NULL)
+	if ( (f = fopen( va("%s/" ACC_FILE, fs_gamedir) ,"wt")) == NULL)
 	{
 		Con_Printf("Warning: couldn't open for writing " ACC_FILE "\n");
 		return;
@@ -116,7 +116,7 @@ void SV_LoadAccounts(void)
 	account_t *acc = accounts;
 	client_t *cl;
 
-	if ( (f = fopen( va("%s/" ACC_FILE, com_gamedir) ,"rt")) == NULL)
+	if ( (f = fopen( va("%s/" ACC_FILE, fs_gamedir) ,"rt")) == NULL)
 	{
 		Con_Printf("couldn't open " ACC_FILE "\n");
 		// logout

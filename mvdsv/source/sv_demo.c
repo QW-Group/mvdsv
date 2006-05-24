@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.43 2006/04/30 11:27:14 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.44 2006/05/24 00:29:58 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -110,7 +110,7 @@ void DestClose(mvddest_t *d, qbool destroyfiles)
 
 	if (destroyfiles)
 	{
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, d->path, d->name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
 		Sys_remove(path);
 		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 		Sys_remove(path);
@@ -206,7 +206,7 @@ void DestCloseAllFlush(qbool destroyfiles)
 		d = demo.dest;
 		demo.dest = d->nextdest;
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, d->path, d->name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
 		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 		if (sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
 		{
@@ -1490,7 +1490,7 @@ qbool SV_DirSizeCheck (void)
 	file_t	*list;
 	int	i;
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
+	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
 	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
 	{
 		if (sv_demoClearOld.value <= 0)
@@ -1509,8 +1509,8 @@ qbool SV_DirSizeCheck (void)
 		{
 			if (list->isdir)
 				continue;
-			Sys_remove(va("%s/%s/%s", com_gamedir, sv_demoDir.string, list->name));
-			//Con_Printf("remove %d - %s/%s/%s\n", i, com_gamedir, sv_demoDir.string, list->name);
+			Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name));
+			//Con_Printf("remove %d - %s/%s/%s\n", i, fs_gamedir, sv_demoDir.string, list->name);
 			i--;
 		}
 	}
@@ -1552,9 +1552,9 @@ void SV_MVD_Record_f (void)
 	strlcpy(newname, va("%s%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1)),
 						sv_demoSuffix.string), sizeof(newname) - 4);
 
-	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
+	Sys_mkdir(va("%s/%s", fs_gamedir, sv_demoDir.string));
 
-	snprintf (name, sizeof(name), "%s/%s/%s", com_gamedir, sv_demoDir.string, newname);
+	snprintf (name, sizeof(name), "%s/%s/%s", fs_gamedir, sv_demoDir.string, newname);
 
 //Sys_Printf("%s\n", name);
 	//COM_StripExtension(name, name);
@@ -1803,17 +1803,17 @@ void SV_MVDEasyRecord_f (void)
 	strlcpy(name, va("%s%s%s", sv_demoPrefix.string, SV_CleanName(name), sv_demoSuffix.string),
 	        MAX_DEMO_NAME);
 //	strlcat(name, sv_demoSuffix.string, sizeof(name));
-//	strlcpy(name, va("%s/%s/%s", com_gamedir, sv_demoDir.string, name), sizeof(name));
+//	strlcpy(name, va("%s/%s/%s", fs_gamedir, sv_demoDir.string, name), sizeof(name));
 	// find a filename that doesn't exist yet
 //Sys_Printf("%s, %s\n", name, name2);
 	strlcpy(name2, name, sizeof(name2));
 //Sys_Printf("%s, %s\n", name, name2);
-	Sys_mkdir(va("%s/%s", com_gamedir, sv_demoDir.string));
+	Sys_mkdir(va("%s/%s", fs_gamedir, sv_demoDir.string));
 	//	COM_StripExtension(name2, name2);
 
 	if (!(name3 = quote(name2)))
 		return;
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string),
 					  va("^%s%s", name3, sv_demoRegexp.string), SORT_NO);
 	Q_free(name3);
 	for (i = 1; dir.numfiles; )
@@ -1821,7 +1821,7 @@ void SV_MVDEasyRecord_f (void)
 		snprintf(name2, sizeof(name2), "%s_%02i", name, i++);
 		if (!(name3 = quote(name2)))
 			return;
-		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string),
 						  va("^%s%s", name3, sv_demoRegexp.string), SORT_NO);
 		Q_free(name3);
 	}
@@ -1846,7 +1846,7 @@ void SV_MVDEasyRecord_f (void)
 		while (f);
 	}
 */
-	snprintf(name2, sizeof(name2), va("%s/%s/%s.mvd", com_gamedir, sv_demoDir.string, name2));
+	snprintf(name2, sizeof(name2), va("%s/%s/%s.mvd", fs_gamedir, sv_demoDir.string, name2));
 
 	SV_MVD_Record (SV_InitRecordFile(name2));
 }
@@ -1980,8 +1980,8 @@ void SV_DemoList (qbool use_regex)
 
 	memset(files, 0, sizeof(files));
 
-	Con_Printf("content of %s/%s/%s\n", com_gamedir, sv_demoDir.string, sv_demoRegexp.string);
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
+	Con_Printf("content of %s/%s/%s\n", fs_gamedir, sv_demoDir.string, sv_demoRegexp.string);
+	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])
 	{
@@ -2068,7 +2068,7 @@ char *SV_MVDNum(int num)
 	file_t	*list;
 	dir_t	dir;
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
+	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
 
 	if (num > dir.numfiles || -num > dir.numfiles)
@@ -2170,7 +2170,7 @@ void SV_MVDRemove_f (void)
 		// remove all demos with specified token
 		ptr++;
 
-		dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
+		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 		list = dir.files;
 		for (i = 0;list->name[0]; list++)
 		{
@@ -2180,7 +2180,7 @@ void SV_MVDRemove_f (void)
 					SV_MVDStop_f();
 
 				// stop recording first;
-				snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, list->name);
+				snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name);
 				if (!Sys_remove(path))
 				{
 					Con_Printf("removing %s...\n", list->name);
@@ -2206,7 +2206,7 @@ void SV_MVDRemove_f (void)
 	strlcpy(name, Cmd_Argv(1), MAX_DEMO_NAME);
 	COM_DefaultExtension(name, ".mvd");
 
-	snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+	snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 
 	if (sv.mvdrecording && !strcmp(name, demo.name))
 		SV_MVDStop_f();
@@ -2259,7 +2259,7 @@ void SV_MVDRemoveNum_f (void)
 		if (sv.mvdrecording && !strcmp(name, demo.name))
 			SV_MVDStop_f();
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 		if (!Sys_remove(path))
 		{
 			Con_Printf("demo %s succesfully removed\n", name);
@@ -2303,7 +2303,7 @@ void SV_MVDInfoAdd_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
 	}
 	else
 	{
@@ -2315,7 +2315,7 @@ void SV_MVDInfoAdd_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 	}
 
 	if ((f = fopen(path, "a+t")) == NULL)
@@ -2353,7 +2353,7 @@ void SV_MVDInfoRemove_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
 	}
 	else
 	{
@@ -2365,7 +2365,7 @@ void SV_MVDInfoRemove_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 	}
 
 	if (Sys_remove(path))
@@ -2393,7 +2393,7 @@ void SV_MVDInfo_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
 	}
 	else
 	{
@@ -2405,7 +2405,7 @@ void SV_MVDInfo_f (void)
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string, name);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 	}
 
 	if ((f = fopen(path, "rt")) == NULL)
@@ -2442,7 +2442,7 @@ void SV_LastScores_f (void)
 		if ((demos = Q_atoi(Cmd_Argv(1))) <= 0)
 			demos = MAXDEMOS;
 
-	dir = Sys_listdir(va("%s/%s", com_gamedir, sv_demoDir.string),
+	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string),
 	                  sv_demoRegexp.string, SORT_BY_DATE);
 	if (!dir.numfiles)
 	{
@@ -2460,7 +2460,7 @@ void SV_LastScores_f (void)
 
 	for (i = dir.numfiles - demos; i < dir.numfiles; )
 	{
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", com_gamedir, sv_demoDir.string,
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string,
 					SV_MVDName2Txt(dir.files[i].name));
 
 		Con_Printf("%i. ", ++i);

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.22 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: pr_cmds.c,v 1.23 2006/05/24 00:29:58 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1281,7 +1281,7 @@ void PF_log(void)
 	char name[MAX_OSPATH], *text;
 	FILE *file;
 
-	snprintf(name, MAX_OSPATH, "%s/%s.log", com_gamedir, G_STRING(OFS_PARM0));
+	snprintf(name, MAX_OSPATH, "%s/%s.log", fs_gamedir, G_STRING(OFS_PARM0));
 	text = PF_VarString(2);
 	PR_CleanText(text);
 

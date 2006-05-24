@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.61 2006/05/23 16:25:28 vvd0 Exp $
+	$Id: sv_main.c,v 1.62 2006/05/24 00:29:58 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1655,7 +1655,7 @@ static void SV_WriteIPVIP_f (void)
 	byte	b[4];
 	int		i;
 
-	snprintf (name, MAX_OSPATH, "%s/vip_ip.cfg", com_gamedir);
+	snprintf (name, MAX_OSPATH, "%s/vip_ip.cfg", fs_gamedir);
 
 	Con_Printf ("Writing %s.\n", name);
 
@@ -1768,7 +1768,7 @@ static void SV_WriteIP_f (void)
 	byte	b[4];
 	int		i;
 
-	snprintf (name, MAX_OSPATH, "%s/listip.cfg", com_gamedir);
+	snprintf (name, MAX_OSPATH, "%s/listip.cfg", fs_gamedir);
 
 	Con_Printf ("Writing %s.\n", name);
 
@@ -2928,9 +2928,10 @@ void SV_Init (quakeparms_t *parms)
 
 	Memory_Init (parms->membase, parms->memsize);
 	Cbuf_Init ();
+
 	Cmd_Init ();
 
-	COM_Init ();
+	FS_Init();
 
 #ifdef USE_PR2
 	PR2_Init();
@@ -3072,15 +3073,15 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 	{
 	case FRAG_LOG:
 	case MOD_FRAG_LOG:
-		log_msg = msg; // these logs aren't in com_gamedir
+		log_msg = msg; // these logs aren't in fs_gamedir
 		error_msg = va("Can't write in %s log file: "/*%s/ */"%sN.log.\n",
-		               /*com_gamedir,*/ logs[sv_log].message_on,
+		               /*fs_gamedir,*/ logs[sv_log].message_on,
 		               logs[sv_log].file_name);
 		break;
 	default:
 		log_msg = va("[%s].[%d] %s", date.str, level, msg);
 		error_msg = va("Can't write in %s log file: "/*%s/ */"%s%i.log.\n",
-		               /*com_gamedir,*/ logs[sv_log].message_on,
+		               /*fs_gamedir,*/ logs[sv_log].message_on,
 		               logs[sv_log].file_name, sv_port);
 	}
 
@@ -3096,7 +3097,7 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 	{
 		fflush(logs[sv_log].sv_logfile);
 		if (sv_maxlogsize.value &&
-		        (COM_FileLength(logs[sv_log].sv_logfile) > sv_maxlogsize.value))
+		        (FS_FileLength(logs[sv_log].sv_logfile) > sv_maxlogsize.value))
 		{
 			SV_Logfile(sv_log, true);
 		}

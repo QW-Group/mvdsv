@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.30 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.31 2006/05/24 00:29:58 disconn3ct Exp $
 */
 
 #include <conio.h>
@@ -643,7 +643,7 @@ int Sys_Script(char *path, char *args)
 
 
 	snprintf(cmdline, sizeof(cmdline), "%s\\sh.exe %s.qws %s", curdir, path, args);
-	strlcat(curdir, va("\\%s", com_gamedir+2), MAX_OSPATH);
+	strlcat(curdir, va("\\%s", fs_gamedir+2), MAX_OSPATH);
 
 	return CreateProcess (NULL, cmdline, NULL, NULL,
 	                      FALSE, 0/*DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);

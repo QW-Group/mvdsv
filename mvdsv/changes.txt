@@ -1,9 +1,12 @@
 
-$Id: changes.txt,v 1.77 2006/05/23 16:25:28 vvd0 Exp $
+$Id: changes.txt,v 1.78 2006/05/24 00:34:09 disconn3ct Exp $
 
 ----
 MVDSV v0.19.23-CVS build 23?? (2006.05.??)
 [server]
+* disconnect <disconn3ct@users.sourceforge.net>
+- for developers: move FS-related stuff from common.c to fs.c
+- small fixes and cleanups here and there
 
 * qqshka <qqshka@users.sourceforge.net>
 - switching GAME_API_VERSION to 9.
