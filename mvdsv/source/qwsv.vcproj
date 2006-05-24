@@ -250,7 +250,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\fs.c">
+				RelativePath="fs.c">
 			</File>
 			<File
 				RelativePath="mathlib.c">
@@ -966,6 +966,9 @@
 				RelativePath="cvar.h">
 			</File>
 			<File
+				RelativePath="fs.h">
+			</File>
+			<File
 				RelativePath="g_public.h">
 			</File>
 			<File
@@ -1006,6 +1009,9 @@
 			</File>
 			<File
 				RelativePath="protocol.h">
+			</File>
+			<File
+				RelativePath="quakeasm.h">
 			</File>
 			<File
 				RelativePath="qwsvdef.h">
