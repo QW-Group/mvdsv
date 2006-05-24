@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.62 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: sv_main.c,v 1.63 2006/05/24 11:47:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -568,10 +568,14 @@ static void SVC_Status (void)
 				else
 					frags = va("%i", cl->old_frags);
 
-				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i %s\n", cl->userid, frags,
+				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i", cl->userid, frags,
 				            (int)(realtime - cl->connection_started)/60, ping, name,
-				            Info_ValueForKey (cl->userinfo, "skin"), top, bottom,
-							(opt & STATUS_SHOWTEAMS) ? cl->team : "");
+				            Info_ValueForKey (cl->userinfo, "skin"), top, bottom);
+
+				if (opt & STATUS_SHOWTEAMS)
+					Con_Printf (" \"%s\"\n", cl->team);
+				else
+					Con_Printf ("\n");
 			}
 		}
 	SV_EndRedirect ();
