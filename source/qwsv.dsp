@@ -126,6 +126,10 @@ SOURCE=cvar.c
 # End Source File
 # Begin Source File
 
+SOURCE=fs.c
+# End Source File
+# Begin Source File
+
 SOURCE=mathlib.c
 # End Source File
 # Begin Source File
@@ -290,23 +294,11 @@ SOURCE=bspfile.h
 # End Source File
 # Begin Source File
 
-SOURCE=cdaudio.h
-# End Source File
-# Begin Source File
-
-SOURCE=client.h
-# End Source File
-# Begin Source File
-
 SOURCE=cmd.h
 # End Source File
 # Begin Source File
 
 SOURCE=common.h
-# End Source File
-# Begin Source File
-
-SOURCE=console.h
 # End Source File
 # Begin Source File
 
@@ -318,23 +310,11 @@ SOURCE=cvar.h
 # End Source File
 # Begin Source File
 
-SOURCE=d_iface.h
-# End Source File
-# Begin Source File
-
-SOURCE=draw.h
+SOURCE=fs.h
 # End Source File
 # Begin Source File
 
 SOURCE=g_public.h
-# End Source File
-# Begin Source File
-
-SOURCE=input.h
-# End Source File
-# Begin Source File
-
-SOURCE=keys.h
 # End Source File
 # Begin Source File
 
@@ -347,10 +327,6 @@ SOURCE=mathlib.h
 # Begin Source File
 
 SOURCE=mdfour.h
-# End Source File
-# Begin Source File
-
-SOURCE=menu.h
 # End Source File
 # Begin Source File
 
@@ -394,15 +370,11 @@ SOURCE=protocol.h
 # End Source File
 # Begin Source File
 
-SOURCE=quakedef.h
+SOURCE=quakeasm.h
 # End Source File
 # Begin Source File
 
 SOURCE=qwsvdef.h
-# End Source File
-# Begin Source File
-
-SOURCE=render.h
 # End Source File
 # Begin Source File
 
@@ -414,19 +386,11 @@ SOURCE=sbar.h
 # End Source File
 # Begin Source File
 
-SOURCE=screen.h
-# End Source File
-# Begin Source File
-
 SOURCE=server.h
 # End Source File
 # Begin Source File
 
 SOURCE=sha1.h
-# End Source File
-# Begin Source File
-
-SOURCE=sound.h
 # End Source File
 # Begin Source File
 
@@ -447,18 +411,6 @@ SOURCE=sys.h
 # Begin Source File
 
 SOURCE=version.h
-# End Source File
-# Begin Source File
-
-SOURCE=vid.h
-# End Source File
-# Begin Source File
-
-SOURCE=view.h
-# End Source File
-# Begin Source File
-
-SOURCE=wad.h
 # End Source File
 # Begin Source File
 
