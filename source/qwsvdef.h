@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: qwsvdef.h,v 1.14 2006/05/23 14:47:54 vvd0 Exp $
+    $Id: qwsvdef.h,v 1.15 2006/05/24 00:29:58 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bspfile.h"
 #include "sys.h"
 #include "zone.h"
+#include "fs.h"
 #include "mathlib.h"
 
 #include "cvar.h"

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: common.h,v 1.18 2006/05/23 14:47:54 vvd0 Exp $
+    1$Id: common.h,v 1.19 2006/05/24 00:29:58 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -64,8 +64,8 @@ void MSG_WriteAngle (sizebuf_t *sb, float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, float f);
 void MSG_WriteDeltaUsercmd (sizebuf_t *sb, struct usercmd_s *from, struct usercmd_s *cmd);
 
-extern	int		msg_readcount;
-extern	qbool	msg_badread; // set if a read goes beyond end of message
+extern int msg_readcount;
+extern qbool msg_badread; // set if a read goes beyond end of message
 
 void MSG_BeginReading (void);
 int MSG_GetReadCount(void);
@@ -84,47 +84,25 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 //============================================================================
 
-char	*Q_normalizetext(unsigned char *name); //bliP: red to white text
-char	*Q_redtext(unsigned char *str); //bliP: white to red text
-char	*Q_yelltext(unsigned char *str); //VVD: white to red text and yellow numbers
+char *Q_normalizetext(unsigned char *name); //bliP: red to white text
+char *Q_redtext(unsigned char *str); //bliP: white to red text
+char *Q_yelltext(unsigned char *str); //VVD: white to red text and yellow numbers
 
 //============================================================================
 
 #define MAX_COM_TOKEN	1024
-extern	char com_token[MAX_COM_TOKEN];
+extern char com_token[MAX_COM_TOKEN];
 
 char *COM_Parse (char *data);
 
-
-extern	int	com_argc;
-extern	char	**com_argv;
+extern int com_argc;
+extern char **com_argv;
 
 int COM_CheckParm (char *parm);
 
-void COM_Init (void);
 void COM_InitArgv (int argc, char **argv);
 
-void COM_FileBase (char *in, char *out);
-int COM_FileLength (FILE *f); //bliP: init
-
-
 //============================================================================
-
-extern int com_filesize;
-struct cache_user_s;
-
-extern char	com_gamedir[MAX_OSPATH];
-extern char	com_basedir[MAX_OSPATH];
-
-void COM_WriteFile (char *filename, void *data, int len);
-int COM_FOpenFile (char *filename, FILE **file);
-
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
-byte *COM_LoadTempFile (char *path);
-byte *COM_LoadHunkFile (char *path);
-void COM_CreatePath (char *path);
-char *COM_NextPath (char *prevpath);
-void COM_Gamedir (char *dir);
 
 char *Info_ValueForKey (char *s, char *key);
 char *Info_KeyNameForKeyNum (char *s, int key);
@@ -136,6 +114,6 @@ void Info_Print (char *s);
 void Info_CopyStarKeys (char *from, char *to);
 
 unsigned Com_BlockChecksum (void *buffer, int length);
-byte	COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
+byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 
 #endif //__COMMON_H__

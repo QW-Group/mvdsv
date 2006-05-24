@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.32 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.33 2006/05/24 00:29:58 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1697,14 +1697,13 @@ SV_Gamedir_f
 Sets the gamedir and path to a different directory.
 ================
 */
-char	gamedirfile[MAX_OSPATH];
 void SV_Gamedir_f (void)
 {
 	char			*dir;
 
 	if (Cmd_Argc() == 1)
 	{
-		Con_Printf ("Current gamedir: %s\n", com_gamedir);
+		Con_Printf ("Current gamedir: %s\n", fs_gamedir);
 		return;
 	}
 
@@ -1753,14 +1752,14 @@ void SV_Snap (int uid)
 		return;
 	}
 
-	COM_CreatePath (va("%s/snap/", com_gamedir));
+	COM_CreatePath (va("%s/snap/", fs_gamedir));
 	snprintf(pcxname, sizeof(pcxname), "%d-00.pcx", uid);
 
 	for (i=0 ; i<=99 ; i++)
 	{
 		pcxname[strlen(pcxname) - 6] = i/10 + '0';
 		pcxname[strlen(pcxname) - 5] = i%10 + '0';
-		snprintf (checkname, MAX_OSPATH, "%s/snap/%s", com_gamedir, pcxname);
+		snprintf (checkname, MAX_OSPATH, "%s/snap/%s", fs_gamedir, pcxname);
 		f = fopen (checkname, "rb");
 		if (!f)
 			break; // file doesn't exist

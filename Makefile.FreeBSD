@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.26 2006/05/02 20:19:18 disconn3ct Exp $
+#	$Id: Makefile.FreeBSD,v 1.27 2006/05/24 00:30:28 disconn3ct Exp $
 #
 
 CC=gcc
@@ -70,6 +70,7 @@ SV_OBJS = \
 		${SV_DIR}/common.o \
 		${SV_DIR}/crc.o \
 		${SV_DIR}/cvar.o \
+		${SV_DIR}/fs.o \
 		${SV_DIR}/mathlib.o \
 		${SV_DIR}/mdfour.o \
 		${SV_DIR}/net_chan.o \

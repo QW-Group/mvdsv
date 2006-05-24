@@ -250,6 +250,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\fs.c">
+			</File>
+			<File
 				RelativePath="mathlib.c">
 				<FileConfiguration
 					Name="Release|Win32">
@@ -288,7 +291,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="net_chan.c">
+				RelativePath="net.c">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -307,7 +310,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="net.c">
+				RelativePath="net_chan.c">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool

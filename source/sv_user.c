@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.55 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: sv_user.c,v 1.56 2006/05/24 00:29:58 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1197,7 +1197,7 @@ static void SV_BeginDownload_f(void)
 		{
 			if (developer.value)
 				Sys_Printf ("FindFile: %s\n", name);
-			host_client->downloadsize = COM_FileLength (host_client->download);
+			host_client->downloadsize = FS_FileLength (host_client->download);
 		}
 	}
 	else

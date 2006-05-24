@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.15 2006/04/30 11:27:14 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.16 2006/05/24 00:29:58 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -327,7 +327,7 @@ qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	Info_SetValueForStarKey( localinfo, "*qvm", "QVM", MAX_LOCALINFO_STRING );
 	//	Info_SetValueForStarKey( svs.info, "*qvm", "QVM", MAX_SERVERINFO_STRING );
 
-	snprintf( num, sizeof(num), "%i", CRC_Block( ( byte * ) buff, com_filesize ) );
+	snprintf( num, sizeof(num), "%i", CRC_Block( ( byte * ) buff, fs_filesize ) );
 	Info_SetValueForStarKey( svs.info, "*progs", num, MAX_SERVERINFO_STRING );
 
 	header = ( vmHeader_t * ) buff;
