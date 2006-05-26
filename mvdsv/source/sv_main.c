@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.63 2006/05/24 11:47:16 vvd0 Exp $
+	$Id: sv_main.c,v 1.64 2006/05/26 15:26:12 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -2828,7 +2828,7 @@ qbool OnChange_sysselecttimeout_var (cvar_t *var, char *value)
 #endif
 		return false;
 	}
-	Sys_Printf("WARNING: sys_select_timeout can't be less then 10 (10 microseconds) and more then 1 000 000 (1 second).\n");
+	Con_Printf("WARNING: sys_select_timeout can't be less then 10 (10 microseconds) and more then 1 000 000 (1 second).\n");
 	return true;
 }
 //bliP: 24/9 logdir ->
