@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: init.c,v 1.12 2006/05/26 14:39:28 disconn3ct Exp $
+    $Id: init.c,v 1.13 2006/05/26 14:51:09 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -197,31 +197,31 @@ int  whatToStdout = 0;
 #endif
 param_t params[] =
 	{
-		{"-qizmo_dir",			"-qd",	TYPE_S, (char *) qizmoDir},
-		{"-output_dir",			"-od",	TYPE_S, (char *) outputDir},
-		{"-output",				"-o",	TYPE_S, (char *) sworld.demo.name},
-		{"-debug_file",			NULL,	TYPE_S, (char *) sworld.debug.name},
-		{"-log_file",			NULL,	TYPE_S, (char *) sworld.log.name},
-		{"-fps",				NULL,	TYPE_I, (char *) &sworld.fps},
-		{"-filter_spectalk",	"-fs",	TYPE_O, (char *) O_FS},
-		{"-filter_qizmotalk",	"-fq",	TYPE_O, (char *) O_FQ},
-		{"-filter_chats",		"-fc",	TYPE_O, (char *) O_FC},
-		{"-filter_teamchats",	"-ft",	TYPE_O, (char *) O_FT},
-		{"-convert",			"-c",	TYPE_O, (char *) O_CONVERT},
-		{"-analyse",			"-a",	TYPE_O, (char *) O_ANALYSE},
-		{"-log",				NULL,	TYPE_O, (char *) O_LOG},
-		{"-debug",				NULL,	TYPE_O, (char *) O_DEBUG},
+		{"-qizmo_dir",			"-qd",	TYPE_S, {(char *) qizmoDir}},
+		{"-output_dir",			"-od",	TYPE_S, {(char *) outputDir}},
+		{"-output",				"-o",	TYPE_S, {(char *) sworld.demo.name}},
+		{"-debug_file",			NULL,	TYPE_S, {(char *) sworld.debug.name}},
+		{"-log_file",			NULL,	TYPE_S, {(char *) sworld.log.name}},
+		{"-fps",				NULL,	TYPE_I, {(char *) &sworld.fps}},
+		{"-filter_spectalk",	"-fs",	TYPE_O, {(char *) O_FS}},
+		{"-filter_qizmotalk",	"-fq",	TYPE_O, {(char *) O_FQ}},
+		{"-filter_chats",		"-fc",	TYPE_O, {(char *) O_FC}},
+		{"-filter_teamchats",	"-ft",	TYPE_O, {(char *) O_FT}},
+		{"-convert",			"-c",	TYPE_O, {(char *) O_CONVERT}},
+		{"-analyse",			"-a",	TYPE_O, {(char *) O_ANALYSE}},
+		{"-log",				NULL,	TYPE_O, {(char *) O_LOG}},
+		{"-debug",				NULL,	TYPE_O, {(char *) O_DEBUG}},
 #ifdef _WIN32
-		{"-waitforkbhit",		"-wait",TYPE_O, (char *) O_WAITFORKBHIT},
+		{"-waitforkbhit",		"-wait",TYPE_O, {(char *) O_WAITFORKBHIT}},
 #endif
-		{"-stdin",				NULL,	(type_t) (TYPE_O | TYPE_S), (char *) stdintype, (int) O_STDIN},
-		{"-stdout",				NULL,	TYPE_O, (char *) O_STDOUT},
+		{"-stdin",				NULL,	(type_t) (TYPE_O | TYPE_S), {(char *) stdintype}, (int) O_STDIN},
+		{"-stdout",				NULL,	TYPE_O, {(char *) O_STDOUT}},
 		{"-noini"},
-		{"-base_dir",			"-bd",	TYPE_S, (char *) currentDir},
-		{"-msglevel",			"-msg",	TYPE_I, (char *) &sworld.msglevel},
-		{"-marge",				"-m",	TYPE_O, (char *) O_MARGE},
-		{"-range",				"-r",	TYPE_I, (char *) &sworld.range},
-		NULL
+		{"-base_dir",			"-bd",	TYPE_S, {(char *) currentDir}},
+		{"-msglevel",			"-msg",	TYPE_I, {(char *) &sworld.msglevel}},
+		{"-marge",				"-m",	TYPE_O, {(char *) O_MARGE}},
+		{"-range",				"-r",	TYPE_I, {(char *) &sworld.range}},
+		{NULL}
 	};
 
 #ifdef _WIN32
