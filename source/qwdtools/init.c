@@ -1,21 +1,20 @@
 /*
- 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: init.c,v 1.11 2006/04/28 17:16:19 vvd0 Exp $
+
+    $Id: init.c,v 1.12 2006/05/26 14:39:28 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -72,26 +71,26 @@ BOOL WINAPI CtrlC( DWORD dwCtrlType )
 {
 	switch (dwCtrlType)
 	{
-	case CTRL_C_EVENT:
-		if (sworld.options |= O_SHUTDOWN)
-			exit(3);
+			case CTRL_C_EVENT:
+			if (sworld.options |= O_SHUTDOWN)
+				exit(3);
 
-		Sys_Printf("Shutting down...\n");
-		if (sworld.options & O_WAITFORKBHIT)
-			SetConsoleTitle("qwdtools  ctrl-c issued");
+			Sys_Printf("Shutting down...\n");
+			if (sworld.options & O_WAITFORKBHIT)
+				SetConsoleTitle("qwdtools  ctrl-c issued");
 
-		sworld.options |= O_SHUTDOWN;
-		return true;
-	case CTRL_BREAK_EVENT:
-		if (sworld.options |= O_SHUTDOWN)
-			exit(3);
+			sworld.options |= O_SHUTDOWN;
+			return true;
+			case CTRL_BREAK_EVENT:
+			if (sworld.options |= O_SHUTDOWN)
+				exit(3);
 
-		Sys_Printf("Shutting down...\n");
-		if (sworld.options & O_WAITFORKBHIT)
-			SetConsoleTitle("qwdtools  ctrl-break issued");
+			Sys_Printf("Shutting down...\n");
+			if (sworld.options & O_WAITFORKBHIT)
+				SetConsoleTitle("qwdtools  ctrl-break issued");
 
-		sworld.options |= O_SHUTDOWN;
-		return true;
+			sworld.options |= O_SHUTDOWN;
+			return true;
 	}
 
 	return false;
@@ -184,7 +183,7 @@ void World_Init(void)
 /*
 ===================
 ParseArgv
- 
+
 Parse cmdline options
 ===================
 */
@@ -197,33 +196,34 @@ int  whatToStdout = 0;
 #pragma warning( disable : 4133 4047)
 #endif
 param_t params[] =
-    {
-        {"-qizmo_dir",		"-qd",	TYPE_S,	qizmoDir},
-        {"-output_dir",		"-od",	TYPE_S,	outputDir},
-        {"-output",		"-o",	TYPE_S,	sworld.demo.name},
-        {"-debug_file",		NULL,	TYPE_S,	sworld.debug.name},
-        {"-log_file",		NULL,	TYPE_S,	sworld.log.name},
-        {"-fps",		NULL,	TYPE_I,	&sworld.fps},
-        {"-filter_spectalk",	"-fs",	TYPE_O, O_FS},
-        {"-filter_qizmotalk",	"-fq",	TYPE_O,	O_FQ},
-        {"-filter_chats",	"-fc",	TYPE_O,	O_FC},
-        {"-filter_teamchats",	"-ft",	TYPE_O,	O_FT},
-        {"-convert",		"-c",	TYPE_O,	O_CONVERT},
-        {"-analyse",		"-a",	TYPE_O,	O_ANALYSE},
-        {"-log",		NULL,	TYPE_O,	O_LOG},
-        {"-debug",		NULL,	TYPE_O,	O_DEBUG},
+	{
+		{"-qizmo_dir",			"-qd",	TYPE_S, (char *) qizmoDir},
+		{"-output_dir",			"-od",	TYPE_S, (char *) outputDir},
+		{"-output",				"-o",	TYPE_S, (char *) sworld.demo.name},
+		{"-debug_file",			NULL,	TYPE_S, (char *) sworld.debug.name},
+		{"-log_file",			NULL,	TYPE_S, (char *) sworld.log.name},
+		{"-fps",				NULL,	TYPE_I, (char *) &sworld.fps},
+		{"-filter_spectalk",	"-fs",	TYPE_O, (char *) O_FS},
+		{"-filter_qizmotalk",	"-fq",	TYPE_O, (char *) O_FQ},
+		{"-filter_chats",		"-fc",	TYPE_O, (char *) O_FC},
+		{"-filter_teamchats",	"-ft",	TYPE_O, (char *) O_FT},
+		{"-convert",			"-c",	TYPE_O, (char *) O_CONVERT},
+		{"-analyse",			"-a",	TYPE_O, (char *) O_ANALYSE},
+		{"-log",				NULL,	TYPE_O, (char *) O_LOG},
+		{"-debug",				NULL,	TYPE_O, (char *) O_DEBUG},
 #ifdef _WIN32
-        {"-waitforkbhit",	"-wait",TYPE_O,	O_WAITFORKBHIT},
+		{"-waitforkbhit",		"-wait",TYPE_O, (char *) O_WAITFORKBHIT},
 #endif
-        {"-stdin",		NULL,	TYPE_O | TYPE_S, stdintype, O_STDIN},
-        {"-stdout",		NULL,	TYPE_O,	O_STDOUT},
-        {"-noini"},
-        {"-base_dir",		"-bd",	TYPE_S,	currentDir},
-        {"-msglevel",		"-msg",	TYPE_I,	&sworld.msglevel},
-        {"-marge",		"-m",	TYPE_O,	O_MARGE},
-        {"-range",		"-r",	TYPE_I,	&sworld.range},
-        NULL
-    };
+		{"-stdin",				NULL,	(type_t) (TYPE_O | TYPE_S), (char *) stdintype, (int) O_STDIN},
+		{"-stdout",				NULL,	TYPE_O, (char *) O_STDOUT},
+		{"-noini"},
+		{"-base_dir",			"-bd",	TYPE_S, (char *) currentDir},
+		{"-msglevel",			"-msg",	TYPE_I, (char *) &sworld.msglevel},
+		{"-marge",				"-m",	TYPE_O, (char *) O_MARGE},
+		{"-range",				"-r",	TYPE_I, (char *) &sworld.range},
+		NULL
+	};
+
 #ifdef _WIN32
 #pragma warning( default : 4133 4047)
 #endif

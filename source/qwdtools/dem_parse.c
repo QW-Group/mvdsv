@@ -16,90 +16,90 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_parse.c,v 1.10 2006/05/02 14:13:51 disconn3ct Exp $
+    $Id: dem_parse.c,v 1.11 2006/05/26 14:39:28 disconn3ct Exp $
 */
 // cl_parse.c  -- parse a message received from the server
 
 #include "defs.h"
 
 char *svc_strings[] =
-    {
-        "svc_bad",
-        "svc_nop",
-        "svc_disconnect",
-        "svc_updatestat",
-        "svc_version",		// [long] server version
-        "svc_setview",		// [short] entity number
-        "svc_sound",		// <see code>
-        "svc_time",		// [float] server time
-        "svc_print",		// [string] null terminated string
-        "svc_stufftext",	// [string] stuffed into client's console buffer
-        // the string should be \n terminated
-        "svc_setangle",		// [vec3] set the view angle to this absolute value
+	{
+		"svc_bad",
+		"svc_nop",
+		"svc_disconnect",
+		"svc_updatestat",
+		"svc_version",		// [long] server version
+		"svc_setview",		// [short] entity number
+		"svc_sound",		// <see code>
+		"svc_time",		// [float] server time
+		"svc_print",		// [string] null terminated string
+		"svc_stufftext",	// [string] stuffed into client's console buffer
+		// the string should be \n terminated
+		"svc_setangle",		// [vec3] set the view angle to this absolute value
 
-        "svc_serverdata",	// [long] version ...
-        "svc_lightstyle",	// [byte] [string]
-        "svc_updatename",	// [byte] [string]
-        "svc_updatefrags",	// [byte] [short]
-        "svc_clientdata",	// <shortbits + data>
-        "svc_stopsound",	// <see code>
-        "svc_updatecolors",	// [byte] [byte]
-        "svc_particle",		// [vec3] <variable>
-        "svc_damage",		// [byte] impact [byte] blood [vec3] from
+		"svc_serverdata",	// [long] version ...
+		"svc_lightstyle",	// [byte] [string]
+		"svc_updatename",	// [byte] [string]
+		"svc_updatefrags",	// [byte] [short]
+		"svc_clientdata",	// <shortbits + data>
+		"svc_stopsound",	// <see code>
+		"svc_updatecolors",	// [byte] [byte]
+		"svc_particle",		// [vec3] <variable>
+		"svc_damage",		// [byte] impact [byte] blood [vec3] from
 
-        "svc_spawnstatic",
-        "OBSOLETE svc_spawnbinary",
-        "svc_spawnbaseline",
+		"svc_spawnstatic",
+		"OBSOLETE svc_spawnbinary",
+		"svc_spawnbaseline",
 
-        "svc_temp_entity",	// <variable>
-        "svc_setpause",
-        "svc_signonnum",
-        "svc_centerprint",
-        "svc_killedmonster",
-        "svc_foundsecret",
-        "svc_spawnstaticsound",
-        "svc_intermission",
-        "svc_finale",
+		"svc_temp_entity",	// <variable>
+		"svc_setpause",
+		"svc_signonnum",
+		"svc_centerprint",
+		"svc_killedmonster",
+		"svc_foundsecret",
+		"svc_spawnstaticsound",
+		"svc_intermission",
+		"svc_finale",
 
-        "svc_cdtrack",
-        "svc_sellscreen",
+		"svc_cdtrack",
+		"svc_sellscreen",
 
-        "svc_smallkick",
-        "svc_bigkick",
+		"svc_smallkick",
+		"svc_bigkick",
 
-        "svc_updateping",
-        "svc_updateentertime",
+		"svc_updateping",
+		"svc_updateentertime",
 
-        "svc_updatestatlong",
-        "svc_muzzleflash",
-        "svc_updateuserinfo",
-        "svc_download",
-        "svc_playerinfo",
-        "svc_nails",
-        "svc_choke",
-        "svc_modellist",
-        "svc_soundlist",
-        "svc_packetentities",
-        "svc_deltapacketentities",
-        "svc_maxspeed",
-        "svc_entgravity",
+		"svc_updatestatlong",
+		"svc_muzzleflash",
+		"svc_updateuserinfo",
+		"svc_download",
+		"svc_playerinfo",
+		"svc_nails",
+		"svc_choke",
+		"svc_modellist",
+		"svc_soundlist",
+		"svc_packetentities",
+		"svc_deltapacketentities",
+		"svc_maxspeed",
+		"svc_entgravity",
 
-        "svc_setinfo",
-        "svc_serverinfo",
-        "svc_updatepl",
-        "svc_nails2",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL",
-        "NEW PROTOCOL"
+		"svc_setinfo",
+		"svc_serverinfo",
+		"svc_updatepl",
+		"svc_nails2",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL",
+		"NEW PROTOCOL"
     };
 
 #define	svc_qizmomsg	83		// qizmo voice message
@@ -115,7 +115,7 @@ projectile_t cl_projectiles[MAX_PROJECTILES];
 
 //=============================================================================
 
-int	msg_startcount;
+int msg_startcount;
 //double parsecounttime;
 
 int To(void)
@@ -156,9 +156,9 @@ void Dem_ParseDownload (void)
 
 /*
 =====================================================================
- 
+
   SERVER CONNECTING MESSAGES
- 
+
 =====================================================================
 */
 
@@ -295,9 +295,9 @@ void Dem_Parselist (byte type)
 
 /*
 =====================================================================
- 
+
 ACTION MESSAGES
- 
+
 =====================================================================
 */
 
@@ -366,7 +366,7 @@ void Dem_ParseStartSoundPacket(void)
 /*
 ==================
 Dem_ParseClientdata
- 
+
 Server information pertaining to this client only, sent every frame
 ==================
 */
@@ -423,8 +423,8 @@ void Dem_ParseClientdata (void)
 
 /*
 ====================
-SV_CleanName_Init
- 
+CleanName_Init
+
 sets chararcter table to translate quake texts to more friendly texts
 ====================
 */
@@ -481,7 +481,7 @@ void CleanName_Init ()
 
 char *CleanName (unsigned char *name)
 {
-	unsigned char *out;
+	char *out;
 	static char text[2048];
 
 	out = text;
@@ -562,7 +562,7 @@ void Dem_ParsePrint (void)
 
 	if (sworld.options & O_LOG)
 	{
-		strlcat(logbuf, CleanName(s), sizeof(logbuf));
+		strlcat(logbuf, CleanName((unsigned char *) s), sizeof(logbuf)); //FIXME
 		if (logbuf[strlen(logbuf)-1] == '\n')
 		{
 			char *p = logbuf;
@@ -633,14 +633,14 @@ void Dem_UpdateUserinfo (void)
 /*
 ==================
 Dem_ParseDelta
- 
+
 Can go from either a baseline or a previous packet_entity
 ==================
 */
-int	bitcounts[32];	/// just for protocol profiling
+int	bitcounts[32]; // just for protocol profiling
 void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 {
-	int			i;
+	int i;
 
 	// set everything to the state we are delta'ing from
 	*eto = *efrom;
@@ -649,7 +649,8 @@ void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 	bits &= ~511;
 
 	if (bits & U_MOREBITS)
-	{	// read in the low order bits
+	{
+		// read in the low order bits
 		i = MSG_ReadByte ();
 		bits |= i;
 	}
@@ -708,8 +709,8 @@ FlushEntityPacket
 
 void FlushEntityPacket (void)
 {
-	int			word;
-	entity_state_t	olde, newe;
+	int word;
+	entity_state_t olde, newe;
 
 	memset (&olde, 0, sizeof(olde));
 
@@ -738,7 +739,7 @@ void FlushEntityPacket (void)
 /*
 ==================
 Dem_ParsePacketEntities
- 
+
 An svc_packetentities has just been parsed, deal with the
 rest of the data stream.
 ==================
@@ -750,7 +751,7 @@ void Dem_ParsePacketEntities (qbool delta)
 	packet_entities_t	*oldp, *newp, dummy;
 	int			oldindex, newindex;
 	int			word, newnum, oldnum;
-	qbool	full;
+	qbool		full;
 	byte		deltafrom;
 
 	newpacket = from->netchan.incoming_sequence&UPDATE_MASK;
@@ -1091,7 +1092,7 @@ void Dem_ParsePlayerinfo (void)
 /*
 =====================
 Dem_ParseProjectiles
- 
+
 Nails are passed as efficient temporary entities
 =====================
 */
@@ -1195,7 +1196,7 @@ void Dem_ParseBaseline (entity_state_t *es)
 Dem_ParseServerMessage
 =====================
 */
-int	received_framecount;
+int received_framecount;
 void Dem_ParseDemoMessage (void)
 {
 	int			cmd = 0, oldcmd;

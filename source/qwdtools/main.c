@@ -1,21 +1,20 @@
 /*
- 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: main.c,v 1.15 2006/05/23 14:47:54 vvd0 Exp $
+
+    $Id: main.c,v 1.16 2006/05/26 14:39:28 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -550,7 +549,7 @@ void CheckSpectator (void)
 			continue;
 
 		for (j = 0; j < 3; j++)
-			if (abs(state->command.angles[j] - self->command.angles[j]) > 0.0)
+			if (abs ((int)(state->command.angles[j] - self->command.angles[j])) > 0.0)
 			{
 				break;
 			}
@@ -826,7 +825,7 @@ void AddPlayers(frame_t *to, frame_t *frame)
 		}
 		else world.players[i].lastsource = from-sources + 1;
 
-		msec = (world.time - frame->time)*1000;
+		msec = ((int) (world.time - frame->time)) * 1000;
 		if (msec > 100) msec = 100;
 		else if (msec < -100) msec = -100;
 
