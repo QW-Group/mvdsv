@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.33 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.34 2006/05/26 13:14:19 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1289,14 +1289,14 @@ void SV_Check_localinfo_maps_support(void)
 	if ((k_version < LOCALINFO_MAPS_KTPRO_VERSION || k_build < LOCALINFO_MAPS_KTPRO_BUILD) &&
 		!(*x_version && *x_build))
 	{
-		Con_Printf("WARNING: Storing maps list in LOCALINFO supported only by ktpro version "
+		Con_DPrintf("WARNING: Storing maps list in LOCALINFO supported only by ktpro version "
 		           LOCALINFO_MAPS_KTPRO_VERSION_S " build %i and newer and by ktx.\n",
 		           LOCALINFO_MAPS_KTPRO_BUILD);
 		if (k_version && k_build)
-			Con_Printf("Current running ktpro version %s build %s.\n",
+			Con_DPrintf("Current running ktpro version %s build %s.\n",
 			           k_version_s, k_build_s);
 		else
-			Con_Printf("Current running mod is not ktpro and is not ktx.\n");
+			Con_DPrintf("Current running mod is not ktpro and is not ktx.\n");
 	}
 }
 /*
