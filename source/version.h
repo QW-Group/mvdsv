@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.24 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: version.h,v 1.25 2006/05/26 15:28:30 disconn3ct Exp $
 */
 // version.h
 
@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SERVER_NAME			"MVDSV"
 #define QWDTOOLS_NAME		"QWDtools"
 #define PROJECT_NAME		SERVER_NAME
-#define PROJECT_URL			"http://mvdsv.sorceforge.net"
+#define PROJECT_URL			"http://mvdsv.sourceforge.net"
 #define FULL_VERSION		SERVER_NAME " " QWE_VERSION " " QW_PLATFORM_SHORT ", build %d"
 #define BUILD_DATE			"Build date: " __DATE__ ", " __TIME__
 #define SIZEOF_FULL_VERSION	(sizeof(FULL_VERSION) + sizeof(BUILD_DATE) + sizeof(int) * 3)
