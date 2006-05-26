@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.56 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: sv_user.c,v 1.57 2006/05/26 15:27:53 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1680,8 +1680,8 @@ The client is going to disconnect, so remove the connection immediately
 static void SV_Drop_f (void)
 {
 	SV_EndRedirect ();
-	if (host_client->state == cs_zombie)
-		return;
+	if (host_client->state == cs_zombie) // FIXME
+		return; // FIXME
 	if (!host_client->spectator)
 		SV_BroadcastPrintf (PRINT_HIGH, "%s dropped\n", host_client->name);
 	SV_DropClient (host_client);
@@ -2704,8 +2704,8 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 	if (!Netchan_Process(&cl->netchan))
 		return;
-//	if (cl->state == cs_zombie)
-//		return;
+//	if (cl->state == cs_zombie) // FIXME
+//		return; // FIXME
 
 	// this is a valid, sequenced packet, so process it
 	svs.stats.packets++;
