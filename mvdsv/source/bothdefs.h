@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothdefs.h,v 1.17 2006/05/01 22:37:43 oldmanuk Exp $
+    $Id: bothdefs.h,v 1.18 2006/05/26 14:39:49 disconn3ct Exp $
 */
 
 // defs common to client and server
@@ -141,7 +141,12 @@ typedef unsigned char byte;
 // KJB Undefined true and false defined in SciTech's DEBUG.H header
 #undef true
 #undef false
-typedef enum {false, true} qbool;
+
+#ifndef __cplusplus
+typedef enum qbool_e {false, true} qbool;
+#else
+typedef bool qbool;
+#endif
 
 #define	MAX_INFO_STRING		196
 #define	MAX_SERVERINFO_STRING	512

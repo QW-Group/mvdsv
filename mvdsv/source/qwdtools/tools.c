@@ -1,21 +1,20 @@
 /*
- 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: tools.c,v 1.15 2006/05/23 14:47:54 vvd0 Exp $
+
+    $Id: tools.c,v 1.16 2006/05/26 14:39:28 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -27,7 +26,7 @@ usercmd_t nullcmd; // guarenteed to be zero
 
 //#define BUF_FULL (1<<31)
 
-sizebuf_t			*msgbuf;
+sizebuf_t	*msgbuf;
 dbuffer_t	*demobuffer;
 static int	header = (char *)&((header_t*)0)->data - (char *)NULL;
 
@@ -47,34 +46,34 @@ Handles byte ordering and avoids alignment errors
 
 void MSG_WriteChar (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
-	buf = SZ_GetSpace (sb, 1);
+	buf = (byte *) SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
 
 void MSG_WriteByte (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
-	buf = SZ_GetSpace (sb, 1);
+	buf = (byte *) SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
 
 void MSG_WriteShort (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
-	buf = SZ_GetSpace (sb, 2);
+	buf = (byte *) SZ_GetSpace (sb, 2);
 	buf[0] = c&0xff;
 	buf[1] = c>>8;
 }
 
 void MSG_WriteLong (sizebuf_t *sb, int c)
 {
-	byte	*buf;
+	byte *buf;
 
-	buf = SZ_GetSpace (sb, 4);
+	buf = (byte *) SZ_GetSpace (sb, 4);
 	buf[0] = c&0xff;
 	buf[1] = (c>>8)&0xff;
 	buf[2] = (c>>16)&0xff;
@@ -99,7 +98,7 @@ void MSG_WriteFloat (sizebuf_t *sb, float f)
 void MSG_WriteString (sizebuf_t *sb, char *s)
 {
 	if (!s)
-		SZ_Write (sb, "", 1);
+		SZ_Write (sb, (void *) "", 1);
 	else
 		SZ_Write (sb, s, strlen(s)+1);
 }
@@ -685,7 +684,7 @@ void MVDWrite_Begin(byte type, int to, int size)
 /*
 ====================
 WriteDemoMessage
- 
+
 Dumps the current net message, prefixed by the length and time
 ====================
 */
@@ -698,7 +697,7 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 	if (sworld.demo.file == NULL)
 		return;
 
-	msec = (time - prevtime)*1000;
+	msec = ((int) (time - prevtime)) * 1000;
 	prevtime += msec*0.001;
 
 	//Sys_Printf("%f %f\n", time, prevtime);

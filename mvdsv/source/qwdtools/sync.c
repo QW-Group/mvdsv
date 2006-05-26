@@ -1,21 +1,20 @@
 /*
- 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: sync.c,v 1.7 2006/05/02 14:13:51 disconn3ct Exp $
+
+    $Id: sync.c,v 1.8 2006/05/26 14:39:28 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -29,8 +28,7 @@ typedef struct
 	float	diff;
 	float	ratio;
 	qbool synced;
-}
-info_t;
+} info_t;
 
 static info_t	info[MAX_CLIENTS];
 static sizebuf_t dummy;
@@ -336,8 +334,9 @@ qbool Synchronize (void)
 
 		rewind(sworld.from[from-sources].file);
 		memset(&from->netchan, 0, sizeof(from->netchan));
-		from->latency = from->worldtime = from->prevtime = from->lastframe = from->lasttime = 0;
-		from->parsecount = 0;
+		from->latency = from->worldtime = from->lastframe = from->lasttime = 0.0; // float
+		from->prevtime = 0; // long
+		from->parsecount = 0; // int
 
 		p->running = from->running;
 		p->diff = 0;
