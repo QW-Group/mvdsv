@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.29 2006/05/23 14:47:54 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.30 2006/05/30 22:12:32 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -1555,6 +1555,11 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 		else if (!strcmp(key, "*userid"))
 		{
 			snprintf(ov, sizeof(ov), "%d", svs.clients[e1 - 1].userid);
+			value = ov;
+		}
+		else if (!strcmp(key, "*VIP")) // qqshka: also locate in userinfo, but this is more safe/secure way, imo
+		{
+			snprintf(ov, sizeof(ov), "%d", svs.clients[e1 - 1].vip);
 			value = ov;
 		}
 		else if (!strcmp(key, "*state"))
