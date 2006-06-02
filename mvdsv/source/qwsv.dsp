@@ -93,10 +93,6 @@ LINK32=link.exe
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=pcre\chartables.c
-# End Source File
-# Begin Source File
-
 SOURCE=pcre\get.c
 # End Source File
 # Begin Source File
@@ -138,11 +134,11 @@ SOURCE=mdfour.c
 # End Source File
 # Begin Source File
 
-SOURCE=net_chan.c
+SOURCE=net.c
 # End Source File
 # Begin Source File
 
-SOURCE=net.c
+SOURCE=net_chan.c
 # End Source File
 # Begin Source File
 
@@ -271,6 +267,11 @@ SOURCE=zone.c
 # Begin Group "pcre.h"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=pcre\chartables.c
+# PROP Ignore_Default_Tool 1
+# End Source File
 # Begin Source File
 
 SOURCE=pcre\config.h
