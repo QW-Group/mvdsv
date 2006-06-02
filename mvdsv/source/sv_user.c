@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.57 2006/05/26 15:27:53 disconn3ct Exp $
+	$Id: sv_user.c,v 1.58 2006/06/02 15:16:13 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1280,7 +1280,7 @@ static void SV_DemoDownload_f(void)
 	if (Cmd_Argc() < 2)
 	{
 		Con_Printf("usage: cmd dl [\\] # [# [#]]\n"
-		           "where \"#\" it is demonum from demo list and "
+		           "where \"#\" is demonum from demo list and "
 		           "\"\\\" clear download queue\n"
 		           "you can also use cmd dl ., .. or any quantity of dots "
 		           "where . is the last recorded demo, "

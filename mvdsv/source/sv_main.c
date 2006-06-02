@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.64 2006/05/26 15:26:12 vvd0 Exp $
+	$Id: sv_main.c,v 1.65 2006/06/02 15:16:13 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -2928,7 +2928,8 @@ void SV_Init (quakeparms_t *parms)
 	host_parms = *parms;
 
 	if (parms->memsize < MINIMUM_MEMORY)
-		SV_Error ("Only %4.1f megs of memory reported, can't execute game", parms->memsize / (float)0x100000);
+		SV_Error ("Only %4.1f megs of memory reported, can't execute game",
+					parms->memsize / (float)0x100000);
 
 	Memory_Init (parms->membase, parms->memsize);
 	Cbuf_Init ();
@@ -2961,7 +2962,7 @@ void SV_Init (quakeparms_t *parms)
 
 	host_initialized = true;
 
-	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));
+	Con_Printf ("%4.1f megabyte heap\n", parms->memsize / (float)0x100000);
 
 	Version_f();
 
