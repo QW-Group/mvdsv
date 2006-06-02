@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: bothdefs.h,v 1.18 2006/05/26 14:39:49 disconn3ct Exp $
+    $Id: bothdefs.h,v 1.19 2006/06/02 15:16:13 vvd0 Exp $
 */
 
 // defs common to client and server
@@ -214,4 +214,5 @@ void	*Q_malloc (size_t size);
 void	COM_StripExtension (char *in, char *out);
 char	*COM_FileExtension (char *in);
 void	COM_DefaultExtension (char *path, char *extension);
-#endif //__BOTHDEFS_H__
+
+#endif /* !__BOTHDEFS_H__ */

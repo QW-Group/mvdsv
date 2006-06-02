@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.34 2006/05/26 13:14:19 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.35 2006/06/02 15:16:13 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -229,12 +229,12 @@ void SV_ModFragLogfile_f (void)
 
 log_t	logs[MAX_LOG] =
     {
-        {NULL, "logfile",        "qconsole_", "File logging off.\n",          "console",  SV_Logfile_f, 0},
-        {NULL, "logerrors",      "qerror_",   "Error logging off.\n",         "errors",   SV_ErrorLogfile_f, 0},
-        {NULL, "logrcon",        "rcon_",     "Rcon logging off.\n",          "rcon",     SV_RconLogfile_f, 0},
-        {NULL, "logtelnet",      "qtelnet_",  "Telnet logging off.\n",        "telnet",   SV_TelnetLogfile_f, 0},
-        {NULL, "fraglogfile",    "frag_",     "Frag file logging off.\n",     "frags",    SV_FragLogfile_f, 0},
-        {NULL, "logplayers",     "player_",   "Player logging off.\n",        "players",  SV_PlayerLogfile_f, 0},//bliP: player logging
+        {NULL, "logfile",        "qconsole_", "File logging off.\n",          "console",  SV_Logfile_f,        0},
+        {NULL, "logerrors",      "qerror_",   "Error logging off.\n",         "errors",   SV_ErrorLogfile_f,   0},
+        {NULL, "logrcon",        "rcon_",     "Rcon logging off.\n",          "rcon",     SV_RconLogfile_f,    0},
+        {NULL, "logtelnet",      "qtelnet_",  "Telnet logging off.\n",        "telnet",   SV_TelnetLogfile_f,  0},
+        {NULL, "fraglogfile",    "frag_",     "Frag file logging off.\n",     "frags",    SV_FragLogfile_f,    0},
+        {NULL, "logplayers",     "player_",   "Player logging off.\n",        "players",  SV_PlayerLogfile_f,  0},//bliP: player logging
         {NULL, "modfraglogfile", "modfrag_",  "Mod frag file logging off.\n", "modfrags", SV_ModFragLogfile_f, 0}
     };
 
