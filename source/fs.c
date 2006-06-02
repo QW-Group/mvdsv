@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: fs.c,v 1.1 2006/05/24 00:30:19 disconn3ct Exp $
+    $Id: fs.c,v 1.2 2006/06/02 15:11:56 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -258,14 +258,14 @@ FS_Shutdown
 
 ================
 */
-#if 0
+/*
 void FS_Shutdown (void)
 {
 --> disconnect
 TODO: fclose all fopen'ed files && free allocated memory
 <-- disconnect
 }
-#endif
+*/
 
 
 /*
@@ -303,23 +303,22 @@ COM_FileBase
 */
 void COM_FileBase (char *in, char *out)
 {
-	char *s, *s2;
+	char *begin, *end;
+	int len;
 
-	s = in + strlen(in) - 1;
+	if (!(end = strrchr(in, '.')))
+		end = in + strlen(in);
 
-	while (s != in && *s != '.')
-		s--;
+	if (!(begin = strchr(in, '/')))
+		begin = in;
+	else
+		begin++;
 
-	for (s2 = s ; *s2 && *s2 != '/' ; s2--)
-		;
-
-	if (s-s2 < 2)
+	len = end - begin + 1;
+	if (len < 1)
 		strlcpy (out, "?model?", 8);
 	else
-	{
-		s--;
-		strlcpy (out, s2 + 1, s - s2);
-	}
+		strlcpy (out, begin, min(len, MAX_OSPATH));
 }
 
 /*
@@ -476,12 +475,13 @@ byte *COM_LoadFile (char *path, int usehunk)
 {
 	FILE *h;
 	byte *buf=NULL;
-	char base[32];
+	char base[MAX_OSPATH];
 	int len;
 	extern cvar_t sv_cpserver;
 	int l, count;
-#define READMAX 50000
 
+#define READMAX 50000
+#define READSIZE 1024
 
 	// look for it in the filesystem or pack files
 	len = fs_filesize = COM_FOpenFile (path, &h);
@@ -492,13 +492,13 @@ byte *COM_LoadFile (char *path, int usehunk)
 	COM_FileBase (path, base);
 
 	if (usehunk == 1)
-		buf = (byte *) Hunk_AllocName_f (len+1, base, false);
+		buf = (byte *) Hunk_AllocName_f (len + 1, base, false);
 	else if (usehunk == 2)
-		buf = (byte *) Hunk_TempAlloc (len+1);
+		buf = (byte *) Hunk_TempAlloc (len + 1);
 	else if (usehunk == 4)
 	{
-		if (len+1 > loadsize)
-			buf = (byte *) Hunk_TempAlloc (len+1);
+		if (len + 1 > loadsize)
+			buf = (byte *) Hunk_TempAlloc (len + 1);
 		else
 			buf = loadbuf;
 	}
@@ -515,14 +515,14 @@ byte *COM_LoadFile (char *path, int usehunk)
 
 	while (!feof(h))
 	{
-		if (l + 128 > len)
+		if (l + READSIZE > len)
 		{
-			fread(buf+l, 1, len - l, h);
+			fread(buf + l, 1, len - l, h);
 			break;
 		}
 
-		fread(buf+l, 1, 128, h);
-		l += 128;
+		fread(buf + l, 1, READSIZE, h);
+		l += READSIZE;
 		if (l - count > READMAX && (sv_cpserver.value > 0) && (sv_cpserver.value < 100))
 		{
 			Sys_Sleep((unsigned long)sv_cpserver.value);
