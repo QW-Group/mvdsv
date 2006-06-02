@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: cmd.c,v 1.19 2006/05/16 02:15:17 disconn3ct Exp $
+    $Id: cmd.c,v 1.20 2006/06/02 15:12:25 vvd0 Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -159,7 +159,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 	char	line[1024];
 	int	quotes;
 	int	cursize;
-	qbool	semicolon = false;
+	int semicolon = 0;
 
 	cbuf_current = cbuf;
 
@@ -170,21 +170,33 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 		cursize = cbuf->text_end - cbuf->text_start;
 		quotes = 0;
-		for (i=0 ; i<cursize ; i++)
+		for (i = 0; i < cursize; i++)
 		{
 			if (text[i] == '"')
 				quotes++;
 /* EXPERIMENTAL: Forbid ';' as commands separator, because ktpro didn't quote arguments
-   from admin users. Example: cmd kick "N;quit" => kick N;quit => server will exit.*/
-			if ( !(quotes&1) && text[i] == ';')
+   from admin users. Example: cmd fkick "N;quit" => kick N;quit => server will exit.*/
+			if (!(quotes & 1) && text[i] == ';')	// don't break if inside a quoted string
 			{
-				semicolon = true;
-				break;	// don't break if inside a quoted string
+				switch (semicolon)
+				{
+					case 0:
+					case 3: semicolon = 1; break;
+					case 1: semicolon = 2; break;
+					default:;
+				}
+				break;
 			}
 
 			if (text[i] == '\n')
 			{
-				semicolon = false;
+				switch (semicolon)
+				{
+					case 1:
+					case 2: semicolon = 3; break;
+					case 3: semicolon = 0; break;
+					default:;
+				}
 				break;
 			}
 		}
@@ -192,10 +204,10 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		// don't execute lines without ending \n; this fixes problems with
 		// partially stuffed aliases not being executed properly
 
-		memcpy (line, text, i);
+		memcpy(line, text, i);
 		line[i] = 0;
-		if (i > 0 && line[i-1] == '\r')
-			line[i-1] = 0;	// remove DOS ending CR
+		if (i > 0 && line[i - 1] == '\r')
+			line[i - 1] = 0;	// remove DOS ending CR
 
 		// delete the text from the command buffer and move remaining commands down
 		// this is necessary because commands (exec, alias) can insert data at the
@@ -203,7 +215,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 
 		if (i == cursize)
 		{
-			cbuf->text_start = cbuf->text_end = MAXCMDBUF/2;
+			cbuf->text_start = cbuf->text_end = MAXCMDBUF / 2;
 		}
 		else
 		{
@@ -212,7 +224,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		}
 
 		// security bugfix in ktpro
-		if (SV_Check_ktpro() && semicolon/* && strcasestr(line, "rcon_password")*/)
+		if (SV_Check_ktpro() && semicolon > 1)
 			Sys_Printf("ATTENTION: possibly tried to use ktpro's security hole, "
 						"server don't run command after ';'!\nCommand: %s\n", line);
 		else
