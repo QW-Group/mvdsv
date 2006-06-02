@@ -8,32 +8,34 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.27 2006/05/24 00:30:28 disconn3ct Exp $
+#	$Id: Makefile.FreeBSD,v 1.28 2006/06/02 15:05:13 vvd0 Exp $
 #
 
-CC=gcc
-MAINDIR!=	/bin/pwd
-SV_DIR=${MAINDIR}/source
-QWDTOOLS_DIR=${MAINDIR}/source/qwdtools
+CC				=	gcc
+#MAINDIR			!=	/bin/pwd
+#SV_DIR			=	${MAINDIR}/source
+#QWDTOOLS_DIR	=	${MAINDIR}/source/qwdtools
+SV_DIR			=	source
+QWDTOOLS_DIR	=	source/qwdtools
 
-DO_CFLAGS = 	${CFLAGS} -Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2
+DO_CFLAGS		=	${CFLAGS} -Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2
 
-.if defined(KQUEUE)
-DO_CFLAGS +=	-DKQUEUE
+.if defined(KQUEUE) && ${UNAME} == "FreeBSD"
+DO_CFLAGS		+=	-DKQUEUE
 .endif
 
 WITH_OPTIMIZED_CFLAGS = YES
 
 USE_ASM=-Did386
 .if defined(WITH_OPTIMIZED_CFLAGS)
-DO_CFLAGS +=	-O2 -s -ffast-math -funroll-loops
+DO_CFLAGS		+=	-O2 -s -ffast-math -funroll-loops
 . if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
 ASM=${USE_ASM}
-DO_CFLAGS +=	${ASM}
+DO_CFLAGS		+=	${ASM}
 . endif
 .endif
 
-LDFLAGS = -lm
+LDFLAGS			=	-lm
 
 #############################################################################
 # SERVER
@@ -82,7 +84,6 @@ SV_OBJS = \
 		${SV_DIR}/world.o \
 		${SV_DIR}/zone.o \
 \
-		${SV_DIR}/pcre/chartables.o \
 		${SV_DIR}/pcre/get.o \
 		${SV_DIR}/pcre/pcre.o
 

@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.29 2006/05/24 00:30:28 disconn3ct Exp $
+#	$Id: Makefile.Linux,v 1.30 2006/06/02 15:05:13 vvd0 Exp $
 #
 
 MAINDIR=.
@@ -87,7 +87,6 @@ SV_OBJS = \
 		$(SV_DIR)/world.o \
 		$(SV_DIR)/zone.o \
 \
-		$(SV_DIR)/pcre/chartables.o \
 		$(SV_DIR)/pcre/get.o \
 		$(SV_DIR)/pcre/pcre.o
 
