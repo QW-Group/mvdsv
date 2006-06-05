@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Zp4 /W3 /O1 /Ob0 /I "." /D "NDEBUG" /D "_CONSOLE" /FD /c
-# SUBTRACT CPP /Fr /YX
+# ADD CPP /nologo /G6 /Zp4 /W3 /O1 /Ob0 /I "." /D "NDEBUG" /D "_CONSOLE" /D "__LITTLE_ENDIAN__Q__" /Fr /FD /c
+# SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x415 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /G3 /Zp4 /W3 /GX /O1 /Ob2 /I "." /D "_DEBUG" /D "_CONSOLE" /YX /FD /c
+# ADD CPP /nologo /G6 /Zp4 /W3 /GX /ZI /Od /I "." /D "_DEBUG" /D "_CONSOLE" /D "__LITTLE_ENDIAN__Q__" /FR /YX /FD /c
 # ADD BASE RSC /l 0x415 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
