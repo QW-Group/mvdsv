@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_demo.c,v 1.44 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: sv_demo.c,v 1.45 2006/06/05 12:46:10 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -791,7 +791,7 @@ void MVD_Init (void)
 		if (p < com_argc-1)
 			size = Q_atoi (com_argv[p+1]) * 1024;
 		else
-			Sys_Error ("Memory_Init: you must specify a size in KB after -democache");
+			Sys_Error ("MVD_Init: you must specify a size in KB after -democache");
 	}
 
 	if (size < MIN_DEMO_MEMORY)

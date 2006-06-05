@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.30 2006/06/02 15:05:13 vvd0 Exp $
+#	$Id: Makefile.Linux,v 1.31 2006/06/05 12:46:10 vvd0 Exp $
 #
 
 MAINDIR=.
@@ -13,7 +13,7 @@ SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 CC=gcc
-BASE_CFLAGS=-Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2
+BASE_CFLAGS=-Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2 -D$(BYTE_ORDER)Q__
 WITH_OPTIMIZED_CFLAGS=YES
 #DEBUG_CFLAGS=$(BASE_CFLAGS) -Wsign-compare -g
 

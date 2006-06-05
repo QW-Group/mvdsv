@@ -11,11 +11,10 @@ Test Vectors (from FIPS PUB 180-1)
 A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
  
-	$Id: sha1.c,v 1.7 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: sha1.c,v 1.8 2006/06/05 12:46:10 vvd0 Exp $
 */
 
 /* #define LITTLE_ENDIAN * This should be #define'd if true. */
-/* Changed LITTLE_ENDIAN to __BIG_ENDIAN__ define checking (unification of defines) */
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
 
 #include "qwsvdef.h"
