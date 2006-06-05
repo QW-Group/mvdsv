@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.7 2006/04/30 22:33:15 oldmanuk Exp $
+	$Id: bothtools.c,v 1.8 2006/06/05 12:46:10 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -359,12 +359,12 @@ int strchrn(char* str, char c)
 ============================================================================
 */
 
-short ShortSwap (short l)
+/*short ShortSwap (short s)
 {
 	byte    b1,b2;
 
-	b1 = l&255;
-	b2 = (l>>8)&255;
+	b1 = s&255;
+	b2 = (s>>8)&255;
 
 	return (b1<<8) + b2;
 }
@@ -395,8 +395,108 @@ float FloatSwap (float f)
 	dat2.b[2] = dat1.b[1];
 	dat2.b[3] = dat1.b[0];
 	return dat2.f;
+}*/
+
+#ifndef id386
+short ShortSwap (short s)
+{
+	union
+	{
+		short	s;
+		byte	b[2];
+	} dat1, dat2;
+	dat1.s = s;
+	dat2.b[0] = dat1.b[1];
+	dat2.b[1] = dat1.b[0];
+	return dat2.s;
 }
 
+int LongSwap (int l)
+{
+	union
+	{
+		int		l;
+		byte	b[4];
+	} dat1, dat2;
+	dat1.l = l;
+	dat2.b[0] = dat1.b[3];
+	dat2.b[1] = dat1.b[2];
+	dat2.b[2] = dat1.b[1];
+	dat2.b[3] = dat1.b[0];
+	return dat2.l;
+}
+
+float FloatSwap (float f)
+{
+	union
+	{
+		float	f;
+		byte	b[4];
+	} dat1, dat2;
+	dat1.f = f;
+	dat2.b[0] = dat1.b[3];
+	dat2.b[1] = dat1.b[2];
+	dat2.b[2] = dat1.b[1];
+	dat2.b[3] = dat1.b[0];
+	return dat2.f;
+}
+#endif
+
+int LongSwapPDP2Big (int l)
+{
+	union
+	{
+		int		l;
+		byte	b[4];
+	} dat1, dat2;
+	dat1.l = l;
+	dat2.b[0] = dat1.b[1];
+	dat2.b[1] = dat1.b[0];
+	dat2.b[2] = dat1.b[3];
+	dat2.b[3] = dat1.b[2];
+	return dat2.l;
+}
+
+int LongSwapPDP2Lit (int l)
+{
+	union
+	{
+		int		l;
+		short	s[2];
+	} dat1, dat2;
+	dat1.l = l;
+	dat2.s[0] = dat1.s[1];
+	dat2.s[1] = dat1.s[0];
+	return dat2.l;
+}
+
+float FloatSwapPDP2Big (float f)
+{
+	union
+	{
+		float	f;
+		byte	b[4];
+	} dat1, dat2;
+	dat1.f = f;
+	dat2.b[0] = dat1.b[1];
+	dat2.b[1] = dat1.b[0];
+	dat2.b[2] = dat1.b[3];
+	dat2.b[3] = dat1.b[2];
+	return dat2.f;
+}
+
+float FloatSwapPDP2Lit (float f)
+{
+	union
+	{
+		float	f;
+		short	s[2];
+	} dat1, dat2;
+	dat1.f = f;
+	dat2.s[0] = dat1.s[1];
+	dat2.s[1] = dat1.s[0];
+	return dat2.f;
+}
 
 /*
 ===================

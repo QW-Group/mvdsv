@@ -1,9 +1,8 @@
 
-$Id: changes.txt,v 1.78 2006/05/24 00:34:09 disconn3ct Exp $
+$Id: changes.txt,v 1.79 2006/06/05 12:46:10 vvd0 Exp $
 
 ----
-MVDSV v0.19.23-CVS build 23?? (2006.05.??)
-[server]
+MVDSV v0.19.25-CVS build 23?? (2006.06.??)
 * disconnect <disconn3ct@users.sourceforge.net>
 - for developers: move FS-related stuff from common.c to fs.c
 - small fixes and cleanups here and there
@@ -23,12 +22,28 @@ MVDSV v0.19.23-CVS build 23?? (2006.05.??)
 - improved MacOS X/Darwin support
 
 * VVD <vvd0@users.sourceforge.net>
+- improved byte order support:
+    supported byte order:
+      little endian 1234
+      big endian 4321
+      pdp endian 3412 (middle endian?)
+    optimized byte swap functions for i386 arch, therefore no more support of i80386 -
+    require i80486 or newer (Anybody use i80386 for runing mvdsv? :-))
+    gas2masm was modified:
+      .386P changed to .486P
+      added commands bswap (require 486), movzbw, movzbl, movzwl, xchgb, xchgw, xchgl
+- added initial support of the NetBSD targets
+- bugfix from Id Software's QWSV: buffer overflow in loading files (How did it work before???)
+- improved bugfix ktpro from 0.19.20-develop: command before first ';' will be executed,
+  but other commands are ignored
 - new value in extension of connectionless command status:
   16 - add information about teams
+- bugfix from 0.19.20-develop (in "ZQuake-like minping" code): kicked client don't get any packets
+  from server and server ignore all packets from this client - for client look like network lag
 - improved OpenBSD support
 - improved sys_select_timeout with kqueue on FreeBSD
-- removed cvar sv_old_status_for_ktpro - not needed after "improved connection algorithm..."
 - improved connection algorithm: if client core dumped, then allow to reuse slot (EXPERIMENTAL)
+- removed cvar sv_old_status_for_ktpro - not needed after "improved status command output..."
 - improved status command output with ktpro in server console - always write new status
 - disabled general-protection-fault window box on Win32 if there are command line options
   "-noerrormsgbox" or "-d"
@@ -66,7 +81,7 @@ MVDSV v0.19.20-develop build 2320 (2006.04.28)
   "seems spectator is sort of hack in QW, I let qvm mods serve spectator like we do for normal player"
 (by qqshka)
 - bugfix ktpro: forbid ';' as commands separator if mod is ktpro, because it don't quote arguments
-  from admin users; example: cmd kick "X;quit" => kick X;quit => server will exit (EXPERIMENTAL)
+  from admin users; example: cmd fkick "X;quit" => kick X;quit => server will exit (EXPERIMENTAL)
 - returned back sys_select_timeout:
   MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
   (else can occur packets lost if sv_minping > 0)

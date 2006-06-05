@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: bothdefs.h,v 1.19 2006/06/02 15:16:13 vvd0 Exp $
+    $Id: bothdefs.h,v 1.20 2006/06/05 12:46:10 vvd0 Exp $
 */
 
 // defs common to client and server
@@ -24,11 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __BOTHDEFS_H__
 #define __BOTHDEFS_H__
 
-#ifdef _BIG_ENDIAN
-#ifndef __BIG_ENDIAN__
-#define __BIG_ENDIAN__
-#endif
-#endif
 
 #define	MSG_BUF_SIZE	8192
 
@@ -161,24 +156,41 @@ typedef bool qbool;
 
 //============================================================================
 
-short	ShortSwap (short l);
+short	ShortSwap (short s);
 int		LongSwap (int l);
 float	FloatSwap (float f);
+int		LongSwapPDP2Big (int l);
+int		LongSwapPDP2Lit (int l);
+float	FloatSwapPDP2Big (float f);
+float	FloatSwapPDP2Lit (float f);
 
-#ifdef __BIG_ENDIAN__
-#define BigShort(x) (x)
-#define BigLong(x) (x)
-#define BigFloat(x) (x)
-#define LittleShort(x) ShortSwap(x)
-#define LittleLong(x) LongSwap(x)
-#define LittleFloat(x) FloatSwap(x)
+#ifdef __BIG_ENDIAN__Q__
+#define BigShort(x)		(x)
+#define BigLong(x)		(x)
+#define BigFloat(x)		(x)
+#define LittleShort(x)	ShortSwap(x)
+#define LittleLong(x)	LongSwap(x)
+#define LittleFloat(x)	FloatSwap(x)
 #else
-#define BigShort(x) ShortSwap(x)
-#define BigLong(x) LongSwap(x)
-#define BigFloat(x) FloatSwap(x)
-#define LittleShort(x) (x)
-#define LittleLong(x) (x)
-#define LittleFloat(x) (x)
+#ifdef __LITTLE_ENDIAN__Q__
+#define BigShort(x)		ShortSwap(x)
+#define BigLong(x)		LongSwap(x)
+#define BigFloat(x)		FloatSwap(x)
+#define LittleShort(x)	(x)
+#define LittleLong(x)	(x)
+#define LittleFloat(x)	(x)
+#else
+#ifdef __PDP_ENDIAN__Q__
+#define BigShort(x)		ShortSwap(x)
+#define BigLong(x)		LongSwapPDP2Big(x)
+#define BigFloat(x)		FloatSwapPDP2Big(x)
+#define LittleShort(x)	(x)
+#define LittleLong(x)	LongSwapPDP2Lit(x)
+#define LittleFloat(x)	FloatSwapPDP2Lit(x)
+#else
+#error Unknown byte order type!
+#endif
+#endif
 #endif
 
 //============================================================================

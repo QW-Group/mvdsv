@@ -8,17 +8,16 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.28 2006/06/02 15:05:13 vvd0 Exp $
+#	$Id: Makefile.FreeBSD,v 1.29 2006/06/05 12:46:10 vvd0 Exp $
 #
 
 CC				=	gcc
 #MAINDIR			!=	/bin/pwd
-#SV_DIR			=	${MAINDIR}/source
-#QWDTOOLS_DIR	=	${MAINDIR}/source/qwdtools
-SV_DIR			=	source
-QWDTOOLS_DIR	=	source/qwdtools
+MAINDIR			=	.
+SV_DIR			=	${MAINDIR}/source
+QWDTOOLS_DIR	=	${MAINDIR}/source/qwdtools
 
-DO_CFLAGS		=	${CFLAGS} -Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2
+DO_CFLAGS		=	${CFLAGS} -Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2 -D${BYTE_ORDER}Q__
 
 .if defined(KQUEUE) && ${UNAME} == "FreeBSD"
 DO_CFLAGS		+=	-DKQUEUE
