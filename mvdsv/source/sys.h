@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.11 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: sys.h,v 1.12 2006/06/07 14:07:47 disconn3ct Exp $
 */
 // sys.h -- non-portable functions
 
@@ -63,7 +63,7 @@ int		Sys_compare_by_name (const void *a, const void *b);
 #define SORT_BY_DATE	1
 #define SORT_BY_NAME	2
 
-#if defined(__FreeBSD__) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 	extern struct timespec select_timeout;
 #else
 	extern struct timeval  select_timeout;
