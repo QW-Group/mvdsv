@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: qwsvdef.h,v 1.17 2006/06/07 13:57:42 disconn3ct Exp $
+    $Id: qwsvdef.h,v 1.18 2006/06/07 14:07:47 disconn3ct Exp $
 */
 // qwsvdef.h -- primary header for server
 
@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <limits.h>
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
-#if defined(__FreeBSD__) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 #include <sys/types.h>
 #include <sys/event.h>
 #endif

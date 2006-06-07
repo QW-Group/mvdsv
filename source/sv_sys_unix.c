@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.40 2006/06/07 13:57:42 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.41 2006/06/07 14:07:47 disconn3ct Exp $
 */
 
 #include <dlfcn.h>
@@ -298,7 +298,7 @@ double Sys_DoubleTime (void)
 	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
 }
 
-#if defined(__FreeBSD__) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 static const struct timespec zerotime = { 0, 0 };
 static int kq;
 static struct kevent kevs[4];
@@ -480,7 +480,7 @@ void Sys_Init (void)
 }
 
 inline void Sys_Telnet (void);
-#if defined(__FreeBSD__) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 struct timespec select_timeout;
 void Sys_NET_Init()
 {
@@ -671,7 +671,7 @@ inline void Sys_Telnet (void)
 			cur_time_not_auth = realtime;
 			SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
 			send (telnet_iosock, "# ", 2, 0);
-#if defined(__FreeBSD__) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 			EV_SET(&kevs[3], (intptr_t) telnet_iosock, EVFILT_READ, EV_ADD, 0, 0, 0);
 			if (kevent(kq, &kevs[3], 1, NULL, 0, &zerotime) == -1)
 				SV_Error("IO_Engine_Init: kevent() failed");

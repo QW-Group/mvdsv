@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.66 2006/06/07 12:59:06 qqshka Exp $
+	$Id: sv_main.c,v 1.67 2006/06/07 14:07:47 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -2834,7 +2834,7 @@ qbool OnChange_sysselecttimeout_var (cvar_t *var, char *value)
 	if (t <= 1000000 && t >= 10)
 	{
 		select_timeout.tv_sec  =  t / 1000000;
-#if defined(__FreeBSD__) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 		select_timeout.tv_nsec = (t - select_timeout.tv_sec) * 1000;
 #else
 		select_timeout.tv_usec =  t - select_timeout.tv_sec;
