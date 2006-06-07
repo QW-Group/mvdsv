@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.27 2006/06/05 12:46:10 vvd0 Exp $
+	$Id: version.h,v 1.28 2006/06/07 13:57:42 disconn3ct Exp $
 */
 // version.h
 
@@ -42,6 +42,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef __NetBSD__
 #define QW_PLATFORM			"NetBSD"
 #define QW_PLATFORM_SHORT	"(n)"
+#endif
+
+#ifdef __DragonFly__
+#define QW_PLATFORM			"DragonFlyBSD" // or DragonFly?
+#define QW_PLATFORM_SHORT	"(r)" // r? `d' is already used by Darwin
 #endif
 
 #ifdef __linux__

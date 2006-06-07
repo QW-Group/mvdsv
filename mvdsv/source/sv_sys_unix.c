@@ -16,14 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.39 2006/06/02 15:13:38 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.40 2006/06/07 13:57:42 disconn3ct Exp $
 */
 
 #include <dlfcn.h>
 #include <signal.h>
 #include "qwsvdef.h"
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
 /*#include <sys/time.h>
 #include <sys/stat.h>*/
 #else

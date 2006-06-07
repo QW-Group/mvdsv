@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: bothdefs.h,v 1.20 2006/06/05 12:46:10 vvd0 Exp $
+    $Id: bothdefs.h,v 1.21 2006/06/07 13:57:42 disconn3ct Exp $
 */
 
 // defs common to client and server
@@ -206,7 +206,7 @@ int		vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 size_t	strlcpy (char *dst, char *src, size_t siz);
 size_t	strlcat (char *dst, char *src, size_t siz);
 #endif
-#if !defined(__FreeBSD__) && !defined(__APPLE__)
+#if !defined(__FreeBSD__) && !defined(__APPLE__) && !defined(__DragonFly__)
 char	*strnstr (char *s, char *find, size_t slen);
 char	*strcasestr(const char *s, const char *find);
 #endif
