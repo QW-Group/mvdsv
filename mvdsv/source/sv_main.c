@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.65 2006/06/02 15:16:13 vvd0 Exp $
+	$Id: sv_main.c,v 1.66 2006/06/07 12:59:06 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -90,6 +90,7 @@ cvar_t	sys_command_line = {"sys_command_line", NULL, CVAR_ROM};
 cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status command, 0 - don't use
 cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
+cvar_t	vip_values = {"vip_values", ""};
 
 cvar_t	allow_download		= {"allow_download", "1"};
 cvar_t	allow_download_skins	= {"allow_download_skins", "1"};
@@ -1854,16 +1855,27 @@ SV_VIPbyPass
 */
 int SV_VIPbyPass (char *pass)
 {
+	qbool use_value = false;
+	int vip_value[MAX_ARGS];
 	int i;
 
 	if (!vip_password.string[0] || !strcasecmp(vip_password.string, "none"))
 		return 0;
 
+	if (vip_values.string[0]) {
+		use_value = true;
+		// 2VVD: vip_password count may be not equal vip_values count, what we must do in this case?
+		memset((void*)vip_value, 0, sizeof(vip_value));
+		Cmd_TokenizeString(vip_values.string);
+		for (i = 0; i < Cmd_Argc(); i++)
+			vip_value[i] = atoi(Cmd_Argv(i));
+	}
+
 	Cmd_TokenizeString(vip_password.string);
 
 	for (i = 0; i < Cmd_Argc(); i++)
 		if (!strcmp(Cmd_Argv(i), pass) && strcasecmp(Cmd_Argv(i), "none"))
-			return i+1;
+			return (use_value ? vip_value[i] : i+1);
 
 	return 0;
 }
@@ -2489,6 +2501,7 @@ void SV_InitLocal (void)
 	//Added by VVD }
 	Cvar_Register (&spectator_password);
 	Cvar_Register (&vip_password);
+	Cvar_Register (&vip_values);
 
 	Cvar_Register (&sv_nailhack);
 
