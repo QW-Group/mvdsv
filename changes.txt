@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.79 2006/06/05 12:46:10 vvd0 Exp $
+$Id: changes.txt,v 1.80 2006/06/07 12:58:49 qqshka Exp $
 
 ----
 MVDSV v0.19.25-CVS build 23?? (2006.06.??)
@@ -8,6 +8,14 @@ MVDSV v0.19.25-CVS build 23?? (2006.06.??)
 - small fixes and cleanups here and there
 
 * qqshka <qqshka@users.sourceforge.net>
+- new cvar vip_values which control which vip value assign for particular
+  vip password.
+
+  Example, if we talk about ktpro and particular passwords:
+  vip_password "justvip demoadmin admin judgeadmin admindemoadmin judgeadmindemoadmin"
+  then we must set next vip_values
+  vip_values   "1       8         4     20         12             28"
+
 - switching GAME_API_VERSION to 9.
   Only one change, added GAME_CLIENT_SAY, so now qvm mods can handle say/say_team.
 - For developers only: now qvm mods can get client state via
