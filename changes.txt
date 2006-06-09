@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.82 2006/06/09 16:19:59 vvd0 Exp $
+$Id: changes.txt,v 1.83 2006/06/09 16:39:09 vvd0 Exp $
 
 ----
 MVDSV v0.19.25-CVS build 23?? (2006.06.??)
@@ -11,7 +11,6 @@ MVDSV v0.19.25-CVS build 23?? (2006.06.??)
 * qqshka <qqshka@users.sourceforge.net>
 - new cvar vip_values which control which vip value assign for particular
   vip password.
-
   Example, if we talk about ktpro and particular passwords:
   vip_password "justvip demoadmin admin judgeadmin admindemoadmin judgeadmindemoadmin"
   then we must set next vip_values
