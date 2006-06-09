@@ -1,5 +1,5 @@
 #
-# QuakeWorld/MVDSV and QWDTools Makefile for FreeBSD/Darwin/OpenBSD
+# QuakeWorld/MVDSV and QWDTools Makefile for FreeBSD/OpenBSD/NetBSD/DragonFly BSD/Darwin
 #
 #	- now should build on non-x86
 #	- no longer requires gmake(1)
@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.FreeBSD,v 1.29 2006/06/05 12:46:10 vvd0 Exp $
+#	$Id: Makefile.BSD,v 1.1 2006/06/09 16:19:59 vvd0 Exp $
 #
 
 CC				=	gcc

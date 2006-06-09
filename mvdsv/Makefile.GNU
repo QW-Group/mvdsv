@@ -1,11 +1,11 @@
 #
-# QuakeWorld/MVDSV makefile for Linux and SunOS
+# QuakeWorld/MVDSV  and QWDTools Makefile for Linux and SunOS
 #
 # GNU Make required
 #
 # ELF only
 #
-#	$Id: Makefile.Linux,v 1.31 2006/06/05 12:46:10 vvd0 Exp $
+#	$Id: Makefile.GNU,v 1.1 2006/06/09 16:19:59 vvd0 Exp $
 #
 
 MAINDIR=.

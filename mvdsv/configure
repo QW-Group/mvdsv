@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#	$Id: configure,v 1.10 2006/06/07 13:57:32 disconn3ct Exp $
+#	$Id: configure,v 1.11 2006/06/09 16:19:59 vvd0 Exp $
 #
 
 # Makefile cleaning
@@ -88,14 +88,14 @@ fi
 echo UNAME=${UNAME} >> Makefile
 
 case ${UNAME} in
-FreeBSD | Darwin | OpenBSD | NetBSD | DragonFly)
-	echo "${UNAME} system - use FreeBSD Makefile."
-	cat Makefile.FreeBSD >> Makefile
+FreeBSD | OpenBSD | NetBSD | DragonFly | Darwin | BSD)
+	echo "${UNAME} system - use BSD Makefile."
+	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
 	;;
-Linux | SunOS)
-	echo "${UNAME} system - use Linux Makefile."
-	cat Makefile.Linux >> Makefile
+Linux | SunOS | GNU)
+	echo "${UNAME} system - use GNU Makefile."
+	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
 	;;
 *)
@@ -106,10 +106,13 @@ Linux | SunOS)
 	echo "./configure FreeBSD               FreeBSD"
 	echo "./configure OpenBSD               OpenBSD"
 	echo "./configure NetBSD                NetBSD"
+	echo "./configure DragonFly             DragonFly BSD"
 	echo "./configure Darwin                Darwin/Mac OS X"
 	echo "./configure Linux                 Linux"
 	echo "./configure SunOS                 SunOS/Solaris"
 	echo "or"
+	echo "./configure BSD                   for build with BSD Makefile"
+	echo "./configure GNU                   for build with GNU Makefile"
 	echo "./configure                       for auto configure"
 	echo ""
 	echo "Other systems not supported yet."
