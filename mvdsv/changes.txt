@@ -1,12 +1,12 @@
 
-$Id: changes.txt,v 1.83 2006/06/09 16:39:09 vvd0 Exp $
+$Id: changes.txt,v 1.84 2006/06/13 12:46:33 vvd0 Exp $
 
 ----
-MVDSV v0.19.25-CVS build 23?? (2006.06.??)
+MVDSV v0.19.27-CVS build 23?? (2006.06.??)
 * disconnect <disconn3ct@users.sourceforge.net>
 - for developers: move FS-related stuff from common.c to fs.c
 - small fixes and cleanups here and there
-- Added DragonFly BSD targets
+- added DragonFly BSD targets
 
 * qqshka <qqshka@users.sourceforge.net>
 - new cvar vip_values which control which vip value assign for particular
@@ -15,7 +15,6 @@ MVDSV v0.19.25-CVS build 23?? (2006.06.??)
   vip_password "justvip demoadmin admin judgeadmin admindemoadmin judgeadmindemoadmin"
   then we must set next vip_values
   vip_values   "1       8         4     20         12             28"
-
 - switching GAME_API_VERSION to 9.
   Only one change, added GAME_CLIENT_SAY, so now qvm mods can handle say/say_team.
 - For developers only: now qvm mods can get client state via
@@ -30,6 +29,7 @@ MVDSV v0.19.25-CVS build 23?? (2006.06.??)
 - improved MacOS X/Darwin support
 
 * VVD <vvd0@users.sourceforge.net>
+- bugfix from 0.19.10-develop: crashes on *nix when qtvproxy will be disconnect (EXPERIMENTAL)
 - improved byte order support:
     supported byte order:
       little endian 1234
