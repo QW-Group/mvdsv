@@ -16,11 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.41 2006/06/07 14:07:47 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.42 2006/06/13 12:46:34 vvd0 Exp $
 */
 
+// AFAIR, <disconn3ct@users.sourceforge.net> said about an error if we call
+// signal(SIGPIPE, SIG_IGN); in sv_sys_unix.c:main().
+// If no, then keep this way. But if yes, then try to call 
+// signal(SIGPIPE, SIG_IGN); send(...); signal(SIGPIPE, SIG_DFL); in sv_demo.c:DestFlush();.
+// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
+//#include <signal.h>
 #include <dlfcn.h>
-#include <signal.h>
 #include "qwsvdef.h"
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
@@ -706,6 +711,13 @@ int main (int argc, char *argv[])
 	struct group *gr;
 	char *user_name, *group_name = NULL, *chroot_dir;
 	//Added by VVD }
+
+// AFAIR, <disconn3ct@users.sourceforge.net> said about an error if we call
+// signal(SIGPIPE, SIG_IGN); in sv_sys_unix.c:main().
+// If no, then keep this way. But if yes, then try to call 
+// signal(SIGPIPE, SIG_IGN); send(...); signal(SIGPIPE, SIG_DFL); in sv_demo.c:DestFlush();.
+// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
+//	signal(SIGPIPE, SIG_IGN);
 
 	argv0 = argv[0];
 

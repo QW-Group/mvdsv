@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.29 2006/06/09 16:20:00 vvd0 Exp $
+	$Id: version.h,v 1.30 2006/06/13 12:46:34 vvd0 Exp $
 */
 // version.h
 
@@ -54,7 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define QW_PLATFORM_SHORT	"(l)"
 #endif
 
-#ifdef sun
+#ifdef __sun__
 #define QW_PLATFORM			"SunOS"
 #define QW_PLATFORM_SHORT	"(s)"
 #endif
@@ -65,8 +65,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #define	QW_VERSION			"2.40"
-#define QWE_VERSION			"0.19.26-CVS"
-#define QWE_VERNUM			0.1926
+#define QWE_VERSION			"0.19.27-CVS"
+#define QWE_VERNUM			0.1927
 #define SERVER_NAME			"MVDSV"
 #define QWDTOOLS_NAME		"QWDtools"
 #define PROJECT_NAME		SERVER_NAME

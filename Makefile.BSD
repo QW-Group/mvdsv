@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.BSD,v 1.1 2006/06/09 16:19:59 vvd0 Exp $
+#	$Id: Makefile.BSD,v 1.2 2006/06/13 12:46:33 vvd0 Exp $
 #
 
 CC				=	gcc
@@ -19,7 +19,7 @@ QWDTOOLS_DIR	=	${MAINDIR}/source/qwdtools
 
 DO_CFLAGS		=	${CFLAGS} -Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2 -D${BYTE_ORDER}Q__
 
-.if defined(KQUEUE) && ${UNAME} == "FreeBSD"
+.if defined(KQUEUE) && (${UNAME} == "FreeBSD" || ${UNAME} == "DragonFly")
 DO_CFLAGS		+=	-DKQUEUE
 .endif
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: bothdefs.h,v 1.21 2006/06/07 13:57:42 disconn3ct Exp $
+    $Id: bothdefs.h,v 1.22 2006/06/13 12:46:34 vvd0 Exp $
 */
 
 // defs common to client and server
@@ -171,16 +171,14 @@ float	FloatSwapPDP2Lit (float f);
 #define LittleShort(x)	ShortSwap(x)
 #define LittleLong(x)	LongSwap(x)
 #define LittleFloat(x)	FloatSwap(x)
-#else
-#ifdef __LITTLE_ENDIAN__Q__
+#elif defined(__LITTLE_ENDIAN__Q__)
 #define BigShort(x)		ShortSwap(x)
 #define BigLong(x)		LongSwap(x)
 #define BigFloat(x)		FloatSwap(x)
 #define LittleShort(x)	(x)
 #define LittleLong(x)	(x)
 #define LittleFloat(x)	(x)
-#else
-#ifdef __PDP_ENDIAN__Q__
+#elif defined(__PDP_ENDIAN__Q__)
 #define BigShort(x)		ShortSwap(x)
 #define BigLong(x)		LongSwapPDP2Big(x)
 #define BigFloat(x)		FloatSwapPDP2Big(x)
@@ -189,8 +187,6 @@ float	FloatSwapPDP2Lit (float f);
 #define LittleFloat(x)	FloatSwapPDP2Lit(x)
 #else
 #error Unknown byte order type!
-#endif
-#endif
 #endif
 
 //============================================================================
