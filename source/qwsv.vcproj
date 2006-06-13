@@ -29,7 +29,7 @@
 				FavorSizeOrSpeed="1"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
-				PreprocessorDefinitions="id386;NDEBUG;USE_PR2"
+				PreprocessorDefinitions="id386;NDEBUG;USE_PR2;__LITTLE_ENDIAN__Q__"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
@@ -94,7 +94,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="id386;_DEBUG;USE_PR2"
+				PreprocessorDefinitions="id386;_DEBUG;USE_PR2;__LITTLE_ENDIAN__Q__"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
 				UsePrecompiledHeader="2"
