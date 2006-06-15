@@ -15,8 +15,8 @@ See the included (GNU.txt) GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: sv_demo.c,v 1.46 2006/06/13 12:46:34 vvd0 Exp $
+
+    $Id: sv_demo.c,v 1.47 2006/06/15 02:04:50 disconn3ct Exp $
 */
 
 // AFAIR, <disconn3ct@users.sourceforge.net> said about an error if we call
@@ -51,8 +51,7 @@ typedef struct mvddest_s
 	unsigned int totalsize;
 
 	struct mvddest_s *nextdest;
-}
-mvddest_t;
+} mvddest_t;
 mvddest_t *singledest;
 
 #define MAXSIZE (demobuffer->end < demobuffer->last ? \
@@ -219,15 +218,21 @@ void DestCloseAllFlush(qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
 	mvddest_t *d;
-	DestFlush(true);	//make sure it's all written.
+	DestFlush(true); //make sure it's all written.
 
 	while (demo.dest)
 	{
 		d = demo.dest;
 		demo.dest = d->nextdest;
 
+		DestClose(d, destroyfiles);
+
+		if (d->desttype == DEST_STREAM)
+			continue;
+
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
 		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+
 		if (sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
 		{
 			FILE *f;
@@ -240,8 +245,6 @@ void DestCloseAllFlush(qbool destroyfiles)
 				fclose(f);
 			}
 		}
-
-		DestClose(d, destroyfiles);
 
 		if (sv_onrecordfinish.string[0] && !destroyfiles) // dont gzip deleted demos
 		{
@@ -276,7 +279,7 @@ int DemoWriteDest(void *data, int len, mvddest_t *d)
 		case DEST_FILE:
 			fwrite(data, len, 1, d->file);
 			break;
-			case DEST_BUFFEREDFILE:	//these write to a cache, which is flushed later
+		case DEST_BUFFEREDFILE:	//these write to a cache, which is flushed later
 		case DEST_STREAM:
 			if (d->cacheused+len > d->maxcachesize)
 			{
@@ -1075,7 +1078,7 @@ void SV_MVDStop_f (void)
 /*
 ====================
 SV_MVD_Cancel_f
- 
+
 Stops recording, and removes the demo
 ====================
 */
@@ -1087,7 +1090,7 @@ void SV_MVD_Cancel_f (void)
 /*
 ====================
 SV_WriteMVDMessage
- 
+
 Dumps the current net message, prefixed by the length and view angles
 ====================
 */
