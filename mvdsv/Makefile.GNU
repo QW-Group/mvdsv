@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.1 2006/06/09 16:19:59 vvd0 Exp $
+#	$Id: Makefile.GNU,v 1.2 2006/06/15 01:39:26 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -13,9 +13,8 @@ SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 CC=gcc
-BASE_CFLAGS=-Wall -pipe -funsigned-char -fno-strict-aliasing -DUSE_PR2 -D$(BYTE_ORDER)Q__
+BASE_CFLAGS=-Wall -pipe -funsigned-char -DUSE_PR2 -D$(BYTE_ORDER)Q__
 WITH_OPTIMIZED_CFLAGS=YES
-#DEBUG_CFLAGS=$(BASE_CFLAGS) -Wsign-compare -g
 
 USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
@@ -24,9 +23,9 @@ ifeq (,$(findstring 64,$(shell uname -m)))
 ASM=$(USE_ASM)
 endif
 endif
-CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -s -funroll-loops
+CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -fno-strict-aliasing -s -ffast-math -funroll-loops
 else
-CFLAGS=$(BASE_CFLAGS)
+CFLAGS=$(BASE_CFLAGS) -Wsign-compare -ggdb
 endif
 
 LDFLAGS=-lm
