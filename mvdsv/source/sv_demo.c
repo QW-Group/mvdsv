@@ -16,17 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.47 2006/06/15 02:04:50 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.48 2006/06/16 17:35:08 vvd0 Exp $
 */
 
-// AFAIR, <disconn3ct@users.sourceforge.net> said about an error if we call
-// signal(SIGPIPE, SIG_IGN); in sv_sys_unix.c:main().
-// If no, then keep this way. But if yes, then try to call 
-// signal(SIGPIPE, SIG_IGN); send(...); signal(SIGPIPE, SIG_DFL); in sv_demo.c:DestFlush();.
-// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
-#ifndef _WIN32
-#include <signal.h>
-#endif
 #include "qwsvdef.h"
 #include "winquake.h"
 
@@ -168,18 +160,7 @@ void DestFlush(qbool compleate)
 			case DEST_STREAM:
 				if (d->cacheused && !d->error)
 				{
-// AFAIR, <disconn3ct@users.sourceforge.net> said about an error if we call
-// signal(SIGPIPE, SIG_IGN); in sv_sys_unix.c:main().
-// If no, then keep this way. But if yes, then try to call 
-// signal(SIGPIPE, SIG_IGN); send(...); signal(SIGPIPE, SIG_DFL); in sv_demo.c:DestFlush();.
-// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
-#ifndef _WIN32
-					signal(SIGPIPE, SIG_IGN);
-#endif
 					len = send(d->socket, d->cache, d->cacheused, 0);
-#ifndef _WIN32
-					signal(SIGPIPE, SIG_DFL);
-#endif
 
 					if (len == 0) //client died
 						d->error = true;

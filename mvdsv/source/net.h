@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.19 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: net.h,v 1.20 2006/06/16 17:35:08 vvd0 Exp $
 */
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
@@ -46,9 +46,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#ifdef sun
+#ifdef __sun__
 #include <sys/filio.h>
-#endif //sun
+#endif //__sun__
 
 #ifdef NeXT
 #include <libc.h>
