@@ -16,21 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.42 2006/06/13 12:46:34 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.43 2006/06/16 17:35:08 vvd0 Exp $
 */
 
-// AFAIR, <disconn3ct@users.sourceforge.net> said about an error if we call
-// signal(SIGPIPE, SIG_IGN); in sv_sys_unix.c:main().
-// If no, then keep this way. But if yes, then try to call 
-// signal(SIGPIPE, SIG_IGN); send(...); signal(SIGPIPE, SIG_DFL); in sv_demo.c:DestFlush();.
-// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
-//#include <signal.h>
+#include <signal.h>
 #include <dlfcn.h>
 #include "qwsvdef.h"
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(sun) || defined(__GNUC__) || defined(__APPLE__)
-/*#include <sys/time.h>
-#include <sys/stat.h>*/
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__sun__) || defined(__GNUC__) || defined(__APPLE__)
 #else
 #include <sys/dir.h>
 #endif
@@ -41,11 +34,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pwd.h>
 #include <grp.h>
 
-#ifdef sun
+#ifndef _PATH_DEVNULL
 #define _PATH_DEVNULL "/dev/null"
 #else
 #include <paths.h>
-#endif
+#endif // __sun__ have no _PATH_DEVNULL
 // Added by VVD }
 
 extern cvar_t sys_restart_on_error;
@@ -712,12 +705,8 @@ int main (int argc, char *argv[])
 	char *user_name, *group_name = NULL, *chroot_dir;
 	//Added by VVD }
 
-// AFAIR, <disconn3ct@users.sourceforge.net> said about an error if we call
-// signal(SIGPIPE, SIG_IGN); in sv_sys_unix.c:main().
-// If no, then keep this way. But if yes, then try to call 
-// signal(SIGPIPE, SIG_IGN); send(...); signal(SIGPIPE, SIG_DFL); in sv_demo.c:DestFlush();.
 // Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
-//	signal(SIGPIPE, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
 
 	argv0 = argv[0];
 
