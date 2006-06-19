@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.12 2006/06/07 14:07:47 disconn3ct Exp $
+	$Id: sys.h,v 1.13 2006/06/19 16:46:16 vvd0 Exp $
 */
 // sys.h -- non-portable functions
 
@@ -95,16 +95,51 @@ void Sys_Sleep (unsigned long ms);
 int Sys_Script(char *path, char *args);
 
 #ifdef _WIN32
-#include "winsock2.h"
+
+#include <conio.h>
+#include <direct.h>		// _mkdir
+#include <process.h>
+#include <winsock2.h>
+#include <windows.h>
+#include "resource.h"
+#include "winquake.h"
+#include "sv_windows.h"
 typedef HMODULE DL_t;
 #define DLEXT "dll"
+
 #else
+
+#include <signal.h>
+#include <dlfcn.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <pwd.h>
+#include <grp.h>
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__sun__) || defined(__GNUC__) || defined(__APPLE__)
+#include <sys/time.h>
+#include <dirent.h>
+#if (defined(__FreeBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
+#include <sys/types.h>
+#include <sys/event.h>
+#endif
+#else
+#include <sys/dir.h>
+#endif
+
+#ifndef _PATH_DEVNULL
+#define _PATH_DEVNULL "/dev/null"
+#else
+#include <paths.h>
+#endif // __sun__ have no _PATH_DEVNULL
+
 typedef void *DL_t;
 #define DLEXT "so"
-#endif
+
+#endif /* _WIN32 */
 
 DL_t Sys_DLOpen(const char *path);
 qbool Sys_DLClose(DL_t dl);
 void *Sys_DLProc(DL_t dl, const char *name);
 
-#endif // !__SYS_H__
+#endif /* !__SYS_H__ */

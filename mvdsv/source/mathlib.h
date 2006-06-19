@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: mathlib.h,v 1.7 2006/03/23 14:10:35 disconn3ct Exp $
+	$Id: mathlib.h,v 1.8 2006/06/19 16:46:15 vvd0 Exp $
 */
 // mathlib.h
-#ifndef _MATHLIB_H_
-#define _MATHLIB_H_
+#ifndef __MATHLIB_H__
+#define __MATHLIB_H__
 
 #define	PITCH	0 // up / down
 #define	YAW	1 // left / right
@@ -88,4 +88,4 @@ float anglemod(float a);
 	:										\
 		BoxOnPlaneSide( (emins), (emaxs), (p)))
 
-#endif /* _MATHLIB_H_ */
+#endif /* !__MATHLIB_H__ */

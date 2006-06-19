@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: world.h,v 1.8 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: world.h,v 1.9 2006/06/19 16:46:16 vvd0 Exp $
 */
 // world.h
-#ifndef _WORLD_H_
-#define _WORLD_H_
+#ifndef __WORLD_H__
+#define __WORLD_H__
 
 #define	MOVE_NORMAL	0
 #define	MOVE_NOMONSTERS	1
@@ -75,5 +75,4 @@ trace_t SV_Trace (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, 
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
 
-#endif /* _WORLD_H_ */
-
+#endif /* !__WORLD_H__ */

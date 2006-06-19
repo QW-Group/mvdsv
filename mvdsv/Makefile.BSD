@@ -8,10 +8,9 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.BSD,v 1.3 2006/06/15 01:39:26 disconn3ct Exp $
+#	$Id: Makefile.BSD,v 1.4 2006/06/19 16:46:15 vvd0 Exp $
 #
 
-CC				=	gcc
 #MAINDIR			!=	/bin/pwd
 MAINDIR			=	.
 SV_DIR			=	${MAINDIR}/source
@@ -19,7 +18,7 @@ QWDTOOLS_DIR	=	${MAINDIR}/source/qwdtools
 
 DO_CFLAGS		=	${CFLAGS} -Wall -pipe -funsigned-char -DUSE_PR2 -D${BYTE_ORDER}Q__
 
-.if defined(KQUEUE) && (${UNAME} == "FreeBSD" || ${UNAME} == "DragonFly")
+.if !defined(NOKQUEUE) && (${UNAME} == "FreeBSD" || ${UNAME} == "DragonFly")
 DO_CFLAGS		+=	-DKQUEUE
 .endif
 
@@ -33,6 +32,12 @@ ASM=${USE_ASM}
 DO_CFLAGS		+=	${ASM}
 . endif
 .endif
+
+STRIP			=	strip
+.if ${UNAME} != "Darwin" && ${UNAME} != "MacOSX"
+STRIP_FLAGS		=	--strip-unneeded
+.endif
+STRIP_FLAGS		+=	--remove-section=.comment
 
 LDFLAGS			=	-lm
 
@@ -119,7 +124,7 @@ QWDTOOLS_OBJS = \
 		${CC} ${DO_CFLAGS} -DELF -x assembler-with-cpp -c $< -o $*.o
 		
 all:	mvdsv qwdtools
-		-strip --strip-unneeded --remove-section=.comment mvdsv qwdtools
+		${STRIP} ${STRIP_FLAGS} mvdsv qwdtools
 
 mvdsv:	${SV_OBJS} ${SV_AS_OBJS}
 		${CC} ${DO_CFLAGS} ${LDFLAGS} -o mvdsv ${SV_OBJS} ${SV_AS_OBJS}
@@ -128,4 +133,4 @@ qwdtools:	${QWDTOOLS_OBJS}
 		${CC} ${DO_CFLAGS} ${LDFLAGS} -o qwdtools ${QWDTOOLS_OBJS}
 
 clean:
-		-rm -f ${MAINDIR}/Makefile ${SV_DIR}/*.core ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${QWDTOOLS_DIR}/*.o
+		-rm -f ${SV_DIR}/*.core ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${QWDTOOLS_DIR}/*.o

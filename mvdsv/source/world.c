@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: world.c,v 1.11 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: world.c,v 1.12 2006/06/19 16:46:16 vvd0 Exp $
 */
 // world.c -- world query functions
 
@@ -499,7 +499,7 @@ POINT TESTING IN HULLS
 ===============================================================================
 */
 
-#if	!id386
+#ifndef id386
 
 /*
 ==================
@@ -534,7 +534,7 @@ int SV_HullPointContents (hull_t *hull, int num, vec3_t p)
 	return num;
 }
 
-#endif	// !id386
+#endif	/* !id386 */
 
 
 /*

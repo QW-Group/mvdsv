@@ -16,12 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.11 2006/04/28 17:12:44 vvd0 Exp $
+	$Id: net.c,v 1.12 2006/06/19 16:46:16 vvd0 Exp $
 */
-// net_wins.c
+// net.c
 
 #include "qwsvdef.h"
-#include "winquake.h"
 
 netadr_t	net_local_adr;
 
@@ -203,10 +202,11 @@ qbool NET_GetPacket (void)
 void NET_SendPacket (int length, void *data, netadr_t to)
 {
 	struct sockaddr_qstorage addr;
+	socklen_t addrlen = sizeof(struct sockaddr_in);
 
 	NetadrToSockadr (&to, &addr);
 
-	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)))
+	if (-1 == sendto (net_socket, data, length, 0, (struct sockaddr *)&addr, addrlen))
 	{
 		if (qerrno == EWOULDBLOCK)
 			return;
@@ -346,14 +346,14 @@ int TCP_OpenSocket (int port, int udp_port)
 void NET_GetLocalAddress (netadr_t *out)
 {
 	struct sockaddr_qstorage address;
+	socklen_t namelen = sizeof(address);
 	qbool notvalid = false;
 	netadr_t adr = {0};
 	char buff[512];
-	socklen_t namelen = sizeof(address);
 
 	strlcpy(buff, "localhost", sizeof(buff));
-	gethostname(buff, 512);
-	buff[512-1] = 0;
+	gethostname(buff, sizeof(buff));
+	buff[sizeof(buff) - 1] = 0;
 
 	if (!NET_StringToAdr (buff, &adr)) //urm
 		NET_StringToAdr ("127.0.0.1", &adr);
@@ -388,8 +388,8 @@ void NET_Init (int *serverport, int *telnetport)
 	// open the single socket to be used for all communications
 	
 #ifdef _WIN32
-	// Why we need version 2.0? Trying 1.1...  Work with 1.0 too.
-	if (WSAStartup (MAKEWORD(1, 0), &winsockdata))
+	// Why we need version 2.0?
+	if (WSAStartup (MAKEWORD(1, 1), &winsockdata))
 		Sys_Error ("WinSock initialization failed.");
 
 	Sys_Printf("WinSock version is: %d.%d\n",

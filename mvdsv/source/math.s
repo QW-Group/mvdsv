@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: math.s,v 1.2 2006/06/05 12:46:10 vvd0 Exp $
+	$Id: math.s,v 1.3 2006/06/19 16:46:15 vvd0 Exp $
 */
 
 #include "asm_i386.h"
@@ -377,4 +377,4 @@ C(FloatSwap):
 	ret
 
 
-#endif	// id386
+#endif	/* id386 */

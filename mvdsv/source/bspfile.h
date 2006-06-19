@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bspfile.h,v 1.5 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: bspfile.h,v 1.6 2006/06/19 16:46:15 vvd0 Exp $
 */
 
-#ifndef __bspfile_h
-#define __bspfile_h
+#ifndef __BSPFILE_H__
+#define __BSPFILE_H__
 
 // upper design bounds
 
@@ -195,4 +195,4 @@ typedef struct
 	byte		ambient_level[NUM_AMBIENTS];
 } dleaf_t;
 
-#endif // __bspfile_h
+#endif /* !__BSPFILE_H__ */

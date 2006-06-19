@@ -17,13 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.8 2006/05/23 14:47:54 vvd0 Exp $
+ *  $Id: pr2_exec.c,v 1.9 2006/06/19 16:46:16 vvd0 Exp $
  */
 
 #ifdef USE_PR2
 
 #include "qwsvdef.h"
-#include "g_public.h"
 
 gameData_t *gamedata;
 

@@ -16,11 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: crc.h,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: crc.h,v 1.5 2006/06/19 16:46:15 vvd0 Exp $
 */
 /* crc.h */
+
+#ifndef __CRC_H__
+#define __CRC_H__
 
 void CRC_Init(unsigned short *crcvalue);
 void CRC_ProcessByte(unsigned short *crcvalue, byte data);
 unsigned short CRC_Value(unsigned short crcvalue);
 unsigned short CRC_Block (byte *start, int count);
+
+#endif /* !__CRC_H__ */

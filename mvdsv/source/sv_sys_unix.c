@@ -16,30 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.43 2006/06/16 17:35:08 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.44 2006/06/19 16:46:16 vvd0 Exp $
 */
 
-#include <signal.h>
-#include <dlfcn.h>
 #include "qwsvdef.h"
-
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__sun__) || defined(__GNUC__) || defined(__APPLE__)
-#else
-#include <sys/dir.h>
-#endif
-
-// Added by VVD {
-#include <unistd.h>
-#include <fcntl.h>
-#include <pwd.h>
-#include <grp.h>
-
-#ifndef _PATH_DEVNULL
-#define _PATH_DEVNULL "/dev/null"
-#else
-#include <paths.h>
-#endif // __sun__ have no _PATH_DEVNULL
-// Added by VVD }
 
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
@@ -436,7 +416,7 @@ void Sys_Printf (char *fmt, ...)
 	unsigned char	*p;
 
 	va_start (argptr,fmt);
-	vsnprintf(text, sizeof(text), fmt, argptr);
+	vsnprintf((char*)text, sizeof(text), fmt, argptr);
 	//	if (vsnprintf(text, sizeof(text), fmt, argptr) >= sizeof(text))
 	//        	Sys_Error("memory overwrite in Sys_Printf.\n");
 	va_end (argptr);
@@ -458,7 +438,7 @@ void Sys_Printf (char *fmt, ...)
 	}
 
 	if (telnetport && telnet_connected && authenticated)
-		SV_Write_Log(TELNET_LOG, 3, text);
+		SV_Write_Log(TELNET_LOG, 3, (char*)text);
 	if (!sys_nostdout.value)
 		fflush(stdout);
 }

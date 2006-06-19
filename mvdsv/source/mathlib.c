@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: mathlib.c,v 1.7 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: mathlib.c,v 1.8 2006/06/19 16:46:15 vvd0 Exp $
 */
 // mathlib.c -- math primitives
 
@@ -53,7 +53,7 @@ void BOPS_Error (void)
 	Sys_Error ("BoxOnPlaneSide:  Bad signbits");
 }
 
-#if !id386
+#ifndef id386
 
 /*
 ==================
@@ -162,7 +162,7 @@ int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 	return sides;
 }
 
-#endif
+#endif /* id386 */
 
 
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)

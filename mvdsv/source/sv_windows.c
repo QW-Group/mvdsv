@@ -15,14 +15,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.15 2006/04/12 17:08:57 vvd0 Exp $
+	$Id: sv_windows.c,v 1.16 2006/06/19 16:46:16 vvd0 Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
 
 #include "qwsvdef.h"
-
-#include "sv_windows.h"
 
 COLORREF EditBoxBgColor, EditBoxColor;
 HBRUSH g_hbrBackground;
@@ -401,4 +399,4 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-#endif // _CONSOLE //bliP: console compile
+#endif /* !_CONSOLE */ //bliP: console compile

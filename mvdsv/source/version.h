@@ -15,58 +15,55 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.31 2006/06/16 18:23:35 vvd0 Exp $
+	$Id: version.h,v 1.32 2006/06/19 16:46:16 vvd0 Exp $
 */
 // version.h
 
 #ifndef __VERSION_H__
 #define __VERSION_H__
 
-#ifdef _WIN32
+
+#if defined(_WIN32)
 #define QW_PLATFORM			"Win32"
 #define QW_PLATFORM_SHORT	"(w)"
-#endif
 
-#ifdef __FreeBSD__
+#elif defined(__FreeBSD__)
 #define QW_PLATFORM			"FreeBSD"
 #define QW_PLATFORM_SHORT	"(f)"
-#endif
 
-/*Claymore added this stuff ---> */
-#ifdef __OpenBSD__
+#elif defined(__OpenBSD__)
 #define QW_PLATFORM			"OpenBSD"
 #define QW_PLATFORM_SHORT	"(o)"
-#endif
-/* <---  */
 
-#ifdef __NetBSD__
+#elif defined(__NetBSD__)
 #define QW_PLATFORM			"NetBSD"
 #define QW_PLATFORM_SHORT	"(n)"
-#endif
 
-#ifdef __DragonFly__
-#define QW_PLATFORM			"DragonFlyBSD" // or DragonFly?
-#define QW_PLATFORM_SHORT	"(r)" // r? `d' is already used by Darwin
-#endif
+#elif defined(__DragonFly__)
+#define QW_PLATFORM			"DragonFly"
+#define QW_PLATFORM_SHORT	"(d)"
 
-#ifdef __linux__
+#elif defined(__linux__)
 #define QW_PLATFORM			"Linux"
 #define QW_PLATFORM_SHORT	"(l)"
-#endif
 
-#ifdef __sun__
+#elif defined(__sun__)
 #define QW_PLATFORM			"SunOS"
 #define QW_PLATFORM_SHORT	"(s)"
+
+#elif defined(__APPLE__)
+#define QW_PLATFORM			"MacOSX" // Darwin was changed to MacOSX
+#define QW_PLATFORM_SHORT	"(m)"
+
+#else
+#define QW_PLATFORM			"Unknown"
+#define QW_PLATFORM_SHORT	"(u)"
 #endif
 
-#ifdef __APPLE__
-#define QW_PLATFORM			"Darwin"
-#define QW_PLATFORM_SHORT	"(d)"
-#endif
 
 #define	QW_VERSION			"2.40"
-#define QWE_VERSION			"0.19.28-CVS"
-#define QWE_VERNUM			0.1928
+#define QWE_VERSION			"0.19.30-CVS"
+#define QWE_VERNUM			0.1930
 #define SERVER_NAME			"MVDSV"
 #define QWDTOOLS_NAME		"QWDtools"
 #define PROJECT_NAME		SERVER_NAME

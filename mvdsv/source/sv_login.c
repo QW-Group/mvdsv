@@ -16,12 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_login.c,v 1.14 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: sv_login.c,v 1.15 2006/06/19 16:46:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
-#include "winquake.h"
-#include "sha1.h"
 
 #define MAX_ACCOUNTS 1000
 #define MAX_FAILURES 10

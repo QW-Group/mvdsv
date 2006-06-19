@@ -1,18 +1,17 @@
 #
-# QuakeWorld/MVDSV  and QWDTools Makefile for Linux and SunOS
+# QuakeWorld/MVDSV and QWDTools Makefile for Linux and SunOS
 #
 # GNU Make required
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.2 2006/06/15 01:39:26 disconn3ct Exp $
+#	$Id: Makefile.GNU,v 1.3 2006/06/19 16:46:15 vvd0 Exp $
 #
 
 MAINDIR=.
 SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
-CC=gcc
 BASE_CFLAGS=-Wall -pipe -funsigned-char -DUSE_PR2 -D$(BYTE_ORDER)Q__
 WITH_OPTIMIZED_CFLAGS=YES
 
@@ -31,7 +30,8 @@ endif
 LDFLAGS=-lm
 ifeq ($(UNAME),Linux)
 LDFLAGS+=-ldl
-STRIP=-strip --strip-unneeded --remove-section=.comment mvdsv qwdtools
+STRIP=-strip
+STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv qwdtools
 else
 ifeq ($(UNAME),SunOS)
 LDFLAGS+= -lsocket -lnsl
@@ -122,7 +122,7 @@ QWDTOOLS_OBJS = \
 	$(CC) $(CFLAGS) -DELF -x assembler-with-cpp -c $< -o $@
 
 all : mvdsv qwdtools
-	$(STRIP)
+	$(STRIP) $(STRIP_FLAGS)
 
 mvdsv : $(SV_OBJS) $(SV_AS_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o mvdsv $^
@@ -131,4 +131,4 @@ qwdtools : $(QWDTOOLS_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
 
 clean : 
-	-rm -f $(MAINDIR)/Makefile $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o
+	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o

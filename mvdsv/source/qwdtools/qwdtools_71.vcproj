@@ -12,8 +12,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="Debug_71"
+			IntermediateDirectory="Debug_71"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -30,10 +30,10 @@
 				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile="Debug/qwdtools.pch"
-				AssemblerListingLocation="Debug/"
-				ObjectFile="Debug/"
-				ProgramDataBaseFileName="Debug/"
+				PrecompiledHeaderFile="Debug_71/qwdtools.pch"
+				AssemblerListingLocation="Debug_71/"
+				ObjectFile="Debug_71/"
+				ProgramDataBaseFileName="Debug_71/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="1"/>
@@ -41,18 +41,18 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../qwdtools-debug.exe"
+				OutputFile="../../qwdtools-debug_71.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="Debug/qwdtools-debug.pdb"
+				ProgramDatabaseFile="Debug_71/qwdtools-debug.pdb"
 				GenerateMapFile="TRUE"
-				MapFileName="Debug/qwdtools-debug.map"
+				MapFileName="Debug_71/qwdtools-debug.map"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Debug/qwdtools.tlb"
+				TypeLibraryName="Debug_71/qwdtools.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -77,8 +77,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="Release_71"
+			IntermediateDirectory="Release_71"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -97,10 +97,10 @@
 				RuntimeLibrary="4"
 				StructMemberAlignment="3"
 				EnableFunctionLevelLinking="FALSE"
-				PrecompiledHeaderFile="Release/qwdtools.pch"
-				AssemblerListingLocation="Release/"
-				ObjectFile="Release/"
-				ProgramDataBaseFileName="Release/"
+				PrecompiledHeaderFile="Release_71/qwdtools.pch"
+				AssemblerListingLocation="Release_71/"
+				ObjectFile="Release_71/"
+				ProgramDataBaseFileName="Release_71/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="1"/>
@@ -109,10 +109,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib"
-				OutputFile="../../qwdtools.exe"
+				OutputFile="../../qwdtools_71.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="Release/qwdtools.pdb"
+				ProgramDatabaseFile="Release_71/qwdtools.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -121,7 +121,7 @@
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Release/qwdtools.tlb"
+				TypeLibraryName="Release_71/qwdtools.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>

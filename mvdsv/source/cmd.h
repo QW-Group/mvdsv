@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmd.h,v 1.6 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: cmd.h,v 1.7 2006/06/19 16:46:15 vvd0 Exp $
 */
 
 // cmd.h -- Command buffer and command execution
@@ -34,6 +34,9 @@ The + command line options are also added to the command buffer.
 The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 
 */
+
+#ifndef __CMD_H__
+#define __CMD_H__
 
 #define MAXCMDBUF 16384
 
@@ -137,3 +140,5 @@ typedef struct cmd_alias_s
 qbool Cmd_DeleteAlias (char *name);	// return true if successful
 
 #define MAX_ARGS 80
+
+#endif /* !__CMD_H__ */

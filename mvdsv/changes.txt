@@ -1,9 +1,10 @@
 
-$Id: changes.txt,v 1.84 2006/06/13 12:46:33 vvd0 Exp $
+$Id: changes.txt,v 1.85 2006/06/19 16:46:15 vvd0 Exp $
 
 ----
-MVDSV v0.19.27-CVS build 23?? (2006.06.??)
+MVDSV v0.19.30-CVS build 237? (2006.06.2?)
 * disconnect <disconn3ct@users.sourceforge.net>
+- bugfix from 0.19.10-develop: mvd stream (qtv) closed as file - cause crash mvdsv on exit
 - for developers: move FS-related stuff from common.c to fs.c
 - small fixes and cleanups here and there
 - added DragonFly BSD targets
@@ -20,7 +21,7 @@ MVDSV v0.19.27-CVS build 23?? (2006.06.??)
 - For developers only: now qvm mods can get client state via
   trap_infokey( int edn, "*state", char *valbuff, int sizebuff ).
   Possible states: "free", "zombie", "preconnected", "connected", "spawned", "unknown".
-  So u can spot not yet connected clients. Personally, i'm using this in KTX for
+  So you can spot not yet connected clients. Personally, i'm using this in KTX for
   /klist or /fkick. ktpro do this via parsing output of server /status command.
   I'm dislike ktpro way here.
 
@@ -29,6 +30,8 @@ MVDSV v0.19.27-CVS build 23?? (2006.06.??)
 - improved MacOS X/Darwin support
 
 * VVD <vvd0@users.sourceforge.net>
+- default value of sys_select_timeout in *nix was changed from 10000 (10 milsec) to 1000000 (1 sec)
+- Darwin was renamed to MacOSX
 - bugfix from 0.19.10-develop: crashes on *nix when qtvproxy will be disconnect (EXPERIMENTAL)
 - improved byte order support:
     supported byte order:
@@ -39,7 +42,7 @@ MVDSV v0.19.27-CVS build 23?? (2006.06.??)
     require i80486 or newer (Anybody use i80386 for runing mvdsv? :-))
     gas2masm was modified:
       .386P changed to .486P
-      added commands bswap (require 486), movzbw, movzbl, movzwl, xchgb, xchgw, xchgl
+      added commands bswap (require i80486), movzbw, movzbl, movzwl, xchgb, xchgw, xchgl
 - added NetBSD targets
 - bugfix from Id Software's QWSV: buffer overflow in loading files (How did it work before???)
 - improved bugfix ktpro from 0.19.20-develop: command before first ';' will be executed,
