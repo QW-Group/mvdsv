@@ -16,15 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.31 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.32 2006/06/19 16:46:16 vvd0 Exp $
 */
 
-#include <conio.h>
-#include <direct.h>		// _mkdir
-#include <process.h>
-
 #include "qwsvdef.h"
-#include "sv_windows.h"
 
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;

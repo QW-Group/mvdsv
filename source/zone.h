@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: zone.h,v 1.6 2006/02/26 05:32:00 vvd0 Exp $
+	$Id: zone.h,v 1.7 2006/06/19 16:46:16 vvd0 Exp $
 */
 #ifndef __ZONE_H__
 #define __ZONE_H__
@@ -117,5 +117,4 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name);
 
 void Cache_Report (void);
 
-#endif /* __ZONE_H__ */
-
+#endif /* !__ZONE_H__ */

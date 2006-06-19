@@ -1,9 +1,9 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwdtools", "qwdtools\qwdtools.vcproj", "{0251665C-50AC-4BB5-9E5D-0B2D25617845}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwdtools", "qwdtools/qwdtools_71.vcproj", "{0251665C-50AC-4BB5-9E5D-0B2D25617845}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwsv", "qwsv.vcproj", "{617E4627-FBC6-4834-9C6B-B178EACE973E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwsv", "mvdsv_71.vcproj", "{617E4627-FBC6-4834-9C6B-B178EACE973E}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject

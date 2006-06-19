@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.20 2006/06/16 17:35:08 vvd0 Exp $
+	$Id: net.h,v 1.21 2006/06/19 16:46:16 vvd0 Exp $
 */
+
 // net.h -- quake's interface to the networking layer
 #ifndef __NET_H__
 #define __NET_H__
@@ -65,13 +66,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INVALID_SOCKET	-1
 #endif
 
-#ifndef socklen_t
-#define socklen_t	int
+#ifdef _WIN32
+typedef unsigned int socklen_t;
 #endif
 
 #define	PORT_ANY	-1
 
-typedef enum {NA_INVALID, NA_LOOPBACK, NA_IP, NA_IPV6, NA_IPX, NA_BROADCAST_IP, NA_BROADCAST_IP6, NA_BROADCAST_IPX} netadrtype_t;
+typedef enum {NA_INVALID, NA_LOOPBACK, NA_IP, NA_IPV6, NA_IPX,
+				NA_BROADCAST_IP, NA_BROADCAST_IP6, NA_BROADCAST_IPX} netadrtype_t;
 
 typedef enum {NS_CLIENT, NS_SERVER} netsrc_t;
 
@@ -94,6 +96,8 @@ struct sockaddr_qstorage
 	unsigned char dontusesa_pad[6];
 #if defined(_MSC_VER) || defined(MINGW)
 	__int64 sa_align;
+#elif defined(__GNUC__)
+	long long sa_align;
 #else
 	int sa_align[2];
 #endif

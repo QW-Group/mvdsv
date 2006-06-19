@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.35 2006/06/02 15:16:13 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.36 2006/06/19 16:46:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -672,7 +672,7 @@ Chmod a script
 #ifndef _WIN32
 void SV_ChmodFile_f (void)
 {
-	unsigned char	*_mode, *filename;
+	char	*_mode, *filename;
 	unsigned int	mode, m;
 
 	if (Cmd_Argc() != 3)

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    1$Id: common.h,v 1.19 2006/05/24 00:29:58 disconn3ct Exp $
+    1$Id: common.h,v 1.20 2006/06/19 16:46:15 vvd0 Exp $
 */
 // common.h  -- general definitions
 
@@ -116,4 +116,4 @@ void Info_CopyStarKeys (char *from, char *to);
 unsigned Com_BlockChecksum (void *buffer, int length);
 byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 
-#endif //__COMMON_H__
+#endif /* !__COMMON_H__ */

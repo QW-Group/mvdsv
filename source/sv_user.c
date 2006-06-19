@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.58 2006/06/02 15:16:13 vvd0 Exp $
+	$Id: sv_user.c,v 1.59 2006/06/19 16:46:16 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -840,7 +840,7 @@ static qbool SV_DownloadNextFile (void)
 	}
 	if (!(name = SV_MVDNum(num)))
 	{
-		Con_Printf(Q_yelltext(va("Demo number %d not found.\n", num)));
+		Con_Printf(Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
 		return SV_DownloadNextFile();
 	}
 	//Con_Printf("downloading demos/%s\n",name);
@@ -1171,7 +1171,7 @@ static void SV_BeginDownload_f(void)
 		name = SV_MVDNum(num);
 		if (!name)
 		{
-			Con_Printf(Q_yelltext(va("Demo number %d not found.\n", num)));
+			Con_Printf(Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
 			goto deny_download;
 		}
 		//Con_Printf("downloading demos/%s\n",name);

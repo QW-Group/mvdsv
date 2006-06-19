@@ -13,8 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="SRelease"
-			IntermediateDirectory="SRelease"
+			OutputDirectory="SRelease_71"
+			IntermediateDirectory="SRelease_71"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -29,18 +29,18 @@
 				FavorSizeOrSpeed="1"
 				OptimizeForProcessor="2"
 				OptimizeForWindowsApplication="TRUE"
-				PreprocessorDefinitions="id386;NDEBUG;USE_PR2;__LITTLE_ENDIAN__Q__"
+				PreprocessorDefinitions="NDEBUG;USE_PR2;__LITTLE_ENDIAN__Q__"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="SRelease/mvdsv.pch"
-				AssemblerListingLocation="SRelease/"
-				ObjectFile="SRelease/"
-				ProgramDataBaseFileName="SRelease/"
+				PrecompiledHeaderFile="SRelease_71/mvdsv.pch"
+				AssemblerListingLocation="SRelease_71/"
+				ObjectFile="SRelease_71/"
+				ProgramDataBaseFileName="SRelease_71/"
 				BrowseInformation="1"
-				BrowseInformationFile="SRelease/"
+				BrowseInformationFile="SRelease_71/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="1"/>
@@ -49,10 +49,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="../mvdsv-current.exe"
+				OutputFile="../mvdsv-current_71.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="SRelease/mvdsv-current.pdb"
+				ProgramDatabaseFile="SRelease_71/mvdsv-current.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -61,7 +61,7 @@
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SRelease/qwsv.tlb"
+				TypeLibraryName="SRelease_71/qwsv.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -86,23 +86,23 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="SDebug"
-			IntermediateDirectory="SDebug"
+			OutputDirectory="SDebug_71"
+			IntermediateDirectory="SDebug_71"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="id386;_DEBUG;USE_PR2;__LITTLE_ENDIAN__Q__"
+				PreprocessorDefinitions="_DEBUG;USE_PR2;__LITTLE_ENDIAN__Q__"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile="SDebug/mvdsv.pch"
+				PrecompiledHeaderFile="SDebug_71/mvdsv.pch"
 				AssemblerOutput="2"
-				AssemblerListingLocation="SDebug/"
-				ObjectFile="SDebug/"
-				ProgramDataBaseFileName="SDebug/"
+				AssemblerListingLocation="SDebug_71/"
+				ObjectFile="SDebug_71/"
+				ProgramDataBaseFileName="SDebug_71/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -113,18 +113,18 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="..\mvdsv-debug.exe"
+				OutputFile="../mvdsv-debug_60.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="SDebug/mvdsv-debug.pdb"
+				ProgramDatabaseFile="SDebug_71/mvdsv-debug.pdb"
 				GenerateMapFile="TRUE"
-				MapFileName="SDebug/mvdsv-debug.map"
+				MapFileName="SDebug_71/mvdsv-debug.map"
 				SubSystem="2"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SDebug/qwsv.tlb"
+				TypeLibraryName="SDebug_71/qwsv.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>

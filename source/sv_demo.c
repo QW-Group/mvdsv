@@ -16,11 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.48 2006/06/16 17:35:08 vvd0 Exp $
+    $Id: sv_demo.c,v 1.49 2006/06/19 16:46:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
-#include "winquake.h"
 
 #define demo_size_padding 0x1000
 
@@ -1129,7 +1128,7 @@ void SV_WriteSetMVDMessage (void)
 static qbool SV_MVD_Record (mvddest_t *dest)
 {
 	sizebuf_t	buf;
-	char buf_data[MAX_MSGLEN];
+	unsigned char buf_data[MAX_MSGLEN];
 	int i;
 	unsigned int n;
 	char *s, info[MAX_INFO_STRING];
@@ -1553,7 +1552,7 @@ void SV_MVD_Record_f (void)
 		return;
 	//<-
 
-	strlcpy(newname, va("%s%s%s", sv_demoPrefix.string, SV_CleanName(Cmd_Argv(1)),
+	strlcpy(newname, va("%s%s%s", sv_demoPrefix.string, SV_CleanName((unsigned char*)Cmd_Argv(1)),
 						sv_demoSuffix.string), sizeof(newname) - 4);
 
 	Sys_mkdir(va("%s/%s", fs_gamedir, sv_demoDir.string));
@@ -1804,8 +1803,8 @@ void SV_MVDEasyRecord_f (void)
 	// <-
 
 	// Make sure the filename doesn't contain illegal characters
-	strlcpy(name, va("%s%s%s", sv_demoPrefix.string, SV_CleanName(name), sv_demoSuffix.string),
-	        MAX_DEMO_NAME);
+	strlcpy(name, va("%s%s%s", sv_demoPrefix.string, SV_CleanName((unsigned char*)name),
+			sv_demoSuffix.string), MAX_DEMO_NAME);
 //	strlcat(name, sv_demoSuffix.string, sizeof(name));
 //	strlcpy(name, va("%s/%s/%s", fs_gamedir, sv_demoDir.string, name), sizeof(name));
 	// find a filename that doesn't exist yet
@@ -1998,7 +1997,8 @@ void SV_DemoList (qbool use_regex)
 		{
 			if (use_regex)
 			{
-				if (!(preg = pcre_compile(Q_normalizetext(Cmd_Argv(j)), PCRE_CASELESS, &errbuf, &r, NULL)))
+				if (!(preg = pcre_compile(Q_normalizetext((unsigned char*)Cmd_Argv(j)),
+											PCRE_CASELESS, &errbuf, &r, NULL)))
 				{
 					Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
 					           Cmd_Argv(j), errbuf, r);
@@ -2379,7 +2379,7 @@ void SV_MVDInfoRemove_f (void)
 
 void SV_MVDInfo_f (void)
 {
-	char buf[512];
+	unsigned char buf[512];
 	FILE *f = NULL;
 	char *name, path[MAX_OSPATH];
 
@@ -2476,7 +2476,7 @@ void SV_LastScores_f (void)
 			{
 				buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
 				*strchr(buf, '\n') = 0;
-				Con_Printf("%s\n", Q_yelltext(buf));
+				Con_Printf("%s\n", Q_yelltext((unsigned char*)buf));
 			}
 			else
 				Con_Printf("(empty)\n");

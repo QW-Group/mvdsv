@@ -16,15 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: winquake.h,v 1.8 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: winquake.h,v 1.9 2006/06/19 16:46:16 vvd0 Exp $
 */
 // winquake.h: Win32-specific Quake header file
 
+#ifndef __WINQUAKE_H__
+#define __WINQUAKE_H__
+
 #ifdef _WIN32 
 #pragma warning( disable : 4229 )  // mgraph gets this
-
-#include <windows.h>
-
 
 extern	HINSTANCE	global_hInstance;
 extern	int		global_nCmdShow;
@@ -49,4 +49,6 @@ struct hostent FAR * (PASCAL FAR *pgethostbyaddr)(const char FAR * addr,
 												  int len, int type);
 int (PASCAL FAR *pgetsockname)(SOCKET s, struct sockaddr FAR *name,
 							   int FAR * namelen);
-#endif
+#endif /* _WIN32 */
+
+#endif /* !__WINQUAKE_H__ */

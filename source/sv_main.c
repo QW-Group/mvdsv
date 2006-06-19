@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_main.c,v 1.67 2006/06/07 14:07:47 disconn3ct Exp $
+	$Id: sv_main.c,v 1.68 2006/06/19 16:46:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -42,16 +42,22 @@ cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic
 
 qbool OnChange_sysselecttimeout_var (cvar_t *var, char *string);
-cvar_t	sys_select_timeout = {"sys_select_timeout", "10000", 0, OnChange_sysselecttimeout_var};
+cvar_t	sys_select_timeout = {"sys_select_timeout",
+#ifdef _WIN32
+							"10000"
+#else
+							"1000000"
+#endif
+							, 0, OnChange_sysselecttimeout_var};
 // MUST be set to ~ (sv_mintic / 1.3) * 1 000 000 = 10 000
 // (else can occur packets lost if sv_minping > 0)
 // if set too low then occur higher CPU usage
 
 cvar_t	sys_restart_on_error = {"sys_restart_on_error", "0"};
 
-cvar_t	developer = {"developer","0"};		// show extra messages
+cvar_t	developer = {"developer", "0"};		// show extra messages
 
-cvar_t	timeout = {"timeout","65"};		// seconds without any message
+cvar_t	timeout = {"timeout", "65"};		// seconds without any message
 cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 // after disconnect
 

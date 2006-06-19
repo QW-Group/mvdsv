@@ -16,13 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: model.h,v 1.10 2006/03/27 22:54:38 disconn3ct Exp $
+	$Id: model.h,v 1.11 2006/06/19 16:46:15 vvd0 Exp $
 */
 
-#ifndef __MODEL__
-#define __MODEL__
-
-#include "bspfile.h"
+#ifndef __MODEL_H__
+#define __MODEL_H__
 
 /*
 ==============================================================================
@@ -288,4 +286,4 @@ qmodel_t *Mod_ForName (char *name, qbool crash);
 mleaf_t *Mod_PointInLeaf (float *p, qmodel_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, qmodel_t *model, qbool);
 
-#endif	// __MODEL__
+#endif	/* !__MODEL_H__ */

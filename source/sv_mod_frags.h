@@ -21,8 +21,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_mod_frags.h,v 1.6 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_mod_frags.h,v 1.7 2006/06/19 16:46:16 vvd0 Exp $
 */
+
+#ifndef __SV_MOD_FRAGS__
+#define __SV_MOD_FRAGS__
 
 extern cvar_t	sv_mod_msg_file;
 #define MOD_MSG_MAX	512
@@ -136,3 +139,5 @@ qwmsg_t qwmsg_def[] =
     {     0,  0, 0, NULL, 0}
 };
 // end
+
+#endif /* !__SV_MOD_FRAGS__ */

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.23 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.24 2006/06/19 16:46:16 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -744,7 +744,7 @@ void PF_stuffcmd (void)
 		return;
 	}
 
-	buf = cl->stufftext_buf;
+	buf = (char *)cl->stufftext_buf;
 	if (strlen(buf) + strlen(str) >= MAX_STUFFTEXT)
 		PR_RunError ("stufftext buffer overflow");
 	strlcat (buf, str, MAX_STUFFTEXT);
@@ -1278,12 +1278,12 @@ void log(string name, float console, string text)
 
 void PF_log(void)
 {
-	char name[MAX_OSPATH], *text;
+	unsigned char name[MAX_OSPATH], *text;
 	FILE *file;
 
 	snprintf(name, MAX_OSPATH, "%s/%s.log", fs_gamedir, G_STRING(OFS_PARM0));
 	text = PF_VarString(2);
-	PR_CleanText(text);
+	PR_CleanText((unsigned char*)text);
 
 	if ((file = fopen(name, "a")) == NULL)
 	{

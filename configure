@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	Copyright (C) 2004-2006 VVD (vvd@quakeworld.ru).
+#	Copyright (C) 2004-2006 VVD (vvd0@users.sourceforge.net).
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,15 +17,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#	$Id: configure,v 1.11 2006/06/09 16:19:59 vvd0 Exp $
+#	$Id: configure,v 1.12 2006/06/19 16:46:15 vvd0 Exp $
 #
 
-# Makefile cleaning
-echo > Makefile
+# C Compiler
+CC=gcc
+echo CC="${CC}" > Makefile
+
+FILE=conftest
+
 
 # Byte order determination
 echo "Checking byte order..."
-FILE=conftest
 cat > "${FILE}.c"  << _EOF
 #include <stdio.h>
 /*
@@ -60,7 +63,7 @@ int main()
 }
 _EOF
 
-if gcc -o "${FILE}" "${FILE}.c"; then
+if "${CC}" -o "${FILE}" "${FILE}.c"; then
 BYTE_ORDER=`"./${FILE}"`
 rm -f "${FILE}" "${FILE}.c"
 if test "x${BYTE_ORDER}" != xUNKNOWN; then
@@ -79,16 +82,17 @@ else
 	return 1
 fi
 
+
 # OS determination
 if [ x$1 != x ]; then
 UNAME=$1
 else
 UNAME=`uname`
 fi
-echo UNAME=${UNAME} >> Makefile
+echo UNAME="${UNAME}" >> Makefile
 
 case ${UNAME} in
-FreeBSD | OpenBSD | NetBSD | DragonFly | Darwin | BSD)
+FreeBSD | OpenBSD | NetBSD | DragonFly | Darwin | MacOSX | BSD)
 	echo "${UNAME} system - use BSD Makefile."
 	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
@@ -107,7 +111,8 @@ Linux | SunOS | GNU)
 	echo "./configure OpenBSD               OpenBSD"
 	echo "./configure NetBSD                NetBSD"
 	echo "./configure DragonFly             DragonFly BSD"
-	echo "./configure Darwin                Darwin/Mac OS X"
+	echo "./configure Darwin                Darwin/MacOS X"
+	echo "./configure MacOSX                Darwin/MacOS X"
 	echo "./configure Linux                 Linux"
 	echo "./configure SunOS                 SunOS/Solaris"
 	echo "or"

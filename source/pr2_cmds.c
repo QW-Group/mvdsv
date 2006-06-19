@@ -17,13 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.30 2006/05/30 22:12:32 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.31 2006/06/19 16:46:16 vvd0 Exp $
  */
 
 #ifdef USE_PR2
 
 #include "qwsvdef.h"
-#include "g_public.h"
 
 char	*pr2_ent_data_ptr;
 vm_t	*sv_vm = NULL;

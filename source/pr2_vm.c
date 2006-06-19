@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.16 2006/05/24 00:29:58 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.17 2006/06/19 16:46:16 vvd0 Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -27,10 +27,9 @@
   reenterable vmMain
 */
 
-#include "qwsvdef.h"
-#include "g_public.h"
-
 #ifdef USE_PR2
+
+#include "qwsvdef.h"
 
 #ifdef QVM_PROFILE
 cvar_t	sv_enableprofile = {"sv_enableprofile","0"};

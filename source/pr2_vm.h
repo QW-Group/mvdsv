@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.h,v 1.7 2006/04/30 11:27:14 disconn3ct Exp $
+ *  $Id: pr2_vm.h,v 1.8 2006/06/19 16:46:16 vvd0 Exp $
  */
 
 #ifndef __PR2_VM_H__
@@ -248,4 +248,5 @@ vm_t* VM_Load(vm_t *vm, vm_type_t type, char *name,sys_call_t syscall,sys_callex
 extern int VM_Call(vm_t *vm, int /*command*/, int /*arg0*/, int , int , int , int , int , 
 				int , int , int , int , int , int /*arg11*/);
 void  QVM_StackTrace( qvm_t * qvm );
+
 #endif /* !__PR2_VM_H__ */

@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: asm_i386.h,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: asm_i386.h,v 1.5 2006/06/19 16:46:15 vvd0 Exp $
 */
 
-#ifndef __ASM_I386__
-#define __ASM_I386__
+#ifndef __ASM_I386_H__
+#define __ASM_I386_H__
 
 #ifdef ELF
 #define C(label) label
@@ -94,5 +94,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define psp_right		4
 #define psp_size		8
 
-#endif
-
+#endif /* !__ASM_I386_H__ */

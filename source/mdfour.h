@@ -24,11 +24,11 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: mdfour.h,v 1.4 2005/12/04 07:46:59 disconn3ct Exp $
+	$Id: mdfour.h,v 1.5 2006/06/19 16:46:15 vvd0 Exp $
 */
 
-#ifndef _MDFOUR_H
-#define _MDFOUR_H
+#ifndef __MDFOUR_H__
+#define __MDFOUR_H__
 
 #ifndef int32
 #define int32 int
@@ -52,5 +52,4 @@ void mdfour_update(struct mdfour *md, unsigned char *in, int n); //old: MD4Updat
 void mdfour_result(struct mdfour *md, unsigned char *out); // old: MD4Final
 void mdfour(unsigned char *out, unsigned char *in, int n);
 
-#endif	// _MDFOUR_H
-
+#endif	/* !__MDFOUR_H__ */
