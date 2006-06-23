@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pcre.c,v 1.5 2005/10/12 12:14:37 danfe Exp $
+	$Id: pcre.c,v 1.6 2006/06/23 18:09:10 vvd0 Exp $
 */
 
 /*************************************************
@@ -2115,7 +2115,7 @@ int req_caseopt, reqvary, tempreqvary;
 int condcount = 0;
 int options = *optionsptr;
 int after_manual_callout = 0;
-register int c;
+register int c = 0;
 register uschar *code = *codeptr;
 uschar *tempcode;
 BOOL inescq = FALSE;
@@ -2165,7 +2165,7 @@ for (;; ptr++)
   {
   BOOL negate_class;
   BOOL possessive_quantifier;
-  BOOL is_quantifier;
+  BOOL is_quantifier = FALSE;
   int class_charcount;
   int class_lastchar;
   int newoptions;
