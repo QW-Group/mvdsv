@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gas2masm", "gas2masm.vcproj", "{A2AF610C-97D3-44EA-9FAA-FA41F04D0E33}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gas2masm", "gas2masm_71.vcproj", "{315A3F4E-216E-41B1-BE07-C6FD547B1E9C}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -9,10 +9,10 @@ Global
 		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
-		{A2AF610C-97D3-44EA-9FAA-FA41F04D0E33}.Debug.ActiveCfg = Debug|Win32
-		{A2AF610C-97D3-44EA-9FAA-FA41F04D0E33}.Debug.Build.0 = Debug|Win32
-		{A2AF610C-97D3-44EA-9FAA-FA41F04D0E33}.Release.ActiveCfg = Release|Win32
-		{A2AF610C-97D3-44EA-9FAA-FA41F04D0E33}.Release.Build.0 = Release|Win32
+		{315A3F4E-216E-41B1-BE07-C6FD547B1E9C}.Debug.ActiveCfg = Debug|Win32
+		{315A3F4E-216E-41B1-BE07-C6FD547B1E9C}.Debug.Build.0 = Debug|Win32
+		{315A3F4E-216E-41B1-BE07-C6FD547B1E9C}.Release.ActiveCfg = Release|Win32
+		{315A3F4E-216E-41B1-BE07-C6FD547B1E9C}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
