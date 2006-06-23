@@ -1,13 +1,14 @@
 
-$Id: changes.txt,v 1.85 2006/06/19 16:46:15 vvd0 Exp $
+$Id: changes.txt,v 1.86 2006/06/23 17:58:20 vvd0 Exp $
 
 ----
-MVDSV v0.19.30-CVS build 237? (2006.06.2?)
+MVDSV v0.20 build 2376 (2006.06.23)
 * disconnect <disconn3ct@users.sourceforge.net>
 - bugfix from 0.19.10-develop: mvd stream (qtv) closed as file - cause crash mvdsv on exit
 - for developers: move FS-related stuff from common.c to fs.c
 - small fixes and cleanups here and there
 - added DragonFly BSD targets
+- added kqueue support for DragonFly and NetBSD
 
 * qqshka <qqshka@users.sourceforge.net>
 - new cvar vip_values which control which vip value assign for particular
@@ -30,6 +31,7 @@ MVDSV v0.19.30-CVS build 237? (2006.06.2?)
 - improved MacOS X/Darwin support
 
 * VVD <vvd0@users.sourceforge.net>
+- kqueue now default on
 - default value of sys_select_timeout in *nix was changed from 10000 (10 milsec) to 1000000 (1 sec)
 - Darwin was renamed to MacOSX
 - bugfix from 0.19.10-develop: crashes on *nix when qtvproxy will be disconnect (EXPERIMENTAL)
