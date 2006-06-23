@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_exec.c,v 1.7 2006/06/23 18:09:10 vvd0 Exp $
+	$Id: pr_exec.c,v 1.8 2006/06/23 18:15:33 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -366,7 +366,7 @@ void PR_ExecuteProgram (func_t fnum)
 {
 	eval_t	*a = NULL, *b = NULL, *c = NULL;
 	int			s;
-	dstatement_t	*st;
+	dstatement_t	*st = NULL;
 	dfunction_t	*f, *newf;
 	int		runaway;
 	int		i;
