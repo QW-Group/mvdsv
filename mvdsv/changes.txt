@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.86 2006/06/23 17:58:20 vvd0 Exp $
+$Id: changes.txt,v 1.87 2006/06/26 17:01:49 vvd0 Exp $
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
@@ -31,7 +31,7 @@ MVDSV v0.20 build 2376 (2006.06.23)
 - improved MacOS X/Darwin support
 
 * VVD <vvd0@users.sourceforge.net>
-- kqueue now default on
+- kqueue now on by default, for disabling use "make -DNOKQUEUE"
 - default value of sys_select_timeout in *nix was changed from 10000 (10 milsec) to 1000000 (1 sec)
 - Darwin was renamed to MacOSX
 - bugfix from 0.19.10-develop: crashes on *nix when qtvproxy will be disconnect (EXPERIMENTAL)
@@ -164,7 +164,7 @@ MVDSV v0.19.20-develop build 2320 (2006.04.28)
 
 ----
 MVDSV v0.19.10-develop build 2227 (2006.01.25)
-- hardcore cleanup. Removed lot of client-onlt code (by Angel)
+- hardcore cleanup. Removed lot of client-only code (by Angel)
 - work on SunOS SPARC and ix86 targets now
 - added MSVC 7.1 solution/project file
 [server]
