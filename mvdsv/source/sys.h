@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.14 2006/06/22 18:27:11 disconn3ct Exp $
+	$Id: sys.h,v 1.15 2006/06/26 14:07:59 disconn3ct Exp $
 */
 // sys.h -- non-portable functions
 
@@ -63,7 +63,7 @@ int		Sys_compare_by_name (const void *a, const void *b);
 #define SORT_BY_DATE	1
 #define SORT_BY_NAME	2
 
-#if (defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 	extern struct timespec select_timeout;
 #else
 	extern struct timeval  select_timeout;
@@ -104,7 +104,6 @@ int Sys_Script(char *path, char *args);
 #include "resource.h"
 #include "winquake.h"
 #include "sv_windows.h"
-typedef HMODULE DL_t;
 #define DLEXT "dll"
 
 #else
@@ -119,9 +118,13 @@ typedef HMODULE DL_t;
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__sun__) || defined(__GNUC__) || defined(__APPLE__)
 #include <sys/time.h>
 #include <dirent.h>
-#if (defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
+#if (defined(__FreeBSD__) || defined(__OpenBSD__)  || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
 #include <sys/types.h>
 #include <sys/event.h>
+#ifdef __OpenBSD__ // OpenBSD tell me it want it for kqueue
+#include <sys/time.h>
+#include <stdint.h> /* for intptr_t */
+#endif /* !__OpenBSD__ */
 #endif
 #else
 #include <sys/dir.h>
