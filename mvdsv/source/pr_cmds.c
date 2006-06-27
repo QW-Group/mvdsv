@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.24 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: pr_cmds.c,v 1.25 2006/06/27 14:59:51 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -2439,6 +2439,8 @@ void PF_infokey (void)
 			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
 		else if (!strncmp(key, "ping", 5))
 			snprintf(ov, sizeof(ov), "%d", SV_CalcPing (cl));
+		else if (!strncmp(key, "*userid", 8))
+			snprintf(ov, sizeof(ov), "%d", svs.clients[e1 - 1].userid);
 		else if (!strncmp(key, "login", 6))
 			value = cl->login;
 		else
