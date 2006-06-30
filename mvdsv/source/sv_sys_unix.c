@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.48 2006/06/30 17:52:24 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.49 2006/06/30 17:56:07 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -811,9 +811,6 @@ int main (int argc, char *argv[])
 					Sys_Printf("WARNING: Can't initgroups(%s, %d): %s",
 								user_name, (unsigned)group_id, strerror(qerrno));
 			}
-			if (setuid(user_id) < 0)
-				Sys_Printf("WARNING: Can't setuid to user \"%s\": %s\n",
-							user_name, strerror(qerrno));
 		}
 	}
 
