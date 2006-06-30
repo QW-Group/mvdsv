@@ -1,11 +1,17 @@
 
-$Id: changes.txt,v 1.88 2006/06/27 15:08:15 qqshka Exp $
+$Id: changes.txt,v 1.89 2006/06/30 15:23:32 vvd0 Exp $
 
 ----
-MVDSV v0.2X build XXXX (2006.06.27)
+MVDSV v0.20.01-CVS build 23?? (2006.0?.??)
+* VVD <vvd0@users.sourceforge.net>
+- bugfix from 0.1726: on *nix '-u <UID>' didn't set uid
+(Thanks to mli)
+- improved -u and -g (setuid/setgid) support
+
 * qqshka <qqshka@users.sourceforge.net>
--  adding access to user id for qc-based mods, via infokey(client, "*userid"),
-   QVM mods already have this.
+- adding access to user id for qc-based mods, via infokey(client, "*userid"),
+  QVM mods already have this.
+
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
