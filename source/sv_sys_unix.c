@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.46 2006/06/26 14:07:59 disconn3ct Exp $
+	$Id: sv_sys_unix.c,v 1.47 2006/06/30 15:23:32 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -676,14 +676,13 @@ int main (int argc, char *argv[])
 	double time, oldtime, newtime;
 	quakeparms_t parms;
 
-	//Added by VVD {
 	int j;
-	uid_t user_id;
+	qbool ind;
+	uid_t user_id = 0;
 	gid_t group_id = 0;
-	struct passwd *pw;
+	struct passwd *pw = NULL;
 	struct group *gr;
 	char *user_name, *group_name = NULL, *chroot_dir;
-	//Added by VVD }
 
 // Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
 	signal(SIGPIPE, SIG_IGN);
@@ -758,49 +757,72 @@ int main (int argc, char *argv[])
 	j = COM_CheckParm ("-g");
 	if (j && j + 1 < com_argc)
 	{
+		ind = true;
 		group_name = com_argv[j + 1];
 		if (only_digits(group_name))
 			group_id = Q_atoi(group_name);
 		else
 		{
-			if ((gr = getgrnam(group_name)) == NULL)
+			if (!(gr = getgrnam(group_name)))
 			{
-				Sys_Printf("group \"%s\" unknown\n", group_name);
-				group_id = -1; // disconnect: FIXME: gid_t cant be -1
+				Sys_Printf("WARNING: group \"%s\" unknown\n", group_name);
+				ind = false;
 			}
 			else
 				group_id = gr->gr_gid;
 		}
-		if (group_id != -1) // disconnect: FIXME: gid_t cant be -1
+		if (ind)
 			if (setgid(group_id) < 0)
-				Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(qerrno));
+				Sys_Printf("WARNING: Can't setgid to group \"%s\": %s\n",
+							group_name, strerror(qerrno));
 	}
 	// setuid
 	j = COM_CheckParm ("-u");
 	if (j && j + 1 < com_argc)
 	{
+		ind = true;
 		user_name = com_argv[j + 1];
-		if (only_digits(user_name))
-			user_id = Q_atoi(user_name);
-		else
+		j = only_digits(user_name);
+		if (j)
 		{
-			pw = getpwnam(user_name);
-			if (pw == NULL)
-				Sys_Printf("user \"%s\" unknown\n", user_name);
-			else
+			user_id = Q_atoi(user_name);
+			pw = getpwuid(user_id);
+		}
+		if (!j || !pw)
+		{
+			if (!(pw = getpwnam(user_name)))
 			{
+				if (j)
+					Sys_Printf("WARNING: user with uid %u unknown, but we will try to setuid\n",
+								(unsigned)user_id);
+				else
+				{
+					Sys_Printf("WARNING: user \"%s\" unknown\n", user_name);
+					ind = false;
+				}
+			}
+			else
 				user_id = pw->pw_uid;
+		}
+
+		if (ind)
+		{
+			if (pw)
+			{
 				if (!group_name)
 				{
 					group_id = pw->pw_gid;
 					if (setgid(group_id) < 0)
-						Sys_Printf("Can't setgid to group \"%s\": %s\n", group_name, strerror(qerrno));
+						Sys_Printf("WARNING: Can't setgid to group \"%s\": %s\n",
+									group_name, strerror(qerrno));
 				}
-				if (!getuid() && initgroups(user_name, group_id) < 0)
-					Sys_Printf("Can't initgroups(%s, %d): %s", user_name, (int)group_id, strerror(qerrno));
-				if (setuid(user_id) < 0)
-					Sys_Printf("Can't setuid to user \"%s\": %s\n", user_name, strerror(qerrno));
+				if (!getuid() && initgroups(pw->pw_name, group_id) < 0)
+					Sys_Printf("WARNING: Can't initgroups(%s, %d): %s",
+								user_name, (unsigned)group_id, strerror(qerrno));
 			}
+			if (setuid(user_id) < 0)
+				Sys_Printf("WARNING: Can't setuid to user \"%s\": %s\n",
+							user_name, strerror(qerrno));
 		}
 	}
 
