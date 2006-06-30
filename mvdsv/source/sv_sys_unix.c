@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.49 2006/06/30 17:56:07 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.50 2006/06/30 18:12:55 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -682,7 +682,7 @@ int main (int argc, char *argv[])
 	gid_t group_id = 0;
 	struct passwd *pw = NULL;
 	struct group *gr;
-	char *user_name, *group_name = NULL, *chroot_dir;
+	char *user_name = NULL, *group_name = NULL, *chroot_dir;
 
 // Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
 	signal(SIGPIPE, SIG_IGN);
