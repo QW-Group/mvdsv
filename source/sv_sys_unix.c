@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.47 2006/06/30 15:23:32 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.48 2006/06/30 17:52:24 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -741,18 +741,6 @@ int main (int argc, char *argv[])
 		}
 	}
 
-	// chroot
-	j = COM_CheckParm ("-t");
-	if (j && j + 1 < com_argc)
-	{
-		chroot_dir = com_argv[j + 1];
-		if (chroot(chroot_dir) < 0)
-			Sys_Printf("chroot %s failed: %s\n", chroot_dir, strerror(qerrno));
-		else
-			if (chdir("/") < 0)
-				Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(qerrno));
-	}
-
 	// setgid
 	j = COM_CheckParm ("-g");
 	if (j && j + 1 < com_argc)
@@ -776,7 +764,10 @@ int main (int argc, char *argv[])
 				Sys_Printf("WARNING: Can't setgid to group \"%s\": %s\n",
 							group_name, strerror(qerrno));
 	}
-	// setuid
+
+
+	// setuid - only resolve name
+	ind = false;
 	j = COM_CheckParm ("-u");
 	if (j && j + 1 < com_argc)
 	{
@@ -824,6 +815,27 @@ int main (int argc, char *argv[])
 				Sys_Printf("WARNING: Can't setuid to user \"%s\": %s\n",
 							user_name, strerror(qerrno));
 		}
+	}
+
+	// chroot
+	j = COM_CheckParm ("-t");
+	if (j && j + 1 < com_argc)
+	{
+		chroot_dir = com_argv[j + 1];
+		if (chroot(chroot_dir) < 0)
+			Sys_Printf("chroot %s failed: %s\n", chroot_dir, strerror(qerrno));
+		else
+			if (chdir("/") < 0)
+				Sys_Printf("chdir(\"/\") to %s failed: %s\n", chroot_dir, strerror(qerrno));
+	}
+
+	// setuid - we can't setuid before chroot and
+	// can't resolve uid/gid from user/group names after chroot
+	if (ind)
+	{
+		if (setuid(user_id) < 0)
+			Sys_Printf("WARNING: Can't setuid to user \"%s\": %s\n",
+						user_name, strerror(qerrno));
 	}
 
 	// run one frame immediately for first heartbeat
