@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.21 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: net.h,v 1.22 2006/07/01 16:13:16 disconn3ct Exp $
 */
 
 // net.h -- quake's interface to the networking layer
@@ -72,8 +72,7 @@ typedef unsigned int socklen_t;
 
 #define	PORT_ANY	-1
 
-typedef enum {NA_INVALID, NA_LOOPBACK, NA_IP, NA_IPV6, NA_IPX,
-				NA_BROADCAST_IP, NA_BROADCAST_IP6, NA_BROADCAST_IPX} netadrtype_t;
+typedef enum {NA_INVALID, NA_IP} netadrtype_t;
 
 typedef enum {NS_CLIENT, NS_SERVER} netsrc_t;
 
