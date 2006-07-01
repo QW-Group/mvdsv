@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.71 2006/07/01 07:19:54 jhodge Exp $
+	$Id: sv_main.c,v 1.72 2006/07/01 18:31:01 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1279,8 +1279,9 @@ static void SVC_RemoteCommand (char *client_string)
 			// must check not only for chmod, but also CHMOD, ChmoD, etc.
 			// so we lowercase the whole temporary line before checking
 
-			for(i = 0; str[i]; i++)
-				str[i] = (char)tolower(str[i]);
+			// VVD: strcmp => strcasecmp and we don't need to do this (yes?)
+			//for(i = 0; str[i]; i++)
+			//	str[i] = (char)tolower(str[i]);
 
 			Cmd_TokenizeString (str);		// must check *all* tokens, because
 													// a command/var may not be the first
@@ -1300,18 +1301,18 @@ static void SVC_RemoteCommand (char *client_string)
 				if(!tstr[0])		// skip leading empty tokens
 					continue;
 
-				if(!strcmp(tstr, "rm") ||
-		          !strcmp(tstr, "rmdir") ||
-		          !strcmp(tstr, "ls") ||
-		          !strcmp(tstr, "chmod") ||
-		          !strcmp(tstr, "sv_admininfo") ||
-		          !strcmp(tstr, "if") ||
-		          !strcmp(tstr, "localcommand") ||
-		          !strcmp(tstr, "sv_crypt_rcon") ||
-		          !strcmp(tstr, "sv_timestamplen") ||
-		          !strncmp(tstr, "log", 3) ||
-		          !strcmp(tstr, "sys_command_line")
-				   )
+				if (!strcasecmp(tstr, "rm") ||
+					!strcasecmp(tstr, "rmdir") ||
+					!strcasecmp(tstr, "ls") ||
+					!strcasecmp(tstr, "chmod") ||
+					!strcasecmp(tstr, "sv_admininfo") ||
+					!strcasecmp(tstr, "if") ||
+					!strcasecmp(tstr, "localcommand") ||
+					!strcasecmp(tstr, "sv_crypt_rcon") ||
+					!strcasecmp(tstr, "sv_timestamplen") ||
+					!strncasecmp(tstr, "log", 3) ||
+					!strcasecmp(tstr, "sys_command_line")
+					)
 				{
 					bad_cmd = true;
 				}
