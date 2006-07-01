@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: sv_main.c,v 1.70 2006/06/26 14:07:55 disconn3ct Exp $
+
+	$Id: sv_main.c,v 1.71 2006/07/01 07:19:54 jhodge Exp $
 */
 
 #include "qwsvdef.h"
@@ -507,7 +507,7 @@ int SV_GenerateUserID (void)
 			if (cl->state != cs_free && cl->userid == svs.lastuserid)
 				break;
 	} while (i != MAX_CLIENTS);
-	
+
 	return svs.lastuserid;
 }
 
@@ -988,7 +988,7 @@ static void SVC_DirectConnect (void)
 	newcl->userid = SV_GenerateUserID();
 
 	strlcpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
-	
+
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
 
@@ -1107,14 +1107,14 @@ static int char2int (int c)
  *      sys/netinet/ip_icmp.c(846): int badport_bandlim(int which);
  *
  *	Return false if it is ok to check rcon_password, true if we have
- *	hit our bandwidth limit and it is not ok.  
+ *	hit our bandwidth limit and it is not ok.
  *
  *	If sv_rconlim.value is <= 0, the feature is disabled and false is returned.
  *
  *	Note that the printing of the error message is delayed so we can
  *	properly print the rcon limit error rate that the system was trying to do
  *	(i.e. 22000/100 rcon pps, etc...).  This can cause long delays in printing
- *	the 'final' error, but it doesn't make sense to solve the printing 
+ *	the 'final' error, but it doesn't make sense to solve the printing
  *	delay with more complex code.
  */
 static qbool rcon_bandlim (void)
@@ -1265,23 +1265,60 @@ static void SVC_RemoteCommand (char *client_string)
 		}
 		else
 		{
-			strlcpy (str, Cmd_Argv(2), sizeof(str));
-			if (	str[0] && //normal rcon can't use these commands
-				(!strcmp(str, "master_rcon_password") || //disconnect: remove?
-			          !strcmp(str, "rm") ||
-			          !strcmp(str, "rmdir") ||
-			          !strcmp(str, "ls") ||
-			          !strcmp(str, "chmod") ||
-			          !strcmp(str, "sv_admininfo") ||
-			          !strcmp(str, "if") ||
-			          !strcmp(str, "localcommand") ||
-			          !strcmp(str, "sv_crypt_rcon") ||
-			          !strcmp(str, "sv_timestamplen") ||
-			          !strncmp(str, "log", 3) ||
-			          !strcmp(str, "sys_command_line")
-			        )
-			   )
-				bad_cmd = true;
+			//
+			// the following line prevents exploits like:
+			//   coop rm
+			//   $coop . *
+			// which expands to:
+			//   rm . *
+
+			Cmd_ExpandString (client_string, str);		// check *expanded* command
+
+			//
+			// since the execution parser is not case sensitive, we
+			// must check not only for chmod, but also CHMOD, ChmoD, etc.
+			// so we lowercase the whole temporary line before checking
+
+			for(i = 0; str[i]; i++)
+				str[i] = (char)tolower(str[i]);
+
+			Cmd_TokenizeString (str);		// must check *all* tokens, because
+													// a command/var may not be the first
+													// token -- example: "" ls .
+
+			//
+			// normal rcon can't use these commands
+			//
+			// NOTE: this would still be vulnerable to semicolons if
+			// they were still allowed, so keep that in mind before
+			// re-enabling them
+
+			for (i = 2; i < Cmd_Argc(); i++)
+			{
+				const char *tstr = Cmd_Argv(i);
+
+				if(!tstr[0])		// skip leading empty tokens
+					continue;
+
+				if(!strcmp(tstr, "rm") ||
+		          !strcmp(tstr, "rmdir") ||
+		          !strcmp(tstr, "ls") ||
+		          !strcmp(tstr, "chmod") ||
+		          !strcmp(tstr, "sv_admininfo") ||
+		          !strcmp(tstr, "if") ||
+		          !strcmp(tstr, "localcommand") ||
+		          !strcmp(tstr, "sv_crypt_rcon") ||
+		          !strcmp(tstr, "sv_timestamplen") ||
+		          !strncmp(tstr, "log", 3) ||
+		          !strcmp(tstr, "sys_command_line")
+				   )
+				{
+					bad_cmd = true;
+				}
+				break;	// stop after first non-empty token
+			}
+
+			Cmd_TokenizeString (client_string);	// restore original tokens
 		}
 		do_cmd = !bad_cmd;
 	}
@@ -1470,32 +1507,32 @@ static void SV_ConnectionlessPacket (void)
 
 /*
 ==============================================================================
- 
+
 PACKET FILTERING
- 
- 
+
+
 You can add or remove addresses from the filter list with:
- 
+
 addip <ip>
 removeip <ip>
- 
+
 The ip address is specified in dot format, and any unspecified digits will match any value, so you can specify an entire class C network with "addip 192.246.40".
- 
+
 Removeip will only remove an address specified exactly the same way.  You cannot addip a subnet, then removeip a single host.
- 
+
 listip
 Prints the current list of filters.
- 
+
 writeip
 Dumps "addip <ip>" commands to listip.cfg so it can be execed at a later date.  The filter lists are not saved and restored by default, because I beleive it would cause too much confusion.
- 
+
 filterban <0 or 1>
- 
+
 If 1 (the default), then ip addresses matching the current list will be prohibited from entering the game.  This is the default setting.
- 
+
 If 0, then only addresses matching the list will be allowed.  This lets you easily set up a private game, or a game that only allows players from your local network.
- 
- 
+
+
 ==============================================================================
 */
 
@@ -2165,7 +2202,7 @@ static void SV_ReadPackets (void)
 
 			svs.free_packets = svs.free_packets->next;
 			cl->last_packet->next = NULL;
-			
+
 			cl->last_packet->time = realtime;
 			SZ_Clear(&cl->last_packet->msg);
 			SZ_Write(&cl->last_packet->msg, net_message.data, net_message.cursize);
@@ -2184,7 +2221,7 @@ SV_CheckTimeouts
 
 If a packet has not been received from a client in timeout.value
 seconds, drop the conneciton.
- 
+
 When a client is normally dropped, the client_t goes into a zombie state
 for a few seconds to make sure any final reliable message gets resent
 if necessary
@@ -2390,7 +2427,7 @@ void SV_Frame (double time)
 	SV_CheckLog ();
 
 	SV_MVDStream_Poll();
-	
+
 	// check for commands typed to the host
 	SV_GetConsoleCommands ();
 
@@ -2547,7 +2584,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_wateraccelerate);
 	Cvar_Register (&sv_friction);
 	Cvar_Register (&sv_waterfriction);
-	
+
 	//Cvar_Register (&pm_bunnyspeedcap);
 	Cvar_Register (&pm_ktjump);
 	//Cvar_Register (&pm_slidefix);
@@ -2912,7 +2949,7 @@ static void SV_InitNet (void)
 		Con_Printf ("Telnet port: %i\n", telnetport);
 	}
 	else
-		telnetport = 
+		telnetport =
 #ifdef ENABLE_TELNET_BY_DEFAULT
 			sv_port;
 #else
@@ -3161,7 +3198,7 @@ int Sys_compare_by_name(const void *a, const void *b)
 	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
 	'x', 'y', 'z', '{', '|', '}', '~', '<',
- 
+
 	'<', '=', '>', '#', '#', '.', '#', '#',
 	'#', '#', ' ', '#', ' ', '>', '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
