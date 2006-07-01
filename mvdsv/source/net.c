@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.12 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: net.c,v 1.13 2006/07/01 16:14:05 disconn3ct Exp $
 */
 // net.c
 
@@ -26,11 +26,11 @@ netadr_t	net_local_adr;
 
 netadr_t	net_from;
 sizebuf_t	net_message;
-int		net_socket;
-int		net_telnetsocket;
-int		sv_port;
-int		telnetport;
-int		telnet_iosock;
+int			net_socket;
+int			net_telnetsocket;
+int			sv_port;
+int			telnetport;
+int			telnet_iosock;
 qbool		telnet_connected;
 
 byte		net_message_buffer[MSG_BUF_SIZE];
@@ -73,7 +73,7 @@ qbool NET_CompareAdr (netadr_t a, netadr_t b)
 
 char *NET_AdrToString (netadr_t a)
 {
-	static	char	s[64];
+	static char s[64]; // 22 should be OK too
 
 	snprintf (s, sizeof(s), "%i.%i.%i.%i:%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3], ntohs(a.port));
 
@@ -82,7 +82,7 @@ char *NET_AdrToString (netadr_t a)
 
 char *NET_BaseAdrToString (netadr_t a)
 {
-	static	char	s[64];
+	static char s[64]; // 16 should be OK too
 
 	snprintf (s, sizeof(s), "%i.%i.%i.%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3]);
 
@@ -101,39 +101,40 @@ idnewt:28000
 */
 qbool NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 {
-	struct hostent	*h;
-	char	*colon;
-	char	copy[128];
+	struct hostent *h;
+	char *colon;
+	char copy[128];
 
 	memset (sadr, 0, sizeof(*sadr));
 
+	((struct sockaddr_in *)sadr)->sin_family = AF_INET;
+
+	((struct sockaddr_in *)sadr)->sin_port = 0;
+
+	if (strlen(s) >= sizeof(copy)-1)
+		return false;
+
+	strlcpy (copy, s, sizeof(copy));
+	// strip off a trailing :port if present
+	for (colon = copy ; *colon ; colon++)
+		if (*colon == ':')
+		{
+			*colon = 0;
+			((struct sockaddr_in *)sadr)->sin_port = htons((short)Q_atoi(colon+1));
+		}
+
+	//this is the wrong way to test. a server name may start with a number.
+	if (copy[0] >= '0' && copy[0] <= '9')
 	{
-		((struct sockaddr_in *)sadr)->sin_family = AF_INET;
-
-		((struct sockaddr_in *)sadr)->sin_port = 0;
-
-		strlcpy (copy, s, sizeof(copy));
-		// strip off a trailing :port if present
-		for (colon = copy ; *colon ; colon++)
-			if (*colon == ':')
-			{
-				*colon = 0;
-				((struct sockaddr_in *)sadr)->sin_port = htons((short)Q_atoi(colon+1));
-			}
-
-		//this is the wrong way to test. a server name may start with a number.
-		if (copy[0] >= '0' && copy[0] <= '9')
-		{
-			*(int *)&((struct sockaddr_in *)sadr)->sin_addr = inet_addr(copy);
-		}
-		else
-		{
-			if (! (h = gethostbyname(copy)) )
-				return 0;
-			if (h->h_addrtype != AF_INET)
-				return 0;
-			*(int *)&((struct sockaddr_in *)sadr)->sin_addr = *(int *)h->h_addr_list[0];
-		}
+		*(int *)&((struct sockaddr_in *)sadr)->sin_addr = inet_addr(copy);
+	}
+	else
+	{
+		if (!(h = gethostbyname(copy)))
+			return 0;
+		if (h->h_addrtype != AF_INET)
+			return 0;
+		*(int *)&((struct sockaddr_in *)sadr)->sin_addr = *(int *)h->h_addr_list[0];
 	}
 
 	return true;
@@ -142,13 +143,6 @@ qbool NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 qbool NET_StringToAdr (char *s, netadr_t *a)
 {
 	struct sockaddr_qstorage sadr;
-
-	if (!strcmp (s, "internalserver"))
-	{
-		memset (a, 0, sizeof(*a));
-		a->type = NA_LOOPBACK;
-		return true;
-	}
 
 	if (!NET_StringToSockaddr (s, &sadr))
 		return false;
