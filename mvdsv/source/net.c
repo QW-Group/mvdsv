@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.13 2006/07/01 16:14:05 disconn3ct Exp $
+	$Id: net.c,v 1.14 2006/07/01 16:54:21 vvd0 Exp $
 */
 // net.c
 
@@ -111,10 +111,10 @@ qbool NET_StringToSockaddr (char *s, struct sockaddr_qstorage *sadr)
 
 	((struct sockaddr_in *)sadr)->sin_port = 0;
 
-	if (strlen(s) >= sizeof(copy)-1)
+	// can't resolve IP by hostname if hostname was truncated
+	if (strlcpy (copy, s, sizeof(copy)) >= sizeof(copy))
 		return false;
 
-	strlcpy (copy, s, sizeof(copy));
 	// strip off a trailing :port if present
 	for (colon = copy ; *colon ; colon++)
 		if (*colon == ':')
