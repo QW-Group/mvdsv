@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.h,v 1.11 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: pmove.h,v 1.12 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #ifndef __PMOVE_H__
@@ -26,16 +26,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct
 {
 	vec3_t		origin;
-	qmodel_t	*model;		// only for bsp models
+	cmodel_t	*model;		// only for bsp models
 	vec3_t		mins, maxs;	// only for non-bsp models
-	int		info;		// for client or server to identify
+	int			info;		// for client or server to identify
 } physent_t;
 
 typedef enum
 {
 	PM_NORMAL,			// normal ground movement
-	PM_OLD_SPECTATOR,		// fly, no clip to world (QW bug)
-	PM_SPECTATOR,			// fly, no clip to world
+	PM_OLD_SPECTATOR,	// fly, no clip to world (QW bug)
+	PM_SPECTATOR,		// fly, no clip to world
 	PM_DEAD,			// no acceleration
 	PM_FLY,				// fly, bump into walls
 	PM_NONE,			// can't move
@@ -51,23 +51,22 @@ typedef struct
 	qbool		jump_held;
 
 	float		waterjumptime;
-	int		pm_type;
+	int			pm_type;
 
 	// world state
-	int		numphysent;
-	physent_t	physents[MAX_PHYSENTS];	// 0 should be the world
+	int			numphysent;
+	physent_t	physents[MAX_PHYSENTS]; // 0 should be the world
 
 	// input
 	usercmd_t	cmd;
 
 	// results
-	int		numtouch;
-	int		touchindex[MAX_PHYSENTS];
+	int			numtouch;
+	int			touchindex[MAX_PHYSENTS];
 	qbool		onground;
-	int		groundent;		// index in physents array, only valid
-						// when onground is true
-	int		waterlevel;
-	int		watertype;
+	int			groundent; // index in physents array, only valid when onground is true
+	int			waterlevel;
+	int			watertype;
 } playermove_t;
 
 typedef struct {
@@ -89,13 +88,11 @@ typedef struct {
 } movevars_t;
 
 
-extern	movevars_t	movevars;
-extern	playermove_t	pmove;
+extern	movevars_t movevars;
+extern	playermove_t pmove;
 
 void PM_PlayerMove (void);
 void PM_Init (void);
-
-int PM_HullPointContents (hull_t *hull, int num, vec3_t p);
 
 int PM_PointContents (vec3_t point);
 qbool PM_TestPlayerPosition (vec3_t point);

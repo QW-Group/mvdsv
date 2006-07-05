@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.22 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_send.c,v 1.23 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -339,14 +339,10 @@ void SV_Multicast (vec3_t origin, int to)
 {
 	client_t	*client;
 	byte		*mask;
-	mleaf_t		*leaf;
 	int		leafnum;
 	int		j;
 	qbool		reliable;
-	vec3_t		org;
-
-	leaf = Mod_PointInLeaf (origin, sv.worldmodel);
-	leafnum = leaf ? leaf - sv.worldmodel->leafs : 0;
+	vec3_t		vieworg;
 
 	reliable = false;
 
@@ -355,19 +351,19 @@ void SV_Multicast (vec3_t origin, int to)
 	case MULTICAST_ALL_R:
 		reliable = true;	// intentional fallthrough
 	case MULTICAST_ALL:
-		mask = sv.pvs;		// leaf 0 is everything;
+		mask = NULL;		// everything
 		break;
 
 	case MULTICAST_PHS_R:
 		reliable = true;	// intentional fallthrough
 	case MULTICAST_PHS:
-		mask = sv.phs + leafnum * 4*((sv.worldmodel->numleafs+31)>>5);
+		mask = CM_LeafPHS (CM_PointInLeaf(origin));
 		break;
 
 	case MULTICAST_PVS_R:
 		reliable = true;	// intentional fallthrough
 	case MULTICAST_PVS:
-		mask = sv.pvs + leafnum * 4*((sv.worldmodel->numleafs+31)>>5);
+		mask = CM_LeafPVS (CM_PointInLeaf (origin));
 		break;
 
 	default:
@@ -381,24 +377,27 @@ void SV_Multicast (vec3_t origin, int to)
 		if (client->state != cs_spawned)
 			continue;
 
-		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, org);
+		if (!mask)
+			goto inrange; // multicast to all
+
+		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, vieworg);
 
 		if (to == MULTICAST_PHS_R || to == MULTICAST_PHS)
 		{
 			vec3_t delta;
-			VectorSubtract(origin, org, delta);
+			VectorSubtract(origin, vieworg, delta);
 			if (VectorLength(delta) <= 1024)
 				goto inrange;
 		}
 
-		leaf = Mod_PointInLeaf (org, sv.worldmodel);
-		if (leaf)
+		leafnum = CM_Leafnum(CM_PointInLeaf(vieworg));
+		if (leafnum)
 		{
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
-			leafnum = leaf - sv.worldmodel->leafs - 1;
+			leafnum = leafnum - 1;
 			if ( !(mask[leafnum>>3] & (1<<(leafnum&7)) ) )
 			{
-				//				Con_Printf ("supressed multicast\n");
+				// Con_Printf ("supressed multicast\n");
 				continue;
 			}
 		}

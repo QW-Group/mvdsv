@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.33 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: server.h,v 1.34 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 // server.h
@@ -66,9 +66,11 @@ typedef struct
 	unsigned	model_player_checksum;
 	unsigned	eyes_player_checksum;
 	
-	char		name[MAP_NAME_LEN];		// map name
+	char		mapname[MAP_NAME_LEN];		// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
-	struct model_s 	*worldmodel;
+	unsigned	map_checksum;
+	unsigned	map_checksum2;
+	cmodel_t	*worldmodel;
 	char		*model_precache[MAX_MODELS];	// NULL terminated
 #ifdef VWEP_TEST
 	// TODO: rename to precache to match mvdsv naming?
@@ -76,7 +78,7 @@ typedef struct
 #endif
 	char		*sound_precache[MAX_SOUNDS];	// NULL terminated
 	char		*lightstyles[MAX_LIGHTSTYLES];
-	struct model_s	*models[MAX_MODELS];
+	cmodel_t	*models[MAX_MODELS];
 
 	int		num_edicts;			// increases towards MAX_EDICTS
 	edict_t		*edicts;			// can NOT be array indexed, because

@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.BSD,v 1.6 2006/06/26 14:06:58 disconn3ct Exp $
+#	$Id: Makefile.BSD,v 1.7 2006/07/05 17:07:04 disconn3ct Exp $
 #
 
 #MAINDIR			!=	/bin/pwd
@@ -63,7 +63,6 @@ SV_OBJS = \
 		${SV_DIR}/sv_main.o \
 		${SV_DIR}/sv_master.o \
 		${SV_DIR}/sv_mod_frags.o \
-		${SV_DIR}/sv_model.o \
 		${SV_DIR}/sv_move.o \
 		${SV_DIR}/sv_nchan.o \
 		${SV_DIR}/sv_phys.o \
@@ -74,6 +73,7 @@ SV_OBJS = \
 		${SV_DIR}/bothtools.o \
 		${SV_DIR}/cmd.o \
 		${SV_DIR}/common.o \
+		${SV_DIR}/cmodel.o \
 		${SV_DIR}/crc.o \
 		${SV_DIR}/cvar.o \
 		${SV_DIR}/fs.o \

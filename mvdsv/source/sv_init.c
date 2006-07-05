@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.21 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: sv_init.c,v 1.22 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -33,8 +33,6 @@ char localinfo[MAX_LOCALINFO_STRING+1]; // local game info
 //storage for client names for -progtype 0 (VM_NONE)
 char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN]; //clientnames for -progtype 0
 #endif
-
-extern spec_worldmodel_t specworld;
 
 /*
 ================
@@ -193,86 +191,6 @@ static void SV_SaveSpawnparms (void)
 	}
 }
 
-/*
-================
-SV_CalcPHS
-
-Expands the PVS and calculates the PHS
-(Potentially Hearable Set)
-================
-*/
-static void SV_CalcPHS (void)
-{
-	int rowbytes, rowwords;
-	int i, j, k, l, index, num;
-	int bitbyte;
-	unsigned *dest, *src;
-	unsigned char *scan;
-	int count, vcount;
-
-	Con_Printf ("Building PHS...\n");
-
-	num = sv.worldmodel->numleafs;
-	rowwords = (num+31)>>5;
-	rowbytes = rowwords*4;
-
-	sv.pvs = (byte *) Hunk_Alloc (rowbytes*num);
-	scan = sv.pvs;
-	vcount = 0;
-	for (i=0 ; i<num ; i++, scan+=rowbytes)
-	{
-		memcpy (scan, Mod_LeafPVS(sv.worldmodel->leafs+i, sv.worldmodel, true),
-		        rowbytes);
-		if (i == 0)
-			continue;
-		for (j=0 ; j<num ; j++)
-		{
-			if ( scan[j>>3] & (1<<(j&7)) )
-			{
-				vcount++;
-			}
-		}
-	}
-
-
-	sv.phs = (byte *) Hunk_Alloc (rowbytes*num);
-	count = 0;
-	scan = sv.pvs;
-	dest = (unsigned *)sv.phs;
-	for (i=0 ; i<num ; i++, dest += rowwords, scan += rowbytes)
-	{
-		memcpy ((void *) dest, (const void *) scan, (size_t) rowbytes);
-		for (j=0 ; j<rowbytes ; j++)
-		{
-			bitbyte = scan[j];
-			if (!bitbyte)
-				continue;
-			for (k=0 ; k<8 ; k++)
-			{
-				if (! (bitbyte & (1<<k)) )
-					continue;
-				// or this pvs row into the phs
-				// +1 because pvs is 1 based
-				index = ((j<<3)+k+1);
-				if (index >= num)
-					continue;
-				src = (unsigned *)sv.pvs + index*rowwords;
-				for (l=0 ; l<rowwords ; l++)
-					dest[l] |= src[l];
-			}
-		}
-
-		if (i == 0)
-			continue;
-		for (j=0 ; j<num ; j++)
-			if ( ((byte *)dest)[j>>3] & (1<<(j&7)) )
-				count++;
-	}
-
-	Con_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n"
-	            , vcount/num, count/num, num);
-}
-
 static unsigned SV_CheckModel(char *mdl)
 {
 	unsigned char stackbuf[1024]; // avoid dirtying the cache heap
@@ -296,204 +214,6 @@ static unsigned SV_CheckModel(char *mdl)
 
 /*
 ================
-Load_SpecVisData
-
-Loads visibility data of the map for spectators
-================
-*/
-
-typedef struct
-{
-	char		qvis[4];
-	int		version;
-	int		visleafs;
-	lump_t		lumps[4];
-}
-visheader_t;
-
-#define VIS_LUMP_VISIBILITY	0
-#define VIS_LUMP_LEAFS		1
-#define VIS_LUMP_PLANES		2
-#define VIS_LUMP_NODES		3
-
-static void VIS_LoadPlanes(lump_t *l, byte *base, char *allocname)
-{
-	int i, j;
-	mplane_t *out;
-	dplane_t *in;
-	int count;
-	int bits;
-
-	in = (void *)(base + l->fileofs);
-	if (l->filelen % sizeof(*in))
-		Sys_Printf("VIS_LoadPlanes: lol?\n");
-	count = l->filelen / sizeof(*in);
-	out = (mplane_t* ) Hunk_AllocName ( count*2*sizeof(*out), allocname);
-
-	specworld.planes = out;
-	specworld.numplanes = count;
-
-	for ( i=0 ; i<count ; i++, in++, out++)
-	{
-		bits = 0;
-		for (j=0 ; j<3 ; j++)
-		{
-			out->normal[j] = LittleFloat (in->normal[j]);
-			if (out->normal[j] < 0)
-				bits |= 1<<j;
-		}
-
-		out->dist = LittleFloat (in->dist);
-		out->type = LittleLong (in->type);
-		out->signbits = bits;
-	}
-}
-
-static void VIS_LoadVisibility (lump_t *l, byte *base, char *allocname)
-{
-	if (!l->filelen)
-	{
-		specworld.visdata = NULL;
-		Sys_Printf("VIS_LoadVisibility: lol?\n");
-		return;
-	}
-
-	specworld.visdata = (byte *) Hunk_AllocName ( l->filelen, allocname);
-	memcpy (specworld.visdata, base + l->fileofs, l->filelen);
-}
-
-static void VIS_LoadLeafs (lump_t *l, byte *base, char *allocname)
-{
-	struct vdleaf_s
-	{
-		int contents;
-		int visofs;
-	} *in;
-
-	mleaf_t  *out;
-	int i, count, p;
-
-	in = (void *)(base + l->fileofs);
-	count = l->filelen / sizeof(*in);
-	if (l->filelen % sizeof(*in))
-		Sys_Printf("VIS_LoadLeafs: lol?\n");
-	out = (mleaf_t*)Hunk_AllocName ( count*sizeof(*out), allocname);
-
-	specworld.leafs = out;
-	specworld.numleafs = count;
-
-	for ( i=0 ; i<count ; i++, in++, out++)
-	{
-		p = LittleLong(in->contents);
-		out->contents = p;
-		p = LittleLong(in->visofs);
-		if (p == -1)
-			out->compressed_vis = NULL;
-		else
-			out->compressed_vis = specworld.visdata + p;
-	}
-}
-
-void Mod_SetParent (mnode_t *node, mnode_t *parent);
-static void VIS_LoadNodes (lump_t *l, byte *base, char *allocname)
-{
-	int i, j, count, p;
-	dnode_t *in;
-	mnode_t *out;
-
-	in = (void *)(base + l->fileofs);
-	count = l->filelen / sizeof(*in);
-	if (l->filelen % sizeof(*in))
-		Sys_Printf("VIS_LoadNodes: lol?\n");
-	out = (mnode_t*)Hunk_AllocName ( count*sizeof(*out), allocname);
-
-	specworld.nodes = out;
-	specworld.numnodes = count;
-
-	for ( i=0 ; i<count ; i++, in++, out++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			out->minmaxs[j] = LittleShort (in->mins[j]);
-			out->minmaxs[3+j] = LittleShort (in->maxs[j]);
-		}
-
-		p = LittleLong(in->planenum);
-		out->plane = specworld.planes + p;
-
-		out->firstsurface = LittleShort (in->firstface);
-		out->numsurfaces = LittleShort (in->numfaces);
-
-		for (j=0 ; j<2 ; j++)
-		{
-			p = LittleShort (in->children[j]);
-			if (p >= 0)
-				out->children[j] = specworld.nodes + p;
-			else
-				out->children[j] = (mnode_t *)(specworld.leafs + (-1 - p));
-		}
-	}
-
-	Mod_SetParent (specworld.nodes, NULL);	// sets nodes and leafs
-}
-
-
-static void Load_SpecVisData(char *visname)
-{
-	byte *base;
-	visheader_t *header;
-	unsigned int i;
-	char loadname[32];
-
-	memset(&specworld, 0, sizeof(specworld));
-
-	// disconnect: why we use serverinfo for spec_watervis? IMHO localinfo better // FIXME
-	if ((!Q_atoi(Info_ValueForKey (svs.info, "watervis")) &&
-		 !Q_atoi(Info_ValueForKey (svs.info, "spec_watervis"))) ||
-		(base = COM_LoadHunkFile (visname)) == NULL)
-	{
-		specworld.visdata = sv.worldmodel->visdata;
-		specworld.nodes = sv.worldmodel->nodes;
-		specworld.planes = sv.worldmodel->planes;
-		specworld.leafs = sv.worldmodel->leafs;
-
-		specworld.numnodes = sv.worldmodel->numnodes;
-		specworld.numplanes = sv.worldmodel->numplanes;
-		specworld.numleafs = sv.worldmodel->numleafs;
-		return;
-	}
-
-	header = (visheader_t*)base;
-
-	if (strncmp("QVIS", header->qvis, 4))
-	{
-		Sys_Printf("Load_SpecVisData: %s: unknown file type\n", visname);
-		return;
-	}
-
-	i = LittleLong (header->version);
-	if (i != Q1_BSPVERSION && i != HL_BSPVERSION)
-	{
-		Sys_Printf ("Load_SpecVisData: %s has wrong version number (%i should be %i or %i)",
-		            visname, i, Q1_BSPVERSION, HL_BSPVERSION);
-		return;
-	}
-
-	for (i=0 ; i<sizeof(visheader_t)/4 ; i++)
-		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
-
-	COM_FileBase (visname, loadname);
-
-	VIS_LoadPlanes(&header->lumps[VIS_LUMP_PLANES], base, loadname);
-	VIS_LoadVisibility(&header->lumps[VIS_LUMP_VISIBILITY], base, loadname);
-	VIS_LoadLeafs(&header->lumps[VIS_LUMP_LEAFS], base, loadname);
-	VIS_LoadNodes(&header->lumps[VIS_LUMP_NODES], base, loadname);
-
-	specworld.numleafs = header->visleafs;
-}
-
-/*
-================
 SV_SpawnServer
 
 Change the server to a new map, taking all connected
@@ -504,7 +224,7 @@ This is only called from the SV_Map_f() function.
 */
 dfunction_t *ED_FindFunction (char *name);
 
-void SV_SpawnServer (char *server)
+void SV_SpawnServer (char *mapname)
 {
 	edict_t *ent;
 	int i;
@@ -516,7 +236,7 @@ void SV_SpawnServer (char *server)
 	extern cvar_t sv_loadentfiles;
 	char		*entitystring;
 
-	Con_DPrintf ("SpawnServer: %s\n",server);
+	Con_DPrintf ("SpawnServer: %s\n",mapname);
 
 	SV_SaveSpawnparms ();
 	SV_LoadAccounts();
@@ -543,13 +263,12 @@ void SV_SpawnServer (char *server)
 		PR2_GameShutDown();
 #endif
 
-	svs.spawncount++;		// any partially connected client will be
-	// restarted
+	svs.spawncount++; // any partially connected client will be restarted
 
 	sv.state = ss_dead;
 	sv.paused = false;
 
-	Mod_ClearAll ();
+	CM_InvalidateMap ();
 	Hunk_FreeToLowMark (host_hunklevel);
 
 	if (coop.value)
@@ -578,8 +297,6 @@ void SV_SpawnServer (char *server)
 	sv.signon.maxsize = sizeof(sv.signon_buffers[0]);
 	sv.signon.data = sv.signon_buffers[0];
 	sv.num_signon_buffers = 1;
-
-	strlcpy (sv.name, server, MAP_NAME_LEN);
 
 	// load progs to get entity field count
 	// which determines how big each edict is
@@ -617,11 +334,9 @@ void SV_SpawnServer (char *server)
 		svs.clients[i].old_frags = 0;
 	}
 
-	strlcpy (sv.name, server, MAP_NAME_LEN);
-	snprintf (sv.modelname, MAX_QPATH, "maps/%s.bsp", server);
-	sv.worldmodel = Mod_ForName (sv.modelname, true);
-	Load_SpecVisData(va("maps/%s.vis", server));
-	SV_CalcPHS ();
+	strlcpy (sv.mapname, mapname, sizeof(sv.mapname));
+	snprintf (sv.modelname, sizeof(sv.modelname), "maps/%s.bsp", sv.mapname);
+	sv.worldmodel = CM_LoadMap (sv.modelname, false, &sv.map_checksum, &sv.map_checksum2);
 
 	//
 	// clear physics interaction links
@@ -643,10 +358,10 @@ void SV_SpawnServer (char *server)
 	}
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
+	for (i=1 ; i< CM_NumInlineModels() ; i++)
 	{
 		sv.model_precache[1+i] = localmodels[i];
-		sv.models[i+1] = Mod_ForName (localmodels[i], false);
+		sv.models[i+1] =  CM_InlineModel (localmodels[i]);
 	}
 
 	//check player/eyes models for hacks
@@ -665,10 +380,10 @@ void SV_SpawnServer (char *server)
 	ent->free = false;
 #ifdef USE_PR2
 	if ( sv_vm )
-		strlcpy(PR2_GetString(ent->v.model), sv.worldmodel->name, 64);
+		strlcpy(PR2_GetString(ent->v.model), sv.modelname, 64);
 	else
 #endif
-		ent->v.model = PR_SetString(sv.worldmodel->name);
+		ent->v.model = PR_SetString(sv.modelname);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
@@ -681,10 +396,10 @@ void SV_SpawnServer (char *server)
 
 #ifdef USE_PR2
 	if(sv_vm)
-		strlcpy((char*)PR2_GetString(pr_global_struct->mapname) , sv.name, 64);
+		strlcpy((char*)PR2_GetString(pr_global_struct->mapname) , sv.mapname, 64);
 	else
 #endif
-		pr_global_struct->mapname = /*sv.name - pr_strings;*/PR_SetString(sv.name);
+	pr_global_struct->mapname = PR_SetString(sv.mapname);
 	// serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
 
@@ -693,33 +408,26 @@ void SV_SpawnServer (char *server)
 
 	// ********* External Entity support (.ent file(s) in gamedir/maps) pinched from ZQuake *********
 	// load and spawn all other entities
-
 	entitystring = NULL;
-	if (sv_loadentfiles.value)
-		entitystring = (char *) COM_LoadHunkFile (va("maps/%s.ent", sv.name));
-
-	if (entitystring)
-	{
-		Con_DPrintf ("Using entfile maps/%s.ent\n", sv.name);
-		//Info_SetValueForStarKey (svs.info, "*entfile", va("%i", CRC_Block(entitystring, fs_filesize)), MAX_SERVERINFO_STRING);
-#ifdef USE_PR2
-		if ( sv_vm )
-			PR2_LoadEnts(entitystring);
-		else
-#endif
-			ED_LoadFromFile (entitystring);
+	if (sv_loadentfiles.value) {
+		entitystring = (char *) COM_LoadHunkFile (va("maps/%s.ent", sv.mapname));
+		if (entitystring) {
+			Con_DPrintf ("Using entfile maps/%s.ent\n", sv.mapname);
+//			Info_SetValueForStarKey (svs.info, "*entfile", va("%i",
+//					CRC_Block((byte *)entitystring, fs_filesize)), MAX_SERVERINFO_STRING);
+		}
 	}
+	if (!entitystring) {
+		Info_SetValueForStarKey (svs.info,  "*entfile", "", MAX_SERVERINFO_STRING);
+		entitystring = CM_EntityString();
+	}
+	
+#ifdef USE_PR2
+	if ( sv_vm )
+		PR2_LoadEnts(entitystring);
 	else
-	{
-		//Info_SetValueForStarKey (svs.info, "*entfile", "", MAX_SERVERINFO_STRING);
-		//entitystring = CM_EntityString();
-#ifdef USE_PR2
-		if ( sv_vm )
-			PR2_LoadEnts(sv.worldmodel->entities);
-		else
 #endif
-			ED_LoadFromFile (sv.worldmodel->entities); //just use the QWE way of doing it if no entfile.
-	}
+		ED_LoadFromFile (entitystring);
 	// ********* End of External Entity support code *********
 
 	// look up some model indexes for specialized message compression
@@ -743,7 +451,7 @@ void SV_SpawnServer (char *server)
 	SV_CreateBaseline ();
 	sv.signon_buffer_size[sv.num_signon_buffers-1] = sv.signon.cursize;
 
-	Info_SetValueForKey (svs.info, "map", sv.name, MAX_SERVERINFO_STRING);
+	Info_SetValueForKey (svs.info, "map", sv.mapname, MAX_SERVERINFO_STRING);
 
 #ifdef USE_PR2
 	if ( !sv_vm )
