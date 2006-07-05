@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_send.c,v 1.6 2006/03/27 22:55:10 disconn3ct Exp $
+	$Id: dem_send.c,v 1.7 2006/07/05 17:08:16 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -459,8 +459,8 @@ void EmitNailUpdate (sizebuf_t *msg, frame_t *frame)
 		x = (int)(pr->origin[0]+4096)>>1;
 		y = (int)(pr->origin[1]+4096)>>1;
 		z = (int)(pr->origin[2]+4096)>>1;
-		p = (int)(16*pr->angles[0]/360)&15;
-		yaw = (int)(256*pr->angles[1]/360)&255;
+		p = Q_rint(16*pr->angles[0]/360)&15;
+		yaw = Q_rint(256*pr->angles[1]/360)&255;
 
 		bits[0] = x;
 		bits[1] = (x>>8) | (y<<4);
