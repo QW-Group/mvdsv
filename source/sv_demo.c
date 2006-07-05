@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.49 2006/06/19 16:46:16 vvd0 Exp $
+    $Id: sv_demo.c,v 1.50 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -845,7 +845,7 @@ static char *SV_PrintTeams(void)
 	lastscores[0] = 0;
 	snprintf(buf, sizeof(buf),
 		"date %s\nmap %s\nteamplay %d\ndeathmatch %d\ntimelimit %d\n",
-		date.str, sv.name, (int)teamplay.value, (int)deathmatch.value,
+		date.str, sv.mapname, (int)teamplay.value, (int)deathmatch.value,
 		(int)timelimit.value);
 	if (numcl == 2) // duel
 	{
@@ -854,7 +854,7 @@ static char *SV_PrintTeams(void)
 			clients[0]->name, clients[0]->old_frags,
 			clients[1]->name, clients[1]->old_frags);
 		snprintf(lastscores, sizeof(lastscores), "duel: %s vs %s @ %s - %i:%i\n",
-			clients[0]->name, clients[1]->name, sv.name,
+			clients[0]->name, clients[1]->name, sv.mapname,
 			clients[0]->old_frags, clients[1]->old_frags);
 	}
 	else if (!teamplay.value) // ffa
@@ -869,7 +869,7 @@ static char *SV_PrintTeams(void)
 				"  %s(%i)", clients[i]->name, clients[i]->old_frags);
 		}
 		snprintf(lastscores + strlen(lastscores),
-			sizeof(lastscores) - strlen(lastscores), " @ %s\n", sv.name);
+			sizeof(lastscores) - strlen(lastscores), " @ %s\n", sv.mapname);
 	}
 	else
 	{ // teamplay
@@ -895,7 +895,7 @@ static char *SV_PrintTeams(void)
 
 		}
 		snprintf(lastscores + strlen(lastscores),
-			sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.name);
+			sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.mapname);
 	}
 
 	for (p = buf; *p; p++) *p = chartbl2[(byte)*p];
@@ -1745,19 +1745,19 @@ void SV_MVDEasyRecord_f (void)
 					strlcat (name, va("[%s]_%s_vs_[%s]_%s_%s", 
 										Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)), 
 										Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)),
-										sv.name), sizeof(name));
+										sv.mapname), sizeof(mapname));
 				} else
-					strlcat (name, va("%s_vs_%s_%s", Dem_Team(1), Dem_Team(2), sv.name), sizeof(name));
+					strlcat (name, va("%s_vs_%s_%s", Dem_Team(1), Dem_Team(2), sv.mapname), sizeof(name));
 			} else {
 				if (i == 2) {
 					// Duel
 					snprintf (name, sizeof(name), "duel_%s_vs_%s_%s",
 						Dem_PlayerName(1),
 						Dem_PlayerName(2),
-						sv.name);
+						sv.mapname);
 				} else {
 					// FFA
-					snprintf (name, sizeof(name), "ffa_%s(%d)", sv.name, i);
+					snprintf (name, sizeof(name), "ffa_%s(%d)", sv.mapname, i);
 				}
 			}
 		}*/
@@ -1777,10 +1777,10 @@ void SV_MVDEasyRecord_f (void)
 				strlcat (name, va("[%s]_%s_vs_[%s]_%s_%s",
 				                  Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)),
 				                  Dem_Team(2), Dem_PlayerNameTeam(Dem_Team(2)),
-				                  sv.name), sizeof(name));
+				                  sv.mapname), sizeof(name));
 			}
 			else
-				strlcat (name, va("%s_vs_%s_%s", Dem_Team(1), Dem_Team(2), sv.name), sizeof(name));
+				strlcat (name, va("%s_vs_%s_%s", Dem_Team(1), Dem_Team(2), sv.mapname), sizeof(name));
 		}
 		else
 		{
@@ -1790,12 +1790,12 @@ void SV_MVDEasyRecord_f (void)
 				snprintf (name, sizeof(name), "duel_%s_vs_%s_%s",
 				          Dem_PlayerName(1),
 				          Dem_PlayerName(2),
-				          sv.name);
+				          sv.mapname);
 			}
 			else
 			{
 				// FFA
-				snprintf (name, sizeof(name), "ffa_%s(%d)", sv.name, i);
+				snprintf (name, sizeof(name), "ffa_%s(%d)", sv.mapname, i);
 			}
 		}
 	}

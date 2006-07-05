@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.3 2006/06/19 16:46:15 vvd0 Exp $
+#	$Id: Makefile.GNU,v 1.4 2006/07/05 17:07:04 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -61,7 +61,6 @@ SV_OBJS = \
 		$(SV_DIR)/sv_main.o \
 		$(SV_DIR)/sv_master.o \
 		$(SV_DIR)/sv_mod_frags.o \
-		$(SV_DIR)/sv_model.o \
 		$(SV_DIR)/sv_move.o \
 		$(SV_DIR)/sv_nchan.o \
 		$(SV_DIR)/sv_phys.o \
@@ -72,6 +71,7 @@ SV_OBJS = \
 		$(SV_DIR)/bothtools.o \
 		$(SV_DIR)/cmd.o \
 		$(SV_DIR)/common.o \
+		$(SV_DIR)/cmodel.o \
 		$(SV_DIR)/crc.o \
 		$(SV_DIR)/cvar.o \
 		$(SV_DIR)/fs.o \

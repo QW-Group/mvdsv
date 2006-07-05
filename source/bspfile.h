@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bspfile.h,v 1.6 2006/06/19 16:46:15 vvd0 Exp $
+	$Id: bspfile.h,v 1.7 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #ifndef __BSPFILE_H__
@@ -115,6 +115,17 @@ typedef struct
 	float	point[3];
 } dvertex_t;
 
+
+// 0-2 are axial planes
+#define	PLANE_X			0
+#define	PLANE_Y			1
+#define	PLANE_Z			2
+
+// 3-5 are non-axial planes snapped to the nearest
+#define	PLANE_ANYX		3
+#define	PLANE_ANYY		4
+#define	PLANE_ANYZ		5
+
 typedef struct
 {
 	float	normal[3];
@@ -131,6 +142,7 @@ typedef struct
 #define	CONTENTS_LAVA	-5
 #define	CONTENTS_SKY	-6
 
+// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {
 	int		planenum;
@@ -146,6 +158,7 @@ typedef struct
 	int	planenum;
 	short	children[2]; // negative numbers are contents
 } dclipnode_t;
+
 
 typedef struct texinfo_s
 {
@@ -177,7 +190,14 @@ typedef struct
 	int	lightofs; // start of [numstyles*surfsize] samples
 } dface_t;
 
-#define	NUM_AMBIENTS 4 // automatic ambient sounds
+
+
+#define	AMBIENT_WATER	0
+#define	AMBIENT_SKY	1
+#define	AMBIENT_SLIME	2
+#define	AMBIENT_LAVA	3
+
+#define	NUM_AMBIENTS	4 // automatic ambient sounds
 
 // leaf 0 is the generic CONTENTS_SOLID leaf, used for all solid areas
 // all other leafs need visibility info

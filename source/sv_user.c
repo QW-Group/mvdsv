@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.59 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: sv_user.c,v 1.60 2006/07/05 17:07:18 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -457,13 +457,13 @@ static void SV_PreSpawn_f (void)
 
 		//		Con_DPrintf("Client check = %d\n", check);
 
-		if (sv_mapcheck.value && check != sv.worldmodel->checksum &&
-		        check != sv.worldmodel->checksum2)
+		if (sv_mapcheck.value && check != sv.map_checksum &&
+			check != sv.map_checksum2)
 		{
 			SV_ClientPrintf (host_client, PRINT_HIGH,
 			                 "Map model file does not match (%s), %i != %i/%i.\n"
 			                 "You may need a new version of the map, or the proper install files.\n",
-			                 sv.modelname, check, sv.worldmodel->checksum, sv.worldmodel->checksum2);
+					 sv.modelname, check, sv.map_checksum, sv.map_checksum2);
 			SV_DropClient (host_client);
 			return;
 		}

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.25 2006/06/27 14:59:51 qqshka Exp $
+	$Id: pr_cmds.c,v 1.26 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -161,31 +161,29 @@ setmodel(entity, model)
 Also sets size, mins, and maxs for inline bmodels
 =================
 */
-void PF_setmodel (void)
+static void PF_setmodel (void)
 {
-	edict_t	*e;
-	char	*m, **check;
-	int		i;
-	qmodel_t	*mod;
+	int			i;
+	edict_t		*e;
+	char		*m, **check;
+	cmodel_t	*mod;
 
 	e = G_EDICT(OFS_PARM0);
 	m = G_STRING(OFS_PARM1);
 
-	// check to see if model was properly precached
-	for (i=0, check = sv.model_precache ; *check ; i++, check++)
+// check to see if model was properly precached
+	for (i = 0, check = sv.model_precache; i < MAX_MODELS && *check ; i++, check++)
 		if (!strcmp(*check, m))
-			break;
+			goto ok;
+	PR_RunError ("PF_setmodel: no precache: %s\n", m);
+ok:
 
-	if (!*check)
-		PR_RunError ("no precache: %s\n", m);
-
-	e->v.model = PR_SetString(m);
+		e->v.model = G_INT(OFS_PARM1);
 	e->v.modelindex = i;
 
-	// if it is an inline model, get the size information for it
-	if (m[0] == '*')
-	{
-		mod = Mod_ForName (m, true);
+// if it is an inline model, get the size information for it
+	if (m[0] == '*') {
+		mod = CM_InlineModel (m);
 		VectorCopy (mod->mins, e->v.mins);
 		VectorCopy (mod->maxs, e->v.maxs);
 		VectorSubtract (mod->maxs, mod->mins, e->v.size);
@@ -602,17 +600,17 @@ void PF_checkpos (void)
 
 //============================================================================
 
-byte	checkpvs[MAX_MAP_LEAFS/8];
+// Unlike Quake's Mod_LeafPVS, CM_LeafPVS returns a pointer to static data
+// uncompressed at load time, so it's safe to store for future use
+static byte	*checkpvs;
 
 int PF_newcheckclient (int check)
 {
 	int		i;
-	byte	*pvs;
 	edict_t	*ent;
-	mleaf_t	*leaf;
 	vec3_t	org;
 
-	// cycle to the next one
+// cycle to the next one
 
 	if (check < 1)
 		check = 1;
@@ -641,51 +639,48 @@ int PF_newcheckclient (int check)
 		if ((int)ent->v.flags & FL_NOTARGET)
 			continue;
 
-		// anything that is a client, or has a client as an enemy
+	// anything that is a client, or has a client as an enemy
 		break;
 	}
 
-	// get the PVS for the entity
+// get the PVS for the entity
 	VectorAdd (ent->v.origin, ent->v.view_ofs, org);
-	leaf = Mod_PointInLeaf (org, sv.worldmodel);
-	pvs = Mod_LeafPVS (leaf, sv.worldmodel, false);
-	memcpy (checkpvs, pvs, (sv.worldmodel->numleafs+7)>>3 );
+	checkpvs = CM_LeafPVS (CM_PointInLeaf(org));
 
 	return i;
 }
 
+
 /*
 =================
 PF_checkclient
- 
+
 Returns a client (or object that has a client enemy) that would be a
 valid target.
- 
+
 If there are more than one valid options, they are cycled each frame
- 
+
 If (self.origin + self.viewofs) is not in the PVS of the current target,
 it is not returned at all.
- 
-name checkclient ()
+
+entity checkclient() = #17
 =================
 */
 #define	MAX_CHECK	16
-int c_invis, c_notvis;
-void PF_checkclient (void)
+static void PF_checkclient (void)
 {
 	edict_t	*ent, *self;
-	mleaf_t	*leaf;
 	int		l;
-	vec3_t	view;
-
-	// find a new check if on a new frame
+	vec3_t	vieworg;
+	
+// find a new check if on a new frame
 	if (sv.time - sv.lastchecktime >= 0.1)
 	{
 		sv.lastcheck = PF_newcheckclient (sv.lastcheck);
 		sv.lastchecktime = sv.time;
 	}
 
-	// return check if it might be visible
+// return check if it might be visible	
 	ent = EDICT_NUM(sv.lastcheck);
 	if (ent->free || ent->v.health <= 0)
 	{
@@ -693,20 +688,17 @@ void PF_checkclient (void)
 		return;
 	}
 
-	// if current entity can't possibly see the check entity, return 0
+// if current entity can't possibly see the check entity, return 0
 	self = PROG_TO_EDICT(pr_global_struct->self);
-	VectorAdd (self->v.origin, self->v.view_ofs, view);
-	leaf = Mod_PointInLeaf (view, sv.worldmodel);
-	l = (leaf - sv.worldmodel->leafs) - 1;
+	VectorAdd (self->v.origin, self->v.view_ofs, vieworg);
+	l = CM_Leafnum(CM_PointInLeaf(vieworg)) - 1;
 	if ( (l<0) || !(checkpvs[l>>3] & (1<<(l&7)) ) )
 	{
-		c_notvis++;
 		RETURN_EDICT(sv.edicts);
 		return;
 	}
 
-	// might be able to see it
-	c_invis++;
+// might be able to see it
 	RETURN_EDICT(ent);
 }
 
@@ -1351,29 +1343,38 @@ Returns a chain of entities that have origins within a spherical area
 findradius (origin, radius)
 =================
 */
-void PF_findradius (void)
+static void PF_findradius (void)
 {
-	edict_t	*ent, *chain;
-	float	rad;
-	float	*org;
-	vec3_t	eorg;
-	int		i, j;
-
-	chain = (edict_t *)sv.edicts;
+	int			i, j, numtouch;
+	edict_t		*touchlist[MAX_EDICTS], *ent, *chain;
+	float		rad, rad2, *org;
+	vec3_t		mins, maxs, eorg;
 
 	org = G_VECTOR(OFS_PARM0);
 	rad = G_FLOAT(OFS_PARM1);
+	rad2 = rad * rad;
 
-	ent = NEXT_EDICT(sv.edicts);
-	for (i=1 ; i<sv.num_edicts ; i++, ent = NEXT_EDICT(ent))
+	for (i = 0; i < 3; i++)
 	{
-		if (ent->free)
-			continue;
+		mins[i] = org[i] - rad - 1;		// enlarge the bbox a bit
+		maxs[i] = org[i] + rad + 1;
+	}
+
+	numtouch = SV_AreaEdicts (mins, maxs, touchlist, MAX_EDICTS, AREA_SOLID);
+	numtouch += SV_AreaEdicts (mins, maxs, &touchlist[numtouch], MAX_EDICTS - numtouch, AREA_TRIGGERS);
+
+	chain = (edict_t *)sv.edicts;
+
+// touch linked edicts
+	for (i = 0; i < numtouch; i++)
+	{
+		ent = touchlist[i];
 		if (ent->v.solid == SOLID_NOT)
-			continue;
-		for (j=0 ; j<3 ; j++)
-			eorg[j] = org[j] - (ent->v.origin[j] + (ent->v.mins[j] + ent->v.maxs[j])*0.5);
-		if (VectorLength(eorg) > rad)
+			continue;	// FIXME?
+
+		for (j = 0; j < 3; j++)
+			eorg[j] = org[j] - (ent->v.origin[j] + (ent->v.mins[j] + ent->v.maxs[j]) * 0.5);
+		if (DotProduct(eorg, eorg) > rad2)
 			continue;
 
 		ent->v.chain = EDICT_TO_PROG(chain);

@@ -16,82 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.11 2006/05/01 22:37:43 oldmanuk Exp $
+	$Id: sv_ents.c,v 1.12 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 
-/*
-=============================================================================
-
-The PVS must include a small area around the client to allow head bobbing
-or other small motion on the client side.  Otherwise, a bob might cause an
-entity that should be visible to not show up, especially when the bob
-crosses a waterline.
-
-=============================================================================
-*/
-
-static int fatbytes;
-static byte fatpvs[MAX_MAP_LEAFS/8];
-
-static void SV_AddToFatPVS (vec3_t org, mnode_t *node, qbool spectator_vis)
-{
-	mplane_t *plane;
-	byte *pvs;
-	float d;
-	int i;
-
-
-	while (1)
-	{
-		// if this is a leaf, accumulate the pvs bits
-		if (node->contents < 0)
-		{
-			if (node->contents != CONTENTS_SOLID)
-			{
-				pvs = Mod_LeafPVS ( (mleaf_t *)node, sv.worldmodel, spectator_vis);
-				for (i=0 ; i<fatbytes ; i++)
-					fatpvs[i] |= pvs[i];
-			}
-			return;
-		}
-
-		plane = node->plane;
-		d = DotProduct (org, plane->normal) - plane->dist;
-		if (d > 8)
-			node = node->children[0];
-		else if (d < -8)
-			node = node->children[1];
-		else
-		{	// go down both
-			SV_AddToFatPVS (org, node->children[0], spectator_vis);
-			node = node->children[1];
-		}
-	}
-}
-
-/*
-=============
-SV_FatPVS
-
-Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
-given point.
-=============
-*/
-static byte *SV_FatPVS (vec3_t org, qbool spectator_vis)
-{
-	extern spec_worldmodel_t specworld;
-
-
-	fatbytes = (sv.worldmodel->numleafs+31)>>3;
-	memset (fatpvs, 0, fatbytes);
-	if (spectator_vis)
-		SV_AddToFatPVS (org, specworld.nodes, spectator_vis);
-	else
-		SV_AddToFatPVS (org, sv.worldmodel->nodes, spectator_vis);
-	return fatpvs;
-}
 
 //=============================================================================
 
@@ -366,7 +295,7 @@ SV_WritePlayersToClient
 #define DF_WEAPONFRAME	(1<<10)
 #define DF_MODEL	(1<<11)
 
-#define TruePointContents(p) PM_HullPointContents(&sv.worldmodel->hulls[0], 0, p)
+#define TruePointContents(p) CM_HullPointContents(&sv.worldmodel->hulls[0], 0, p)
 
 #define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
 
@@ -619,10 +548,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	if (!recorder)
 	{
 		VectorAdd (clent->v.origin, clent->v.view_ofs, org);
-		if (client->spectator)
-			pvs = SV_FatPVS (org, true);
-		else
-			pvs = SV_FatPVS (org, false);
+		pvs = CM_FatPVS (org);
 	}
 	else
 	{
@@ -636,16 +562,14 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			if (cl->spectator)
 				continue;
 
-			if (pvs == NULL)
-			{
-				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
-				pvs = SV_FatPVS (org, false);
-			}
-			else
-			{
-				VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
-				SV_AddToFatPVS (org, sv.worldmodel->nodes, false);
-			}
+			VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
+
+			// disconnect --> "is it correct?"
+			//if (pvs == NULL)
+				pvs = CM_FatPVS (org);
+			//else
+				//	SV_AddToFatPVS (org, sv.worldmodel->nodes, false);
+			// <-- disconnect
 		}
 	}
 	if (clent && client->disable_updates_stop > realtime)
@@ -672,7 +596,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 
 		// QW protocol can only handle 512 entities. Any entity with number >= 512 will be invisible
 		// From ZQuake.
-		//	max_edicts = min(sv.num_edicts, MAX_EDICTS);
+		// max_edicts = min(sv.num_edicts, MAX_EDICTS);
 
 		for (e = MAX_CLIENTS + 1, ent = EDICT_NUM(e); e < sv.num_edicts/*max_edicts*/; e++, ent = NEXT_EDICT(ent))
 		{
@@ -698,7 +622,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			}
 
 			if (SV_AddNailUpdate (ent))
-				continue;	// added to the special update list
+				continue; // added to the special update list
 
 			// add to the packetentities
 			if (pack->num_entities == max_packet_entities)

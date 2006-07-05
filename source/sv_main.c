@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.72 2006/07/01 18:31:01 vvd0 Exp $
+	$Id: sv_main.c,v 1.73 2006/07/05 17:07:18 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -3000,13 +3000,13 @@ void SV_Init (quakeparms_t *parms)
 #else
 	PR_Init ();
 #endif
-	Mod_Init ();
 
 	SV_InitNet ();
 
 	SV_InitLocal ();
 
 	Sys_Init ();
+	CM_Init ();
 	PM_Init ();
 
 	SV_MVDInit ();
@@ -3049,7 +3049,6 @@ void SV_Init (quakeparms_t *parms)
 	if (sv.state == ss_dead)
 		SV_Error ("Couldn't spawn a server");
 }
-
 
 /*
 ============

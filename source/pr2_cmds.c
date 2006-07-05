@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.31 2006/06/19 16:46:16 vvd0 Exp $
+ *  $Id: pr2_cmds.c,v 1.32 2006/07/05 17:07:18 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -224,8 +224,8 @@ void PF2_setmodel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	edict_t		*e;
 	char		*m;
 	char		**check;
-	int			i;
-	qmodel_t		*mod;
+	int		i;
+	cmodel_t	*mod;
 
 	e = EDICT_NUM(stack[0]._int);
 	m = VM_POINTER(base,mask,stack[1].string);
@@ -245,7 +245,7 @@ void PF2_setmodel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	// if it is an inline model, get the size information for it
 	if (m[0] == '*')
 	{
-		mod = Mod_ForName(m, true);
+		mod = CM_InlineModel (m);
 		VectorCopy(mod->mins, e->v.mins);
 		VectorCopy(mod->maxs, e->v.maxs);
 		VectorSubtract(mod->maxs, mod->mins, e->v.size);
@@ -560,14 +560,12 @@ name checkclient ()
 =================
 */
 
-byte	checkpvs[MAX_MAP_LEAFS / 8];
+static byte	*checkpvs;
 
 int PF2_newcheckclient(int check)
 {
 	int		i;
-	byte	*pvs;
 	edict_t	*ent;
-	mleaf_t	*leaf;
 	vec3_t	org;
 
 	// cycle to the next one
@@ -603,23 +601,20 @@ int PF2_newcheckclient(int check)
 	}
 
 	// get the PVS for the entity
-	VectorAdd(ent->v.origin, ent->v.view_ofs, org);
-	leaf = Mod_PointInLeaf(org, sv.worldmodel);
-	pvs = Mod_LeafPVS(leaf, sv.worldmodel, false);
-	memcpy(checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
+	VectorAdd (ent->v.origin, ent->v.view_ofs, org);
+	checkpvs = CM_LeafPVS (CM_PointInLeaf(org));
 
 	return i;
 }
 
 
 #define	MAX_CHECK	16
-int c_invis, c_notvis;
+
 
 
 void PF2_checkclient(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	edict_t	*ent, *self;
-	mleaf_t	*leaf;
 	int		l;
 	vec3_t	view;
 
@@ -642,18 +637,13 @@ void PF2_checkclient(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	// if current entity can't possibly see the check entity, return 0
 	self = PROG_TO_EDICT(pr_global_struct->self);
 	VectorAdd(self->v.origin, self->v.view_ofs, view);
-	leaf = Mod_PointInLeaf(view, sv.worldmodel);
-	l = (leaf - sv.worldmodel->leafs) - 1;
+	l = CM_Leafnum(CM_PointInLeaf(view)) - 1;
 	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7))))
 	{
-		c_notvis++;
 		retval->_int = NUM_FOR_EDICT(sv.edicts);
 		return;
 
 	}
-
-	// might be able to see it
-	c_invis++;
 
 	retval->_int = NUM_FOR_EDICT(ent);
 	return;
