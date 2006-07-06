@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: mathlib.h,v 1.8 2006/06/19 16:46:15 vvd0 Exp $
+	$Id: mathlib.h,v 1.9 2006/07/06 00:40:39 disconn3ct Exp $
 */
 // mathlib.h
 #ifndef __MATHLIB_H__
@@ -87,5 +87,9 @@ float anglemod(float a);
 	)										\
 	:										\
 		BoxOnPlaneSide( (emins), (emaxs), (p)))
+
+#define PlaneDiff(point, plane) (																			\
+	(((plane)->type < 3) ? (point)[(plane)->type] - (plane)->dist: DotProduct((point), (plane)->normal) - (plane)->dist) 	\
+)
 
 #endif /* !__MATHLIB_H__ */
