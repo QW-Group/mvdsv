@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.73 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: sv_main.c,v 1.74 2006/07/06 00:08:15 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -3007,7 +3007,6 @@ void SV_Init (quakeparms_t *parms)
 
 	Sys_Init ();
 	CM_Init ();
-	PM_Init ();
 
 	SV_MVDInit ();
 	Login_Init ();

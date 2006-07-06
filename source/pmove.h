@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.h,v 1.12 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: pmove.h,v 1.13 2006/07/06 00:08:15 disconn3ct Exp $
 */
 
 #ifndef __PMOVE_H__
@@ -92,7 +92,6 @@ extern	movevars_t movevars;
 extern	playermove_t pmove;
 
 void PM_PlayerMove (void);
-void PM_Init (void);
 
 int PM_PointContents (vec3_t point);
 qbool PM_TestPlayerPosition (vec3_t point);
