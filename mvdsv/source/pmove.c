@@ -16,18 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.c,v 1.13 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: pmove.c,v 1.14 2006/07/06 00:17:40 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 
-// disconnect: commented out, since KTeams/KTPro "broken ankle" fixed other other way
-// and NEW_JUMPFIX cause to some weird bugs with slopes :E
-
-//#define NEW_JUMPFIX	// new (Jan 2006) fix for the jump bug that doesn't
-			// interfere with KTeams/KTPro "broken ankle" code
-
-movevars_t	movevars;
+movevars_t		movevars;
 playermove_t	pmove;
 
 static float	pm_frametime;
@@ -37,20 +31,16 @@ static vec3_t	pm_forward, pm_right;
 vec3_t	player_mins = {-16, -16, -24};
 vec3_t	player_maxs = {16, 16, 32};
 
-#define STEPSIZE	18
-#define MIN_STEP_NORMAL	0.7 // roughly 45 degrees
+#define STEPSIZE 18
+#define MIN_STEP_NORMAL 0.7 // roughly 45 degrees
 
 #define pm_flyfriction	4
 
 #define BLOCKED_FLOOR	1
 #define BLOCKED_STEP	2
 #define BLOCKED_OTHER	4
-#define BLOCKED_ANY	7
+#define BLOCKED_ANY		7
 
-
-void PM_Init (void)
-{
-}
 
 
 // Add an entity to touch list, discarding duplicates
@@ -197,6 +187,7 @@ static int PM_SlideMove (void)
 
 	if (pmove.waterjumptime)
 		VectorCopy (primal_velocity, pmove.velocity);
+
 	return blocked;
 }
 
@@ -228,10 +219,7 @@ static int PM_StepSlideMove (qbool in_air)
 		if (!(blocked & BLOCKED_STEP))
 			return blocked;
 
-		//FIXME: "pmove.velocity < 0" ???? :)
-		// Of course I meant pmove.velocity[2], but I'm afraid I don't understand
-		// the code's purpose any more, so let it stay just this way for now :)  -- Tonik
-		org = (pmove.velocity < 0) ? pmove.origin : original;	// cryptic, eh?
+		org = (originalvel[2] < 0) ? pmove.origin : original;
 		VectorCopy (org, dest);
 		dest[2] -= STEPSIZE;
 		trace = PM_PlayerTrace (org, dest);
@@ -255,16 +243,19 @@ static int PM_StepSlideMove (qbool in_air)
 
 	// move up a stair height
 	VectorCopy (pmove.origin, dest);
-	dest[2] += STEPSIZE;
+	dest[2] += stepsize;
 	trace = PM_PlayerTrace (pmove.origin, dest);
 	if (!trace.startsolid && !trace.allsolid)
 		VectorCopy (trace.endpos, pmove.origin);
+
+	if (in_air && originalvel[2] < 0)
+		pmove.velocity[2] = 0;
 
 	PM_SlideMove ();
 
 	// press down the stepheight
 	VectorCopy (pmove.origin, dest);
-	dest[2] -= STEPSIZE;
+	dest[2] -= stepsize;
 	trace = PM_PlayerTrace (pmove.origin, dest);
 	if (trace.fraction != 1 && trace.plane.normal[2] < MIN_STEP_NORMAL)
 		goto usedown;
@@ -278,13 +269,13 @@ static int PM_StepSlideMove (qbool in_air)
 
 	// decide which one went farther
 	downdist = (down[0] - original[0]) * (down[0] - original[0])
-	           + (down[1] - original[1]) * (down[1] - original[1]);
+		+ (down[1] - original[1]) * (down[1] - original[1]);
 	updist = (up[0] - original[0]) * (up[0] - original[0])
-	         + (up[1] - original[1]) * (up[1] - original[1]);
+		+ (up[1] - original[1]) * (up[1] - original[1]);
 
 	if (downdist >= updist)
 	{
-	usedown:
+usedown:
 		VectorCopy (down, pmove.origin);
 		VectorCopy (downvel, pmove.velocity);
 		return blocked;
@@ -627,15 +618,6 @@ static void PM_CategorizePosition (void)
 			// snap to ground so that we can't jump higher than we're supposed to
 			if (!trace.startsolid && !trace.allsolid)
 				VectorCopy (trace.endpos, pmove.origin);
-#ifdef NEW_JUMPFIX
-			// check for jump bug
-			if (DotProduct(pmove.velocity, groundplane.normal) < 0)
-			{
-				// pmove.velocity is pointing into the ground, clip it
-				PM_ClipVelocity (pmove.velocity, groundplane.normal, pmove.velocity, 1);
-			}
-#endif
-
 		}
 	}
 }
@@ -680,7 +662,6 @@ static void PM_CheckJump (void)
 	if (pmove.jump_held)
 		return; // don't pogo stick
 
-#ifndef NEW_JUMPFIX
 	if (!movevars.pground)
 	{
 		// check for jump bug
@@ -691,7 +672,6 @@ static void PM_CheckJump (void)
 			PM_ClipVelocity (pmove.velocity, groundplane.normal, pmove.velocity, 1);
 		}
 	}
-#endif
 
 	pmove.onground = false;
 	pmove.velocity[2] += 270;
@@ -900,7 +880,6 @@ void PM_PlayerMove (void)
 	// set onground, watertype, and waterlevel for final spot
 	PM_CategorizePosition ();
 
-#ifndef NEW_JUMPFIX
 	if (!movevars.pground)
 	{
 		// this is to make sure landing sound is not played twice
@@ -909,6 +888,4 @@ void PM_PlayerMove (void)
 		        && DotProduct(pmove.velocity, groundplane.normal) < -0.1)
 			PM_ClipVelocity (pmove.velocity, groundplane.normal, pmove.velocity, 1);
 	}
-#endif
-
 }
