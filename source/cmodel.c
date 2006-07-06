@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmodel.c,v 1.1 2006/07/05 17:28:19 disconn3ct Exp $
+	$Id: cmodel.c,v 1.2 2006/07/06 00:40:39 disconn3ct Exp $
 */
 // cmodel.c
 
@@ -115,11 +115,7 @@ static void CM_InitBoxHull (void)
 		side = i&1;
 		
 		box_clipnodes[i].children[side] = CONTENTS_EMPTY;
-		if (i != 5)
-			box_clipnodes[i].children[side^1] = i + 1;
-		else
-			box_clipnodes[i].children[side^1] = CONTENTS_SOLID;
-		
+		box_clipnodes[i].children[side^1] = (i != 5) ? (i + 1) : CONTENTS_SOLID;
 		box_planes[i].type = i>>1;
 		box_planes[i].normal[i>>1] = 1;
 	}
@@ -158,15 +154,8 @@ int CM_HullPointContents (hull_t *hull, int num, vec3_t p)
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 		
-		if (plane->type < 3)
-			d = p[plane->type] - plane->dist;
-		else
-			d = DotProduct (plane->normal, p) - plane->dist;
-
-		if (d < 0)
-			num = node->children[1];
-		else
-			num = node->children[0];
+		d = PlaneDiff(p, plane);
+		num = (d < 0) ? node->children[1] : node->children[0];
 	}
 	
 	return num;
@@ -207,7 +196,10 @@ static qbool RecursiveHullTrace (int num, float p1f, float p2f, vec3_t p1, vec3_
 				trace_trace.inwater = true;
 		}
 		else
+		{
 			trace_trace.startsolid = true;
+		}
+
 		return true; // empty
 	}
 
@@ -243,14 +235,8 @@ static qbool RecursiveHullTrace (int num, float p1f, float p2f, vec3_t p1, vec3_
 #endif
 
 	// put the crosspoint DIST_EPSILON pixels on the near side
-	if (t1 < 0)
-		frac = (t1 + DIST_EPSILON)/(t1-t2);
-	else
-		frac = (t1 - DIST_EPSILON)/(t1-t2);
-	if (frac < 0)
-		frac = 0;
-	if (frac > 1)
-		frac = 1;
+	frac = (t1<0) ? (t1 + DIST_EPSILON)/(t1-t2) : (t1 - DIST_EPSILON)/(t1-t2);
+	frac = bound (0, frac, 1);
 		
 	midf = p1f + (p2f - p1f)*frac;
 	for (i=0 ; i<3 ; i++)
@@ -292,12 +278,12 @@ static qbool RecursiveHullTrace (int num, float p1f, float p2f, vec3_t p1, vec3_
 	{ // shouldn't really happen, but does occasionally
 		frac -= 0.1;
 		if (frac < 0)
-			{
-				trace_trace.fraction = midf;
-				VectorCopy (mid, trace_trace.endpos);
-				Con_DPrintf ("backup past 0\n");
-				return false;
-			}
+		{
+			trace_trace.fraction = midf;
+			VectorCopy (mid, trace_trace.endpos);
+			Con_DPrintf ("backup past 0\n");
+			return false;
+		}
 		midf = p1f + (p2f - p1f)*frac;
 		for (i=0 ; i<3 ; i++)
 			mid[i] = p1[i] + frac*(p2[i] - p1[i]);
@@ -361,12 +347,10 @@ cleaf_t *CM_PointInLeaf (const vec3_t p)
 	{
 		if (node->contents < 0)
 			return (cleaf_t *)node;
+
 		plane = node->plane;
 		d = DotProduct (p,plane->normal) - plane->dist;
-		if (d > 0)
-			node = node->children[0];
-		else
-			node = node->children[1];
+		node = (d > 0) ? node->children[0] : node->children[1];
 	}
 	
 	return NULL; // never reached
@@ -647,6 +631,7 @@ static void CM_LoadNodes (lump_t *l)
 	in = (dnode_t *)(cmod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		SV_Error ("CM_LoadMap: funny lump size");
+
 	count = l->filelen / sizeof(*in);
 	out = Hunk_AllocName ( count*sizeof(*out), loadname);
 
@@ -661,14 +646,11 @@ static void CM_LoadNodes (lump_t *l)
 		for (j=0 ; j<2 ; j++)
 		{
 			p = LittleShort (in->children[j]);
-			if (p >= 0)
-				out->children[j] = map_nodes + p;
-			else
-				out->children[j] = (cnode_t *)(map_leafs + (-1 - p));
+			out->children[j] = (p >= 0) ? (map_nodes + p) : ((cnode_t *)(map_leafs + (-1 - p)));
 		}
 	}
 	
-	CM_SetParent (map_nodes, NULL);		// sets nodes and leafs
+	CM_SetParent (map_nodes, NULL); // sets nodes and leafs
 }
 
 /*
@@ -759,10 +741,7 @@ static void CM_MakeHull0 (void)
 		for (j = 0; j < 2; j++)
 		{
 			child = in->children[j];
-			if (child->contents < 0)
-				out->children[j] = child->contents;
-			else
-				out->children[j] = child - map_nodes;
+			out->children[j] = (child->contents < 0) ? (child->contents) : (child - map_nodes);
 		}
 	}
 }
