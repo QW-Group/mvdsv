@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.26 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.27 2006/07/15 21:50:52 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1347,12 +1347,12 @@ static void PF_findradius (void)
 {
 	int			i, j, numtouch;
 	edict_t		*touchlist[MAX_EDICTS], *ent, *chain;
-	float		rad, rad2, *org;
+	float		rad, rad_2, *org;
 	vec3_t		mins, maxs, eorg;
 
 	org = G_VECTOR(OFS_PARM0);
 	rad = G_FLOAT(OFS_PARM1);
-	rad2 = rad * rad;
+	rad_2 = rad * rad;
 
 	for (i = 0; i < 3; i++)
 	{
@@ -1374,7 +1374,7 @@ static void PF_findradius (void)
 
 		for (j = 0; j < 3; j++)
 			eorg[j] = org[j] - (ent->v.origin[j] + (ent->v.mins[j] + ent->v.maxs[j]) * 0.5);
-		if (DotProduct(eorg, eorg) > rad2)
+		if (DotProduct(eorg, eorg) > rad_2)
 			continue;
 
 		ent->v.chain = EDICT_TO_PROG(chain);
