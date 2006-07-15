@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.91 2006/07/05 23:48:57 disconn3ct Exp $
+$Id: changes.txt,v 1.92 2006/07/15 22:04:54 qqshka Exp $
 
 ----
 MVDSV v0.20.02-CVS build 23?? (2006.0?.??)
@@ -17,7 +17,7 @@ MVDSV v0.20.02-CVS build 23?? (2006.0?.??)
 * qqshka <qqshka@users.sourceforge.net>
 - adding access to user id for qc-based mods, via infokey(client, "*userid"),
   QVM mods already have this.
-
+- bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
