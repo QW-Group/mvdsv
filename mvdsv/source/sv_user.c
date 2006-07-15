@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.60 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: sv_user.c,v 1.61 2006/07/15 21:56:39 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2364,13 +2364,13 @@ int SV_PMTypeForClient (client_t *cl)
 		return PM_OLD_SPECTATOR;
 	}
 
-	if (sv_player->v.movetype == MOVETYPE_FLY)
+	if (cl->edict->v.movetype == MOVETYPE_FLY)
 		return PM_FLY;
 
-	if (sv_player->v.movetype == MOVETYPE_NONE)
+	if (cl->edict->v.movetype == MOVETYPE_NONE)
 		return PM_NONE;
 
-	if (sv_player->v.health <= 0)
+	if (cl->edict->v.health <= 0)
 		return PM_DEAD;
 
 	return PM_NORMAL;
