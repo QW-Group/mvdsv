@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.32 2006/07/05 17:07:18 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.33 2006/07/23 14:43:49 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -2488,7 +2488,7 @@ int sv_sys_callex(byte *data, unsigned int mask, int fn, pr2val_t*arg)
 extern gameData_t *gamedata;
 extern field_t *fields;
 
-#define GAME_API_VERSION_MIN	GAME_API_VERSION
+#define GAME_API_VERSION_MIN 8
 
 void PR2_InitProg()
 {
