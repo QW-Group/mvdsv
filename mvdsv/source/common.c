@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.28 2006/05/24 00:29:58 disconn3ct Exp $
+    $Id: common.c,v 1.29 2006/07/24 13:41:13 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -109,7 +109,7 @@ void MSG_WriteFloat (sizebuf_t *sb, float f)
 
 void MSG_WriteString (sizebuf_t *sb, char *s)
 {
-	if (!s)
+	if (!s || !*s)
 		SZ_Write (sb, "", 1);
 	else
 		SZ_Write (sb, s, strlen(s)+1);
