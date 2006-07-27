@@ -671,7 +671,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_model.c">
+				RelativePath="cmodel.c">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -962,7 +962,7 @@
 				RelativePath="mdfour.h">
 			</File>
 			<File
-				RelativePath="model.h">
+				RelativePath="cmodel.h">
 			</File>
 			<File
 				RelativePath="modelgen.h">

@@ -214,7 +214,7 @@ SOURCE=sv_mod_frags.c
 # End Source File
 # Begin Source File
 
-SOURCE=sv_model.c
+SOURCE=cmodel.c
 # End Source File
 # Begin Source File
 
@@ -331,7 +331,7 @@ SOURCE=mdfour.h
 # End Source File
 # Begin Source File
 
-SOURCE=model.h
+SOURCE=cmodel.h
 # End Source File
 # Begin Source File
 
