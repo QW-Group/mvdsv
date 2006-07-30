@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.61 2006/07/15 21:56:39 qqshka Exp $
+	$Id: sv_user.c,v 1.62 2006/07/30 21:30:20 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1869,6 +1869,9 @@ char *shortinfotbl[] =
 	"skin",
 	"topcolor",
 	"bottomcolor",
+#ifdef CHAT_ICON_EXPEREMENTAL
+	"chat",
+#endif
 	//"*client",
 	//"*spectator",
 	//"*VIP",
@@ -2802,6 +2805,16 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 			if ( cl->state != cs_spawned )
 				break;
+
+#ifdef CHAT_ICON_EXPEREMENTAL
+			s = Info_ValueForKey(cl->userinfoshort, "chat");
+			if ( s[0] ) {
+				newcmd.forwardmove = newcmd.sidemove = newcmd.upmove = 0;
+				newcmd.buttons = 0;
+// somemods uses impulses for commands, so let them use
+//				newcmd.impulse = 0;
+			}
+#endif
 
 			// if the checksum fails, ignore the rest of the packet
 			calculatedChecksum = COM_BlockSequenceCRCByte(
