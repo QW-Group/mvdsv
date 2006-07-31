@@ -1,8 +1,8 @@
 
-$Id: changes.txt,v 1.92 2006/07/15 22:04:54 qqshka Exp $
+$Id: changes.txt,v 1.93 2006/07/31 14:02:55 vvd0 Exp $
 
 ----
-MVDSV v0.20.02-CVS build 23?? (2006.0?.??)
+MVDSV v0.20.03-CVS build 24?? (2006.0?.??)
 * disconnect <disconn3ct@users.sourceforge.net>
 - ZQuake's cmodel.c insteand of original sv_model.c
 
@@ -15,9 +15,13 @@ MVDSV v0.20.02-CVS build 23?? (2006.0?.??)
 - improved -u and -g (setuid/setgid) support
 
 * qqshka <qqshka@users.sourceforge.net>
+- adding CHAT_ICON_EXPEREMENTAL - add support for showing chat baloon over players head,
+  sure if player client support such thing too.
+  Player client must setup userinfo chat, if player goes to console or menus.
 - adding access to user id for qc-based mods, via infokey(client, "*userid"),
   QVM mods already have this.
 - bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
+
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
