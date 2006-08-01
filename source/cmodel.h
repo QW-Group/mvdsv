@@ -16,14 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmodel.h,v 1.1 2006/07/05 17:28:19 disconn3ct Exp $
+	$Id: cmodel.h,v 1.2 2006/08/01 11:58:47 vvd0 Exp $
 */
 
 // cmodel.h
-#ifndef _CMODEL_H_
-#define _CMODEL_H_
-
-#include "bspfile.h"
+#ifndef __CMODEL_H__
+#define __CMODEL_H__
 
 // mplane->type
 enum {
@@ -99,5 +97,4 @@ void CM_InvalidateMap (void);
 cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2);
 void CM_Init (void);
 
-#endif /* _CMODEL_H_ */
-
+#endif /* !__CMODEL_H__ */
