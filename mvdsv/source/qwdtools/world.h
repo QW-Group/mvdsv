@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: world.h,v 1.6 2006/05/26 14:39:28 disconn3ct Exp $
+    $Id: world.h,v 1.7 2006/08/01 11:58:47 vvd0 Exp $
 */
 
 #ifndef __WORLD_H__
@@ -194,4 +194,4 @@ extern static_world_state_t	sworld;
 extern lightstyle_t	lightstyle[MAX_LIGHTSTYLES];
 extern entity_state_t	baselines[MAX_EDICTS];
 
-#endif //__WORLD_H__
+#endif /* !__WORLD_H__ */

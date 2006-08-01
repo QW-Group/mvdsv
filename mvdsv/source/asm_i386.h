@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: asm_i386.h,v 1.5 2006/06/19 16:46:15 vvd0 Exp $
+	$Id: asm_i386.h,v 1.6 2006/08/01 11:58:46 vvd0 Exp $
 */
 
 #ifndef __ASM_I386_H__
@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 
 // plane_t structure
-// !!! if this is changed, it must be changed in model.h too !!!
+// !!! if this is changed, it must be changed in cmodel.h too !!!
 // !!! if the size of this is changed, the array lookup in SV_HullPointContents
 //     must be changed too !!!
 #define pl_normal	0
@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define pl_size		20
 
 // hull_t structure
-// !!! if this is changed, it must be changed in model.h too !!!
+// !!! if this is changed, it must be changed in cmodel.h too !!!
 #define	hu_clipnodes		0
 #define	hu_planes			4
 #define	hu_firstclipnode	8

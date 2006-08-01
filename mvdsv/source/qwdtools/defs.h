@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: defs.h,v 1.12 2006/05/26 14:39:28 disconn3ct Exp $
+    $Id: defs.h,v 1.13 2006/08/01 11:58:47 vvd0 Exp $
 */
 
 #ifndef __DEFS_H__
@@ -255,4 +255,4 @@ void ReadIni (char *buf);
 qbool OpenQWZ (char *files);
 void StopQWZ (source_t *s);
 
-#endif /* __DEFS_H__ */
+#endif /* !__DEFS_H__ */
