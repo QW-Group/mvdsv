@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.74 2006/07/06 00:08:15 disconn3ct Exp $
+	$Id: sv_main.c,v 1.75 2006/08/03 21:43:31 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1733,13 +1733,40 @@ SV_AddIP_f
 static void SV_AddIP_f (void)
 {
 	int		i;
+	double	t = 0;
+	char	*s;
+	time_t	long_time = time(NULL);
 	ipfilter_t f;
+	ipfiltertype_t ipft = ipft_ban; // default is ban
 
-	if (!StringToFilter (Cmd_Argv(1), &f))
+	if (!StringToFilter (Cmd_Argv(1), &f) || f.compare == 0)
 	{
 		Con_Printf ("Bad filter address: %s\n", Cmd_Argv(1));
 		return;
 	}
+
+	s = Cmd_Argv(2);
+	if ( !s[0] || !strcmp(s, "ban"))
+		ipft = ipft_ban;
+	else if (!strcmp(s, "safe"))
+		ipft = ipft_safe;
+	else {
+		Con_Printf ("Wrong filter type %s, use ban or safe\n", Cmd_Argv(2));
+		return;
+	}
+
+	s = Cmd_Argv(3);
+	if (long_time > 0) {
+		if (*s == '+')     // "addip 127.0.0.1 ban +10" will ban for 10 seconds from current time
+			s++;
+		else
+			long_time = 0; // "addip 127.0.0.1 ban 1234567" will ban for some seconds since 00:00:00 GMT, January 1, 1970
+
+		t = (sscanf(s, "%lf", &t) == 1) ? t + long_time : 0;
+	}
+
+	f.time = t;
+	f.type = ipft;
 
 	for (i=0 ; i<numipfilters ; i++)
 		if (ipfilters[i].compare == 0xffffffff || (ipfilters[i].mask == f.mask
@@ -1794,6 +1821,7 @@ SV_ListIP_f
 */
 static void SV_ListIP_f (void)
 {
+	time_t	long_time = time(NULL);
 	int		i;
 	byte	b[4];
 
@@ -1801,7 +1829,15 @@ static void SV_ListIP_f (void)
 	for (i=0 ; i<numipfilters ; i++)
 	{
 		*(unsigned *)b = ipfilters[i].compare;
-		Con_Printf ("%3i.%3i.%3i.%3i\n", b[0], b[1], b[2], b[3]);
+		Con_Printf ("%3i.%3i.%3i.%3i | ", b[0], b[1], b[2], b[3]);
+		switch((int)ipfilters[i].type){
+			case ipft_ban:  Con_Printf (" ban"); break;
+			case ipft_safe: Con_Printf ("safe"); break;
+			default: Con_Printf ("unkn"); break;
+		}
+		if (ipfilters[i].time)
+			Con_Printf (" | %i s", (int)(ipfilters[i].time-long_time));
+		Con_Printf ("\n");
 	}
 }
 
@@ -1813,7 +1849,7 @@ SV_WriteIP_f
 static void SV_WriteIP_f (void)
 {
 	FILE	*f;
-	char	name[MAX_OSPATH];
+	char	name[MAX_OSPATH], *s;
 	byte	b[4];
 	int		i;
 
@@ -1828,10 +1864,28 @@ static void SV_WriteIP_f (void)
 		return;
 	}
 
+	// write safe filters first
 	for (i=0 ; i<numipfilters ; i++)
 	{
+		if(ipfilters[i].type != ipft_safe)
+			continue;
+
 		*(unsigned *)b = ipfilters[i].compare;
-		fprintf (f, "addip %i.%i.%i.%i\n", b[0], b[1], b[2], b[3]);
+		fprintf (f, "addip %i.%i.%i.%i safe %.0lf\n", b[0], b[1], b[2], b[3], ipfilters[i].time);
+	}
+
+	for (i=0 ; i<numipfilters ; i++)
+	{
+		if(ipfilters[i].type == ipft_safe)
+			continue; // ignore safe, we already save it
+
+		switch((int)ipfilters[i].type){
+			case ipft_ban:  s = " ban"; break;
+			case ipft_safe: s = "safe"; break;
+			default: s = "unkn"; break;
+		}
+		*(unsigned *)b = ipfilters[i].compare;
+		fprintf (f, "addip %i.%i.%i.%i %s %.0lf\n", b[0], b[1], b[2], b[3], s, ipfilters[i].time);
 	}
 
 	fclose (f);
@@ -1867,11 +1921,352 @@ qbool SV_FilterPacket (void)
 	in = *(unsigned *)net_from.ip.ip;
 
 	for (i=0 ; i<numipfilters ; i++)
-		if ( (in & ipfilters[i].mask) == ipfilters[i].compare)
+		if ( ipfilters[i].type == ipft_ban && (in & ipfilters[i].mask) == ipfilters[i].compare )
 			return filterban.value;
 
 	return !filterban.value;
 }
+
+// { server internal BAN support
+
+qbool SV_ExecutePRCommand (qbool warn);
+
+#define AF_REAL_ADMIN  (1<<1) // pass/vip granted admin (real admin in terms of ktpro)
+
+void Do_BanList(ipfiltertype_t ipft)
+{
+	time_t	long_time = time(NULL);
+	int		i;
+	byte	b[4];
+
+	for (i=0 ; i<numipfilters ; i++)
+	{
+		if (ipfilters[i].type != ipft)
+			continue;
+
+		*(unsigned *)b = ipfilters[i].compare;
+		Con_Printf ("%3i|%3i.%3i.%3i.%3i", i, b[0], b[1], b[2], b[3]);
+		switch((int)ipfilters[i].type){
+			case ipft_ban:  Con_Printf ("| ban"); break;
+			case ipft_safe: Con_Printf ("|safe"); break;
+			default: Con_Printf ("|unkn"); break;
+		}
+
+		if (ipfilters[i].time) {
+			long df = ipfilters[i].time-long_time;
+			long d, h, m, s;
+			d = df / (60*60*24);
+			df -= d * 60*60*24;
+			h = df / (60*60);
+			df -= h * 60*60;
+			m = df /  60;
+			df -= m * 60;
+			s = df;
+
+			if (d)
+				Con_Printf ("|%4ldd:%2ldh", d, h);
+			else if (h)
+				Con_Printf ("|%4ldh:%2ldm", h, m);
+			else
+				Con_Printf ("|%4ldm:%2lds", m, s);
+		}
+		else
+			Con_Printf ("|permanent");
+		Con_Printf ("\n");
+	}
+}
+
+void SV_BanList (void)
+{
+	char blist[64] = "Ban list:", id[64] = "id", ipmask[64] = "ip mask", type[64] = "type", expire[64] = "expire";
+
+	if (numipfilters < 1) {
+		Con_Printf ("Ban list: empty\n");
+		return;
+	}
+
+	Con_Printf ("%s\n"
+				"\235\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236"
+				"\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236\237\n"
+				"%3.3s|%15.15s|%4.4s|%9.9s\n", 
+				Q_redtext(blist), Q_redtext(id), Q_redtext(ipmask), Q_redtext(type), Q_redtext(expire));
+
+	Do_BanList(ipft_safe);
+	Do_BanList(ipft_ban);
+}
+
+qbool SV_CanAddBan (ipfilter_t *f)
+{
+	int i;
+
+	if (f->compare == 0)
+		return false;
+	
+	for (i=0 ; i<numipfilters ; i++)
+		if (ipfilters[i].mask == f->mask && ipfilters[i].compare == f->compare && ipfilters[i].type == ipft_safe)
+			return false; // can't add filter f because present "safe" filter
+
+	return true;
+}
+
+void SV_RemoveBansIPFilter (int i)
+{
+	for (; i + 1 < numipfilters; i++)
+		ipfilters[i] = ipfilters[i + 1];
+
+	numipfilters--;
+}
+
+void SV_CleanBansIPList (void)
+{
+	time_t	long_time = time(NULL);
+	int     i;
+
+	for (i = 0; i < numipfilters;)
+	{
+		if (ipfilters[i].time && ipfilters[i].time <= long_time)
+		{
+			SV_RemoveBansIPFilter (i);
+		}
+		else
+			i++;
+	}
+}
+
+void SV_Cmd_Ban_f(void)
+{
+	edict_t	*ent;
+	eval_t *val;
+	double		d;
+	int			i, j, t;
+	client_t	*cl;
+	ipfilter_t  f;
+	int			uid;
+	int			c;
+	char		reason[80] = "", arg2[32], arg2c[sizeof(arg2)], *s;
+
+	if (SV_ExecutePRCommand(false)) // no warning if command does't served in mod
+		return;
+
+	// set up the edict
+	ent = host_client->edict;
+
+// ============
+// get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
+// ============
+
+	val =
+#ifdef USE_PR2
+	    PR2_GetEdictFieldValue(ent, "mod_admin");
+#else
+	    GetEdictFieldValue(ent, "mod_admin");
+#endif
+	if (!val || !(val->_int & AF_REAL_ADMIN) ) {
+		Con_Printf("You are not an admin\n");
+		return;
+	}
+
+	c = Cmd_Argc ();
+	if (c < 3)
+	{
+		Con_Printf("usage: cmd ban <id/nick> <time<s m h d>> [reason]\n");
+		return;
+	}
+
+	uid = Q_atoi(Cmd_Argv(1));
+
+	strlcpy(arg2, Cmd_Argv(2), sizeof(arg2));
+
+	// sscanf safe here since sizeof(arg2) == sizeof(arg2c), right?
+	if (sscanf(arg2, "%d%s", &t, &arg2c) != 2 || strlen(arg2c) != 1) {
+		Con_Printf("ban: wrong time arg\n");
+		return;
+	}
+
+	d = t = bound(0, t, 999);
+	switch(arg2c[0]) {
+		case 's': break; // seconds is seconds
+		case 'm': d *= 60; break; // 60 seconds per minute
+		case 'h': d *= 60*60; break; // 3600 seconds per hour
+		case 'd': d *= 60*60*24; break; // 86400 seconds per day
+		default:
+		Con_Printf("ban: wrong time arg\n");
+		return;
+	}
+
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+	{
+		if (!cl->state)
+			continue;
+		if (cl->userid == uid || !strcmp(Cmd_Argv(1), cl->name))
+		{
+			if (c > 3) // serve reason arguments
+			{
+				strlcpy (reason, " (", sizeof(reason));
+				for (j=3 ; j<c; j++)
+				{
+					strlcat (reason, Cmd_Argv(j), sizeof(reason)-4);
+					if (j < c-1)
+						strlcat (reason, " ", sizeof(reason)-4);
+				}
+				if (strlen(reason) < 3)
+					reason[0] = '\0';
+				else
+					strlcat (reason, ")", sizeof(reason));
+			}
+
+			s = NET_BaseAdrToString(cl->netchan.remote_address);
+			if (!StringToFilter (s, &f))
+			{
+				Con_Printf ("ban: bad ip address: %s\n", s);
+				return;
+			}
+
+			if (!SV_CanAddBan(&f))
+			{
+				Con_Printf ("ban: can't ban such ip: %s\n", s);
+				return;
+			}
+
+			SV_BroadcastPrintf (PRINT_HIGH, "%s was banned for %d%s%s\n", cl->name, t, arg2c, reason);
+
+			Cbuf_AddText(va("addip %s ban %s%.0lf\n", s, d ? "+" : "", d));
+			return;
+		}
+	}
+
+	Con_Printf ("Couldn't find user %s\n", Cmd_Argv(1));
+}
+
+void SV_Cmd_Banip_f(void)
+{
+	edict_t	*ent;
+	eval_t *val;
+	byte	b[4];
+	double		d;
+	int			c, t;
+	ipfilter_t  f;
+	char		arg2[32], arg2c[sizeof(arg2)];
+
+	if (SV_ExecutePRCommand(false)) // no warning if command does't served in mod
+		return;
+
+	// set up the edict
+	ent = host_client->edict;
+
+// ============
+// get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
+// ============
+
+	val =
+#ifdef USE_PR2
+	    PR2_GetEdictFieldValue(ent, "mod_admin");
+#else
+	    GetEdictFieldValue(ent, "mod_admin");
+#endif
+	if (!val || !(val->_int & AF_REAL_ADMIN) ) {
+		Con_Printf("You are not an admin\n");
+		return;
+	}
+
+	c = Cmd_Argc ();
+	if (c < 3)
+	{
+		Con_Printf("usage: cmd banip <ip> <time<s m h d>>\n");
+		return;
+	}
+
+	if (!StringToFilter (Cmd_Argv(1), &f))
+	{
+		Con_Printf ("ban: bad ip address: %s\n", Cmd_Argv(1));
+		return;
+	}
+
+	if (!SV_CanAddBan(&f))
+	{
+		Con_Printf ("ban: can't ban such ip: %s\n", Cmd_Argv(1));
+		return;
+	}
+
+	strlcpy(arg2, Cmd_Argv(2), sizeof(arg2));
+
+	// sscanf safe here since sizeof(arg2) == sizeof(arg2c), right?
+	if (sscanf(arg2, "%d%s", &t, &arg2c) != 2 || strlen(arg2c) != 1) {
+		Con_Printf("ban: wrong time arg\n");
+		return;
+	}
+
+	d = t = bound(0, t, 999);
+	switch(arg2c[0]) {
+		case 's': break; // seconds is seconds
+		case 'm': d *= 60; break; // 60 seconds per minute
+		case 'h': d *= 60*60; break; // 3600 seconds per hour
+		case 'd': d *= 60*60*24; break; // 86400 seconds per day
+		default:
+		Con_Printf("ban: wrong time arg\n");
+		return;
+	}
+
+	*(unsigned *)b = f.compare;
+	SV_BroadcastPrintf (PRINT_HIGH, "%3i.%3i.%3i.%3i was banned for %d%s\n", b[0], b[1], b[2], b[3], t, arg2c);
+
+	Cbuf_AddText(va("addip %i.%i.%i.%i ban %s%.0lf\n", b[0], b[1], b[2], b[3], d ? "+" : "", d));
+}
+
+void SV_Cmd_Banremove_f(void)
+{
+	edict_t	*ent;
+	eval_t *val;
+	byte	b[4];
+	int		id;
+
+	if (SV_ExecutePRCommand(false)) // no warning if command does't served in mod
+		return;
+
+	// set up the edict
+	ent = host_client->edict;
+
+// ============
+// get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
+// ============
+
+	val =
+#ifdef USE_PR2
+	    PR2_GetEdictFieldValue(ent, "mod_admin");
+#else
+	    GetEdictFieldValue(ent, "mod_admin");
+#endif
+	if (!val || !(val->_int & AF_REAL_ADMIN) ) {
+		Con_Printf("You are not an admin\n");
+		return;
+	}
+
+	if (Cmd_Argc () < 2)
+	{
+		Con_Printf("usage: cmd banrem [banid]\n");
+		SV_BanList();
+		return;
+	}
+
+	id = Q_atoi(Cmd_Argv(1));
+
+	if (id < 0 || id >= numipfilters) {
+		Con_Printf ("Wrong ban id: %d\n", id);
+		return;
+	}
+
+	if (ipfilters[id].type == ipft_safe) {
+		Con_Printf ("Can't remove such ban with id: %d\n", id);
+		return;
+	}
+
+	*(unsigned *)b = ipfilters[id].compare;
+	SV_BroadcastPrintf (PRINT_HIGH, "%3i.%3i.%3i.%3i was unbanned\n", b[0], b[1], b[2], b[3]);
+
+	SV_RemoveBansIPFilter (id);
+}
+
+// } server internal BAN support
 
 /*
 =================
@@ -2423,6 +2818,9 @@ void SV_Frame (double time)
 	// clean out expired cuffs/mutes
 	SV_CleanIPList ();
 	//<-
+
+	// clean out bans
+	SV_CleanBansIPList ();
 
 	// toggle the log buffer if full
 	SV_CheckLog ();
