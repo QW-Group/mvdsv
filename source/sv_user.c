@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.62 2006/07/30 21:30:20 qqshka Exp $
+	$Id: sv_user.c,v 1.63 2006/08/03 21:43:31 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1264,7 +1264,7 @@ deny_download:
 SV_DemoDownload_f
 ==================
 */
-qbool SV_ExecutePRCommand (void);
+qbool SV_ExecutePRCommand (qbool warn);
 static void SV_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
@@ -1274,7 +1274,7 @@ static void SV_DemoDownload_f(void)
 	unsigned char	download_queue_already_exists[]	= "Download queue already exists.\n";
 
 	if (!sv_use_internal_cmd_dl.value)
-		if (SV_ExecutePRCommand())
+		if (SV_ExecutePRCommand(true)) // FIXME: may be turn off warning here if mod does't support "cmd dl" because server will server command internally in such case, warning looks stupid in this case?
 			return;
 
 	if (Cmd_Argc() < 2)
@@ -2149,6 +2149,12 @@ void SV_DemoListRegex_f(void);
 void SV_MVDInfo_f(void);
 void SV_LastScores_f(void);
 
+// { bans
+void SV_Cmd_Ban_f(void);
+void SV_Cmd_Banip_f(void);
+void SV_Cmd_Banremove_f(void);
+// } bans
+
 typedef struct
 {
 	char	*name;
@@ -2205,6 +2211,9 @@ ucmd_t ucmds[] =
 		{"lastscores", SV_LastScores_f},
 		{"minping", SV_MinPing_f},
 		{"maps", SV_ShowMapsList_f},
+		{"ban", SV_Cmd_Ban_f}, // internal server ban support
+		{"banip", SV_Cmd_Banip_f}, // internal server ban support
+		{"banrem", SV_Cmd_Banremove_f}, // internal server ban support
 
 		{NULL, NULL}
 	};
@@ -2232,13 +2241,13 @@ static void SV_ExecuteUserCommand (char *s)
 		}
 
 	if (!u->name)
-		SV_ExecutePRCommand();
+		SV_ExecutePRCommand(true);
 
 	SV_EndRedirect ();
 }
 
 qbool SV_Check_ktpro(void);
-qbool SV_ExecutePRCommand (void)
+qbool SV_ExecutePRCommand (qbool warn)
 {
 #ifdef USE_PR2
 	if ( sv_vm )
@@ -2247,7 +2256,8 @@ qbool SV_ExecutePRCommand (void)
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 		if (!PR2_ClientCmd())
 		{
-			Con_Printf("Bad user command: %s\n", Cmd_Argv(0));
+			if (warn)
+				Con_Printf("Bad user command: %s\n", Cmd_Argv(0));
 			return false;
 		}
 	}
@@ -2267,7 +2277,8 @@ qbool SV_ExecutePRCommand (void)
 			}
 		if (!PR_UserCmd())
 		{
-			Con_Printf ("Bad user command: %s\n", Cmd_Argv(0));
+			if (warn)
+				Con_Printf ("Bad user command: %s\n", Cmd_Argv(0));
 			return false;
 		}
 	}

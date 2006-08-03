@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.34 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: server.h,v 1.35 2006/08/03 21:43:31 qqshka Exp $
 */
 
 // server.h
@@ -529,11 +529,18 @@ extern char		master_rcon_password[128];
 // sv_main.c
 //
 
+typedef enum {
+	ipft_ban,
+	ipft_safe
+} ipfiltertype_t;
+
 typedef struct
 {
 	unsigned	mask;
 	unsigned	compare;
-	int		level;
+	int			level;
+	double		time; // for ban expiration
+	ipfiltertype_t type;
 } ipfilter_t;
 
 //bliP: penalty filters ->

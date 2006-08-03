@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.93 2006/07/31 14:02:55 vvd0 Exp $
+$Id: changes.txt,v 1.94 2006/08/03 21:43:51 qqshka Exp $
 
 ----
 MVDSV v0.20.03-CVS build 24?? (2006.0?.??)
@@ -21,7 +21,29 @@ MVDSV v0.20.03-CVS build 24?? (2006.0?.??)
 - adding access to user id for qc-based mods, via infokey(client, "*userid"),
   QVM mods already have this.
 - bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
+- extending "/addip" command, adding expiration time, and "type" of ipfilter.
+  Now syntax looks like: /addip <ip> [type] [[+]time]
+  Type may be: "ban" or "safe", "ban" is obvious while "safe" will be described below.
+  Time param better describe via examples:
+	"/addip 127.0.0.1 ban +10" will ban 127.0.0.1 for 10 seconds from current time
+	"/addip 127.0.0.1 ban 1234567" will ban 127.0.0.1 for some seconds since 00:00:00 GMT, January 1, 1970
+  Second variant is not human frienly, and developed to be used in listip.cfg, which is generated after
+  issuing "/writeip". Oh, and zero time ( 0s or 0m etc) treated as unexpired time value.
+- adding server side bans.
+  First of all u must be an realAdmin for use serverside bans, also if mod have self ban commands (like ktpro),
+  then mod commands will be used. Currently server side bans can be used only for KTX mod, but adding such support
+  to any mod is just few lines of code.
 
+	"/cmd ban <uid/nick> <time s m h d> [reason]" timed ban by uid/nick.
+	Example: "/cmd ban qqshka 10s testban" will ban user with nick qqshka for 10 seconds, and print reason as "testban".
+	"/cmd banip <ip> <time s m h d>" timed ban by ip.
+	Example: "/cmd ban 127.0.0.1 10s" will ban ip 127.0.0.1 for 10 seconds.
+	"/cmd banrem [banid]" remove ban by banid, banlist can be obtained if you omit banid, so banid can be guessed.
+
+  Server side bans is just interface for "/addip" command.
+  And the last thing abount "/addip <ip> safe [[+]time]", after using such command, noone can ban such ip
+  via "/cmd ban" or "/cmd banip", sure if server side bans is used, but mod bans probably ignore such politics, that can
+  be used for preventing ban some friendly ips.
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
