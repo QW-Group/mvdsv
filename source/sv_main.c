@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.75 2006/08/03 21:43:31 qqshka Exp $
+	$Id: sv_main.c,v 1.76 2006/08/04 19:31:28 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -2131,6 +2131,7 @@ void SV_Cmd_Ban_f(void)
 			SV_BroadcastPrintf (PRINT_HIGH, "%s was banned for %d%s%s\n", cl->name, t, arg2c, reason);
 
 			Cbuf_AddText(va("addip %s ban %s%.0lf\n", s, d ? "+" : "", d));
+			Cbuf_AddText("writeip\n");
 			return;
 		}
 	}
@@ -2211,6 +2212,7 @@ void SV_Cmd_Banip_f(void)
 	SV_BroadcastPrintf (PRINT_HIGH, "%3i.%3i.%3i.%3i was banned for %d%s\n", b[0], b[1], b[2], b[3], t, arg2c);
 
 	Cbuf_AddText(va("addip %i.%i.%i.%i ban %s%.0lf\n", b[0], b[1], b[2], b[3], d ? "+" : "", d));
+	Cbuf_AddText("writeip\n");
 }
 
 void SV_Cmd_Banremove_f(void)
@@ -2264,6 +2266,7 @@ void SV_Cmd_Banremove_f(void)
 	SV_BroadcastPrintf (PRINT_HIGH, "%3i.%3i.%3i.%3i was unbanned\n", b[0], b[1], b[2], b[3]);
 
 	SV_RemoveBansIPFilter (id);
+	Cbuf_AddText("writeip\n");
 }
 
 // } server internal BAN support
