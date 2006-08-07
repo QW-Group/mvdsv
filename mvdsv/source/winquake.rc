@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: winquake.rc,v 1.4 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: winquake.rc,v 1.5 2006/08/07 13:03:59 vvd0 Exp $
 */
 //Microsoft Developer Studio generated resource script.
 //
@@ -92,12 +92,12 @@ BEGIN
 END
 
 2 TEXTINCLUDE DISCARDABLE 
-BEGIN
-    "#include ""afxres.h""\r\n"
-    "\0"
-END
+//BEGIN
+//    "#include ""afxres.h""\r\n"
+//    "\0"
+//END
 
-3 TEXTINCLUDE DISCARDABLE 
+//3 TEXTINCLUDE DISCARDABLE 
 BEGIN
     "\r\n"
     "\0"

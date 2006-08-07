@@ -1,26 +1,28 @@
 
-$Id: changes.txt,v 1.94 2006/08/03 21:43:51 qqshka Exp $
+$Id: changes.txt,v 1.95 2006/08/07 13:03:59 vvd0 Exp $
 
 ----
-MVDSV v0.20.03-CVS build 24?? (2006.0?.??)
+MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
 * disconnect <disconn3ct@users.sourceforge.net>
-- ZQuake's cmodel.c insteand of original sv_model.c
+- ZQuake's cmodel.c instead of original sv_model.c
 
 * jhodge <jhodge@users.sourceforge.net>
+- new cvar sv_allowlastscores
+  0 - disallow connection less command lastscores
+  1 - allow connection less command lastscores
+  default: 1
 - bugfix from 0.1727: possibility to run master_rcon commands with normal rcon
 
 * VVD <vvd0@users.sourceforge.net>
+- improved build number calculation
+- bugfix: "99% downloaded" - sometimes after downloading client don't rename temporary file to
+  real filename and don't hide download bar - show 99% (EXPERIMENTAL)
+(Thanks to Renzo)
 - bugfix from 0.1726: on *nix '-u <UID>' didn't set uid
 (Thanks to mli)
 - improved -u and -g (setuid/setgid) support
 
 * qqshka <qqshka@users.sourceforge.net>
-- adding CHAT_ICON_EXPEREMENTAL - add support for showing chat baloon over players head,
-  sure if player client support such thing too.
-  Player client must setup userinfo chat, if player goes to console or menus.
-- adding access to user id for qc-based mods, via infokey(client, "*userid"),
-  QVM mods already have this.
-- bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
 - extending "/addip" command, adding expiration time, and "type" of ipfilter.
   Now syntax looks like: /addip <ip> [type] [[+]time]
   Type may be: "ban" or "safe", "ban" is obvious while "safe" will be described below.
@@ -44,6 +46,13 @@ MVDSV v0.20.03-CVS build 24?? (2006.0?.??)
   And the last thing abount "/addip <ip> safe [[+]time]", after using such command, noone can ban such ip
   via "/cmd ban" or "/cmd banip", sure if server side bans is used, but mod bans probably ignore such politics, that can
   be used for preventing ban some friendly ips.
+- adding CHAT_ICON_EXPERIMENTAL - add support for showing chat baloon over players head,
+  sure if player client support such thing too.
+  Player client must setup userinfo chat, if player goes to console or menus.
+- adding access to user id for qc-based mods, via infokey(client, "*userid"),
+  QVM mods already have this.
+- bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
+
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
