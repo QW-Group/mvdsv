@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.63 2006/08/03 21:43:31 qqshka Exp $
+	$Id: sv_user.c,v 1.64 2006/08/07 13:03:59 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -890,13 +890,20 @@ static void SV_NextDownload_f (void)
 	if (r > tmp)
 		r = tmp;
 
+	Con_DPrintf("Downloading: %d", r);
 	r = fread (buffer, 1, r, host_client->download);
-	ClientReliableWrite_Begin (host_client, svc_download, 6+r);
+	Con_DPrintf(" => %d, total: %d => %d", r, host_client->downloadsize, host_client->downloadcount);
+	ClientReliableWrite_Begin (host_client, svc_download, 6 + r);
 	ClientReliableWrite_Short (host_client, r);
 	host_client->downloadcount += r;
 	if (!(size = host_client->downloadsize))
 		size = 1;
 	percent = (host_client->downloadcount * 100.) / size;
+	if (percent == 100 && host_client->downloadcount != host_client->downloadsize)
+		percent = 99;
+	else if (percent != 100 && host_client->downloadcount == host_client->downloadsize)
+		percent = 100;
+	Con_DPrintf("; %d\n", percent);
 	ClientReliableWrite_Byte (host_client, percent);
 	ClientReliableWrite_SZ (host_client, buffer, r);
 	host_client->file_percent = percent; //bliP: file percent
@@ -921,7 +928,6 @@ static void SV_NextDownload_f (void)
 		ClientReliableWrite_Begin (host_client, svc_stufftext, strlen(str)+2);
 		ClientReliableWrite_String (host_client, str);
 	}
-
 }
 
 static void OutofBandPrintf(netadr_t where, char *fmt, ...)
@@ -1058,7 +1064,7 @@ static void SV_NextUpload (void)
 SV_BeginDownload_f
 ==================
 */
-void SV_ReplaceChar(char *s, char from, char to);
+//void SV_ReplaceChar(char *s, char from, char to);
 static void SV_BeginDownload_f(void)
 {
 	char	*name, n[MAX_OSPATH], *val, *p;
@@ -1372,7 +1378,6 @@ static void SV_Say (qbool team)
 	{
 		p++;
 		p[strlen(p)-1] = 0;
-
 	}
 
 	strlcpy(text,    p, sizeof(text));
@@ -1869,7 +1874,7 @@ char *shortinfotbl[] =
 	"skin",
 	"topcolor",
 	"bottomcolor",
-#ifdef CHAT_ICON_EXPEREMENTAL
+#ifdef CHAT_ICON_EXPERIMENTAL
 	"chat",
 #endif
 	//"*client",
@@ -2817,7 +2822,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			if ( cl->state != cs_spawned )
 				break;
 
-#ifdef CHAT_ICON_EXPEREMENTAL
+#ifdef CHAT_ICON_EXPERIMENTAL
 			s = Info_ValueForKey(cl->userinfoshort, "chat");
 			if ( s[0] ) {
 				newcmd.forwardmove = newcmd.sidemove = newcmd.upmove = 0;

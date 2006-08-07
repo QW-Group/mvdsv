@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.10 2006/08/04 17:03:58 qqshka Exp $
+	$Id: bothtools.c,v 1.11 2006/08/07 13:03:59 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -96,6 +96,7 @@ int Q_atoi (char *str)
 		return sign * str[1];
 	}
 
+	for (; *str == ' '; str++);
 	//
 	// assume decimal
 	//

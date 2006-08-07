@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c,v 1.8 2006/04/28 17:12:45 vvd0 Exp $
+	$Id: version.c,v 1.9 2006/08/07 13:03:59 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -40,33 +40,33 @@ char full_version[SIZEOF_FULL_VERSION];
 // returns days since Dec 21 1999
 int build_number (void)
 {
-	int m = 0;
-	int d = 0;
-	int y = 0;
 	static int b = 0;
 
-	if (b != 0)
+	if (b)
 		return b;
 
-	for (m = 0; m < 11; m++)
 	{
-		if (strncasecmp( &date[0], mon[m], 3 ) == 0)
-			break;
-		d += mond[m];
+		int m = 0;
+		int d = -1;
+		int y = -1901;
+		for (m = 0; m < 11; m++)
+		{
+			if (strncasecmp(&date[0], mon[m], 3) == 0)
+				break;
+			d += mond[m];
+		}
+
+		d += Q_atoi(&date[4]);
+		y += Q_atoi(&date[7]);
+		b = d + y * 365 + y / 4;
+
+		if ((y % 4) == 3 && m > 1)
+			++b;
+
+		b -= 36148; // Dec 21 1999
 	}
-
-	d += Q_atoi( &date[4] ) - 1;
-	y = Q_atoi( &date[7] ) - 1900;
-	b = d + (int)((y - 1) * 365.25);
-
-	if (((y % 4) == 0) && m > 1)
-		b += 1;
-
-	b -= 36148; // Dec 21 1999
-
 	return b;
 }
-
 
 /*
 =======================
