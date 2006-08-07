@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.76 2006/08/04 19:31:28 qqshka Exp $
+	$Id: sv_main.c,v 1.77 2006/08/07 03:29:36 jhodge Exp $
 */
 
 #include "qwsvdef.h"
@@ -117,6 +117,8 @@ cvar_t  sv_admininfo = {"sv_admininfo", "", 0, OnChange_admininfo_var};
 
 cvar_t	sv_unfake = {"sv_unfake", "0"}; //bliP: 24/9 kickfake to unfake
 cvar_t	sv_kicktop = {"sv_kicktop", "0"};
+
+cvar_t	sv_allowlastscores = {"sv_allowlastscores", "1"};
 
 cvar_t	sv_maxlogsize = {"sv_maxlogsize", "0"};
 //bliP: 24/9 ->
@@ -597,6 +599,9 @@ SVC_LastScores
 void SV_LastScores_f (void);
 static void SVC_LastScores (void)
 {
+	if(!sv_allowlastscores.value)
+		return;
+
 	SV_BeginRedirect (RD_PACKET);
 	SV_LastScores_f ();
 	SV_EndRedirect ();
@@ -3017,6 +3022,7 @@ void SV_InitLocal (void)
 	//<-
 	Cvar_Register (&sv_kicktop);
 	//<-
+	Cvar_Register (&sv_allowlastscores);
 
 	Cvar_Register (&sv_highchars);
 
