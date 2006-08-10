@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.95 2006/08/07 13:03:59 vvd0 Exp $
+$Id: changes.txt,v 1.96 2006/08/10 10:34:13 vvd0 Exp $
 
 ----
 MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
@@ -14,6 +14,7 @@ MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
 - bugfix from 0.1727: possibility to run master_rcon commands with normal rcon
 
 * VVD <vvd0@users.sourceforge.net>
+- bugfix form 0.20: qwdtools made "choppy" mvd demos from qwd (disconnect, hello :-))
 - improved build number calculation
 - bugfix: "99% downloaded" - sometimes after downloading client don't rename temporary file to
   real filename and don't hide download bar - show 99% (EXPERIMENTAL)
