@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.36 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: sv_ccmds.c,v 1.37 2006/08/10 22:16:35 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1264,10 +1264,16 @@ void SV_Status_f (void)
 SV_Check_ktpro
 ==================
 */
+
+qbool is_ktpro;
+
 qbool SV_Check_ktpro(void)
 {
+	return is_ktpro;
+/*
 	return	*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION) &&
 			*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD);
+*/
 }
 
 void SV_Check_localinfo_maps_support(void)
