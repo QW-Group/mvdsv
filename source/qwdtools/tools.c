@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: tools.c,v 1.16 2006/05/26 14:39:28 disconn3ct Exp $
+    $Id: tools.c,v 1.17 2006/08/10 10:33:45 vvd0 Exp $
 */
 
 #include "defs.h"
@@ -697,8 +697,8 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 	if (sworld.demo.file == NULL)
 		return;
 
-	msec = ((int) (time - prevtime)) * 1000;
-	prevtime += msec*0.001;
+	msec = (int)((time - prevtime) * 1000);
+	prevtime += msec * 0.001;
 
 	//Sys_Printf("%f %f\n", time, prevtime);
 

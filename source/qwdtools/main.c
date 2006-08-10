@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: main.c,v 1.16 2006/05/26 14:39:28 disconn3ct Exp $
+    $Id: main.c,v 1.17 2006/08/10 10:33:45 vvd0 Exp $
 */
 
 #include "defs.h"
@@ -825,7 +825,7 @@ void AddPlayers(frame_t *to, frame_t *frame)
 		}
 		else world.players[i].lastsource = from-sources + 1;
 
-		msec = ((int) (world.time - frame->time)) * 1000;
+		msec = (int)((world.time - frame->time) * 1000);
 		if (msec > 100) msec = 100;
 		else if (msec < -100) msec = -100;
 
