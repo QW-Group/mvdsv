@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.11 2006/08/07 13:03:59 vvd0 Exp $
+	$Id: bothtools.c,v 1.12 2006/08/10 10:34:49 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -443,6 +443,7 @@ float FloatSwap (float f)
 }
 #endif
 
+#ifdef __PDP_ENDIAN__Q__
 int LongSwapPDP2Big (int l)
 {
 	union
@@ -498,6 +499,7 @@ float FloatSwapPDP2Lit (float f)
 	dat2.s[1] = dat1.s[0];
 	return dat2.f;
 }
+#endif
 
 /*
 ===================

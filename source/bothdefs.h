@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: bothdefs.h,v 1.22 2006/06/13 12:46:34 vvd0 Exp $
+    $Id: bothdefs.h,v 1.23 2006/08/10 10:34:49 vvd0 Exp $
 */
 
 // defs common to client and server
@@ -159,10 +159,6 @@ typedef bool qbool;
 short	ShortSwap (short s);
 int		LongSwap (int l);
 float	FloatSwap (float f);
-int		LongSwapPDP2Big (int l);
-int		LongSwapPDP2Lit (int l);
-float	FloatSwapPDP2Big (float f);
-float	FloatSwapPDP2Lit (float f);
 
 #ifdef __BIG_ENDIAN__Q__
 #define BigShort(x)		(x)
@@ -179,6 +175,10 @@ float	FloatSwapPDP2Lit (float f);
 #define LittleLong(x)	(x)
 #define LittleFloat(x)	(x)
 #elif defined(__PDP_ENDIAN__Q__)
+int		LongSwapPDP2Big (int l);
+int		LongSwapPDP2Lit (int l);
+float	FloatSwapPDP2Big (float f);
+float	FloatSwapPDP2Lit (float f);
 #define BigShort(x)		ShortSwap(x)
 #define BigLong(x)		LongSwapPDP2Big(x)
 #define BigFloat(x)		FloatSwapPDP2Big(x)

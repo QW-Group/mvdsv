@@ -24,7 +24,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: mdfour.c,v 1.5 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: mdfour.c,v 1.6 2006/08/10 10:34:49 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -60,8 +60,12 @@ static void mdfour64(uint32 *M)
 	for (j=0;j<16;j++)
 		X[j] = M[j];
 
-	A = m->A; B = m->B; C = m->C; D = m->D;
-	AA = A; BB = B; CC = C; DD = D;
+	AA = A = m->A;
+	BB = B = m->B;
+	CC = C = m->C;
+	DD = D = m->D;
+	/*A = m->A; B = m->B; C = m->C; D = m->D;
+	AA = A; BB = B; CC = C; DD = D;*/
 
 	ROUND1(A,B,C,D,  0,  3);  ROUND1(D,A,B,C,  1,  7);
 	ROUND1(C,D,A,B,  2, 11);  ROUND1(B,C,D,A,  3, 19);
@@ -107,17 +111,19 @@ static void copy64(uint32 *M, unsigned char *in)
 {
 	int i;
 
-	for (i=0;i<16;i++)
-		M[i] = (in[i*4+3]<<24) | (in[i*4+2]<<16) |
-			(in[i*4+1]<<8) | (in[i*4+0]<<0);
+	for (i=0;i<16;i++,in+=4)
+		M[i] = LittleLong(*(uint32*)in);
+			/*(in[i*4+3]<<24) | (in[i*4+2]<<16) |
+			(in[i*4+1]<<8) | (in[i*4+0]<<0);*/
 }
 
 static void copy4(unsigned char *out,uint32 x)
 {
-	out[0] = (unsigned char)(x & 0xFF);
+	*(uint32*)out = LittleLong(x);
+	/*out[0] = (unsigned char)(x & 0xFF);
 	out[1] = (unsigned char)((x>>8) & 0xFF);
 	out[2] = (unsigned char)((x>>16) & 0xFF);
-	out[3] = (unsigned char)((x>>24) & 0xFF);
+	out[3] = (unsigned char)((x>>24) & 0xFF);*/
 }
 
 void mdfour_begin(struct mdfour *md)
