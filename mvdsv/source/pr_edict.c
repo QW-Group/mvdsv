@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.15 2006/05/24 00:29:58 disconn3ct Exp $
+	$Id: pr_edict.c,v 1.16 2006/08/10 22:16:18 qqshka Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -1027,6 +1027,8 @@ PR_LoadProgs
 */
 void PF_clear_strtbl(void);
 
+extern qbool is_ktpro;
+
 void PR_LoadProgs (void)
 {
 	int	i;
@@ -1145,6 +1147,14 @@ void PR_LoadProgs (void)
 	if ((f = ED_FindFunction ("vw_frame")) != NULL)
 		fofs_vw_frame = (func_t)(f - pr_functions);
 #endif
+
+	// check for ktpro
+	is_ktpro = false;
+	// two globals which present in ktpro 1.67
+	if (ED_FindGlobal("fcheck_move_pos") && ED_FindGlobal("speed_check_finished")) {
+		is_ktpro = true;
+		Con_DPrintf ("Treat programs as ktpro\n");
+	}
 }
 
 
