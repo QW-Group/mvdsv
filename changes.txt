@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.96 2006/08/10 10:34:13 vvd0 Exp $
+$Id: changes.txt,v 1.97 2006/08/11 19:01:18 qqshka Exp $
 
 ----
 MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
@@ -53,6 +53,9 @@ MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
 - adding access to user id for qc-based mods, via infokey(client, "*userid"),
   QVM mods already have this.
 - bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
+- Removing *qwe_version from serverinfo, changing *version key in serverinfo so its looks like other server engines do,
+  ktpro still happy because i made some work around (Tonik idea). We catch ktpro from 1.58 to 1.67, can't check for 
+  older ktpro since i have't qwprogs.dat from older ktpro.
 
 
 ----
