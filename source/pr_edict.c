@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.16 2006/08/10 22:16:18 qqshka Exp $
+	$Id: pr_edict.c,v 1.17 2006/08/11 18:47:39 qqshka Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -1033,7 +1033,7 @@ void PR_LoadProgs (void)
 {
 	int	i;
 	char	num[32];
-	char	name[MAX_OSPATH];
+	char	name[MAX_OSPATH], *s;
 	dfunction_t *f;
 
 	// flush the non-C variable lookup cache
@@ -1150,10 +1150,15 @@ void PR_LoadProgs (void)
 
 	// check for ktpro
 	is_ktpro = false;
-	// two globals which present in ktpro 1.67
-	if (ED_FindGlobal("fcheck_move_pos") && ED_FindGlobal("speed_check_finished")) {
+	for (i=0; i < progs->numstrings; i++)
+	{
+		s = PR_GetString(i);
+		if ( !s || !s[0] || !strstr(s, "http://ktpro.does.it/ for"))
+			continue;
+
 		is_ktpro = true;
 		Con_DPrintf ("Treat programs as ktpro\n");
+		break;
 	}
 }
 
