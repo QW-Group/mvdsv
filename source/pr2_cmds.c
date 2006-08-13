@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.33 2006/07/23 14:43:49 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.34 2006/08/13 00:15:21 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -1515,60 +1515,64 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 	//	e1 = NUM_FOR_EDICT(e);
 	//	key = G_STRING(OFS_PARM1);
 
+	value = ov;
+
 	if (e1 == 0)
 	{
-		if (!strcmp(key, "date_str")) { // qqshka - qvm does't have any time builtin support, so add this
+		if (key && key[0] == '\\') { // so we can check is server support such "hacks" via infokey(world, "\\realip") f.e.
+			key++;
+
+			value = "no";
+
+			if (   !strcmp(key, "date_str")
+				|| !strcmp(key, "ip") || !strncmp(key, "realip", 7) || !strncmp(key, "download", 9)
+				|| !strcmp(key, "ping") || !strcmp(key, "*userid") || !strncmp(key, "login", 6)
+				|| !strcmp(key, "*VIP") || !strcmp(key, "*state")
+			   )
+				value = "yes";
+		}
+		else if (!strcmp(key, "date_str")) { // qqshka - qvm does't have any time builtin support, so add this
 			date_t date;
 
 			SV_TimeOfDay(&date);
 			snprintf(ov, sizeof(ov), "%s", date.str);
-			value = ov;
 		}
 		else if ((value = Info_ValueForKey(svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey(localinfo, key);
 	}
-	else if (e1 <= MAX_CLIENTS)
+	else if (e1 > 0 && e1 <= MAX_CLIENTS)
 	{
+		client_t *cl = &svs.clients[e1-1];
+
 		if (!strcmp(key, "ip"))
-		{
-			strlcpy(ov, NET_BaseAdrToString(
-			            svs.clients[e1 - 1].netchan.remote_address), sizeof(ov));
-			value = ov;
-		}
+			strlcpy(ov, NET_BaseAdrToString(cl->netchan.remote_address), sizeof(ov));
+		else if (!strncmp(key, "realip", 7))
+			strlcpy(ov, NET_BaseAdrToString (cl->realip), sizeof(ov));
+		else if (!strncmp(key, "download", 9))
+			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
 		else if (!strcmp(key, "ping"))
-		{
-			int ping = SV_CalcPing(&svs.clients[e1 - 1]);
-			snprintf(ov, sizeof(ov), "%d", ping);
-			value = ov;
-		}
+			snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
 		else if (!strcmp(key, "*userid"))
-		{
-			snprintf(ov, sizeof(ov), "%d", svs.clients[e1 - 1].userid);
-			value = ov;
-		}
-		else if (!strcmp(key, "*VIP")) // qqshka: also locate in userinfo, but this is more safe/secure way, imo
-		{
-			snprintf(ov, sizeof(ov), "%d", svs.clients[e1 - 1].vip);
-			value = ov;
-		}
+			snprintf(ov, sizeof(ov), "%d", cl->userid);
+		else if (!strncmp(key, "login", 6))
+			value = cl->login;
+		else if (!strcmp(key, "*VIP")) // qqshka: also located in userinfo, but this is more safe/secure way, imo
+			snprintf(ov, sizeof(ov), "%d", cl->vip);
 		else if (!strcmp(key, "*state"))
 		{
-			switch (svs.clients[e1 - 1].state)
+			switch (cl->state)
 			{
-				case cs_free: value = "free"; break;
-				case cs_zombie: value = "zombie"; break;
+				case cs_free:         value = "free"; break;
+				case cs_zombie:       value = "zombie"; break;
 				case cs_preconnected: value = "preconnected"; break;
-				case cs_connected: value = "connected"; break;
-				case cs_spawned: value = "spawned"; break;
+				case cs_connected:    value = "connected"; break;
+				case cs_spawned:      value = "spawned"; break;
 
 				default: value = "unknown"; break;
 			}
-
-			snprintf(ov, sizeof(ov), "%s", value);
-			value = ov;
 		}
 		else
-			value = Info_ValueForKey(svs.clients[e1 - 1].userinfo, key);
+			value = Info_ValueForKey(cl->userinfo, key);
 	}
 	else
 		value = "";
