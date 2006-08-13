@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.97 2006/08/11 19:01:18 qqshka Exp $
+$Id: changes.txt,v 1.98 2006/08/13 00:15:37 qqshka Exp $
 
 ----
 MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
@@ -56,7 +56,9 @@ MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
 - Removing *qwe_version from serverinfo, changing *version key in serverinfo so its looks like other server engines do,
   ktpro still happy because i made some work around (Tonik idea). We catch ktpro from 1.58 to 1.67, can't check for 
   older ktpro since i have't qwprogs.dat from older ktpro.
-
+- for developers: for QVM mods only, now you can check is particular infokey(...) "extension" supported by server,
+  in mod you must use something like this: infokey(world, "\\realip") which rerurn "yes" if infokey(edict, "realip")
+  supported.
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
