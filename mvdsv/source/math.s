@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: math.s,v 1.3 2006/06/19 16:46:15 vvd0 Exp $
+	$Id: math.s,v 1.4 2006/08/14 12:22:14 vvd0 Exp $
 */
 
 #include "asm_i386.h"
@@ -37,6 +37,7 @@
 	.align	4
 Ljmptab:	.long	Lcase0, Lcase1, Lcase2, Lcase3
 			.long	Lcase4, Lcase5, Lcase6, Lcase7
+
 
 	.text
 
@@ -353,28 +354,6 @@ LSetSides:
 
 Lerror:
 	call	C(BOPS_Error)
-
-
-
-#define	val	4
-
-.globl C(ShortSwap)
-C(ShortSwap):
-
-	movzwl	val(%esp),%eax
-	xchgb	%al,%ah
-	ret
-
-
-.globl C(LongSwap)
-C(LongSwap):
-
-.globl C(FloatSwap)
-C(FloatSwap):
-
-	movl	val(%esp),%eax
-	bswap	%eax
-	ret
 
 
 #endif	/* id386 */

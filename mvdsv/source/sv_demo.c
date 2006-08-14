@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.50 2006/07/05 17:07:18 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.51 2006/08/14 12:22:14 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -2427,7 +2427,8 @@ void SV_MVDInfo_f (void)
 	fclose(f);
 }
 
-#define MAXDEMOS	10
+#define MAXDEMOS			10
+#define MAXDEMOS_RD_PACKET	100
 void SV_LastScores_f (void)
 {
 	int		demos = MAXDEMOS, i;
@@ -2435,6 +2436,7 @@ void SV_LastScores_f (void)
 	FILE	*f = NULL;
 	char	path[MAX_OSPATH];
 	dir_t	dir;
+	extern redirect_t sv_redirected;
 
 	if (Cmd_Argc() > 2)
 	{
@@ -2454,11 +2456,16 @@ void SV_LastScores_f (void)
 		return;
 	}
 
-	if (dir.numfiles < demos)
+	if (demos > dir.numfiles)
 		demos = dir.numfiles;
 
-	if (GameStarted() && demos > MAXDEMOS)
-		Con_Printf("<numlastdemos> was decreased to %i: match is in progress.\n", demos = MAXDEMOS);
+	if (demos > MAXDEMOS && GameStarted())
+		Con_Printf("<numlastdemos> was decreased to %i: match is in progress.\n",
+					demos = MAXDEMOS);
+
+	if (demos > MAXDEMOS_RD_PACKET && sv_redirected == RD_PACKET)
+		Con_Printf("<numlastdemos> was decreased to %i: command from connectionless packet.\n",
+					demos = MAXDEMOS_RD_PACKET);
 
 	Con_Printf("List of %d last demos:\n", demos);
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.17 2006/08/11 18:47:39 qqshka Exp $
+	$Id: pr_edict.c,v 1.18 2006/08/14 12:22:14 vvd0 Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -1031,13 +1031,13 @@ extern qbool is_ktpro;
 
 void PR_LoadProgs (void)
 {
-	int	i;
+	int	i, len;
 	char	num[32];
 	char	name[MAX_OSPATH], *s;
 	dfunction_t *f;
 
 	// flush the non-C variable lookup cache
-	for (i=0 ; i<GEFV_CACHESIZE ; i++)
+	for (i = 0; i < GEFV_CACHESIZE; i++)
 		gefvCache[i].field[0] = 0;
 
 	// clear pr_newstrtbl
@@ -1062,7 +1062,7 @@ void PR_LoadProgs (void)
 	Info_SetValueForStarKey (svs.info, "*progs", num, MAX_SERVERINFO_STRING);
 
 	// byte swap the header
-	for (i=0 ; i < (int) sizeof(*progs)/4 ; i++)
+	for (i = 0; i < (int) sizeof(*progs) / 4 ; i++)
 		((int *)progs)[i] = LittleLong ( ((int *)progs)[i] );
 
 	if (progs->version != PROG_VERSION)
@@ -1084,7 +1084,7 @@ void PR_LoadProgs (void)
 	pr_edict_size = progs->entityfields * 4 + sizeof (edict_t) - sizeof(entvars_t);
 
 	// byte swap the lumps
-	for (i=0 ; i<progs->numstatements ; i++)
+	for (i = 0; i < progs->numstatements; i++)
 	{
 		pr_statements[i].op = LittleShort(pr_statements[i].op);
 		pr_statements[i].a = LittleShort(pr_statements[i].a);
@@ -1092,7 +1092,7 @@ void PR_LoadProgs (void)
 		pr_statements[i].c = LittleShort(pr_statements[i].c);
 	}
 
-	for (i=0 ; i<progs->numfunctions; i++)
+	for (i = 0; i < progs->numfunctions; i++)
 	{
 		pr_functions[i].first_statement = LittleLong (pr_functions[i].first_statement);
 		pr_functions[i].parm_start = LittleLong (pr_functions[i].parm_start);
@@ -1102,14 +1102,14 @@ void PR_LoadProgs (void)
 		pr_functions[i].locals = LittleLong (pr_functions[i].locals);
 	}
 
-	for (i=0 ; i<progs->numglobaldefs ; i++)
+	for (i = 0; i < progs->numglobaldefs; i++)
 	{
 		pr_globaldefs[i].type = LittleShort (pr_globaldefs[i].type);
 		pr_globaldefs[i].ofs = LittleShort (pr_globaldefs[i].ofs);
 		pr_globaldefs[i].s_name = LittleLong (pr_globaldefs[i].s_name);
 	}
 
-	for (i=0 ; i<progs->numfielddefs ; i++)
+	for (i = 0; i < progs->numfielddefs; i++)
 	{
 		pr_fielddefs[i].type = LittleShort (pr_fielddefs[i].type);
 		if (pr_fielddefs[i].type & DEF_SAVEGLOBAL)
@@ -1118,7 +1118,7 @@ void PR_LoadProgs (void)
 		pr_fielddefs[i].s_name = LittleLong (pr_fielddefs[i].s_name);
 	}
 
-	for (i=0 ; i<progs->numglobals ; i++)
+	for (i = 0; i < progs->numglobals; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
 
 	// Zoid, find the spectator functions
@@ -1150,15 +1150,21 @@ void PR_LoadProgs (void)
 
 	// check for ktpro
 	is_ktpro = false;
-	for (i=0; i < progs->numstrings; i++)
+	for (i = 0; i < progs->numstrings; i++)
 	{
-		s = PR_GetString(i);
-		if ( !s || !s[0] || !strstr(s, "http://ktpro.does.it/ for"))
-			continue;
-
-		is_ktpro = true;
-		Con_DPrintf ("Treat programs as ktpro\n");
-		break;
+		if ((s = PR_GetString(i)))
+			if (*s)
+			{
+				if ((len = strlen(s)) >= 23)
+					if (strstr(s, "http://ktpro.does.it/ for") ||
+						strstr(s, "http://qwex.n3.net/ for"))
+					{
+						is_ktpro = true;
+						Con_DPrintf ("Treat mod as ktpro.\n");
+						break;
+					}
+				i += len;
+			}
 	}
 }
 
@@ -1183,7 +1189,6 @@ void PR_Init (void)
 }
 
 
-
 edict_t *EDICT_NUM(int n)
 {
 	if (n < 0 || n >= MAX_EDICTS)
@@ -1203,5 +1208,3 @@ int NUM_FOR_EDICT(edict_t *e)
 
 	return b;
 }
-
-

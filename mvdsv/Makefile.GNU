@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.4 2006/07/05 17:07:04 disconn3ct Exp $
+#	$Id: Makefile.GNU,v 1.5 2006/08/14 12:22:13 vvd0 Exp $
 #
 
 MAINDIR=.
@@ -90,8 +90,8 @@ SV_OBJS = \
 		$(SV_DIR)/pcre/pcre.o
 
 ifeq ($(USE_ASM),$(ASM))
-SV_AS_OBJS = \
-		$(SV_DIR)/worlda.o \
+SV_ASM_OBJS = \
+		$(SV_DIR)/bothtoolsa.o \
 		$(SV_DIR)/math.o
 endif
 
@@ -111,6 +111,11 @@ QWDTOOLS_OBJS = \
 		$(QWDTOOLS_DIR)/sync.o \
 		$(QWDTOOLS_DIR)/tools.o
 
+ifeq ($(USE_ASM),$(ASM))
+QWDTOOLS_ASM_OBJS = \
+		$(SV_DIR)/bothtoolsa.o
+endif
+
 #############################################################################
 # SETUP AND BUILD
 #############################################################################
@@ -124,10 +129,10 @@ QWDTOOLS_OBJS = \
 all : mvdsv qwdtools
 	$(STRIP) $(STRIP_FLAGS)
 
-mvdsv : $(SV_OBJS) $(SV_AS_OBJS)
+mvdsv : $(SV_OBJS) $(SV_ASM_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o mvdsv $^
 
-qwdtools : $(QWDTOOLS_OBJS)
+qwdtools : $(QWDTOOLS_OBJS) $(QWDTOOLS_ASM_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
 
 clean : 
