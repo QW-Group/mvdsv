@@ -24,7 +24,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: mdfour.c,v 1.6 2006/08/10 10:34:49 vvd0 Exp $
+	$Id: mdfour.c,v 1.7 2006/08/14 12:22:14 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -117,14 +117,15 @@ static void copy64(uint32 *M, unsigned char *in)
 			(in[i*4+1]<<8) | (in[i*4+0]<<0);*/
 }
 
-static void copy4(unsigned char *out,uint32 x)
-{
-	*(uint32*)out = LittleLong(x);
+#define	copy4(out, x)	*(uint32*)(out) = LittleLong(x)
+//static void copy4(unsigned char *out,uint32 x)
+//{
+//	*(uint32*)out = LittleLong(x);
 	/*out[0] = (unsigned char)(x & 0xFF);
 	out[1] = (unsigned char)((x>>8) & 0xFF);
 	out[2] = (unsigned char)((x>>16) & 0xFF);
 	out[3] = (unsigned char)((x>>24) & 0xFF);*/
-}
+//}
 
 void mdfour_begin(struct mdfour *md)
 {
@@ -153,6 +154,7 @@ static void mdfour_tail(unsigned char *in, int n)
 	if (n <= 55)
 	{
 		copy4(buf+56, b);
+*(uint32*)(buf + 56) = LittleLong(b);
 		copy64(M, buf);
 		mdfour64(M);
 	}

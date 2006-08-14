@@ -364,6 +364,35 @@
 				RelativePath="world.h">
 			</File>
 		</Filter>
+		<Filter
+			Name="Asm Files"
+			Filter="">
+			<File
+				RelativePath="..\bothtoolsa.s">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;
+gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;
+ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;
+del &quot;$(OUTDIR)\$(InputName).spp&quot;
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;
+gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;
+ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;
+del &quot;$(OUTDIR)\$(InputName).spp&quot;
+"
+						Outputs="$(OUTDIR)\$(InputName).obj"/>
+				</FileConfiguration>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

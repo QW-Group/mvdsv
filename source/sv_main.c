@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.78 2006/08/10 22:40:10 qqshka Exp $
+	$Id: sv_main.c,v 1.79 2006/08/14 12:22:14 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1876,7 +1876,7 @@ static void SV_WriteIP_f (void)
 			continue;
 
 		*(unsigned *)b = ipfilters[i].compare;
-		fprintf (f, "addip %i.%i.%i.%i safe %.0lf\n", b[0], b[1], b[2], b[3], ipfilters[i].time);
+		fprintf (f, "addip %i.%i.%i.%i safe %.0f\n", b[0], b[1], b[2], b[3], ipfilters[i].time);
 	}
 
 	for (i=0 ; i<numipfilters ; i++)
@@ -1890,7 +1890,7 @@ static void SV_WriteIP_f (void)
 			default: s = "unkn"; break;
 		}
 		*(unsigned *)b = ipfilters[i].compare;
-		fprintf (f, "addip %i.%i.%i.%i %s %.0lf\n", b[0], b[1], b[2], b[3], s, ipfilters[i].time);
+		fprintf (f, "addip %i.%i.%i.%i %s %.0f\n", b[0], b[1], b[2], b[3], s, ipfilters[i].time);
 	}
 
 	fclose (f);
@@ -2083,7 +2083,7 @@ void SV_Cmd_Ban_f(void)
 	strlcpy(arg2, Cmd_Argv(2), sizeof(arg2));
 
 	// sscanf safe here since sizeof(arg2) == sizeof(arg2c), right?
-	if (sscanf(arg2, "%d%s", &t, &arg2c) != 2 || strlen(arg2c) != 1) {
+	if (sscanf(arg2, "%d%s", &t, arg2c) != 2 || strlen(arg2c) != 1) {
 		Con_Printf("ban: wrong time arg\n");
 		return;
 	}
@@ -2197,7 +2197,7 @@ void SV_Cmd_Banip_f(void)
 	strlcpy(arg2, Cmd_Argv(2), sizeof(arg2));
 
 	// sscanf safe here since sizeof(arg2) == sizeof(arg2c), right?
-	if (sscanf(arg2, "%d%s", &t, &arg2c) != 2 || strlen(arg2c) != 1) {
+	if (sscanf(arg2, "%d%s", &t, arg2c) != 2 || strlen(arg2c) != 1) {
 		Con_Printf("ban: wrong time arg\n");
 		return;
 	}

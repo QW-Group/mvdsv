@@ -1071,7 +1071,7 @@
 			Name="Asm Files"
 			Filter="">
 			<File
-				RelativePath="math.s">
+				RelativePath="bothtoolsa.s">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -1096,7 +1096,7 @@ del &quot;$(OUTDIR)\$(InputName).spp&quot;
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="worlda.s">
+				RelativePath="math.s">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool

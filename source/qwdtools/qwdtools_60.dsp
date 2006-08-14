@@ -155,5 +155,46 @@ SOURCE=..\version.h
 SOURCE=world.h
 # End Source File
 # End Group
+# Begin Group "Asm Files"
+
+# PROP Default_Filter "s"
+# Begin Source File
+
+SOURCE=..\bothtoolsa.s
+
+!IF  "$(CFG)" == "qwdtools - Win32 Release"
+
+# Begin Custom Build
+OutDir=Release_60
+InputPath=..\bothtoolsa.s
+InputName=bothtoolsa
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "qwdtools - Win32 Debug"
+
+# Begin Custom Build
+OutDir=Debug_60
+InputPath=..\bothtoolsa.s
+InputName=bothtoolsa
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# End Group
 # End Target
 # End Project

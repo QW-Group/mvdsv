@@ -439,6 +439,44 @@ SOURCE=qwcl2.ico
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=bothtoolsa.s
+
+!IF  "$(CFG)" == "qwsv - Win32 Release"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build
+OutDir=.\SRelease_60
+InputPath=bothtoolsa.s
+InputName=bothtoolsa
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
+
+# Begin Custom Build
+OutDir=.\SDebug_60
+InputPath=bothtoolsa.s
+InputName=bothtoolsa
+
+"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
+	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
+	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
+	del $(OUTDIR)\$(InputName).spp 
+	
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=math.s
 
 !IF  "$(CFG)" == "qwsv - Win32 Release"
@@ -463,44 +501,6 @@ InputName=math
 OutDir=.\SDebug_60
 InputPath=math.s
 InputName=math
-
-"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
-	del $(OUTDIR)\$(InputName).spp 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=worlda.s
-
-!IF  "$(CFG)" == "qwsv - Win32 Release"
-
-# PROP Ignore_Default_Tool 1
-# Begin Custom Build
-OutDir=.\SRelease_60
-InputPath=worlda.s
-InputName=worlda
-
-"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
-	del $(OUTDIR)\$(InputName).spp 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
-
-# Begin Custom Build
-OutDir=.\SDebug_60
-InputPath=worlda.s
-InputName=worlda
 
 "$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 

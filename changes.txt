@@ -1,8 +1,8 @@
 
-$Id: changes.txt,v 1.98 2006/08/13 00:15:37 qqshka Exp $
+$Id: changes.txt,v 1.99 2006/08/14 12:22:13 vvd0 Exp $
 
 ----
-MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
+MVDSV v0.20.05-CVS/0.21 build 24??/2442 (2006.0?.??/2006.08.28)
 * disconnect <disconn3ct@users.sourceforge.net>
 - ZQuake's cmodel.c instead of original sv_model.c
 
@@ -14,9 +14,10 @@ MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
 - bugfix from 0.1727: possibility to run master_rcon commands with normal rcon
 
 * VVD <vvd0@users.sourceforge.net>
-- bugfix form 0.20: qwdtools made "choppy" mvd demos from qwd (disconnect, hello :-))
+- optimized detection of ktpro and added detection of ktpro versions from 1.50 to 1.57
+- bugfix from 0.20: qwdtools made "choppy" mvd demos from qwd (disconnect, hello :-))
 - improved build number calculation
-- bugfix: "99% downloaded" - sometimes after downloading client don't rename temporary file to
+- bugfix from 0.179: "99% downloaded" - sometimes after downloading client don't rename temporary file to
   real filename and don't hide download bar - show 99% (EXPERIMENTAL)
 (Thanks to Renzo)
 - bugfix from 0.1726: on *nix '-u <UID>' didn't set uid
@@ -24,41 +25,45 @@ MVDSV v0.20.04-CVS build 24?? (2006.0?.??)
 - improved -u and -g (setuid/setgid) support
 
 * qqshka <qqshka@users.sourceforge.net>
+- bugfix: u can use higher rate than sv_maxrate after some trix with downloading
+- for developers: for QVM mods only, now you can check is particular infokey(...) "extension"
+  supported by server, in mod you must use something like this: infokey(world, "\\realip")
+  which rerurn "yes" if infokey(edict, "realip") supported.
+- Removed *qwe_version from serverinfo, changed *version key in serverinfo so its looks like
+  other server engines do, ktpro still happy because I made some work around (Tonik idea).
+  We catch ktpro (in a new way) from 1.58 to 1.67, can't check for older ktpro since i have't
+  qwprogs.dat from older ktpro.
 - extending "/addip" command, adding expiration time, and "type" of ipfilter.
   Now syntax looks like: /addip <ip> [type] [[+]time]
   Type may be: "ban" or "safe", "ban" is obvious while "safe" will be described below.
   Time param better describe via examples:
 	"/addip 127.0.0.1 ban +10" will ban 127.0.0.1 for 10 seconds from current time
-	"/addip 127.0.0.1 ban 1234567" will ban 127.0.0.1 for some seconds since 00:00:00 GMT, January 1, 1970
-  Second variant is not human frienly, and developed to be used in listip.cfg, which is generated after
-  issuing "/writeip". Oh, and zero time ( 0s or 0m etc) treated as unexpired time value.
+	"/addip 127.0.0.1 ban 1234567" will ban 127.0.0.1 for some seconds since 00:00:00 GMT,
+      January 1, 1970
+  Second variant is not human frienly, and developed to be used in listip.cfg, which is generated
+  after issuing "/writeip". Oh, and zero time ( 0s or 0m etc) treated as unexpired time value.
 - adding server side bans.
-  First of all u must be an realAdmin for use serverside bans, also if mod have self ban commands (like ktpro),
-  then mod commands will be used. Currently server side bans can be used only for KTX mod, but adding such support
-  to any mod is just few lines of code.
-
+  First of all u must be an realAdmin for use serverside bans, also if mod have self ban commands
+  (like ktpro), then mod commands will be used. Currently server side bans can be used only for
+  KTX mod, but adding such support to any mod is just few lines of code.
 	"/cmd ban <uid/nick> <time s m h d> [reason]" timed ban by uid/nick.
-	Example: "/cmd ban qqshka 10s testban" will ban user with nick qqshka for 10 seconds, and print reason as "testban".
+	Example: "/cmd ban qqshka 10s testban" will ban user with nick qqshka for 10 seconds,
+    and print reason as "testban".
 	"/cmd banip <ip> <time s m h d>" timed ban by ip.
 	Example: "/cmd ban 127.0.0.1 10s" will ban ip 127.0.0.1 for 10 seconds.
-	"/cmd banrem [banid]" remove ban by banid, banlist can be obtained if you omit banid, so banid can be guessed.
-
+	"/cmd banrem [banid]" remove ban by banid, banlist can be obtained if you omit banid,
+    so banid can be guessed.
   Server side bans is just interface for "/addip" command.
-  And the last thing abount "/addip <ip> safe [[+]time]", after using such command, noone can ban such ip
-  via "/cmd ban" or "/cmd banip", sure if server side bans is used, but mod bans probably ignore such politics, that can
-  be used for preventing ban some friendly ips.
+  And the last thing abount "/addip <ip> safe [[+]time]", after using such command, noone can
+  ban such ip via "/cmd ban" or "/cmd banip", sure if server side bans is used, but mod bans 
+  probably ignore such politics, that can be used for preventing ban some friendly ips.
 - adding CHAT_ICON_EXPERIMENTAL - add support for showing chat baloon over players head,
   sure if player client support such thing too.
   Player client must setup userinfo chat, if player goes to console or menus.
 - adding access to user id for qc-based mods, via infokey(client, "*userid"),
   QVM mods already have this.
 - bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
-- Removing *qwe_version from serverinfo, changing *version key in serverinfo so its looks like other server engines do,
-  ktpro still happy because i made some work around (Tonik idea). We catch ktpro from 1.58 to 1.67, can't check for 
-  older ktpro since i have't qwprogs.dat from older ktpro.
-- for developers: for QVM mods only, now you can check is particular infokey(...) "extension" supported by server,
-  in mod you must use something like this: infokey(world, "\\realip") which rerurn "yes" if infokey(edict, "realip")
-  supported.
+
 
 ----
 MVDSV v0.20 build 2376 (2006.06.23)
@@ -495,8 +500,8 @@ MVDSV v0.174 Beta DEVELOP build 1742 (2004.09.27)
 - added button1 support for the ability to use objects with a key or mouse:
   mod must support this feature (from ezQuake)
 - cmd upload syntax changed to: cmd upload <local file> <remote file>
-- action of commands was correctly limited by root of the quake dir (example: restrict path like "/../",
-  but can operate with files and directories which containing substring ".."):
+- action of commands was correctly limited by root of the quake dir (example: restrict path
+  like "/../", but can operate with files and directories which containing substring ".."):
   client commands:
     cmd upload, cmd download, download
   server commands:
@@ -574,7 +579,7 @@ QWEX v0.1728 build 1675 (2004.07.22)
 - QC:
   TeamFortress map voting: (by bliP)
     - bugfix in PF_findmap
-    - float(entity client, float level, float range, float start, float style, float footer) listmaps = #105; 
+    - float(entity client, float level, float range, float start, float style, float footer) listmaps = #105;
     - string(float id) findmapname = #106;
 
   Example:
@@ -778,7 +783,7 @@ QWEX v0.1726 (no release)
 ----
 QWEX v0.1725 build 1501 (2004.01.30)
 [server]
-- change MAX_PACKET_ENTITIES form 300 down to 64
+- change MAX_PACKET_ENTITIES from 300 down to 64
 (Thanks to Fuh)
 [unix]
 - bugfix in reading and writing "accounts" file
