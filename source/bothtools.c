@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.12 2006/08/10 10:34:49 vvd0 Exp $
+	$Id: bothtools.c,v 1.13 2006/08/14 15:37:28 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -60,6 +60,10 @@ int Q_atoi (char *str)
 	int		sign;
 	int		c;
 
+	if (!str) return 0;
+
+	for (; *str && *str <= ' '; str++);
+
 	if (*str == '-')
 	{
 		sign = -1;
@@ -96,7 +100,6 @@ int Q_atoi (char *str)
 		return sign * str[1];
 	}
 
-	for (; *str == ' '; str++);
 	//
 	// assume decimal
 	//
@@ -118,6 +121,10 @@ float Q_atof (char *str)
 	int		sign;
 	int		c;
 	int		decimal, total;
+
+	if (!str) return 0;
+
+	for (; *str && *str <= ' '; str++);
 
 	if (*str == '-')
 	{
