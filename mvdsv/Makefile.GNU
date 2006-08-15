@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.6 2006/08/15 12:23:19 oldmanuk Exp $
+#	$Id: Makefile.GNU,v 1.7 2006/08/15 21:04:19 disconn3ct Exp $
 #
 
 MAINDIR=.
@@ -21,6 +21,7 @@ ifneq (,$(findstring 86,$(shell uname -m)))
 ifeq (,$(findstring 64,$(shell uname -m)))
 ifneq ($(UNAME),Darwin)
 ASM=$(USE_ASM)
+endif
 endif
 endif
 CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -fno-strict-aliasing -s -ffast-math -funroll-loops
