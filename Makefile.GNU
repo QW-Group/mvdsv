@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.5 2006/08/14 12:22:13 vvd0 Exp $
+#	$Id: Makefile.GNU,v 1.6 2006/08/15 12:23:19 oldmanuk Exp $
 #
 
 MAINDIR=.
@@ -19,6 +19,7 @@ USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
 ifneq (,$(findstring 86,$(shell uname -m)))
 ifeq (,$(findstring 64,$(shell uname -m)))
+ifneq ($(UNAME),Darwin)
 ASM=$(USE_ASM)
 endif
 endif
@@ -36,6 +37,12 @@ else
 ifeq ($(UNAME),SunOS)
 LDFLAGS+= -lsocket -lnsl
 CFLAGS+= -DBSD_COMP
+endif
+endif
+
+ifeq ($(UNAME),Darwin)
+ifeq ($(CC_BASEVERSION),4) # if gcc4 then build universal binary
+CFLAGS+= -arch ppc -arch i386
 endif
 endif
 
