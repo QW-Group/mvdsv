@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#	$Id: configure,v 1.12 2006/06/19 16:46:15 vvd0 Exp $
+#	$Id: configure,v 1.13 2006/08/15 12:22:19 oldmanuk Exp $
 #
 
 # C Compiler
@@ -92,12 +92,12 @@ fi
 echo UNAME="${UNAME}" >> Makefile
 
 case ${UNAME} in
-FreeBSD | OpenBSD | NetBSD | DragonFly | Darwin | MacOSX | BSD)
+FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 	echo "${UNAME} system - use BSD Makefile."
 	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
 	;;
-Linux | SunOS | GNU)
+Darwin | MacOSX | Linux | SunOS | GNU)
 	echo "${UNAME} system - use GNU Makefile."
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
