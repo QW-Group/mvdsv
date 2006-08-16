@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.79 2006/08/14 12:22:14 vvd0 Exp $
+	$Id: sv_main.c,v 1.80 2006/08/16 16:57:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -177,6 +177,8 @@ log_t	logs[MAX_LOG];
 
 qbool sv_error = 0;
 qbool server_cfg_done = false;
+
+client_t *WatcherId = NULL; // QW262
 
 void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 
@@ -381,6 +383,11 @@ void SV_DropClient (client_t *drop)
 
 	drop->state = cs_zombie;		// become free in a few seconds
 	drop->connection_started = realtime;	// for zombie timeout
+
+// MD -->
+	if (drop == WatcherId)
+		WatcherId = NULL;
+// <-- MD
 
 	drop->old_frags = 0;
 	drop->edict->v.frags = 0;
@@ -1236,6 +1243,45 @@ int Master_Rcon_Validate (void)
 	return i;
 }
 
+// QW262 -->
+void SV_Admin_f (void)
+{
+	client_t *cl;
+	int i = 0;
+	
+	if (Cmd_Argc () == 2 && !strcmp (Cmd_Argv (1), "off") && WatcherId &&
+			NET_CompareAdr (WatcherId->netchan.remote_address, net_from))
+	{
+		Con_Printf ("Rcon Watch stopped\n");
+		WatcherId = NULL;
+		return;
+	}
+
+	if (WatcherId)
+		Con_Printf ("Rcon Watch is already being made by %s\n", WatcherId->name);
+	else
+	{
+		for (cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+		{
+			if (cl->state != cs_spawned)
+				continue;
+
+			if (NET_CompareAdr (cl->netchan.remote_address, net_from))
+				break;
+		}
+
+		if (i == MAX_CLIENTS)
+		{
+			Con_Printf ("You are not connected to server!\n");
+			return;
+		}
+
+		WatcherId = cl;
+		Con_Printf ("Rcon Watch started for %s\n", cl->name);
+	}
+}
+// <-- QW262
+
 /*
 ===============
 SVC_RemoteCommand
@@ -1245,9 +1291,9 @@ Shift down the remaining args
 Redirect all printfs
 ===============
 */
-static void SVC_RemoteCommand (char *client_string)
+static void SVC_RemoteCommand (char *remote_command)
 {
-	int		i;
+	int			i;
 	char		str[1024];
 	char		plain[32];
 	char		*hide, *p;
@@ -1258,9 +1304,14 @@ static void SVC_RemoteCommand (char *client_string)
 	qbool		banned = false;
 
 
-	if (Rcon_Validate (client_string, master_rcon_password))
-		do_cmd = true;
-	else if (Rcon_Validate (client_string, rcon_password.string))
+	if (Rcon_Validate (remote_command, master_rcon_password))
+	{
+		if (SV_FilterPacket()) //banned players can't use rcon, but we log it
+			banned = true;
+		else
+			do_cmd = true;
+	}
+	else if (Rcon_Validate (remote_command, rcon_password.string))
 	{
 		admin_cmd = true;
 		if (SV_FilterPacket()) //banned players can't use rcon, but we log it
@@ -1277,7 +1328,7 @@ static void SVC_RemoteCommand (char *client_string)
 			// which expands to:
 			//   rm . *
 
-			Cmd_ExpandString (client_string, str);		// check *expanded* command
+			Cmd_ExpandString (remote_command, str); // check *expanded* command
 
 			//
 			// since the execution parser is not case sensitive, we
@@ -1289,8 +1340,8 @@ static void SVC_RemoteCommand (char *client_string)
 			//	str[i] = (char)tolower(str[i]);
 
 			Cmd_TokenizeString (str);		// must check *all* tokens, because
-													// a command/var may not be the first
-													// token -- example: "" ls .
+											// a command/var may not be the first
+											// token -- example: "" ls .
 
 			//
 			// normal rcon can't use these commands
@@ -1303,7 +1354,7 @@ static void SVC_RemoteCommand (char *client_string)
 			{
 				const char *tstr = Cmd_Argv(i);
 
-				if(!tstr[0])		// skip leading empty tokens
+				if(!tstr[0]) // skip leading empty tokens
 					continue;
 
 				if (!strcasecmp(tstr, "rm") ||
@@ -1321,10 +1372,10 @@ static void SVC_RemoteCommand (char *client_string)
 				{
 					bad_cmd = true;
 				}
-				break;	// stop after first non-empty token
+				break; // stop after first non-empty token
 			}
 
-			Cmd_TokenizeString (client_string);	// restore original tokens
+			Cmd_TokenizeString (remote_command); // restore original tokens
 		}
 		do_cmd = !bad_cmd;
 	}
@@ -3041,6 +3092,10 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_maxuserid);
 
 	Cvar_Register (&registered);
+
+// QW262 -->
+	Cmd_AddCommand ("admin", SV_Admin_f);
+// <-- QW262
 
 	Cmd_AddCommand ("addip", SV_AddIP_f);
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
