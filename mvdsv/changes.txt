@@ -1,10 +1,15 @@
 
-$Id: changes.txt,v 1.99 2006/08/14 12:22:13 vvd0 Exp $
+$Id: changes.txt,v 1.100 2006/08/16 17:02:55 disconn3ct Exp $
 
 ----
 MVDSV v0.20.05-CVS/0.21 build 24??/2442 (2006.0?.??/2006.08.28)
 * disconnect <disconn3ct@users.sourceforge.net>
 - ZQuake's cmodel.c instead of original sv_model.c
+- bugfix: banned users can use master_rcon
+- Ported from QW262: new command admin - spy'ing on rcon usage
+  Can be used only by connected player. When you enable `spy mode' and
+  somobody use rcon - you will be noticed. Use rcon admin off to disable
+  spy mode.
 
 * jhodge <jhodge@users.sourceforge.net>
 - new cvar sv_allowlastscores
