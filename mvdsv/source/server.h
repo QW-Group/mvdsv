@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.35 2006/08/03 21:43:31 qqshka Exp $
+	$Id: server.h,v 1.36 2006/08/16 16:53:40 disconn3ct Exp $
 */
 
 // server.h
@@ -187,7 +187,7 @@ typedef struct client_s
 	int		backbuf_size[MAX_BACK_BUFFERS];
 	byte		backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
 
-	byte		stufftext_buf[MAX_STUFFTEXT];
+	char		stufftext_buf[MAX_STUFFTEXT];
 
 	double		connection_started;		// or time of disconnect for zombies
 	qbool		send_message;			// set on frames a datagram arived on
