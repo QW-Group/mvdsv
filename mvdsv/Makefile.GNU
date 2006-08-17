@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.7 2006/08/15 21:04:19 disconn3ct Exp $
+#	$Id: Makefile.GNU,v 1.8 2006/08/17 15:20:27 vvd0 Exp $
 #
 
 MAINDIR=.
@@ -20,7 +20,9 @@ ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
 ifneq (,$(findstring 86,$(shell uname -m)))
 ifeq (,$(findstring 64,$(shell uname -m)))
 ifneq ($(UNAME),Darwin)
+ifneq ($(UNAME),MacOSX)
 ASM=$(USE_ASM)
+endif
 endif
 endif
 endif
@@ -41,8 +43,11 @@ CFLAGS+= -DBSD_COMP
 endif
 endif
 
-ifeq ($(UNAME),Darwin)
 ifeq ($(CC_BASEVERSION),4) # if gcc4 then build universal binary
+ifeq ($(UNAME),Darwin)
+CFLAGS+= -arch ppc -arch i386
+endif
+ifeq ($(UNAME),MacOSX)
 CFLAGS+= -arch ppc -arch i386
 endif
 endif
