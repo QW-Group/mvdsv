@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.65 2006/08/13 17:49:14 qqshka Exp $
+	$Id: sv_user.c,v 1.66 2006/08/18 06:26:52 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1344,6 +1344,7 @@ static void SV_StopDownload_f(void)
 		fclose (host_client->download);
 		host_client->download = NULL;
 		host_client->file_percent = 0; //bliP: file percent
+		host_client->netchan.rate = 1.0/SV_BoundRate(false, Q_atoi(Info_ValueForKey (host_client->userinfo, "rate"))); // qqshka: set normal rate
 		ClientReliableWrite_Begin (host_client, svc_download, 6);
 		ClientReliableWrite_Short (host_client, 0);
 		ClientReliableWrite_Byte (host_client, 100);
