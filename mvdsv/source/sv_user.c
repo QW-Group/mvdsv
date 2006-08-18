@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.66 2006/08/18 06:26:52 qqshka Exp $
+	$Id: sv_user.c,v 1.67 2006/08/18 08:46:54 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1583,7 +1583,7 @@ static void SV_Pings_f (void)
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
-		if (!(client->state == cs_spawned || (client->state == cs_connected && client->spawncount != svs.spawncount )) )
+		if (!(client->state == cs_spawned || (client->state == cs_connected/* && client->spawncount != svs.spawncount*/)) )
 			continue;
 
 		ClientReliableWrite_Begin (host_client, svc_updateping, 4);
