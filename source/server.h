@@ -16,12 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.36 2006/08/16 16:53:40 disconn3ct Exp $
+	$Id: server.h,v 1.37 2006/08/19 16:53:45 qqshka Exp $
 */
 
 // server.h
 #ifndef __SERVER_H__
 #define __SERVER_H__
+
+#define CHAT_ICON_EXPERIMENTAL 1
 
 #define	MAX_MASTERS 8 // max recipients for heartbeat packets
 
