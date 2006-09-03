@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.101 2006/08/16 19:10:32 vvd0 Exp $
+$Id: changes.txt,v 1.102 2006/09/03 23:14:36 qqshka Exp $
 
 ----
 MVDSV v0.20.05-CVS/0.21 build 24??/2442 (2006.0?.??/2006.08.28)
@@ -67,6 +67,11 @@ MVDSV v0.20.05-CVS/0.21 build 24??/2442 (2006.0?.??/2006.08.28)
 - adding access to user id for qc-based mods, via infokey(client, "*userid"),
   QVM mods already have this.
 - bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
+- for developers only: Tonik quote: Add ZQ_ITEMS2 extension - adds .items2 into the 9 highest
+  bits of STAT_ITEMS sent to clients, a la NQ.  Allows for per-client sigil display in the status bar,
+  unlike serverflags which is the same for everyone. Unlike NQ, we don't discard serverflags 
+  if the .items2 field is declared by progs.
+  Supported both by QVM and QC.
 
 
 ----

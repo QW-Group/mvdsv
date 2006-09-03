@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.23 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: sv_send.c,v 1.24 2006/09/03 23:14:36 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -677,6 +677,8 @@ void SV_UpdateClientStats (client_t *client)
 		stats[STAT_ACTIVEWEAPON] = ent->v.weapon;
 	// stuff the sigil bits into the high bits of items for sbar
 	stats[STAT_ITEMS] = (int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
+	if (fofs_items2)	// ZQ_ITEMS2 extension
+		stats[STAT_ITEMS] |= (int)EdictFieldFloat(ent, fofs_items2) << 23;
 
 	if (ent->v.health > 0 || client->spectator) // viewheight for PF_DEAD & PF_GIB is hardwired
 		stats[STAT_VIEWHEIGHT] = ent->v.view_ofs[2];
