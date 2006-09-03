@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.22 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: sv_init.c,v 1.23 2006/09/03 23:14:36 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -33,6 +33,8 @@ char localinfo[MAX_LOCALINFO_STRING+1]; // local game info
 //storage for client names for -progtype 0 (VM_NONE)
 char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN]; //clientnames for -progtype 0
 #endif
+
+int fofs_items2;
 
 /*
 ================
@@ -313,6 +315,12 @@ void SV_SpawnServer (char *mapname)
 		PR_LoadProgs ();
 		sv.edicts = (edict_t*) Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
 	}
+
+#ifdef USE_PR2
+	fofs_items2 = ED2_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
+#else
+	fofs_items2 = ED_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
+#endif
 
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS+1;

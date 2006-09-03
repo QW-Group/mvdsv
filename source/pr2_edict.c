@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_edict.c,v 1.6 2006/08/02 00:17:52 qqshka Exp $
+ *  $Id: pr2_edict.c,v 1.7 2006/09/03 23:14:36 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -42,6 +42,20 @@ eval_t *PR2_GetEdictFieldValue(edict_t *ed, char *field)
 	return NULL;
 }
 
+int ED2_FindFieldOffset (char *field)
+{
+	char *s;
+	field_t	*f;
+
+	if (!sv_vm)
+		return ED_FindFieldOffset(field);
+
+	for (f = fields; (s = PR2_GetString(f->name)) && *s; f++)
+		if (!strcasecmp(PR2_GetString(f->name), field))
+			return f->ofs-((int)&(((edict_t *)0)->v));
+
+	return 0;
+}
 
 /*
 =================

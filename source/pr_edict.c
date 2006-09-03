@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.18 2006/08/14 12:22:14 vvd0 Exp $
+	$Id: pr_edict.c,v 1.19 2006/09/03 23:14:36 qqshka Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -225,6 +225,19 @@ ddef_t *ED_FindGlobal (char *name)
 	return NULL;
 }
 
+/*
+============
+ED_FindFieldOffset
+============
+*/
+int ED_FindFieldOffset (char *field)
+{
+	ddef_t *d;
+	d = ED_FindField(field);
+	if (!d)
+		return 0;
+	return d->ofs*4;
+}
 
 /*
 ============
