@@ -1,8 +1,10 @@
 
-$Id: changes.txt,v 1.102 2006/09/03 23:14:36 qqshka Exp $
+$Id: changes.txt,v 1.103 2006/09/05 13:26:24 vvd0 Exp $
 
+MVDSV v0.25 build 2500 (2006.10.25) :-)
+MVDSV v0.21 build 24?? (2006.09.??)
 ----
-MVDSV v0.20.05-CVS/0.21 build 24??/2442 (2006.0?.??/2006.08.28)
+MVDSV v0.20.05-CVS build 24?? (2006.0?.??)
 * disconnect <disconn3ct@users.sourceforge.net>
 - Ported from QW262: new command admin - spy'ing on rcon usage
   Can be used only by connected player. When you enable `spy mode' and
@@ -21,14 +23,19 @@ MVDSV v0.20.05-CVS/0.21 build 24??/2442 (2006.0?.??/2006.08.28)
 - optimized detection of ktpro and added detection of ktpro versions from 1.50 to 1.57
 - bugfix from 0.20: qwdtools made "choppy" mvd demos from qwd (disconnect, hello :-))
 - improved build number calculation
-- bugfix from 0.179: "99% downloaded" - sometimes after downloading client don't rename temporary file to
-  real filename and don't hide download bar - show 99% (EXPERIMENTAL)
+- bugfix from 0.179: "99% downloaded" - sometimes after downloading client don't rename
+  temporary file to real filename and don't hide download bar - show 99% (EXPERIMENTAL)
 (Thanks to Renzo)
 - bugfix from 0.1726: on *nix '-u <UID>' didn't set uid
 (Thanks to mli)
 - improved -u and -g (setuid/setgid) support
 
 * qqshka <qqshka@users.sourceforge.net>
+- for developers only: Tonik quote: Add ZQ_ITEMS2 extension - adds .items2 into the 9 highest
+  bits of STAT_ITEMS sent to clients, a la NQ.  Allows for per-client sigil display in the
+  status bar, unlike serverflags which is the same for everyone. Unlike NQ, we don't discard
+  serverflags if the .items2 field is declared by progs.
+  Supported both by QVM and QC.
 - bugfix: u can use higher rate than sv_maxrate after some trix with downloading
 - for developers: for QVM mods only, now you can check is particular infokey(...) "extension"
   supported by server, in mod you must use something like this: infokey(world, "\\realip")
@@ -67,11 +74,6 @@ MVDSV v0.20.05-CVS/0.21 build 24??/2442 (2006.0?.??/2006.08.28)
 - adding access to user id for qc-based mods, via infokey(client, "*userid"),
   QVM mods already have this.
 - bugfix: choppiness/prediction bug, fixed by Tonik, i'm just commit to CVS.
-- for developers only: Tonik quote: Add ZQ_ITEMS2 extension - adds .items2 into the 9 highest
-  bits of STAT_ITEMS sent to clients, a la NQ.  Allows for per-client sigil display in the status bar,
-  unlike serverflags which is the same for everyone. Unlike NQ, we don't discard serverflags 
-  if the .items2 field is declared by progs.
-  Supported both by QVM and QC.
 
 
 ----
@@ -112,7 +114,7 @@ MVDSV v0.20 build 2376 (2006.06.23)
     supported byte order:
       little endian 1234
       big endian 4321
-      pdp endian 3412 (middle endian?)
+      pdp endian 3412 (middle endian)
     optimized byte swap functions for i386 arch, therefore no more support of i80386 -
     require i80486 or newer (Anybody use i80386 for runing mvdsv? :-))
     gas2masm was modified:
