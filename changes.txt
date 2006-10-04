@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.104 2006/10/04 14:05:22 vvd0 Exp $
+$Id: changes.txt,v 1.105 2006/10/04 14:08:06 vvd0 Exp $
 
 MVDSV v0.25 build 2500 (2006.10.25) :-)
 MVDSV v0.21 build 24?? (2006.09.??)
@@ -20,6 +20,7 @@ MVDSV v0.21-develop build 2480 (2006.10.05)
 - bugfix from 0.1727: possibility to run master_rcon commands with normal rcon
 
 * VVD <vvd0@users.sourceforge.net>
+- 'cmd stopdl' now clear download queue like 'cmd dl \'
 - changed internal 'cmd dl <N dots>' - download the Nth to last recorded demo on this server
   after start - work like ktpro's 'cmd dl <N dots>'; limits: 0 < N < 16
 (Thanks to B1aze)
