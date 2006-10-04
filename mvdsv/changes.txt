@@ -1,10 +1,10 @@
 
-$Id: changes.txt,v 1.103 2006/09/05 13:26:24 vvd0 Exp $
+$Id: changes.txt,v 1.104 2006/10/04 14:05:22 vvd0 Exp $
 
 MVDSV v0.25 build 2500 (2006.10.25) :-)
 MVDSV v0.21 build 24?? (2006.09.??)
 ----
-MVDSV v0.20.05-CVS build 24?? (2006.0?.??)
+MVDSV v0.21-develop build 2480 (2006.10.05)
 * disconnect <disconn3ct@users.sourceforge.net>
 - Ported from QW262: new command admin - spy'ing on rcon usage
   Can be used only by connected player. When you enable `spy mode' and
@@ -20,6 +20,9 @@ MVDSV v0.20.05-CVS build 24?? (2006.0?.??)
 - bugfix from 0.1727: possibility to run master_rcon commands with normal rcon
 
 * VVD <vvd0@users.sourceforge.net>
+- changed internal 'cmd dl <N dots>' - download the Nth to last recorded demo on this server
+  after start - work like ktpro's 'cmd dl <N dots>'; limits: 0 < N < 16
+(Thanks to B1aze)
 - optimized detection of ktpro and added detection of ktpro versions from 1.50 to 1.57
 - bugfix from 0.20: qwdtools made "choppy" mvd demos from qwd (disconnect, hello :-))
 - improved build number calculation

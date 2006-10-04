@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.67 2006/08/18 08:46:54 qqshka Exp $
+	$Id: sv_user.c,v 1.68 2006/10/04 14:05:22 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -898,7 +898,7 @@ static void SV_NextDownload_f (void)
 	host_client->downloadcount += r;
 	if (!(size = host_client->downloadsize))
 		size = 1;
-	percent = (host_client->downloadcount * 100.) / size;
+	percent = (host_client->downloadcount * (double)100.) / size;
 	if (percent == 100 && host_client->downloadcount != host_client->downloadsize)
 		percent = 99;
 	else if (percent != 100 && host_client->downloadcount == host_client->downloadsize)
@@ -914,7 +914,9 @@ static void SV_NextDownload_f (void)
 	fclose (host_client->download);
 	host_client->download = NULL;
 	host_client->file_percent = 0; //bliP: file percent
-	host_client->netchan.rate = 1.0/SV_BoundRate(false, Q_atoi(Info_ValueForKey (host_client->userinfo, "rate"))); // qqshka: set normal rate
+	host_client->netchan.rate = 1. / SV_BoundRate(false,
+		Q_atoi(Info_ValueForKey (host_client->userinfo, "rate")));
+	// qqshka: set normal rate
 
 	Con_Printf(Q_redtext(download_completed));
 
@@ -1057,7 +1059,6 @@ static void SV_NextUpload (void)
 			                name, p);
 		}
 	}
-
 }
 
 /*
@@ -1174,6 +1175,10 @@ static void SV_BeginDownload_f(void)
 
 					goto deny_download;
 				}
+			num = -num;
+			num &= 16;
+			num <<= 14;
+			num |= 0xFFFC3FFF;
 		}
 		name = SV_MVDNum(num);
 		if (!name)
@@ -1228,7 +1233,7 @@ static void SV_BeginDownload_f(void)
 
 	val = Info_ValueForKey (host_client->userinfo, "drate");
 	if (Q_atoi(val))
-		host_client->netchan.rate = 1.0/SV_BoundRate(true, Q_atoi(val));
+		host_client->netchan.rate = 1. / SV_BoundRate(true, Q_atoi(val));
 
 	// all checks passed, start downloading
 	SV_NextDownload_f ();
@@ -1281,7 +1286,9 @@ static void SV_DemoDownload_f(void)
 	unsigned char	download_queue_already_exists[]	= "Download queue already exists.\n";
 
 	if (!sv_use_internal_cmd_dl.value)
-		if (SV_ExecutePRCommand(true)) // FIXME: may be turn off warning here if mod does't support "cmd dl" because server will server command internally in such case, warning looks stupid in this case?
+		if (SV_ExecutePRCommand(true))
+// FIXME: may be turn off warning here if mod does't support "cmd dl" because server will
+// server command internally in such case, warning looks stupid in this case?
 			return;
 
 	if (Cmd_Argc() < 2)
@@ -1319,12 +1326,22 @@ static void SV_DemoDownload_f(void)
 	{
 		cmd_argv_i = Cmd_Argv(i);
 		cmd_argv_i_len = strlen(cmd_argv_i);
-		for (num = 0; -num < cmd_argv_i_len; num--)
-			if (cmd_argv_i[-num] != '.')
+		if ((num = Q_atoi(cmd_argv_i)) == 0 && cmd_argv_i[0] != '0')
+		{
+			for (num = 0; -num < cmd_argv_i_len; num--)
+				if (cmd_argv_i[-num] != '.')
+				{
+					num = 0;
+					break;
+				}
+			if (num)
 			{
-				num = Q_atoi(cmd_argv_i);
-				break;
+				num = -num;
+				num &= 0xF;
+				num <<= 14;
+				num |= 0xFFFC3FFF;
 			}
+		}
 		host_client->demonum[host_client->demonum[0] - i] = num;
 	}
 	SV_DownloadNextFile();
@@ -1337,17 +1354,20 @@ SV_StopDownload_f
 */
 static void SV_StopDownload_f(void)
 {
-	unsigned char	download_stopped[] = "Download stopped.\n";
+	unsigned char	download_stopped[] = "Download stopped and download queue cleared.\n";
 	if (host_client->download)
 	{
 		host_client->downloadcount = host_client->downloadsize;
 		fclose (host_client->download);
 		host_client->download = NULL;
 		host_client->file_percent = 0; //bliP: file percent
-		host_client->netchan.rate = 1.0/SV_BoundRate(false, Q_atoi(Info_ValueForKey (host_client->userinfo, "rate"))); // qqshka: set normal rate
+		host_client->netchan.rate = 1. / SV_BoundRate(false,
+			Q_atoi(Info_ValueForKey (host_client->userinfo, "rate")));
+		// qqshka: set normal rate
 		ClientReliableWrite_Begin (host_client, svc_download, 6);
 		ClientReliableWrite_Short (host_client, 0);
 		ClientReliableWrite_Byte (host_client, 100);
+		host_client->demonum[0] = 0;
 		Con_Printf (Q_redtext(download_stopped));
 	}
 }

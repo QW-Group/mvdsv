@@ -16,10 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.51 2006/08/14 12:22:14 vvd0 Exp $
+    $Id: sv_demo.c,v 1.52 2006/10/04 14:05:22 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
+
+// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
+static char *lastdemosname[16];
+static int lastdemospos;
 
 #define demo_size_padding 0x1000
 
@@ -805,6 +809,11 @@ void MVD_Init (void)
 
 	Cvar_SetROM(&sv_demoCacheSize, va("%d", size/1024));
 	CleanName_Init();
+
+	// clean last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
+	for (p = 0; p < 16; p++)
+		lastdemosname[p] = NULL;
+	lastdemospos = 0;
 }
 
 
@@ -949,7 +958,8 @@ mvddest_t *SV_InitRecordFile (char *name)
 	if (!*demo.path)
 		strlcpy(demo.path, ".", MAX_OSPATH);
 
-	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n", (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
+	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
+						(dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
 	Cvar_SetROM(&serverdemo, dst->name);
 
 	strlcpy(path, name, MAX_OSPATH);
@@ -970,7 +980,6 @@ mvddest_t *SV_InitRecordFile (char *name)
 	}
 	else
 		Sys_remove(path);
-
 
 	return dst;
 }
@@ -1000,6 +1009,8 @@ stop recording a demo
 */
 void SV_MVDStop (int reason)
 {
+	size_t name_len;
+
 	if (!sv.mvdrecording)
 	{
 		Con_Printf ("Not recording a demo.\n");
@@ -1033,8 +1044,16 @@ void SV_MVDStop (int reason)
 	SV_MVDWritePackets(demo.parsecount - demo.lastwritten + 1);
 	// finish up
 
-	DestCloseAllFlush(false);
+	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
+	name_len = strlen(demo.dest->name) + 1;
+	if (++lastdemospos > 15)
+		lastdemospos &= 0xF;
+	if (lastdemosname[lastdemospos])
+		Q_free(lastdemosname[lastdemospos]);
+	lastdemosname[lastdemospos] = Q_malloc(name_len);
+	strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
 
+	DestCloseAllFlush(false);
 
 	sv.mvdrecording = false;
 	if (!reason)
@@ -2071,6 +2090,14 @@ char *SV_MVDNum(int num)
 {
 	file_t	*list;
 	dir_t	dir;
+	int num_dot;
+
+	if (!num)
+		return NULL;
+
+	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
+	if ((num_dot = (num & 0x0003C000)))
+		return lastdemosname[(lastdemospos - (num_dot >> 14) + 1) & 0xF];
 
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
@@ -2079,16 +2106,13 @@ char *SV_MVDNum(int num)
 		return NULL;
 
 	if (num < 0)
-		num += dir.numfiles + 1;
+		num += dir.numfiles;
+	else 
+		--num;
 
-	num--;
+	while (list->name[0] && num) {list++; num--;}
 
-while (list->name[0] && num) {list++; num--;};
-
-	if (list->name[0])
-		return list->name;
-
-	return NULL;
+	return list->name[0] ? list->name : NULL;
 }
 
 #define OVECCOUNT	3
