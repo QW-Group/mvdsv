@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.34 2006/08/13 00:15:21 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.35 2006/10/04 23:03:44 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -2368,6 +2368,50 @@ void PF2_SetBotCMD( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t *
 	}
 }
 
+//=========================================
+// some time support in QVM
+//=========================================
+
+/*
+==============
+PF2_QVMstrftime
+==============
+*/
+void PF2_QVMstrftime(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+//(char *valbuff, int sizebuff, char *fmt, int offset)
+{
+	char	*valbuff = VM_POINTER(base,mask,stack[0].string);
+	int		sizebuff = stack[1]._int;
+	char	*fmt = VM_POINTER(base,mask,stack[2].string);
+	int		offset = stack[3]._int;
+
+	struct tm *newtime;
+	time_t long_time;
+
+	if (sizebuff <= 0 || !valbuff) {
+		Con_DPrintf("PF2_QVMstrftime: wrong buffer\n");
+		return;
+	}
+
+	time(&long_time);
+	long_time += offset;
+	newtime = localtime(&long_time);
+
+	if (!newtime)
+	{
+		valbuff[0] = 0; // or may be better set to "#bad date#" ?
+		return;
+	}
+
+	retval->_int = strftime(valbuff, sizebuff-1, fmt, newtime);
+
+	if (!retval->_int) {
+		valbuff[0] = 0; // or may be better set to "#bad date#" ?
+		Con_DPrintf("PF2_QVMstrftime: buffer size too small\n");
+		return;
+	}
+}
+
 //===========================================================================
 // SysCalls
 //===========================================================================
@@ -2459,7 +2503,8 @@ pr2_trapcall_t pr2_API[]=
         PF2_Add_Bot,
         PF2_Remove_Bot,
         PF2_SetBotUserInfo,
-        PF2_SetBotCMD
+        PF2_SetBotCMD,
+		PF2_QVMstrftime	// G_QVMstrftime
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 

@@ -20,7 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: g_public.h,v 1.8 2006/05/15 00:00:46 qqshka Exp $
+ *  $Id: g_public.h,v 1.9 2006/10/04 23:03:44 qqshka Exp $
  */
 
 #ifndef __G_PUBLIC_H__
@@ -31,10 +31,12 @@
 //
 // g_public.h -- game module information visible to server
 
-#define	GAME_API_VERSION	9
+#define	GAME_API_VERSION	10
 
 
 //===============================================================
+
+// !!! new traps comes to end of list !!!
 
 //
 // system traps provided by the main engine
@@ -129,9 +131,11 @@ typedef enum
 	G_Add_Bot,
 	G_Remove_Bot,
 	G_SetBotUserInfo,
-	G_SetBotCMD
+	G_SetBotCMD,
+	G_QVMstrftime
 } gameImport_t;
 
+// !!! new things comes to end of list !!!
 
 //
 // functions exported by the game subsystem
