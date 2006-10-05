@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.105 2006/10/04 14:08:06 vvd0 Exp $
+$Id: changes.txt,v 1.106 2006/10/05 17:34:11 vvd0 Exp $
 
 MVDSV v0.25 build 2500 (2006.10.25) :-)
 MVDSV v0.21 build 24?? (2006.09.??)
@@ -35,6 +35,9 @@ MVDSV v0.21-develop build 2480 (2006.10.05)
 - improved -u and -g (setuid/setgid) support
 
 * qqshka <qqshka@users.sourceforge.net>
+- changed QVM API version to 10 due to i've add
+  int QVMstrftime( char *valbuff, int sizebuff, const char *fmt, int offset ),
+  allows me get system date/time in form i want, old mods may work without changes/recompilation.
 - for developers only: Tonik quote: Add ZQ_ITEMS2 extension - adds .items2 into the 9 highest
   bits of STAT_ITEMS sent to clients, a la NQ.  Allows for per-client sigil display in the
   status bar, unlike serverflags which is the same for everyone. Unlike NQ, we don't discard
