@@ -1,8 +1,8 @@
 
-$Id: changes.txt,v 1.106 2006/10/05 17:34:11 vvd0 Exp $
+$Id: changes.txt,v 1.107 2006/10/06 16:22:56 vvd0 Exp $
 
 MVDSV v0.25 build 2500 (2006.10.25) :-)
-MVDSV v0.21 build 24?? (2006.09.??)
+MVDSV v0.22-develop build 2490 (2006.09.15)
 ----
 MVDSV v0.21-develop build 2480 (2006.10.05)
 * disconnect <disconn3ct@users.sourceforge.net>
