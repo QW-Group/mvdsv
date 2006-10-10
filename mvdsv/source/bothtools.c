@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.13 2006/08/14 15:37:28 vvd0 Exp $
+	$Id: bothtools.c,v 1.14 2006/10/10 16:11:29 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -70,7 +70,12 @@ int Q_atoi (char *str)
 		str++;
 	}
 	else
+	{
+		if (*str == '+')
+			str++;
+
 		sign = 1;
+	}
 
 	val = 0;
 
@@ -132,7 +137,12 @@ float Q_atof (char *str)
 		str++;
 	}
 	else
+	{
+		if (*str == '+')
+			str++;
+
 		sign = 1;
+	}
 
 	val = 0;
 
