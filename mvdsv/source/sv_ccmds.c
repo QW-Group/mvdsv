@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.37 2006/08/10 22:16:35 qqshka Exp $
+	$Id: sv_ccmds.c,v 1.38 2006/10/12 20:26:56 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -731,9 +731,9 @@ void SV_LocalCommand_f (void)
 		strlcat (str, Cmd_Argv(i), sizeof(str));
 		strlcat (str, " ", sizeof(str));
 	}
-	strlcat (str, va("> %s\n", temp_file), sizeof(str));
+	strlcat (str, va("> %s 2>&1\n", temp_file), sizeof(str));
 
-	if (system(str))
+	if (system(str) == -1)
 		Con_Printf("command failed\n");
 	else
 	{
