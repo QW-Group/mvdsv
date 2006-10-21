@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: progs.h,v 1.13 2006/09/03 23:14:36 qqshka Exp $
+	$Id: progs.h,v 1.14 2006/10/21 14:22:00 disconn3ct Exp $
 */
 
 #ifndef __PROGS_H__
@@ -137,9 +137,10 @@ extern	int		pr_xstatement;
 extern func_t SpectatorConnect, SpectatorDisconnect, SpectatorThink;
 
 #ifdef VWEP_TEST
-extern int	fofs_vw_index, fofs_vw_frame;
+extern int fofs_vw_index, fofs_vw_frame;
 #endif
 extern int fofs_items2; // ZQ_ITEMS2 extension
+extern int fofs_gravity, fofs_maxspeed;
 
 #define EdictFieldFloat(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->_float
 

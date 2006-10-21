@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.24 2006/09/03 23:14:36 qqshka Exp $
+	$Id: sv_send.c,v 1.25 2006/10/21 14:22:00 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -766,11 +766,10 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 SV_UpdateToReliableMessages
 =======================
 */
-void SV_UpdateToReliableMessages (void)
+static void SV_UpdateToReliableMessages (void)
 {
-	int i, j, cls;
+	int i, j;
 	client_t *client;
-	eval_t *val;
 	edict_t *ent;
 
 	// check for changes to be sent over the reliable streams to all clients
@@ -778,7 +777,6 @@ void SV_UpdateToReliableMessages (void)
 	{
 		if (host_client->state != cs_spawned)
 			continue;
-		cls |= 1 << i;
 
 		if (host_client->sendinfo)
 		{
@@ -790,7 +788,6 @@ void SV_UpdateToReliableMessages (void)
 
 		if (host_client->old_frags != (int)ent->v.frags)
 		{
-			cls = 0;
 			for (j=0, client = svs.clients ; j<MAX_CLIENTS ; j++, client++)
 			{
 				if (client->state < cs_preconnected)
@@ -812,15 +809,9 @@ void SV_UpdateToReliableMessages (void)
 		}
 
 		// maxspeed/entgravity changes
-		val =
-#ifdef USE_PR2
-		    PR2_GetEdictFieldValue(ent, "gravity");
-#else
-			GetEdictFieldValue(ent, "gravity");
-#endif
-		if (val && host_client->entgravity != val->_float)
+		if (fofs_gravity && host_client->entgravity != EdictFieldFloat(ent, fofs_gravity))
 		{
-			host_client->entgravity = val->_float;
+			host_client->entgravity = EdictFieldFloat(ent, fofs_gravity);
 			ClientReliableWrite_Begin(host_client, svc_entgravity, 5);
 			ClientReliableWrite_Float(host_client, host_client->entgravity);
 			if (sv.mvdrecording)
@@ -830,15 +821,10 @@ void SV_UpdateToReliableMessages (void)
 				MSG_WriteFloat((sizebuf_t*)demo.dbuf, host_client->entgravity);
 			}
 		}
-		val =
-#ifdef USE_PR2
-		    PR2_GetEdictFieldValue(ent, "maxspeed");
-#else
-		    GetEdictFieldValue(ent, "maxspeed");
-#endif
-		if (val && host_client->maxspeed != val->_float)
+
+		if (fofs_maxspeed && host_client->maxspeed != EdictFieldFloat(ent, fofs_maxspeed))
 		{
-			host_client->maxspeed = val->_float;
+			host_client->maxspeed = EdictFieldFloat(ent, fofs_maxspeed);
 			ClientReliableWrite_Begin(host_client, svc_maxspeed, 5);
 			ClientReliableWrite_Float(host_client, host_client->maxspeed);
 			if (sv.mvdrecording)
@@ -855,21 +841,18 @@ void SV_UpdateToReliableMessages (void)
 		SZ_Clear (&sv.datagram);
 
 	// append the broadcast messages to each client messages
-	cls = 0;
 	for (j=0, client = svs.clients ; j<MAX_CLIENTS ; j++, client++)
 	{
 		if (client->state < cs_preconnected)
-			continue;	// reliables go to all connected or spawned
+			continue; // reliables go to all connected or spawned
 
 		ClientReliableCheckBlock(client, sv.reliable_datagram.cursize);
 		ClientReliableWrite_SZ(client, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
 
 		if (client->state != cs_spawned)
-			continue;	// datagrams only go to spawned
+			continue; // datagrams only go to spawned
 
-		SZ_Write (&client->datagram
-		          , sv.datagram.data
-		          , sv.datagram.cursize);
+		SZ_Write (&client->datagram, sv.datagram.data, sv.datagram.cursize);
 	}
 
 	if (sv.mvdrecording && sv.reliable_datagram.cursize)

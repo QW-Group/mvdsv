@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.23 2006/09/03 23:14:36 qqshka Exp $
+	$Id: sv_init.c,v 1.24 2006/10/21 14:22:00 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -35,6 +35,7 @@ char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN]; //clientnames for -progtype 0
 #endif
 
 int fofs_items2;
+int fofs_maxspeed, fofs_gravity;
 
 /*
 ================
@@ -318,8 +319,12 @@ void SV_SpawnServer (char *mapname)
 
 #ifdef USE_PR2
 	fofs_items2 = ED2_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
+	fofs_maxspeed = ED2_FindFieldOffset ("maxspeed");
+	fofs_gravity = ED2_FindFieldOffset ("gravity");
 #else
 	fofs_items2 = ED_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
+	fofs_maxspeed = ED_FindFieldOffset ("maxspeed");
+	fofs_gravity = ED_FindFieldOffset ("gravity");
 #endif
 
 	// leave slots at start for clients only
