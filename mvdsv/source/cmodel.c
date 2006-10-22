@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmodel.c,v 1.2 2006/07/06 00:40:39 disconn3ct Exp $
+	$Id: cmodel.c,v 1.3 2006/10/22 15:49:39 disconn3ct Exp $
 */
 // cmodel.c
 
@@ -933,7 +933,7 @@ void CM_InvalidateMap (void)
 */
 cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2)
 {
-	int i;
+	unsigned int i;
 	dheader_t *header;
 	unsigned int *buf;
 
@@ -964,7 +964,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	// swap all the lumps
 	cmod_base = (byte *)header;
 
-	for (i = 0; i < sizeof(dheader_t)/4; i++)
+	for (i = 0; i < sizeof(dheader_t) / 4; i++)
 		((int *)header)[i] = LittleLong(((int *)header)[i]);
 
 	// checksum all of the map, except for entities

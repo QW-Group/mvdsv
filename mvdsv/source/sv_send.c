@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.25 2006/10/21 14:22:00 disconn3ct Exp $
+	$Id: sv_send.c,v 1.26 2006/10/22 15:49:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -794,7 +794,7 @@ static void SV_UpdateToReliableMessages (void)
 					continue;
 				ClientReliableWrite_Begin(client, svc_updatefrags, 4);
 				ClientReliableWrite_Byte(client, i);
-				ClientReliableWrite_Short(client, ent->v.frags);
+				ClientReliableWrite_Short(client, (int) ent->v.frags);
 			}
 
 			if (sv.mvdrecording)
@@ -802,10 +802,10 @@ static void SV_UpdateToReliableMessages (void)
 				MVDWrite_Begin(dem_all, 0, 4);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatefrags);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, i);
-				MSG_WriteShort((sizebuf_t*)demo.dbuf, ent->v.frags);
+				MSG_WriteShort((sizebuf_t*)demo.dbuf, (int) ent->v.frags);
 			}
 
-			host_client->old_frags = ent->v.frags;
+			host_client->old_frags = (int) ent->v.frags;
 		}
 
 		// maxspeed/entgravity changes

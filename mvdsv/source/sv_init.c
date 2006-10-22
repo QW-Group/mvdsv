@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.24 2006/10/21 14:22:00 disconn3ct Exp $
+	$Id: sv_init.c,v 1.25 2006/10/22 15:49:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -251,7 +251,7 @@ void SV_SpawnServer (char *mapname)
 		if( sv_vm && svs.clients[i].isBot ) // remove bot clients
 		{
 			svs.clients[i].old_frags = 0;
-			svs.clients[i].edict->v.frags = 0;
+			svs.clients[i].edict->v.frags = 0.0;
 			svs.clients[i].name[0] = 0;
 			svs.clients[i].state = cs_free;
 			memset(svs.clients[i].userinfo, 0, sizeof(svs.clients[i].userinfo));
