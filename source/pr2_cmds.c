@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.35 2006/10/04 23:03:44 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.36 2006/10/22 15:49:39 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -2257,7 +2257,7 @@ void RemoveBot(client_t *cl)
 		PR2_GameClientDisconnect(0);
 
 	cl->old_frags = 0;
-	cl->edict->v.frags = 0;
+	cl->edict->v.frags = 0.0;
 	cl->name[0] = 0;
 	cl->state = cs_free;
 	memset( cl->userinfo, 0, sizeof( cl->userinfo ) );

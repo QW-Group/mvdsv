@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.80 2006/08/16 16:57:14 disconn3ct Exp $
+	$Id: sv_main.c,v 1.81 2006/10/22 15:49:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -390,7 +390,7 @@ void SV_DropClient (client_t *drop)
 // <-- MD
 
 	drop->old_frags = 0;
-	drop->edict->v.frags = 0;
+	drop->edict->v.frags = 0.0;
 	drop->name[0] = 0;
 	memset (drop->userinfo, 0, sizeof(drop->userinfo));
 	memset (drop->userinfoshort, 0, sizeof(drop->userinfoshort));
@@ -1296,7 +1296,8 @@ static void SVC_RemoteCommand (char *remote_command)
 	int			i;
 	char		str[1024];
 	char		plain[32];
-	char		*hide, *p;
+	char		*p;
+	unsigned char *hide;
 	client_t	*cl;
 	qbool		admin_cmd = false;
 	qbool		do_cmd = false;
