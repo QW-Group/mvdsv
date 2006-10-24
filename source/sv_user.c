@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.68 2006/10/04 14:05:22 vvd0 Exp $
+	$Id: sv_user.c,v 1.69 2006/10/24 19:44:45 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2847,8 +2847,10 @@ void SV_ExecuteClientMessage (client_t *cl)
 #ifdef CHAT_ICON_EXPERIMENTAL
 			s = Info_ValueForKey(cl->userinfoshort, "chat");
 			if ( s[0] ) {
-				newcmd.forwardmove = newcmd.sidemove = newcmd.upmove = 0;
-				newcmd.buttons = 0;
+// allow movement while in console
+//				newcmd.forwardmove = newcmd.sidemove = newcmd.upmove = 0;
+				newcmd.buttons &= BUTTON_JUMP; // only jump button allowed while in console
+
 // somemods uses impulses for commands, so let them use
 //				newcmd.impulse = 0;
 			}
