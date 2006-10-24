@@ -1,8 +1,14 @@
 
-$Id: changes.txt,v 1.109 2006/10/21 14:30:24 disconn3ct Exp $
+$Id: changes.txt,v 1.110 2006/10/24 14:05:22 vvd0 Exp $
 
-MVDSV v0.25 build 2500 (2006.10.25) :-)
-MVDSV v0.22-develop build 2490 (2006.09.15)
+MVDSV v0.25 build 2500 (2006.10.25)
+----
+* disconnect <disconn3ct@users.sourceforge.net>
+- field offsets cacheing (ported from ZQuake)
+- made localcommand more verbose
+- kqueue was disabled on NetBSD and OpenBSD because it don't work
+
+
 ----
 MVDSV v0.21-develop build 2480 (2006.10.05)
 * disconnect <disconn3ct@users.sourceforge.net>
@@ -11,8 +17,6 @@ MVDSV v0.21-develop build 2480 (2006.10.05)
   somebody use rcon - you will be noticed. Use rcon admin off to disable spy mode.
 - ZQuake's cmodel.c instead of original sv_model.c
 - bugfix: banned users can use master_rcon
-- made localcommand more verbose
-- field offsets cacheing (ported from ZQuake)
 
 * jhodge <jhodge@users.sourceforge.net>
 - new cvar sv_allowlastscores
