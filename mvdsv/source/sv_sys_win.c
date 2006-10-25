@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.33 2006/08/07 13:03:59 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.34 2006/10/25 11:09:45 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -45,11 +45,7 @@ Sys_FileTime
 int	Sys_FileTime (char *path)
 {
 	struct	_stat	buf;
-
-	if (_stat (path,&buf) == -1)
-		return -1;
-
-	return buf.st_mtime;
+	return _stat(path, &buf) == -1 ? -1 : buf.st_mtime;
 }
 
 /*
@@ -149,8 +145,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		{
 			dir.numdirs++;
 			list[dir.numfiles].isdir = true;
-			list[dir.numfiles].size = 0;
-			list[dir.numfiles].time = 0;
+			list[dir.numfiles].size = list[dir.numfiles].time = 0;
 		}
 		else
 		{

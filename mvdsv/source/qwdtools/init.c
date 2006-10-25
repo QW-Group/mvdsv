@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: init.c,v 1.13 2006/05/26 14:51:09 disconn3ct Exp $
+    $Id: init.c,v 1.14 2006/10/25 11:09:45 vvd0 Exp $
 */
 
 #include "defs.h"
@@ -197,11 +197,11 @@ int  whatToStdout = 0;
 #endif
 param_t params[] =
 	{
-		{"-qizmo_dir",			"-qd",	TYPE_S, {(char *) qizmoDir}},
-		{"-output_dir",			"-od",	TYPE_S, {(char *) outputDir}},
-		{"-output",				"-o",	TYPE_S, {(char *) sworld.demo.name}},
-		{"-debug_file",			NULL,	TYPE_S, {(char *) sworld.debug.name}},
-		{"-log_file",			NULL,	TYPE_S, {(char *) sworld.log.name}},
+		{"-qizmo_dir",			"-qd",	TYPE_S, {(char *) qizmoDir}, sizeof(qizmoDir)},
+		{"-output_dir",			"-od",	TYPE_S, {(char *) outputDir}, sizeof(outputDir)},
+		{"-output",				"-o",	TYPE_S, {(char *) sworld.demo.name}, sizeof(sworld.demo.name)},
+		{"-debug_file",			NULL,	TYPE_S, {(char *) sworld.debug.name}, sizeof(sworld.debug.name)},
+		{"-log_file",			NULL,	TYPE_S, {(char *) sworld.log.name}, sizeof(sworld.log.name)},
 		{"-fps",				NULL,	TYPE_I, {(char *) &sworld.fps}},
 		{"-filter_spectalk",	"-fs",	TYPE_O, {(char *) O_FS}},
 		{"-filter_qizmotalk",	"-fq",	TYPE_O, {(char *) O_FQ}},
@@ -214,10 +214,10 @@ param_t params[] =
 #ifdef _WIN32
 		{"-waitforkbhit",		"-wait",TYPE_O, {(char *) O_WAITFORKBHIT}},
 #endif
-		{"-stdin",				NULL,	(type_t) (TYPE_O | TYPE_S), {(char *) stdintype}, (int) O_STDIN},
+		{"-stdin",				NULL,	(type_t) (TYPE_O | TYPE_S), {(char *) stdintype}, sizeof(stdintype), (int) O_STDIN},
 		{"-stdout",				NULL,	TYPE_O, {(char *) O_STDOUT}},
 		{"-noini"},
-		{"-base_dir",			"-bd",	TYPE_S, {(char *) currentDir}},
+		{"-base_dir",			"-bd",	TYPE_S, {(char *) currentDir}, sizeof(currentDir)},
 		{"-msglevel",			"-msg",	TYPE_I, {(char *) &sworld.msglevel}},
 		{"-marge",				"-m",	TYPE_O, {(char *) O_MARGE}},
 		{"-range",				"-r",	TYPE_I, {(char *) &sworld.range}},
@@ -312,16 +312,14 @@ void ParseArgv(void)
 			i++;
 			if (i < com_argc && com_argv[i][0] != '-')
 			{
-				// FIXME
-				strcpy(param->opt1.str, com_argv[i]);
+				strlcpy(param->opt1.str, com_argv[i], param->str_len);
 			}
 			else
 			{
 				// if it's stdin assume qwd
 				if (param->opt2 == O_STDIN)
 				{
-					// FIXME
-					strcpy(param->opt1.str, "qwd");
+					strlcpy(param->opt1.str, "qwd", param->str_len);
 					i--;
 				}
 				else
