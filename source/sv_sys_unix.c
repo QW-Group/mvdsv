@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_unix.c,v 1.50 2006/06/30 18:12:55 vvd0 Exp $
+	$Id: sv_sys_unix.c,v 1.51 2006/10/25 11:09:45 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -56,21 +56,22 @@ returns -1 if not present
 int	Sys_FileTime (char *path)
 {
 	struct	stat	buf;
-
-	if (stat (path,&buf) == -1)
-		return -1;
-
-	return buf.st_mtime;
+	return stat(path, &buf) == -1 ? -1 : buf.st_mtime;
 }
 
-int	Sys_FileSize (char *path)
+int Sys_FileSizeTime (char *path, int *time)
 {
 	struct	stat	buf;
-
-	if (stat (path,&buf) == -1)
+	if (stat(path, &buf) == -1)
+	{
+		*time = -1;
 		return 0;
-
-	return buf.st_size;
+	}
+	else
+	{
+		*time = buf.st_mtime;
+		return buf.st_size;
+	}
 }
 
 
@@ -127,7 +128,7 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 	qbool all;
 
 	int	r;
-	pcre	*preg=NULL;
+	pcre	*preg = NULL;
 	const char	*errbuf;
 
 	memset(list, 0, sizeof(list));
@@ -173,15 +174,15 @@ dir_t Sys_listdir (char *path, char *ext, int sort_type)
 		{
 			dir.numdirs++;
 			list[dir.numfiles].isdir = true;
-			list[dir.numfiles].size = 0;
-			list[dir.numfiles].time = 0;
+			list[dir.numfiles].size = list[dir.numfiles].time = 0;
 			closedir(testdir);
 		}
 		else
 		{
 			list[dir.numfiles].isdir = false;
-			list[dir.numfiles].time = Sys_FileTime(pathname);
-			dir.size += (list[dir.numfiles].size = Sys_FileSize(pathname));
+			//list[dir.numfiles].time = Sys_FileTime(pathname);
+			dir.size +=
+				(list[dir.numfiles].size = Sys_FileSizeTime(pathname, &list[dir.numfiles].time));
 		}
 		strlcpy (list[dir.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 

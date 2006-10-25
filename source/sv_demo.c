@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.53 2006/10/23 19:45:20 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.54 2006/10/25 11:09:45 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1510,30 +1510,34 @@ qbool SV_DirSizeCheck (void)
 {
 	dir_t	dir;
 	file_t	*list;
-	int	i;
+	int	n;
 
-	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
-	if (sv_demoMaxDirSize.value && dir.size > sv_demoMaxDirSize.value*1024)
+	if (sv_demoMaxDirSize.value)
 	{
-		if (sv_demoClearOld.value <= 0)
+		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_NO/*BY_DATE*/);
+		if (dir.size > sv_demoMaxDirSize.value * 1024)
 		{
-			Con_Printf("insufficient directory space, increase sv_demoMaxDirSize\n");
-			return false;
-		}
-		list = dir.files;
-		i = sv_demoClearOld.value;
-		Con_Printf("clearing %d old demos\n", i);
-		// HACK!!! HACK!!! HACK!!!
-		if (sv_demotxt.value) // if our server record demos and txts, then to remove
-			i=i*2;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
+			if (sv_demoClearOld.value <= 0)
+			{
+				Con_Printf("Insufficient directory space, increase sv_demoMaxDirSize\n");
+				return false;
+			}
+			list = dir.files;
+			n = sv_demoClearOld.value;
+			Con_Printf("Clearing %d old demos\n", n);
+			// HACK!!! HACK!!! HACK!!!
+			if (sv_demotxt.value) // if our server record demos and txts, then to remove
+				n <<= 1;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
 
-		for (; list->name[0] && i > 0; list++)
-		{
-			if (list->isdir)
-				continue;
-			Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name));
-			//Con_Printf("remove %d - %s/%s/%s\n", i, fs_gamedir, sv_demoDir.string, list->name);
-			i--;
+			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
+			for (; list->name[0] && n > 0; list++)
+			{
+				if (list->isdir)
+					continue;
+				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name));
+				//Con_Printf("Remove %d - %s/%s/%s\n", n, fs_gamedir, sv_demoDir.string, list->name);
+				n--;
+			}
 		}
 	}
 	return true;

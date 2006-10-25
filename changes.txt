@@ -1,8 +1,17 @@
 
-$Id: changes.txt,v 1.110 2006/10/24 14:05:22 vvd0 Exp $
+$Id: changes.txt,v 1.111 2006/10/25 11:09:44 vvd0 Exp $
 
 MVDSV v0.25 build 2500 (2006.10.25)
 ----
+* qqshka <qqshka@users.sourceforge.net>
+- allow player move even chat userinfo present
+
+* VVD <vvd0@users.sourceforge.net>
+- optimized SV_DirSizeCheck - used every time on demo record start
+- small optimization in Sys_listdir (used, for example, in 'cmd dlist')
+- increased maximum of fps in qwdtools from 100 to 1000
+- replaced last 2 dangerous strcpy with strlcpy in qwdtools
+
 * disconnect <disconn3ct@users.sourceforge.net>
 - field offsets cacheing (ported from ZQuake)
 - made localcommand more verbose
