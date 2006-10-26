@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.54 2006/10/25 11:09:45 vvd0 Exp $
+    $Id: sv_demo.c,v 1.55 2006/10/26 19:12:13 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1732,6 +1732,7 @@ char *quote(char *str)
 	*s = '\0';
 	return out;
 }
+
 void SV_MVDEasyRecord_f (void)
 {
 	int		c;
@@ -1739,7 +1740,6 @@ void SV_MVDEasyRecord_f (void)
 	char	name2[MAX_OSPATH*7]; // scream
 	//char	name2[MAX_OSPATH*2];
 	int		i;
-//	FILE	*f;
 	dir_t	dir;
 	char	*name3;
 
@@ -1837,6 +1837,11 @@ void SV_MVDEasyRecord_f (void)
 	Sys_mkdir(va("%s/%s", fs_gamedir, sv_demoDir.string));
 	//	COM_StripExtension(name2, name2);
 
+//#define TMP_EASYRECORD_SPEEDUP_HACK
+#ifndef TMP_EASYRECORD_SPEEDUP_HACK
+
+// FIXME: very SLOW
+
 	if (!(name3 = quote(name2)))
 		return;
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string),
@@ -1852,27 +1857,27 @@ void SV_MVDEasyRecord_f (void)
 		Q_free(name3);
 	}
 
-/*	strlcat (name2, ".mvd", sizeof(name2));
-	if ((f = fopen (name2, "rb")) == 0)
-		f = fopen(va("%s.gz", name2), "rb");
-
-	if (f)
-	{
-		i = 1;
-		do
-		{
-			fclose (f);
-			snprintf(name2, sizeof(name2), "%s_%02i", name, i);
-			//			COM_StripExtension(name2, name2);
-			strlcat (name2, ".mvd", sizeof(name2));
-			if ((f = fopen (name2, "rb")) == 0)
-				f = fopen(va("%s.gz", name2), "rb");
-			i++;
-		}
-		while (f);
-	}
-*/
 	snprintf(name2, sizeof(name2), va("%s/%s/%s.mvd", fs_gamedir, sv_demoDir.string, name2));
+
+#else
+
+// HACK, because ignoring sv_demoRegexp variable
+// serve only demoname.mvd and demoname.mvd.gz files
+
+	for (i = 0; ; i++) {
+		if (i > 10000)
+			return; // 10000 demos, insane ?
+
+		if (!i)
+			snprintf(name2, sizeof(name2), "%s/%s/%s.mvd",      fs_gamedir, sv_demoDir.string, name);
+		else
+			snprintf(name2, sizeof(name2), "%s/%s/%s_%02i.mvd", fs_gamedir, sv_demoDir.string, name, i);
+
+		if (Sys_FileTime(name2) == -1 && Sys_FileTime(va("%s.gz", name2)) == -1)
+			break; // ok, found free name
+	}
+
+#endif
 
 	SV_MVD_Record (SV_InitRecordFile(name2));
 }
