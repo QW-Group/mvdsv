@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.70 2006/10/26 20:47:14 disconn3ct Exp $
+	$Id: sv_user.c,v 1.71 2006/10/26 22:12:21 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2171,6 +2171,256 @@ static void SV_ShowMapsList_f(void)
 	Con_Printf("%s---%s\n", i_mod_2 ? "" : "\n", Q_redtext(end_of_list));
 }
 
+static void SetUpClientEdict (client_t *cl, edict_t *ent)
+{
+#ifdef USE_PR2
+	string_t savenetname;
+#endif
+
+#ifdef USE_PR2
+	if (sv_vm)
+	{
+		savenetname = ent->v.netname;
+		memset(&ent->v, 0, pr_edict_size - sizeof(edict_t) + sizeof(entvars_t));
+		ent->v.netname = savenetname;
+
+		// so spec will have right goalentity - if speccing someone
+		// qqshka {
+		if(host_client->spectator && host_client->spec_track > 0)
+			ent->v.goalentity = EDICT_TO_PROG(svs.clients[host_client->spec_track-1].edict);
+		// }
+
+		//host_client->name = PR2_GetString(ent->v.netname);
+		//strlcpy(PR2_GetString(ent->v.netname), host_client->name, 32);
+	}
+	else
+#endif
+	{
+		memset (&ent->v, 0, progs->entityfields * 4);
+		ent->v.netname = PR_SetString(host_client->name);
+	}
+	
+	ent->v.colormap = NUM_FOR_EDICT(ent);
+
+	cl->entgravity = 1.0;
+	if (fofs_gravity)
+		EdictFieldFloat(ent, fofs_gravity) = 1.0;
+
+	cl->maxspeed = sv_maxspeed.value;
+	if (fofs_maxspeed)
+		EdictFieldFloat(ent, fofs_maxspeed) = sv_maxspeed.value;
+}
+
+extern cvar_t maxclients, maxspectators;
+/*
+==================
+Cmd_Join_f
+
+Set client to player mode without reconnecting
+==================
+*/
+static void Cmd_Join_f (void)
+{
+	int i;
+	client_t *cl;
+	int numclients;
+	extern cvar_t password;
+
+	if (host_client->state != cs_spawned)
+		return;
+
+	if (!host_client->spectator)
+		return; // already a player
+
+	if (!(host_client->extensions & Z_EXT_JOIN_OBSERVE)) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, "Your QW client doesn't support this command\n");
+		return;
+	}
+
+	if (password.string[0] && strcmp (password.string, "none")) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, "This server requires a %s password. Please disconnect, set the password and reconnect as %s.\n", "player", "player");
+		return;
+	}
+
+	// count players already on server
+	numclients = 0;
+	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
+		if (cl->state != cs_free && !cl->spectator)
+			numclients++;
+	}
+	if (numclients >= maxclients.value) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, "Can't join, all player slots full\n");
+		return;
+	}
+
+	if (SpectatorDisconnect
+#ifdef USE_PR2
+			|| sv_vm
+#endif
+	)
+	{
+		// call the prog function for removing a client
+		// this will set the body to a dead frame, among other things
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+#ifdef USE_PR2
+		if (sv_vm)
+			PR2_GameClientDisconnect(1);
+		else
+#endif
+			PR_ExecuteProgram (SpectatorDisconnect);
+	}
+
+	host_client->old_frags = 0;
+	SetUpClientEdict (host_client, host_client->edict);
+
+	// turn the spectator into a player
+	host_client->spectator = false;
+	Info_RemoveKey (host_client->userinfo, "*spectator");
+
+	// call the progs to get default spawn parms for the new client
+#ifdef USE_PR2
+	if (sv_vm)
+		PR2_GameSetNewParms();
+	else
+#endif
+		PR_ExecuteProgram (pr_global_struct->SetNewParms);
+
+	// copy spawn parms out of the client_t
+	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
+		host_client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+
+	// call the spawn function
+	pr_global_struct->time = sv.time;
+	pr_global_struct->self = EDICT_TO_PROG(sv_player);
+	G_FLOAT(OFS_PARM0) = (float) host_client->vip;
+#ifdef USE_PR2
+	if ( sv_vm )
+		PR2_GameClientConnect(0);
+	else
+#endif
+		PR_ExecuteProgram (pr_global_struct->ClientConnect);
+	
+	// actually spawn the player
+	pr_global_struct->time = sv.time;
+	pr_global_struct->self = EDICT_TO_PROG(sv_player);
+	G_FLOAT(OFS_PARM0) = (float) host_client->vip;
+#ifdef USE_PR2
+	if ( sv_vm )
+		PR2_GamePutClientInServer(0);
+	else
+#endif
+		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
+
+	// send notification to all clients
+	host_client->sendinfo = true;
+}
+
+/*
+==================
+Cmd_Observe_f
+
+Set client to spectator mode without reconnecting
+==================
+*/
+static void Cmd_Observe_f (void)
+{
+	int i;
+	client_t *cl;
+	int numspectators;
+	extern cvar_t maxspectators, spectator_password;
+
+	if (host_client->state != cs_spawned)
+		return;
+	if (host_client->spectator)
+		return; // already a spectator
+
+	if (!(host_client->extensions & Z_EXT_JOIN_OBSERVE)) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, "Your QW client doesn't support this command\n");
+		return;
+	}
+
+	if (spectator_password.string[0] && strcmp (spectator_password.string, "none")) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, "This server requires a %s password. Please disconnect, set the password and reconnect as %s.\n", "spectator", "spectator");
+		return;
+	}
+
+	// count spectators already on server
+	numspectators = 0;
+	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
+		if (cl->state != cs_free && cl->spectator)
+			numspectators++;
+	}
+	if (numspectators >= maxspectators.value) {
+		SV_ClientPrintf (host_client, PRINT_HIGH, "Can't join, all spectator slots full\n");
+		return;
+	}
+
+	// call the prog function for removing a client
+	// this will set the body to a dead frame, among other things
+	pr_global_struct->self = EDICT_TO_PROG(sv_player);
+
+#ifdef USE_PR2
+	if (sv_vm)
+		PR2_GameClientDisconnect(0);
+	else
+#endif
+		PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
+
+	host_client->old_frags = 0;
+	SetUpClientEdict (host_client, host_client->edict);
+
+	// turn the player into a spectator
+	host_client->spectator = true;
+	Info_SetValueForStarKey (host_client->userinfo, "*spectator", "1", MAX_INFO_STRING);
+
+	// call the progs to get default spawn parms for the new client
+#ifdef USE_PR2
+	if (sv_vm)
+		PR2_GameSetNewParms();
+	else
+#endif
+		PR_ExecuteProgram (pr_global_struct->SetNewParms);
+
+	SV_SpawnSpectator ();
+	
+	// call the spawn function
+	if (SpectatorConnect
+#ifdef USE_PR2
+		        || sv_vm
+#endif
+	   )
+	{
+	// copy spawn parms out of the client_t
+	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
+		host_client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		G_FLOAT(OFS_PARM0) = (float) host_client->vip;
+#ifdef USE_PR2
+		if (sv_vm)
+			PR2_GameClientConnect(1);
+		else
+#endif
+			PR_ExecuteProgram (SpectatorConnect);
+	}
+
+#ifdef USE_PR2
+	// qqshka: seems spectator is sort of hack in QW
+	// I let qvm mods serve spectator like we do for normal player
+	if (sv_vm)
+	{
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		PR2_GamePutClientInServer(1); // let mod know we put spec not player
+	}
+#endif
+
+	// send notification to all clients
+	host_client->sendinfo = true;
+}
+
+
 void SV_DemoList_f(void);
 void SV_DemoListRegex_f(void);
 void SV_MVDInfo_f(void);
@@ -2189,61 +2439,66 @@ typedef struct
 }
 ucmd_t;
 
-ucmd_t ucmds[] =
-	{
-		{"new", SV_New_f},
-		{"modellist", SV_Modellist_f},
-		{"soundlist", SV_Soundlist_f},
-		{"prespawn", SV_PreSpawn_f},
-		{"spawn", SV_Spawn_f},
-		{"begin", SV_Begin_f},
 
-		{"drop", SV_Drop_f},
-		{"pings", SV_Pings_f},
+static ucmd_t ucmds[] =
+{
+	{"new", SV_New_f},
+	{"modellist", SV_Modellist_f},
+	{"soundlist", SV_Soundlist_f},
+	{"prespawn", SV_PreSpawn_f},
+	{"spawn", SV_Spawn_f},
+	{"begin", SV_Begin_f},
 
-		// issued by hand at client consoles
-		{"rate", SV_Rate_f},
-		{"kill", SV_Kill_f},
-		{"pause", SV_Pause_f},
-		{"msg", SV_Msg_f},
+	{"drop", SV_Drop_f},
+	{"pings", SV_Pings_f},
 
-		{"say", SV_Say_f},
-		{"say_team", SV_Say_Team_f},
+	// issued by hand at client consoles
+	{"rate", SV_Rate_f},
+	{"kill", SV_Kill_f},
+	{"pause", SV_Pause_f},
+	{"msg", SV_Msg_f},
 
-		{"setinfo", SV_SetInfo_f},
+	{"say", SV_Say_f},
+	{"say_team", SV_Say_Team_f},
 
-		{"serverinfo", SV_ShowServerinfo_f},
+	{"setinfo", SV_SetInfo_f},
 
-		{"download", SV_BeginDownload_f},
-		{"nextdl", SV_NextDownload_f},
-		{"dl", SV_DemoDownload_f},
+	{"serverinfo", SV_ShowServerinfo_f},
 
-		{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
+	{"download", SV_BeginDownload_f},
+	{"nextdl", SV_NextDownload_f},
+	{"dl", SV_DemoDownload_f},
 
-		//bliP: file upload ->
-		{"techlogin", SV_TechLogin_f},
-		{"upload", SV_ClientUpload_f},
-		//<-
+	{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
 
-		{"snap", SV_NoSnap_f},
-		{"stopdownload", SV_StopDownload_f},
-		{"stopdl", SV_StopDownload_f},
-		//	{"dlist", SV_DemoList_f},
-		{"dlistr", SV_DemoListRegex_f},
-		{"dlistregex", SV_DemoListRegex_f},
-		{"demolist", SV_DemoList_f},
-		{"demolistr", SV_DemoListRegex_f},
-		{"demolistregex", SV_DemoListRegex_f},
-		{"demoinfo", SV_MVDInfo_f},
-		{"lastscores", SV_LastScores_f},
-		{"minping", SV_MinPing_f},
-		{"maps", SV_ShowMapsList_f},
-		{"ban", SV_Cmd_Ban_f}, // internal server ban support
-		{"banip", SV_Cmd_Banip_f}, // internal server ban support
-		{"banrem", SV_Cmd_Banremove_f}, // internal server ban support
+	//bliP: file upload ->
+	{"techlogin", SV_TechLogin_f},
+	{"upload", SV_ClientUpload_f},
+	//<-
 
-		{NULL, NULL}
-	};
+	{"snap", SV_NoSnap_f},
+	{"stopdownload", SV_StopDownload_f},
+	{"stopdl", SV_StopDownload_f},
+	//	{"dlist", SV_DemoList_f},
+	{"dlistr", SV_DemoListRegex_f},
+	{"dlistregex", SV_DemoListRegex_f},
+	{"demolist", SV_DemoList_f},
+	{"demolistr", SV_DemoListRegex_f},
+	{"demolistregex", SV_DemoListRegex_f},
+	{"demoinfo", SV_MVDInfo_f},
+	{"lastscores", SV_LastScores_f},
+	{"minping", SV_MinPing_f},
+	{"maps", SV_ShowMapsList_f},
+	{"ban", SV_Cmd_Ban_f}, // internal server ban support
+	{"banip", SV_Cmd_Banip_f}, // internal server ban support
+	{"banrem", SV_Cmd_Banremove_f}, // internal server ban support
+#ifdef I_AM_MVDSV_HACKER
+	{"join", Cmd_Join_f},
+	{"observe", Cmd_Observe_f},
+#endif
+	{NULL, NULL}
+
+};
 
 /*
 ==================
@@ -2253,7 +2508,7 @@ SV_ExecuteUserCommand
 qbool PR_UserCmd(void);
 static void SV_ExecuteUserCommand (char *s)
 {
-	ucmd_t	*u;
+	ucmd_t *u;
 
 	Cmd_TokenizeString (s);
 	sv_player = host_client->edict;
