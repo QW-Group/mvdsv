@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: fs.c,v 1.3 2006/06/05 12:43:55 vvd0 Exp $
+    $Id: fs.c,v 1.4 2006/10/26 20:47:13 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -352,7 +352,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 			for (i=0 ; i<pak->numfiles ; i++)
 				if (!strcmp (pak->files[i].name, filename))
 			{	// found it!
-				if (developer.value)
+				if ((int)developer.value)
 					Sys_Printf ("PackFile: %s : %s\n", pak->filename, filename);
 					// open a new file on the pakfile
 				*file = fopen (pak->filename, "rb");
@@ -372,7 +372,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 			if (!*file)
 				continue;
 
-			if (developer.value)
+			if ((int)developer.value)
 				Sys_Printf ("FindFile: %s\n",netpath);
 
 			fs_filesize = FS_FileLength (*file);
@@ -380,7 +380,7 @@ int COM_FOpenFile (char *filename, FILE **file)
 		}
 	}
 
-	if (developer.value)
+	if ((int)developer.value)
 		Sys_Printf ("FindFile: can't find %s\n", filename);
 
 	return -1;
@@ -449,7 +449,7 @@ byte *COM_LoadFile (char *path, int usehunk)
 
 		fread(buf + l, 1, READSIZE, h);
 		l += READSIZE;
-		if (l - count > READMAX && (sv_cpserver.value > 0) && (sv_cpserver.value < 100))
+		if (l - count > READMAX && ((int)sv_cpserver.value > 0) && ((int)sv_cpserver.value < 100))
 		{
 			Sys_Sleep((unsigned long)sv_cpserver.value);
 			count = l;

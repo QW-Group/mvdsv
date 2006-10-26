@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.17 2006/06/19 16:46:16 vvd0 Exp $
+ *  $Id: pr2_vm.c,v 1.18 2006/10/26 20:47:13 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -94,7 +94,7 @@ void PR2_Profile_f()
 	if(sv_vm->type != VM_BYTECODE)
 		return;
 	num = 0;
-	if(!sv_enableprofile.value)
+	if(!(int)sv_enableprofile.value)
 	{
 		Con_Printf ("profiling no enabled\n");
 		return;
@@ -623,7 +623,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 
 
 #ifdef QVM_PROFILE
-	if(sv_enableprofile.value)
+	if((int)sv_enableprofile.value)
 		profile_func = ProfileEnterFunction(0);
 #endif
 	if ( !qvm->reenter )
@@ -680,7 +680,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			QVM_RunError( qvm, "QVM runaway loop error", qvm->PC );
 #endif
 #ifdef QVM_PROFILE
-		if(sv_enableprofile.value)
+		if((int)sv_enableprofile.value)
 			profile_func->instruction_count++;
 #endif
 		op = qvm->cs[qvm->PC++];
@@ -722,7 +722,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 #endif
 			qvm->PC = STACK_INT( 0 );
 #ifdef QVM_PROFILE
-			if(sv_enableprofile.value)
+			if((int)sv_enableprofile.value)
 			{
 				sym = QVM_FindName( qvm, qvm->PC );
 				profile_func = ProfileEnterFunction(sym->off);
@@ -746,7 +746,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 			{
 				qvm->PC = ivar;
 #ifdef QVM_PROFILE
-				if(sv_enableprofile.value)
+				if((int)sv_enableprofile.value)
 					profile_func = ProfileEnterFunction(ivar);
 #endif
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_chan.c,v 1.12 2006/05/23 14:47:54 vvd0 Exp $
+	$Id: net_chan.c,v 1.13 2006/10/26 20:47:13 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -230,7 +230,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	if (chan->message.overflowed)
 	{
 		chan->fatal_error = true;
-		if (last_error_time - current_time > 5 || developer.value)
+		if (last_error_time - current_time > 5 || (int)developer.value)
 		{
 			Con_Printf ("%s:Outgoing message overflow\n"
 			            , NET_AdrToString (chan->remote_address));
@@ -295,7 +295,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	if (sv.paused)
 		chan->cleartime = realtime;
 
-	if (showpackets.value)
+	if ((int)showpackets.value)
 		Con_Printf ("--> s=%i(%i) a=%i(%i) %i\n"
 		            , chan->outgoing_sequence
 		            , send_reliable
@@ -336,7 +336,7 @@ qbool Netchan_Process (netchan_t *chan)
 	sequence &= ~(1<<31);
 	sequence_ack &= ~(1<<31);
 
-	if (showpackets.value)
+	if ((int)showpackets.value)
 		Con_Printf ("<-- s=%i(%i) a=%i(%i) %i\n"
 		            , sequence
 		            , reliable_message
@@ -379,7 +379,7 @@ qbool Netchan_Process (netchan_t *chan)
 	//
 	if (sequence <= (unsigned)chan->incoming_sequence)
 	{
-		if (showdrop.value)
+		if ((int)showdrop.value)
 			Con_Printf ("%s:Out of order packet %i at %i\n"
 			            , NET_AdrToString (chan->remote_address)
 			            ,  sequence
@@ -395,7 +395,7 @@ qbool Netchan_Process (netchan_t *chan)
 	{
 		chan->drop_count += 1;
 
-		if (showdrop.value)
+		if ((int)showdrop.value)
 			Con_Printf ("%s:Dropped %i packets at %i\n"
 			, NET_AdrToString (chan->remote_address)
 			, chan->dropped

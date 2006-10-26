@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_login.c,v 1.15 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: sv_login.c,v 1.16 2006/10/26 20:47:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -273,7 +273,7 @@ void SV_CreateAccount_f(void)
 		i = 2;
 	else
 		i = 1;
-	strlcpy(accounts[spot].pass, sv_hashpasswords.value && use == use_log ?
+	strlcpy(accounts[spot].pass, (int)sv_hashpasswords.value && use == use_log ?
 	        SHA1(Cmd_Argv(i)) : Cmd_Argv(i), MAX_LOGINNAME);
 
 	accounts[spot].state = a_ok;
@@ -453,8 +453,8 @@ static int checklogin(char *log, char *pass, int num, quse_t use)
 				return -2;
 
 			if (use == use_ip ||
-			        (!sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
-			        ( sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass)))
+			        (!(int)sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
+			        ( (int)sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass)))
 			{
 				accounts[i].failures = 0;
 				accounts[i].inuse++;
@@ -507,7 +507,7 @@ qbool SV_Login(client_t *cl)
 	char *ip;
 
 	// is sv_login is disabled, login is not necessery
-	if (!sv_login.value)
+	if (!(int)sv_login.value)
 	{
 		SV_Logout(cl);
 		cl->logged = -1;
@@ -519,7 +519,7 @@ qbool SV_Login(client_t *cl)
 		return true;
 
 	// sv_login == 1 -> spectators don't login
-	if (sv_login.value == 1 && cl->spectator)
+	if ((int)sv_login.value == 1 && cl->spectator)
 	{
 		SV_Logout(cl);
 		cl->logged = -1;
@@ -637,7 +637,7 @@ void SV_ParseLogin(client_t *cl)
 		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log));
 
 		//VVD: forcenick ->
-		if (sv_forcenick.value && cl->login)
+		if ((int)sv_forcenick.value && cl->login)
 		{
 			Info_SetValueForKey (cl->userinfo, "name", cl->login, MAX_INFO_STRING);
 			strlcpy (cl->name, cl->login, CLIENT_NAME_LEN);

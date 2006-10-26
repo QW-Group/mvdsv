@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.38 2006/10/12 20:26:56 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.39 2006/10/26 20:47:13 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -420,7 +420,7 @@ void SV_Map (qbool now)
 		SV_SendMessagesToAll ();
 
 		// -> scream
-		if (frag_log_type.value)
+		if ((int)frag_log_type.value)
 		{
 			//bliP: date check ->
 			SV_TimeOfDay(&date);
@@ -1172,7 +1172,7 @@ void SV_Status_f (void)
 						continue;
 					s = NET_BaseAdrToString(cl->netchan.remote_address);
 					Con_Printf ("%5i %3i %-15s %-15s ", (int)cl->edict->v.frags, cl->userid,
-								sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
+								(int)sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
 					switch (cl->state)
 					{
 						case cs_connected:
@@ -1202,7 +1202,7 @@ void SV_Status_f (void)
 					continue;
 				s = NET_BaseAdrToString(cl->netchan.remote_address);
 				Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, (int)SV_CalcPing(cl),
-						(int)cl->edict->v.frags, cl->userid, sv_use_dns.value ? SV_Resolve(s) : s);
+						(int)cl->edict->v.frags, cl->userid, (int)sv_use_dns.value ? SV_Resolve(s) : s);
 				if (cl->realip.ip.ip[0])
 					Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
 				Con_Printf (cl->spectator ? "(s)" : "");
@@ -1238,7 +1238,7 @@ void SV_Status_f (void)
 				s = NET_BaseAdrToString(cl->netchan.remote_address);
 				Con_Printf ("%-18s %4i %5i %6s %s\n%-36s\n", cl->name, (int)SV_CalcPing(cl),
 							(int)cl->edict->v.frags, Q_yelltext(va("%d", cl->userid)),
-							cl->spectator ? " (s)" : "", sv_use_dns.value ? SV_Resolve(s) : s);
+							cl->spectator ? " (s)" : "", (int)sv_use_dns.value ? SV_Resolve(s) : s);
 
 				if (cl->realip.ip.ip[0])
 					Con_Printf ("%-36s\n", NET_BaseAdrToString (cl->realip));

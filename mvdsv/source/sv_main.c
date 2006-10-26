@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.81 2006/10/22 15:49:39 disconn3ct Exp $
+	$Id: sv_main.c,v 1.82 2006/10/26 20:47:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -424,7 +424,7 @@ int SV_CalcPing (client_t *cl)
 	count = 0;
 #ifdef USE_PR2
 	if( cl->isBot )
-		return sv_mintic.value * 1000;
+		return ((int) (sv_mintic.value * 1000));
 #endif
 	for (frame = cl->frames, i=0 ; i<UPDATE_BACKUP ; i++, frame++)
 	{
@@ -606,7 +606,7 @@ SVC_LastScores
 void SV_LastScores_f (void);
 static void SVC_LastScores (void)
 {
-	if(!sv_allowlastscores.value)
+	if(!(int)sv_allowlastscores.value)
 		return;
 
 	SV_BeginRedirect (RD_PACKET);
@@ -950,17 +950,17 @@ static void SVC_DirectConnect (void)
 	}
 
 	// if at server limits, refuse connection
-	if (maxclients.value > MAX_CLIENTS)
+	if ((int)maxclients.value > MAX_CLIENTS)
 		Cvar_SetValue (&maxclients, MAX_CLIENTS);
-	if (maxspectators.value > MAX_CLIENTS)
+	if ((int)maxspectators.value > MAX_CLIENTS)
 		Cvar_SetValue (&maxspectators, MAX_CLIENTS);
-	if (maxvip_spectators.value > MAX_CLIENTS)
+	if ((int)maxvip_spectators.value > MAX_CLIENTS)
 		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS);
 
-	if (maxspectators.value + maxclients.value > MAX_CLIENTS)
-		Cvar_SetValue (&maxspectators, MAX_CLIENTS - maxclients.value);
-	if (maxspectators.value + maxclients.value + maxvip_spectators.value > MAX_CLIENTS)
-		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS - maxclients.value - maxspectators.value);
+	if ((int)maxspectators.value + maxclients.value > MAX_CLIENTS)
+		Cvar_SetValue (&maxspectators, MAX_CLIENTS - (int)maxclients.value);
+	if ((int)maxspectators.value + maxclients.value + maxvip_spectators.value > MAX_CLIENTS)
+		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS - (int)maxclients.value - (int)maxspectators.value);
 
 	if ( (vip && spectator && vips >= (int)maxvip_spectators.value &&
 	        (spectators >= (int)maxspectators.value || !spass))
@@ -969,7 +969,7 @@ static void SVC_DirectConnect (void)
                 || !newcl)
 	{
 		Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
-		if (spectator == 2 && maxvip_spectators.value > vips && !vip)
+		if (spectator == 2 && (int)maxvip_spectators.value > vips && !vip)
 		{
 			newcl->rip_vip = 1; // yet can be connected if realip is on vip list
 			newcl->vip = 1; // :)
@@ -978,7 +978,7 @@ static void SVC_DirectConnect (void)
 		{
 			if (!spectator && spectators < (int)maxspectators.value &&
 				( (Q_atoi(Info_ValueForKey (userinfo, "svf")) & SVF_SPEC_ONFULL &&
-				   sv_forcespec_onfull.value == 2) || sv_forcespec_onfull.value == 1))
+				   (int)sv_forcespec_onfull.value == 2) || (int)sv_forcespec_onfull.value == 1))
 			{
 				Netchan_OutOfBandPrint (adr, "%c\nserver is full: connecting as spectator\n", A2C_PRINT);
 				Info_SetValueForStarKey (userinfo, "*spectator", "1", MAX_INFO_STRING);
@@ -1077,7 +1077,7 @@ static void SVC_DirectConnect (void)
 	newcl->realip_num = rand();
 
 	//bliP: init
-	newcl->spec_print = sv_specprint.value;
+	newcl->spec_print = (int)sv_specprint.value;
 	newcl->logincount = 0;
 	//<-
 
@@ -1139,7 +1139,7 @@ static qbool rcon_bandlim (void)
 	 * ranage.
 	 */
 
-	if (sv_rconlim.value <= 0)
+	if ((int)sv_rconlim.value <= 0)
 		return false;
 
 	/*
@@ -1148,9 +1148,9 @@ static qbool rcon_bandlim (void)
 
 	if (realtime - lticks > 1.0)
 	{
-		if (lpackets > sv_rconlim.value)
-			Sys_Printf("WARNING: Limiting rcon response from %d to %4f rcon pequests per second from %s\n",
-			           lpackets, sv_rconlim.value, NET_AdrToString(net_from));
+		if (lpackets > (int)sv_rconlim.value)
+			Sys_Printf("WARNING: Limiting rcon response from %d to %d rcon pequests per second from %s\n",
+			           lpackets, (int)sv_rconlim.value, NET_AdrToString(net_from));
 		lticks = realtime;
 		lpackets = 0;
 	}
@@ -1159,7 +1159,7 @@ static qbool rcon_bandlim (void)
 	 * bump packet count
 	 */
 
-	if (++lpackets > sv_rconlim.value)
+	if (++lpackets > (int)sv_rconlim.value)
 		return true;
 
 	return false;
@@ -1178,7 +1178,7 @@ int Rcon_Validate (char *client_string, char *password)
 	if (!strlen (password))
 		return 0;
 
-	if (sv_crypt_rcon.value)
+	if ((int)sv_crypt_rcon.value)
 	{
 		time(&server_time);
 		for (i = 0; i < sizeof(client_time) * 2; i += 2)
@@ -1192,9 +1192,9 @@ int Rcon_Validate (char *client_string, char *password)
 		difftime_server_client = difftime(server_time, client_time);
 		//		Sys_Printf("3) %f, %d, %d\n", difftime_server_client, client_time, server_time);
 
-		if (!sv_timestamplen.value)
-			if (difftime_server_client >  sv_timestamplen.value ||
-			        difftime_server_client < -sv_timestamplen.value)
+		if (!(int)sv_timestamplen.value)
+			if (difftime_server_client > (double) sv_timestamplen.value ||
+			        difftime_server_client < - (double) sv_timestamplen.value)
 				return 0;
 		SHA1_Init();
 		SHA1_Update(Cmd_Argv(0));
@@ -1401,7 +1401,7 @@ static void SVC_RemoteCommand (char *remote_command)
 
 	if (do_cmd)
 	{
-		if (!sv_crypt_rcon.value)
+		if (!(int)sv_crypt_rcon.value)
 		{
 			hide = net_message.data + 9;
 			p = admin_cmd ? rcon_password.string : master_rcon_password;
@@ -1432,7 +1432,7 @@ static void SVC_RemoteCommand (char *remote_command)
 	}
 	else
 	{
-		if (admin_cmd && !sv_crypt_rcon.value)
+		if (admin_cmd && !(int)sv_crypt_rcon.value)
 		{
 			hide = net_message.data + 9;
 			p = admin_cmd ? rcon_password.string : master_rcon_password;
@@ -1979,9 +1979,9 @@ qbool SV_FilterPacket (void)
 
 	for (i=0 ; i<numipfilters ; i++)
 		if ( ipfilters[i].type == ipft_ban && (in & ipfilters[i].mask) == ipfilters[i].compare )
-			return filterban.value;
+			return (int)filterban.value;
 
-	return !filterban.value;
+	return !(int)filterban.value;
 }
 
 // { server internal BAN support
@@ -2758,15 +2758,15 @@ int SV_BoundRate (qbool dl, int rate)
 		rate = 2500;
 	if (dl)
 	{
-		if (!sv_maxdownloadrate.value && sv_maxrate.value && rate > sv_maxrate.value)
-			rate = sv_maxrate.value;
+		if (!(int)sv_maxdownloadrate.value && (int)sv_maxrate.value && rate > (int)sv_maxrate.value)
+			rate = (int)sv_maxrate.value;
 
 		if (sv_maxdownloadrate.value && rate > sv_maxdownloadrate.value)
-			rate = sv_maxdownloadrate.value;
+			rate = (int)sv_maxdownloadrate.value;
 	}
 	else
-		if (sv_maxrate.value && rate > sv_maxrate.value)
-			rate = sv_maxrate.value;
+		if ((int)sv_maxrate.value && rate > (int) sv_maxrate.value)
+			rate = (int)sv_maxrate.value;
 
 	if (rate < 500)
 		rate = 500;
@@ -2817,14 +2817,14 @@ static void SV_CheckVars (void)
 	}
 
 	// check sv_maxrate
-	if (sv_maxrate.value != old_maxrate || sv_maxdownloadrate.value != old_maxdlrate )
+	if ((int)sv_maxrate.value != old_maxrate || (int)sv_maxdownloadrate.value != old_maxdlrate )
 	{
 		client_t	*cl;
 		int			i;
 		char		*val;
 
-		old_maxrate = sv_maxrate.value;
-		old_maxdlrate = sv_maxdownloadrate.value;
+		old_maxrate = (int)sv_maxrate.value;
+		old_maxdlrate = (int)sv_maxdownloadrate.value;
 
 		for (i=0, cl = svs.clients ; i<MAX_CLIENTS ; i++, cl++)
 		{
@@ -3619,8 +3619,8 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 	else
 	{
 		fflush(logs[sv_log].sv_logfile);
-		if (sv_maxlogsize.value &&
-		        (FS_FileLength(logs[sv_log].sv_logfile) > sv_maxlogsize.value))
+		if ((int)sv_maxlogsize.value &&
+		        (FS_FileLength(logs[sv_log].sv_logfile) > (int)sv_maxlogsize.value))
 		{
 			SV_Logfile(sv_log, true);
 		}

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.69 2006/10/24 19:44:45 qqshka Exp $
+	$Id: sv_user.c,v 1.70 2006/10/26 20:47:14 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -100,7 +100,7 @@ static void SV_New_f (void)
 
 	host_client->spawncount = svs.spawncount;
 	// do not proceed if realip is unknown
-    if (host_client->state == cs_preconnected && !host_client->realip.ip.ip[0] && sv_getrealip.value)
+    if (host_client->state == cs_preconnected && !host_client->realip.ip.ip[0] && (int)sv_getrealip.value)
 	{
 		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr);
 
@@ -126,7 +126,7 @@ static void SV_New_f (void)
 			}
 			if (realtime - host_client->connection_started > 3 || host_client->realip_count > 10)
 			{
-				if (sv_getrealip.value == 2)
+				if ((int)sv_getrealip.value == 2)
 				{
 					Netchan_OutOfBandPrint (net_from,
 						"%c\nFailed to validate client's IP.\n\n", A2C_PRINT);
@@ -179,7 +179,7 @@ static void SV_New_f (void)
 		if (!SV_Login(host_client))
 			return;
 
-		if (!host_client->logged && sv_login.value)
+		if (!host_client->logged && (int)sv_login.value)
 			return; // not so fast;
 
 		//bliP: cuff, mute ->
@@ -457,7 +457,7 @@ static void SV_PreSpawn_f (void)
 
 		//		Con_DPrintf("Client check = %d\n", check);
 
-		if (sv_mapcheck.value && check != sv.map_checksum &&
+		if ((int)sv_mapcheck.value && check != sv.map_checksum &&
 			check != sv.map_checksum2)
 		{
 			SV_ClientPrintf (host_client, PRINT_HIGH,
@@ -1002,8 +1002,8 @@ static void SV_NextUpload (void)
 
 	if (host_client->upload)
 	{
-		long pos = ftell(host_client->upload);
-		if (pos == -1 || (host_client->remote_snap && (float)pos + (float)size > sv_maxuploadsize.value))
+		int pos = ftell(host_client->upload);
+		if (pos == -1 || (host_client->remote_snap && (pos + size) > (int)sv_maxuploadsize.value))
 		{
 			msg_readcount += size;
 			SV_CancelUpload();
@@ -1115,20 +1115,20 @@ static void SV_BeginDownload_f(void)
 			!host_client->special &&
 			(
 			// global allow check
-			!allow_download.value
+			!(int)allow_download.value
 			// next up, skin check
-			|| (strncmp(name, "skins/", 6) == 0 && !allow_download_skins.value)
+			|| (strncmp(name, "skins/", 6) == 0 && !(int)allow_download_skins.value)
 			// now models
-			|| (strncmp(name, "progs/", 6) == 0 && !allow_download_models.value)
+			|| (strncmp(name, "progs/", 6) == 0 && !(int)allow_download_models.value)
 			// now sounds
-			|| (strncmp(name, "sound/", 6) == 0 && !allow_download_sounds.value)
+			|| (strncmp(name, "sound/", 6) == 0 && !(int)allow_download_sounds.value)
 			// now maps (note special case for maps, must not be in pak)
-			|| (strncmp(name, "maps/", 5) == 0 && !allow_download_maps.value)
+			|| (strncmp(name, "maps/", 5) == 0 && !(int)allow_download_maps.value)
 			// now demos
-			|| (strncmp(name, "demos/", 6) == 0 && !allow_download_demos.value)
-			|| (strncmp(name, "demonum/", 8) == 0 && !allow_download_demos.value)
+			|| (strncmp(name, "demos/", 6) == 0 && !(int)allow_download_demos.value)
+			|| (strncmp(name, "demonum/", 8) == 0 && !(int)allow_download_demos.value)
 			// all other stuff FIXME
-			|| (!allow_download_other.value &&
+			|| (!(int)allow_download_other.value &&
 		   		!strncmp(name, "skins/", 6) &&
 		   		!strncmp(name, "progs/", 6) &&
 				!strncmp(name, "sound/", 6) &&
@@ -1207,7 +1207,7 @@ static void SV_BeginDownload_f(void)
 		host_client->download = fopen (name, "rb");
 		if (host_client->download)
 		{
-			if (developer.value)
+			if ((int)developer.value)
 				Sys_Printf ("FindFile: %s\n", name);
 			host_client->downloadsize = FS_FileLength (host_client->download);
 		}
@@ -1224,7 +1224,7 @@ static void SV_BeginDownload_f(void)
 	}
 
 	// special check for maps that came from a pak file
-	if (!strncmp(name, "maps/", 5) && file_from_pak && !allow_download_pakmaps.value)
+	if (!strncmp(name, "maps/", 5) && file_from_pak && !(int)allow_download_pakmaps.value)
 	{
 		fclose(host_client->download);
 		host_client->download = NULL;
@@ -1285,7 +1285,7 @@ static void SV_DemoDownload_f(void)
 	unsigned char	download_queue_empty[] = "Download queue empty.\n";
 	unsigned char	download_queue_already_exists[]	= "Download queue already exists.\n";
 
-	if (!sv_use_internal_cmd_dl.value)
+	if (!(int)sv_use_internal_cmd_dl.value)
 		if (SV_ExecutePRCommand(true))
 // FIXME: may be turn off warning here if mod does't support "cmd dl" because server will
 // server command internally in such case, warning looks stupid in this case?
@@ -1447,7 +1447,7 @@ static void SV_Say (qbool team)
 	}
 #endif
 
-	if (host_client->spectator && (!sv_spectalk.value || team))
+	if (host_client->spectator && (!(int)sv_spectalk.value || team))
 		strlcpy(text, va("[SPEC] %s: %s", host_client->name, text), sizeof(text));
 	else if (team)
 		strlcpy(text, va("(%s): %s", host_client->name, text), sizeof(text));
@@ -1490,7 +1490,7 @@ static void SV_Say (qbool team)
 	if (!team)
 		for (i = p; *i; i++)
 			//bliP: 24/9 kickfake to unfake ->
-			if (*i == 13 && sv_unfake.value) // ^M
+			if (*i == 13 && (int)sv_unfake.value) // ^M
 				*i = '#';
 	//<-
 
@@ -1503,7 +1503,7 @@ static void SV_Say (qbool team)
 		//if (client->state != cs_spawned)
 		//	continue;
 		//<-
-		if (host_client->spectator && !sv_spectalk.value)
+		if (host_client->spectator && !(int)sv_spectalk.value)
 			if (!client->spectator)
 				continue;
 
@@ -1522,7 +1522,7 @@ static void SV_Say (qbool team)
 				{
 					if (client->spectator)
 					{
-						if(   !sv_sayteam_to_spec.value // player can't say_team to spec in this case
+						if(   !(int)sv_sayteam_to_spec.value // player can't say_team to spec in this case
 						   || (   client->spec_track <= 0
 							   && strcmp(host_client->team, client->team)
 							  ) // spec do not track player and on different team
@@ -1552,7 +1552,7 @@ static void SV_Say (qbool team)
 		return;
 
 	// non-team messages should be seen always, even if not tracking any player
-	if (!team && ((host_client->spectator && sv_spectalk.value) || !host_client->spectator))
+	if (!team && ((host_client->spectator && (int)sv_spectalk.value) || !host_client->spectator))
 	{
 		MVDWrite_Begin (dem_all, 0, strlen(text)+3);
 	}
@@ -1676,7 +1676,7 @@ static void SV_Pause_f (void)
 {
 	char st[CLIENT_NAME_LEN + 32];
 
-	if (!pausable.value)
+	if (!(int)pausable.value)
 	{
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Pause not allowed.\n");
 		return;
@@ -1911,7 +1911,7 @@ static void SV_SetInfo_f (void)
 	int i, saved_state;
 	char oldval[MAX_INFO_STRING];
 
-	if (sv_kickuserinfospamtime.value > 0 && sv_kickuserinfospamcount.value > 0)
+	if ((int)sv_kickuserinfospamtime.value > 0 && sv_kickuserinfospamcount.value > 0)
 	{
 		if (!host_client->lastuserinfotime ||
 			realtime - host_client->lastuserinfotime > sv_kickuserinfospamtime.value)
@@ -1919,7 +1919,7 @@ static void SV_SetInfo_f (void)
 			host_client->lastuserinfocount = 0;
 			host_client->lastuserinfotime = realtime;
 		}
-		else if (++(host_client->lastuserinfocount) > sv_kickuserinfospamcount.value)
+		else if (++(host_client->lastuserinfocount) > (int)sv_kickuserinfospamcount.value)
 		{
 			if (!host_client->drop)
 			{
@@ -1991,7 +1991,7 @@ static void SV_SetInfo_f (void)
 		}
 		//<-
 		//VVD: forcenick ->
-		if (sv_forcenick.value && sv_login.value && host_client->login)
+		if ((int)sv_forcenick.value && (int)sv_login.value && host_client->login)
 		{
 			SV_ClientPrintf(host_client, PRINT_CHAT,
 			                "You can't change your name while logged in on this server.\n");
@@ -2010,7 +2010,7 @@ static void SV_SetInfo_f (void)
 	}
 
 	//bliP: kick top ->
-	if (sv_kicktop.value && !strcmp(Cmd_Argv(1), "topcolor"))
+	if ((int)sv_kicktop.value && !strcmp(Cmd_Argv(1), "topcolor"))
 	{
 		if (!host_client->lasttoptime || realtime - host_client->lasttoptime > 8)
 		{
@@ -2112,7 +2112,7 @@ static void SV_MinPing_f (void)
 	case 2:
 		if (GameStarted())
 			Con_Printf("Can't change sv_minping value: demo recording in progress or ktpro serverinfo key status not equal 'Standby'.\n");
-		else if (!sv_enable_cmd_minping.value)
+		else if (!(int)sv_enable_cmd_minping.value)
 			Con_Printf("Can't change sv_minping: sv_enable_cmd_minping == 0.\n");
 		else
 		{
@@ -2443,7 +2443,7 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 	//bliP: 24/9 anti speed ->
 	int tmp_time;
 
-	if (!inside && sv_speedcheck.value)
+	if (!inside && (int)sv_speedcheck.value)
 	{
 		/* AM101 method */
 		tmp_time = Q_rint((realtime - host_client->last_check) * 1000); // ie. Old 'timepassed'
@@ -2588,9 +2588,9 @@ FIXME
 	movevars.maxspeed = host_client->maxspeed;
 	movevars.bunnyspeedcap = pm_bunnyspeedcap.value;
 	movevars.ktjump = pm_ktjump.value;
-	movevars.slidefix = (pm_slidefix.value != 0);
-	movevars.airstep = (pm_airstep.value != 0);
-	movevars.pground = (pm_pground.value != 0);
+	movevars.slidefix = ((int)pm_slidefix.value != 0);
+	movevars.airstep = ((int)pm_airstep.value != 0);
+	movevars.pground = ((int)pm_pground.value != 0);
 	
 	// do the move
 	PM_PlayerMove ();
