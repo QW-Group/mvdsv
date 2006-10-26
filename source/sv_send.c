@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.26 2006/10/22 15:49:39 disconn3ct Exp $
+	$Id: sv_send.c,v 1.27 2006/10/26 20:47:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -162,7 +162,7 @@ void Con_DPrintf (char *fmt, ...)
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 
-	if (!developer.value)
+	if (!(int)developer.value)
 		return;
 
 	va_start (argptr,fmt);
@@ -478,7 +478,7 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 
 	ent = NUM_FOR_EDICT(entity);
 
-	if ((channel & 8) || !sv_phs.value)	// no PHS flag
+	if ((channel & 8) || !(int)sv_phs.value)	// no PHS flag
 	{
 		if (channel & 8)
 			reliable = true; // sounds that break the phs are reliable
@@ -991,7 +991,7 @@ void SV_SendDemoMessage(void)
 	if (!sv.mvdrecording)
 		return;
 
-	if (sv_demoPings.value)
+	if ((int)sv_demoPings.value)
 	{
 		if (sv.time - demo.pingtime > sv_demoPings.value)
 		{
@@ -1000,7 +1000,7 @@ void SV_SendDemoMessage(void)
 		}
 	}
 
-	min_fps = max(4, sv_demofps.value ? sv_demofps.value : 20.0);
+	min_fps = max(4.0, (int)sv_demofps.value ? (int)sv_demofps.value : 20.0);
 
 	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
 		return;

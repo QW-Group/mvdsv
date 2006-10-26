@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.12 2006/07/05 17:07:18 disconn3ct Exp $
+	$Id: sv_ents.c,v 1.13 2006/10/26 20:47:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -38,7 +38,7 @@ cvar_t	sv_nailhack	= {"sv_nailhack", "1"};
 
 static qbool SV_AddNailUpdate (edict_t *ent)
 {
-	if (sv_nailhack.value)
+	if ((int)sv_nailhack.value)
 		return false;
 
 	if (ent->v.modelindex != sv_nailmodel
@@ -610,7 +610,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			   )
 				continue;
 
-			if (!sv_demoNoVis.value || !recorder)
+			if (!(int)sv_demoNoVis.value || !recorder)
 			{
 				// ignore if not touching a PV leaf
 				for (i=0 ; i < ent->num_leafs ; i++)

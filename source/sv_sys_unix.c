@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: sv_sys_unix.c,v 1.51 2006/10/25 11:09:45 vvd0 Exp $
+
+    $Id: sv_sys_unix.c,v 1.52 2006/10/26 20:47:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -25,8 +25,8 @@ extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
 extern cvar_t auth_timeout;
 
-cvar_t	sys_nostdout = {"sys_nostdout", "0"};
-cvar_t	sys_extrasleep = {"sys_extrasleep", "0"};
+cvar_t sys_nostdout = {"sys_nostdout", "0"};
+cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
 
 static qbool	stdin_ready = false;
 // Added by VVD {
@@ -39,9 +39,9 @@ static qbool	do_stdin = true;
 
 /*
 ===============================================================================
- 
-				REQUIRED SYS FUNCTIONS
- 
+
+                         REQUIRED SYS FUNCTIONS
+
 ===============================================================================
 */
 
@@ -49,19 +49,19 @@ static qbool	do_stdin = true;
 /*
 ============
 Sys_FileTime
- 
+
 returns -1 if not present
 ============
 */
 int	Sys_FileTime (char *path)
 {
-	struct	stat	buf;
+	struct stat buf;
 	return stat(path, &buf) == -1 ? -1 : buf.st_mtime;
 }
 
 int Sys_FileSizeTime (char *path, int *time)
 {
-	struct	stat	buf;
+	struct stat buf;
 	if (stat(path, &buf) == -1)
 	{
 		*time = -1;
@@ -78,7 +78,7 @@ int Sys_FileSizeTime (char *path, int *time)
 /*
 ============
 Sys_mkdir
- 
+
 ============
 */
 void Sys_mkdir (char *path)
@@ -120,16 +120,16 @@ Sys_listdir
 dir_t Sys_listdir (char *path, char *ext, int sort_type)
 {
 	static file_t list[MAX_DIRFILES];
-	dir_t	dir;
-	char	pathname[MAX_OSPATH];
-	DIR	*d;
-	DIR	*testdir; //bliP: list dir
+	dir_t dir;
+	char pathname[MAX_OSPATH];
+	DIR *d;
+	DIR *testdir; //bliP: list dir
 	struct dirent *oneentry;
 	qbool all;
 
-	int	r;
-	pcre	*preg = NULL;
-	const char	*errbuf;
+	int r;
+	pcre *preg = NULL;
+	const char *errbuf;
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
@@ -247,10 +247,10 @@ void Sys_Error (char *error, ...)
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
-	if (!sys_nostdout.value)
+	if (!(int)sys_nostdout.value)
 		printf ("Fatal error: %s\n", string);
 	SV_Write_Log(ERROR_LOG, 1, va("Fatal error: %s\n", string));
-	if (sys_restart_on_error.value)
+	if ((int)sys_restart_on_error.value)
 		Sys_Quit(true);
 	Sys_Exit(1);
 }
@@ -422,7 +422,7 @@ void Sys_Printf (char *fmt, ...)
 	//        	Sys_Error("memory overwrite in Sys_Printf.\n");
 	va_end (argptr);
 
-	if (!(telnetport && telnet_connected && authenticated) && sys_nostdout.value)
+	if (!(telnetport && telnet_connected && authenticated) && (int)sys_nostdout.value)
 		return;
 
 	for (p = text; *p; p++)
@@ -434,13 +434,13 @@ void Sys_Printf (char *fmt, ...)
 			if (*p == '\n') // demand for M$ WIN 2K telnet support
 				write (telnet_iosock, "\r", 1);
 		}
-		if (!sys_nostdout.value)
+		if (!(int)sys_nostdout.value)
 			putc(*p, stdout);
 	}
 
 	if (telnetport && telnet_connected && authenticated)
 		SV_Write_Log(TELNET_LOG, 3, (char*)text);
-	if (!sys_nostdout.value)
+	if (!(int)sys_nostdout.value)
 		fflush(stdout);
 }
 
@@ -629,9 +629,9 @@ inline void Sys_Telnet (void)
 			SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
 			                               inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
 		}
-		if ((!authenticated && not_auth_timeout.value &&
+		if ((!authenticated && (int)not_auth_timeout.value &&
 			 realtime - cur_time_not_auth > not_auth_timeout.value) ||
-			(authenticated && auth_timeout.value &&
+			(authenticated && (int)auth_timeout.value &&
 			 realtime - cur_time_auth > auth_timeout.value))
 		{
 			telnet_connected = false;
@@ -861,8 +861,8 @@ int main (int argc, char *argv[])
 		SV_Frame (time);
 
 		// extrasleep is just a way to generate a fucked up connection on purpose
-		if (sys_extrasleep.value)
-			usleep (sys_extrasleep.value);
+		if ((int)sys_extrasleep.value)
+			usleep ((unsigned long)sys_extrasleep.value);
 	}
 
 	return 0;

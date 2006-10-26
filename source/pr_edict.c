@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_edict.c,v 1.19 2006/09/03 23:14:36 qqshka Exp $
+	$Id: pr_edict.c,v 1.20 2006/10/26 20:47:13 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -939,7 +939,7 @@ void ED_LoadFromFile (char *data)
 		data = ED_ParseEdict (data, ent);
 
 		// remove things from different skill levels or deathmatch
-		if (deathmatch.value)
+		if ((int)deathmatch.value)
 		{
 			if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
 			{

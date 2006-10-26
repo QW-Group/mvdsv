@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.34 2006/10/25 11:09:45 vvd0 Exp $
+	$Id: sv_sys_win.c,v 1.35 2006/10/26 20:47:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -204,7 +204,7 @@ void Sys_Quit (qbool restart)
 		if (execv(argv0, com_argv) == -1)
 		{
 #ifdef _CONSOLE
-			if (!(sys_nostdout.value || isdaemon))
+			if (!((int)sys_nostdout.value || isdaemon))
 				printf("Restart failed: (%i): %s\n", qerrno, strerror(qerrno));
 #else
 			if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
@@ -229,7 +229,7 @@ void Sys_Error (char *error, ...)
 	vsnprintf (text, sizeof(text), error,argptr);
 	va_end (argptr);
 #ifdef _CONSOLE
-	if (!(sys_nostdout.value || isdaemon))
+	if (!((int)sys_nostdout.value || isdaemon))
 		printf ("ERROR: %s\n", text);
 #else
 	if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
@@ -243,7 +243,7 @@ void Sys_Error (char *error, ...)
 		SV_Write_Log(ERROR_LOG, 1, va("ERROR: %s\n", text));
 		fclose(logs[ERROR_LOG].sv_logfile);
 	}
-	if (sys_restart_on_error.value)
+	if ((int)sys_restart_on_error.value)
 		Sys_Quit(true);
 	Sys_Exit (1);
 }
@@ -486,7 +486,7 @@ void Sys_Printf (char *fmt, ...)
 
 	if ((
 #ifdef _CONSOLE
-	            sys_nostdout.value ||
+	            (int)sys_nostdout.value ||
 #endif //_CONSOLE
 	            isdaemon) && !(telnetport && telnet_connected && authenticated))
 		return;
@@ -509,7 +509,7 @@ void Sys_Printf (char *fmt, ...)
 				send (telnet_iosock, "\r", 1, 0);
 		}
 #ifdef _CONSOLE
-		if (!(sys_nostdout.value || isdaemon))
+		if (!((int)sys_nostdout.value || isdaemon))
 			putc(*p, stdout);
 #endif //_CONSOLE
 
@@ -518,7 +518,7 @@ void Sys_Printf (char *fmt, ...)
 	if (telnetport && telnet_connected && authenticated)
 		SV_Write_Log(TELNET_LOG, 3, text);
 #ifdef _CONSOLE
-	if (!(sys_nostdout.value || isdaemon))
+	if (!((int)sys_nostdout.value || isdaemon))
 		fflush(stdout);
 #endif //_CONSOLE
 }
@@ -670,9 +670,9 @@ __inline void Sys_Telnet (void)
 			SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
 										   inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
 		}
-		if (	(!authenticated && not_auth_timeout.value &&
+		if (	(!authenticated && (int)not_auth_timeout.value &&
 				realtime - cur_time_not_auth > not_auth_timeout.value) ||
-				(authenticated && auth_timeout.value &&
+				(authenticated && (int)auth_timeout.value &&
 				 realtime - cur_time_auth > auth_timeout.value))
 		{
 			telnet_connected = false;
@@ -749,7 +749,7 @@ int main (int argc, char **argv)
 
 	while (1)
 	{
-		sleep_msec = sys_sleep.value;
+		sleep_msec = (int)sys_sleep.value;
 		if (sleep_msec > 0)
 		{
 			if (sleep_msec > 13)
@@ -906,7 +906,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 
 		// server frame
 
-		sleep_msec = sys_sleep.value;
+		sleep_msec = (int)sys_sleep.value;
 		if (sleep_msec > 0)
 		{
 			if (sleep_msec > 13)

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.36 2006/10/22 15:49:39 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.37 2006/10/26 20:47:13 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -1479,7 +1479,7 @@ void PF2_logfrag(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 	if (!tblock)
 		s = va("%s\n", "#bad date#");
 	else
-		if (frag_log_type.value) // need for old-style frag log file
+		if ((int)frag_log_type.value) // need for old-style frag log file
 			s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",
 			       svs.clients[e1-1].name, svs.clients[e2-1].name,
 			       svs.clients[e1-1].team, svs.clients[e2-1].team,
@@ -2152,12 +2152,12 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 	}
 
 	// if at server limits, refuse connection
-	if ( maxclients.value > MAX_CLIENTS )
+	if ((int)maxclients.value > MAX_CLIENTS )
 		Cvar_SetValue( &maxclients, MAX_CLIENTS );
-	if ( maxspectators.value > MAX_CLIENTS )
+	if ((int)maxspectators.value > MAX_CLIENTS )
 		Cvar_SetValue( &maxspectators, MAX_CLIENTS );
-	if ( maxspectators.value + maxclients.value > MAX_CLIENTS )
-		Cvar_SetValue( &maxspectators, MAX_CLIENTS - maxclients.value );
+	if ((int)maxspectators.value + maxclients.value > MAX_CLIENTS )
+		Cvar_SetValue( &maxspectators, MAX_CLIENTS - (int)maxclients.value );
 
 	if ( clients >= ( int ) maxclients.value )
 	{

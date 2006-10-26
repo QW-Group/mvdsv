@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.29 2006/08/16 16:53:40 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.30 2006/10/26 20:47:13 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -2150,7 +2150,7 @@ void PF_logfrag (void)
 	if (!tblock)
 		s = va("%s\n", "#bad date#");
 	else
-		if (frag_log_type.value) // need for old-style frag log file
+		if ((int)frag_log_type.value) // need for old-style frag log file
 			s = va("\\frag\\%s\\%s\\%s\\%s\\%d-%d-%d %d:%d:%d\\\n",
 			       svs.clients[e1-1].name, svs.clients[e2-1].name,
 			       svs.clients[e1-1].team, svs.clients[e2-1].team,

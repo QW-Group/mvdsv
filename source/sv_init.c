@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.25 2006/10/22 15:49:39 disconn3ct Exp $
+	$Id: sv_init.c,v 1.26 2006/10/26 20:47:14 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -274,14 +274,14 @@ void SV_SpawnServer (char *mapname)
 	CM_InvalidateMap ();
 	Hunk_FreeToLowMark (host_hunklevel);
 
-	if (coop.value)
+	if ((int)coop.value)
 		Cvar_Set (&deathmatch, "0");
-	current_skill = (int)(skill.value + 0.5);
+	current_skill = (int) (skill.value + 0.5);
 	if (current_skill < 0)
 		current_skill = 0;
 	if (current_skill > 3)
 		current_skill = 3;
-	Cvar_Set (&skill, va("%d", (int)current_skill));
+	Cvar_Set (&skill, va("%d", current_skill));
 
 
 	// wipe the entire per-level structure
@@ -306,7 +306,7 @@ void SV_SpawnServer (char *mapname)
 	// and allocate edicts
 #ifdef USE_PR2
 	sv.time = 1.0;
-	sv_vm = VM_Load(sv_vm, sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
+	sv_vm = VM_Load(sv_vm, (int)sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
 	if ( sv_vm )
 		PR2_InitProg();
 	else
@@ -422,7 +422,7 @@ void SV_SpawnServer (char *mapname)
 	// ********* External Entity support (.ent file(s) in gamedir/maps) pinched from ZQuake *********
 	// load and spawn all other entities
 	entitystring = NULL;
-	if (sv_loadentfiles.value) {
+	if ((int)sv_loadentfiles.value) {
 		entitystring = (char *) COM_LoadHunkFile (va("maps/%s.ent", sv.mapname));
 		if (entitystring) {
 			Con_DPrintf ("Using entfile maps/%s.ent\n", sv.mapname);
