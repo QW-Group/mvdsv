@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.11 2006/05/03 12:56:31 vvd0 Exp $
+	$Id: protocol.h,v 1.12 2006/10/26 22:12:21 disconn3ct Exp $
 */
 // protocol.h -- communications protocols
 #ifndef __PROTOCOL_H__
@@ -286,7 +286,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 // what our server supports
+#ifdef I_AM_MVDSV_HACKER
+#define SERVER_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME|Z_EXT_JOIN_OBSERVE|Z_EXT_PF_ONGROUND)
+#else
 #define SERVER_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME|Z_EXT_PF_ONGROUND)
+#endif
 
 
 /*
