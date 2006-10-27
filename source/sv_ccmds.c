@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.39 2006/10/26 20:47:13 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.40 2006/10/27 14:58:11 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1237,7 +1237,7 @@ void SV_Status_f (void)
 
 				s = NET_BaseAdrToString(cl->netchan.remote_address);
 				Con_Printf ("%-18s %4i %5i %6s %s\n%-36s\n", cl->name, (int)SV_CalcPing(cl),
-							(int)cl->edict->v.frags, Q_yelltext(va("%d", cl->userid)),
+							(int)cl->edict->v.frags, Q_yelltext((unsigned char*)va("%d", cl->userid)),
 							cl->spectator ? " (s)" : "", (int)sv_use_dns.value ? SV_Resolve(s) : s);
 
 				if (cl->realip.ip.ip[0])

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.72 2006/10/27 10:39:42 disconn3ct Exp $
+	$Id: sv_user.c,v 1.73 2006/10/27 14:58:12 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -823,7 +823,7 @@ static qbool SV_DownloadNextFile (void)
 	case 1:
 		if (host_client->demolist)
 		{
-			Con_Printf(Q_redtext(all_demos_downloaded));
+			Con_Printf((char *)Q_redtext(all_demos_downloaded));
 			host_client->demolist = false;
 		}
 		host_client->demonum[0] = 0;
@@ -835,12 +835,12 @@ static qbool SV_DownloadNextFile (void)
 	num = host_client->demonum[--(host_client->demonum[0])];
 	if (num == 0)
 	{
-		Con_Printf(Q_redtext(incorrect_demo_number));
+		Con_Printf((char *)Q_redtext(incorrect_demo_number));
 		return SV_DownloadNextFile();
 	}
 	if (!(name = SV_MVDNum(num)))
 	{
-		Con_Printf(Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
+		Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
 		return SV_DownloadNextFile();
 	}
 	//Con_Printf("downloading demos/%s\n",name);
@@ -918,7 +918,7 @@ static void SV_NextDownload_f (void)
 		Q_atoi(Info_ValueForKey (host_client->userinfo, "rate")));
 	// qqshka: set normal rate
 
-	Con_Printf(Q_redtext(download_completed));
+	Con_Printf((char *)Q_redtext(download_completed));
 
 	if (SV_DownloadNextFile())
 		return;
@@ -1183,7 +1183,7 @@ static void SV_BeginDownload_f(void)
 		name = SV_MVDNum(num);
 		if (!name)
 		{
-			Con_Printf(Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
+			Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
 			goto deny_download;
 		}
 		//Con_Printf("downloading demos/%s\n",name);
@@ -1307,17 +1307,17 @@ static void SV_DemoDownload_f(void)
 	{
 		if (host_client->demonum[0])
 		{
-			Con_Printf(Q_redtext(download_queue_cleared));
+			Con_Printf((char *)Q_redtext(download_queue_cleared));
 			host_client->demonum[0] = 0;
 		}
 		else
-			Con_Printf(Q_redtext(download_queue_empty));
+			Con_Printf((char *)Q_redtext(download_queue_empty));
 		return;
 	}
 
 	if (host_client->demonum[0])
 	{
-		Con_Printf(Q_redtext(download_queue_already_exists));
+		Con_Printf((char *)Q_redtext(download_queue_already_exists));
 		return;
 	}
 
@@ -1368,7 +1368,7 @@ static void SV_StopDownload_f(void)
 		ClientReliableWrite_Short (host_client, 0);
 		ClientReliableWrite_Byte (host_client, 100);
 		host_client->demonum[0] = 0;
-		Con_Printf (Q_redtext(download_stopped));
+		Con_Printf ((char *)Q_redtext(download_stopped));
 	}
 }
 //=============================================================================
@@ -2171,6 +2171,7 @@ static void SV_ShowMapsList_f(void)
 	Con_Printf("%s---%s\n", i_mod_2 ? "" : "\n", Q_redtext(end_of_list));
 }
 
+#ifdef I_AM_MVDSV_HACKER
 static void SetUpClientEdict (client_t *cl, edict_t *ent)
 {
 #ifdef USE_PR2
@@ -2419,7 +2420,7 @@ static void Cmd_Observe_f (void)
 	// send notification to all clients
 	host_client->sendinfo = true;
 }
-
+#endif
 
 void SV_DemoList_f(void);
 void SV_DemoListRegex_f(void);

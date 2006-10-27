@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.84 2006/10/27 10:42:39 disconn3ct Exp $
+	$Id: sv_main.c,v 1.85 2006/10/27 14:58:11 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1396,7 +1396,7 @@ static void SVC_RemoteCommand (char *remote_command)
 		if (cl->netchan.remote_address.port != net_from.port)
 			continue;
 		strlcpy(plain, cl->name, sizeof(plain));
-		Q_normalizetext(plain);
+		Q_normalizetext((unsigned char*)plain);
 	}
 
 	if (do_cmd)
@@ -2035,7 +2035,7 @@ void Do_BanList(ipfiltertype_t ipft)
 
 void SV_BanList (void)
 {
-	char blist[64] = "Ban list:", id[64] = "id", ipmask[64] = "ip mask", type[64] = "type", expire[64] = "expire";
+	unsigned char blist[64] = "Ban list:", id[64] = "id", ipmask[64] = "ip mask", type[64] = "type", expire[64] = "expire";
 
 	if (numipfilters < 1) {
 		Con_Printf ("Ban list: empty\n");
@@ -3685,7 +3685,7 @@ Q_normalizetext
 returns readable extended quake names
 ==================
 */
-char *Q_normalizetext(unsigned char *str)
+unsigned char *Q_normalizetext(unsigned char *str)
 {
 	extern char chartbl2[];
 	unsigned char	*i;
@@ -3701,7 +3701,7 @@ Q_redtext
 returns extended quake names
 ==================
 */
-char *Q_redtext (unsigned char *str)
+unsigned char *Q_redtext (unsigned char *str)
 {
 	unsigned char *i;
 	for (i = str; *i; i++)
@@ -3717,7 +3717,7 @@ Q_yelltext
 returns extended quake names (yellow numbers)
 ==================
 */
-char *Q_yelltext (unsigned char *str)
+unsigned char *Q_yelltext (unsigned char *str)
 {
 	unsigned char *i;
 	for (i = str; *i; i++)
