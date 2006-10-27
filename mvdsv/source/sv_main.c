@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.83 2006/10/27 10:39:42 disconn3ct Exp $
+	$Id: sv_main.c,v 1.84 2006/10/27 10:42:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -899,7 +899,7 @@ static void SVC_DirectConnect (void)
 			(cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port))
 		{
 			//bliP: reconnect limit
-			if ((realtime - cl->lastconnect) < (sv_reconnectlimit.value * 1000)
+			if ((realtime - cl->lastconnect) < sv_reconnectlimit.value * 1000)
 			{
 				Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
 				return;
