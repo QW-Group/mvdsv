@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: net_chan.c,v 1.13 2006/10/26 20:47:13 disconn3ct Exp $
+	$Id: net_chan.c,v 1.14 2006/10/27 10:39:42 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -230,7 +230,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	if (chan->message.overflowed)
 	{
 		chan->fatal_error = true;
-		if (last_error_time - current_time > 5 || (int)developer.value)
+		if (last_error_time - current_time > 5.0 || (int)developer.value)
 		{
 			Con_Printf ("%s:Outgoing message overflow\n"
 			            , NET_AdrToString (chan->remote_address));

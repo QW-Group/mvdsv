@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.71 2006/10/26 22:12:21 disconn3ct Exp $
+	$Id: sv_user.c,v 1.72 2006/10/27 10:39:42 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1911,7 +1911,7 @@ static void SV_SetInfo_f (void)
 	int i, saved_state;
 	char oldval[MAX_INFO_STRING];
 
-	if ((int)sv_kickuserinfospamtime.value > 0 && sv_kickuserinfospamcount.value > 0)
+	if (sv_kickuserinfospamtime.value > 0 && (int)sv_kickuserinfospamcount.value > 0)
 	{
 		if (!host_client->lastuserinfotime ||
 			realtime - host_client->lastuserinfotime > sv_kickuserinfospamtime.value)
@@ -2208,7 +2208,7 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 
 	cl->maxspeed = sv_maxspeed.value;
 	if (fofs_maxspeed)
-		EdictFieldFloat(ent, fofs_maxspeed) = sv_maxspeed.value;
+		EdictFieldFloat(ent, fofs_maxspeed) = (int)sv_maxspeed.value;
 }
 
 extern cvar_t maxclients, maxspectators;
@@ -2248,7 +2248,7 @@ static void Cmd_Join_f (void)
 		if (cl->state != cs_free && !cl->spectator)
 			numclients++;
 	}
-	if (numclients >= maxclients.value) {
+	if (numclients >= (int)maxclients.value) {
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Can't join, all player slots full\n");
 		return;
 	}
@@ -2350,7 +2350,7 @@ static void Cmd_Observe_f (void)
 		if (cl->state != cs_free && cl->spectator)
 			numspectators++;
 	}
-	if (numspectators >= maxspectators.value) {
+	if (numspectators >= (int)maxspectators.value) {
 		SV_ClientPrintf (host_client, PRINT_HIGH, "Can't join, all spectator slots full\n");
 		return;
 	}
