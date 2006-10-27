@@ -11,7 +11,7 @@ Test Vectors (from FIPS PUB 180-1)
 A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
  
-	$Id: sha1.c,v 1.9 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: sha1.c,v 1.10 2006/10/27 14:34:51 disconn3ct Exp $
 */
 
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
@@ -20,7 +20,7 @@ A million repetitions of "a"
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void SHA1Transform(unsigned long state[5], unsigned char buffer[64])
+static void SHA1Transform (unsigned long state[5], unsigned char buffer[64])
 {
 	unsigned long a, b, c, d, e;
 	typedef union {
@@ -75,7 +75,7 @@ void SHA1Transform(unsigned long state[5], unsigned char buffer[64])
 
 /* SHA1Init - Initialize new context */
 
-void SHA1Init(SHA1_CTX* context)
+static void SHA1Init(SHA1_CTX* context)
 {
 	/* SHA1 initialization constants */
 	context->state[0] = 0x67452301;
@@ -89,7 +89,7 @@ void SHA1Init(SHA1_CTX* context)
 
 /* Run your data through this. */
 
-void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int len)
+static void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int len)
 {
 	unsigned int i, j;
 
@@ -113,7 +113,7 @@ void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int len)
 
 /* Add padding and return the message digest. */
 
-void SHA1Final(unsigned char digest[DIGEST_SIZE], SHA1_CTX* context)
+static void SHA1Final(unsigned char digest[DIGEST_SIZE], SHA1_CTX* context)
 {
 	unsigned long i, j;
 	unsigned char finalcount[8];
@@ -146,37 +146,40 @@ void SHA1Final(unsigned char digest[DIGEST_SIZE], SHA1_CTX* context)
 }
 
 //VVD: SHA1 crypt
-char *bin2hex(unsigned char *d)
+static char *bin2hex (unsigned char *d)
 {
-	static char	ret[DIGEST_SIZE * 2 + 1];
-	int		i;
+	static char ret[DIGEST_SIZE * 2 + 1];
+	int i;
 	for (i = 0; i < DIGEST_SIZE * 2; i += 2, d++)
 		snprintf(ret + i, DIGEST_SIZE * 2 + 1 - i, "%02X", *d);
 	return ret;
 }
 
-char *SHA1(char *string)
+char *SHA1 (char *string)
 {
-	SHA1_CTX	context;
-	unsigned char	digest[DIGEST_SIZE];
+	SHA1_CTX context;
+	unsigned char digest[DIGEST_SIZE];
 	SHA1Init(&context);
 	SHA1Update(&context, (unsigned char*)string, strlen(string));
 	SHA1Final(digest, &context);
 	return bin2hex(digest);
 }
 
-SHA1_CTX	context;
-void SHA1_Init(void)
+static SHA1_CTX context;
+
+void SHA1_Init (void)
 {
 	SHA1Init(&context);
 }
-void SHA1_Update(unsigned char *string)
+
+void SHA1_Update (char *string)
 {
-	SHA1Update(&context, string, strlen((char*)string));
+	SHA1Update(&context, (unsigned char *)string, strlen((char*)string));
 }
+
 char *SHA1_Final(void)
 {
-	unsigned char	digest[DIGEST_SIZE];
+	unsigned char digest[DIGEST_SIZE];
 	SHA1Final(digest, &context);
 	return bin2hex(digest);
 }
