@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    1$Id: common.h,v 1.20 2006/06/19 16:46:15 vvd0 Exp $
+    1$Id: common.h,v 1.21 2006/10/27 14:58:11 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -84,9 +84,9 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 //============================================================================
 
-char *Q_normalizetext(unsigned char *name); //bliP: red to white text
-char *Q_redtext(unsigned char *str); //bliP: white to red text
-char *Q_yelltext(unsigned char *str); //VVD: white to red text and yellow numbers
+unsigned char *Q_normalizetext(unsigned char *name); //bliP: red to white text
+unsigned char *Q_redtext(unsigned char *str); //bliP: white to red text
+unsigned char *Q_yelltext(unsigned char *str); //VVD: white to red text and yellow numbers
 
 //============================================================================
 

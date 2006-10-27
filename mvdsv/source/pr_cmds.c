@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: pr_cmds.c,v 1.30 2006/10/26 20:47:13 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.31 2006/10/27 14:58:11 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -2340,7 +2340,7 @@ void PF_listmaps (void)
 			//print id and name
 			snprintf(tmp, sizeof(tmp), "%d:%s ", j++, list->name);
 			if (i % 2 != 0) //red every second
-				Q_redtext(tmp);
+				Q_redtext((unsigned char*)tmp);
 			strlcat(line, tmp, sizeof(line));
 			if (i % 10 == 0)
 			{ //print entire line
@@ -2353,13 +2353,13 @@ void PF_listmaps (void)
 			num[0] = '\0';
 			for (j = strlen(tmp); j < pad; j++) //padding to align
 				strlcat(num, " ", sizeof(num));
-			Q_redtext(tmp);
+			Q_redtext((unsigned char*)tmp);
 			SV_ClientPrintf(client, level, "%s%s%c %s\n", num, tmp, 133, list->name);
 			break;
 		case 3:
 			list->name[13] = 0;
 			snprintf(tmp, sizeof(tmp), "%03d", id);
-			Q_redtext(tmp);
+			Q_redtext((unsigned char*)tmp);
 			snprintf(line, sizeof(line), "%s\x85%-13s", tmp, list->name);
 			id++;
 			list++;
@@ -2368,13 +2368,13 @@ void PF_listmaps (void)
 			list->name[13] = 0;
 			list->name[strlen(list->name) - 4] = 0;
 			snprintf(tmp, sizeof(tmp), "%03d", id);
-			Q_redtext(tmp);
+			Q_redtext((unsigned char*)tmp);
 			SV_ClientPrintf(client, level, "%s %s\x85%-13s\n", line, tmp, list->name);
 			line[0] = 0; //bliP: 24/9 bugfix
 			break;
 		default:
 			snprintf(tmp, sizeof(tmp), "%d", id);
-			Q_redtext(tmp);
+			Q_redtext((unsigned char*)tmp);
 			SV_ClientPrintf(client, level, "%s%c%s%s", tmp, 133, list->name, (i == range) ? "\n" : " ");
 			i++;
 		}
@@ -2394,7 +2394,7 @@ void PF_listmaps (void)
 	if (foot)
 	{ //footer
 		strlcpy(tmp, "Total:", sizeof(tmp));
-		Q_redtext(tmp);
+		Q_redtext((unsigned char*)tmp);
 		SV_ClientPrintf (client, level,	"%s %d maps %.0fKB (%.2fMB)\n", tmp, dir.numfiles, (float)dir.size/1024, (float)dir.size/1024/1024);
 	}
 

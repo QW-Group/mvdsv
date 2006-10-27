@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.57 2006/10/27 10:53:36 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.58 2006/10/27 14:58:11 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -2025,7 +2025,7 @@ void SV_DemoList (qbool use_regex)
 		{
 			if (use_regex)
 			{
-				if (!(preg = pcre_compile(Q_normalizetext((unsigned char*)Cmd_Argv(j)),
+				if (!(preg = pcre_compile((char *)Q_normalizetext((unsigned char*)Cmd_Argv(j)),
 											PCRE_CASELESS, &errbuf, &r, NULL)))
 				{
 					Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
