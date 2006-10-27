@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.56 2006/10/27 10:39:42 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.57 2006/10/27 10:53:36 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -184,7 +184,7 @@ void DestFlush(qbool compleate)
 				Sys_Error("DestFlush encoundered bad dest.");
 		}
 
-		if ((int)sv_demoMaxSize.value && d->totalsize > ((int)sv_demoMaxSize.value * 1024))
+		if ((unsigned int)sv_demoMaxSize.value && d->totalsize > ((unsigned int)sv_demoMaxSize.value * 1024))
 			d->error = 2;	//abort, but don't kill it.
 
 		while (d->nextdest && d->nextdest->error)
@@ -2078,7 +2078,7 @@ void SV_DemoList (qbool use_regex)
 	Con_Printf("\ndirectory size: %.1fMB\n", (float)dir.size / (1024 * 1024));
 	if ((int)sv_demoMaxDirSize.value)
 	{
-		free_space = ((int)sv_demoMaxDirSize.value * 1024 - dir.size) / (1024 * 1024);
+		free_space = (sv_demoMaxDirSize.value * 1024 - dir.size) / (1024 * 1024);
 		if (free_space < 0)
 			free_space = 0;
 		Con_Printf("space available: %.1fMB\n", free_space);
