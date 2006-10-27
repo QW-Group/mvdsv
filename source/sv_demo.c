@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.55 2006/10/26 19:12:13 qqshka Exp $
+    $Id: sv_demo.c,v 1.56 2006/10/27 10:39:42 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -184,7 +184,7 @@ void DestFlush(qbool compleate)
 				Sys_Error("DestFlush encoundered bad dest.");
 		}
 
-		if (sv_demoMaxSize.value && d->totalsize > sv_demoMaxSize.value*1024)
+		if ((int)sv_demoMaxSize.value && d->totalsize > ((int)sv_demoMaxSize.value * 1024))
 			d->error = 2;	//abort, but don't kill it.
 
 		while (d->nextdest && d->nextdest->error)
@@ -217,7 +217,7 @@ void DestCloseAllFlush(qbool destroyfiles)
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
 		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 
-		if (sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
+		if ((int)sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
 		{
 			FILE *f;
 			char *text;
@@ -866,7 +866,7 @@ static char *SV_PrintTeams(void)
 			clients[0]->name, clients[1]->name, sv.mapname,
 			clients[0]->old_frags, clients[1]->old_frags);
 	}
-	else if (!teamplay.value) // ffa
+	else if (!(int)teamplay.value) // ffa
 	{
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "players:\n");
 		snprintf(lastscores, sizeof(lastscores), "ffa:");
@@ -936,7 +936,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 
 	dst = (mvddest_t*) Q_malloc (sizeof(mvddest_t));
 
-	if (!sv_demoUseCache.value)
+	if (!(int)sv_demoUseCache.value)
 	{
 		dst->desttype = DEST_FILE;
 		dst->file = file;
@@ -965,7 +965,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 	strlcpy(path, name, MAX_OSPATH);
 	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 
-	if (sv_demotxt.value)
+	if ((int)sv_demotxt.value)
 	{
 		FILE *f;
 		char *text;
@@ -1512,21 +1512,21 @@ qbool SV_DirSizeCheck (void)
 	file_t	*list;
 	int	n;
 
-	if (sv_demoMaxDirSize.value)
+	if ((int)sv_demoMaxDirSize.value)
 	{
 		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_NO/*BY_DATE*/);
-		if (dir.size > sv_demoMaxDirSize.value * 1024)
+		if (dir.size > ((int)sv_demoMaxDirSize.value * 1024))
 		{
-			if (sv_demoClearOld.value <= 0)
+			if ((int)sv_demoClearOld.value <= 0)
 			{
 				Con_Printf("Insufficient directory space, increase sv_demoMaxDirSize\n");
 				return false;
 			}
 			list = dir.files;
-			n = sv_demoClearOld.value;
+			n = (int) sv_demoClearOld.value;
 			Con_Printf("Clearing %d old demos\n", n);
 			// HACK!!! HACK!!! HACK!!!
-			if (sv_demotxt.value) // if our server record demos and txts, then to remove
+			if ((int)sv_demotxt.value) // if our server record demos and txts, then to remove
 				n <<= 1;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
 
 			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
@@ -1791,11 +1791,11 @@ void SV_MVDEasyRecord_f (void)
 	else
 	{
 		i = Dem_CountPlayers();
-		if (teamplay.value >= 1 && i > 2)
+		if ((int)teamplay.value >= 1 && i > 2)
 		{
 			// Teamplay
 			snprintf (name, sizeof(name), "%don%d_", Dem_CountTeamPlayers(Dem_Team(1)), Dem_CountTeamPlayers(Dem_Team(2)));
-			if (sv_demoExtraNames.value > 0)
+			if ((int)sv_demoExtraNames.value > 0)
 			{
 				strlcat (name, va("[%s]_%s_vs_[%s]_%s_%s",
 				                  Dem_Team(1), Dem_PlayerNameTeam(Dem_Team(1)),
@@ -1932,16 +1932,16 @@ void SV_MVDStream_Poll(void)
 	qbool wanted;
 	mvddest_t *dest;
 
-	if (!sv.state || !mvd_streamport.value)
+	if (!sv.state || !(int)mvd_streamport.value)
 		wanted = false;
 	else if (listenport && (int)mvd_streamport.value != listenport)	//easy way to switch... disable for a frame. :)
 	{
-		listenport = mvd_streamport.value;
+		listenport = (int)mvd_streamport.value;
 		wanted = false;
 	}
 	else
 	{
-		listenport = mvd_streamport.value;
+		listenport = (int)mvd_streamport.value;
 		wanted = true;
 	}
 
@@ -1961,7 +1961,7 @@ void SV_MVDStream_Poll(void)
 	if (client == INVALID_SOCKET)
 		return;
 
-	if (mvd_maxstreams.value > 0)
+	if ((int)mvd_maxstreams.value > 0)
 	{
 		count = 0;
 		for (dest = demo.dest; dest; dest = dest->nextdest)
@@ -1972,7 +1972,7 @@ void SV_MVDStream_Poll(void)
 			}
 		}
 
-		if (count > mvd_maxstreams.value)
+		if (count > (int)mvd_maxstreams.value)
 		{	//sorry
 			char *goawaymessage = "This server enforces a limit on the number of proxies connected at any one time. Please try again later\n";
 			char packetheader[6];
@@ -2076,9 +2076,9 @@ void SV_DemoList (qbool use_regex)
 		dir.size += d->totalsize;
 
 	Con_Printf("\ndirectory size: %.1fMB\n", (float)dir.size / (1024 * 1024));
-	if (sv_demoMaxDirSize.value)
+	if ((int)sv_demoMaxDirSize.value)
 	{
-		free_space = (sv_demoMaxDirSize.value * 1024 - dir.size) / (1024 * 1024);
+		free_space = ((int)sv_demoMaxDirSize.value * 1024 - dir.size) / (1024 * 1024);
 		if (free_space < 0)
 			free_space = 0;
 		Con_Printf("space available: %.1fMB\n", free_space);

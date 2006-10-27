@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.15 2006/03/27 22:54:39 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.16 2006/10/27 10:39:42 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -955,10 +955,10 @@ void SV_Physics (void)
 	{
 		// don't bother running a frame if sv_mintic seconds haven't passed
 		sv_frametime = sv.time - sv.old_time;
-		if (sv_frametime < sv_mintic.value)
+		if (sv_frametime < (double) sv_mintic.value)
 			return;
-		if (sv_frametime > sv_maxtic.value)
-			sv_frametime = sv_maxtic.value;
+		if (sv_frametime > (double) sv_maxtic.value)
+			sv_frametime = (double) sv_maxtic.value;
 		sv.old_time = sv.time;
 	}
 	else
