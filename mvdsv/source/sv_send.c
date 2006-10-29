@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.27 2006/10/26 20:47:14 disconn3ct Exp $
+	$Id: sv_send.c,v 1.28 2006/10/29 17:27:24 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -976,6 +976,9 @@ void SV_SendClientMessages (void)
 }
 
 void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
+void DemoWriteQTVTimePad(int msecs);
+void DestFlush(qbool compleate);
+void SV_MVD_RunPendingConnections(void);
 void SV_SendDemoMessage(void)
 {
 	int			i, j, cls = 0;
@@ -987,6 +990,8 @@ void SV_SendDemoMessage(void)
 	float		min_fps;
 	extern		cvar_t sv_demofps;
 	extern		cvar_t sv_demoPings;
+
+	SV_MVD_RunPendingConnections();
 
 	if (!sv.mvdrecording)
 		return;
@@ -1018,6 +1023,9 @@ void SV_SendDemoMessage(void)
 	if (!cls)
 	{
 		SZ_Clear (&demo.datagram);
+		DemoWriteQTVTimePad((int)((sv.time - demo.time)*1000));
+		DestFlush(false);
+		demo.time = sv.time;
 		return;
 	}
 

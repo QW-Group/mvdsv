@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.30 2006/10/26 20:47:11 disconn3ct Exp $
+    $Id: common.c,v 1.31 2006/10/29 17:27:23 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -1019,3 +1019,7 @@ unsigned Com_BlockChecksum (void *buffer, int length)
 	return val;
 }
 
+void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf)
+{
+	mdfour ( outbuf, (unsigned char *) buffer, len );
+}

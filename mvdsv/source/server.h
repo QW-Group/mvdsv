@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.37 2006/08/19 16:53:45 qqshka Exp $
+	$Id: server.h,v 1.38 2006/10/29 17:27:23 disconn3ct Exp $
 */
 
 // server.h
@@ -143,122 +143,122 @@ typedef struct client_s
 {
 	sv_client_state_t	state;
 
-	int		extensions;			// what ZQuake extensions the client supports
-	int		spectator;			// non-interactive
-	int		vip;
+	int				extensions;			// what ZQuake extensions the client supports
+	int				spectator;			// non-interactive
+	int				vip;
 
-	qbool		sendinfo;			// at end of frame, send info to all
+	qbool			sendinfo;			// at end of frame, send info to all
 							// this prevents malicious multiple broadcasts
-	float		lastnametime;			// time of last name change
-	int		lastnamecount;			// time of last name change
-	unsigned	checksum;			// checksum for calcs
-	qbool		drop;				// lose this guy next opportunity
-	int		lossage;			// loss percentage
+	float			lastnametime;			// time of last name change
+	int				lastnamecount;			// time of last name change
+	unsigned		checksum;			// checksum for calcs
+	qbool			drop;				// lose this guy next opportunity
+	int				lossage;			// loss percentage
 
-	int		userid;				// identifying number
-	char		userinfo[MAX_INFO_STRING];	// infostring
-	char		userinfoshort[MAX_INFO_STRING];	// infostring
+	int				userid;				// identifying number
+	char			userinfo[MAX_INFO_STRING];	// infostring
+	char			userinfoshort[MAX_INFO_STRING];	// infostring
 
-	usercmd_t	lastcmd;			// for filling in big drops and partial predictions
-	double		localtime;			// of last message
-	qbool		jump_held;
+	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
+	double			localtime;			// of last message
+	qbool			jump_held;
 
-	float		maxspeed;			// localized maxspeed
-	float		entgravity;			// localized ent gravity
+	float			maxspeed;			// localized maxspeed
+	float			entgravity;			// localized ent gravity
 
-	edict_t		*edict;				// EDICT_NUM(clientnum+1)
+	edict_t			*edict;				// EDICT_NUM(clientnum+1)
 #ifdef USE_PR2
 	int		isBot;
-	usercmd_t	botcmd;				// bot movment
-	char		*name;				// in PR2 points to ent->v.netname
+	usercmd_t		botcmd;				// bot movment
+	char			*name;				// in PR2 points to ent->v.netname
 #else
-	char		name[CLIENT_NAME_LEN];		// for printing to other people
+	char			name[CLIENT_NAME_LEN];		// for printing to other people
 #endif
-	char		team[CLIENT_NAME_LEN];
+	char			team[CLIENT_NAME_LEN];
 							// extracted from userinfo
-	int		messagelevel;			// for filtering printed messages
+	int				messagelevel;			// for filtering printed messages
 
 	// the datagram is written to after every frame, but only cleared
 	// when it is sent out to the client.  overflow is tolerated.
-	sizebuf_t	datagram;
-	byte		datagram_buf[MAX_DATAGRAM];
+	sizebuf_t		datagram;
+	byte			datagram_buf[MAX_DATAGRAM];
 
 	// back buffers for client reliable data
-	sizebuf_t	backbuf;
-	int		num_backbuf;
-	int		backbuf_size[MAX_BACK_BUFFERS];
-	byte		backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
+	sizebuf_t		backbuf;
+	int				num_backbuf;
+	int				backbuf_size[MAX_BACK_BUFFERS];
+	byte			backbuf_data[MAX_BACK_BUFFERS][MAX_MSGLEN];
 
-	char		stufftext_buf[MAX_STUFFTEXT];
+	char			stufftext_buf[MAX_STUFFTEXT];
 
-	double		connection_started;		// or time of disconnect for zombies
-	qbool		send_message;			// set on frames a datagram arived on
+	double			connection_started;		// or time of disconnect for zombies
+	qbool			send_message;			// set on frames a datagram arived on
 
 // spawn parms are carried from level to level
-	float		spawn_parms[NUM_SPAWN_PARMS];
+	float			spawn_parms[NUM_SPAWN_PARMS];
 
 // client known data for deltas	
-	int		old_frags;
+	int				old_frags;
 	
-	int		stats[MAX_CL_STATS];
+	int				stats[MAX_CL_STATS];
 
-	double		lastservertimeupdate;		// last realtime we sent STAT_TIME to the client
+	double			lastservertimeupdate;		// last realtime we sent STAT_TIME to the client
 
 	client_frame_t	frames[UPDATE_BACKUP];		// updates can be deltad from here
 
-	FILE		*download;			// file being downloaded
-	int		downloadsize;			// total bytes
-	int		downloadcount;			// bytes sent
+	FILE			*download;			// file being downloaded
+	int				downloadsize;			// total bytes
+	int				downloadcount;			// bytes sent
 // demo download list for internal cmd dl function
 //Added by VVD {
-	int		demonum[MAX_ARGS];
-	qbool		demolist;
+	int				demonum[MAX_ARGS];
+	qbool			demolist;
 // } Added by VVD
 
-	int		spec_track;			// entnum of player tracking
+	int				spec_track;			// entnum of player tracking
 
-	double		whensaid[10];			// JACK: For floodprots
- 	int		whensaidhead;			// Head value for floodprots
- 	double		lockedtill;
+	double			whensaid[10];			// JACK: For floodprots
+ 	int				whensaidhead;			// Head value for floodprots
+ 	double			lockedtill;
 
-	FILE		*upload;
-	char		uploadfn[MAX_QPATH];
-	netadr_t	snap_from;
-	qbool		remote_snap;
+	FILE			*upload;
+	char			uploadfn[MAX_QPATH];
+	netadr_t		snap_from;
+	qbool			remote_snap;
 
-	char		login[CLIENT_LOGIN_LEN];
-	int		logged;
+	char			login[CLIENT_LOGIN_LEN];
+	int				logged;
 
-	int		spawncount;			// for tracking map changes during downloading
+	int				spawncount;			// for tracking map changes during downloading
 
 //bliP: additional ->
-	int		file_percent;
-	qbool		special;
-	int		logincount;
-	float		lasttoptime;			// time of last topcolor change
-	int		lasttopcount;			// count of last topcolor change
-	int		lastconnect;
-	int		spec_print;
-	double		cuff_time;
+	int				file_percent;
+	qbool			special;
+	int				logincount;
+	float			lasttoptime;			// time of last topcolor change
+	int				lasttopcount;			// count of last topcolor change
+	int				lastconnect;
+	int				spec_print;
+	double			cuff_time;
 //bliP: 24/9 anti speed ->
-	int		msecs;
-	double		last_check;
+	int				msecs;
+	double			last_check;
 //<-
 //<-
-	float		lastuserinfotime;		// time of last userinfo change
-	int		lastuserinfocount;		// count of last userinfo change
+	float			lastuserinfotime;		// time of last userinfo change
+	int				lastuserinfocount;		// count of last userinfo change
  
 //===== NETWORK ============
-	int		chokecount;
-	int		delta_sequence;			// -1 = no compression
-	netchan_t	netchan;
-	netadr_t	realip;				// client's ip, not latest proxy's
-	int		realip_num;			// random value
-	int		realip_count;
-	int		rip_vip;
-	double		delay;
-	double		disable_updates_stop;		//Vladis
-	packet_t	*packets, *last_packet;
+	int				chokecount;
+	int				delta_sequence;			// -1 = no compression
+	netchan_t		netchan;
+	netadr_t		realip;				// client's ip, not latest proxy's
+	int				realip_num;			// random value
+	int				realip_count;
+	int				rip_vip;
+	double			delay;
+	double			disable_updates_stop;		//Vladis
+	packet_t		*packets, *last_packet;
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -269,57 +269,57 @@ typedef struct client_s
 
 typedef struct
 {
-	vec3_t		origin;
-	vec3_t		angles;
-	int		weaponframe;
-	int		skinnum;
-	int		model;
-	int		effects;
+	vec3_t			origin;
+	vec3_t			angles;
+	int				weaponframe;
+	int				skinnum;
+	int				model;
+	int				effects;
 } demoinfo_t;
 
 typedef struct
 {
-	demoinfo_t	info;
-	float		sec;
-	int		parsecount;
-	qbool		fixangle;
-	vec3_t		angle;
-	float		cmdtime;
-	int		flags;
-	int		frame;
+	demoinfo_t		info;
+	float			sec;
+	int				parsecount;
+	qbool			fixangle;
+	vec3_t			angle;
+	float			cmdtime;
+	int				flags;
+	int				frame;
 } demo_client_t;
 
 typedef struct {
-	byte		type;
-	byte		full;
-	int		to;
-	int		size;
-	byte		data[1]; //gcc doesn't allow [] (?)
+	byte			type;
+	byte			full;
+	int				to;
+	int				size;
+	byte			data[1]; //gcc doesn't allow [] (?)
 } header_t;
 
 typedef struct
 {
-	qbool		allowoverflow; // if false, do a Sys_Error
-	qbool		overflowed; // set to true if the buffer size failed
-	byte		*data;
-	int		maxsize;
-	int		cursize;
-	int		bufsize;
-	header_t 	*h;
+	qbool			allowoverflow; // if false, do a Sys_Error
+	qbool			overflowed; // set to true if the buffer size failed
+	byte			*data;
+	int				maxsize;
+	int				cursize;
+	int				bufsize;
+	header_t 		*h;
 } demobuf_t;
 
 typedef struct
 {
 	demo_client_t	clients[MAX_CLIENTS];
-	double		time;
-	demobuf_t	buf;
+	double			time;
+	demobuf_t		buf;
 
 } demo_frame_t;
 
 typedef struct {
-	byte		*data;
-	int		start, end, last;
-	int		maxsize;
+	byte			*data;
+	int				start, end, last;
+	int				maxsize;
 } dbuffer_t;
 
 #define DEMO_FRAMES 64
@@ -327,28 +327,29 @@ typedef struct {
 
 typedef struct
 {
-	demobuf_t	*dbuf;
-	dbuffer_t	dbuffer;
-	sizebuf_t	datagram;
-	byte		datagram_data[MSG_BUF_SIZE];
-	int		lastto;
-	int		lasttype;
-	double		time, pingtime;
-	int		stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
-	client_t	recorder;
-	qbool		fixangle[MAX_CLIENTS];
-	float		fixangletime[MAX_CLIENTS];
-	vec3_t		angles[MAX_CLIENTS];
-	char		name[MAX_OSPATH], path[MAX_OSPATH];
-	int		parsecount;
-	int		lastwritten;
+	demobuf_t		*dbuf;
+	dbuffer_t		dbuffer;
+	sizebuf_t		datagram;
+	byte			datagram_data[MSG_BUF_SIZE];
+	int				lastto;
+	int				lasttype;
+	double			time, pingtime;
+	int				stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
+	client_t		recorder;
+	qbool			fixangle[MAX_CLIENTS];
+	float			fixangletime[MAX_CLIENTS];
+	vec3_t			angles[MAX_CLIENTS];
+	char			name[MAX_OSPATH], path[MAX_OSPATH];
+	int				parsecount;
+	int				lastwritten;
 	demo_frame_t	frames[DEMO_FRAMES];
-	demoinfo_t	info[MAX_CLIENTS];
-	byte		buffer[20*MAX_MSGLEN];
-	int		bufsize;
-	int		forceFrame;
+	demoinfo_t		info[MAX_CLIENTS];
+	byte			buffer[20*MAX_MSGLEN];
+	int				bufsize;
+	int				forceFrame;
 
 	struct mvddest_s *dest;
+	struct mvdpendingdest_s *pendingdest;
 } demo_t;
 
 
@@ -358,16 +359,16 @@ typedef struct
 #define	STATFRAMES	100
 typedef struct
 {
-	double		active;
-	double		idle;
-	double		demo;
-	int		count;
-	int		packets;
+	double			active;
+	double			idle;
+	double			demo;
+	int				count;
+	int				packets;
 
-	double		latched_active;
-	double		latched_idle;
-	double		latched_demo;
-	int		latched_packets;
+	double			latched_active;
+	double			latched_idle;
+	double			latched_demo;
+	int				latched_packets;
 } svstats_t;
 
 // MAX_CHALLENGES is made large to prevent a denial
@@ -377,34 +378,34 @@ typedef struct
 
 typedef struct
 {
-	netadr_t	adr;
-	int		challenge;
-	int		time;
+	netadr_t		adr;
+	int				challenge;
+	int				time;
 } challenge_t;
 
 typedef struct
 {
-	int		spawncount;		// number of servers spawned since start,
+	int				spawncount;		// number of servers spawned since start,
 						// used to check late spawns
-	int		lastuserid;		// userid of last spawned client
-	client_t	clients[MAX_CLIENTS];
-	int		serverflags;		// episode completion information
+	int				lastuserid;		// userid of last spawned client
+	client_t		clients[MAX_CLIENTS];
+	int				serverflags;		// episode completion information
 	
-	double		last_heartbeat;
-	int		heartbeat_sequence;
-	svstats_t	stats;
+	double			last_heartbeat;
+	int				heartbeat_sequence;
+	svstats_t		stats;
 
-	char		info[MAX_SERVERINFO_STRING];
+	char				info[MAX_SERVERINFO_STRING];
 
 	// log messages are used so that fraglog processes can get stats
-	int		logsequence;		// the message currently being filled
-	double		logtime;		// time of last swap
-	sizebuf_t	log[2];
-	byte		log_buf[2][MAX_DATAGRAM];
+	int				logsequence;		// the message currently being filled
+	double			logtime;		// time of last swap
+	sizebuf_t		log[2];
+	byte			log_buf[2][MAX_DATAGRAM];
 
-	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
+	challenge_t		challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
 
-	packet_t	*free_packets;
+	packet_t		*free_packets;
 } server_static_t;
 
 //=============================================================================
