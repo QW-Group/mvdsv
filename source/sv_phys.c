@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.16 2006/10/27 10:39:42 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.17 2006/10/29 17:27:24 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -517,6 +517,9 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 		block = SV_TestEntityPosition (check);
 		if (!block)
 		{
+			//if leaving it where it was, allow it to drop to the floor again (useful for plats that move downward)
+			//check->v->flags = (int)check->v->flags & ~FL_ONGROUND; // disconnect: is it needed?
+
 			num_moved--;
 			continue;
 		}
