@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.73 2006/10/27 14:58:12 disconn3ct Exp $
+	$Id: sv_user.c,v 1.74 2006/11/07 13:06:14 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -840,7 +840,9 @@ static qbool SV_DownloadNextFile (void)
 	}
 	if (!(name = SV_MVDNum(num)))
 	{
-		Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
+		Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n",
+			(num & 0xFF000000) ? -(num >> 24) : 
+				((num & 0x00800000) ? (num | 0xFF000000) : num) )));
 		return SV_DownloadNextFile();
 	}
 	//Con_Printf("downloading demos/%s\n",name);
@@ -1160,13 +1162,13 @@ static void SV_BeginDownload_f(void)
 	}
 	else if (!strncmp(name, "demonum/", 8))
 	{
-		int num;
-		if ((num = Q_atoi(name + 8)) == 0 && name[8] != '0')
+		int num = Q_atoi(name + 8);
+		if (num == 0 && name[8] != '0')
 		{
 			char *num_s = name + 8;
 			int num_s_len = strlen(num_s);
-			for (num = 0; -num < num_s_len; num--)
-				if (num_s[-num] != '.')
+			for (num = 0; num < num_s_len; num++)
+				if (num_s[num] != '.')
 				{
 					Con_Printf("usage: download demonum/nun\n"
 					           "if num is negative then download the Nth to last recorded demo, "
@@ -1175,15 +1177,16 @@ static void SV_BeginDownload_f(void)
 
 					goto deny_download;
 				}
-			num = -num;
-			num &= 16;
-			num <<= 14;
-			num |= 0xFFFC3FFF;
+			num &= 0xF;
+			num <<= 24;
 		}
+		else
+			num &= 0x00FFFFFF;
 		name = SV_MVDNum(num);
 		if (!name)
 		{
-			Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n", num)));
+			Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n",
+				(num & 0xFF000000) ? -(num >> 24) : ((num & 0x00800000) ? (num | 0xFF000000) : num) )));
 			goto deny_download;
 		}
 		//Con_Printf("downloading demos/%s\n",name);
@@ -1326,22 +1329,23 @@ static void SV_DemoDownload_f(void)
 	{
 		cmd_argv_i = Cmd_Argv(i);
 		cmd_argv_i_len = strlen(cmd_argv_i);
-		if ((num = Q_atoi(cmd_argv_i)) == 0 && cmd_argv_i[0] != '0')
+		num = Q_atoi(cmd_argv_i);
+		if (num == 0 && cmd_argv_i[0] != '0')
 		{
-			for (num = 0; -num < cmd_argv_i_len; num--)
-				if (cmd_argv_i[-num] != '.')
+			for (num = 0; num < cmd_argv_i_len; num++)
+				if (cmd_argv_i[num] != '.')
 				{
 					num = 0;
 					break;
 				}
 			if (num)
 			{
-				num = -num;
 				num &= 0xF;
-				num <<= 14;
-				num |= 0xFFFC3FFF;
+				num <<= 24;
 			}
 		}
+		else
+			num &= 0x00FFFFFF;
 		host_client->demonum[host_client->demonum[0] - i] = num;
 	}
 	SV_DownloadNextFile();
