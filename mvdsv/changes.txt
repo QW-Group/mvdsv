@@ -1,5 +1,17 @@
 
-$Id: changes.txt,v 1.111 2006/10/25 11:09:44 vvd0 Exp $
+$Id: changes.txt,v 1.112 2006/11/07 13:06:13 vvd0 Exp $
+
+MVDSV v0.25.01-CVS build 25?? (200?.??.??)
+----
+* VVD <vvd0@users.sourceforge.net>
+- changed internal 'cmd dl -N' - download the Nth to last demo from demodir - work like before
+  changes in 0.21
+
+* disconnect <disconn3ct@users.sourceforge.net>
+- qtv was updated to version v1
+- new cvar qtv_password - password for connecting to qtv
+- renamed cvars mvd_streamport and mvd_maxstreams to qtv_streamport and qtv_maxstreams
+
 
 MVDSV v0.25 build 2500 (2006.10.25)
 ----

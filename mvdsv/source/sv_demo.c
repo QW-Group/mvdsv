@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.59 2006/10/29 17:27:23 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.60 2006/11/07 13:06:14 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -2530,25 +2530,27 @@ char *SV_MVDNum(int num)
 {
 	file_t	*list;
 	dir_t	dir;
-	int num_dot;
 
 	if (!num)
 		return NULL;
 
 	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
-	if ((num_dot = (num & 0x0003C000)))
-		return lastdemosname[(lastdemospos - (num_dot >> 14) + 1) & 0xF];
+	if (num & 0xFF000000)
+		return lastdemosname[(lastdemospos - (num >> 24) + 1) & 0xF];
 
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
 
-	if (num > dir.numfiles || -num > dir.numfiles)
-		return NULL;
-
-	if (num < 0)
+	if (num & 0x00800000)
+	{
+		num |= 0xFF000000;
 		num += dir.numfiles;
-	else 
+	}
+	else
 		--num;
+
+	if (num > dir.numfiles)
+		return NULL;
 
 	while (list->name[0] && num) {list++; num--;}
 
