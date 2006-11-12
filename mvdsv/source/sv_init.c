@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_init.c,v 1.26 2006/10/26 20:47:14 disconn3ct Exp $
+	$Id: sv_init.c,v 1.27 2006/11/12 14:38:36 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -237,7 +237,11 @@ void SV_SpawnServer (char *mapname)
 	extern cvar_t version;
 	dfunction_t *f;
 	extern cvar_t sv_loadentfiles;
-	char		*entitystring;
+	char *entitystring;
+	char oldmap[MAP_NAME_LEN];
+
+	// store old map name
+	snprintf (oldmap, MAP_NAME_LEN, "%s", sv.mapname);
 
 	Con_DPrintf ("SpawnServer: %s\n",mapname);
 
@@ -347,14 +351,28 @@ void SV_SpawnServer (char *mapname)
 		svs.clients[i].old_frags = 0;
 	}
 
+	// fill sv.mapname and sv.modelname with new map name
 	strlcpy (sv.mapname, mapname, sizeof(sv.mapname));
 	snprintf (sv.modelname, sizeof(sv.modelname), "maps/%s.bsp", sv.mapname);
-	sv.worldmodel = CM_LoadMap (sv.modelname, false, &sv.map_checksum, &sv.map_checksum2);
 
-	//
-	// clear physics interaction links
-	//
-	SV_ClearWorld ();
+	if (!(sv.worldmodel = CM_LoadMap (sv.modelname, false, &sv.map_checksum, &sv.map_checksum2))) // true if bad map
+	{
+		Con_Printf ("Cant load map %s, falling back to %s\n", mapname, oldmap);
+
+		// fill mapname, sv.mapname and sv.modelname with old map name
+		strlcpy (sv.mapname, oldmap, sizeof(sv.mapname)); 
+		snprintf (sv.modelname, sizeof(sv.modelname), "maps/%s.bsp", sv.mapname);
+		mapname = oldmap;
+
+		// and re-load old map
+		sv.worldmodel = CM_LoadMap (sv.modelname, false, &sv.map_checksum, &sv.map_checksum2);
+
+		// this should never happen
+		if (!sv.worldmodel)
+			SV_Error ("CM_LoadMap: bad map");
+	}
+
+	SV_ClearWorld (); // clear physics interaction links
 
 #ifdef USE_PR2
 	if ( sv_vm )
