@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.74 2006/11/07 13:06:14 vvd0 Exp $
+	$Id: sv_user.c,v 1.75 2006/11/20 11:13:15 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1393,20 +1393,32 @@ static void SV_Say (qbool team)
 	int	j, tmp, cls = 0;
 	char	*p;
 	char	*i;
-	char	text[2048];
+	char	text[2048] = {0};
 
 	if (Cmd_Argc () < 2)
 		return;
 
 	p = Cmd_Args();
 
-	if (*p == '"')
-	{
-		p++;
-		p[strlen(p)-1] = 0;
-	}
+	//bliP: kick fake ->
+	if (!team)
+		for (i = p; *i; i++) //bliP: 24/9 kickfake to unfake ->
+			if (*i == 13 && (int)sv_unfake.value) // ^M
+				*i = '#';
+	//<-
 
-	strlcpy(text,    p, sizeof(text));
+	if (*p == '"')
+	{ // remove surrounding "
+		p++;
+		strlcat(text, p, sizeof(text));
+		text[max(0,strlen(text)-1)] = 0; // actualy here we remove closing ", but without any check, just in hope...
+#ifdef USE_PR2
+		if ( !sv_vm )
+#endif
+			p[strlen(p)-1] = 0; // here remove closing " only for QC based mods
+	}
+	else
+		strlcat(text, p, sizeof(text));
 	strlcat(text, "\n", sizeof(text));
 
 	if (!host_client->logged)
@@ -1489,14 +1501,6 @@ static void SV_Say (qbool team)
 			host_client->whensaidhead = 0;
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
-
-	//bliP: kick fake ->
-	if (!team)
-		for (i = p; *i; i++)
-			//bliP: 24/9 kickfake to unfake ->
-			if (*i == 13 && (int)sv_unfake.value) // ^M
-				*i = '#';
-	//<-
 
 	Sys_Printf ("%s", text);
 	SV_Write_Log(CONSOLE_LOG, 1, text);

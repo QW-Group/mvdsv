@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.112 2006/11/07 13:06:13 vvd0 Exp $
+$Id: changes.txt,v 1.113 2006/11/20 11:12:45 qqshka Exp $
 
 MVDSV v0.25.01-CVS build 25?? (200?.??.??)
 ----
@@ -11,6 +11,9 @@ MVDSV v0.25.01-CVS build 25?? (200?.??.??)
 - qtv was updated to version v1
 - new cvar qtv_password - password for connecting to qtv
 - renamed cvars mvd_streamport and mvd_maxstreams to qtv_streamport and qtv_maxstreams
+
+* qqshka <qqshka@users.sourceforge.net>
+- changed QVM API version to 11 due to i've add G_CMD_TOKENIZE, g_strlcpy, g_strlcat.
 
 
 MVDSV v0.25 build 2500 (2006.10.25)

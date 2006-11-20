@@ -20,7 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: g_public.h,v 1.9 2006/10/04 23:03:44 qqshka Exp $
+ *  $Id: g_public.h,v 1.10 2006/11/20 11:13:15 qqshka Exp $
  */
 
 #ifndef __G_PUBLIC_H__
@@ -31,7 +31,7 @@
 //
 // g_public.h -- game module information visible to server
 
-#define	GAME_API_VERSION	10
+#define	GAME_API_VERSION	11
 
 
 //===============================================================
@@ -132,7 +132,12 @@ typedef enum
 	G_Remove_Bot,
 	G_SetBotUserInfo,
 	G_SetBotCMD,
-	G_QVMstrftime
+	G_QVMstrftime,
+	G_CMD_ARGS,
+	G_CMD_TOKENIZE,
+	g_strlcpy,
+	g_strlcat
+
 } gameImport_t;
 
 // !!! new things comes to end of list !!!
