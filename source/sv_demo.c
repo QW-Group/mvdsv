@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.60 2006/11/07 13:06:14 vvd0 Exp $
+    $Id: sv_demo.c,v 1.61 2006/11/20 17:05:54 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -81,7 +81,7 @@ cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
 cvar_t	sv_demoClearOld = {"sv_demoClearOld", "0"}; //bliP: 24/9 clear old demos
 qbool sv_demoDir_OnChange(cvar_t *cvar, char *value);
 cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
-cvar_t	sv_demofps = {"sv_demofps", "20"};
+cvar_t	sv_demofps = {"sv_demofps", "30"};
 cvar_t	sv_demoPings = {"sv_demopings", "3"};
 cvar_t	sv_demoNoVis = {"sv_demonovis", "1"};
 cvar_t	sv_demoMaxSize  = {"sv_demoMaxSize", "20480"};
