@@ -1,19 +1,25 @@
 
-$Id: changes.txt,v 1.113 2006/11/20 11:12:45 qqshka Exp $
+$Id: changes.txt,v 1.114 2006/11/20 17:05:52 vvd0 Exp $
 
-MVDSV v0.25.01-CVS build 25?? (200?.??.??)
+MVDSV v0.25.02-CVS build 25?? (200?.??.??)
 ----
+* qqshka <qqshka@users.sourceforge.net>
+- changed QVM API version to 11 due to i've add G_CMD_TOKENIZE, g_strlcpy, g_strlcat.
+
 * VVD <vvd0@users.sourceforge.net>
+- default value for sv_demofps increased from 20 to 30
+- bugfix from 0.19.20-develop: pause with sv_minping > 0 cause server inaccessible -
+  bug in ZQuake's minping ported by disconnect (Tonik, disconnect, hello :-))
 - changed internal 'cmd dl -N' - download the Nth to last demo from demodir - work like before
   changes in 0.21
+- increased maximum of fps in qwdtools from 100 to 1000
 
 * disconnect <disconn3ct@users.sourceforge.net>
+- changed behavior of server while loading corrupted maps: load previous map instead SV_Error
+  (quit with error)
 - qtv was updated to version v1
 - new cvar qtv_password - password for connecting to qtv
 - renamed cvars mvd_streamport and mvd_maxstreams to qtv_streamport and qtv_maxstreams
-
-* qqshka <qqshka@users.sourceforge.net>
-- changed QVM API version to 11 due to i've add G_CMD_TOKENIZE, g_strlcpy, g_strlcat.
 
 
 MVDSV v0.25 build 2500 (2006.10.25)
@@ -24,7 +30,6 @@ MVDSV v0.25 build 2500 (2006.10.25)
 * VVD <vvd0@users.sourceforge.net>
 - optimized SV_DirSizeCheck - used every time on demo record start
 - small optimization in Sys_listdir (used, for example, in 'cmd dlist')
-- increased maximum of fps in qwdtools from 100 to 1000
 - replaced last 2 dangerous strcpy with strlcpy in qwdtools
 
 * disconnect <disconn3ct@users.sourceforge.net>
