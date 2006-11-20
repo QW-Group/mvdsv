@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.37 2006/10/26 20:47:13 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.38 2006/11/20 11:13:15 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -1663,6 +1663,28 @@ void PF2_cmdargv(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 	strlcpy(VM_POINTER(base,mask,stack[1].string), Cmd_Argv(stack[0]._int), stack[2]._int);
 }
 
+/*
+==============
+PF2_cmdargs
+==============
+*/
+void PF2_cmdargs(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+//(char *valbuff, int sizebuff)
+{
+	strlcpy(VM_POINTER(base,mask,stack[0].string), Cmd_Args(), stack[1]._int);
+}
+
+/*
+==============
+PF2_tokenize
+==============
+*/
+void PF2_tokenize(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+//(char *str)
+{
+	Cmd_TokenizeString(VM_POINTER(base,mask,stack[0].string));
+}
+
 void PF2_fixme(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 }
@@ -2118,6 +2140,16 @@ void PF2_strnicmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	                            VM_POINTER(base,mask,stack[1].string),stack[2]._int);
 }
 
+void PF2_strlcpy(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{ // (char *dst, char *src, size_t siz)
+	retval->_int = strlcpy( VM_POINTER(base,mask,stack[0].string), VM_POINTER(base,mask,stack[1].string), stack[2]._int );
+}
+
+void PF2_strlcat(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{ // (char *dst, char *src, size_t siz)
+	retval->_int = strlcat( VM_POINTER(base,mask,stack[0].string), VM_POINTER(base,mask,stack[1].string), stack[2]._int );
+}
+
 /////////Bot Functions
 extern cvar_t maxclients, maxspectators;
 void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
@@ -2504,7 +2536,11 @@ pr2_trapcall_t pr2_API[]=
         PF2_Remove_Bot,
         PF2_SetBotUserInfo,
         PF2_SetBotCMD,
-		PF2_QVMstrftime	// G_QVMstrftime
+		PF2_QVMstrftime,	//G_QVMstrftime
+		PF2_cmdargs,		//G_CMD_ARGS
+		PF2_tokenize,		//G_CMD_TOKENIZE
+		PF2_strlcpy,		//g_strlcpy
+		PF2_strlcat			//g_strlcat
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 
