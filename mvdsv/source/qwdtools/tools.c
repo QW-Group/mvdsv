@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: tools.c,v 1.17 2006/08/10 10:33:45 vvd0 Exp $
+    $Id: tools.c,v 1.18 2006/11/25 23:26:21 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -118,29 +118,29 @@ void MSG_WriteAngle16 (sizebuf_t *sb, float f)
 	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
 }
 
-void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
+void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from1, usercmd_t *cmd)
 {
-	int		bits;
+	int bits;
 
 	//
 	// send the movement message
 	//
 	bits = 0;
-	if (cmd->angles[0] != from->angles[0])
+	if (cmd->angles[0] != from1->angles[0])
 		bits |= CM_ANGLE1;
-	if (cmd->angles[1] != from->angles[1])
+	if (cmd->angles[1] != from1->angles[1])
 		bits |= CM_ANGLE2;
-	if (cmd->angles[2] != from->angles[2])
+	if (cmd->angles[2] != from1->angles[2])
 		bits |= CM_ANGLE3;
-	if (cmd->forwardmove != from->forwardmove)
+	if (cmd->forwardmove != from1->forwardmove)
 		bits |= CM_FORWARD;
-	if (cmd->sidemove != from->sidemove)
+	if (cmd->sidemove != from1->sidemove)
 		bits |= CM_SIDE;
-	if (cmd->upmove != from->upmove)
+	if (cmd->upmove != from1->upmove)
 		bits |= CM_UP;
-	if (cmd->buttons != from->buttons)
+	if (cmd->buttons != from1->buttons)
 		bits |= CM_BUTTONS;
-	if (cmd->impulse != from->impulse)
+	if (cmd->impulse != from1->impulse)
 		bits |= CM_IMPULSE;
 
 	MSG_WriteByte (buf, bits);
@@ -352,11 +352,11 @@ float MSG_ReadAngle16 (void)
 	return MSG_ReadShort() * (360.0/65536);
 }
 
-void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
+void MSG_ReadDeltaUsercmd (usercmd_t *from1, usercmd_t *move)
 {
 	int bits;
 
-	memcpy (move, from, sizeof(*move));
+	memcpy (move, from1, sizeof(*move));
 
 	bits = MSG_ReadByte ();
 
@@ -490,7 +490,7 @@ Message is cleared from demobuf after that
 ==============
 */
 
-void SV_MVDWriteToDisk(sizebuf_t *buf, int type, int to, float time)
+void SV_MVDWriteToDisk(sizebuf_t *buf, int type, int to, float time1)
 {
 	int pos = 0;
 	header_t *p;
@@ -513,7 +513,7 @@ void SV_MVDWriteToDisk(sizebuf_t *buf, int type, int to, float time)
 				msg.data = p->data;
 				msg.cursize = size;
 
-				WriteDemoMessage(&msg, p->type, p->to, time);
+				WriteDemoMessage(&msg, p->type, p->to, time1);
 			}
 
 			// data is written so it need to be cleard from demobuf
@@ -688,7 +688,7 @@ WriteDemoMessage
 Dumps the current net message, prefixed by the length and time
 ====================
 */
-void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
+void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time1)
 {
 	int		len, i, msec;
 	byte	c;
@@ -697,10 +697,10 @@ void WriteDemoMessage (sizebuf_t *msg, int type, int to, float time)
 	if (sworld.demo.file == NULL)
 		return;
 
-	msec = (int)((time - prevtime) * 1000);
+	msec = (int)((time1 - prevtime) * 1000);
 	prevtime += msec * 0.001;
 
-	//Sys_Printf("%f %f\n", time, prevtime);
+	//Sys_Printf("%f %f\n", time1, prevtime);
 
 	if (!world.signonloaded)
 		msec = 0;
@@ -791,7 +791,7 @@ void ForceExtension (char *path, char *extension)
 	strncat (path, extension, MAX_OSPATH);
 }
 
-char *TemplateName (char *from, char *to, char *ch)
+char *TemplateName (char *from1, char *to, char *ch)
 {
 	static char name[MAX_OSPATH];
 	char tmp[MAX_OSPATH];
@@ -802,7 +802,7 @@ char *TemplateName (char *from, char *to, char *ch)
 	if ( !(p = strstr(to, ch)) )
 		return to;
 
-	COM_StripExtension(from, tmp);
+	COM_StripExtension(from1, tmp);
 	strlcpy(name, to, p - to);
 	strlcat(name, va("%s%s", tmp, p + 1), sizeof(name));
 

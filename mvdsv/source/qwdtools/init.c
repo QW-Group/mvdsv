@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: init.c,v 1.15 2006/10/31 14:50:31 vvd0 Exp $
+    $Id: init.c,v 1.16 2006/11/25 23:26:21 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -464,7 +464,7 @@ Init file system
 
 int Files_Init (int options)
 {
-	char *p, log[MAX_OSPATH], debug[MAX_OSPATH], convert[MAX_OSPATH], out[MAX_OSPATH], analyse[MAX_OSPATH], d[MAX_OSPATH];
+	char *p, log1[MAX_OSPATH], debug[MAX_OSPATH], convert[MAX_OSPATH], out[MAX_OSPATH], analyse[MAX_OSPATH], d[MAX_OSPATH];
 	int job = 0, i;
 
 	if (!strcmp(currentDir, sworld.from->path))
@@ -484,7 +484,7 @@ int Files_Init (int options)
 	strlcpy(convert, TemplateName(p, sworld.demo.name, "*"), sizeof(convert));
 	ForceExtension(convert, ".mvd");
 
-	strlcpy(log, TemplateName(p, sworld.log.name, "*"), sizeof(log));
+	strlcpy(log1, TemplateName(p, sworld.log.name, "*"), sizeof(log1));
 	strlcpy(debug, TemplateName(p, sworld.debug.name, "*"), sizeof(debug));
 	strlcpy(out, TemplateName(p, out, "*"), sizeof(out));
 	strlcpy(analyse, TemplateName(p, sworld.analyse.name, "*"), sizeof(analyse));
@@ -502,7 +502,7 @@ int Files_Init (int options)
 
 	snprintf(analyse, sizeof(analyse), "%s", va("%s%s", out, analyse));
 	snprintf(convert, sizeof(convert), "%s", va("%s%s", out, convert));
-	snprintf(log, sizeof(log), "%s", va("%s%s", out, log));
+	snprintf(log1, sizeof(log1), "%s", va("%s%s", out, log1));
 	snprintf(debug, sizeof(debug), "%s", va("%s%s", out, debug));
 
 	// open source file(s)
@@ -566,7 +566,7 @@ int Files_Init (int options)
 
 	if (options & O_LOG)
 	{
-		sworld.log.file = openFile(log, " log", O_LOG, _O_TEXT);
+		sworld.log.file = openFile(log1, " log", O_LOG, _O_TEXT);
 		if (sworld.log.file)
 			job |= O_LOG;
 	}
