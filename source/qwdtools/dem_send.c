@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_send.c,v 1.7 2006/07/05 17:08:16 disconn3ct Exp $
+	$Id: dem_send.c,v 1.8 2006/11/25 23:26:21 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -371,20 +371,20 @@ EmitPacketEntities
 Writes a delta update of a packet_entities_t to the message.
 =============
 */
-void EmitPacketEntities (sizebuf_t *msg, packet_entities_t *to)
+static void EmitPacketEntities (sizebuf_t *msg, packet_entities_t *to)
 {
-	frame_t	*fromframe;
-	packet_entities_t *from;
-	int		oldindex, newindex;
-	int		oldnum, newnum;
-	int		oldmax;
+	frame_t *fromframe;
+	packet_entities_t *from1;
+	int oldindex, newindex;
+	int oldnum, newnum;
+	int oldmax;
 
 	// this is the frame that we are going to delta update from
 	if (world.delta_sequence != -1)
 	{
 		fromframe = &world.frames[world.delta_sequence & UPDATE_MASK];
-		from = &fromframe->packet_entities;
-		oldmax = from->num_entities;
+		from1 = &fromframe->packet_entities;
+		oldmax = from1->num_entities;
 
 		MSG_WriteByte (msg, svc_deltapacketentities);
 		MSG_WriteByte (msg, world.delta_sequence);
@@ -392,7 +392,7 @@ void EmitPacketEntities (sizebuf_t *msg, packet_entities_t *to)
 	else
 	{
 		oldmax = 0;	// no delta update
-		from = NULL;
+		from1 = NULL;
 
 		MSG_WriteByte (msg, svc_packetentities);
 	}
@@ -404,12 +404,12 @@ void EmitPacketEntities (sizebuf_t *msg, packet_entities_t *to)
 	while (newindex < to->num_entities || oldindex < oldmax)
 	{
 		newnum = newindex >= to->num_entities ? 9999 : to->entities[newindex].number;
-		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
+		oldnum = oldindex >= oldmax ? 9999 : from1->entities[oldindex].number;
 
 		if (newnum == oldnum)
 		{	// delta update from old position
 			//Con_Printf ("delta %i\n", newnum);
-			WriteDelta (&from->entities[oldindex], &to->entities[newindex], msg, false);
+			WriteDelta (&from1->entities[oldindex], &to->entities[newindex], msg, false);
 			oldindex++;
 			newindex++;
 			continue;

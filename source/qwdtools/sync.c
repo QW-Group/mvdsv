@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sync.c,v 1.8 2006/05/26 14:39:28 disconn3ct Exp $
+    $Id: sync.c,v 1.9 2006/11/25 23:26:21 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -274,7 +274,7 @@ float demcmp(source_t *d1, source_t *d2)
 	return sr/c;
 }
 
-qbool SetComparisionDemo(source_t *dem, float time)
+qbool SetComparisionDemo(source_t *dem, float time1)
 {
 	int num;
 
@@ -282,7 +282,7 @@ qbool SetComparisionDemo(source_t *dem, float time)
 	num = from - sources;
 
 	dem->running = (1 << (dem - sources));
-	if (from->lastframe > time) // rewind
+	if (from->lastframe > time1) // rewind
 	{
 		from->netchan.incoming_sequence = 0;
 		from->netchan.incoming_acknowledged= 0;
@@ -296,8 +296,8 @@ qbool SetComparisionDemo(source_t *dem, float time)
 		ReadPackets();
 	}
 
-	if (time > from->lastframe)
-		from->lastframe = time;
+	if (time1 > (from->lastframe))
+		from->lastframe = time1;
 
 	ReadPackets();
 
