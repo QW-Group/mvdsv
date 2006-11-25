@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.38 2006/11/20 11:13:15 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.39 2006/11/25 23:32:37 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -1614,12 +1614,12 @@ void(entiny whom, float time) disable_updates
 void PF2_disable_updates(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 //(int entnum, float time)
 {
-	client_t	*client;
-	int 		entnum = stack[0]._int;
-	float		time   = stack[1]._float;
+	client_t *client;
+	int entnum = stack[0]._int;
+	float time1   = stack[1]._float;
 
 	//	entnum = G_EDICTNUM(OFS_PARM0);
-	//	time = G_FLOAT(OFS_PARM1);
+	//	time1 = G_FLOAT(OFS_PARM1);
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 	{
@@ -1629,7 +1629,7 @@ void PF2_disable_updates(byte* base, unsigned int mask, pr2val_t* stack, pr2val_
 
 	client = &svs.clients[entnum - 1];
 
-	client->disable_updates_stop = realtime + time;
+	client->disable_updates_stop = realtime + time1;
 }
 
 /*

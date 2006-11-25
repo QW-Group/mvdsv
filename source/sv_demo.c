@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.61 2006/11/20 17:05:54 vvd0 Exp $
+    $Id: sv_demo.c,v 1.62 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -68,7 +68,7 @@ typedef struct mvddest_s
 } mvddest_t;
 mvddest_t *singledest;
 
-mvddest_t *SV_InitStream(int socket);
+mvddest_t *SV_InitStream(int socket1);
 static qbool SV_MVD_Record (mvddest_t *dest);
 
 #define MAXSIZE (demobuffer->end < demobuffer->last ? \
@@ -99,7 +99,7 @@ cvar_t	sv_onrecordfinish = {"sv_onRecordFinish", ""};
 cvar_t	sv_ondemoremove = {"sv_onDemoRemove", ""};
 cvar_t	sv_demoRegexp = {"sv_demoRegexp", "\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
-void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time);
+void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1);
 
 demo_t			demo;
 static dbuffer_t	*demobuffer;
@@ -267,9 +267,9 @@ void SV_MVD_RunPendingConnections(void)
 			}
 			else
 			{	//error of some kind. would block or something
-				int e;
-				e = qerrno;
-				if (e != EWOULDBLOCK)
+				int err;
+				err = qerrno;
+				if (err != EWOULDBLOCK)
 					p->error = true;
 			}
 		}
@@ -569,9 +569,9 @@ void SV_MVD_RunPendingConnections(void)
 				p->error = true;
 			else
 			{	//error of some kind. would block or something
-				int e;
-				e = qerrno;
-				if (e != EWOULDBLOCK)
+				int err;
+				err = qerrno;
+				if (err != EWOULDBLOCK)
 					p->error = true;
 			}
 		}
@@ -765,7 +765,7 @@ Message is cleared from demobuf after that
 ==============
 */
 
-void SV_MVDWriteToDisk(int type, int to, float time)
+void SV_MVDWriteToDisk(int type, int to, float time1)
 {
 	int pos = 0, oldm, oldd;
 	header_t *p;
@@ -790,7 +790,7 @@ void SV_MVDWriteToDisk(int type, int to, float time)
 				msg.data = p->data;
 				msg.cursize = size;
 
-				SV_WriteMVDMessage(&msg, p->type, p->to, time);
+				SV_WriteMVDMessage(&msg, p->type, p->to, time1);
 			}
 
 			// data is written so it need to be cleard from demobuf
@@ -923,7 +923,7 @@ SV_WriteMVDMessage
 Dumps the current net message, prefixed by the length and view angles
 ====================
 */
-void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time)
+void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
 {
 	int		len, i, msec;
 	byte	c;
@@ -932,7 +932,7 @@ void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time)
 	if (!sv.mvdrecording)
 		return;
 
-	msec = (time - prevtime)*1000;
+	msec = (time1 - prevtime)*1000;
 	prevtime += msec*0.001;
 	if (msec > 255) msec = 255;
 	if (msec < 2) msec = 0;
@@ -1029,7 +1029,7 @@ void SV_MVDWritePackets (int num)
 	demo_client_t	*cl, *nextcl = NULL;
 	int		i, j, flags;
 	qbool		valid;
-	double		time, playertime, nexttime;
+	double		time1, playertime, nexttime;
 	float		f;
 	vec3_t		origin, angles;
 	sizebuf_t	msg;
@@ -1049,7 +1049,7 @@ void SV_MVDWritePackets (int num)
 	for ( ; num; num--, demo.lastwritten++)
 	{
 		frame = &demo.frames[demo.lastwritten&DEMO_FRAMES_MASK];
-		time = frame->time;
+		time1 = frame->time;
 		nextframe = frame;
 		msg.cursize = 0;
 
@@ -1063,9 +1063,9 @@ void SV_MVDWritePackets (int num)
 			if (cl->parsecount != demo.lastwritten)
 				continue; // not valid
 
-			nexttime = playertime = time - cl->sec;
+			nexttime = playertime = time1 - cl->sec;
 
-			for (j = demo.lastwritten+1, valid = false; nexttime < time && j < demo.parsecount; j++)
+			for (j = demo.lastwritten+1, valid = false; nexttime < time1 && j < demo.parsecount; j++)
 			{
 				nextframe = &demo.frames[j&DEMO_FRAMES_MASK];
 				nextcl = &nextframe->clients[i];
@@ -1079,7 +1079,7 @@ void SV_MVDWritePackets (int num)
 
 				nexttime = nextframe->time - nextcl->sec;
 
-				if (nexttime >= time)
+				if (nexttime >= time1)
 				{
 					// good, found what we were looking for
 					valid = true;
@@ -1089,7 +1089,7 @@ void SV_MVDWritePackets (int num)
 
 			if (valid)
 			{
-				f = (time - nexttime)/(nexttime - playertime);
+				f = (time1 - nexttime)/(nexttime - playertime);
 				for (j=0;j<3;j++)
 				{
 					angles[j] = adjustangle(cl->info.angles[j], nextcl->info.angles[j],1.0+f);
@@ -1165,10 +1165,10 @@ void SV_MVDWritePackets (int num)
 			demoinfo->model = cl->info.model;
 		}
 
-		SV_MVDWriteToDisk(demo.lasttype,demo.lastto, (float)time); // this goes first to reduce demo size a bit
-		SV_MVDWriteToDisk(0,0, (float)time); // now goes the rest
+		SV_MVDWriteToDisk(demo.lasttype,demo.lastto, (float)time1); // this goes first to reduce demo size a bit
+		SV_MVDWriteToDisk(0,0, (float)time1); // now goes the rest
 		if (msg.cursize)
-			SV_WriteMVDMessage(&msg, dem_all, 0, (float)time);
+			SV_WriteMVDMessage(&msg, dem_all, 0, (float)time1);
 	}
 
 	if (demo.lastwritten > demo.parsecount)
@@ -1395,14 +1395,14 @@ mvddest_t *SV_InitRecordFile (char *name)
 	return dst;
 }
 
-mvddest_t *SV_InitStream(int socket)
+mvddest_t *SV_InitStream(int socket1)
 {
 	mvddest_t *dst;
 
 	dst = (mvddest_t *) Q_malloc (sizeof(mvddest_t));
 
 	dst->desttype = DEST_STREAM;
-	dst->socket = socket;
+	dst->socket = socket1;
 	dst->maxcachesize = 0x8000;	//is this too small?
 	dst->cache = (char *) Q_malloc(dst->maxcachesize);
 
@@ -1411,12 +1411,12 @@ mvddest_t *SV_InitStream(int socket)
 	return dst;
 }
 
-void SV_MVD_InitPendingStream(int socket, char *ip)
+void SV_MVD_InitPendingStream(int socket1, char *ip)
 {
 	mvdpendingdest_t *dst;
 	unsigned int i;
 	dst = (mvdpendingdest_t*) Q_malloc(sizeof(mvdpendingdest_t));
-	dst->socket = socket;
+	dst->socket = socket1;
 
 	strlcpy(dst->challenge, ip, sizeof(dst->challenge));
 	for (i = strlen(dst->challenge); i < sizeof(dst->challenge)-1; i++)
@@ -2053,27 +2053,27 @@ char *Dem_Team(int num)
 	static char *lastteam[2];
 	qbool first = true;
 	client_t *client;
-	static int index = 0;
+	static int index1 = 0;
 
-	index = 1 - index;
+	index1 = 1 - index1;
 
 	for (i = 0, client = svs.clients; num && i < MAX_CLIENTS; i++, client++)
 	{
 		if (!client->name[0] || client->spectator)
 			continue;
 
-		if (first || strcmp(lastteam[index], client->team))
+		if (first || strcmp(lastteam[index1], client->team))
 		{
 			first = false;
 			num--;
-			lastteam[index] = client->team;
+			lastteam[index1] = client->team;
 		}
 	}
 
 	if (num)
 		return "";
 
-	return lastteam[index];
+	return lastteam[index1];
 }
 
 char *Dem_PlayerName(int num)

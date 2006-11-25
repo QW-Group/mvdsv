@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_sys_unix.c,v 1.52 2006/10/26 20:47:14 disconn3ct Exp $
+    $Id: sv_sys_unix.c,v 1.53 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -59,17 +59,17 @@ int	Sys_FileTime (char *path)
 	return stat(path, &buf) == -1 ? -1 : buf.st_mtime;
 }
 
-int Sys_FileSizeTime (char *path, int *time)
+int Sys_FileSizeTime (char *path, int *time1)
 {
 	struct stat buf;
 	if (stat(path, &buf) == -1)
 	{
-		*time = -1;
+		*time1 = -1;
 		return 0;
 	}
 	else
 	{
-		*time = buf.st_mtime;
+		*time1 = buf.st_mtime;
 		return buf.st_size;
 	}
 }
@@ -674,7 +674,7 @@ main
 void PR_CleanLogText_Init(void);
 int main (int argc, char *argv[])
 {
-	double time, oldtime, newtime;
+	double time1, oldtime, newtime;
 	quakeparms_t parms;
 
 	int j;
@@ -855,10 +855,10 @@ int main (int argc, char *argv[])
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
-		time = newtime - oldtime;
+		time1 = newtime - oldtime;
 		oldtime = newtime;
 
-		SV_Frame (time);
+		SV_Frame (time1);
 
 		// extrasleep is just a way to generate a fucked up connection on purpose
 		if ((int)sys_extrasleep.value)

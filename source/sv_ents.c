@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.13 2006/10/26 20:47:14 disconn3ct Exp $
+	$Id: sv_ents.c,v 1.14 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -210,7 +210,7 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 {
 	int oldindex, newindex, oldnum, newnum, oldmax;
 	client_frame_t	*fromframe;
-	packet_entities_t *from;
+	packet_entities_t *from1;
 	edict_t	*ent;
 
 
@@ -218,8 +218,8 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 	if (client->delta_sequence != -1)
 	{
 		fromframe = &client->frames[client->delta_sequence & UPDATE_MASK];
-		from = &fromframe->entities;
-		oldmax = from->num_entities;
+		from1 = &fromframe->entities;
+		oldmax = from1->num_entities;
 
 		MSG_WriteByte (msg, svc_deltapacketentities);
 		MSG_WriteByte (msg, client->delta_sequence);
@@ -227,7 +227,7 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 	else
 	{
 		oldmax = 0;	// no delta update
-		from = NULL;
+		from1 = NULL;
 
 		MSG_WriteByte (msg, svc_packetentities);
 	}
@@ -239,12 +239,12 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 	while (newindex < to->num_entities || oldindex < oldmax)
 	{
 		newnum = newindex >= to->num_entities ? 9999 : to->entities[newindex].number;
-		oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
+		oldnum = oldindex >= oldmax ? 9999 : from1->entities[oldindex].number;
 
 		if (newnum == oldnum)
 		{	// delta update from old position
 			//Con_Printf ("delta %i\n", newnum);
-			SV_WriteDelta (&from->entities[oldindex], &to->entities[newindex], msg, false);
+			SV_WriteDelta (&from1->entities[oldindex], &to->entities[newindex], msg, false);
 			oldindex++;
 			newindex++;
 			continue;
@@ -254,7 +254,7 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 		{	// this is a new entity, send it from the baseline
 			if (newnum == 9999)
 			{
-				Sys_Printf("LOL, %d, %d, %d, %d %d %d\n",
+				Sys_Printf("LOL, %d, %d, %d, %d %d %d\n", // nice message
 				           newnum, oldnum, to->num_entities, oldmax,
 				           client->netchan.incoming_sequence & UPDATE_MASK,
 				           client->delta_sequence & UPDATE_MASK);

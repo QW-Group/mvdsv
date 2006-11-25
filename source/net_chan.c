@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: net_chan.c,v 1.14 2006/10/27 10:39:42 disconn3ct Exp $
+
+   $Id: net_chan.c,v 1.15 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -31,10 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 packet header
 -------------
-31	sequence
-1	does this message contain a reliable payload
-31	acknowledge sequence
-1	acknowledge receipt of even/odd message
+31  sequence
+1   does this message contain a reliable payload
+31  acknowledge sequence
+1   acknowledge receipt of even/odd message
 16  qport
 
 The remote connection never knows if it missed a reliable message, the
@@ -76,19 +76,19 @@ to the new value before sending out any replies.
 
 */
 
-cvar_t	showpackets = {"showpackets", "0"};
-cvar_t	showdrop = {"showdrop", "0"};
-cvar_t	qport = {"qport", "0"};
+cvar_t showpackets = {"showpackets", "0"};
+cvar_t showdrop = {"showdrop", "0"};
+cvar_t qport = {"qport", "0"};
 
 /*
 ===============
 Netchan_Init
- 
+
 ===============
 */
 void Netchan_Init (void)
 {
-	int		port = 0xffff;
+	int port = 0xffff;
 
 	// pick a port value that should be nice and random
 	srand((unsigned)time(NULL));
@@ -103,7 +103,7 @@ void Netchan_Init (void)
 	Cvar_Register (&showpackets);
 	Cvar_Register (&showdrop);
 	Cvar_Register (&qport);
-	Cvar_SetValue(&qport, port);
+	Cvar_SetValue (&qport, port);
 }
 
 /*
@@ -115,19 +115,19 @@ Sends an out-of-band datagram
 */
 void Netchan_OutOfBand (netadr_t adr, int length, byte *data)
 {
-	sizebuf_t	send;
-	byte		send_buf[MAX_MSGLEN + PACKET_HEADER];
+	sizebuf_t send1;
+	byte send_buf[MAX_MSGLEN + PACKET_HEADER];
 
 	// write the packet header
-	send.data = send_buf;
-	send.maxsize = sizeof(send_buf);
-	send.cursize = 0;
+	send1.data = send_buf;
+	send1.maxsize = sizeof(send_buf);
+	send1.cursize = 0;
 
-	MSG_WriteLong (&send, -1);	// -1 sequence means out of band
-	SZ_Write (&send, data, length);
+	MSG_WriteLong (&send1, -1);	// -1 sequence means out of band
+	SZ_Write (&send1, data, length);
 
 	// send the datagram
-	NET_SendPacket (send.cursize, send.data, adr);
+	NET_SendPacket (send1.cursize, send1.data, adr);
 }
 
 /*
@@ -139,13 +139,12 @@ Sends a text message in an out-of-band datagram
 */
 void Netchan_OutOfBandPrint (netadr_t adr, char *format, ...)
 {
-	va_list		argptr;
-	static char		string[8192];		// ??? why static? - make program look big :-D
+	va_list argptr;
+	static char string[8192]; // ??? why static? - make program look big :-D
 
 	va_start (argptr, format);
 	vsnprintf (string, sizeof(string), format, argptr);
 	va_end (argptr);
-
 
 	Netchan_OutOfBand (adr, strlen(string), (byte *)string);
 }
@@ -158,19 +157,16 @@ Netchan_Setup
 called to open a channel to a remote system
 ==============
 */
-void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
+void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport1)
 {
 	memset (chan, 0, sizeof(*chan));
 
 	chan->remote_address = adr;
 	chan->last_received = realtime;
-
 	chan->message.data = chan->message_buf;
 	chan->message.allowoverflow = true;
 	chan->message.maxsize = sizeof(chan->message_buf);
-
-	chan->qport = qport;
-
+	chan->qport = qport1;
 	chan->rate = 1.0/2500;
 }
 
@@ -178,7 +174,7 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
 /*
 ===============
 Netchan_CanPacket
- 
+
 Returns true if the bandwidth choke isn't active
 ================
 */
@@ -194,36 +190,36 @@ qbool Netchan_CanPacket (netchan_t *chan)
 /*
 ===============
 Netchan_CanReliable
- 
+
 Returns true if the bandwidth choke isn't 
 ================
 */
 qbool Netchan_CanReliable (netchan_t *chan)
 {
 	if (chan->reliable_length)
-		return false;			// waiting for ack
+		return false; // waiting for ack
 	return Netchan_CanPacket (chan);
 }
 
 /*
 ===============
 Netchan_Transmit
- 
+
 tries to send an unreliable message to a connection, and handles the
 transmition / retransmition of the reliable messages.
- 
+
 A 0 length will still generate a packet and deal with the reliable messages.
 ================
 */
 void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 {
-	sizebuf_t	send;
-	byte		send_buf[MAX_MSGLEN + PACKET_HEADER];
-	qbool		send_reliable;
-	unsigned	w1, w2;
-	int			i;
-	static double	last_error_time = 0;
-	double	current_time;
+	sizebuf_t send1;
+	byte send_buf[MAX_MSGLEN + PACKET_HEADER];
+	qbool send_reliable;
+	unsigned w1, w2;
+	int i;
+	static double last_error_time = 0;
+	double current_time;
 
 	// check for message overflow
 	current_time = Sys_DoubleTime();
@@ -257,40 +253,40 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	}
 
 	// write the packet header
-	send.data = send_buf;
-	send.maxsize = sizeof(send_buf);
-	send.cursize = 0;
+	send1.data = send_buf;
+	send1.maxsize = sizeof(send_buf);
+	send1.cursize = 0;
 
 	w1 = chan->outgoing_sequence | (send_reliable<<31);
 	w2 = chan->incoming_sequence | (chan->incoming_reliable_sequence<<31);
 
 	chan->outgoing_sequence++;
 
-	MSG_WriteLong (&send, w1);
-	MSG_WriteLong (&send, w2);
+	MSG_WriteLong (&send1, w1);
+	MSG_WriteLong (&send1, w2);
 
 	// copy the reliable message to the packet first
 	if (send_reliable)
 	{
-		SZ_Write (&send, chan->reliable_buf, chan->reliable_length);
+		SZ_Write (&send1, chan->reliable_buf, chan->reliable_length);
 		chan->last_reliable_sequence = chan->outgoing_sequence;
 	}
 
 	// add the unreliable part if space is available
-	if (send.maxsize - send.cursize >= length)
-		SZ_Write (&send, data, length);
+	if (send1.maxsize - send1.cursize >= length)
+		SZ_Write (&send1, data, length);
 
 	// send the datagram
 	i = chan->outgoing_sequence & (MAX_LATENT-1);
-	chan->outgoing_size[i] = send.cursize;
+	chan->outgoing_size[i] = send1.cursize;
 	chan->outgoing_time[i] = realtime;
 
-	NET_SendPacket (send.cursize, send.data, chan->remote_address);
+	NET_SendPacket (send1.cursize, send1.data, chan->remote_address);
 
 	if (chan->cleartime < realtime)
-		chan->cleartime = realtime + send.cursize*chan->rate;
+		chan->cleartime = realtime + send1.cursize*chan->rate;
 	else
-		chan->cleartime += send.cursize*chan->rate;
+		chan->cleartime += send1.cursize*chan->rate;
 
 	if (sv.paused)
 		chan->cleartime = realtime;
@@ -301,23 +297,23 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 		            , send_reliable
 		            , chan->incoming_sequence
 		            , chan->incoming_reliable_sequence
-		            , send.cursize);
+		            , send1.cursize);
 
 }
 
 /*
 =================
 Netchan_Process
- 
+
 called when the current net_message is from remote_address
 modifies net_message so that it points to the packet payload
 =================
 */
 qbool Netchan_Process (netchan_t *chan)
 {
-	unsigned		sequence, sequence_ack;
-	unsigned		reliable_ack, reliable_message;
-	int			qport;
+	unsigned sequence, sequence_ack;
+	unsigned reliable_ack, reliable_message;
+	int qport1;
 
 	if (!NET_CompareAdr (net_from, chan->remote_address))
 		return false;
@@ -328,7 +324,7 @@ qbool Netchan_Process (netchan_t *chan)
 	sequence_ack = MSG_ReadLong ();
 
 	// read the qport
-	qport = MSG_ReadShort ();
+	qport1 = MSG_ReadShort ();
 
 	reliable_message = sequence >> 31;
 	reliable_ack = sequence_ack >> 31;
@@ -432,4 +428,3 @@ qbool Netchan_Process (netchan_t *chan)
 
 	return true;
 }
-

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.17 2006/10/29 17:27:24 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.18 2006/11/25 23:32:37 disconn3ct Exp $
 */
 // sv_phys.c
 
@@ -245,19 +245,19 @@ Returns the clipflags if the velocity was modified (hit something solid)
 If steptrace is not NULL, the trace of any vertical wall hit will be stored
 ============
 */
-#define	MAX_CLIP_PLANES	5
-int SV_FlyMove (edict_t *ent, float time, trace_t *steptrace, int type)
+#define MAX_CLIP_PLANES	5
+int SV_FlyMove (edict_t *ent, float time1, trace_t *steptrace, int type)
 {
 	int		bumpcount, numbumps;
-	vec3_t		dir;
-	float		d;
+	vec3_t	dir;
+	float	d;
 	int		numplanes;
-	vec3_t		planes[MAX_CLIP_PLANES];
-	vec3_t		primal_velocity, original_velocity, new_velocity;
+	vec3_t	planes[MAX_CLIP_PLANES];
+	vec3_t	primal_velocity, original_velocity, new_velocity;
 	int		i, j;
-	trace_t		trace;
-	vec3_t		end;
-	float		time_left;
+	trace_t	trace;
+	vec3_t	end;
+	float	time_left;
 	int		blocked;
 
 	numbumps = 4;
@@ -267,7 +267,7 @@ int SV_FlyMove (edict_t *ent, float time, trace_t *steptrace, int type)
 	VectorCopy (ent->v.velocity, primal_velocity);
 	numplanes = 0;
 
-	time_left = time;
+	time_left = time1;
 
 	for (bumpcount=0 ; bumpcount<numbumps ; bumpcount++)
 	{

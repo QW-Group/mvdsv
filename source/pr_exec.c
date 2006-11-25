@@ -1,49 +1,48 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: pr_exec.c,v 1.8 2006/06/23 18:15:33 vvd0 Exp $
+
+   $Id: pr_exec.c,v 1.9 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
 
 
-typedef struct
+typedef struct prstack_s
 {
-	int		s;
-	dfunction_t	*f;
-}
-prstack_t;
+	int s;
+	dfunction_t *f;
+} prstack_t;
 
-#define	MAX_STACK_DEPTH		32
+#define	MAX_STACK_DEPTH 32
 prstack_t	pr_stack[MAX_STACK_DEPTH];
-int		pr_depth;
+int			pr_depth;
 
-#define	LOCALSTACK_SIZE		2048
-int		localstack[LOCALSTACK_SIZE];
-int		localstack_used;
+#define	LOCALSTACK_SIZE 2048
+int			localstack[LOCALSTACK_SIZE];
+int			localstack_used;
 
 
 qbool		pr_trace;
 dfunction_t	*pr_xfunction;
-int		pr_xstatement;
+int			pr_xstatement;
 
 
-int		pr_argc;
+int			pr_argc;
 
 char *pr_opnames[] =
     {
@@ -147,7 +146,7 @@ PR_PrintStatement
 */
 void PR_PrintStatement (dstatement_t *s)
 {
-	int		i;
+	int i;
 
 	if ( (unsigned)s->op < sizeof(pr_opnames)/sizeof(pr_opnames[0]))
 	{
@@ -189,8 +188,8 @@ PR_StackTrace
 */
 void PR_StackTrace (void)
 {
-	dfunction_t	*f;
-	int			i;
+	dfunction_t *f;
+	int i;
 
 	if (pr_depth == 0)
 	{
@@ -204,9 +203,7 @@ void PR_StackTrace (void)
 		f = pr_stack[i].f;
 
 		if (!f)
-		{
 			Con_Printf ("<NO FUNCTION>\n");
-		}
 		else
 			Con_Printf ("%12s : %s\n", PR_GetString(f->s_file), PR_GetString(f->s_name));
 	}
@@ -216,15 +213,15 @@ void PR_StackTrace (void)
 /*
 ============
 PR_Profile_f
- 
+
 ============
 */
 void PR_Profile_f (void)
 {
 	dfunction_t	*f, *best;
-	int			max;
-	int			num;
-	int			i;
+	int max;
+	int num;
+	int i;
 
 	num = 0;
 	do
@@ -255,14 +252,14 @@ void PR_Profile_f (void)
 /*
 ============
 PR_RunError
- 
+
 Aborts the currently executing function
 ============
 */
 void PR_RunError (char *error, ...)
 {
-	va_list		argptr;
-	char		string[1024];
+	va_list argptr;
+	char string[1024];
 
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
@@ -275,29 +272,21 @@ void PR_RunError (char *error, ...)
 	PR_StackTrace ();
 	Con_Printf ("%s\n", string);
 
-	pr_depth = 0;		// dump the stack so SV_Error can shutdown functions
+	pr_depth = 0; // dump the stack so SV_Error can shutdown functions
 
 	SV_Error ("Program error");
 }
 
 /*
-============================================================================
-PR_ExecuteProgram
- 
-The interpretation main loop
-============================================================================
-*/
-
-/*
 ====================
 PR_EnterFunction
- 
+
 Returns the new program statement counter
 ====================
 */
 int PR_EnterFunction (dfunction_t *f)
 {
-	int		i, j, c, o;
+	int i, j, c, o;
 
 	pr_stack[pr_depth].s = pr_xstatement;
 	pr_stack[pr_depth].f = pr_xfunction;
@@ -326,7 +315,7 @@ int PR_EnterFunction (dfunction_t *f)
 	}
 
 	pr_xfunction = f;
-	return f->first_statement - 1;	// offset the s++
+	return f->first_statement - 1; // offset the s++
 }
 
 /*
@@ -336,7 +325,7 @@ PR_LeaveFunction
 */
 int PR_LeaveFunction (void)
 {
-	int		i, c;
+	int i, c;
 
 	if (pr_depth <= 0)
 		SV_Error ("prog stack underflow");
@@ -356,23 +345,24 @@ int PR_LeaveFunction (void)
 	return pr_stack[pr_depth].s;
 }
 
-
 /*
-====================
+============================================================================
 PR_ExecuteProgram
-====================
+
+The interpretation main loop
+============================================================================
 */
 void PR_ExecuteProgram (func_t fnum)
 {
-	eval_t	*a = NULL, *b = NULL, *c = NULL;
-	int			s;
-	dstatement_t	*st = NULL;
-	dfunction_t	*f, *newf;
-	int		runaway;
-	int		i;
-	edict_t	*ed;
-	int		exitdepth;
-	eval_t	*ptr;
+	eval_t *a = NULL, *b = NULL, *c = NULL;
+	int s;
+	dstatement_t *st = NULL;
+	dfunction_t *f, *newf;
+	int runaway;
+	int i;
+	edict_t *ed;
+	int exitdepth;
+	eval_t *ptr;
 
 	if (!fnum || fnum >= progs->numfunctions)
 	{
@@ -393,7 +383,7 @@ void PR_ExecuteProgram (func_t fnum)
 
 	while (1)
 	{
-		s++;	// next statement
+		s++; // next statement
 
 		st = &pr_statements[s];
 		a = (eval_t *)&pr_globals[st->a];
@@ -717,7 +707,7 @@ int PR_SetString(char *s)
 /*
 ==============
 PR_SetTmpString
- 
+
 temp strings are used for qc function parameters
 many calls to function could cause strtbl overflow
 ==============
@@ -725,11 +715,11 @@ many calls to function could cause strtbl overflow
 
 int PR_SetTmpString(char *s)
 {
-	static int index;
+	static int index1;
 	static char tmp[8][2048];
 
-	index = (index + 1)&7;
+	index1 = (index1 + 1) & 7;
 
-	strlcpy(tmp[index], s, sizeof(tmp[index]));
-	return PR_SetString(tmp[index]);
+	strlcpy(tmp[index1], s, sizeof(tmp[index1]));
+	return PR_SetString(tmp[index1]);
 }
