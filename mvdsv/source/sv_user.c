@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.75 2006/11/20 11:13:15 qqshka Exp $
+	$Id: sv_user.c,v 1.76 2006/11/25 23:32:37 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -938,18 +938,18 @@ static void SV_NextDownload_f (void)
 static void OutofBandPrintf(netadr_t where, char *fmt, ...)
 {
 	va_list	 argptr;
-	char send[1024];
+	char send1[1024];
 
-	send[0] = 0xff;
-	send[1] = 0xff;
-	send[2] = 0xff;
-	send[3] = 0xff;
-	send[4] = A2C_PRINT;
+	send1[0] = 0xff;
+	send1[1] = 0xff;
+	send1[2] = 0xff;
+	send1[3] = 0xff;
+	send1[4] = A2C_PRINT;
 	va_start (argptr, fmt);
-	vsnprintf (send + 5, sizeof(send) - 5, fmt, argptr);
+	vsnprintf (send1 + 5, sizeof(send1) - 5, fmt, argptr);
 	va_end (argptr);
 
-	NET_SendPacket (strlen(send)+1, send, where);
+	NET_SendPacket (strlen(send1) + 1, send1, where);
 }
 
 /*

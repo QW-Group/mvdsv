@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: bothtools.c,v 1.14 2006/10/10 16:11:29 qqshka Exp $
+   $Id: bothtools.c,v 1.15 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -33,17 +33,17 @@ FIXME: make this buffer size safe someday
 #define MAX_STRINGS 16
 char *va(char *format, ...)
 {
-	va_list		argptr;
-	static char	string[MAX_STRINGS][1024];
-	static int	index = 0;
+	va_list argptr;
+	static char string[MAX_STRINGS][1024];
+	static int index1 = 0;
 
-	index %= MAX_STRINGS;
-	//index = (++index)&(MAX_STRINGS - 1);
+	index1 %= MAX_STRINGS;
+	//index = (++index1)&(MAX_STRINGS - 1);
 	va_start (argptr, format);
-	vsnprintf (string[index], sizeof(string[0]), format, argptr);
+	vsnprintf (string[index1], sizeof(string[0]), format, argptr);
 	va_end (argptr);
 
-	return string[index++];
+	return string[index1++];
 }
 
 /*

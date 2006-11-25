@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.28 2006/10/29 17:27:24 disconn3ct Exp $
+	$Id: sv_send.c,v 1.29 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -49,18 +49,18 @@ SV_FlushRedirect
 */
 void SV_FlushRedirect (void)
 {
-	char	send[OUTPUTBUF_SIZE + 6];
+	char send1[OUTPUTBUF_SIZE + 6];
 
 	if (sv_redirected == RD_PACKET)
 	{
-		send[0] = 0xff;
-		send[1] = 0xff;
-		send[2] = 0xff;
-		send[3] = 0xff;
-		send[4] = A2C_PRINT;
-		memcpy (send+5, outputbuf, strlen(outputbuf)+1);
+		send1[0] = 0xff;
+		send1[1] = 0xff;
+		send1[2] = 0xff;
+		send1[3] = 0xff;
+		send1[4] = A2C_PRINT;
+		memcpy (send1 + 5, outputbuf, strlen(outputbuf) + 1);
 
-		NET_SendPacket (strlen(send)+1, send, net_from);
+		NET_SendPacket (strlen(send1) + 1, send1, net_from);
 	}
 	else if (sv_redirected == RD_CLIENT && sv_redirectbufcount < MAX_REDIRECTMESSAGES)
 	{
@@ -326,10 +326,10 @@ void SV_BroadcastCommand (char *fmt, ...)
 /*
 =================
 SV_Multicast
- 
+
 Sends the contents of sv.multicast to a subset of the clients,
 then clears sv.multicast.
- 
+
 MULTICAST_ALL	same as broadcast
 MULTICAST_PVS	send to clients potentially visible from org
 MULTICAST_PHS	send to clients potentially hearable from org

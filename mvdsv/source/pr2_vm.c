@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.18 2006/10/26 20:47:13 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.19 2006/11/25 23:32:37 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -306,7 +306,7 @@ void LoadMapFile( qvm_t*qvm, char* fname )
 	Con_DPrintf("%i symbols loaded from %s\n",num_symbols,name);
 }
 
-qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
+qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall1 )
 {
 	char    name[MAX_OSPATH];
 	byte   *buff;
@@ -373,7 +373,7 @@ qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 	qvm->LP = qvm->len_ds - sizeof(int);
 	qvm->cycles = 0;
 	qvm->reenter = 0;
-	qvm->syscall = syscall;
+	qvm->syscall = syscall1;
 
 
 	// load instructions
@@ -446,9 +446,9 @@ qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall )
 }
 
 
-vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_callex_t syscallex )
+vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall1, sys_callex_t syscallex )
 {
-	if ( !name || !syscall || !syscallex )
+	if ( !name || !syscall1 || !syscallex )
 		Sys_Error( "VM_Load: bad parms" );
 
 	if ( vm )
@@ -463,7 +463,7 @@ vm_t   *VM_Load( vm_t * vm, vm_type_t type, char *name, sys_call_t syscall, sys_
 	// prepare vm struct
 	memset( vm, 0, sizeof( vm_t ) );
 	strlcpy( vm->name, name, sizeof( vm->name ) );
-	vm->syscall = syscall;
+	vm->syscall = syscall1;
 #ifdef QVM_PROFILE
 	num_profile_func = 0;
 #endif

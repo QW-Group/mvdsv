@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_mod_frags.c,v 1.11 2006/04/30 11:27:15 disconn3ct Exp $
+	$Id: sv_mod_frags.c,v 1.12 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -33,14 +33,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qwmsg_t *qwmsg[MOD_MSG_MAX + 1];
 static qbool qwm_static = true;
 
-void free_qwmsg_t(qwmsg_t **qwmsg)
+void free_qwmsg_t(qwmsg_t **qwmsg1)
 {
 	int i;
 	if (!qwm_static)
-		for (i = 0; qwmsg[i]; i++)
+		for (i = 0; qwmsg1[i]; i++)
 		{
-			Q_free(qwmsg[i]->str);
-			Q_free(qwmsg[i]);
+			Q_free(qwmsg1[i]->str);
+			Q_free(qwmsg1[i]);
 		}
 }
 

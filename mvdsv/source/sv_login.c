@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_login.c,v 1.16 2006/10/26 20:47:14 disconn3ct Exp $
+	$Id: sv_login.c,v 1.17 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -433,7 +433,7 @@ returns positive value if login/pass are valid
 values <= 0 indicates a failure
 =================
 */
-static int checklogin(char *log, char *pass, int num, quse_t use)
+static int checklogin(char *log1, char *pass, int num, quse_t use)
 {
 	int i,c;
 
@@ -444,7 +444,7 @@ static int checklogin(char *log, char *pass, int num, quse_t use)
 
 		if (use == accounts[i].use &&
 		        /*use == use_log && accounts[i].use == use_log && */
-			!strcasecmp(log, accounts[i].login))
+			!strcasecmp(log1, accounts[i].login))
 		{
 			if (accounts[i].inuse && accounts[i].use == use_log)
 				return -1;
@@ -566,16 +566,16 @@ void SV_Logout(client_t *cl)
 void SV_ParseLogin(client_t *cl)
 {
 	extern cvar_t sv_forcenick;
-	char *log, *pass;
+	char *log1, *pass;
 
 	if (Cmd_Argc() > 2)
 	{
-		log = Cmd_Argv(1);
+		log1 = Cmd_Argv(1);
 		pass = Cmd_Argv(2);
 	}
 	else
 	{ // bah usually whole text in 'say' is put into ""
-		log = pass = Cmd_Argv(1);
+		log1 = pass = Cmd_Argv(1);
 		while (*pass && *pass != ' ')
 			pass++;
 
@@ -589,17 +589,17 @@ void SV_ParseLogin(client_t *cl)
 	// if login is parsed, we read just a password
 	if (cl->login[0])
 	{
-		pass = log;
-		log = cl->login;
+		pass = log1;
+		log1 = cl->login;
 	}
 	else
 	{
-		strlcpy(cl->login, log, CLIENT_LOGIN_LEN);
+		strlcpy(cl->login, log1, CLIENT_LOGIN_LEN);
 	}
 
 	if (!*pass)
 	{
-		strlcpy(cl->login, log, CLIENT_LOGIN_LEN);
+		strlcpy(cl->login, log1, CLIENT_LOGIN_LEN);
 		MSG_WriteByte (&cl->netchan.message, svc_print);
 		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
 		MSG_WriteString (&cl->netchan.message, va("Password for %s:\n", cl->login));
@@ -607,7 +607,7 @@ void SV_ParseLogin(client_t *cl)
 		return;
 	}
 
-	cl->logged = checklogin(log, pass, cl - svs.clients + 1, use_log);
+	cl->logged = checklogin(log1, pass, cl - svs.clients + 1, use_log);
 
 	switch (cl->logged)
 	{
@@ -634,7 +634,7 @@ void SV_ParseLogin(client_t *cl)
 		Sys_Printf("%s logged in as %s\n", cl->name, cl->login);
 		MSG_WriteByte (&cl->netchan.message, svc_print);
 		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log));
+		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log1));
 
 		//VVD: forcenick ->
 		if ((int)sv_forcenick.value && cl->login)

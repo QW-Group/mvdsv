@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.86 2006/11/20 17:05:54 vvd0 Exp $
+	$Id: sv_main.c,v 1.87 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -791,7 +791,7 @@ extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
 extern char *shortinfotbl[];
 static void SVC_DirectConnect (void)
 {
-	int clients, spectators, vips, qport, version, challenge, i, edictnum;
+	int clients, spectators, vips, qport, version1, challenge, i, edictnum;
 	qbool spass = false, vip, spectator;
 	client_t *cl, *newcl;
 	char userinfo[1024];
@@ -800,12 +800,12 @@ static void SVC_DirectConnect (void)
 	edict_t *ent;
 
 
-	version = Q_atoi(Cmd_Argv(1));
-	if (version != PROTOCOL_VERSION)
+	version1 = Q_atoi(Cmd_Argv(1));
+	if (version1 != PROTOCOL_VERSION)
 	{
 //		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
 		Netchan_OutOfBandPrint (net_from, "%c\nServer is version " QW_VERSION ".\n", A2C_PRINT);
-		Con_Printf ("* rejected connect from version %i\n", version);
+		Con_Printf ("* rejected connect from version %i\n", version1);
 		return;
 	}
 
@@ -1165,7 +1165,7 @@ static qbool rcon_bandlim (void)
 	return false;
 }
 //bliP: master rcon/logging ->
-int Rcon_Validate (char *client_string, char *password)
+int Rcon_Validate (char *client_string, char *password1)
 {
 	time_t server_time, client_time = 0;
 	double difftime_server_client;
@@ -1175,7 +1175,7 @@ int Rcon_Validate (char *client_string, char *password)
 	if (rcon_bandlim())
 		return 0;
 
-	if (!strlen (password))
+	if (!strlen (password1))
 		return 0;
 
 	if ((int)sv_crypt_rcon.value)
@@ -1199,10 +1199,10 @@ int Rcon_Validate (char *client_string, char *password)
 		SHA1_Init();
 		SHA1_Update(Cmd_Argv(0));
 		SHA1_Update(" ");
-		SHA1_Update(password);
+		SHA1_Update(password1);
 		SHA1_Update(Cmd_Argv(1) + DIGEST_SIZE * 2);
 		SHA1_Update(" ");
-		//		SHA1_Update(va("%s %s%s ", Cmd_Argv(0), password, Cmd_Argv(1) + DIGEST_SIZE * 2));
+		//		SHA1_Update(va("%s %s%s ", Cmd_Argv(0), password1, Cmd_Argv(1) + DIGEST_SIZE * 2));
 		for (i = 2; (int) i < Cmd_Argc(); i++)
 		{
 			//			SHA1_Update(va("%s ", Cmd_Argv(i)));
@@ -1216,7 +1216,7 @@ int Rcon_Validate (char *client_string, char *password)
 			return 0;
 	}
 	else
-		if (strcmp (Cmd_Argv(1), password))
+		if (strcmp (Cmd_Argv(1), password1))
 			return 0;
 	return 1;
 }
@@ -2548,22 +2548,20 @@ void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime)
 
 double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 {
-	int     i;
-	double  time;
-
-	time = 0.0;
+	int i;
+	double time1 = 0.0;
 
 	// search for existing penalty filter of same type
 	for (i = 0; i < numpenfilters; i++)
 	{
 		if (type == penfilters[i].type && SV_IPCompare (cl->realip.ip.ip, penfilters[i].ip))
 		{
-			time = penfilters[i].time;
+			time1 = penfilters[i].time;
 			SV_RemoveIPFilter (i);
-			return time;
+			return time1;
 		}
 	}
-	return time;
+	return time1;
 }
 //<-
 
@@ -2852,7 +2850,7 @@ SV_Frame
 ==================
 */
 void SV_Map (qbool now);
-void SV_Frame (double time)
+void SV_Frame (double time1)
 {
 	static double start, end;
 	double demo_start, demo_end;
@@ -2867,8 +2865,8 @@ void SV_Frame (double time)
 	// decide the simulation time
 	if (!sv.paused)
 	{
-		realtime += time;
-		sv.time += time;
+		realtime += time1;
+		sv.time += time1;
 	}
 
 	// check timeouts

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.40 2006/10/27 14:58:11 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.41 2006/11/25 23:32:37 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1129,20 +1129,20 @@ SV_Status_f
 ================
 */
 qbool SV_Check_ktpro(void);
+extern cvar_t sv_use_dns;
 void SV_Status_f (void)
 {
-	int			i;
-	client_t	*cl;
-	float		cpu, avg, pak, demo = 0;
-	char		*s;
-	extern cvar_t	sv_use_dns;
+	int i;
+	client_t *cl;
+	float cpu, avg, pak, demo1 = 0.0;
+	char *s;
 
 	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
 
 	if (cpu)
 	{
-		demo = 100 * svs.stats.latched_demo   / cpu;
-		cpu  = 100 * svs.stats.latched_active / cpu;
+		demo1 = 100.0 * svs.stats.latched_demo  / cpu;
+		cpu  = 100.0 * svs.stats.latched_active / cpu;
 	}
 
 	avg = 1000 * svs.stats.latched_active  / STATFRAMES;
@@ -1155,7 +1155,7 @@ void SV_Status_f (void)
 				"packets/frame               : %5.2f (%d)\n",
 				NET_AdrToString (net_local_adr),
 				(int)cpu,
-				(int)demo,
+				(int)demo1,
 				(int)avg,
 				pak, num_prstr);
 

@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmodel.c,v 1.4 2006/11/12 14:38:36 disconn3ct Exp $
+    $Id: cmodel.c,v 1.5 2006/11/25 23:32:37 disconn3ct Exp $
 */
 // cmodel.c
 
@@ -108,12 +108,12 @@ static void CM_InitBoxHull (void)
 	box_hull.firstclipnode = 0;
 	box_hull.lastclipnode = 5;
 
-	for (i=0 ; i<6 ; i++)
+	for (i = 0; i < 6; i++)
 	{
 		box_clipnodes[i].planenum = i;
-		
+
 		side = i&1;
-		
+
 		box_clipnodes[i].children[side] = CONTENTS_EMPTY;
 		box_clipnodes[i].children[side^1] = (i != 5) ? (i + 1) : CONTENTS_SOLID;
 		box_planes[i].type = i>>1;
@@ -150,14 +150,13 @@ int CM_HullPointContents (hull_t *hull, int num, vec3_t p)
 	{
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
 			Sys_Error ("CM_HullPointContents: bad node number");
-	
+
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
 		
 		d = PlaneDiff(p, plane);
 		num = (d < 0) ? node->children[1] : node->children[0];
 	}
-	
 	return num;
 }
 
@@ -238,9 +237,9 @@ static qbool RecursiveHullTrace (int num, float p1f, float p2f, vec3_t p1, vec3_
 	frac = (t1<0) ? (t1 + DIST_EPSILON)/(t1-t2) : (t1 - DIST_EPSILON)/(t1-t2);
 	frac = bound (0, frac, 1);
 		
-	midf = p1f + (p2f - p1f)*frac;
-	for (i=0 ; i<3 ; i++)
-		mid[i] = p1[i] + frac*(p2[i] - p1[i]);
+	midf = p1f + (p2f - p1f) * frac;
+	for (i = 0; i < 3; i++)
+		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 
 	side = (t1 < 0);
 
@@ -284,9 +283,9 @@ static qbool RecursiveHullTrace (int num, float p1f, float p2f, vec3_t p1, vec3_
 			Con_DPrintf ("backup past 0\n");
 			return false;
 		}
-		midf = p1f + (p2f - p1f)*frac;
+		midf = p1f + (p2f - p1f) * frac;
 		for (i=0 ; i<3 ; i++)
-			mid[i] = p1[i] + frac*(p2[i] - p1[i]);
+			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
 	}
 
 	trace_trace.fraction = midf;
@@ -456,7 +455,7 @@ static vec3_t leafs_mins, leafs_maxs;
 static void FindTouchedLeafs_r (const cnode_t *node)
 {
 	mplane_t *splitplane;
-	cleaf_t	*leaf;
+	cleaf_t *leaf;
 	int sides;
 
 	while (1)
@@ -859,10 +858,7 @@ static void CM_BuildPVS (lump_t *lump_vis, lump_t *lump_leafs)
 	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes)
 	{
 		int p = LittleLong(in->visofs);
-		if (p == -1)
-			memcpy (scan, map_novis, map_vis_rowbytes);
-		else
-			memcpy (scan, DecompressVis (visdata + p), map_vis_rowbytes);
+		memcpy (scan, (p == -1) ? map_novis : DecompressVis (visdata + p), map_vis_rowbytes);
 	}
 }
 
@@ -875,7 +871,7 @@ static void CM_BuildPVS (lump_t *lump_vis, lump_t *lump_leafs)
 */
 static void CM_BuildPHS (void)
 {
-	int i, j, k, l, index, bitbyte;
+	int i, j, k, l, index1, bitbyte;
 	unsigned *dest, *src;
 	byte *scan;
 
@@ -898,10 +894,10 @@ static void CM_BuildPHS (void)
 				if (! (bitbyte & (1<<k)) )
 					continue;
 				// or this pvs row into the phs
-				index = (j<<3) + k;
-				if (index >= visleafs)
+				index1 = (j<<3) + k;
+				if (index1 >= visleafs)
 					continue;
-				src = (unsigned *)map_pvs + index * map_vis_rowlongs;
+				src = (unsigned *)map_pvs + index1 * map_vis_rowlongs;
 				for (l = 0; l < map_vis_rowlongs; l++)
 					dest[l] |= src[l];
 			}
@@ -976,13 +972,11 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	for (i = 0; i < HEADER_LUMPS; i++) {
 		if (i == LUMP_ENTITIES)
 			continue;
-		map_checksum ^= LittleLong(Com_BlockChecksum(cmod_base + header->lumps[i].fileofs,
-					   header->lumps[i].filelen));
+		map_checksum ^= LittleLong(Com_BlockChecksum(cmod_base + header->lumps[i].fileofs, header->lumps[i].filelen));
 
 		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
 			continue;
-		map_checksum2 ^= LittleLong(Com_BlockChecksum(cmod_base + header->lumps[i].fileofs,
-					    header->lumps[i].filelen));
+		map_checksum2 ^= LittleLong(Com_BlockChecksum(cmod_base + header->lumps[i].fileofs, header->lumps[i].filelen));
 	}
 	if (checksum)
 		*checksum = map_checksum;

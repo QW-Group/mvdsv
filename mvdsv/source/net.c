@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.14 2006/07/01 16:54:21 vvd0 Exp $
+	$Id: net.c,v 1.15 2006/11/25 23:32:37 disconn3ct Exp $
 */
 // net.c
 
@@ -377,7 +377,7 @@ void NET_GetLocalAddress (netadr_t *out)
 NET_Init
 ====================
 */
-void NET_Init (int *serverport, int *telnetport)
+void NET_Init (int *serverport, int *telnetport1)
 {
 	// open the single socket to be used for all communications
 	
@@ -392,9 +392,9 @@ void NET_Init (int *serverport, int *telnetport)
 
 	*serverport = UDP_OpenSocket (*serverport);
 
-	if (*telnetport)
+	if (*telnetport1)
 	{
-		*telnetport = TCP_OpenSocket (*telnetport, *serverport);
+		*telnetport1 = TCP_OpenSocket (*telnetport1, *serverport);
 		Con_Printf("TCP Initialized\n");
 	}
 
