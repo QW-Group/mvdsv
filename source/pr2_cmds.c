@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.39 2006/11/25 23:32:37 disconn3ct Exp $
+ *  $Id: pr2_cmds.c,v 1.40 2006/11/26 19:17:01 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -885,13 +885,44 @@ void PF2_cvar_set_float(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 
 /*
 =================
-PF2_findradius
- 
+PF2_FindRadius
+
 Returns a chain of entities that have origins within a spherical area
- 
-findradius (origin, radius)
+gedict_t *findradius( gedict_t * start, vec3_t org, float rad );
 =================
 */
+
+void PF2_FindRadius( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
+{
+	int     e,j;
+
+	edict_t *ed;
+	float* org;
+	vec3_t	eorg;
+	float rad;
+
+	e = NUM_FOR_EDICT( VM_POINTER( base, mask, stack[0]._int ) );
+	org = VM_POINTER( base, mask, stack[1]._int );
+	rad = stack[2]._float;
+
+	for ( e++; e < sv.num_edicts; e++ )
+	{
+		ed = EDICT_NUM( e );
+
+		if ( ed->free )
+			continue;
+		if (ed->v.solid == SOLID_NOT)
+			continue;
+		for (j=0 ; j<3 ; j++)
+			eorg[j] = org[j] - (ed->v.origin[j] + (ed->v.mins[j] + ed->v.maxs[j])*0.5);			
+		if (VectorLength(eorg) > rad)
+			continue;
+		retval->_int = POINTER_TO_VM( base, mask, ed );
+		return;
+	}
+	retval->_int = 0;
+	return;
+}
 
 /*
 ===============
@@ -1075,6 +1106,41 @@ void PF2_nextent(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 		{
 			retval->_int = i;
 			return;
+		}
+	}
+}
+
+/*
+=============
+PF2_nextclient
+
+fast walk over spawned clients
+ 
+entity nextclient(entity)
+=============
+*/
+void PF2_nextclient(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	int		i;
+	edict_t	*ent;
+
+	i = NUM_FOR_EDICT((edict_t *) VM_POINTER(base,mask,stack[0]._int));;
+	while (1)
+	{
+		i++;
+		if (i < 1 || i > MAX_CLIENTS)
+		{
+			retval->_int = 0;
+			return;
+		}
+		ent = EDICT_NUM(i);
+		if (!ent->free) // actually that always true for clients edicts
+		{
+			if (svs.clients[i-1].state == cs_spawned) // client in game
+			{
+				retval->_int = POINTER_TO_VM(base,mask,ent);
+				return;
+			}
 		}
 	}
 }
@@ -2444,6 +2510,11 @@ void PF2_QVMstrftime(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	}
 }
 
+void PF2_makevectors(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	AngleVectors (VM_POINTER(base,mask,stack[0].string), pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
+}
+
 //===========================================================================
 // SysCalls
 //===========================================================================
@@ -2477,7 +2548,7 @@ pr2_trapcall_t pr2_API[]=
         PF2_localcmd,		//G_LOCALCMD,
         PF2_cvar,		//G_CVAR,
         PF2_cvar_set,		//G_CVAR_SET,
-        PF2_fixme,
+        PF2_FindRadius,		//G_FINDRADIUS
         PF2_walkmove,
         PF2_droptofloor,	//G_DROPTOFLOOR,
         PF2_checkbottom,	//G_CHECKBOTTOM,
@@ -2540,7 +2611,9 @@ pr2_trapcall_t pr2_API[]=
 		PF2_cmdargs,		//G_CMD_ARGS
 		PF2_tokenize,		//G_CMD_TOKENIZE
 		PF2_strlcpy,		//g_strlcpy
-		PF2_strlcat			//g_strlcat
+		PF2_strlcat,		//g_strlcat
+		PF2_makevectors,	//G_MAKEVECTORS
+		PF2_nextclient		//G_NEXTCLIENT
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 
