@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:06:43
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   ScoreRegDM.java
+/**
+
+$Id: ScoreRegDM.java,v 1.2 2006/11/27 15:15:46 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 
@@ -155,7 +156,7 @@ public class ScoreRegDM extends JDialog
     private void jbInit()
         throws Exception
     {
-        setTitle("Edit match ".concat(String.valueOf(String.valueOf(match.getName()))));
+        setTitle("Edit match ".concat(match.getName()));
         txtPlayer1 = new JTextField(match.getPlayer(0).getName());
         txtPlayer2 = new JTextField(match.getPlayer(1).getName());
         txtPlayer1.setPreferredSize(new Dimension(150, 25));
@@ -163,8 +164,8 @@ public class ScoreRegDM extends JDialog
         txtScheduled.setPreferredSize(new Dimension(320, 25));
         txtTotal1.setPreferredSize(new Dimension(150, 25));
         txtTotal2.setPreferredSize(new Dimension(150, 25));
-        btnWinA = new JToggleButton(String.valueOf(String.valueOf((new StringBuffer("")).append(txtPlayer1.getText()).append(" wins"))));
-        btnWinB = new JToggleButton(String.valueOf(String.valueOf((new StringBuffer("")).append(txtPlayer2.getText()).append(" wins"))));
+        btnWinA = new JToggleButton(new String((new StringBuffer(txtPlayer1.getText())).append(" wins")));
+        btnWinB = new JToggleButton(new String((new StringBuffer(txtPlayer2.getText())).append(" wins")));
         btnWinA.setPreferredSize(new Dimension(150, 25));
         btnWinB.setPreferredSize(new Dimension(150, 25));
         txtTotal1.setText(String.valueOf(match.getScore(0)));
@@ -287,7 +288,7 @@ public class ScoreRegDM extends JDialog
     private void addRound(DMRound round)
     {
         JPanel mapPanel = new JPanel();
-        mapPanel.add(new JLabel(String.valueOf(String.valueOf((new StringBuffer("")).append(numRounds + 1).append(": ")))));
+        mapPanel.add(new JLabel(new String((new StringBuffer(numRounds + 1)).append(": "))));
         cmbMap[numRounds] = new JComboBox(data.getMapList().toArray());
         mapPanel.add(cmbMap[numRounds]);
         cmbMap[numRounds].setSelectedItem(round.getMapName());
@@ -299,10 +300,10 @@ public class ScoreRegDM extends JDialog
             DoubleRound dround = (DoubleRound)round;
             int idx = numRounds * 2;
             FlowLayout fLay = new FlowLayout(1, 2, 2);
-            txtFrag1[idx] = new JTextField("".concat(String.valueOf(String.valueOf(dround.getScore(0, 0)))));
-            txtFrag2[idx] = new JTextField("".concat(String.valueOf(String.valueOf(dround.getScore(0, 1)))));
-            txtFrag1[idx + 1] = new JTextField("".concat(String.valueOf(String.valueOf(dround.getScore(1, 0)))));
-            txtFrag2[idx + 1] = new JTextField("".concat(String.valueOf(String.valueOf(dround.getScore(1, 1)))));
+            txtFrag1[idx] = new JTextField(String.valueOf(dround.getScore(0, 0)));
+            txtFrag2[idx] = new JTextField(String.valueOf(dround.getScore(0, 1)));
+            txtFrag1[idx + 1] = new JTextField(String.valueOf(dround.getScore(1, 0)));
+            txtFrag2[idx + 1] = new JTextField(String.valueOf(dround.getScore(1, 1)));
             Dimension dim1 = new Dimension(40, 21);
             txtFrag1[idx].setPreferredSize(dim1);
             txtFrag2[idx].setPreferredSize(dim1);
@@ -329,8 +330,8 @@ public class ScoreRegDM extends JDialog
             fragPanel2.add(loRight, "South");
         } else
         {
-            txtFrag1[numRounds] = new JTextField("".concat(String.valueOf(String.valueOf(round.getScore(0)))));
-            txtFrag2[numRounds] = new JTextField("".concat(String.valueOf(String.valueOf(round.getScore(1)))));
+            txtFrag1[numRounds] = new JTextField(String.valueOf(round.getScore(0)));
+            txtFrag2[numRounds] = new JTextField(String.valueOf(round.getScore(1)));
             Dimension dim1 = new Dimension(40, 21);
             txtFrag1[numRounds].setPreferredSize(dim1);
             txtFrag2[numRounds].setPreferredSize(dim1);

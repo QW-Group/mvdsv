@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:17:17
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   Rankable.java
+/**
+
+$Id: Rankable.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 

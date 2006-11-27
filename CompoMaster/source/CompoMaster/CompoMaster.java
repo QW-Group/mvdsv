@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:01:17
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   CompoMaster.java
+/**
+
+$Id: CompoMaster.java,v 1.2 2006/11/27 15:15:45 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 
@@ -32,7 +33,7 @@ public class CompoMaster
         }
         catch(Exception exception) { }
         URL url = (CompoMaster.class).getResource("/cm_icon.gif");
-        System.out.println("".concat(String.valueOf(String.valueOf(url))));
+        System.out.println(String.valueOf(url));
         icon = Toolkit.getDefaultToolkit().getImage(url);
         cmpFilter = new CmpFilter();
         if(args.length > 0)
@@ -130,11 +131,11 @@ public class CompoMaster
             lastBrowsedDir = f.getDirectory();
             if(f.getFile() == null)
                 return;
-            dataFileName = String.valueOf(lastBrowsedDir) + String.valueOf(f.getFile());
+            dataFileName = lastBrowsedDir + f.getFile();
         }
         boolean result = Data.save(dataFileName, data);
         if(data.getExtData() != null)
-            result |= Data.save(String.valueOf(lastBrowsedDir) + String.valueOf(data.getInDataFilename()), data.getExtData());
+            result |= Data.save(lastBrowsedDir + data.getInDataFilename(), data.getExtData());
         if(!result)
             JOptionPane.showMessageDialog(frame2, "Unable to write to file", "I/O Error", 0);
         else
@@ -169,9 +170,13 @@ public class CompoMaster
             String extFileName = data.getInDataFilename();
             if(extFileName != null)
             {
-                Data extd = Data.load(String.valueOf(loadedFileDir) + String.valueOf(extFileName));
+                Data extd = Data.load(loadedFileDir + extFileName);
                 if(extd == null)
-                    JOptionPane.showMessageDialog(frame2, String.valueOf(String.valueOf((new StringBuffer("Unable to load qualifier tournament '")).append(extFileName).append("'. ").append("If you need to see the contestants from this file, please make sure ").append("the file resides in the same directory as this file."))), "Linked file not found", 0);
+                    JOptionPane.showMessageDialog(frame2,
+						new String((new StringBuffer("Unable to load qualifier tournament '"))
+							.append(extFileName)
+							.append("'. If you need to see the contestants from this file, please make sure the file resides in the same directory as this file.")),
+						"Linked file not found", 0);
                 else
                     data.setExtData(extd);
             }
@@ -198,7 +203,7 @@ public class CompoMaster
         if(f.getFile() == null)
             return null;
         else
-            return new File(String.valueOf(lastBrowsedDir) + String.valueOf(f.getFile()));
+            return new File(lastBrowsedDir + f.getFile());
     }
 
     public static void importList(int whatToLoad)
@@ -209,7 +214,7 @@ public class CompoMaster
         if(f.getFile() != null)
             try
             {
-                BufferedReader inFile = new BufferedReader(new FileReader(String.valueOf(f.getDirectory()) + String.valueOf(f.getFile())));
+                BufferedReader inFile = new BufferedReader(new FileReader(f.getDirectory() + f.getFile()));
                 if(whatToLoad == 0)
                 {
                     RealPlayer p[] = null;
@@ -232,7 +237,7 @@ public class CompoMaster
         if(f.getFile() != null)
             try
             {
-                FileWriter outFile = new FileWriter(String.valueOf(f.getDirectory()) + String.valueOf(f.getFile()));
+                FileWriter outFile = new FileWriter(f.getDirectory() + f.getFile());
                 if(whatToExport == 0)
                     RealPlayer.exportPlayerList(data, outFile);
                 else
@@ -280,7 +285,7 @@ public class CompoMaster
     public static SignupAdmin frame2;
     public static AdminFrame frame3;
     public static Frame activeFrame;
-    public static final String defaultFileName = new String("compo1.cmp");
+    public static final String defaultFileName = "compo1.cmp";
     public static String dataFileName;
     public static String loadedFileDir = ".\\";
     private static CmpFilter cmpFilter;

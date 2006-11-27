@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:15:52
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   Data.java
+/**
+
+$Id: Data.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -297,9 +298,7 @@ public class Data
     public static Data load(URL u)
         throws Exception, IOException
     {
-        InputStream source = u.openStream();
-        Data main = loadObjectFile(source, null);
-        return main;
+        return loadObjectFile(u.openStream(), null);
     }
 
     public static Data load(URL u, ProgressIndicator p)
@@ -334,23 +333,18 @@ public class Data
         {
             File f = new File(filename);
             if(!f.exists())
-                f = new File(String.valueOf(String.valueOf(filename)).concat(".cmp"));
-            FileInputStream source = new FileInputStream(f);
-            Data data2 = loadObjectFile(source, null);
-            return data2;
+                f = new File(filename.concat(".cmp"));
+            return loadObjectFile(new FileInputStream(f), null);
         }
         catch(FileNotFoundException e)
         {
             System.out.println("File not found error");
-            Data data = null;
-            return data;
         }
         catch(Exception e)
         {
-            System.out.println("File not a CompoMaster file. \r\n".concat(String.valueOf(String.valueOf(e.getMessage()))));
+            System.out.println("File not a CompoMaster file. \r\n".concat(e.getMessage()));
         }
-        Data data1 = null;
-        return data1;
+        return null;
     }
 
     public static Data loadObjectFile(InputStream in, ProgressIndicator p)
@@ -364,32 +358,32 @@ public class Data
         {
             byte buffer[] = new byte[p.getGoal()];
             byte temp[] = new byte[1024];
-            errors = " Error=5 -Total size:".concat(String.valueOf(String.valueOf(p.getGoal())));
+            errors = " Error=5 -Total size:".concat(String.valueOf(p.getGoal()));
             int chunksize = 0;
             int pos;
             for(pos = 0; pos < p.getGoal(); pos += chunksize)
             {
                 chunksize = in.read(temp, 0, 1024);
-                errors = String.valueOf(String.valueOf((new StringBuffer(" Error 5.5: Chk[")).append(i++).append("]=").append(chunksize).append(" Pos=").append(pos)));
+                errors = new String((new StringBuffer(" Error 5.5: Chk[")).append(i++).append("]=").append(chunksize).append(" Pos=").append(pos));
                 System.arraycopy(temp, 0, buffer, pos, chunksize);
                 p.setProgress(pos);
             }
 
             p.setProgress(p.getGoal());
-            errParam = String.valueOf(String.valueOf((new StringBuffer("Pos: ")).append(pos).append(" Last chunk: ").append(chunksize).append(" BufLen: ").append(buffer.length)));
-            errors = " Error=6 ".concat(String.valueOf(String.valueOf(errParam)));
+            errParam = new String((new StringBuffer("Pos: ")).append(pos).append(" Last chunk: ").append(chunksize).append(" BufLen: ").append(buffer.length));
+            errors = " Error=6 ".concat(errParam);
             input = new ObjectInputStream(new ByteArrayInputStream(buffer));
         } else
         {
             errors = " Error=7";
             input = new ObjectInputStream(in);
         }
-        errors = " Error=8 ".concat(String.valueOf(String.valueOf(errParam)));
+        errors = " Error=8 ".concat(errParam);
         Object o = input.readObject();
         Data d;
         try
         {
-            errors = " Error=9 ".concat(String.valueOf(String.valueOf(errParam)));
+            errors = " Error=9 ".concat(errParam);
             String version = (String)o;
             d = (Data)input.readObject();
         }
@@ -397,7 +391,7 @@ public class Data
         {
             d = (Data)o;
         }
-        errors = " Error=10 ".concat(String.valueOf(String.valueOf(errParam)));
+        errors = " Error=10 ".concat(errParam);
         input.close();
         return d;
     }
@@ -410,7 +404,7 @@ public class Data
             int slash2 = filename.lastIndexOf('/');
             int dot = filename.lastIndexOf('.');
             if(dot == -1 || dot < slash1 || dot < slash2)
-                filename = String.valueOf(String.valueOf(filename)).concat(".cmp");
+                filename = filename.concat(".cmp");
             FileOutputStream destination = new FileOutputStream(filename);
             ObjectOutputStream output = new ObjectOutputStream(destination);
             output.writeObject(VERSION_NO);
@@ -464,7 +458,7 @@ public class Data
         for(int i = 0; i < size; i++)
         {
             String name = (String)mapName.get(i);
-            out.write(String.valueOf(name) + String.valueOf(newline));
+            out.write(name + newline);
         }
 
         out.close();
@@ -493,7 +487,7 @@ public class Data
             StringTools.drawQ3String(g, name, x, y);
         else
         if(name.length() > MAXLETTERS)
-            g.drawString(String.valueOf(String.valueOf(name.substring(0, MAXLETTERS - 1))).concat(".."), x, y);
+            g.drawString(name.substring(0, MAXLETTERS - 1).concat(".."), x, y);
         else
             g.drawString(name, x, y);
     }
@@ -583,9 +577,9 @@ public class Data
     public static final int COUNTMAPS = 0;
     public static final int COUNTFRAGS = 1;
     public static final boolean drawSignature = true;
-    public static final String VERSION_NO = "2.9.99.01";
-    public static final String VERSION = new String("Compo Master " + VERSION_NO + ", Frode Nilsen, 2003 + VVD patches, 2006");
-    public static final String VERSION_2 = new String("http://www.compomaster.com.");
+    public static final String VERSION_NO = "2.9.99.02";
+    public static final String VERSION = "Compo Master " + VERSION_NO + ", Frode Nilsen, 2003 + VVD patches, 2006";
+    public static final String VERSION_2 = "http://www.compomaster.com, http://mvdsv.cvs.sourceforge.net/mvdsv/compomaster";
     public static final boolean ANONYMOUS = true;
     public static final int VERSIONTEXT_HEIGHT = 15;
     public static transient boolean debug = false;

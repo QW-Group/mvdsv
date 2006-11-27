@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:10:11
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   MultipleSlider.java
+/**
+
+$Id: MultipleSlider.java,v 1.2 2006/11/27 15:15:46 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 
@@ -198,7 +199,7 @@ public class MultipleSlider extends JComponent
         if(align == 1)
             x_marg = 0;
         else
-            x_marg = Math.max(fm.stringWidth("".concat(String.valueOf(String.valueOf(values[0])))), fm.stringWidth("".concat(String.valueOf(String.valueOf(values[values.length - 1])))));
+            x_marg = Math.max(fm.stringWidth(String.valueOf(values[0])), fm.stringWidth(String.valueOf(values[values.length - 1])));
         h_text = 15;
         w = getWidth() - x_marg * 2;
         h = getHeight();
@@ -247,7 +248,7 @@ public class MultipleSlider extends JComponent
         for(int i = 0; i < values.length; i++)
         {
             int x_ofs = x_marg + (int)(ivalSize * (double)i);
-            String numStr = "".concat(String.valueOf(String.valueOf(values[i])));
+            String numStr = String.valueOf(values[i]);
             int strWidth = fm.stringWidth(numStr);
             if(align == 1)
                 g.drawString(numStr, ((-(int)ivalSize / 2 + x_ofs) - strWidth / 2) + 2, h_box + h_text);

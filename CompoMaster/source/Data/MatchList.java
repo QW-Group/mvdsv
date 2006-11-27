@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:53
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   MatchList.java
+/**
+
+$Id: MatchList.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -165,7 +166,7 @@ public abstract class MatchList
         {
             g.setColor(new Color(128, 128, 128));
             MatchList _tmp = this;
-            String line = String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(Data.VERSION_2)))).append(" v").append(Data.VERSION_NO)));
+            String line = new String((new StringBuffer(Data.VERSION_2)).append(" v").append(Data.VERSION_NO));
             g.drawString(line, di.width - g.getFontMetrics(getMainFont()).stringWidth(line) - 5, di.height - 6);
         }
     }

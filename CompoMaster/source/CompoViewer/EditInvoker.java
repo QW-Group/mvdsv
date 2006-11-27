@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:13:15
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   EditInvoker.java
+/**
+
+$Id: EditInvoker.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package CompoViewer;
 
@@ -31,11 +32,11 @@ public class EditInvoker
             {
                 int idx = editUrl.indexOf('?');
                 if(idx != -1 && idx != editUrl.length() - 1)
-                    editUrl = String.valueOf(String.valueOf(editUrl)).concat("&");
+                    editUrl = editUrl.concat("&");
                 String id = data.matchList.findMatchId(m);
-                editUrl = String.valueOf(editUrl) + String.valueOf("&mid=".concat(String.valueOf(String.valueOf(id))));
-                editUrl = String.valueOf(editUrl) + String.valueOf("&cid=".concat(String.valueOf(String.valueOf(compoId))));
-                editUrl = String.valueOf(editUrl) + String.valueOf("&edit=".concat(String.valueOf(String.valueOf(m.isPlayed() ? 0 : 1))));
+                editUrl = editUrl.concat("&mid=").concat(String.valueOf(id));
+                editUrl = editUrl.concat("&cid=").concat(String.valueOf(compoId));
+                editUrl = editUrl.concat("&edit=").concat(String.valueOf(m.isPlayed() ? 0 : 1));
                 theApplet.getAppletContext().showDocument(new URL(editUrl));
             }
             catch(MalformedURLException e)
@@ -54,10 +55,7 @@ public class EditInvoker
             return s;
         } else
         {
-            String t = s.substring(0, i);
-            t = String.valueOf(String.valueOf(t)).concat("___");
-            t = String.valueOf(t) + String.valueOf(s.substring(i + 3));
-            return t;
+            return s.substring(0, i).concat("___").concat(s.substring(i + 3));
         }
     }
 

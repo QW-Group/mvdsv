@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:09:45
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   HtmlCode.java
+/**
+
+$Id: HtmlCode.java,v 1.2 2006/11/27 15:15:45 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 
@@ -115,15 +116,18 @@ public class HtmlCode extends JFrame
         int h = (d.height * sldVer.getValue()) / 100;
         int w = (d.width * sldHor.getValue()) / 100;
         File ftemp = new File(CompoMaster.dataFileName);
-        String txt = String.valueOf(String.valueOf((new StringBuffer("<APPLET archive=\"CompoViewer.jar\" code=\"CompoViewer/CompoViewer.class\"height=\"")).append(h).append("\" width=\"").append(w).append("\">\n").append("  <PARAM name=\"DataFile0\" value=\"").append(ftemp.getName()).append("\">\n")));
-        txt = String.valueOf(String.valueOf(txt)).concat("</APPLET>");
+        String txt = new String((
+			new StringBuffer("<APPLET archive=\"CompoViewer.jar\" code=\"CompoViewer/CompoViewer.class\"height=\""))
+				.append(h).append("\" width=\"").append(w).append("\">\n")
+				.append("  <PARAM name=\"DataFile0\" value=\"").append(ftemp.getName())
+				.append("\">\n").append("</APPLET>"));
         txaHtml.setText(txt);
     }
 
     private void updateGui()
     {
-        lblHor.setText(String.valueOf(String.valueOf((new StringBuffer("")).append(sldHor.getValue()).append("%"))));
-        lblVer.setText(String.valueOf(String.valueOf((new StringBuffer("")).append(sldVer.getValue()).append("%"))));
+        lblHor.setText(new String((new StringBuffer(sldHor.getValue())).append("%")));
+        lblVer.setText(new String((new StringBuffer(sldVer.getValue())).append("%")));
         updateHtml();
         getContentPane().add(btnOk, new GridBagConstraints(1, 4, 1, 1, 0.0D, 0.0D, 10, 0, new Insets(0, 0, 0, 0), 0, 0));
     }

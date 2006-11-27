@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:15:49
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   CupStructure.java
+/**
+
+$Id: CupStructure.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -198,7 +199,7 @@ public abstract class CupStructure extends MatchList
         Match m;
         for(int i = 0; (m = getMatch(i)) != null; i++)
             if(m == target)
-                return "".concat(String.valueOf(String.valueOf(i)));
+                return String.valueOf(i);
 
         return null;
     }

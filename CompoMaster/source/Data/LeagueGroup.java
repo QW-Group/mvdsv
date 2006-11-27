@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:41
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   LeagueGroup.java
+/**
+
+$Id: LeagueGroup.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -28,34 +29,34 @@ public class LeagueGroup extends Group
                 return player.getName();
 
             case 1: // '\001'
-                return "".concat(String.valueOf(String.valueOf(numPlayed)));
+                return String.valueOf(numPlayed);
 
             case 2: // '\002'
-                return "".concat(String.valueOf(String.valueOf(won)));
+                return String.valueOf(won);
 
             case 3: // '\003'
-                return "".concat(String.valueOf(String.valueOf(draw)));
+                return String.valueOf(draw);
 
             case 4: // '\004'
-                return "".concat(String.valueOf(String.valueOf(lost)));
+                return String.valueOf(lost);
 
             case 5: // '\005'
-                return "".concat(String.valueOf(String.valueOf(mapsWon)));
+                return String.valueOf(mapsWon);
 
             case 6: // '\006'
-                return "".concat(String.valueOf(String.valueOf(mapsLost)));
+                return String.valueOf(mapsLost);
 
             case 7: // '\007'
-                return "".concat(String.valueOf(String.valueOf(kills)));
+                return String.valueOf(kills);
 
             case 8: // '\b'
-                return "".concat(String.valueOf(String.valueOf(deaths)));
+                return String.valueOf(deaths);
 
             case 9: // '\t'
-                return "".concat(String.valueOf(String.valueOf(diff)));
+                return String.valueOf(diff);
 
             case 10: // '\n'
-                return "".concat(String.valueOf(String.valueOf(points)));
+                return String.valueOf(points);
             }
             return "Error";
         }
@@ -251,7 +252,7 @@ public class LeagueGroup extends Group
         for(int i = 0; i < playerList.size(); i++)
         {
             for(int j = i + 1; j < playerList.size(); j++)
-                matchList.add(new DeathMatch((Player)playerList.get(i), (Player)playerList.get(j), "".concat(String.valueOf(String.valueOf(++k)))));
+                matchList.add(new DeathMatch((Player)playerList.get(i), (Player)playerList.get(j), String.valueOf(++k)));
 
         }
 
@@ -285,7 +286,7 @@ public class LeagueGroup extends Group
 
     public void addMatch(DeathMatch m)
     {
-        m.name = new String("".concat(String.valueOf(String.valueOf(matchList.size()))));
+        m.name = String.valueOf(matchList.size());
         matchList.add(m);
     }
 
@@ -329,7 +330,7 @@ public class LeagueGroup extends Group
 
         if(isPlayed())
             g.setColor(Group.greenTextCol);
-        g.drawString(String.valueOf(String.valueOf((new StringBuffer("                ")).append(numPlayed).append(" of ").append(total))), x + 5 + getColumnWidth(0), (y + 20) - 5);
+        g.drawString(new String((new StringBuffer("                ")).append(numPlayed).append(" of ").append(total)), x + 5 + getColumnWidth(0), (y + 20) - 5);
         g.drawString(getName(), x + 5, (y + 20) - 5);
         y += 35;
         y += 4;
@@ -409,7 +410,7 @@ public class LeagueGroup extends Group
     private void sortPlayers()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("    SORT [")).append(getName()).append("]"))));
+            System.out.println(new String((new StringBuffer("    SORT [")).append(getName()).append("]")));
         MatchPlayerInfo mpi[] = new MatchPlayerInfo[playerList.size()];
         int numPlayers = playerList.size();
         for(int i = 0; i < numPlayers; i++)
@@ -492,10 +493,10 @@ public class LeagueGroup extends Group
 
             pass++;
             success = true;
-            System.out.println("-Pass #".concat(String.valueOf(String.valueOf(pass))));
+            System.out.println("-Pass #".concat(String.valueOf(pass)));
             for(int i = 0; i < numRnds; i++)
             {
-                System.out.println(String.valueOf(String.valueOf((new StringBuffer("--Round ")).append(i).append(": ---"))));
+                System.out.println(new String((new StringBuffer("--Round ")).append(i).append(": ---")));
                 mptr = 0;
                 btc = 1;
                 for(int j = 0; j < playerList.size() / 2; j++)
@@ -510,7 +511,7 @@ public class LeagueGroup extends Group
                             int bt = calcBackTrace(btc++);
                             if(j - bt < 0)
                             {
-                                System.out.println(String.valueOf(String.valueOf((new StringBuffer("-Pass #")).append(pass).append(" result: failure.\n"))));
+                                System.out.println(new String((new StringBuffer("-Pass #")).append(pass).append(" result: failure.\n")));
                                 success = false;
                                 j = playerList.size();
                                 i = numRnds;
@@ -540,7 +541,7 @@ public class LeagueGroup extends Group
                     {
                         round[i][j] = mIn;
                         open.remove(mptr);
-                        round[i][j].scheduled = String.valueOf(String.valueOf((new StringBuffer("")).append(i + 1)));
+                        round[i][j].scheduled = new String((new StringBuffer("")).append(i + 1));
                     }
                 }
 
@@ -548,11 +549,11 @@ public class LeagueGroup extends Group
 
             if(pass == maxPass && !success)
             {
-                System.out.println(String.valueOf(String.valueOf((new StringBuffer("Unable to compute after ")).append(maxPass).append(" attempts. This algorithm is based on randomness, and MAY ").append("succeed if retried. Reexecute the command if you feel lucky. "))));
+                System.out.println(new String((new StringBuffer("Unable to compute after ")).append(maxPass).append(" attempts. This algorithm is based on randomness, and MAY ").append("succeed if retried. Reexecute the command if you feel lucky. ")));
                 success = true;
             } else
             if(success)
-                System.out.println(String.valueOf(String.valueOf((new StringBuffer("-Pass #")).append(pass).append(" result: Success!"))));
+                System.out.println(new String((new StringBuffer("-Pass #")).append(pass).append(" result: Success!")));
         } while(!success);
     }
 
@@ -637,7 +638,7 @@ public class LeagueGroup extends Group
 
     public String toString()
     {
-        return String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(super.name)))).append(": ").append(playerList.size()).append(" players.")));
+        return new String((new StringBuffer(String.valueOf(String.valueOf(super.name)))).append(": ").append(playerList.size()).append(" players."));
     }
 
     public String stringStandings()
@@ -648,9 +649,7 @@ public class LeagueGroup extends Group
             if(!getPlayer(j).isDisabled() || Data.showDisabled)
             {
                 MatchPlayerInfo mpi = new MatchPlayerInfo(j);
-                ret = String.valueOf(ret) + String.valueOf(String.valueOf(String.valueOf(((Player)playerList.get(j)).getName())).concat(":"));
-                ret = String.valueOf(ret) + String.valueOf(String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(mpi.numPlayed)))).append(":").append(mpi.won).append(":").append(mpi.lost).append(":").append(mpi.mapsWon).append(":").append(mpi.mapsLost).append(":").append(mpi.kills).append(":").append(mpi.deaths).append(":").append(mpi.diff).append(":").append(mpi.points))));
-                ret = String.valueOf(String.valueOf(ret)).concat("\n\r");
+                ret = new String((new StringBuffer(ret)).append(((Player)playerList.get(j)).getName()).append(":").append(mpi.numPlayed).append(":").append(mpi.won).append(":").append(mpi.lost).append(":").append(mpi.mapsWon).append(":").append(mpi.mapsLost).append(":").append(mpi.kills).append(":").append(mpi.deaths).append(":").append(mpi.diff).append(":").append(mpi.points).append("\n\r"));
             }
 
         return ret;
@@ -664,7 +663,7 @@ public class LeagueGroup extends Group
         {
             DeathMatch m = (DeathMatch)matchList.get(i);
             if(!m.isDisabled() || Data.showDisabled)
-                ret = String.valueOf(ret) + String.valueOf(String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(index++)))).append(":").append(m.toString()).append("\r\n"))));
+                ret = new String((new StringBuffer(ret)).append(index++).append(":").append(m.toString()).append("\r\n"));
         }
 
         return ret;

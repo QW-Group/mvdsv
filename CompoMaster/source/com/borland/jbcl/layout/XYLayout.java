@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:14:30
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   XYLayout.java
+/**
+
+$Id: XYLayout.java,v 1.2 2006/11/27 15:15:49 vvd0 Exp $
+
+**/
 
 package com.borland.jbcl.layout;
 
@@ -50,7 +51,7 @@ public class XYLayout
 
     public String toString()
     {
-        return String.valueOf(String.valueOf((new StringBuffer("XYLayout[width=")).append(width).append(",height=").append(height).append("]")));
+        return new String((new StringBuffer("XYLayout[width=")).append(width).append(",height=").append(height).append("]"));
     }
 
     public void addLayoutComponent(String s, Component component1)

@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:14:26
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   XYConstraints.java
+/**
+
+$Id: XYConstraints.java,v 1.2 2006/11/27 15:15:49 vvd0 Exp $
+
+**/
 
 package com.borland.jbcl.layout;
 
@@ -88,7 +89,7 @@ public class XYConstraints
 
     public String toString()
     {
-        return String.valueOf(String.valueOf((new StringBuffer("XYConstraints[")).append(x).append(",").append(y).append(",").append(width).append(",").append(height).append("]")));
+        return new String((new StringBuffer("XYConstraints[")).append(x).append(",").append(y).append(",").append(width).append(",").append(height).append("]"));
     }
 
     int x;

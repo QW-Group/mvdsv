@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:09:49
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   JCompoDrawing.java
+/**
+
+$Id: JCompoDrawing.java,v 1.2 2006/11/27 15:15:45 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 

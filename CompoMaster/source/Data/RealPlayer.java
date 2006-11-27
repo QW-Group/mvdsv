@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:17:22
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   RealPlayer.java
+/**
+
+$Id: RealPlayer.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -45,14 +46,14 @@ public class RealPlayer extends Player
 	public boolean isDisabled()
 	{
 		if(Data.debug)
-			System.out.println(String.valueOf(String.valueOf((new StringBuffer("	  RPL-ISDISABLED [")).append(getName()).append("]"))));
+			System.out.println(new String((new StringBuffer("	  RPL-ISDISABLED [")).append(getName()).append("]")));
 		return disabled;
 	}
 
 	public boolean isWalkover()
 	{
 		if(Data.debug)
-			System.out.println(String.valueOf(String.valueOf((new StringBuffer("	  RPL-ISWALKOVER [")).append(getName()).append("]"))));
+			System.out.println(new String((new StringBuffer("	  RPL-ISWALKOVER [")).append(getName()).append("]")));
 		return isDisabled();
 	}
 
@@ -101,7 +102,7 @@ public class RealPlayer extends Player
 
 	public String toString()
 	{
-		return String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(name)))).append(":").append(password).append(":").append(super.rank).append(":").append(email)));
+		return new String((new StringBuffer(name)).append(":").append(password).append(":").append(super.rank).append(":").append(email));
 	}
 
 	public static Data importPlayerList(BufferedReader inFile)
@@ -208,24 +209,24 @@ public class RealPlayer extends Player
 				{
 					Team team = (Team)data.getPlayer(i);
 					outFile.write("[teamdef]\r\n");
-					outFile.write(String.valueOf(String.valueOf((new StringBuffer("name=")).append(team.getName()).append("\r\n"))));
+					outFile.write(new String((new StringBuffer("name=")).append(team.getName()).append("\r\n")));
 					if(team.shortname != null)
-						outFile.write(String.valueOf(String.valueOf((new StringBuffer("shortname=")).append(team.shortname).append("\r\n"))));
+						outFile.write(new String((new StringBuffer("shortname=")).append(team.shortname).append("\r\n")));
 					if(((RealPlayer) (team)).password != null)
-						outFile.write(String.valueOf(String.valueOf((new StringBuffer("password=")).append(((RealPlayer) (team)).password).append("\r\n"))));
+						outFile.write(new String((new StringBuffer("password=")).append(((RealPlayer) (team)).password).append("\r\n")));
 					if(team.hp != null)
-						outFile.write(String.valueOf(String.valueOf((new StringBuffer("hp=")).append(team.hp).append("\r\n"))));
+						outFile.write(new String((new StringBuffer("hp=")).append(team.hp).append("\r\n")));
 					if(team.irc != null)
-						outFile.write(String.valueOf(String.valueOf((new StringBuffer("irc=")).append(team.irc).append("\r\n"))));
-					outFile.write(String.valueOf(String.valueOf((new StringBuffer("rank=")).append(((Player) (team)).rank).append("\r\n"))));
+						outFile.write(new String((new StringBuffer("irc=")).append(team.irc).append("\r\n")));
+					outFile.write(new String((new StringBuffer("rank=")).append(((Player) (team)).rank).append("\r\n")));
 					if(team.getMemberCount() > 0)
 					{
 						outFile.write("members=");
 						int j;
 						for(j = 0; j < team.getMemberCount() - 1; j++)
-							outFile.write(String.valueOf(String.valueOf(team.getMember(j))).concat("&"));
+							outFile.write(team.getMember(j).concat("&"));
 
-						outFile.write(String.valueOf(String.valueOf(team.getMember(j))).concat("\r\n"));
+						outFile.write(team.getMember(j).concat("\r\n"));
 					}
 				}
 
@@ -236,9 +237,9 @@ public class RealPlayer extends Player
 				for(int i = 0; i < team; i++)
 				{
 					outFile.write("[playerdef]\r\nname=");
-					outFile.write(String.valueOf(String.valueOf(((RealPlayer)data.getPlayer(i)).name)).concat("\r\n"));
+					outFile.write(((RealPlayer)data.getPlayer(i)).name.concat("\r\n"));
 					outFile.write("rank=");
-					outFile.write(String.valueOf(String.valueOf(((RealPlayer)data.getPlayer(i)).rank)).concat("\r\n"));
+					outFile.write(String.valueOf(((RealPlayer)data.getPlayer(i)).rank).concat("\r\n"));
 				}
 
 			}

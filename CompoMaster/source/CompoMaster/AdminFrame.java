@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:06:16
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   AdminFrame.java
+/**
+
+$Id: AdminFrame.java,v 1.2 2006/11/27 15:15:45 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 
@@ -63,7 +64,7 @@ public class AdminFrame extends JFrame
         xYLayout1 = new XYLayout();
         String title = "CompoMaster";
         if(CompoMaster.dataFileName != null)
-            title = String.valueOf(title) + String.valueOf(" - ".concat(String.valueOf(String.valueOf(CompoMaster.dataFileName))));
+            title = title.concat(" - ").concat(CompoMaster.dataFileName);
         setTitle(title);
         CompoMaster.setDataInstance(d);
         data = d;

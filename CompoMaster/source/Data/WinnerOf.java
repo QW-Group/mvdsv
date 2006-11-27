@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:17:30
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   Player.java
+/**
+
+$Id: WinnerOf.java,v 1.2 2006/11/27 15:15:49 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -42,12 +43,12 @@ class WinnerOf extends Player
     public String getName()
     {
         if(Data.debug)
-            System.out.println("    WINNER OF ".concat(String.valueOf(String.valueOf(parentMatch.getName()))));
+            System.out.println("    WINNER OF ".concat(parentMatch.getName()));
         Player p;
         if((p = getParentWinner()) != null)
             return p.getName();
         else
-            return "Winner ".concat(String.valueOf(String.valueOf(parentMatch.getName())));
+            return "Winner ".concat(parentMatch.getName());
     }
 
     public Color getColor()
@@ -62,7 +63,7 @@ class WinnerOf extends Player
     public boolean isWalkover()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("      WNR-ISWALKOVER [")).append(getName()).append("]"))));
+            System.out.println(new String((new StringBuffer("      WNR-ISWALKOVER [")).append(getName()).append("]")));
         Player p;
         if((p = getParentWinner()) == null)
             return false;
@@ -73,7 +74,7 @@ class WinnerOf extends Player
     public boolean isDisabled()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("      WNR-ISDISABLED [")).append(getName()).append("]"))));
+            System.out.println(new String((new StringBuffer("      WNR-ISDISABLED [")).append(getName()).append("]")));
         Player p;
         if((p = getParentWinner()) == null)
             return false;
@@ -83,7 +84,7 @@ class WinnerOf extends Player
 
     public String toString()
     {
-        return "Winner of ".concat(String.valueOf(String.valueOf(parentMatch.getName())));
+        return "Winner of ".concat(parentMatch.getName());
     }
 
     private static final long serialVersionUID = 0x289f5684b6dd3a8L;

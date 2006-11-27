@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:17:06
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   NetInterface.java
+/**
+
+$Id: NetInterface.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -58,7 +59,7 @@ public class NetInterface extends DataInterface
         debug = !debug;
         if(tap != null)
             tap.setEnabled(debug);
-        System.out.println("Debug mode: ".concat(String.valueOf(String.valueOf(debug))));
+        System.out.println("Debug mode: ".concat(String.valueOf(debug)));
     }
 
     private static boolean startServer(String args[])
@@ -72,12 +73,12 @@ public class NetInterface extends DataInterface
             }
             catch(NumberFormatException e)
             {
-                System.out.println(String.valueOf(String.valueOf((new StringBuffer("Unable to set port '")).append(args[0]).append("'"))));
+                System.out.println(new String((new StringBuffer("Unable to set port '")).append(args[0]).append("'")));
             }
         try
         {
             outSocket = new ServerSocket(port);
-            System.out.println("Listening on port ".concat(String.valueOf(String.valueOf(port))));
+            System.out.println("Listening on port ".concat(String.valueOf(port)));
             Thread listen = new Thread() {
 
                 public void run()
@@ -88,7 +89,7 @@ public class NetInterface extends DataInterface
                         {
                             NetInterface.inSocket = NetInterface.outSocket.accept();
                             InetAddress address = NetInterface.inSocket.getInetAddress();
-                            System.out.println("Received connection from ".concat(String.valueOf(String.valueOf(address.getHostAddress()))));
+                            System.out.println("Received connection from ".concat(address.getHostAddress()));
                             DataInterface.outStream = new PrintStream(NetInterface.inSocket.getOutputStream());
                             DataInterface.inStream = new BufferedReaderTap(new InputStreamReader(NetInterface.inSocket.getInputStream()), System.out);
                             NetInterface.tap = (BufferedReaderTap)DataInterface.inStream;
@@ -112,7 +113,7 @@ public class NetInterface extends DataInterface
         }
         catch(IOException e)
         {
-            System.out.println("Unable to start server on port ".concat(String.valueOf(String.valueOf(port))));
+            System.out.println("Unable to start server on port ".concat(String.valueOf(port)));
         }
         boolean flag1 = false;
         return flag1;

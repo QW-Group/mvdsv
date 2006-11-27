@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:37
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   GroupStructure.java
+/**
+
+$Id: GroupStructure.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -87,7 +88,7 @@ public abstract class GroupStructure extends MatchList
             {
                 extra = 0;
             }
-            addGroup(super.data.getNumPlayers() / numGroups + extra, "Group ".concat(String.valueOf(String.valueOf(String.valueOf(i + 1)))));
+            addGroup(super.data.getNumPlayers() / numGroups + extra, "Group ".concat(String.valueOf(i + 1)));
         }
 
         if(super.data.doShuffle)
@@ -99,7 +100,7 @@ public abstract class GroupStructure extends MatchList
             for(; i < super.data.getNumPlayers(); i++)
                 if(!((Group)getMatch(gPtr)).addPlayer(super.data.getPlayer(i)))
                 {
-                    ((Group)getMatch(gPtr)).setName(String.valueOf(String.valueOf((new StringBuffer("Division ")).append(gPtr + 1))));
+                    ((Group)getMatch(gPtr)).setName(new String((new StringBuffer("Division ")).append(gPtr + 1)));
                     gPtr++;
                     i--;
                 }

@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:07:27
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   ScoreRegFFA.java
+/**
+
+$Id: ScoreRegFFA.java,v 1.2 2006/11/27 15:15:46 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 
@@ -96,7 +97,7 @@ public class ScoreRegFFA extends JDialog
         getContentPane().add(chkIsPlayed, new XYConstraints(66, 131, 141, 23));
         getContentPane().add(txtScheduled, new XYConstraints(85, 23, 229, -1));
         getContentPane().add(btnDone, new XYConstraints(118, 171, 125, 28));
-        setTitle("Edit ".concat(String.valueOf(String.valueOf(match.getName()))));
+        setTitle("Edit ".concat(match.getName()));
         txtScheduled.setText(((Match) (match)).scheduled);
         chkIsPlayed.setSelected(match.isPlayed());
         curPlayer = 0;
@@ -111,7 +112,7 @@ public class ScoreRegFFA extends JDialog
 
     private void showPlayer(int nr)
     {
-        lblCounter.setText(String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(String.valueOf(nr + 1))))).append("/").append(String.valueOf(match.getNumPlayers())))));
+        lblCounter.setText(new String((new StringBuffer(nr + 1)).append("/").append(match.getNumPlayers())));
         lblPlayer.setText(match.getPlayer(nr).getName());
         txtScore.setText(String.valueOf(match.getScore(nr)));
         txtScore.grabFocus();

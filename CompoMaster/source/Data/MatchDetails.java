@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:51
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   MatchDetails.java
+/**
+
+$Id: MatchDetails.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -81,30 +82,30 @@ public class MatchDetails extends Panel
         int tmp = Data.MAXLETTERS;
         Data.MAXLETTERS = 40;
         g.setColor(DeathMatch.INFO_TEXTCOL);
-        String s = new String("^3Match code: ^7".concat(String.valueOf(String.valueOf(((Match) (match)).name))));
+        String s = new String("^3Match code: ^7".concat(((Match) (match)).name));
         Data.drawName(g, s, 5, y);
         y += 20;
         g.setColor(DeathMatch.INFO_TEXTCOL);
         if(!match.isPlayed())
         {
-            s = new String("^3Scheduled: ^7".concat(String.valueOf(String.valueOf(((Match) (match)).scheduled))));
+            s = new String("^3Scheduled: ^7".concat(String.valueOf(((Match) (match)).scheduled)));
         } else
         {
-            String result = String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(match.getScore(0))))).append(" - ").append(match.getScore(1))));
+            String result = new String((new StringBuffer(match.getScore(0))).append(" - ").append(match.getScore(1)));
             int wo;
             if((wo = match.getWalkover()) != -1)
             {
                 result = "";
-                Data.drawName(g, String.valueOf(String.valueOf(match.getPlayer(1 - wo).getName())).concat("^7 wins on walkover"), x, y + 20, -1);
+                Data.drawName(g, match.getPlayer(1 - wo).getName().concat("^7 wins on walkover"), x, y + 20, -1);
             }
-            s = new String("^3Result:^7 ".concat(String.valueOf(String.valueOf(result))));
+            s = new String("^3Result:^7 ".concat(result));
         }
         Data.drawName(g, s, 5, y, -1);
         y += 40;
         g.setColor(BGCOL2);
         g.fill3DRect(4, y - 15, d.width - 8, 25, true);
         g.setColor(Group.headerCol);
-        s = String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(match.getPlayer(0).getName())))).append("^7 vs ").append(match.getPlayer(1).getName())));
+        s = new String((new StringBuffer(match.getPlayer(0).getName())).append("^7 vs ").append(match.getPlayer(1).getName()));
         Data.drawName(g, s, 5, y, -1);
         Data.MAXLETTERS = tmp;
         y += 20;
@@ -132,13 +133,13 @@ public class MatchDetails extends Panel
                     g.drawString("-", centerX - 3, y + 20);
                     DoubleRound r = (DoubleRound)match.getRound(i);
                     MatchList.drawNumber(r.getScore(0, 1), digits, centerX + 10, y, g);
-                    g.drawString(String.valueOf(String.valueOf((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(0, 1))).append(")"))), centerX + 35, y);
+                    g.drawString(new String((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(0, 1))).append(")")), centerX + 35, y);
                     MatchList.drawNumber(r.getScore(0, 0), digits, centerX - 27, y, g);
-                    g.drawString(String.valueOf(String.valueOf((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(0, 0))).append(")"))), centerX - 60, y);
+                    g.drawString(new String((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(0, 0))).append(")")), centerX - 60, y);
                     MatchList.drawNumber(r.getScore(1, 1), digits, centerX + 10, y + 20, g);
-                    g.drawString(String.valueOf(String.valueOf((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(1, 1))).append(")"))), centerX + 35, y + 20);
+                    g.drawString(new String((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(1, 1))).append(")")), centerX + 35, y + 20);
                     MatchList.drawNumber(r.getScore(1, 0), digits, centerX - 27, y + 20, g);
-                    g.drawString(String.valueOf(String.valueOf((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(1, 0))).append(")"))), centerX - 60, y + 20);
+                    g.drawString(new String((new StringBuffer("(")).append(data.getRoundNameShort(r.getSideIndex(1, 0))).append(")")), centerX - 60, y + 20);
                     y += 40;
                 } else
                 {

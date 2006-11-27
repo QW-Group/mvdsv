@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:17:19
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   Player.java
+/**
+
+$Id: RankOf.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -61,7 +62,7 @@ class RankOf extends Player
     public boolean isWalkover()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("      RNK-ISWALKOVER [")).append(getName()).append("]"))));
+            System.out.println(new String((new StringBuffer("      RNK-ISWALKOVER [")).append(getName()).append("]")));
         if(source != null)
         {
             RealPlayer p = getRealPlayer();
@@ -74,7 +75,7 @@ class RankOf extends Player
     public boolean isDisabled()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("      RNK-ISDISABLED [")).append(getName()).append("]"))));
+            System.out.println(new String((new StringBuffer("      RNK-ISDISABLED [")).append(getName()).append("]")));
         if(source != null)
         {
             RealPlayer p = getRealPlayer();
@@ -87,7 +88,7 @@ class RankOf extends Player
     public String getName()
     {
         if(Data.debug)
-            System.out.println("    RANK OF -R=".concat(String.valueOf(String.valueOf(super.rank))));
+            System.out.println("    RANK OF -R=".concat(String.valueOf(super.rank)));
         if(source == null)
             return "(Broken link)";
         RealPlayer p = (RealPlayer)source.getPlayerAt(super.rank);

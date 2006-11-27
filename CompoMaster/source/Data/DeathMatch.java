@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:12
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   DeathMatch.java
+/**
+
+$Id: DeathMatch.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -81,7 +82,7 @@ public class DeathMatch extends Match
     public boolean isDisabled()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("     MATCH-isDisabled [")).append(getName()).append("]= ").append(mPlayer[0].player.isDisabled() || mPlayer[1].player.isDisabled()))));
+            System.out.println(new String((new StringBuffer("     MATCH-isDisabled [")).append(getName()).append("]= ").append(mPlayer[0].player.isDisabled() || mPlayer[1].player.isDisabled())));
         return mPlayer[0].player.isDisabled() || mPlayer[1].player.isDisabled();
     }
 
@@ -243,16 +244,16 @@ public class DeathMatch extends Match
             temp2 = "WO";
         } else
         {
-            temp = new String(String.valueOf(mPlayer[0].score));
-            temp2 = new String(String.valueOf(mPlayer[1].score));
+            temp = String.valueOf(mPlayer[0].score);
+            temp2 = String.valueOf(mPlayer[1].score);
         }
         if(!isPlayed())
             temp = temp2 = "";
         for(int i = temp.length(); i < 2; i++)
-            temp = " ".concat(String.valueOf(String.valueOf(temp)));
+            temp = " ".concat(temp);
 
         for(int i = temp2.length(); i < 2; i++)
-            temp2 = " ".concat(String.valueOf(String.valueOf(temp2)));
+            temp2 = " ".concat(temp2);
 
         g.drawString(temp, x + 105 + 4, (y + 4 + 20) - adjust);
         g.drawString(temp2, x + 105 + 4, (y + 4 + 40) - adjust);
@@ -326,10 +327,10 @@ public class DeathMatch extends Match
         for(int i = 0; i < rounds.size(); i++)
         {
             DMRound rptr = (DMRound)rounds.get(i);
-            str = String.valueOf(str) + String.valueOf(String.valueOf(String.valueOf((new StringBuffer(":")).append(rptr.mapName).append(":").append(rptr.getScore(0)).append(":").append(rptr.getScore(1)))));
+            str = new String((new StringBuffer(str)).append(":").append(rptr.mapName).append(":").append(rptr.getScore(0)).append(":").append(rptr.getScore(1)));
         }
 
-        return String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(super.name)))).append(":").append(playCode).append(':').append(getPlayer(0).getName()).append(':').append(getPlayer(1).getName()).append(':').append(getScore(0)).append(':').append(getScore(1)).append(':').append(super.scheduled).append(str)));
+        return new String((new StringBuffer(super.name)).append(":").append(playCode).append(':').append(getPlayer(0).getName()).append(':').append(getPlayer(1).getName()).append(':').append(getScore(0)).append(':').append(getScore(1)).append(':').append(super.scheduled).append(str));
     }
 
     private static final String WALKOVER_OLD = "!WALKOVER!";

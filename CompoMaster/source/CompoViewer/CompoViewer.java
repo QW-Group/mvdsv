@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:13:11
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   CompoViewer.java
+/**
+
+$Id: CompoViewer.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package CompoViewer;
 
@@ -145,7 +146,7 @@ public class CompoViewer extends Applet
         int compoLink[] = new int[10];
         for(int i = 0; i < 10; i++)
         {
-            String _dataFile = getParameter("DataFile".concat(String.valueOf(String.valueOf(i))));
+            String _dataFile = getParameter("DataFile".concat(String.valueOf(i)));
             if(_dataFile != null)
             {
                 filename[numCompos] = _dataFile;
@@ -177,23 +178,22 @@ public class CompoViewer extends Applet
             }
             catch(MalformedURLException e)
             {
-                errors = String.valueOf(errors) + String.valueOf(String.valueOf(String.valueOf((new StringBuffer("Error: Malformed URL exception (")).append(url).append(") "))));
-                errors = String.valueOf(errors) + String.valueOf(e.getMessage());
+                errors = new String((new StringBuffer(errors)).append("Error: Malformed URL exception (").append(url).append(") ").append(e.getMessage()));
                 continue;
             }
             catch(Exception e)
             {
                 if(Data.errors.endsWith("Error=1"))
-                    errors = String.valueOf(errors) + String.valueOf(String.valueOf(String.valueOf((new StringBuffer("File not found (")).append(url).append(")."))));
+                    errors = new String((new StringBuffer(errors)).append("File not found (").append(url).append(")."));
                 else
-                    errors = String.valueOf(errors) + String.valueOf(String.valueOf(String.valueOf((new StringBuffer("Error while loading file. (")).append(url).append(") - ").append(Data.errors))));
+                    errors = new String((new StringBuffer(errors)).append("Error while loading file. (").append(url).append(") - ").append(Data.errors));
                 if(Data.debug)
                 {
-                    errors = String.valueOf(errors) + String.valueOf(e.toString());
+                    errors = errors + e.toString();
                     StringWriter temp = new StringWriter();
                     PrintWriter p_temp = new PrintWriter(temp);
                     e.printStackTrace(p_temp);
-                    errors = String.valueOf(errors) + String.valueOf(String.valueOf(temp.toString()) + String.valueOf(e.toString()));
+                    errors = errors + temp.toString() + e.toString();
                 }
                 i++;
             }
@@ -215,7 +215,7 @@ public class CompoViewer extends Applet
             {
                 if(data[0].matchList.getMatch(0) == null)
                 {
-                    errors = String.valueOf(String.valueOf(errors)).concat("Error: No groups defined");
+                    errors = errors.concat("Error: No groups defined");
                     return;
                 }
                 Dimension winSize = getSize();
@@ -233,7 +233,7 @@ public class CompoViewer extends Applet
                 {
                     compo[i] = new CompoDrawing(data[i], winSize);
                     compo[i].addKeyListener(this);
-                    data[i].matchList.setEditListener(new EditInvoker(editUrl, "".concat(String.valueOf(String.valueOf(i))), data[i], this));
+                    data[i].matchList.setEditListener(new EditInvoker(editUrl, String.valueOf(i), data[i], this));
                     Dimension thisDim = data[i].matchList.getSize();
                     if(thisDim.width > maxX)
                         maxX = thisDim.width;
@@ -260,7 +260,7 @@ public class CompoViewer extends Applet
         }
         catch(Exception e)
         {
-            errors = String.valueOf(errors) + String.valueOf(e.toString());
+            errors = errors + e.toString();
         }
     }
 
@@ -291,7 +291,7 @@ public class CompoViewer extends Applet
             return true;
         } else
         {
-            errors = String.valueOf(String.valueOf((new StringBuffer("Fatal: Java VM too old (")).append(ver).append("). ").append("You need at least Java SE v1.3 to view this applet.   ").append("Please download the latest version from http://java.sun.com")));
+            errors = new String((new StringBuffer("Fatal: Java VM too old (")).append(ver).append("). You need at least Java SE v1.3 to view this applet.   ").append("Please download the latest version from http://java.sun.com"));
             return false;
         }
     }
@@ -337,7 +337,7 @@ public class CompoViewer extends Applet
         if(loadFinished && !errors.equals(""))
         {
             if(!errorsDrawn && Data.debug)
-                errors = String.valueOf(errors) + String.valueOf(" - ".concat(String.valueOf(String.valueOf(Data.errors))));
+                errors = errors.concat(" - ").concat(Data.errors);
             errorsDrawn = true;
             if(compo != null && compo[0] != null)
                 remove(compo[0]);
@@ -408,7 +408,7 @@ public class CompoViewer extends Applet
         Color done = new Color(100, 100, 255);
         double fact = (double)pi[i].getProgress() / (double)pi[i].getGoal();
         piGraf.setColor(textColor);
-        piGraf.drawString(String.valueOf(String.valueOf((new StringBuffer("Loading tournament ")).append(i + 1))), x, y - 5);
+        piGraf.drawString(new String((new StringBuffer("Loading tournament ")).append(i + 1)), x, y - 5);
         piGraf.setColor(Color.black);
         piGraf.fillRoundRect(x - 1, y - 1, 402, 27, ROUNDNESS, ROUNDNESS);
         piGraf.setColor(left);

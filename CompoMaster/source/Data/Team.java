@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:17:25
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   Team.java
+/**
+
+$Id: Team.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -95,7 +96,7 @@ public class Team extends RealPlayer
 
     public String toString()
     {
-        return String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(super.name)))).append(":").append(super.password).append(":").append(super.rank).append(":").append(shortname).append(":").append(hp).append(":").append(irc)));
+        return new String((new StringBuffer(super.name)).append(":").append(super.password).append(":").append(super.rank).append(":").append(shortname).append(":").append(hp).append(":").append(irc));
     }
 
     String memberName[];

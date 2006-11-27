@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:47
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   Match.java
+/**
+
+$Id: Match.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -98,7 +99,7 @@ public abstract class Match
         {
             if(ret == null)
                 ret = "";
-            ret = String.valueOf(ret) + String.valueOf(String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(prefix)))).append(d.url).append(":").append(d.pov).append(":").append(d.round).append("\n\r"))));
+            ret = new String((new StringBuffer(ret)).append(prefix).append(d.url).append(":").append(d.pov).append(":").append(d.round).append("\n\r"));
         }
 
         return ret;

@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:30
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   FDECup.java
+/**
+
+$Id: FDECup.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -140,11 +141,11 @@ public class FDECup extends CupStructure
         if(!allSingle)
             if(numSERounds > 0)
                 for(i = 0; i < frLength; i++)
-                    match[i].name = "SE-".concat(String.valueOf(String.valueOf(((Match) (match[i])).name)));
+                    match[i].name = "SE-".concat(((Match) (match[i])).name);
 
             else
                 for(i = 0; i < frLength; i++)
-                    match[i].name = "WB-".concat(String.valueOf(String.valueOf(((Match) (match[i])).name)));
+                    match[i].name = "WB-".concat(((Match) (match[i])).name);
 
         int round = 1;
         int roundSize = frLength / 2;
@@ -156,9 +157,9 @@ public class FDECup extends CupStructure
             for(i = 0; i < roundSize;)
             {
                 if(absPtr < ptrWB)
-                    match[absPtr] = new DeathMatch("SE-".concat(String.valueOf(String.valueOf(String.valueOf(absPtr + 1)))));
+                    match[absPtr] = new DeathMatch("SE-".concat(String.valueOf(absPtr + 1)));
                 else
-                    match[absPtr] = new DeathMatch("WB-".concat(String.valueOf(String.valueOf(String.valueOf((absPtr - ptrWB) + 1)))));
+                    match[absPtr] = new DeathMatch("WB-".concat(String.valueOf((absPtr - ptrWB) + 1)));
                 match[absPtr].setPlayer(0, new WinnerOf(super.data.matchList.getMatch(j)));
                 match[absPtr].setPlayer(1, new WinnerOf(super.data.matchList.getMatch(j + 1)));
                 match[absPtr].placingInfo = new MatchPlacingInfo(round, roundSize, i, bracketPtr, 1);
@@ -185,7 +186,7 @@ public class FDECup extends CupStructure
         {
             for(j = 0; j < roundSize;)
             {
-                match[absPtr] = new DeathMatch("LB-".concat(String.valueOf(String.valueOf(String.valueOf(bracketPtr + 1)))));
+                match[absPtr] = new DeathMatch("LB-".concat(String.valueOf(bracketPtr + 1)));
                 if(round == numSERounds * 2)
                 {
                     match[absPtr].setPlayer(0, new LoserOf(super.data.matchList.getMatch(dropperPtr)));
@@ -379,7 +380,7 @@ public class FDECup extends CupStructure
             g.fillRect(x, 0, 158, hWb + hLb);
             g.setColor(Color.black);
             g.drawRect(x, 0, 158, hWb + hLb);
-            drawTextBox(g, CupStructure.HEADERBGCOL, String.valueOf(String.valueOf((new StringBuffer("Round ")).append(i + 1))), x, 0, 0);
+            drawTextBox(g, CupStructure.HEADERBGCOL, new String((new StringBuffer("Round ")).append(i + 1)), x, 0, 0);
             x += 158;
         }
 
@@ -406,7 +407,7 @@ public class FDECup extends CupStructure
             g.setColor(Color.black);
             g.drawRect(x, 0, 316, hWb);
             g.drawRect(x, hWb, 316, hLb);
-            drawTextBox(g, CupStructure.HEADERBGCOL, String.valueOf(String.valueOf((new StringBuffer("Round ")).append(i + 1))), x, 0, 0);
+            drawTextBox(g, CupStructure.HEADERBGCOL, new String((new StringBuffer("Round ")).append(i + 1)), x, 0, 0);
             if(i > numSERounds)
                 x += 316;
             else

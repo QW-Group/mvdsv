@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:15:57
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   DataInterface.java
+/**
+
+$Id: DataInterface.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -31,7 +32,7 @@ public class DataInterface
 
     protected static void init(String argv[])
     {
-        outStream.print(String.valueOf(String.valueOf(Data.VERSION)).concat("\r\n"));
+        outStream.print(Data.VERSION.concat("\r\n"));
         if(argv != null && argv.length >= 1)
         {
             if(argv[0].toUpperCase().equals("-H"))
@@ -62,7 +63,7 @@ public class DataInterface
 
     protected static void displaySyntax()
     {
-        outStream.println("Syntax: DataInterface <datafile> <linked datafile>\r\n  Input (from stdin):\r\n  -------------------------------------------------------------------------------------\r\n".concat(String.valueOf(String.valueOf(helpStr))));
+        outStream.println("Syntax: DataInterface <datafile> <linked datafile>\r\n  Input (from stdin):\r\n  -------------------------------------------------------------------------------------\r\n".concat(helpStr));
         System.exit(0);
     }
 
@@ -73,19 +74,19 @@ public class DataInterface
         {
             data = data_t;
             filename = filename;
-            outStream.println("Loaded main file: ".concat(String.valueOf(String.valueOf(filename))));
+            outStream.println("Loaded main file: ".concat(filename));
             if(linked != null && (data.matchList instanceof CupStructure))
             {
                 Data edata = Data.load(linked);
                 if(edata != null)
                 {
-                    outStream.println("Loaded linked data file: ".concat(String.valueOf(String.valueOf(linked))));
+                    outStream.println("Loaded linked data file: ".concat(linked));
                     data.setExtData(edata);
                 }
             }
         } else
         {
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Error: Unable to load data file ")).append(filename).append("\r\n"))));
+            outStream.println(new String((new StringBuffer("Error: Unable to load data file ")).append(filename).append("\r\n")));
         }
     }
 
@@ -244,14 +245,14 @@ public class DataInterface
                             exit(true);
                         } else
                         {
-                            outStream.print(String.valueOf(String.valueOf((new StringBuffer("Unknown command '")).append(command).append("'\r\n"))));
+                            outStream.print(new String((new StringBuffer("Unknown command '")).append(command).append("'\r\n")));
                             if(data == null)
-                                outStream.print(String.valueOf(String.valueOf((new StringBuffer("Note that only the commands ")).append(nonDataCommands).append(" are valid when no file is loaded\r\n"))));
+                                outStream.print(new String((new StringBuffer("Note that only the commands ")).append(nonDataCommands).append(" are valid when no file is loaded\r\n")));
                         }
                 }
                 catch(NumberFormatException e)
                 {
-                    System.out.print("Input error\r\n".concat(String.valueOf(String.valueOf(cmdSyntax))));
+                    System.out.print("Input error\r\n".concat(cmdSyntax));
                 }
                 continue;
             }
@@ -281,7 +282,7 @@ public class DataInterface
         } else
         {
             Data.save(filename, data);
-            outStream.print(String.valueOf(String.valueOf((new StringBuffer("Saved file to: ")).append(filename).append("\r\n"))));
+            outStream.print(new String((new StringBuffer("Saved file to: ")).append(filename).append("\r\n")));
             return true;
         }
     }
@@ -318,7 +319,7 @@ public class DataInterface
     protected static void currentFile()
     {
         if(filename != null)
-            outStream.print(String.valueOf(String.valueOf((new StringBuffer("Current loaded file is: ")).append(filename).append("\r\n"))));
+            outStream.print(new String((new StringBuffer("Current loaded file is: ")).append(filename).append("\r\n")));
         else
             outStream.print("No file currently loaded\r\n");
     }
@@ -329,7 +330,7 @@ public class DataInterface
         for(int i = 0; i < numP; i++)
         {
             Player p = data.getPlayer(i);
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(i)))).append(":").append(StringTools.stripQ3Colors(p.toString(), doStrip)))));
+            outStream.println(new String((new StringBuffer(i)).append(":").append(StringTools.stripQ3Colors(p.toString(), doStrip))));
         }
 
     }
@@ -340,8 +341,7 @@ public class DataInterface
         outStream.print("Map list:\r\n");
         for(int i = 0; i < num; i++)
         {
-            String map = data.getMapName(i);
-            outStream.print(String.valueOf(String.valueOf(map)).concat("\r\n"));
+            outStream.print(data.getMapName(i).concat("\r\n"));
         }
 
     }
@@ -352,7 +352,7 @@ public class DataInterface
         for(int i = 0; i < numM; i++)
         {
             Match m = data.matchList.getMatch(i);
-            outStream.print(String.valueOf(String.valueOf((new StringBuffer(String.valueOf(String.valueOf(i)))).append(":").append(StringTools.stripQ3Colors(m.toString(), doStrip)).append("\r\n"))));
+            outStream.print(new String((new StringBuffer(i)).append(":").append(StringTools.stripQ3Colors(m.toString(), doStrip)).append("\r\n")));
         }
 
     }
@@ -393,7 +393,7 @@ public class DataInterface
                 {
                     data.removePlayer(i);
                     done = true;
-                    outStream.println(String.valueOf(String.valueOf((new StringBuffer("Player ")).append(i).append(" deleted successfully."))));
+                    outStream.println(new String((new StringBuffer("Player ")).append(i).append(" deleted successfully.")));
                 } else
                 {
                     outStream.println("Error:1: Wrong password");
@@ -410,7 +410,7 @@ public class DataInterface
         if(value != null && value.length > 0)
         {
             data.setCompoName(value[0]);
-            outStream.println("Name set: ".concat(String.valueOf(String.valueOf(value[0]))));
+            outStream.println("Name set: ".concat(value[0]));
         } else
         {
             outStream.println("Error: Too few arguments");
@@ -477,7 +477,7 @@ public class DataInterface
     protected static void externalPlayers()
     {
         data.setInDataFilename(value[0]);
-        outStream.println("External players set to: Filename:".concat(String.valueOf(String.valueOf(value[0]))));
+        outStream.println("External players set to: Filename:".concat(value[0]));
     }
 
     protected static void generateLeagueMatches()
@@ -495,7 +495,7 @@ public class DataInterface
     protected static void setAllowUserReporting()
     {
         if(value == null)
-            outStream.println("Current setting: ".concat(String.valueOf(String.valueOf(data.playerReporting))));
+            outStream.println("Current setting: ".concat(String.valueOf(data.playerReporting)));
         else
             try
             {
@@ -518,7 +518,7 @@ public class DataInterface
     protected static void showDisabled()
     {
         Data.showDisabled = !Data.showDisabled;
-        outStream.println("ShowDisabled is now: ".concat(String.valueOf(String.valueOf(Data.showDisabled))));
+        outStream.println("ShowDisabled is now: ".concat(String.valueOf(Data.showDisabled)));
     }
 
     protected static void initshuffle()
@@ -527,7 +527,7 @@ public class DataInterface
             data.doShuffle = false;
         else
             data.doShuffle = true;
-        outStream.println("DoShuffle is now: ".concat(String.valueOf(String.valueOf(data.doShuffle))));
+        outStream.println("DoShuffle is now: ".concat(String.valueOf(data.doShuffle)));
     }
 
     protected static void setRank()
@@ -547,7 +547,7 @@ public class DataInterface
             return;
         }
         data.getPlayer(i).setRank(r);
-        outStream.println("Rank set for ".concat(String.valueOf(String.valueOf(data.getPlayer(i).getName()))));
+        outStream.println("Rank set for ".concat(data.getPlayer(i).getName()));
     }
 
     protected static void schedule()
@@ -589,7 +589,7 @@ public class DataInterface
             m.deleteRounds();
             m.deleteDemos();
             m.isPlayed = false;
-            outStream.println("Matchresult reset for match: ".concat(String.valueOf(String.valueOf(m.getName()))));
+            outStream.println("Matchresult reset for match: ".concat(m.getName()));
         } else
         {
             outStream.println("No such match");
@@ -644,7 +644,7 @@ public class DataInterface
             m.addRound(new DMRound(Integer.parseInt(r1), Integer.parseInt(r2), map));
             m.calculateScore();
             m.isPlayed = true;
-            outStream.println("Result added to match: ".concat(String.valueOf(String.valueOf(m.getName()))));
+            outStream.println("Result added to match: ".concat(m.getName()));
         }
         catch(NumberFormatException e)
         {
@@ -691,7 +691,7 @@ public class DataInterface
     {
         if(value == null || value.length < num)
         {
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Not enough parameters. (")).append(num).append(" needed)"))));
+            outStream.println(new String((new StringBuffer("Not enough parameters. (")).append(num).append(" needed)")));
             return false;
         } else
         {
@@ -749,7 +749,7 @@ public class DataInterface
             DeathMatch m = new DeathMatch(a, b);
             LeagueGroup g = (LeagueGroup)data.matchList.getMatch(groupId);
             g.addMatch(m);
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Added match: \"")).append(m).append("\""))));
+            outStream.println(new String((new StringBuffer("Added match: \"")).append(m).append("\"")));
         }
         catch(Exception e)
         {
@@ -771,7 +771,7 @@ public class DataInterface
                     if(value.length >= 5)
                         m.deleteDemos();
                     m.addDemo(value[1], value[2], value[3]);
-                    outStream.println("Demo added to: ".concat(String.valueOf(String.valueOf(m.toString()))));
+                    outStream.println("Demo added to: ".concat(m.toString()));
                 } else
                 {
                     outStream.println("No such match");
@@ -800,7 +800,7 @@ public class DataInterface
                     if(value.length >= 6)
                         m.deleteDemos();
                     m.addDemo(value[2], value[3], value[4]);
-                    outStream.println("Demo added to: ".concat(String.valueOf(String.valueOf(m.toString()))));
+                    outStream.println("Demo added to: ".concat(m.toString()));
                 } else
                 {
                     outStream.println("No such match");
@@ -831,7 +831,7 @@ public class DataInterface
         } else
         {
             data.addMap(value[0]);
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Map \"")).append(value[0]).append("\" added"))));
+            outStream.println(new String((new StringBuffer("Map \"")).append(value[0]).append("\" added")));
             return;
         }
     }
@@ -849,7 +849,7 @@ public class DataInterface
         RealPlayer p;
         if((p = (RealPlayer)data.getPlayer(i)) == null)
         {
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Error: No such player (")).append(value[0]).append(")"))));
+            outStream.println(new String((new StringBuffer("Error: No such player (")).append(value[0]).append(")")));
             return;
         }
         if(!value[1].equals(""))
@@ -864,7 +864,7 @@ public class DataInterface
         catch(NumberFormatException numberformatexception1) { }
         if(value.length > 4 && !value[4].equals(""))
             p.setEmail(value[4]);
-        outStream.println("New playerdata set:\r\n".concat(String.valueOf(String.valueOf(p.toString()))));
+        outStream.println("New playerdata set:\r\n".concat(p.toString()));
     }
 
     protected static void enablePlayer(boolean state)
@@ -880,12 +880,12 @@ public class DataInterface
         RealPlayer p;
         if((p = (RealPlayer)data.getPlayer(i)) == null)
         {
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Error: No such player (")).append(value[0]).append(")"))));
+            outStream.println(new String((new StringBuffer("Error: No such player (")).append(value[0]).append(")")));
             return;
         } else
         {
             p.disabled = !state;
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Disabled: ")).append(!state).append("\r\n").append(p))));
+            outStream.println(new String((new StringBuffer("Disabled: ")).append(!state).append("\r\n").append(p)));
             return;
         }
     }
@@ -944,7 +944,7 @@ public class DataInterface
     protected static void strip()
     {
         doStrip = !doStrip;
-        outStream.println("Strip: ".concat(String.valueOf(String.valueOf(doStrip))));
+        outStream.println("Strip: ".concat(String.valueOf(doStrip)));
     }
 
     protected static void setIsPlayed()
@@ -957,11 +957,11 @@ public class DataInterface
         if(value[1].equals("1"))
         {
             m.setPlayed(true);
-            outStream.println(String.valueOf(String.valueOf(m)).concat("> isPlayed = TRUE"));
+            outStream.println(String.valueOf(m).concat("> isPlayed = TRUE"));
         } else
         {
             m.setPlayed(false);
-            outStream.println(String.valueOf(String.valueOf(m)).concat("> isPlayed = FALSE"));
+            outStream.println(String.valueOf(m).concat("> isPlayed = FALSE"));
         }
     }
 
@@ -976,7 +976,7 @@ public class DataInterface
                 Match m;
                 for(int j = 0; (m = (Match)g.matchList.get(j)) != null; j++)
                 {
-                    String s = m.demoString(String.valueOf(String.valueOf((new StringBuffer("")).append(i).append(":").append(j).append(":"))));
+                    String s = m.demoString(new String((new StringBuffer("")).append(i).append(":").append(j).append(":")));
                     if(s != null)
                         outStream.println(s);
                 }
@@ -988,7 +988,7 @@ public class DataInterface
             Match m;
             for(int j = 0; (m = data.matchList.getMatch(j)) != null; j++)
             {
-                String s = m.demoString(String.valueOf(String.valueOf((new StringBuffer("")).append(j).append(":"))));
+                String s = m.demoString(new String((new StringBuffer(j)).append(":")));
                 if(s != null)
                     outStream.println(s);
             }
@@ -1065,12 +1065,12 @@ public class DataInterface
         }
         catch(NumberFormatException e)
         {
-            outStream.println(String.valueOf(String.valueOf((new StringBuffer("Error: Cannot convert string \"")).append(s).append("\" to a number"))));
+            outStream.println(new String((new StringBuffer("Error: Cannot convert string \"")).append(s).append("\" to a number")));
             Match match = null;
             return match;
         }
         if(m == null)
-            outStream.println("Error: No match at index ".concat(String.valueOf(String.valueOf(i))));
+            outStream.println("Error: No match at index ".concat(String.valueOf(i)));
         return m;
     }
 

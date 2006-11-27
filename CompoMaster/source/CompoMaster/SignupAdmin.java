@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:11:03
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   SignupAdmin.java
+/**
+
+$Id: SignupAdmin.java,v 1.2 2006/11/27 15:15:46 vvd0 Exp $
+
+**/
 
 package CompoMaster;
 
@@ -303,14 +304,14 @@ public class SignupAdmin extends JFrame
                 {
                     int row = tblPlayers.getSelectedRow();
                     txtName.setText((String)tblPlayers.getValueAt(row, 0));
-                    txtRank.setText("".concat(String.valueOf(String.valueOf(tblPlayers.getValueAt(row, 1)))));
+                    txtRank.setText(String.valueOf(tblPlayers.getValueAt(row, 1)));
                     btnDelPlayer.setEnabled(true);
                     Player pl = data.getPlayer(row);
                     if(pl instanceof Team)
                     {
                         selectedTeam = (Team)pl;
                         txtNameMember.setEnabled(true);
-                        teamBorder.setTitle(String.valueOf(String.valueOf((new StringBuffer("Team members - ")).append(selectedTeam.getName()).append(":"))));
+                        teamBorder.setTitle(new String((new StringBuffer("Team members - ")).append(selectedTeam.getName()).append(":")));
                     } else
                     {
                         selectedTeam = null;
@@ -626,7 +627,7 @@ public class SignupAdmin extends JFrame
         setIconImage(CompoMaster.getIcon());
         String title = "CompoMaster";
         if(CompoMaster.dataFileName != null)
-            title = String.valueOf(title) + String.valueOf(" - ".concat(String.valueOf(String.valueOf(CompoMaster.dataFileName))));
+            title = title.concat(" - ").concat(CompoMaster.dataFileName);
         setTitle(title);
         getContentPane().setLayout(borderLayout3);
         titledBorder2 = new TitledBorder("Cup type");
@@ -1028,8 +1029,8 @@ public class SignupAdmin extends JFrame
             LeagueGroups ml = (LeagueGroups)data.matchList;
             rbnLeague.setSelected(true);
             sldNumGroups.setValue(ml.getNumGroups());
-            txtLgDraw.setText("".concat(String.valueOf(String.valueOf(ml.getPointsDraw()))));
-            txtLgVictory.setText("".concat(String.valueOf(String.valueOf(ml.getPointsVictory()))));
+            txtLgDraw.setText(String.valueOf(ml.getPointsDraw()));
+            txtLgVictory.setText(String.valueOf(ml.getPointsVictory()));
             chkAllowDraws.setSelected(ml.getDrawsEnabled());
             txtLgDraw.setEnabled(ml.getDrawsEnabled());
             if(ml.isDivisionSystem())
@@ -1120,7 +1121,7 @@ public class SignupAdmin extends JFrame
     {
         updateTourneyTab();
         data.sortPlayers(0);
-        txtPlayerCount.setText("".concat(String.valueOf(String.valueOf(data.getNumPlayers()))));
+        txtPlayerCount.setText(String.valueOf(data.getNumPlayers()));
         tableModel.update();
         mapList = new String[data.getNumMaps()];
         String s;
@@ -1211,7 +1212,10 @@ public class SignupAdmin extends JFrame
                 for(int i = 0; i < data.getNumPlayers(); i++)
                     if(data.getPlayer(i).getName().equals(name))
                     {
-                        JOptionPane.showMessageDialog(CompoMaster.activeFrame, String.valueOf(String.valueOf((new StringBuffer("Player with name ")).append(name).append(" already exists"))), "Input error", 0);
+                        JOptionPane.showMessageDialog(CompoMaster.activeFrame,
+							new String((new StringBuffer("Player with name "))
+								.append(name).append(" already exists")),
+							"Input error", 0);
                         txtName.grabFocus();
                         return;
                     }
@@ -1271,7 +1275,7 @@ public class SignupAdmin extends JFrame
         for(int i = 0; i < data.getNumMaps(); i++)
             if(data.getMapName(i).equals(mapname))
             {
-                JOptionPane.showMessageDialog(CompoMaster.activeFrame, String.valueOf(String.valueOf((new StringBuffer("Map with name ")).append(mapname).append(" already exists"))), "Error", 0);
+                JOptionPane.showMessageDialog(CompoMaster.activeFrame, new String((new StringBuffer("Map with name ")).append(mapname).append(" already exists")), "Error", 0);
                 txtMap.grabFocus();
                 txtMap.setSelectionStart(0);
                 return;
@@ -1333,7 +1337,7 @@ public class SignupAdmin extends JFrame
     private void rankButtonPressed(int val)
     {
         int newRank = readRankField() + val;
-        txtRank.setText("".concat(String.valueOf(String.valueOf(newRank))));
+        txtRank.setText(String.valueOf(newRank));
         validateRankField();
         playerEditRange = tblPlayers.getSelectedRows();
     }
@@ -1413,21 +1417,21 @@ public class SignupAdmin extends JFrame
         }
         catch(Exception e)
         {
-            JOptionPane.showMessageDialog(null, "Error: ".concat(String.valueOf(String.valueOf(e.toString()))), "Unable to launch", 0);
+            JOptionPane.showMessageDialog(null, "Error: ".concat(e.toString()), "Unable to launch", 0);
         }
     }
 
     private void updateGroupTab(int source)
     {
         if(source == 1)
-            txtNumGroups.setText("".concat(String.valueOf(String.valueOf(sldNumGroups.getValue()))));
+            txtNumGroups.setText(String.valueOf(sldNumGroups.getValue()));
         else
             try
             {
                 int val = Integer.parseInt(txtNumGroups.getText());
                 sldNumGroups.setValue(val);
                 if(val > 32)
-                    txtNumGroups.setText("".concat(String.valueOf(String.valueOf(val))));
+                    txtNumGroups.setText(String.valueOf(val));
             }
             catch(NumberFormatException numberformatexception) { }
         int numPlayers = data.getNumPlayers();
@@ -1447,11 +1451,11 @@ public class SignupAdmin extends JFrame
             ppg = (double)numPlayers / (double)numGroups;
             int rest = numPlayers % numGroups;
             if(rest != 0)
-                t = String.valueOf(String.valueOf((new StringBuffer("")).append(rest).append(" group(s) of ").append(numPlayers / numGroups + 1).append(" contestants and ").append(numGroups - rest).append(" groups of ").append(numPlayers / numGroups).append(" contestants.")));
+                t = new String((new StringBuffer(rest)).append(" group(s) of ").append(numPlayers / numGroups + 1).append(" contestants and ").append(numGroups - rest).append(" groups of ").append(numPlayers / numGroups).append(" contestants."));
             else
-                t = String.valueOf(String.valueOf((new StringBuffer("")).append(numGroups).append(" group(s) of ").append((int)ppg).append(" contestants.")));
+                t = new String((new StringBuffer(numGroups)).append(" group(s) of ").append((int)ppg).append(" contestants."));
         }
-        lblPlayers.setText(String.valueOf(String.valueOf((new StringBuffer("With ")).append(numPlayers).append(" contestants signed  up, this results in:"))));
+        lblPlayers.setText(new String((new StringBuffer("With ")).append(numPlayers).append(" contestants signed  up, this results in:")));
         lblGroups.setText(t);
         if(data.matchList instanceof GroupStructure)
             ((GroupStructure)data.matchList).setNumGroups(numGroups);
@@ -1540,17 +1544,17 @@ public class SignupAdmin extends JFrame
             lblQualify.setText("You must select and load a .CMP file to complete the setup.");
         else
         if(impData.matchList instanceof GroupStructure)
-            lblQualify.setText(String.valueOf(String.valueOf((new StringBuffer("Players ranking from ")).append(mslQualify.getSelectedValue(0) + 1).append(" to ").append(mslQualify.getSelectedValue(1)).append(" in each group will qualify"))));
+            lblQualify.setText(new String((new StringBuffer("Players ranking from ")).append(mslQualify.getSelectedValue(0) + 1).append(" to ").append(mslQualify.getSelectedValue(1)).append(" in each group will qualify")));
         else
-            lblQualify.setText(String.valueOf(String.valueOf((new StringBuffer("The best ")).append(mslQualify.getSelectedValue(0)).append(" players will qualify."))));
+            lblQualify.setText(new String((new StringBuffer("The best ")).append(mslQualify.getSelectedValue(0)).append(" players will qualify.")));
     }
 
     private void chainLoadFile()
     {
         boolean ok = false;
         File f = new File(txtChnFilename.getText());
-        impData = Data.load(String.valueOf(CompoMaster.loadedFileDir) + String.valueOf(f.getName()));
-        JOptionPane.showMessageDialog(this, String.valueOf(CompoMaster.loadedFileDir) + String.valueOf(f.getName()), "Wrong file type", 0);
+        impData = Data.load(CompoMaster.loadedFileDir + f.getName());
+        JOptionPane.showMessageDialog(this, CompoMaster.loadedFileDir + f.getName(), "Wrong file type", 0);
         mslQualify.removeAreas();
         if(impData != null)
         {
@@ -1864,34 +1868,4 @@ public class SignupAdmin extends JFrame
     JLabel jLabel21;
     JRadioButton rbnDivisions;
     ButtonGroup bgSeedingSystem;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

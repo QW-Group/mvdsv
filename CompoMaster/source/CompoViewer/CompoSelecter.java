@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:13:04
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   CompoSelecter.java
+/**
+
+$Id: CompoSelecter.java,v 1.2 2006/11/27 15:15:47 vvd0 Exp $
+
+**/
 
 package CompoViewer;
 
@@ -49,7 +50,7 @@ public class CompoSelecter extends Panel
         {
             String text = c.getData(i).getCompoName();
             if(text == null || text.length() == 0)
-                text = String.valueOf(String.valueOf((new StringBuffer("Tournament ")).append(i + 1)));
+                text = new String((new StringBuffer("Tournament ")).append(i + 1));
             button[i] = new Button(text);
             button[i].addActionListener(this);
             add(button[i]);

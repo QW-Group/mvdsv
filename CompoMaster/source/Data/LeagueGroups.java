@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:43
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   LeagueGroups.java
+/**
+
+$Id: LeagueGroups.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -80,7 +81,7 @@ public class LeagueGroups extends GroupStructure
             Match m;
             for(int j = 0; (m = g.getMatch(j)) != null; j++)
                 if(m == target)
-                    return String.valueOf(String.valueOf((new StringBuffer("")).append(i).append(":").append(j)));
+                    return new String((new StringBuffer(i)).append(":").append(j));
 
         }
 
@@ -198,7 +199,7 @@ public class LeagueGroups extends GroupStructure
                                 System.out.println("NumberformatError (adding player)");
                             }
 
-                        g.setName(String.valueOf(GROUPIDENTIFIER) + String.valueOf(groupName));
+                        g.setName(GROUPIDENTIFIER + groupName);
                         super.groupList.add(g);
                     }
 
@@ -248,7 +249,7 @@ public class LeagueGroups extends GroupStructure
     }
 
     private static final long serialVersionUID = 0x2824728b47454721L;
-    public static final String GROUPIDENTIFIER = new String("Gruppe ");
+    public static final String GROUPIDENTIFIER = "Gruppe ";
     protected boolean drawsEnabled;
     protected int pointsDraw;
     protected int pointsVictory;

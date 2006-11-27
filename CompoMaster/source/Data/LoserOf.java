@@ -1,7 +1,8 @@
-// Decompiled by DJ v3.8.8.85 Copyright 2005 Atanas Neshkov  Date: 09.01.2006 22:16:45
-// Home Page : http://members.fortunecity.com/neshkov/dj.html  - Check often for new version!
-// Decompiler options: packimports(3) 
-// Source File Name:   Player.java
+/**
+
+$Id: LoserOf.java,v 1.2 2006/11/27 15:15:48 vvd0 Exp $
+
+**/
 
 package Data;
 
@@ -42,12 +43,12 @@ class LoserOf extends Player
     public String getName()
     {
         if(Data.debug)
-            System.out.println("    LOSER OF ".concat(String.valueOf(String.valueOf(parentMatch.getName()))));
+            System.out.println("    LOSER OF ".concat(parentMatch.getName()));
         Player p;
         if((p = getParentLoser()) != null)
             return p.getName();
         else
-            return "Loser ".concat(String.valueOf(String.valueOf(parentMatch.getName())));
+            return "Loser ".concat(parentMatch.getName());
     }
 
     public Color getColor()
@@ -62,7 +63,7 @@ class LoserOf extends Player
     public boolean isWalkover()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("      LSR-ISWALKOVER [")).append(getName()).append("]"))));
+            System.out.println(new String((new StringBuffer("      LSR-ISWALKOVER [")).append(getName()).append("]")));
         Player p;
         if((p = getParentLoser()) == null)
             return false;
@@ -73,7 +74,7 @@ class LoserOf extends Player
     public boolean isDisabled()
     {
         if(Data.debug)
-            System.out.println(String.valueOf(String.valueOf((new StringBuffer("      LSR-ISDISABLED [")).append(getName()).append("]"))));
+            System.out.println(new String((new StringBuffer("      LSR-ISDISABLED [")).append(getName()).append("]")));
         Player p;
         if((p = getParentLoser()) == null)
             return false;
@@ -83,7 +84,7 @@ class LoserOf extends Player
 
     public String toString()
     {
-        return "Loser of ".concat(String.valueOf(String.valueOf(parentMatch.getName())));
+        return "Loser of ".concat(parentMatch.getName());
     }
 
     private static final long serialVersionUID = 0xe647d6f4244e9339L;
