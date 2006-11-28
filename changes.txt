@@ -1,13 +1,13 @@
 
-$Id: changes.txt,v 1.115 2006/11/28 04:32:23 qqshka Exp $
+$Id: changes.txt,v 1.116 2006/11/28 16:48:03 vvd0 Exp $
 
-MVDSV v0.25.02-CVS build 25?? (200?.??.??)
+MVDSV v0.25.03-CVS build 25?? (200?.??.??)
 ----
 * qqshka <qqshka@users.sourceforge.net>
-- changed QVM API version to 11 due to i've add G_CMD_TOKENIZE, g_strlcpy, g_strlcat.
 - changed QVM API version to 12, G_FINDRADIUS worked now and also added G_MAKEVECTORS,
   both actually coded by SD-Angel, also i've add G_NEXTCLIENT which is similar to G_NEXTENT
-  but G_NEXTCLIENT just help me walk over spawned clients fast.
+  but G_NEXTCLIENT just help me walk over spawned clients fast
+- changed QVM API version to 11 due to i've add G_CMD_TOKENIZE, g_strlcpy, g_strlcat
 
 * VVD <vvd0@users.sourceforge.net>
 - default value for sv_demofps increased from 20 to 30
