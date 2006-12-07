@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.62 2006/11/25 23:32:37 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.63 2006/12/07 04:39:14 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -101,7 +101,6 @@ cvar_t	sv_demoRegexp = {"sv_demoRegexp", "\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
 void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1);
 
-demo_t			demo;
 static dbuffer_t	*demobuffer;
 static int	header = (char *)&((header_t*)0)->data - (char *)NULL;
 
@@ -120,6 +119,17 @@ qbool sv_demoDir_OnChange(cvar_t *cvar, char *value)
 		return true;
 
 	return false;
+}
+
+mvddest_t *DestByName(char *name)
+{
+	mvddest_t *d;
+
+	for (d = demo.dest; d; d = d->nextdest)
+		if (!strncmp(name, d->name, sizeof(d->name)-1))
+			return d;
+
+	return NULL;
 }
 
 void DestClose(mvddest_t *d, qbool destroyfiles)
@@ -602,7 +612,13 @@ void DestCloseAllFlush(qbool destroyfiles)
 		{
 			FILE *f;
 			char *text;
-			if ((f = fopen (path, "w+t")))
+
+			if (sv_demotxt.value == 2)
+			{
+				if ((f = fopen (path, "a+t")))
+					fclose(f); // at least made empty file, but do not owerwite
+			}
+			else if ((f = fopen (path, "w+t")))
 			{
 				text = SV_PrintTeams();
 				fwrite(text, strlen(text), 1, f);
@@ -1366,8 +1382,9 @@ mvddest_t *SV_InitRecordFile (char *name)
 	strlcpy(dst->name, s+1, sizeof(dst->name));
 	strlcpy(dst->path, sv_demoDir.string, sizeof(dst->path));
 
-	if (!*demo.path)
-		strlcpy(demo.path, ".", MAX_OSPATH);
+// unused, and wrong anyway, since we do memset(&demo, 0, sizeof(demo)) after this...
+//	if (!*demo.path)
+//		strlcpy(demo.path, ".", MAX_OSPATH);
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
 						(dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
@@ -1381,7 +1398,12 @@ mvddest_t *SV_InitRecordFile (char *name)
 		FILE *f;
 		char *text;
 
-		if ((f = fopen (path, "w+t")))
+		if (sv_demotxt.value == 2)
+		{
+			if ((f = fopen (path, "a+t")))
+				fclose(f); // at least made empty file
+		}
+		else if ((f = fopen (path, "w+t")))
 		{
 			text = SV_PrintTeams();
 			fwrite(text, strlen(text), 1, f);
@@ -2494,12 +2516,10 @@ void SV_DemoList (qbool use_regex)
 	for (j = (GameStarted() && n > 100) ? n - 100 : 0; files[j]; j++)
 	{
 		i = files[j];
-		for (d = demo.dest; d; d = d->nextdest)
-		{
-			if (!strcmp(list[i].name, d->name))
-				Con_Printf("*%d: %s %dk\n", i, list[i - 1].name, d->totalsize / 1024);
-		}
-		if (!d)
+
+		if ((d = DestByName(list[i - 1].name)))
+			Con_Printf("*%d: %s %dk\n", i, list[i - 1].name, d->totalsize / 1024);
+		else
 			Con_Printf("%d: %s %dk\n", i, list[i - 1].name, list[i - 1].size / 1024);
 	}
 
@@ -2646,8 +2666,8 @@ void SV_MVDRemove_f (void)
 		{
 			if (strstr(list->name, ptr))
 			{
-				if (sv.mvdrecording && !strcmp(list->name, demo.name))
-					SV_MVDStop_f();
+				if (sv.mvdrecording && DestByName(list->name)/*!strcmp(list->name, demo.name)*/)
+					SV_MVDStop_f(); // FIXME: probably we must stop not all demos, but only partial dest
 
 				// stop recording first;
 				snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name);
@@ -2678,8 +2698,8 @@ void SV_MVDRemove_f (void)
 
 	snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 
-	if (sv.mvdrecording && !strcmp(name, demo.name))
-		SV_MVDStop_f();
+	if (sv.mvdrecording && DestByName(name) /*!strcmp(name, demo.name)*/)
+		SV_MVDStop_f(); // FIXME: probably we must stop not all demos, but only partial dest
 
 	if (!Sys_remove(path))
 	{
@@ -2726,8 +2746,8 @@ void SV_MVDRemoveNum_f (void)
 
 	if (name != NULL)
 	{
-		if (sv.mvdrecording && !strcmp(name, demo.name))
-			SV_MVDStop_f();
+		if (sv.mvdrecording && DestByName(name)/*!strcmp(name, demo.name)*/)
+			SV_MVDStop_f(); // FIXME: probably we must stop not all demos, but only partial dest
 
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 		if (!Sys_remove(path))
@@ -2767,13 +2787,15 @@ void SV_MVDInfoAdd_f (void)
 
 	if (!strcmp(Cmd_Argv(1), "*"))
 	{
-		if (!sv.mvdrecording)
+		if (!sv.mvdrecording || !demo.dest)
 		{
 			Con_Printf("Not recording demo!\n");
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+//		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+// FIXME: dunno is this right, just using first dest, also may be we must use demo.dest->path instead of sv_demoDir
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demo.dest->name));
 	}
 	else
 	{
@@ -2796,6 +2818,7 @@ void SV_MVDInfoAdd_f (void)
 
 	// skip demonum
 	args = Cmd_Args();
+
 	while (*args > 32) args++;
 	while (*args && *args <= 32) args++;
 
@@ -2817,13 +2840,15 @@ void SV_MVDInfoRemove_f (void)
 
 	if (!strcmp(Cmd_Argv(1), "*"))
 	{
-		if (!sv.mvdrecording)
+		if (!sv.mvdrecording || !demo.dest)
 		{
 			Con_Printf("Not recording demo!\n");
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+//		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+// FIXME: dunno is this right, just using first dest, also may be we must use demo.dest->path instead of sv_demoDir
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demo.dest->name));
 	}
 	else
 	{
@@ -2857,13 +2882,15 @@ void SV_MVDInfo_f (void)
 
 	if (!strcmp(Cmd_Argv(1), "*"))
 	{
-		if (!sv.mvdrecording)
+		if (!sv.mvdrecording || !demo.dest)
 		{
 			Con_Printf("Not recording demo!\n");
 			return;
 		}
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+//		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
+// FIXME: dunno is this right, just using first dest, also may be we must use demo.dest->path instead of sv_demoDir
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demo.dest->name));
 	}
 	else
 	{
