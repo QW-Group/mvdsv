@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.87 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: sv_main.c,v 1.88 2006/12/07 10:51:51 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -3182,7 +3182,7 @@ extern func_t UserInfo_Changed;
 
 void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 {
-	char	*val, *p, *q;
+	char	*val, *p;
 	int		i, limit;
 	client_t	*client;
 	int		dupc = 1;
@@ -3196,34 +3196,25 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 		// trim user name
 		strlcpy (newname, val, sizeof(newname));
 
-		for (i = 0, p = newname; *p; p++)
-			if ((*p & 127) == '\\')
-			{
-				i = 1;
+		for (p = val; *p; p++)
+			if ((*p & 127) == '\\' || *p == '\r' || *p == '\n' || *p == '$' || *p == '"')
+			{ // illegal characters in name, set some default
+				strlcpy(newname, sv_default_name.string, sizeof(newname));
 				break;
 			}
 
-		if (!i)
-			for (p = newname; *p && ((*p & 127) == ' ' || *p == '\r' || *p == '\n'); p++);
+		for (p = newname; *p && (*p & 127) == ' '; p++)
+			; // empty operator
 
-		if ((p != newname && !*p) || i)
-		{
-			//white space only
-			strlcpy(newname, sv_default_name.string, sizeof(newname));
-			p = newname;
-		}
-		else
-		{
-			if (p != newname && *p)
+		if (p != newname) // skip prefixed spaces, if any, even whole string of spaces
+			strlcpy(newname, p, sizeof(newname));
+
+		for (p = newname + strlen(newname) - 1; p >= newname; p--)
+			if (*p && (*p & 127) != ' ') // skip spaces in suffix, if any
 			{
-				for (q = newname; *p; *q++ = *p++);
-				*q = 0;
+				p[1] = 0;
+				break;
 			}
-			for (p = newname + strlen(newname) - 1;
-			        p != newname && ((*p & 127) == ' ' || *p == '\r' || *p == '\n');
-			        p--);
-			p[1] = 0;
-		}
 
 		if (strcmp(val, newname))
 		{
