@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.38 2006/10/29 17:27:23 disconn3ct Exp $
+	$Id: server.h,v 1.39 2006/12/07 04:42:13 qqshka Exp $
 */
 
 // server.h
@@ -339,7 +339,8 @@ typedef struct
 	qbool			fixangle[MAX_CLIENTS];
 	float			fixangletime[MAX_CLIENTS];
 	vec3_t			angles[MAX_CLIENTS];
-	char			name[MAX_OSPATH], path[MAX_OSPATH];
+// unused, now we must use same in demo.dest list
+//	char			name[MAX_OSPATH], path[MAX_OSPATH];
 	int				parsecount;
 	int				lastwritten;
 	demo_frame_t	frames[DEMO_FRAMES];
