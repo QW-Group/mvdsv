@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.89 2006/12/11 13:21:46 qqshka Exp $
+	$Id: sv_main.c,v 1.90 2006/12/11 15:35:27 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -128,7 +128,7 @@ cvar_t  sv_logdir = {"sv_logdir", ".", 0, OnChange_logdir_var};
 cvar_t  sv_speedcheck = {"sv_speedcheck", "0"};
 //<-
 //<-
-cvar_t	sv_highchars = {"sv_highchars", "1"};
+//cvar_t	sv_highchars = {"sv_highchars", "1"};
 cvar_t	sv_phs = {"sv_phs", "1"};
 cvar_t	pausable = {"pausable", "1"};
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
@@ -3074,7 +3074,7 @@ void SV_InitLocal (void)
 	//<-
 	Cvar_Register (&sv_allowlastscores);
 
-	Cvar_Register (&sv_highchars);
+//	Cvar_Register (&sv_highchars);
 
 	Cvar_Register (&sv_phs);
 
