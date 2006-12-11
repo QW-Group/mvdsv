@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.c,v 1.15 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: net.c,v 1.16 2006/12/11 20:06:23 qqshka Exp $
 */
 // net.c
 
@@ -34,6 +34,8 @@ int			telnet_iosock;
 qbool		telnet_connected;
 
 byte		net_message_buffer[MSG_BUF_SIZE];
+
+cvar_t		sv_local_addr = {"sv_local_addr", "", CVAR_ROM};
 
 #ifdef _WIN32
 WSADATA		winsockdata;
@@ -410,9 +412,10 @@ void NET_Init (int *serverport, int *telnetport1)
 
 	// determine my name & address
 	NET_GetLocalAddress (&net_local_adr);
+	Cvar_Register (&sv_local_addr);
+	Cvar_SetROM(&sv_local_addr, NET_AdrToString(net_local_adr));
 
 	Con_Printf("UDP Initialized\n");
-
 }
 
 /*
