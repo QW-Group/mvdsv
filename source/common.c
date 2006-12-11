@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.31 2006/10/29 17:27:23 disconn3ct Exp $
+    $Id: common.c,v 1.32 2006/12/11 15:35:27 qqshka Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -776,7 +776,7 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, unsigned int maxs
 {
 	char _new[1024], *v;
 	int c;
-	extern cvar_t sv_highchars;
+//	extern cvar_t sv_highchars;
 
 	if (strstr (key, "\\") || strstr (value, "\\") )
 	{
@@ -827,12 +827,14 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, unsigned int maxs
 	while (*v)
 	{
 		c = (unsigned char)*v++;
+/*
 		if (!(int)sv_highchars.value)
 		{
 			c &= 127;
 			if (c < 32 || c > 127)
 				continue;
 		}
+*/
 		// c &= 127; // strip high bits
 		if (c > 13) // && c < 127)
 			*s++ = c;
