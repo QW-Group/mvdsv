@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.88 2006/12/07 10:51:51 qqshka Exp $
+	$Id: sv_main.c,v 1.89 2006/12/11 13:21:46 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -3197,7 +3197,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 		strlcpy (newname, val, sizeof(newname));
 
 		for (p = val; *p; p++)
-			if ((*p & 127) == '\\' || *p == '\r' || *p == '\n' || *p == '$' || *p == '"')
+			if ((*p & 127) == '\\' || *p == '\r' || *p == '\n' || *p == '$' || *p == '"' || *p == ';')
 			{ // illegal characters in name, set some default
 				strlcpy(newname, sv_default_name.string, sizeof(newname));
 				break;
