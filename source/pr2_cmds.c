@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.40 2006/11/26 19:17:01 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.41 2006/12/12 01:54:05 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -1893,9 +1893,12 @@ void PF2_FS_OpenFile(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	case FS_APPEND_BIN:
 	case FS_APPEND_TXT:
 
+/*
 		gamedir = Info_ValueForKey (svs.info, "*gamedir");
 		if (!gamedir[0])
 			gamedir = "qw";
+*/
+		gamedir = fs_gamedir;
 
 		snprintf( fname, sizeof( fname ), "%s/%s" , gamedir, name );
 		pr2_fopen_files[i].handle = fopen(fname, cmodes[fmode]);
@@ -1906,6 +1909,8 @@ void PF2_FS_OpenFile(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		}
 		Con_DPrintf( "PF2_FS_OpenFile %s\n", fname );
 		retval->_int = ftell(pr2_fopen_files[i].handle);
+
+		break;
 	default:
 		retval->_int = -1;
 		return ;
