@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.41 2006/12/12 01:54:05 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.42 2006/12/12 17:17:51 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -2102,9 +2102,12 @@ void PF2_FS_GetFileList(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 	listbuff = (char*)VM_POINTER(base,mask,listbuffoffset);
 	dirptr = listbuff;
 	*dirptr = 0;
+/*
 	gamedir = Info_ValueForKey (svs.info, "*gamedir");
 	if (!gamedir[0])
 		gamedir = "qw";
+*/
+	gamedir = fs_gamedir;
 
 	snprintf( fname, sizeof( fname ), "%s/%s/*%s" , gamedir, path, ext );
 
@@ -2133,8 +2136,8 @@ void PF2_FS_GetFileList(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 		size = fd.nFileSizeLow;
 #else
 		filename = dstruct->d_name;
-		snprintf( fname, sizeof( fname ), "%s/%s/%s" , gamedir, path, fname );
-		stat (fname , &fileinfo);
+		snprintf( fname, sizeof( fname ), "%s/%s/%s" , gamedir, path, filename );
+		stat (fname, &fileinfo);
 		is_dir = S_ISDIR( fileinfo.st_mode );
 		size = fileinfo.st_size;
 #endif
@@ -2142,7 +2145,7 @@ void PF2_FS_GetFileList(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 			continue;
 
 		namelen = strlen(filename)+1;
-		if( dirptr + namelen  > listbuff + buffsize)
+		if(dirptr + namelen > listbuff + buffsize)
 			break;
 		strlcpy(dirptr,filename,namelen);
 		dirptr+= namelen;
