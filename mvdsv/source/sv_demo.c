@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.63 2006/12/07 04:39:14 qqshka Exp $
+    $Id: sv_demo.c,v 1.64 2006/12/12 01:52:23 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -2785,7 +2785,7 @@ void SV_MVDInfoAdd_f (void)
 		return;
 	}
 
-	if (!strcmp(Cmd_Argv(1), "*"))
+	if (!strcmp(Cmd_Argv(1), "*") || !strcmp(Cmd_Argv(1), "**"))
 	{
 		if (!sv.mvdrecording || !demo.dest)
 		{
@@ -2810,20 +2810,47 @@ void SV_MVDInfoAdd_f (void)
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 	}
 
-	if ((f = fopen(path, "a+t")) == NULL)
+	if ((f = fopen(path, !strcmp(Cmd_Argv(1), "**") ? "a+b" : "a+t")) == NULL)
 	{
 		Con_Printf("failed to open the file\n");
 		return;
 	}
 
-	// skip demonum
-	args = Cmd_Args();
+	if (!strcmp(Cmd_Argv(1), "**"))
+	{ // put content of one file to another
+		FILE *src;
 
-	while (*args > 32) args++;
-	while (*args && *args <= 32) args++;
+		snprintf(path, MAX_OSPATH, "%s/%s", fs_gamedir, Cmd_Argv(2));
 
-	fwrite(args, strlen(args), 1, f);
-	fwrite("\n", 1, 1, f);
+		if ((src = fopen(path, "rb")) == NULL) // open src
+		{
+			Con_Printf("failed to open input file\n");
+		}
+		else
+		{
+			char buf[1024*200] = {0}; // 200 kb
+			int sz = fread((void*) buf, 1, sizeof(buf), src); // read from src
+
+			if (sz <= 0)
+				Con_Printf("failed to read or empty input file\n");
+			else if (sz != fwrite((void*) buf, 1, sz, f)) // write to f
+				Con_Printf("failed write to file\n");
+
+			fclose(src); // close src
+		}
+	}
+	else
+	{
+		// skip demonum
+		args = Cmd_Args();
+
+		while (*args > 32) args++;
+		while (*args && *args <= 32) args++;
+
+		fwrite(args, strlen(args), 1, f);
+		fwrite("\n", 1, 1, f);
+	}
+
 	fflush(f);
 	fclose(f);
 }
