@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.64 2006/12/12 01:52:23 qqshka Exp $
+    $Id: sv_demo.c,v 1.65 2007/01/04 07:38:12 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -336,7 +336,7 @@ void SV_MVD_RunPendingConnections(void)
 						continue;
 					}
 					*lineend = '\0';
-					COM_Parse(start);
+					COM_ParseToken(start, NULL);
 					start = lineend+1;
 					if (strcmp(com_token, "QTV"))
 					{	//it's an error if it's not qtv.
@@ -351,7 +351,7 @@ void SV_MVD_RunPendingConnections(void)
 						if (!lineend)
 							break;
 						*lineend = '\0';
-						start = COM_Parse(start);
+						start = COM_ParseToken(start, NULL);
 						if (*start == ':')
 						{
 //VERSION: a list of the different qtv protocols supported. Multiple versions can be specified. The first is assumed to be the prefered version.
@@ -369,24 +369,24 @@ void SV_MVD_RunPendingConnections(void)
 							Con_Printf("qtv, got (%s) (%s)\n", com_token, start);
 							if (!strcmp(com_token, "VERSION"))
 							{
-								start = COM_Parse(start);
+								start = COM_ParseToken(start, NULL);
 								if (atoi(com_token) == 1)
 									versiontouse = 1;
 							}
 							else if (!strcmp(com_token, "RAW"))
 							{
-								start = COM_Parse(start);
+								start = COM_ParseToken(start, NULL);
 								raw = atoi(com_token);
 							}
 							else if (!strcmp(com_token, "PASSWORD"))
 							{
-								start = COM_Parse(start);
+								start = COM_ParseToken(start, NULL);
 								strlcpy(password, com_token, sizeof(password));
 							}
 							else if (!strcmp(com_token, "AUTH"))
 							{
 								unsigned int thisauth;
-								start = COM_Parse(start);
+								start = COM_ParseToken(start, NULL);
 								if (!strcmp(com_token, "NONE"))
 									thisauth = QTVAM_PLAIN;
 								else if (!strcmp(com_token, "PLAIN"))
