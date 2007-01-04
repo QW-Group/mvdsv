@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    1$Id: common.h,v 1.22 2006/10/29 17:27:23 disconn3ct Exp $
+    1$Id: common.h,v 1.23 2007/01/04 07:38:12 qqshka Exp $
 */
 // common.h  -- general definitions
 
@@ -92,8 +92,10 @@ unsigned char *Q_yelltext(unsigned char *str); //VVD: white to red text and yell
 
 #define MAX_COM_TOKEN	1024
 extern char com_token[MAX_COM_TOKEN];
+typedef enum {TTP_UNKNOWN, TTP_STRING} com_tokentype_t;
 
 char *COM_Parse (char *data);
+char *COM_ParseToken (const char *data, const char *punctuation);
 
 extern int com_argc;
 extern char **com_argv;

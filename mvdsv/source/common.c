@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.32 2006/12/11 15:35:27 qqshka Exp $
+    $Id: common.c,v 1.33 2007/01/04 07:38:12 qqshka Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -455,9 +455,12 @@ void SZ_Print (sizebuf_t *buf, char *data)
 
 //============================================================================
 
-char com_token[MAX_COM_TOKEN];
+#define TOKENSIZE sizeof(com_token)
+char com_token[TOKENSIZE];
 int com_argc;
 char **com_argv;
+
+com_tokentype_t com_tokentype;
 
 /*
 ==============
@@ -533,6 +536,107 @@ char *COM_Parse (char *data)
 
 	com_token[len] = 0;
 	return data;
+}
+
+#define DEFAULT_PUNCTUATION "(,{})(\':;=!><&|+"
+char *COM_ParseToken (const char *data, const char *punctuation)
+{
+	int		c;
+	int		len;
+
+	if (!punctuation)
+		punctuation = DEFAULT_PUNCTUATION;
+
+	len = 0;
+	com_token[0] = 0;
+
+	if (!data)
+	{
+		com_tokentype = TTP_UNKNOWN;
+		return NULL;
+	}
+
+// skip whitespace
+skipwhite:
+	while ( (c = *(unsigned char*)data) <= ' ')
+	{
+		if (c == 0)
+		{
+			com_tokentype = TTP_UNKNOWN;
+			return NULL;			// end of file;
+		}
+		data++;
+	}
+
+// skip // comments
+	if (c=='/')
+	{
+		if (data[1] == '/')
+		{
+			while (*data && *data != '\n')
+				data++;
+			goto skipwhite;
+		}
+		else if (data[1] == '*')
+		{
+			data+=2;
+			while (*data && (*data != '*' || data[1] != '/'))
+				data++;
+			data+=2;
+			goto skipwhite;
+		}
+	}
+
+
+// handle quoted strings specially
+	if (c == '\"')
+	{
+		com_tokentype = TTP_STRING;
+		data++;
+		while (1)
+		{
+			if (len >= TOKENSIZE-1)
+			{
+				com_token[len] = '\0';
+				return (char*)data;
+			}
+			c = *data++;
+			if (c=='\"' || !c)
+			{
+				com_token[len] = 0;
+				return (char*)data;
+			}
+			com_token[len] = c;
+			len++;
+		}
+	}
+
+	com_tokentype = TTP_UNKNOWN;
+
+// parse single characters
+	if (strchr(punctuation, c))
+	{
+		com_token[len] = c;
+		len++;
+		com_token[len] = 0;
+		return (char*)(data+1);
+	}
+
+// parse a regular word
+	do
+	{
+		if (len >= TOKENSIZE-1)
+			break;
+		com_token[len] = c;
+		data++;
+		len++;
+		c = *data;
+		if (strchr(punctuation, c))
+			break;
+	} while (c>32);
+
+	com_token[len] = 0;
+	return (char*)data;
 }
 
 /*
