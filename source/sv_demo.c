@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.65 2007/01/04 07:38:12 qqshka Exp $
+    $Id: sv_demo.c,v 1.66 2007/01/05 22:28:48 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -554,6 +554,7 @@ void SV_MVD_RunPendingConnections(void)
 						if (p->hasauthed == true)
 						{
 							e =	("QTVSV 1\n"
+								 "BEGIN\n"
 								 "\n");
 							send(p->socket, e, strlen(e), 0);
 							e = NULL;
