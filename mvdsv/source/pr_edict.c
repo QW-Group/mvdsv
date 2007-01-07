@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_edict.c,v 1.21 2007/01/07 18:11:03 disconn3ct Exp $
+	$Id: pr_edict.c,v 1.22 2007/01/07 22:22:30 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -51,6 +51,7 @@ gefv_cache;
 static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 
 func_t SpectatorConnect, SpectatorThink, SpectatorDisconnect;
+func_t GE_ClientCommand, GE_PausedTic, GE_ShouldPause;
 
 func_t mod_ConsoleCmd, mod_UserCmd;
 func_t UserInfo_Changed, localinfoChanged;
@@ -256,6 +257,14 @@ dfunction_t *ED_FindFunction (char *name)
 			return func;
 	}
 	return NULL;
+}
+
+func_t ED_FindFunctionOffset (char *name)
+{
+	dfunction_t *func;
+
+	func = ED_FindFunction (name);
+	return func ? (func_t)(func - pr_functions) : 0;
 }
 
 eval_t *GetEdictFieldValue(edict_t *ed, char *field)
@@ -1019,6 +1028,18 @@ qbool PR_UserCmd(void)
 		//return true;
 	}*/
 
+	// ZQ_CLIENTCOMMAND extension
+	if (!is_ktpro && GE_ClientCommand) {
+		static char cmd_copy[128], args_copy[1024] /* Ouch! */;
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		strlcpy (cmd_copy, Cmd_Argv(0), sizeof(cmd_copy));
+		strlcpy (args_copy, Cmd_Args(), sizeof(args_copy));
+		((int *)pr_globals)[OFS_PARM0] = PR_SetString (cmd_copy);
+		((int *)pr_globals)[OFS_PARM1] = PR_SetString (args_copy);
+		PR_ExecuteProgram (GE_ClientCommand);
+		return G_FLOAT(OFS_RETURN) ? true : false;
+	}
 
 	if (mod_UserCmd)
 	{
@@ -1026,7 +1047,7 @@ qbool PR_UserCmd(void)
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 
 		PR_ExecuteProgram (mod_UserCmd);
-		return (int) G_FLOAT(OFS_RETURN);
+		return G_FLOAT(OFS_RETURN) ? true : false;
 	}
 
 	return false;
@@ -1078,7 +1099,6 @@ void PR_LoadProgs (void)
 	int	i;
 	char	num[32];
 	char	name[MAX_OSPATH];
-	dfunction_t *f;
 
 	// flush the non-C variable lookup cache
 	for (i = 0; i < GEFV_CACHESIZE; i++)
@@ -1168,23 +1188,17 @@ void PR_LoadProgs (void)
 	// Zoid, find the spectator functions
 	localinfoChanged = mod_UserCmd = mod_ConsoleCmd = UserInfo_Changed = ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
 
-	// TODO: port ED_FindFunctionOffset from ZQuake and clean these up
-	if ((f = ED_FindFunction ("SpectatorConnect")) != NULL)
-		SpectatorConnect = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("SpectatorThink")) != NULL)
-		SpectatorThink = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("SpectatorDisconnect")) != NULL)
-		SpectatorDisconnect = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("ChatMessage")) != NULL)
-		ChatMessage = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("UserInfo_Changed")) != NULL)
-		UserInfo_Changed = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("ConsoleCmd")) != NULL)
-		mod_ConsoleCmd = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("UserCmd")) != NULL)
-		mod_UserCmd = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("localinfoChanged")) != NULL)
-		localinfoChanged = (func_t)(f - pr_functions);
+	SpectatorConnect = ED_FindFunctionOffset ("SpectatorConnect");
+	SpectatorThink = ED_FindFunctionOffset ("SpectatorThink");
+	SpectatorDisconnect = ED_FindFunctionOffset ("SpectatorDisconnect");
+	ChatMessage = ED_FindFunctionOffset ("ChatMessage");
+	UserInfo_Changed = ED_FindFunctionOffset ("UserInfo_Changed");
+	mod_ConsoleCmd = ED_FindFunctionOffset ("ConsoleCmd");
+	mod_UserCmd = ED_FindFunctionOffset ("UserCmd");
+	localinfoChanged = ED_FindFunctionOffset ("localinfoChanged");
+	GE_ClientCommand = ED_FindFunctionOffset ("GE_ClientCommand");
+	GE_PausedTic = ED_FindFunctionOffset ("GE_PausedTic");
+	GE_ShouldPause = ED_FindFunctionOffset ("GE_ShouldPause");
 #ifdef VWEP_TEST
 	if ((f = ED_FindFunction ("vw_index")) != NULL)
 		fofs_vw_index = (func_t)(f - pr_functions);

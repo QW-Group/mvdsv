@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.40 2007/01/07 18:11:03 disconn3ct Exp $
+	$Id: server.h,v 1.41 2007/01/07 22:22:30 disconn3ct Exp $
 */
 
 // server.h
@@ -63,6 +63,7 @@ typedef struct
 	double		lastchecktime;			// for monster ai
 
 	qbool		paused;				// are we paused?
+	double		pausedsince;		// Sys_DoubleTime() when pause started
 
 	//check player/eyes models for hacks
 	unsigned	model_player_checksum;
