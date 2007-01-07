@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: pr_edict.c,v 1.20 2006/10/26 20:47:13 disconn3ct Exp $
+
+	$Id: pr_edict.c,v 1.21 2007/01/07 18:11:03 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -1042,11 +1042,42 @@ void PF_clear_strtbl(void);
 
 extern qbool is_ktpro;
 
+static void CheckKTPro (void)
+{
+	extern cvar_t sv_ktpro_mode;
+	int i, len;
+	char *s;
+
+	if (!strcasecmp(sv_ktpro_mode.string, "auto"))
+	{
+		// attempt automatic detection
+		is_ktpro = false;
+		for (i = 0; i < progs->numstrings; i++)
+		{
+			if ((s = PR_GetString(i)))
+				if (*s)
+				{
+					if ((len = strlen(s)) >= 23)
+						if (strstr(s, "http://ktpro.does.it/ for") ||
+							strstr(s, "http://qwex.n3.net/ for"))
+						{
+							is_ktpro = true;
+							Con_DPrintf ("Treat mod as ktpro.\n");
+							break;
+						}
+					i += len;
+				}
+		}
+	}
+	else
+		is_ktpro = sv_ktpro_mode.value ? true : false;
+}
+
 void PR_LoadProgs (void)
 {
-	int	i, len;
+	int	i;
 	char	num[32];
-	char	name[MAX_OSPATH], *s;
+	char	name[MAX_OSPATH];
 	dfunction_t *f;
 
 	// flush the non-C variable lookup cache
@@ -1161,24 +1192,7 @@ void PR_LoadProgs (void)
 		fofs_vw_frame = (func_t)(f - pr_functions);
 #endif
 
-	// check for ktpro
-	is_ktpro = false;
-	for (i = 0; i < progs->numstrings; i++)
-	{
-		if ((s = PR_GetString(i)))
-			if (*s)
-			{
-				if ((len = strlen(s)) >= 23)
-					if (strstr(s, "http://ktpro.does.it/ for") ||
-						strstr(s, "http://qwex.n3.net/ for"))
-					{
-						is_ktpro = true;
-						Con_DPrintf ("Treat mod as ktpro.\n");
-						break;
-					}
-				i += len;
-			}
-	}
+	CheckKTPro ();
 }
 
 

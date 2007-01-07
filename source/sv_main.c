@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.90 2006/12/11 15:35:27 qqshka Exp $
+	$Id: sv_main.c,v 1.91 2007/01/07 18:11:03 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -172,6 +172,8 @@ cvar_t sv_maxuserid = {"sv_maxuserid", "99"};
 
 cvar_t registered = {"registered", "1", CVAR_ROM};
 // We need this cvar, because ktpro didn't allow to go at some placeses of, for example, start map.
+
+cvar_t sv_ktpro_mode = {"sv_ktpro_mode", "auto"};
 
 log_t	logs[MAX_LOG];
 
@@ -3073,24 +3075,18 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_kicktop);
 	//<-
 	Cvar_Register (&sv_allowlastscores);
-
 //	Cvar_Register (&sv_highchars);
-
 	Cvar_Register (&sv_phs);
-
 	Cvar_Register (&pausable);
-
 	Cvar_Register (&sv_maxrate);
-
 	Cvar_Register (&sv_loadentfiles);
 	Cvar_Register (&sv_default_name);
 	Cvar_Register (&sv_mod_msg_file);
 	Cvar_Register (&sv_forcenick);
 	Cvar_Register (&sv_registrationinfo);
-
 	Cvar_Register (&sv_maxuserid);
-
 	Cvar_Register (&registered);
+	Cvar_Register (&sv_ktpro_mode);
 
 // QW262 -->
 	Cmd_AddCommand ("admin", SV_Admin_f);

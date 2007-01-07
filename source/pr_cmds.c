@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: pr_cmds.c,v 1.31 2006/10/27 14:58:11 disconn3ct Exp $
+
+	$Id: pr_cmds.c,v 1.32 2007/01/07 18:11:03 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -817,20 +817,19 @@ void PF_SetTempString(void)
 
 /*
 =================
-PF_tokanize
+PF_tokenize
  
-tokanize string
- 
-void tokanize(string)
+float tokenize(string)
 =================
 */
 
-void PF_tokanize (void)
+void PF_tokenize (void)
 {
 	char *str;
 
 	str = G_STRING(OFS_PARM0);
 	Cmd_TokenizeString(str);
+	G_FLOAT(OFS_RETURN) = Cmd_Argc();
 }
 
 /*
@@ -864,8 +863,11 @@ void PF_argv (void)
 
 	num = (int) G_FLOAT(OFS_PARM0);
 
-	if (num < 0 ) num = 0;
-	if (num > Cmd_Argc()-1) num = Cmd_Argc()-1;
+//	if (num < 0 ) num = 0;
+//	if (num > Cmd_Argc()-1) num = Cmd_Argc()-1;
+
+	if (num < 0 || num >= Cmd_Argc())
+		RETURN_STRING("");
 
 	snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_Argv(num));
 	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
@@ -1113,7 +1115,10 @@ void PF_redirectcmd (void)
 	Cbuf_Execute();
 	SV_EndRedirect();
 }
+
 dfunction_t *ED_FindFunction (char *name);
+
+//FTE_CALLTIMEOFDAY
 void PF_calltimeofday (void)
 {
 	date_t date;
@@ -1305,6 +1310,12 @@ void PF_cvar (void)
 	char	*str;
 
 	str = G_STRING(OFS_PARM0);
+
+	if (!strcasecmp(str, "pr_checkextension")) {
+		// we do support PF_checkextension
+		G_FLOAT(OFS_RETURN) = 1.0;
+		return;
+	}
 
 	G_FLOAT(OFS_RETURN) = Cvar_VariableValue (str);
 }
@@ -2498,21 +2509,36 @@ void PF_multicast (void)
 }
 
 //bliP: added as requested (mercury) ->
+//DP_QC_SINCOSSQRTPOW
+//float sin(float x) = #60
 void PF_sin (void)
 {
 	G_FLOAT(OFS_RETURN) = sin(G_FLOAT(OFS_PARM0));
 }
 
+//DP_QC_SINCOSSQRTPOW
+//float cos(float x) = #61
 void PF_cos (void)
 {
 	G_FLOAT(OFS_RETURN) = cos(G_FLOAT(OFS_PARM0));
 }
 
+//DP_QC_SINCOSSQRTPOW
+//float sqrt(float x) = #62
 void PF_sqrt (void)
 {
 	G_FLOAT(OFS_RETURN) = sqrt(G_FLOAT(OFS_PARM0));
 }
 
+//DP_QC_SINCOSSQRTPOW
+//float pow(float x, float y) = #97;
+static void PF_pow (void)
+{
+	G_FLOAT(OFS_RETURN) = pow(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1));
+}
+
+//DP_QC_MINMAXBOUND
+//float min(float a, float b, ...) = #94
 void PF_min (void)
 {
 	// LordHavoc: 3+ argument enhancement suggested by FrikaC
@@ -2531,6 +2557,8 @@ void PF_min (void)
 		Sys_Error("min: must supply at least 2 floats\n");
 }
 
+//DP_QC_MINMAXBOUND
+//float max(float a, float b, ...) = #95
 void PF_max (void)
 {
 	// LordHavoc: 3+ argument enhancement suggested by FrikaC
@@ -2548,7 +2576,56 @@ void PF_max (void)
 	else
 		Sys_Error("max: must supply at least 2 floats\n");
 }
+
+//DP_QC_MINMAXBOUND
+//float bound(float min, float value, float max) = #96
+void PF_bound (void)
+{
+	G_FLOAT(OFS_RETURN) = bound(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1), G_FLOAT(OFS_PARM2));
+}
+
 //<-
+
+
+/*
+==============
+PF_checkextension
+
+float checkextension(string extension) = #99;
+==============
+*/
+static void PF_checkextension (void)
+{
+	static char *supported_extensions[] = {
+		"DP_CON_SET",               // http://wiki.quakesrc.org/index.php/DP_CON_SET
+		"DP_QC_MINMAXBOUND",        // http://wiki.quakesrc.org/index.php/DP_QC_MINMAXBOUND
+		"DP_QC_SINCOSSQRTPOW",      // http://wiki.quakesrc.org/index.php/DP_QC_SINCOSSQRTPOW
+		"FTE_CALLTIMEOFDAY",        // http://wiki.quakesrc.org/index.php/FTE_CALLTIMEOFDAY
+		"ZQ_ITEMS2",                // http://wiki.quakesrc.org/index.php/ZQ_ITEMS2
+		"ZQ_MOVETYPE_NOCLIP",       // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_NOCLIP
+		"ZQ_MOVETYPE_FLY",          // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_FLY
+		"ZQ_MOVETYPE_NONE",         // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_NONE
+//		"ZQ_QC_STRINGS",
+		"ZQ_QC_TOKENIZE",           // http://wiki.quakesrc.org/index.php/ZQ_QC_TOKENIZE
+#ifdef VWEP_TEST
+		"ZQ_VWEP_TEST",
+#endif
+		NULL
+	};
+	char **pstr, *extension;
+	extension = G_STRING(OFS_PARM0);
+
+	for (pstr = supported_extensions; *pstr; pstr++) {
+		if (!strcasecmp(*pstr, extension)) {
+			G_FLOAT(OFS_RETURN) = 1.0;	// supported
+			return;
+		}
+	}
+
+	G_FLOAT(OFS_RETURN) = 0.0;	// not supported
+}
+
+
 
 void PF_Fixme (void)
 {
@@ -2557,7 +2634,7 @@ void PF_Fixme (void)
 
 
 
-builtin_t pr_builtin[] =
+static builtin_t std_builtins[] =
     {
         PF_Fixme,		//#0
         PF_makevectors,	// void(entity e)	makevectors 		= #1;
@@ -2655,8 +2732,9 @@ builtin_t pr_builtin[] =
         PF_infokey,		//#80
         PF_stof,
         PF_multicast,
+// MVDSV extensions:
         PF_executecmd,		//#83
-        PF_tokanize,
+        PF_tokenize,
         PF_argc,
         PF_argv,
         PF_teamfield,
@@ -2686,5 +2764,81 @@ builtin_t pr_builtin[] =
 #endif
     };
 
-builtin_t *pr_builtins = pr_builtin;
-int pr_numbuiltins = sizeof(pr_builtin)/sizeof(pr_builtin[0]);
+#define num_mvdsv_builtins (sizeof(std_builtins)/sizeof(std_builtins[0]))
+#define num_id_builtins 83
+
+static struct { int num; builtin_t func; } ext_builtins[] =
+{
+{63, PF_Fixme},		// mvdsv min() -- use QSG min() #94 instead
+{64, PF_Fixme},		// mvdsv max() -- use QSG max() #95 instead
+
+{84, PF_tokenize},		// float(string s) tokenize
+{85, PF_argc},			// float() argc
+{86, PF_argv},			// string(float n) argv
+
+//{90, PF_tracebox},		// void (vector v1, vector mins, vector maxs, vector v2, float nomonsters, entity ignore) tracebox
+//{91, PF_randomvec},		// vector() randomvec
+////
+{94, PF_min},			// float(float a, float b, ...) min
+{95, PF_max},			// float(float a, float b, ...) max
+{96, PF_bound},			// float(float min, float value, float max) bound
+{97, PF_pow},			// float(float x, float y) pow
+////
+{99, PF_checkextension},// float(string name) checkextension
+////
+//{103, PF_cvar_string},	// string(string varname) cvar_string
+////
+{114, PF_strlen},		// float(string s) strlen							= #114;
+{115, PF_strcat},		// string(string s1, string s2, ...) strcat			= #115; 
+{116, PF_substr},		// string(string s, float start, float count) substr = #116;
+//{117, PF_stov},			// vector(string s) stov							= #117;
+//{118, PF_strzone},		// string(string s) strzone							= #118;
+//{119, PF_strunzone},	// void(string s) strunzone							= #119;
+{231, PF_calltimeofday},	// void() calltimeofday							= #231;
+//{448, PF_cvar_string},	// string(string varname) cvar_string				= #448;
+};
+
+#define num_ext_builtins (sizeof(ext_builtins)/sizeof(ext_builtins[0]))
+
+builtin_t *pr_builtins;
+int pr_numbuiltins;
+
+void PR_InitBuiltins (void)
+{
+	int i;
+	enum { UNINITIALIZED, KTPRO, QSG };
+	static int builtin_mode = UNINITIALIZED;
+	int newmode;
+
+	newmode = is_ktpro ? KTPRO : QSG;
+	if (newmode == builtin_mode)
+		return;
+
+	if (builtin_mode == QSG)
+		Q_free (pr_builtins);
+
+	if (newmode == KTPRO) {
+		builtin_mode = KTPRO;
+		pr_builtins = std_builtins;
+		pr_numbuiltins = num_mvdsv_builtins;
+		return;
+	}
+
+	builtin_mode = QSG;
+
+	// find highest builtin number to see how much space we need
+	pr_numbuiltins = num_id_builtins;
+	for (i = 0; i < num_ext_builtins; i++)
+		if (ext_builtins[i].num + 1 > pr_numbuiltins)
+			pr_numbuiltins = ext_builtins[i].num + 1;
+
+	pr_builtins = Q_malloc(pr_numbuiltins * sizeof(builtin_t));
+	memcpy (pr_builtins, std_builtins, num_id_builtins * sizeof(builtin_t));
+	for (i = num_id_builtins; i < pr_numbuiltins; i++)
+		pr_builtins[i] = PF_Fixme;
+	for (i = 0; i < num_ext_builtins; i++) {
+		assert (ext_builtins[i].num >= 0);
+		pr_builtins[ext_builtins[i].num] = ext_builtins[i].func;
+	}
+}
+
