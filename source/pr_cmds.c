@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.32 2007/01/07 18:11:03 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.33 2007/01/07 22:22:30 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -2587,6 +2587,18 @@ void PF_bound (void)
 //<-
 
 
+// ZQ_PAUSE
+// void(float pause) setpause = #531;
+void PF_setpause (void)
+{
+	qbool pause;
+
+	pause = G_FLOAT(OFS_PARM0) ? true : false;
+	if (pause != sv.paused)
+		SV_TogglePause (NULL);
+}
+
+
 /*
 ==============
 PF_checkextension
@@ -2601,10 +2613,12 @@ static void PF_checkextension (void)
 		"DP_QC_MINMAXBOUND",        // http://wiki.quakesrc.org/index.php/DP_QC_MINMAXBOUND
 		"DP_QC_SINCOSSQRTPOW",      // http://wiki.quakesrc.org/index.php/DP_QC_SINCOSSQRTPOW
 		"FTE_CALLTIMEOFDAY",        // http://wiki.quakesrc.org/index.php/FTE_CALLTIMEOFDAY
+		"ZQ_CLIENTCOMMAND",			// http://wiki.quakesrc.org/index.php/ZQ_CLIENTCOMMAND
 		"ZQ_ITEMS2",                // http://wiki.quakesrc.org/index.php/ZQ_ITEMS2
 		"ZQ_MOVETYPE_NOCLIP",       // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_NOCLIP
 		"ZQ_MOVETYPE_FLY",          // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_FLY
 		"ZQ_MOVETYPE_NONE",         // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_NONE
+		"ZQ_PAUSE",					// http://wiki.quakesrc.org/index.php/ZQ_PAUSE
 //		"ZQ_QC_STRINGS",
 		"ZQ_QC_TOKENIZE",           // http://wiki.quakesrc.org/index.php/ZQ_QC_TOKENIZE
 #ifdef VWEP_TEST
@@ -2788,14 +2802,15 @@ static struct { int num; builtin_t func; } ext_builtins[] =
 ////
 //{103, PF_cvar_string},	// string(string varname) cvar_string
 ////
-{114, PF_strlen},		// float(string s) strlen							= #114;
-{115, PF_strcat},		// string(string s1, string s2, ...) strcat			= #115; 
-{116, PF_substr},		// string(string s, float start, float count) substr = #116;
-//{117, PF_stov},			// vector(string s) stov							= #117;
-//{118, PF_strzone},		// string(string s) strzone							= #118;
-//{119, PF_strunzone},	// void(string s) strunzone							= #119;
-{231, PF_calltimeofday},	// void() calltimeofday							= #231;
-//{448, PF_cvar_string},	// string(string varname) cvar_string				= #448;
+{114, PF_strlen},		// float(string s) strlen
+{115, PF_strcat},		// string(string s1, string s2, ...) strcat
+{116, PF_substr},		// string(string s, float start, float count) substr
+//{117, PF_stov},			// vector(string s) stov
+//{118, PF_strzone},		// string(string s) strzone
+//{119, PF_strunzone},	// void(string s) strunzone
+{231, PF_calltimeofday},	// void() calltimeofday
+//{448, PF_cvar_string},	// string(string varname) cvar_string
+{531,PF_setpause},			//void(float pause) setpause
 };
 
 #define num_ext_builtins (sizeof(ext_builtins)/sizeof(ext_builtins[0]))

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.76 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: sv_user.c,v 1.77 2007/01/07 22:22:30 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -791,8 +791,6 @@ static void SV_Begin_f (void)
 		}
 	}
 
-	sv.paused &= ~2;	// FIXME!!!		-- Tonik
-
 	// if we are paused, tell the client
 	if (sv.paused)
 	{
@@ -1279,7 +1277,7 @@ deny_download:
 SV_DemoDownload_f
 ==================
 */
-qbool SV_ExecutePRCommand (qbool warn);
+qbool SV_ExecutePRCommand (void);
 static void SV_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
@@ -1289,9 +1287,7 @@ static void SV_DemoDownload_f(void)
 	unsigned char	download_queue_already_exists[]	= "Download queue already exists.\n";
 
 	if (!(int)sv_use_internal_cmd_dl.value)
-		if (SV_ExecutePRCommand(true))
-// FIXME: may be turn off warning here if mod does't support "cmd dl" because server will
-// server command internally in such case, warning looks stupid in this case?
+		if (SV_ExecutePRCommand())
 			return;
 
 	if (Cmd_Argc() < 2)
@@ -1656,8 +1652,12 @@ void SV_TogglePause (const char *msg)
 {
 	int i;
 	client_t *cl;
+	extern cvar_t sv_paused;
 
-	sv.paused ^= 1;
+	sv.paused = !sv.paused;
+	if (sv.paused)
+		sv.pausedsince = Sys_DoubleTime();
+	Cvar_SetROM (&sv_paused, sv.paused ? "1" : "0");
 
 	if (msg)
 		SV_BroadcastPrintf (PRINT_HIGH, "%s", msg);
@@ -1683,6 +1683,9 @@ SV_Pause_f
 static void SV_Pause_f (void)
 {
 	char st[CLIENT_NAME_LEN + 32];
+	qbool newstate;
+
+	newstate = !sv.paused;
 
 	if (!(int)pausable.value)
 	{
@@ -1696,7 +1699,16 @@ static void SV_Pause_f (void)
 		return;
 	}
 
-	if (!sv.paused)
+	if (GE_ShouldPause) {
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+		G_FLOAT(OFS_PARM0) = newstate;
+		PR_ExecuteProgram (GE_ShouldPause);
+		if (!G_FLOAT(OFS_RETURN))
+			return;		// progs said ignore the request
+	}
+
+	if (newstate)
 		snprintf (st, sizeof(st), "%s paused the game\n", host_client->name);
 	else
 		snprintf (st, sizeof(st), "%s unpaused the game\n", host_client->name);
@@ -2445,65 +2457,66 @@ typedef struct
 {
 	char	*name;
 	void	(*func) (void);
+	qbool	overrideable;
 }
 ucmd_t;
 
 
 static ucmd_t ucmds[] =
 {
-	{"new", SV_New_f},
-	{"modellist", SV_Modellist_f},
-	{"soundlist", SV_Soundlist_f},
-	{"prespawn", SV_PreSpawn_f},
-	{"spawn", SV_Spawn_f},
-	{"begin", SV_Begin_f},
+	{"new", SV_New_f, false},
+	{"modellist", SV_Modellist_f, false},
+	{"soundlist", SV_Soundlist_f, false},
+	{"prespawn", SV_PreSpawn_f, false},
+	{"spawn", SV_Spawn_f, false},
+	{"begin", SV_Begin_f, false},
 
-	{"drop", SV_Drop_f},
-	{"pings", SV_Pings_f},
+	{"drop", SV_Drop_f, false},
+	{"pings", SV_Pings_f, false},
 
 	// issued by hand at client consoles
-	{"rate", SV_Rate_f},
-	{"kill", SV_Kill_f},
-	{"pause", SV_Pause_f},
-	{"msg", SV_Msg_f},
+	{"rate", SV_Rate_f, true},
+	{"kill", SV_Kill_f, true},
+	{"pause", SV_Pause_f, true},
+	{"msg", SV_Msg_f, true},
 
-	{"say", SV_Say_f},
-	{"say_team", SV_Say_Team_f},
+	{"say", SV_Say_f, true},
+	{"say_team", SV_Say_Team_f, true},
 
-	{"setinfo", SV_SetInfo_f},
+	{"setinfo", SV_SetInfo_f, false},
 
-	{"serverinfo", SV_ShowServerinfo_f},
+	{"serverinfo", SV_ShowServerinfo_f, false},
 
-	{"download", SV_BeginDownload_f},
-	{"nextdl", SV_NextDownload_f},
-	{"dl", SV_DemoDownload_f},
+	{"download", SV_BeginDownload_f, false},
+	{"nextdl", SV_NextDownload_f, false},
+	{"dl", SV_DemoDownload_f, false /* sic, mod overrides are handles specially */},
 
-	{"ptrack", SV_PTrack_f}, //ZOID - used with autocam
+	{"ptrack", SV_PTrack_f, false}, //ZOID - used with autocam
 
 	//bliP: file upload ->
-	{"techlogin", SV_TechLogin_f},
-	{"upload", SV_ClientUpload_f},
+	{"techlogin", SV_TechLogin_f, false},
+	{"upload", SV_ClientUpload_f, false},
 	//<-
 
-	{"snap", SV_NoSnap_f},
-	{"stopdownload", SV_StopDownload_f},
-	{"stopdl", SV_StopDownload_f},
+	{"snap", SV_NoSnap_f, false},
+	{"stopdownload", SV_StopDownload_f, false},
+	{"stopdl", SV_StopDownload_f, false},
 	//	{"dlist", SV_DemoList_f},
-	{"dlistr", SV_DemoListRegex_f},
-	{"dlistregex", SV_DemoListRegex_f},
-	{"demolist", SV_DemoList_f},
-	{"demolistr", SV_DemoListRegex_f},
-	{"demolistregex", SV_DemoListRegex_f},
-	{"demoinfo", SV_MVDInfo_f},
-	{"lastscores", SV_LastScores_f},
-	{"minping", SV_MinPing_f},
-	{"maps", SV_ShowMapsList_f},
-	{"ban", SV_Cmd_Ban_f}, // internal server ban support
-	{"banip", SV_Cmd_Banip_f}, // internal server ban support
-	{"banrem", SV_Cmd_Banremove_f}, // internal server ban support
+	{"dlistr", SV_DemoListRegex_f, false},
+	{"dlistregex", SV_DemoListRegex_f, false},
+	{"demolist", SV_DemoList_f, false},
+	{"demolistr", SV_DemoListRegex_f, false},
+	{"demolistregex", SV_DemoListRegex_f, false},
+	{"demoinfo", SV_MVDInfo_f, false},
+	{"lastscores", SV_LastScores_f, false},
+	{"minping", SV_MinPing_f, true},
+	{"maps", SV_ShowMapsList_f, false},
+	{"ban", SV_Cmd_Ban_f, true}, // internal server ban support
+	{"banip", SV_Cmd_Banip_f, true}, // internal server ban support
+	{"banrem", SV_Cmd_Banremove_f, true}, // internal server ban support
 #ifdef I_AM_MVDSV_HACKER
-	{"join", Cmd_Join_f},
-	{"observe", Cmd_Observe_f},
+	{"join", Cmd_Join_f, true},
+	{"observe", Cmd_Observe_f, true},
 #endif
 	{NULL, NULL}
 
@@ -2524,33 +2537,37 @@ static void SV_ExecuteUserCommand (char *s)
 
 	SV_BeginRedirect (RD_CLIENT);
 
-	for (u=ucmds ; u->name ; u++)
-		if (!strcmp (Cmd_Argv(0), u->name) )
-		{
-			u->func ();
+	for (u=ucmds ; u->name ; u++) {
+		if (!strcmp (Cmd_Argv(0), u->name) ) {
+			if (!u->overrideable) {
+				u->func();
+				goto out;
+			}
 			break;
 		}
+	}
 
-	if (!u->name)
-		SV_ExecutePRCommand(true);
+	if (SV_ExecutePRCommand())
+		goto out;
 
+	if (u->name)
+		u->func();	
+	else
+		Con_Printf("Bad user command: %s\n", Cmd_Argv(0));
+
+out:
 	SV_EndRedirect ();
 }
 
 qbool SV_Check_ktpro(void);
-qbool SV_ExecutePRCommand (qbool warn)
+qbool SV_ExecutePRCommand (void)
 {
 #ifdef USE_PR2
 	if ( sv_vm )
 	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
-		if (!PR2_ClientCmd())
-		{
-			if (warn)
-				Con_Printf("Bad user command: %s\n", Cmd_Argv(0));
-			return false;
-		}
+		return PR2_ClientCmd();
 	}
 	else
 #endif
@@ -2564,16 +2581,11 @@ qbool SV_ExecutePRCommand (qbool warn)
 							NET_BaseAdrToString(host_client->netchan.remote_address),
 							host_client->realip.ip.ip[0] ?
 								NET_BaseAdrToString(host_client->realip) : "not detected"));
-				return false;
+				return true /* suppress bad command warning */;
 			}
-		if (!PR_UserCmd())
-		{
-			if (warn)
-				Con_Printf ("Bad user command: %s\n", Cmd_Argv(0));
-			return false;
-		}
+
+		return PR_UserCmd();
 	}
-	return true;
 }
 
 /*

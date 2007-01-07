@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.91 2007/01/07 18:11:03 disconn3ct Exp $
+	$Id: sv_main.c,v 1.92 2007/01/07 22:22:30 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -162,6 +162,7 @@ cvar_t	skill = {"skill", "1"};
 cvar_t	coop = {"coop", "0"};
 
 cvar_t	version = {"version", full_version, CVAR_ROM};
+cvar_t	sv_paused = {"sv_paused", "0", CVAR_ROM};
 
 cvar_t	hostname = {"hostname", "unnamed", CVAR_SERVERINFO};
 
@@ -1988,8 +1989,6 @@ qbool SV_FilterPacket (void)
 
 // { server internal BAN support
 
-qbool SV_ExecutePRCommand (qbool warn);
-
 #define AF_REAL_ADMIN  (1<<1) // pass/vip granted admin (real admin in terms of ktpro)
 
 void Do_BanList(ipfiltertype_t ipft)
@@ -2104,9 +2103,6 @@ void SV_Cmd_Ban_f(void)
 	int			c;
 	char		reason[80] = "", arg2[32], arg2c[sizeof(arg2)], *s;
 
-	if (SV_ExecutePRCommand(false)) // no warning if command does't served in mod
-		return;
-
 	// set up the edict
 	ent = host_client->edict;
 
@@ -2208,9 +2204,6 @@ void SV_Cmd_Banip_f(void)
 	ipfilter_t  f;
 	char		arg2[32], arg2c[sizeof(arg2)];
 
-	if (SV_ExecutePRCommand(false)) // no warning if command does't served in mod
-		return;
-
 	// set up the edict
 	ent = host_client->edict;
 
@@ -2280,9 +2273,6 @@ void SV_Cmd_Banremove_f(void)
 	eval_t *val;
 	byte	b[4];
 	int		id;
-
-	if (SV_ExecutePRCommand(false)) // no warning if command does't served in mod
-		return;
 
 	// set up the edict
 	ent = host_client->edict;
@@ -2721,6 +2711,14 @@ static void SV_CheckTimeouts (void)
 	if (sv.paused && !nclients)
 	{
 		// nobody left, unpause the server
+		if (GE_ShouldPause) {
+			pr_global_struct->time = sv.time;
+			pr_global_struct->self = EDICT_TO_PROG(sv.edicts);
+			G_FLOAT(OFS_PARM0) = 0 /* newstate = false */;
+			PR_ExecuteProgram (GE_ShouldPause);
+			if (!G_FLOAT(OFS_RETURN))
+				return;		// progs said don't unpause
+		}
 		SV_TogglePause("Pause released since no players are left.\n");
 	}
 }
@@ -2845,6 +2843,14 @@ static void SV_CheckVars (void)
 	}
 }
 
+static void PausedTic (void)
+{
+	if (GE_PausedTic) {
+		G_FLOAT(OFS_PARM0) = Sys_DoubleTime() - sv.pausedsince;
+		PR_ExecuteProgram (GE_PausedTic);
+	}
+}
+
 /*
 ==================
 SV_Frame
@@ -2904,6 +2910,8 @@ void SV_Frame (double time1)
 	// move autonomous things around if enough time has passed
 	if (!sv.paused)
 		SV_Physics ();
+	else
+		PausedTic ();
 
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
@@ -3027,6 +3035,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&spawn);
 	Cvar_Register (&watervis);
 	Cvar_Register (&serverdemo);
+	Cvar_Register (&sv_paused);
 
 	Cvar_Register (&developer);
 
