@@ -1,22 +1,22 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	$Id: cvar.c,v 1.13 2006/04/28 17:12:44 vvd0 Exp $
+
+	$Id: cvar.c,v 1.14 2007/01/07 18:11:03 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -427,6 +427,7 @@ qbool Cvar_Delete (char *name)
 	return false;	// shut up compiler
 }
 
+//DP_CON_SET
 void Cvar_Set_f (void)
 {
 	cvar_t *var;
@@ -512,7 +513,7 @@ void Cvar_Init (void)
 {
 	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f);
 	Cmd_AddCommand ("toggle", Cvar_Toggle_f);
-	Cmd_AddCommand ("set", Cvar_Set_f);
+	Cmd_AddCommand ("set", Cvar_Set_f); //DP_CON_SET
 	Cmd_AddCommand ("inc", Cvar_Inc_f);
 
 #ifdef CVAR_DEBUG
