@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.77 2007/01/07 22:22:30 disconn3ct Exp $
+	$Id: sv_user.c,v 1.78 2007/01/08 18:10:25 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1777,52 +1777,6 @@ static void SV_PTrack_f (void)
 }
 
 
-/*
-=================
-SV_Rate_f
-
-Change the bandwidth estimate for a client
-=================
-*/
-static void SV_Rate_f (void)
-{
-	int		rate;
-
-	if (Cmd_Argc() != 2)
-	{
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Current rate is %i\n",
-		                 (int)(1.0/host_client->netchan.rate + 0.5));
-		return;
-	}
-
-	rate = SV_BoundRate (host_client->download != NULL, Q_atoi(Cmd_Argv(1)));
-
-	SV_ClientPrintf (host_client, PRINT_HIGH, "Net rate set to %i\n", rate);
-	host_client->netchan.rate = 1.0/rate;
-}
-
-
-/*
-=================
-SV_Msg_f
-
-Change the message level for a client
-=================
-*/
-static void SV_Msg_f (void)
-{
-	if (Cmd_Argc() != 2)
-	{
-		SV_ClientPrintf (host_client, PRINT_HIGH, "Current msg level is %i\n",
-		                 host_client->messagelevel);
-		return;
-	}
-
-	host_client->messagelevel = Q_atoi(Cmd_Argv(1));
-
-	SV_ClientPrintf (host_client, PRINT_HIGH, "Msg level set to %i\n", host_client->messagelevel);
-}
-
 //bliP: upload files ->
 /*
 =================
@@ -2475,10 +2429,8 @@ static ucmd_t ucmds[] =
 	{"pings", SV_Pings_f, false},
 
 	// issued by hand at client consoles
-	{"rate", SV_Rate_f, true},
 	{"kill", SV_Kill_f, true},
 	{"pause", SV_Pause_f, true},
-	{"msg", SV_Msg_f, true},
 
 	{"say", SV_Say_f, true},
 	{"say_team", SV_Say_Team_f, true},
