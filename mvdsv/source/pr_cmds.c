@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.35 2007/01/08 18:44:20 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.36 2007/01/08 19:31:24 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1000,12 +1000,12 @@ void PF_strzone (void)
 
 	for (i = 0; i < MAX_PRSTR; i++)
 	{
-		if (pr_newstrtbl[i] == NULL)
+		if (!pr_newstrtbl[i] || pr_newstrtbl[i] == pr_strings)
 			break;
 	}
 
 	if (i == MAX_PRSTR)
-		PR_RunError("PF_newstr: MAX_PRSTR");
+		PR_RunError("strzone: out of string memory");
 
 	size = strlen(s) + 1;
 	if (pr_argc == 2 && (int) G_FLOAT(OFS_PARM1) > size)
@@ -1052,7 +1052,7 @@ void PF_clear_strtbl(void)
 
 	for (i = 0; i < MAX_PRSTR; i++)
 	{
-		if (pr_newstrtbl[i] != NULL)
+		if (pr_newstrtbl[i] && pr_newstrtbl[i] != pr_strings)
 		{
 			Q_free(pr_newstrtbl[i]);
 			pr_newstrtbl[i] = NULL;
