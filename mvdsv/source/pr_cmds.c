@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.33 2007/01/07 22:22:30 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.34 2007/01/08 17:29:26 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -982,13 +982,16 @@ void PF_str2short (void)
 
 /*
 =================
-PF_newstr
- 
+PF_strzone
+
+ZQ_QC_STRINGS
 string newstr (string str [, float size])
+
+The 'size' parameter is not QSG but an MVDSV extension
 =================
 */
 
-void PF_newstr (void)
+void PF_strzone (void)
 {
 	char *s;
 	int i, size;
@@ -1016,23 +1019,31 @@ void PF_newstr (void)
 
 /*
 =================
-PF_frestr
- 
-void freestr (string str)
+PF_strunzone
+
+ZQ_QC_STRINGS
+void strunzone (string str)
 =================
 */
 
-void PF_freestr (void)
+void PF_strunzone (void)
 {
 	int num;
 
 	num = G_INT(OFS_PARM0);
 	if (num > - MAX_PRSTR)
-		PR_RunError("freestr: Bad pointer");
+		PR_RunError("strunzone: not a dynamic string");
+
+	if (num <= -(MAX_PRSTR * 2))
+		PR_RunError ("strunzone: bad string");
 
 	num = - (num + MAX_PRSTR);
+
+	if (pr_newstrtbl[num] == pr_strings)
+		return;	// allow multiple strunzone on the same string (like free in C)
+
 	Q_free(pr_newstrtbl[num]);
-	pr_newstrtbl[num] = NULL;
+	pr_newstrtbl[num] = pr_strings;
 }
 
 void PF_clear_strtbl(void)
@@ -1311,7 +1322,7 @@ void PF_cvar (void)
 
 	str = G_STRING(OFS_PARM0);
 
-	if (!strcasecmp(str, "pr_checkextension")) {
+	if (!strcasecmp(str, "pr_checkextension") && !is_ktpro) {
 		// we do support PF_checkextension
 		G_FLOAT(OFS_RETURN) = 1.0;
 		return;
@@ -2619,7 +2630,7 @@ static void PF_checkextension (void)
 		"ZQ_MOVETYPE_FLY",          // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_FLY
 		"ZQ_MOVETYPE_NONE",         // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_NONE
 		"ZQ_PAUSE",					// http://wiki.quakesrc.org/index.php/ZQ_PAUSE
-//		"ZQ_QC_STRINGS",
+		"ZQ_QC_STRINGS",			// http://wiki.quakesrc.org/index.php/ZQ_QC_STRINGS
 		"ZQ_QC_TOKENIZE",           // http://wiki.quakesrc.org/index.php/ZQ_QC_TOKENIZE
 #ifdef VWEP_TEST
 		"ZQ_VWEP_TEST",
@@ -2757,8 +2768,8 @@ static builtin_t std_builtins[] =
         PF_strlen,		//#90
         PF_str2byte,
         PF_str2short,
-        PF_newstr,
-        PF_freestr,
+        PF_strzone,
+        PF_strunzone,
         PF_conprint,
         PF_readcmd,
         PF_strcpy,
@@ -2806,8 +2817,8 @@ static struct { int num; builtin_t func; } ext_builtins[] =
 {115, PF_strcat},		// string(string s1, string s2, ...) strcat
 {116, PF_substr},		// string(string s, float start, float count) substr
 //{117, PF_stov},			// vector(string s) stov
-//{118, PF_strzone},		// string(string s) strzone
-//{119, PF_strunzone},	// void(string s) strunzone
+{118, PF_strzone},			// string(string s) strzone
+{119, PF_strunzone},		// void(string s) strunzone
 {231, PF_calltimeofday},	// void() calltimeofday
 //{448, PF_cvar_string},	// string(string varname) cvar_string
 {531,PF_setpause},			//void(float pause) setpause
