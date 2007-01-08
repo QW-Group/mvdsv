@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.80 2007/01/08 18:44:21 disconn3ct Exp $
+	$Id: sv_user.c,v 1.81 2007/01/08 19:35:02 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2145,7 +2145,6 @@ static void Cmd_ShowMapsList_f(void)
 	Con_Printf("%s---%s\n", i_mod_2 ? "" : "\n", Q_redtext(end_of_list));
 }
 
-#ifdef I_AM_MVDSV_HACKER
 static void SetUpClientEdict (client_t *cl, edict_t *ent)
 {
 #ifdef USE_PR2
@@ -2251,6 +2250,7 @@ static void Cmd_Join_f (void)
 	// turn the spectator into a player
 	host_client->spectator = false;
 	Info_RemoveKey (host_client->userinfo, "*spectator");
+	Info_RemoveKey (host_client->userinfoshort, "*spectator");
 
 	// call the progs to get default spawn parms for the new client
 #ifdef USE_PR2
@@ -2347,6 +2347,7 @@ static void Cmd_Observe_f (void)
 	// turn the player into a spectator
 	host_client->spectator = true;
 	Info_SetValueForStarKey (host_client->userinfo, "*spectator", "1", MAX_INFO_STRING);
+	Info_SetValueForStarKey (host_client->userinfoshort, "*spectator", "1", MAX_INFO_STRING);
 
 	// call the progs to get default spawn parms for the new client
 #ifdef USE_PR2
@@ -2394,7 +2395,6 @@ static void Cmd_Observe_f (void)
 	// send notification to all clients
 	host_client->sendinfo = true;
 }
-#endif
 
 void SV_DemoList_f(void);
 void SV_DemoListRegex_f(void);
@@ -2466,10 +2466,10 @@ static ucmd_t ucmds[] =
 	{"ban", SV_Cmd_Ban_f, true}, // internal server ban support
 	{"banip", SV_Cmd_Banip_f, true}, // internal server ban support
 	{"banrem", SV_Cmd_Banremove_f, true}, // internal server ban support
-#ifdef I_AM_MVDSV_HACKER
+
 	{"join", Cmd_Join_f, true},
 	{"observe", Cmd_Observe_f, true},
-#endif
+
 	{NULL, NULL}
 
 };
