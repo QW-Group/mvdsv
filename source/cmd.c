@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: cmd.c,v 1.20 2006/06/02 15:12:25 vvd0 Exp $
+    $Id: cmd.c,v 1.21 2007/01/08 18:44:20 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -151,14 +151,13 @@ void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text)
 Cbuf_Execute
 ============
 */
-qbool SV_Check_ktpro(void);
 void Cbuf_ExecuteEx (cbuf_t *cbuf)
 {
-	int	i;
-	char	*text;
-	char	line[1024];
-	int	quotes;
-	int	cursize;
+	int i;
+	char *text;
+	char line[1024];
+	int quotes;
+	int cursize;
 	int semicolon = 0;
 
 	cbuf_current = cbuf;
@@ -224,7 +223,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		}
 
 		// security bugfix in ktpro
-		if (SV_Check_ktpro() && semicolon > 1)
+		if (is_ktpro && semicolon > 1)
 			Sys_Printf("ATTENTION: possibly tried to use ktpro's security hole, "
 						"server don't run command after ';'!\nCommand: %s\n", line);
 		else

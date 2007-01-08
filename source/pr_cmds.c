@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.34 2007/01/08 17:29:26 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.35 2007/01/08 18:44:20 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -2427,13 +2427,10 @@ void PF_listmaps (void)
 /*
 ==============
 PF_infokey
- 
+
 string(entity e, string key) infokey
 ==============
 */
-
-qbool SV_Check_ktpro(void);
-
 void PF_infokey (void)
 {
 	edict_t	*e;
@@ -2450,9 +2447,9 @@ void PF_infokey (void)
 
 	if (e1 == 0)
 	{
-		if (SV_Check_ktpro() && !strncmp(key, "*version", 9))
+		if (is_ktpro && !strncmp(key, "*version", 9))
 			value = QW_VERSION;
-		else if (SV_Check_ktpro() && !strncmp(key, "*qwe_version", 13))
+		else if (is_ktpro && !strncmp(key, "*qwe_version", 13))
 			value = QWE_VERSION;
 		else if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey(localinfo, key);

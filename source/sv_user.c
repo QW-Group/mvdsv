@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.79 2007/01/08 18:40:56 disconn3ct Exp $
+	$Id: sv_user.c,v 1.80 2007/01/08 18:44:21 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2511,7 +2511,6 @@ out:
 	SV_EndRedirect ();
 }
 
-qbool SV_Check_ktpro(void);
 qbool SV_ExecutePRCommand (void)
 {
 #ifdef USE_PR2
@@ -2524,7 +2523,7 @@ qbool SV_ExecutePRCommand (void)
 	else
 #endif
 	{
-		if (SV_Check_ktpro() && Cmd_Argc() > 1)
+		if (is_ktpro && Cmd_Argc() > 1)
 		 	if (!((strcmp(Cmd_Argv(0), "admin") && strcmp(Cmd_Argv(0), "judge")) ||
 				strcmp(Cmd_Argv(1), "-0")))
 			{
