@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.78 2007/01/08 18:10:25 disconn3ct Exp $
+	$Id: sv_user.c,v 1.79 2007/01/08 18:40:56 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -77,14 +77,14 @@ host_client and sv_player will be valid.
 
 /*
 ================
-SV_New_f
+Cmd_New_f
 
 Sends the first message from the server to a connected client.
 This will be sent on the initial connection and upon each server load.
 ================
 */
 int SV_VIPbyIP (netadr_t adr);
-static void SV_New_f (void)
+static void Cmd_New_f (void)
 {
 	char		*gamedir;
 	int			playernum;
@@ -261,10 +261,10 @@ static void SV_New_f (void)
 
 /*
 ==================
-SV_Soundlist_f
+Cmd_Soundlist_f
 ==================
 */
-static void SV_Soundlist_f (void)
+static void Cmd_Soundlist_f (void)
 {
 	char		**s;
 	unsigned	n;
@@ -280,7 +280,7 @@ static void SV_Soundlist_f (void)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Soundlist_f from different level\n");
-		SV_New_f ();
+		Cmd_New_f ();
 		return;
 	}
 
@@ -343,10 +343,10 @@ static char *TrimModelName (char *full)
 
 /*
 ==================
-SV_Modellist_f
+Cmd_Modellist_f
 ==================
 */
-static void SV_Modellist_f (void)
+static void Cmd_Modellist_f (void)
 {
 	char		**s;
 	unsigned	n;
@@ -362,7 +362,7 @@ static void SV_Modellist_f (void)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Modellist_f from different level\n");
-		SV_New_f ();
+		Cmd_New_f ();
 		return;
 	}
 
@@ -423,10 +423,10 @@ static void SV_Modellist_f (void)
 
 /*
 ==================
-SV_PreSpawn_f
+Cmd_PreSpawn_f
 ==================
 */
-static void SV_PreSpawn_f (void)
+static void Cmd_PreSpawn_f (void)
 {
 	unsigned int buf;
 	unsigned int check;
@@ -442,7 +442,7 @@ static void SV_PreSpawn_f (void)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_PreSpawn_f from different level\n");
-		SV_New_f ();
+		Cmd_New_f ();
 		return;
 	}
 
@@ -499,10 +499,10 @@ static void SV_PreSpawn_f (void)
 
 /*
 ==================
-SV_Spawn_f
+Cmd_Spawn_f
 ==================
 */
-static void SV_Spawn_f (void)
+static void Cmd_Spawn_f (void)
 {
 	int		i;
 	client_t	*client;
@@ -524,7 +524,7 @@ static void SV_Spawn_f (void)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Spawn_f from different level\n");
-		SV_New_f ();
+		Cmd_New_f ();
 		return;
 	}
 
@@ -682,10 +682,10 @@ static void SV_SpawnSpectator (void)
 
 /*
 ==================
-SV_Begin_f
+Cmd_Begin_f
 ==================
 */
-static void SV_Begin_f (void)
+static void Cmd_Begin_f (void)
 {
 	unsigned pmodel = 0, emodel = 0;
 	int i;
@@ -698,7 +698,7 @@ static void SV_Begin_f (void)
 	{
 		SV_ClearReliable (host_client);
 		Con_Printf ("SV_Begin_f from different level\n");
-		SV_New_f ();
+		Cmd_New_f ();
 		return;
 	}
 
@@ -806,7 +806,7 @@ static void SV_Begin_f (void)
 
 /*
 ==================
-SV_DownloadNextFile_f
+SV_DownloadNextFile
 ==================
 */
 static qbool SV_DownloadNextFile (void)
@@ -854,10 +854,10 @@ static qbool SV_DownloadNextFile (void)
 
 /*
 ==================
-SV_NextDownload_f
+Cmd_NextDownload_f
 ==================
 */
-static void SV_NextDownload_f (void)
+static void Cmd_NextDownload_f (void)
 {
 	byte	buffer[FILE_TRANSFER_BUF_SIZE];
 	int		r, tmp;
@@ -1063,11 +1063,11 @@ static void SV_NextUpload (void)
 
 /*
 ==================
-SV_BeginDownload_f
+Cmd_Download_f
 ==================
 */
 //void SV_ReplaceChar(char *s, char from, char to);
-static void SV_BeginDownload_f(void)
+static void Cmd_Download_f(void)
 {
 	char	*name, n[MAX_OSPATH], *val, *p;
 	extern	cvar_t	allow_download;
@@ -1237,7 +1237,7 @@ static void SV_BeginDownload_f(void)
 		host_client->netchan.rate = 1. / SV_BoundRate(true, Q_atoi(val));
 
 	// all checks passed, start downloading
-	SV_NextDownload_f ();
+	Cmd_NextDownload_f ();
 	Sys_Printf ("Downloading %s to %s\n", name, host_client->name);
 
 	//bliP: download info/download url ->
@@ -1274,11 +1274,11 @@ deny_download:
 
 /*
 ==================
-SV_DemoDownload_f
+Cmd_DemoDownload_f
 ==================
 */
 qbool SV_ExecutePRCommand (void);
-static void SV_DemoDownload_f(void)
+static void Cmd_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
 	char		*cmd_argv_i;
@@ -1349,10 +1349,10 @@ static void SV_DemoDownload_f(void)
 
 /*
 ==================
-SV_StopDownload_f
+Cmd_StopDownload_f
 ==================
 */
-static void SV_StopDownload_f(void)
+static void Cmd_StopDownload_f(void)
 {
 	unsigned char	download_stopped[] = "Download stopped and download queue cleared.\n";
 	if (host_client->download)
@@ -1571,19 +1571,19 @@ static void SV_Say (qbool team)
 
 /*
 ==================
-SV_Say_f
+Cmd_Say_f
 ==================
 */
-static void SV_Say_f(void)
+static void Cmd_Say_f(void)
 {
 	SV_Say (false);
 }
 /*
 ==================
-SV_Say_Team_f
+Cmd_Say_Team_f
 ==================
 */
-static void SV_Say_Team_f(void)
+static void Cmd_Say_Team_f(void)
 {
 	SV_Say (true);
 }
@@ -1594,13 +1594,13 @@ static void SV_Say_Team_f(void)
 
 /*
 =================
-SV_Pings_f
+Cmd_Pings_f
 
 The client is showing the scoreboard, so send new ping times for all
 clients
 =================
 */
-static void SV_Pings_f (void)
+static void Cmd_Pings_f (void)
 {
 	client_t *client;
 	int j;
@@ -1622,10 +1622,10 @@ static void SV_Pings_f (void)
 
 /*
 ==================
-SV_Kill_f
+Cmd_Kill_f
 ==================
 */
-static void SV_Kill_f (void)
+static void Cmd_Kill_f (void)
 {
 	if (sv_player->v.health <= 0)
 	{
@@ -1677,10 +1677,10 @@ void SV_TogglePause (const char *msg)
 
 /*
 ==================
-SV_Pause_f
+Cmd_Pause_f
 ==================
 */
-static void SV_Pause_f (void)
+static void Cmd_Pause_f (void)
 {
 	char st[CLIENT_NAME_LEN + 32];
 	qbool newstate;
@@ -1719,12 +1719,12 @@ static void SV_Pause_f (void)
 
 /*
 =================
-SV_Drop_f
+Cmd_Drop_f
 
 The client is going to disconnect, so remove the connection immediately
 =================
 */
-static void SV_Drop_f (void)
+static void Cmd_Drop_f (void)
 {
 	SV_EndRedirect ();
 	if (host_client->state == cs_zombie) // FIXME
@@ -1736,12 +1736,12 @@ static void SV_Drop_f (void)
 
 /*
 =================
-SV_PTrack_f
+Cmd_PTrack_f
 
 Change the bandwidth estimate for a client
 =================
 */
-static void SV_PTrack_f (void)
+static void Cmd_PTrack_f (void)
 {
 	int		i;
 	edict_t *ent, *tent;
@@ -1780,12 +1780,12 @@ static void SV_PTrack_f (void)
 //bliP: upload files ->
 /*
 =================
-SV_TechLogin_f
+Cmd_TechLogin_f
 Login to upload
 =================
 */
 int Master_Rcon_Validate (void);
-static void SV_TechLogin_f (void)
+static void Cmd_TechLogin_f (void)
 {
 	if (host_client->logincount > 4) //denied
 		return;
@@ -1809,10 +1809,10 @@ static void SV_TechLogin_f (void)
 
 /*
 ================
-SV_ClientUpload_f
+Cmd_Upload_f
 ================
 */
-static void SV_ClientUpload_f (void)
+static void Cmd_Upload_f (void)
 {
 	char str[MAX_OSPATH];
 
@@ -1855,7 +1855,7 @@ static void SV_ClientUpload_f (void)
 
 /*
 ==================
-SV_SetInfo_f
+Cmd_SetInfo_f
 
 Allow clients to change userinfo
 ==================
@@ -1879,7 +1879,7 @@ char *shortinfotbl[] =
 	NULL
 };
 
-static void SV_SetInfo_f (void)
+static void Cmd_SetInfo_f (void)
 {
 	extern cvar_t sv_forcenick, sv_login;
 	int i, saved_state;
@@ -2059,12 +2059,12 @@ SV_ShowServerinfo_f
 Dumps the serverinfo info string
 ==================
 */
-static void SV_ShowServerinfo_f (void)
+static void Cmd_ShowServerinfo_f (void)
 {
 	Info_Print (svs.info);
 }
 
-static void SV_NoSnap_f(void)
+static void Cmd_NoSnap_f(void)
 {
 	if (*host_client->uploadfn)
 	{
@@ -2075,10 +2075,10 @@ static void SV_NoSnap_f(void)
 
 /*
 ==============
-SV_MinPing_f
+Cmd_MinPing_f
 ==============
 */
-static void SV_MinPing_f (void)
+static void Cmd_MinPing_f (void)
 {
 	float minping;
 	switch (Cmd_Argc())
@@ -2106,11 +2106,11 @@ static void SV_MinPing_f (void)
 
 /*
 ==============
-SV_ShowMapsList_f
+Cmd_ShowMapsList_f
 ==============
 */
 void SV_Check_localinfo_maps_support(void);
-static void SV_ShowMapsList_f(void)
+static void Cmd_ShowMapsList_f(void)
 {
 	char	*value, *key;
 	int	i, j, len, i_mod_2 = 1;
@@ -2418,41 +2418,41 @@ ucmd_t;
 
 static ucmd_t ucmds[] =
 {
-	{"new", SV_New_f, false},
-	{"modellist", SV_Modellist_f, false},
-	{"soundlist", SV_Soundlist_f, false},
-	{"prespawn", SV_PreSpawn_f, false},
-	{"spawn", SV_Spawn_f, false},
-	{"begin", SV_Begin_f, false},
+	{"new", Cmd_New_f, false},
+	{"modellist", Cmd_Modellist_f, false},
+	{"soundlist", Cmd_Soundlist_f, false},
+	{"prespawn", Cmd_PreSpawn_f, false},
+	{"spawn", Cmd_Spawn_f, false},
+	{"begin", Cmd_Begin_f, false},
 
-	{"drop", SV_Drop_f, false},
-	{"pings", SV_Pings_f, false},
+	{"drop", Cmd_Drop_f, false},
+	{"pings", Cmd_Pings_f, false},
 
 	// issued by hand at client consoles
-	{"kill", SV_Kill_f, true},
-	{"pause", SV_Pause_f, true},
+	{"kill", Cmd_Kill_f, true},
+	{"pause", Cmd_Pause_f, true},
 
-	{"say", SV_Say_f, true},
-	{"say_team", SV_Say_Team_f, true},
+	{"say", Cmd_Say_f, true},
+	{"say_team", Cmd_Say_Team_f, true},
 
-	{"setinfo", SV_SetInfo_f, false},
+	{"setinfo", Cmd_SetInfo_f, false},
 
-	{"serverinfo", SV_ShowServerinfo_f, false},
+	{"serverinfo", Cmd_ShowServerinfo_f, false},
 
-	{"download", SV_BeginDownload_f, false},
-	{"nextdl", SV_NextDownload_f, false},
-	{"dl", SV_DemoDownload_f, false /* sic, mod overrides are handles specially */},
+	{"download", Cmd_Download_f, false},
+	{"nextdl", Cmd_NextDownload_f, false},
+	{"dl", Cmd_DemoDownload_f, false /* sic, mod overrides are handles specially */},
 
-	{"ptrack", SV_PTrack_f, false}, //ZOID - used with autocam
+	{"ptrack", Cmd_PTrack_f, false}, //ZOID - used with autocam
 
 	//bliP: file upload ->
-	{"techlogin", SV_TechLogin_f, false},
-	{"upload", SV_ClientUpload_f, false},
+	{"techlogin", Cmd_TechLogin_f, false},
+	{"upload", Cmd_Upload_f, false},
 	//<-
 
-	{"snap", SV_NoSnap_f, false},
-	{"stopdownload", SV_StopDownload_f, false},
-	{"stopdl", SV_StopDownload_f, false},
+	{"snap", Cmd_NoSnap_f, false},
+	{"stopdownload", Cmd_StopDownload_f, false},
+	{"stopdl", Cmd_StopDownload_f, false},
 	//	{"dlist", SV_DemoList_f},
 	{"dlistr", SV_DemoListRegex_f, false},
 	{"dlistregex", SV_DemoListRegex_f, false},
@@ -2461,8 +2461,8 @@ static ucmd_t ucmds[] =
 	{"demolistregex", SV_DemoListRegex_f, false},
 	{"demoinfo", SV_MVDInfo_f, false},
 	{"lastscores", SV_LastScores_f, false},
-	{"minping", SV_MinPing_f, true},
-	{"maps", SV_ShowMapsList_f, false},
+	{"minping", Cmd_MinPing_f, true},
+	{"maps", Cmd_ShowMapsList_f, false},
 	{"ban", SV_Cmd_Ban_f, true}, // internal server ban support
 	{"banip", SV_Cmd_Banip_f, true}, // internal server ban support
 	{"banrem", SV_Cmd_Banremove_f, true}, // internal server ban support
