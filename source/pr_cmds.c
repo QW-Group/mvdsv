@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.36 2007/01/08 19:31:24 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.37 2007/01/08 19:57:35 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -2516,7 +2516,6 @@ void PF_multicast (void)
 	SV_Multicast (o, to);
 }
 
-//bliP: added as requested (mercury) ->
 //DP_QC_SINCOSSQRTPOW
 //float sin(float x) = #60
 void PF_sin (void)
@@ -2592,7 +2591,94 @@ void PF_bound (void)
 	G_FLOAT(OFS_RETURN) = bound(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1), G_FLOAT(OFS_PARM2));
 }
 
-//<-
+/*
+=================
+PF_tracebox
+
+Like traceline but traces a box of the size specified
+(NOTE: currently the hull size can only be one of the sizes used in the map
+for bmodel collisions, entity collisions will pay attention to the exact size
+specified however, this is a collision code limitation in quake itself,
+and will be fixed eventually).
+
+DP_QC_TRACEBOX
+
+void(vector v1, vector mins, vector maxs, vector v2, float nomonsters, entity ignore) tracebox = #90;
+=================
+*/
+static void PF_tracebox (void)
+{
+        float       *v1, *v2, *mins, *maxs;
+        edict_t     *ent;
+        int          nomonsters;
+        trace_t      trace;
+
+        v1 = G_VECTOR(OFS_PARM0);
+        mins = G_VECTOR(OFS_PARM1);
+        maxs = G_VECTOR(OFS_PARM2);
+        v2 = G_VECTOR(OFS_PARM3);
+        nomonsters = G_FLOAT(OFS_PARM4);
+        ent = G_EDICT(OFS_PARM5);
+
+        trace = SV_Trace (v1, mins, maxs, v2, nomonsters, ent);
+
+        pr_global_struct->trace_allsolid = trace.allsolid;
+        pr_global_struct->trace_startsolid = trace.startsolid;
+        pr_global_struct->trace_fraction = trace.fraction;
+        pr_global_struct->trace_inwater = trace.inwater;
+        pr_global_struct->trace_inopen = trace.inopen;
+        VectorCopy (trace.endpos, pr_global_struct->trace_endpos);
+        VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
+        pr_global_struct->trace_plane_dist =  trace.plane.dist;
+        if (trace.e.ent)
+                pr_global_struct->trace_ent = EDICT_TO_PROG(trace.e.ent);
+        else
+                pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
+}
+
+/*
+=================
+PF_randomvec
+
+DP_QC_RANDOMVEC
+vector randomvec() = #91
+=================
+*/
+static void PF_randomvec (void)
+{
+	vec3_t temp;
+
+	do {
+		temp[0] = (rand() & 0x7fff) * (2.0 / 0x7fff) - 1.0;
+		temp[1] = (rand() & 0x7fff) * (2.0 / 0x7fff) - 1.0;
+		temp[2] = (rand() & 0x7fff) * (2.0 / 0x7fff) - 1.0;
+	} while (DotProduct(temp, temp) >= 1);
+
+	VectorCopy (temp, G_VECTOR(OFS_RETURN));
+}
+
+/*
+=================
+PF_cvar_string
+
+QSG_CVARSTRING DP_QC_CVAR_STRING
+string cvar_string(string varname) = #103;
+=================
+*/
+static void PF_cvar_string (void)
+{
+	char	*str;
+	cvar_t	*var;
+
+	str = G_STRING(OFS_PARM0);
+	var = Cvar_FindVar(str);
+	if (!var) {
+		G_INT(OFS_RETURN) = 0;
+		return;
+	}
+	strlcpy (pr_string_temp, var->string, sizeof(pr_string_temp));
+	RETURN_STRING(pr_string_temp);
+}
 
 
 // ZQ_PAUSE
@@ -2618,9 +2704,13 @@ static void PF_checkextension (void)
 {
 	static char *supported_extensions[] = {
 		"DP_CON_SET",               // http://wiki.quakesrc.org/index.php/DP_CON_SET
+		"DP_QC_CVAR_STRING",		// http://wiki.quakesrc.org/index.php/DP_QC_CVAR_STRING
 		"DP_QC_MINMAXBOUND",        // http://wiki.quakesrc.org/index.php/DP_QC_MINMAXBOUND
+		"DP_QC_RANDOMVEC",			// http://wiki.quakesrc.org/index.php/DP_QC_RANDOMVEC
 		"DP_QC_SINCOSSQRTPOW",      // http://wiki.quakesrc.org/index.php/DP_QC_SINCOSSQRTPOW
+		"DP_QC_TRACEBOX",			// http://wiki.quakesrc.org/index.php/DP_QC_TRACEBOX
 		"FTE_CALLTIMEOFDAY",        // http://wiki.quakesrc.org/index.php/FTE_CALLTIMEOFDAY
+		"QSG_CVARSTRING",			// http://wiki.quakesrc.org/index.php/QSG_CVARSTRING
 		"ZQ_CLIENTCOMMAND",			// http://wiki.quakesrc.org/index.php/ZQ_CLIENTCOMMAND
 		"ZQ_ITEMS2",                // http://wiki.quakesrc.org/index.php/ZQ_ITEMS2
 		"ZQ_MOVETYPE_NOCLIP",       // http://wiki.quakesrc.org/index.php/ZQ_MOVETYPE_NOCLIP
@@ -2798,8 +2888,8 @@ static struct { int num; builtin_t func; } ext_builtins[] =
 {85, PF_argc},			// float() argc
 {86, PF_argv},			// string(float n) argv
 
-//{90, PF_tracebox},		// void (vector v1, vector mins, vector maxs, vector v2, float nomonsters, entity ignore) tracebox
-//{91, PF_randomvec},		// vector() randomvec
+{90, PF_tracebox},		// void (vector v1, vector mins, vector maxs, vector v2, float nomonsters, entity ignore) tracebox
+{91, PF_randomvec},		// vector() randomvec
 ////
 {94, PF_min},			// float(float a, float b, ...) min
 {95, PF_max},			// float(float a, float b, ...) max
@@ -2808,17 +2898,17 @@ static struct { int num; builtin_t func; } ext_builtins[] =
 ////
 {99, PF_checkextension},// float(string name) checkextension
 ////
-//{103, PF_cvar_string},	// string(string varname) cvar_string
+{103, PF_cvar_string},	// string(string varname) cvar_string
 ////
 {114, PF_strlen},		// float(string s) strlen
 {115, PF_strcat},		// string(string s1, string s2, ...) strcat
 {116, PF_substr},		// string(string s, float start, float count) substr
 //{117, PF_stov},			// vector(string s) stov
-{118, PF_strzone},			// string(string s) strzone
-{119, PF_strunzone},		// void(string s) strunzone
-{231, PF_calltimeofday},	// void() calltimeofday
-//{448, PF_cvar_string},	// string(string varname) cvar_string
-{531,PF_setpause},			//void(float pause) setpause
+{118, PF_strzone},		// string(string s) strzone
+{119, PF_strunzone},	// void(string s) strunzone
+{231, PF_calltimeofday},// void() calltimeofday
+{448, PF_cvar_string},	// string(string varname) cvar_string
+{531,PF_setpause},		//void(float pause) setpause
 };
 
 #define num_ext_builtins (sizeof(ext_builtins)/sizeof(ext_builtins[0]))
