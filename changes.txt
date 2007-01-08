@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.116 2006/11/28 16:48:03 vvd0 Exp $
+$Id: changes.txt,v 1.117 2007/01/08 20:02:18 disconn3ct Exp $
 
 MVDSV v0.25.03-CVS build 25?? (200?.??.??)
 ----
@@ -23,7 +23,13 @@ MVDSV v0.25.03-CVS build 25?? (200?.??.??)
 - qtv was updated to version v1
 - new cvar qtv_password - password for connecting to qtv
 - renamed cvars mvd_streamport and mvd_maxstreams to qtv_streamport and qtv_maxstreams
+- Z_EXT_JOIN_OBSERVE protocol extensions (ported from ZQuake)
+- remove function SV_Check_ktpro. Use qbool is_ktpro insteand
 
+* Tonik <tonik@users.sourceforge.net>
+- ZQ_CLIENTCOMMAND, ZQ_PAUSE, ZQ_QC_STRINGS, DP_QC_CVAR_STRING, DP_QC_RANDOMVEC, DP_QC_TRACEBOX
+- Remove "msg" and "rate", useless user commands
+- Fixes join/observe problems
 
 MVDSV v0.25 build 2500 (2006.10.25)
 ----
