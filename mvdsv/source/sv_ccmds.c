@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.41 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.42 2007/01/08 18:44:21 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -1128,7 +1128,6 @@ void SV_Nslookup_f (void)
 SV_Status_f
 ================
 */
-qbool SV_Check_ktpro(void);
 extern cvar_t sv_use_dns;
 void SV_Status_f (void)
 {
@@ -1162,7 +1161,7 @@ void SV_Status_f (void)
 	switch (sv_redirected)
 	{
 		case RD_MOD:
-			if (SV_Check_ktpro())
+			if (is_ktpro)
 			{
 				Con_Printf ("frags id  address         name            rate ping drop  real ip\n"
 							"----- --- --------------- --------------- ---- ---- ----- ---------------\n");
@@ -1257,23 +1256,6 @@ void SV_Status_f (void)
 			}
 	} // switch
 	Con_Printf ("\n");
-}
-
-/*
-==================
-SV_Check_ktpro
-==================
-*/
-
-qbool is_ktpro;
-
-qbool SV_Check_ktpro(void)
-{
-	return is_ktpro;
-/*
-	return	*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION) &&
-			*Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD);
-*/
 }
 
 void SV_Check_localinfo_maps_support(void)

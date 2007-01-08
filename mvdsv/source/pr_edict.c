@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_edict.c,v 1.22 2007/01/07 22:22:30 disconn3ct Exp $
+	$Id: pr_edict.c,v 1.23 2007/01/08 18:44:20 disconn3ct Exp $
 */
 // sv_edict.c -- entity dictionary
 
@@ -1061,8 +1061,7 @@ PR_LoadProgs
 */
 void PF_clear_strtbl(void);
 
-extern qbool is_ktpro;
-
+qbool is_ktpro;
 static void CheckKTPro (void)
 {
 	extern cvar_t sv_ktpro_mode;
