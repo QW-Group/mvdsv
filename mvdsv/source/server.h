@@ -1,6 +1,4 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
-
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
@@ -16,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.41 2007/01/07 22:22:30 disconn3ct Exp $
+	$Id: server.h,v 1.42 2007/01/09 01:20:29 disconn3ct Exp $
 */
 
 // server.h
@@ -690,10 +688,9 @@ void SV_MVDPings (void);
 void SV_MVDWriteToDisk(int type, int to, float time);
 void MVDWrite_Begin(byte type, int to, int size);
 void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
-void SV_MVDStop (int reason);
+void SV_MVDStop (int reason, qbool mvdonly);
 void SV_MVDStop_f (void);
 void SV_MVDWritePackets (int num);
-void MVD_Init (void);
 void SV_MVDStream_Poll(void);
 
 extern demo_t	demo; // server demo struct
