@@ -1,6 +1,4 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
-
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
@@ -8,7 +6,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the included (GNU.txt) GNU General Public License for more details.
 
@@ -16,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.66 2007/01/05 22:28:48 qqshka Exp $
+    $Id: sv_demo.c,v 1.67 2007/01/09 01:20:29 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -31,7 +29,7 @@ static int lastdemospos;
 //this header gives supported version numbers and stuff
 typedef struct mvdpendingdest_s
 {
-	qbool error;	//disables writers, quit ASAP.
+	qbool error; //disables writers, quit ASAP.
 	int socket;
 
 	char inbuffer[2048];
@@ -66,9 +64,9 @@ typedef struct mvddest_s
 
 	struct mvddest_s *nextdest;
 } mvddest_t;
-mvddest_t *singledest;
 
-mvddest_t *SV_InitStream(int socket1);
+mvddest_t *singledest;
+static mvddest_t *SV_InitStream (int socket1);
 static qbool SV_MVD_Record (mvddest_t *dest);
 
 #define MAXSIZE (demobuffer->end < demobuffer->last ? \
@@ -79,7 +77,7 @@ cvar_t	sv_demoUseCache = {"sv_demoUseCache", "0"};
 cvar_t	sv_demoCacheSize = {"sv_demoCacheSize", "0", CVAR_ROM};
 cvar_t	sv_demoMaxDirSize = {"sv_demoMaxDirSize", "102400"};
 cvar_t	sv_demoClearOld = {"sv_demoClearOld", "0"}; //bliP: 24/9 clear old demos
-qbool sv_demoDir_OnChange(cvar_t *cvar, char *value);
+qbool	sv_demoDir_OnChange(cvar_t *cvar, char *value);
 cvar_t	sv_demoDir = {"sv_demoDir", "demos", 0, sv_demoDir_OnChange};
 cvar_t	sv_demofps = {"sv_demofps", "30"};
 cvar_t	sv_demoPings = {"sv_demopings", "3"};
@@ -99,16 +97,16 @@ cvar_t	sv_onrecordfinish = {"sv_onRecordFinish", ""};
 cvar_t	sv_ondemoremove = {"sv_onDemoRemove", ""};
 cvar_t	sv_demoRegexp = {"sv_demoRegexp", "\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
-void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1);
+static void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1);
 
-static dbuffer_t	*demobuffer;
-static int	header = (char *)&((header_t*)0)->data - (char *)NULL;
+static dbuffer_t *demobuffer;
+static int header = (char *)&((header_t*)0)->data - (char *)NULL;
 
 entity_state_t demo_entities[UPDATE_MASK+1][MAX_DEMO_PACKET_ENTITIES];
 client_frame_t demo_frames[UPDATE_MASK+1];
 
 // only one .. is allowed (security)
-qbool sv_demoDir_OnChange(cvar_t *cvar, char *value)
+qbool sv_demoDir_OnChange (cvar_t *cvar, char *value)
 {
 	if (!value[0])
 		return true;
@@ -121,7 +119,7 @@ qbool sv_demoDir_OnChange(cvar_t *cvar, char *value)
 	return false;
 }
 
-mvddest_t *DestByName(char *name)
+static mvddest_t *DestByName (char *name)
 {
 	mvddest_t *d;
 
@@ -132,7 +130,7 @@ mvddest_t *DestByName(char *name)
 	return NULL;
 }
 
-void DestClose(mvddest_t *d, qbool destroyfiles)
+static void DestClose (mvddest_t *d, qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
 
@@ -154,7 +152,7 @@ void DestClose(mvddest_t *d, qbool destroyfiles)
 	Q_free(d);
 }
 
-void DestFlush(qbool compleate)
+void DestFlush (qbool compleate)
 {
 	int len;
 	mvddest_t *d, *t;
@@ -170,7 +168,7 @@ void DestFlush(qbool compleate)
 
 		if (!demo.dest)
 		{
-			SV_MVDStop(2);
+			SV_MVDStop(3, false);
 			return;
 		}
 	}
@@ -178,43 +176,42 @@ void DestFlush(qbool compleate)
 	{
 		switch(d->desttype)
 		{
-			case DEST_FILE:
-				fflush (d->file);
-				break;
-			case DEST_BUFFEREDFILE:
-				if (d->cacheused+demo_size_padding > d->maxcachesize || compleate)
-				{
-					len = fwrite(d->cache, 1, d->cacheused, d->file);
-					if (len < d->cacheused)
-						d->error = true;
-					fflush(d->file);
+		case DEST_FILE:
+			fflush (d->file);
+			break;
+		case DEST_BUFFEREDFILE:
+			if (d->cacheused+demo_size_padding > d->maxcachesize || compleate)
+			{
+				len = fwrite(d->cache, 1, d->cacheused, d->file);
+				if (len < d->cacheused)
+					d->error = true;
+				fflush(d->file);
 
-					d->cacheused = 0;
+				d->cacheused = 0;
+			}
+			break;
+
+		case DEST_STREAM:
+			if (d->cacheused && !d->error)
+			{
+				len = send(d->socket, d->cache, d->cacheused, 0);
+				if (len == 0) //client died
+					d->error = true;
+				else if (len > 0) //we put some data through
+				{ //move up the buffer
+					d->cacheused -= len;
+					memmove(d->cache, d->cache+len, d->cacheused);
 				}
-				break;
-
-			case DEST_STREAM:
-				if (d->cacheused && !d->error)
-				{
-					len = send(d->socket, d->cache, d->cacheused, 0);
-
-					if (len == 0) //client died
+				else
+				{ //error of some kind. would block or something
+					if (qerrno != EWOULDBLOCK)
 						d->error = true;
-					else if (len > 0)	//error of some kind
-					{
-						d->cacheused -= len;
-						memmove(d->cache, d->cache+len, d->cacheused);
-					}
-					else
-					{	//error of some kind. would block or something
-						if (qerrno != EWOULDBLOCK)
-							d->error = true;
-					}
 				}
-				break;
+			}
+			break;
 
-			case DEST_NONE:
-				Sys_Error("DestFlush encoundered bad dest.");
+		case DEST_NONE:
+			Sys_Error("DestFlush encoundered bad dest.");
 		}
 
 		if ((unsigned int)sv_demoMaxSize.value && d->totalsize > ((unsigned int)sv_demoMaxSize.value * 1024))
@@ -230,7 +227,7 @@ void DestFlush(qbool compleate)
 	}
 }
 
-void SV_MVD_RunPendingConnections(void)
+void SV_MVD_RunPendingConnections (void)
 {
 	unsigned short ushort_result;
 	char *e;
@@ -276,10 +273,8 @@ void SV_MVD_RunPendingConnections(void)
 				memmove(p->outbuffer, p->outbuffer+len, p->outsize );
 			}
 			else
-			{	//error of some kind. would block or something
-				int err;
-				err = qerrno;
-				if (err != EWOULDBLOCK)
+			{ //error of some kind. would block or something
+				if (qerrno != EWOULDBLOCK)
 					p->error = true;
 			}
 		}
@@ -287,7 +282,7 @@ void SV_MVD_RunPendingConnections(void)
 		{
 			len = recv(p->socket, p->inbuffer + p->insize, sizeof(p->inbuffer) - p->insize - 1, 0);
 			if (len > 0)
-			{//fixme: cope with extra \rs
+			{ //fixme: cope with extra \rs
 				char *end;
 				p->insize += len;
 				p->inbuffer[p->insize] = 0;
@@ -310,7 +305,7 @@ void SV_MVD_RunPendingConnections(void)
 					}
 				}
 				if (end)
-				{	//we found the end of the header
+				{ //we found the end of the header
 					char *start, *lineend;
 					int versiontouse = 0;
 					int raw = 0;
@@ -329,7 +324,7 @@ void SV_MVD_RunPendingConnections(void)
 					if (!lineend)
 					{
 //						char *e;
-//						e =	"This is a QTV server.";
+//						e = "This is a QTV server.";
 //						send(p->socket, e, strlen(e), 0);
 
 						p->error = true;
@@ -339,7 +334,7 @@ void SV_MVD_RunPendingConnections(void)
 					COM_ParseToken(start, NULL);
 					start = lineend+1;
 					if (strcmp(com_token, "QTV"))
-					{	//it's an error if it's not qtv.
+					{ //it's an error if it's not qtv.
 						p->error = true;
 						lineend = strchr(start, '\n');
 						continue;
@@ -433,7 +428,7 @@ void SV_MVD_RunPendingConnections(void)
 					{
 					}
 					else if (!*qtv_password.string)
-						p->hasauthed = true;	//no password, no need to auth.
+						p->hasauthed = true; //no password, no need to auth.
 					else if (*password)
 					{
 						switch (authmethod)
@@ -473,7 +468,7 @@ void SV_MVD_RunPendingConnections(void)
 							if (raw)
 								e = "";
 							else
-								e =	("QTVSV 1\n"
+								e = ("QTVSV 1\n"
 									 "PERROR: Bad password.\n\n");
 						}
 					}
@@ -503,14 +498,14 @@ void SV_MVD_RunPendingConnections(void)
 							else if (0)
 							{
 						case QTVAM_MD4:
-									e =	("QTVSV 1\n"
+									e = ("QTVSV 1\n"
 										"AUTH: MD4\n"
 										"CHALLENGE: ");
 							}
 							else
 							{
 						case QTVAM_MD5:
-									e =	("QTVSV 1\n"
+									e = ("QTVSV 1\n"
 										"AUTH: MD5\n"
 										"CHALLENGE: ");
 							}
@@ -533,7 +528,7 @@ void SV_MVD_RunPendingConnections(void)
 					}
 					else if (!versiontouse)
 					{
-						e =	("QTVSV 1\n"
+						e = ("QTVSV 1\n"
 							 "PERROR: Incompatable version (valid version is v1)\n\n");
 					}
 					else if (raw)
@@ -553,7 +548,7 @@ void SV_MVD_RunPendingConnections(void)
 					{
 						if (p->hasauthed == true)
 						{
-							e =	("QTVSV 1\n"
+							e = ("QTVSV 1\n"
 								 "BEGIN\n"
 								 "\n");
 							send(p->socket, e, strlen(e), 0);
@@ -563,7 +558,7 @@ void SV_MVD_RunPendingConnections(void)
 						}
 						else
 						{
-							e =	("QTVSV 1\n"
+							e = ("QTVSV 1\n"
 								"PERROR: You need to provide a password.\n\n");
 						}
 						p->error = true;
@@ -590,68 +585,81 @@ void SV_MVD_RunPendingConnections(void)
 }
 
 static char *SV_PrintTeams(void);
-void DestCloseAllFlush(qbool destroyfiles)
+static void Run_sv_demotxt_and_sv_onrecordfinish (mvddest_t *d, qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
-	mvddest_t *d;
-	DestFlush(true); //make sure it's all written.
+	
+	snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
+	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
 
-	while (demo.dest)
+	if ((int)sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
 	{
-		d = demo.dest;
-		demo.dest = d->nextdest;
+		FILE *f;
+		char *text;
 
-		DestClose(d, destroyfiles);
-
-		if (d->desttype == DEST_STREAM)
-			continue;
-
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
-		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
-
-		if ((int)sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
+		if (sv_demotxt.value == 2)
 		{
-			FILE *f;
-			char *text;
-
-			if (sv_demotxt.value == 2)
-			{
-				if ((f = fopen (path, "a+t")))
-					fclose(f); // at least made empty file, but do not owerwite
-			}
-			else if ((f = fopen (path, "w+t")))
-			{
-				text = SV_PrintTeams();
-				fwrite(text, strlen(text), 1, f);
-				fflush(f);
-				fclose(f);
-			}
+			if ((f = fopen (path, "a+t")))
+				fclose(f); // at least made empty file, but do not owerwite
 		}
-
-		if (sv_onrecordfinish.string[0] && !destroyfiles) // dont gzip deleted demos
+		else if ((f = fopen (path, "w+t")))
 		{
-			extern redirect_t sv_redirected;
-			int old = sv_redirected;
-			char *p;
-	
-			if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
-				*p = 0; // strip parameters
-	
-			strlcpy(path, d->name, MAX_OSPATH);
-			strlcpy(path + strlen(d->name) - 3, "txt", MAX_OSPATH - strlen(d->name) + 3);
-	
-			sv_redirected = RD_NONE; // onrecord script is called always from the console
-			Cmd_TokenizeString(va("script %s \"%s\" \"%s\" \"%s\" %s", sv_onrecordfinish.string, d->path, d->name, path, p != NULL ? p+1 : ""));
-			if (p) *p = ' ';
-			SV_Script_f();
-	
-			sv_redirected = old;
+			text = SV_PrintTeams();
+			fwrite(text, strlen(text), 1, f);
+			fflush(f);
+			fclose(f);
 		}
+	}
 
+	if (sv_onrecordfinish.string[0] && !destroyfiles) // dont gzip deleted demos
+	{
+		extern redirect_t sv_redirected;
+		int old = sv_redirected;
+		char *p;
+	
+		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
+			*p = 0; // strip parameters
+	
+		strlcpy(path, d->name, MAX_OSPATH);
+		strlcpy(path + strlen(d->name) - 3, "txt", MAX_OSPATH - strlen(d->name) + 3);
+	
+		sv_redirected = RD_NONE; // onrecord script is called always from the console
+		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" \"%s\" %s", sv_onrecordfinish.string, d->path, d->name, path, p != NULL ? p+1 : ""));
+		if (p) *p = ' ';
+		SV_Script_f();
+	
+		sv_redirected = old;
 	}
 }
 
-int DemoWriteDest(void *data, int len, mvddest_t *d)
+static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
+{
+	int numclosed = 0;
+	mvddest_t *d, **prev, *next;
+	DestFlush(true); //make sure it's all written.
+
+	prev = &demo.dest;
+	d = demo.dest;
+	while (d)
+	{
+		next = d->nextdest;
+		if (!mvdonly || d->desttype != DEST_STREAM)
+		{
+			*prev = d->nextdest;
+			DestClose(d, destroyfiles);
+			Run_sv_demotxt_and_sv_onrecordfinish (d, destroyfiles);
+			numclosed++;
+		}
+		else
+			prev = &d->nextdest;
+
+		d = next;
+	}
+
+	return numclosed;
+}
+
+static int DemoWriteDest (void *data, int len, mvddest_t *d)
 {
 	if (d->error)
 		return 0;
@@ -677,7 +685,7 @@ int DemoWriteDest(void *data, int len, mvddest_t *d)
 	return len;
 }
 
-int DemoWrite(void *data, int len)	//broadcast to all proxies/mvds
+int DemoWrite (void *data, int len) //broadcast to all proxies/mvds
 {
 	mvddest_t *d;
 	for (d = demo.dest; d; d = d->nextdest)
@@ -689,7 +697,7 @@ int DemoWrite(void *data, int len)	//broadcast to all proxies/mvds
 	return len;
 }
 
-void DemoWriteQTVTimePad(int msecs)	//broadcast to all proxies
+void DemoWriteQTVTimePad (int msecs)	//broadcast to all proxies
 {
 	mvddest_t *d;
 	unsigned char buffer[6];
@@ -722,7 +730,7 @@ void DemoWriteQTVTimePad(int msecs)	//broadcast to all proxies
 void SV_MVDPings (void)
 {
 	client_t *client;
-	int		j;
+	int j;
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
@@ -739,7 +747,7 @@ void SV_MVDPings (void)
 	}
 }
 
-void MVDBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size)
+void MVDBuffer_Init (dbuffer_t *dbuffer, byte *buf, size_t size)
 {
 	demobuffer = dbuffer;
 
@@ -753,12 +761,12 @@ void MVDBuffer_Init(dbuffer_t *dbuffer, byte *buf, size_t size)
 /*
 ==============
 MVDSetMsgBuf
- 
+
 Sets the frame message buffer
 ==============
 */
 
-void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur)
+void MVDSetMsgBuf (demobuf_t *prev,demobuf_t *cur)
 {
 	// fix the maxsize of previous msg buffer,
 	// we won't be able to write there anymore
@@ -775,18 +783,18 @@ void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur)
 /*
 ==============
 SV_MVDWriteToDisk
- 
+
 Writes to disk a message meant for specifc client
 or all messages if type == 0
 Message is cleared from demobuf after that
 ==============
 */
 
-void SV_MVDWriteToDisk(int type, int to, float time1)
+void SV_MVDWriteToDisk (int type, int to, float time1)
 {
 	int pos = 0, oldm, oldd;
 	header_t *p;
-	int	size;
+	int size;
 	sizebuf_t msg;
 
 	p = (header_t *)demo.dbuf->data;
@@ -841,12 +849,11 @@ void SV_MVDWriteToDisk(int type, int to, float time1)
 /*
 ==============
 MVDSetBuf
- 
+
 Sets position in the buf for writing to specific client
 ==============
 */
-
-static void MVDSetBuf(byte type, int to)
+static void MVDSetBuf (byte type, int to)
 {
 	header_t *p;
 	int pos = 0;
@@ -879,7 +886,7 @@ static void MVDSetBuf(byte type, int to)
 	demo.dbuf->h = p;
 }
 
-void MVDMoveBuf(void)
+void MVDMoveBuf (void)
 {
 	// set the last message mark to the previous frame (i/e begining of this one)
 	demobuffer->last = demobuffer->end - demo.dbuf->bufsize;
@@ -892,7 +899,7 @@ void MVDMoveBuf(void)
 	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
 }
 
-void MVDWrite_Begin(byte type, int to, int size)
+void MVDWrite_Begin (byte type, int to, int size)
 {
 	byte *p;
 	qbool move = false;
@@ -936,11 +943,11 @@ void MVDWrite_Begin(byte type, int to, int size)
 /*
 ====================
 SV_WriteMVDMessage
- 
+
 Dumps the current net message, prefixed by the length and view angles
 ====================
 */
-void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
+static void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
 {
 	int		len, i, msec;
 	byte	c;
@@ -1003,13 +1010,12 @@ void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
 /*
 ====================
 SV_MVDWritePackets
- 
+
 Interpolates to get exact players position for current frame
 and writes packets to the disk/memory
 ====================
 */
-
-float adjustangle(float current, float ideal, float fraction)
+static float adjustangle (float current, float ideal, float fraction) // FIXME move to bothtools.c ?
 {
 	float move;
 
@@ -1031,27 +1037,27 @@ float adjustangle(float current, float ideal, float fraction)
 	return (current + move);
 }
 
-#define DF_ORIGIN	1
-#define DF_ANGLES	(1<<3)
-#define DF_EFFECTS	(1<<6)
-#define DF_SKINNUM	(1<<7)
-#define DF_DEAD		(1<<8)
-#define DF_GIB		(1<<9)
-#define DF_WEAPONFRAME (1<<10)
-#define DF_MODEL	(1<<11)
+#define DF_ORIGIN		1
+#define DF_ANGLES		(1<<3)
+#define DF_EFFECTS		(1<<6)
+#define DF_SKINNUM		(1<<7)
+#define DF_DEAD			(1<<8)
+#define DF_GIB			(1<<9)
+#define DF_WEAPONFRAME	(1<<10)
+#define DF_MODEL		(1<<11)
 
 void SV_MVDWritePackets (int num)
 {
 	demo_frame_t	*frame, *nextframe;
 	demo_client_t	*cl, *nextcl = NULL;
-	int		i, j, flags;
-	qbool		valid;
-	double		time1, playertime, nexttime;
-	float		f;
-	vec3_t		origin, angles;
-	sizebuf_t	msg;
-	byte		msg_buf[MAX_MSGLEN];
-	demoinfo_t	*demoinfo;
+	int				i, j, flags;
+	qbool			valid;
+	double			time1, playertime, nexttime;
+	float			f;
+	vec3_t			origin, angles;
+	sizebuf_t		msg;
+	byte			msg_buf[MAX_MSGLEN];
+	demoinfo_t		*demoinfo;
 
 	if (!sv.mvdrecording)
 		return;
@@ -1199,7 +1205,7 @@ static char chartbl[256];
 void CleanName_Init ();
 
 #define MIN_DEMO_MEMORY 0x100000
-void MVD_Init (void)
+static void MVD_Init (void)
 {
 	int p, size = MIN_DEMO_MEMORY;
 	
@@ -1226,7 +1232,7 @@ void MVD_Init (void)
 		if (p < com_argc-1)
 			size = Q_atoi (com_argv[p+1]) * 1024;
 		else
-			Sys_Error ("MVD_Init: you must specify a size in KB after -democache");
+			Sys_Error (": you must specify a size in KB after -democache");
 	}
 
 	if (size < MIN_DEMO_MEMORY)
@@ -1248,16 +1254,16 @@ void MVD_Init (void)
 
 
 void SV_TimeOfDay(date_t *date);
-static char *SV_PrintTeams(void)
+static char *SV_PrintTeams (void)
 {
-	char		*teams[MAX_CLIENTS], *p;
-	int		i, j, numcl = 0, numt = 0, scores;
-	client_t	*clients[MAX_CLIENTS];
-	char		buf[2048];
-	static char	lastscores[2048];
+	char			*teams[MAX_CLIENTS], *p;
+	int				i, j, numcl = 0, numt = 0, scores;
+	client_t		*clients[MAX_CLIENTS];
+	char			buf[2048];
+	static char		lastscores[2048];
 	extern cvar_t	teamplay;
-	extern char	chartbl2[];
-	date_t		date;
+	extern char		chartbl2[];
+	date_t			date;
 	SV_TimeOfDay(&date);
 
 	// count teams and players
@@ -1346,8 +1352,7 @@ static char *SV_PrintTeams(void)
 SV_InitRecord
 ====================
 */
-
-mvddest_t *SV_InitRecordFile (char *name)
+static mvddest_t *SV_InitRecordFile (char *name)
 {
 	char *s;
 	mvddest_t *dst;
@@ -1418,7 +1423,7 @@ mvddest_t *SV_InitRecordFile (char *name)
 	return dst;
 }
 
-mvddest_t *SV_InitStream(int socket1)
+static mvddest_t *SV_InitStream (int socket1)
 {
 	mvddest_t *dst;
 
@@ -1434,7 +1439,7 @@ mvddest_t *SV_InitStream(int socket1)
 	return dst;
 }
 
-void SV_MVD_InitPendingStream(int socket1, char *ip)
+static void SV_MVD_InitPendingStream (int socket1, char *ip)
 {
 	mvdpendingdest_t *dst;
 	unsigned int i;
@@ -1452,13 +1457,14 @@ void SV_MVD_InitPendingStream(int socket1, char *ip)
 /*
 ====================
 SV_MVDStop
- 
+
 stop recording a demo
 ====================
 */
-void SV_MVDStop (int reason)
+void SV_MVDStop (int reason, qbool mvdonly)
 {
 	size_t name_len;
+	int numclosed;
 
 	if (!sv.mvdrecording)
 	{
@@ -1466,15 +1472,18 @@ void SV_MVDStop (int reason)
 		return;
 	}
 
-	if (reason == 2)
+	if (reason == 2 || reason == 3)
 	{
-		DestCloseAllFlush(true);
+		DestCloseAllFlush(true, mvdonly);
 		// stop and remove
 
 		if (!demo.dest)
 			sv.mvdrecording = false;
 
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
+		if (reason == 3)
+			SV_BroadcastPrintf (PRINT_CHAT, "QTV disconnected\n");
+		else
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
 
 		Cvar_SetROM(&serverdemo, "");
 
@@ -1502,13 +1511,19 @@ void SV_MVDStop (int reason)
 	lastdemosname[lastdemospos] = Q_malloc(name_len);
 	strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
 
-	DestCloseAllFlush(false);
+	numclosed = DestCloseAllFlush(false, mvdonly);
 
 	sv.mvdrecording = false;
-	if (!reason)
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
-	else
-		SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
+
+	if (!demo.dest)
+		sv.mvdrecording = false;
+	if (numclosed)
+	{
+		if (!reason)
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
+		else
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
+	}
 
 	Cvar_SetROM(&serverdemo, "");
 }
@@ -1520,7 +1535,7 @@ SV_MVDStop_f
 */
 void SV_MVDStop_f (void)
 {
-	SV_MVDStop(0);
+	SV_MVDStop(0, true);
 }
 
 /*
@@ -1532,7 +1547,7 @@ Stops recording, and removes the demo
 */
 void SV_MVD_Cancel_f (void)
 {
-	SV_MVDStop(2);
+	SV_MVDStop(2, true);
 }
 
 /*
@@ -1542,11 +1557,10 @@ SV_WriteMVDMessage
 Dumps the current net message, prefixed by the length and view angles
 ====================
 */
-
-void SV_WriteRecordMVDMessage (sizebuf_t *msg, int seq)
+static void SV_WriteRecordMVDMessage (sizebuf_t *msg, int seq)
 {
-	int		len;
-	byte	c;
+	int len;
+	byte c;
 
 	if (!sv.mvdrecording)
 		return;
@@ -1568,10 +1582,10 @@ void SV_WriteRecordMVDMessage (sizebuf_t *msg, int seq)
 	DestFlush(false);
 }
 
-void SV_WriteSetMVDMessage (void)
+static void SV_WriteSetMVDMessage (void)
 {
-	int		len;
-	byte	c;
+	int len;
+	byte c;
 
 	//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
@@ -1841,11 +1855,10 @@ static qbool SV_MVD_Record (mvddest_t *dest)
 /*
 ====================
 CleanName_Init
- 
+
 sets chararcter table for quake text->filename translation
 ====================
 */
-
 void CleanName_Init ()
 {
 	int i;
@@ -1920,12 +1933,11 @@ void CleanName_Init ()
 /*
 ====================
 SV_CleanName
- 
+
 Cleans the demo name, removes restricted chars, makes name lowercase
 ====================
 */
-
-char *SV_CleanName (unsigned char *name)
+static char *SV_CleanName (unsigned char *name)
 {
 	static char text[1024];
 	char *out = text;
@@ -1951,11 +1963,11 @@ char *SV_CleanName (unsigned char *name)
 /*
 ====================
 SV_DirSizeCheck
- 
+
 Deletes sv_demoClearOld files from demo dir if out of space
 ====================
 */
-qbool SV_DirSizeCheck (void)
+static qbool SV_DirSizeCheck (void)
 {
 	dir_t	dir;
 	file_t	*list;
@@ -2000,11 +2012,11 @@ SV_MVD_Record_f
 record <demoname>
 ====================
 */
-void SV_MVD_Record_f (void)
+static void SV_MVD_Record_f (void)
 {
-	int	c;
-	char	name[MAX_OSPATH+MAX_DEMO_NAME];
-	char	newname[MAX_DEMO_NAME];
+	int c;
+	char name[MAX_OSPATH+MAX_DEMO_NAME];
+	char newname[MAX_DEMO_NAME];
 
 	c = Cmd_Argc();
 	if (c != 2)
@@ -2051,12 +2063,11 @@ void SV_MVD_Record_f (void)
 /*
 ====================
 SV_MVDEasyRecord_f
- 
+
 easyrecord [demoname]
 ====================
 */
-
-int	Dem_CountPlayers ()
+static int Dem_CountPlayers ()
 {
 	int	i, count;
 
@@ -2070,7 +2081,7 @@ int	Dem_CountPlayers ()
 	return count;
 }
 
-char *Dem_Team(int num)
+static char *Dem_Team (int num)
 {
 	int i;
 	static char *lastteam[2];
@@ -2099,7 +2110,7 @@ char *Dem_Team(int num)
 	return lastteam[index1];
 }
 
-char *Dem_PlayerName(int num)
+static char *Dem_PlayerName (int num)
 {
 	int i;
 	client_t *client;
@@ -2117,7 +2128,7 @@ char *Dem_PlayerName(int num)
 }
 
 // -> scream
-char *Dem_PlayerNameTeam(char *t)
+static char *Dem_PlayerNameTeam (char *t)
 {
 	int	i;
 	client_t *client;
@@ -2147,7 +2158,7 @@ char *Dem_PlayerNameTeam(char *t)
 	return n;
 }
 
-int	Dem_CountTeamPlayers (char *t)
+static int Dem_CountTeamPlayers (char *t)
 {
 	int	i, count;
 
@@ -2163,7 +2174,7 @@ int	Dem_CountTeamPlayers (char *t)
 }
 
 // <-
-char *quote(char *str)
+char *quote (char *str)
 {
 	char *out, *s;
 	if (!str)
@@ -2182,7 +2193,7 @@ char *quote(char *str)
 	return out;
 }
 
-void SV_MVDEasyRecord_f (void)
+static void SV_MVDEasyRecord_f (void)
 {
 	int		c;
 	char	name[MAX_DEMO_NAME];
@@ -2331,7 +2342,7 @@ void SV_MVDEasyRecord_f (void)
 	SV_MVD_Record (SV_InitRecordFile(name2));
 }
 
-int MVD_StreamStartListening(int port)
+static int MVD_StreamStartListening (int port)
 {
 	int sock;
 
@@ -2368,7 +2379,7 @@ int MVD_StreamStartListening(int port)
 	return sock;
 }
 
-void SV_MVDStream_Poll(void)
+void SV_MVDStream_Poll (void)
 {
 	static int listensocket=INVALID_SOCKET;
 	static int listenport;
@@ -2547,7 +2558,7 @@ void SV_DemoListRegex_f (void)
 	SV_DemoList (true);
 }
 
-char *SV_MVDNum(int num)
+char *SV_MVDNum (int num)
 {
 	file_t	*list;
 	dir_t	dir;
@@ -2578,8 +2589,8 @@ char *SV_MVDNum(int num)
 	return list->name[0] ? list->name : NULL;
 }
 
-#define OVECCOUNT	3
-char *SV_MVDName2Txt(char *name)
+#define OVECCOUNT 3
+static char *SV_MVDName2Txt (char *name)
 {
 	char	s[MAX_OSPATH];
 	int		len;
@@ -2635,12 +2646,12 @@ char *SV_MVDName2Txt(char *name)
 	return va("%s", s);
 }
 
-char *SV_MVDTxTNum(int num)
+static char *SV_MVDTxTNum (int num)
 {
-	return SV_MVDName2Txt(SV_MVDNum(num));
+	return SV_MVDName2Txt (SV_MVDNum(num));
 }
 
-void SV_MVDRemove_f (void)
+static void SV_MVDRemove_f (void)
 {
 	char name[MAX_DEMO_NAME], *ptr;
 	char path[MAX_OSPATH];
@@ -2724,7 +2735,7 @@ void SV_MVDRemove_f (void)
 	Sys_remove(SV_MVDName2Txt(path));
 }
 
-void SV_MVDRemoveNum_f (void)
+static void SV_MVDRemoveNum_f (void)
 {
 	int		num;
 	char	*val, *name;
@@ -2775,7 +2786,7 @@ void SV_MVDRemoveNum_f (void)
 		Con_Printf("invalid demo num\n");
 }
 
-void SV_MVDInfoAdd_f (void)
+static void SV_MVDInfoAdd_f (void)
 {
 	char *name, *args, path[MAX_OSPATH];
 	FILE *f;
@@ -2856,7 +2867,7 @@ void SV_MVDInfoAdd_f (void)
 	fclose(f);
 }
 
-void SV_MVDInfoRemove_f (void)
+static void SV_MVDInfoRemove_f (void)
 {
 	char *name, path[MAX_OSPATH];
 
