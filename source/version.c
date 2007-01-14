@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c,v 1.9 2006/08/07 13:03:59 vvd0 Exp $
+	$Id: version.c,v 1.10 2007/01/14 20:34:04 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -75,8 +75,6 @@ Version_f
 */
 void Version_f (void)
 {
-//	Con_Printf ("QW version %4.2f\n", QW_VERSION);
-	Con_Printf ("QW version " QW_VERSION "\n");
 	Con_Printf ("%s\n", full_version);
 	Con_Printf (PROJECT_NAME " Project home page: " PROJECT_URL "\n\n");
 }
