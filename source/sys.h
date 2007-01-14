@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.16 2006/06/27 15:01:29 qqshka Exp $
+	$Id: sys.h,v 1.17 2007/01/14 19:17:57 tonik Exp $
 */
 // sys.h -- non-portable functions
 
@@ -102,7 +102,6 @@ int Sys_Script(char *path, char *args);
 #include <winsock2.h>
 #include <windows.h>
 #include "resource.h"
-#include "winquake.h"
 #include "sv_windows.h"
 typedef HMODULE DL_t;
 #define DLEXT "dll"
