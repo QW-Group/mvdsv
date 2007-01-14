@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_mod_frags.c,v 1.12 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: sv_mod_frags.c,v 1.13 2007/01/14 20:38:31 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -70,7 +70,7 @@ qbool sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
 			//	qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
 		}
 		qwm_static = true;
-		Sys_Printf("Initialised default mod messages.\nTotal: %d messages.\n", i);
+		Sys_Printf("Initialized default mod messages.\nTotal: %d messages.\n", i);
 	}
 	else
 	{
@@ -102,7 +102,7 @@ qbool sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
 			//	qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
 		}
 		qwm_static = false;
-		Sys_Printf("Initialised mod messages from file %s.\nTotal: %d messages.\n", value, i);
+		Sys_Printf("Initialized mod messages from file %s.\nTotal: %d messages.\n", value, i);
 		fclose(fp);
 	}
 	qwmsg[i] = NULL;
