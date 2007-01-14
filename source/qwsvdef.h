@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: qwsvdef.h,v 1.22 2007/01/07 18:11:03 disconn3ct Exp $
+    $Id: qwsvdef.h,v 1.23 2007/01/14 19:44:10 tonik Exp $
 */
 
 // qwsvdef.h -- primary header for server
@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //define PARANOID // speed sapping error checking
 
 #ifdef _MSC_VER
+#define _CRT_SECURE_NO_DEPRECATE	// don't bitch about strncat etc
 #pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018 4996)
 #endif
 
