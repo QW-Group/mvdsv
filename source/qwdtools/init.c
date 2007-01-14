@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: init.c,v 1.16 2006/11/25 23:26:21 disconn3ct Exp $
+    $Id: init.c,v 1.17 2007/01/14 19:34:37 tonik Exp $
 */
 
 #include "defs.h"
@@ -192,7 +192,7 @@ char stdintype[32] = "";
 char dummy[64];
 int  whatToStdout = 0;
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning( disable : 4133 4047)
 #endif
 param_t params[] =
@@ -224,7 +224,7 @@ param_t params[] =
 		{NULL}
 	};
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning( default : 4133 4047)
 #endif
 

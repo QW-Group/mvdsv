@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: defs.h,v 1.14 2006/10/25 11:09:45 vvd0 Exp $
+    $Id: defs.h,v 1.15 2007/01/14 19:34:37 tonik Exp $
 */
 
 #ifndef __DEFS_H__
@@ -28,7 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <malloc.h>
 #include <float.h>
 #include <process.h>
-#pragma warning( disable : 4244)
+#ifdef _MSC_VER
+#pragma warning( disable : 4244 4996)
+#endif
 #else
 #include <unistd.h>
 #include <signal.h>
