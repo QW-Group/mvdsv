@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pmove.c,v 1.14 2006/07/06 00:17:40 disconn3ct Exp $
+	$Id: pmove.c,v 1.15 2007/01/14 20:21:43 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -750,6 +750,17 @@ static void PM_NudgePosition (void)
 			}
 		}
 	}
+
+	// some maps spawn the player several units into the ground
+	for (z=1 ; z<=18 ; z++)
+	{
+		pmove.origin[0] = base[0];
+		pmove.origin[1] = base[1];
+		pmove.origin[2] = base[2] + z;
+		if (PM_TestPlayerPosition(pmove.origin))
+			return;
+	}
+
 	VectorCopy (base, pmove.origin);
 }
 
