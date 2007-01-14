@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.h,v 1.7 2006/06/19 16:46:15 vvd0 Exp $
+	$Id: cvar.h,v 1.8 2007/01/14 20:02:33 tonik Exp $
 */
 
 // cvar.h
@@ -43,7 +43,7 @@ C code usually just references a cvar in place:
 if ( r_draworder.value )
 
 It could optionally ask for the value to be looked up for a string name:
-if (Cvar_VariableValue ("r_draworder"))
+if (Cvar_Value ("r_draworder"))
 
 Interpreted prog code can access cvars with the cvar(name) or
 cvar_set (name, value) internal functions:
@@ -95,10 +95,10 @@ void Cvar_SetValue (cvar_t *var, float value);
 void Cvar_SetValueByName (char *var_name, float value);
 // expands value to a string and calls Cvar_Set
 
-float Cvar_VariableValue (char *var_name);
+float Cvar_Value (char *var_name);
 // returns 0 if not defined or non numeric
 
-char *Cvar_VariableString (char *var_name);
+char *Cvar_String (char *var_name);
 // returns an empty string if not defined
 
 qbool Cvar_Command (void);

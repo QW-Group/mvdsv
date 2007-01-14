@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.35 2006/10/26 20:47:14 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.36 2007/01/14 20:02:33 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -434,7 +434,7 @@ char *Sys_ConsoleInput (void)
 
 		if (!authenticated)
 		{
-			len = strlen(t = Cvar_VariableString ("telnet_password"));
+			len = strlen(t = Cvar_String ("telnet_password"));
 			if (len && (authenticated = (!strncmp(text, t, min(sizeof(text), len + 1)))))
 			{
 				cur_time_auth = realtime;
