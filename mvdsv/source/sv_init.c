@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.28 2007/01/07 18:11:03 disconn3ct Exp $
+	$Id: sv_init.c,v 1.29 2007/01/14 20:14:13 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -227,7 +227,7 @@ This is only called from the SV_Map_f() function.
 */
 dfunction_t *ED_FindFunction (char *name);
 
-void SV_SpawnServer (char *mapname)
+void SV_SpawnServer (char *mapname, qbool devmap)
 {
 	edict_t *ent;
 	int i;
@@ -239,6 +239,8 @@ void SV_SpawnServer (char *mapname)
 	extern cvar_t sv_loadentfiles;
 	char *entitystring;
 	char oldmap[MAP_NAME_LEN];
+	extern qbool	sv_allow_cheats;
+	extern cvar_t	sv_cheats;
 
 	// store old map name
 	snprintf (oldmap, MAP_NAME_LEN, "%s", sv.mapname);
@@ -286,6 +288,15 @@ void SV_SpawnServer (char *mapname)
 	if (current_skill > 3)
 		current_skill = 3;
 	Cvar_Set (&skill, va("%d", current_skill));
+
+	if ((sv_cheats.value || devmap) && !sv_allow_cheats) {
+		sv_allow_cheats = true;
+		Info_SetValueForStarKey (svs.info, "*cheats", "ON", MAX_SERVERINFO_STRING);
+	}
+	else if ((!sv_cheats.value && !devmap) && sv_allow_cheats) {
+		sv_allow_cheats = false;
+		Info_SetValueForStarKey (svs.info, "*cheats", "", MAX_SERVERINFO_STRING);
+	}
 
 
 	// wipe the entire per-level structure

@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.42 2007/01/09 01:20:29 disconn3ct Exp $
+	$Id: server.h,v 1.43 2007/01/14 20:14:13 tonik Exp $
 */
 
 // server.h
@@ -608,7 +608,7 @@ int SV_GenerateUserID (void);
 //
 int SV_ModelIndex (char *name);
 void SV_FlushSignon (void);
-void SV_SpawnServer (char *server);
+void SV_SpawnServer (char *server, qbool devmap);
 
 
 //
