@@ -16,12 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.43 2007/01/14 20:02:33 tonik Exp $
+	$Id: sv_ccmds.c,v 1.44 2007/01/14 20:14:14 tonik Exp $
 */
 
 #include "qwsvdef.h"
 
-qbool sv_allow_cheats;
+cvar_t	sv_cheats = {"sv_cheats", "0"};
+qbool	sv_allow_cheats = false;
 
 int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
@@ -440,7 +441,7 @@ void SV_Map (qbool now)
 		}
 		// <-
 
-		SV_SpawnServer (level);
+		SV_SpawnServer (level, !strcasecmp(Cmd_Argv(0), "devmap"));
 
 		SV_BroadcastCommand ("reconnect\n");
 
@@ -1845,6 +1846,9 @@ SV_InitOperatorCommands
 void SV_InitOperatorCommands (void)
 {
 	int i;
+
+	Cvar_Register (&sv_cheats);
+
 	if (COM_CheckParm ("-cheats"))
 	{
 		sv_allow_cheats = true;
@@ -1881,6 +1885,7 @@ void SV_InitOperatorCommands (void)
 		Cmd_AddCommand ("localcommand", SV_LocalCommand_f);
 
 	Cmd_AddCommand ("map", SV_Map_f);
+	Cmd_AddCommand ("devmap", SV_Map_f);
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
 
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
