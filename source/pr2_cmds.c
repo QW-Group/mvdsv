@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.42 2006/12/12 17:17:51 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.43 2007/01/14 20:02:33 tonik Exp $
  */
 
 #ifdef USE_PR2
@@ -835,7 +835,7 @@ float   trap_cvar( const char *var );
 void PF2_cvar(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 
-	retval->_float =  Cvar_VariableValue(VM_POINTER(base,mask,stack[0].string));
+	retval->_float =  Cvar_Value(VM_POINTER(base,mask,stack[0].string));
 }
 
 /*
@@ -857,7 +857,7 @@ void PF2_cvar_string(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		return;
 
 	strlcpy(VM_POINTER(base,mask,buff_off),
-	        Cvar_VariableString(VM_POINTER(base,mask,stack[0].string)), buffsize);
+	        Cvar_String(VM_POINTER(base,mask,stack[0].string)), buffsize);
 }
 
 /*

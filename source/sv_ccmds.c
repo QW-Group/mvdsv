@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.42 2007/01/08 18:44:21 disconn3ct Exp $
+	$Id: sv_ccmds.c,v 1.43 2007/01/14 20:02:33 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -143,10 +143,10 @@ void SV_Logfile (int sv_log, qbool newlog)
 		switch (sv_log)
 		{
 		case TELNET_LOG:
-			logs[TELNET_LOG].log_level = Cvar_VariableValue("telnet_log_level");
+			logs[TELNET_LOG].log_level = Cvar_Value("telnet_log_level");
 			break;
 		case CONSOLE_LOG:
-			logs[CONSOLE_LOG].log_level = Cvar_VariableValue("qconsole_log_say");
+			logs[CONSOLE_LOG].log_level = Cvar_Value("qconsole_log_say");
 			break;
 		default:
 			logs[sv_log].log_level = 1;

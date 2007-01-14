@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.92 2007/01/07 22:22:30 disconn3ct Exp $
+	$Id: sv_main.c,v 1.93 2007/01/14 20:02:33 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -3578,7 +3578,7 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 
 	//bliP: moved telnet bit to on cvar change ->
 	//if (sv_log == TELNET_LOG)
-	//	logs[sv_log].log_level = Cvar_VariableValue("telnet_log_level");
+	//	logs[sv_log].log_level = Cvar_Value("telnet_log_level");
 	//<-
 
 	if (logs[sv_log].log_level < level)

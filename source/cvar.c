@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.c,v 1.14 2007/01/07 18:11:03 disconn3ct Exp $
+	$Id: cvar.c,v 1.15 2007/01/14 20:02:33 tonik Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -68,10 +68,10 @@ cvar_t *Cvar_FindVar (char *var_name)
 
 /*
 ============
-Cvar_VariableValue
+Cvar_Value
 ============
 */
-float Cvar_VariableValue (char *var_name)
+float Cvar_Value (char *var_name)
 {
 	cvar_t	*var;
 
@@ -84,10 +84,10 @@ float Cvar_VariableValue (char *var_name)
 
 /*
 ============
-Cvar_VariableString
+Cvar_String
 ============
 */
-char *Cvar_VariableString (char *var_name)
+char *Cvar_String (char *var_name)
 {
 	cvar_t *var;
 
