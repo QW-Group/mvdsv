@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.67 2007/01/09 01:20:29 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.68 2007/01/16 06:05:28 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1512,8 +1512,6 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
 
 	numclosed = DestCloseAllFlush(false, mvdonly);
-
-	sv.mvdrecording = false;
 
 	if (!demo.dest)
 		sv.mvdrecording = false;
