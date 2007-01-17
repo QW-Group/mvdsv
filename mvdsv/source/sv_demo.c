@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.68 2007/01/16 06:05:28 qqshka Exp $
+    $Id: sv_demo.c,v 1.69 2007/01/17 07:23:16 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1607,6 +1607,7 @@ static void SV_WriteSetMVDMessage (void)
 
 static qbool SV_MVD_Record (mvddest_t *dest)
 {
+	qbool first_dest = !sv.mvdrecording; // if we are not recording yet, that must be first dest
 	sizebuf_t	buf;
 	unsigned char buf_data[MAX_MSGLEN];
 	int i;
@@ -1819,6 +1820,76 @@ static qbool SV_MVD_Record (mvddest_t *dest)
 		MSG_WriteByte (&buf, i);
 		MSG_WriteLong (&buf, player->userid);
 		MSG_WriteString (&buf, info);
+
+		if (buf.cursize > MAX_MSGLEN/2)
+		{
+			SV_WriteRecordMVDMessage (&buf, seq++);
+			SZ_Clear (&buf);
+		}
+	}
+
+	// that need only if that non first dest, demo code suppose we alredy have this, and do not send
+	// this set proper model origin and angles etc for players
+	for (i = 0; i < MAX_CLIENTS && !first_dest; i++)
+	{
+		vec3_t origin, angles;
+		edict_t *ent;
+		int j, flags;
+
+		player = svs.clients + i;
+		ent = player->edict;
+
+		if (player->state != cs_spawned)
+			continue;
+
+		flags =   (DF_ORIGIN << 0) | (DF_ORIGIN << 1) | (DF_ORIGIN << 2)
+				| (DF_ANGLES << 0) | (DF_ANGLES << 1) | (DF_ANGLES << 2)
+				| DF_EFFECTS | DF_SKINNUM 
+				| (ent->v.health <= 0 ? DF_DEAD : 0)
+				| (ent->v.mins[2] != -24 ? DF_GIB : 0)
+				| DF_WEAPONFRAME | DF_MODEL;
+
+		VectorCopy(ent->v.origin, origin);
+		VectorCopy(ent->v.angles, angles);
+		angles[0] *= -3;
+#ifdef USE_PR2
+		if( player->isBot )
+			VectorCopy(ent->v.v_angle, angles);
+#endif
+		angles[2] = 0; // no roll angle
+
+		if (ent->v.health <= 0)
+		{	// don't show the corpse looking around...
+			angles[0] = 0;
+			angles[1] = ent->v.angles[1];
+			angles[2] = 0;
+		}
+
+		MSG_WriteByte (&buf, svc_playerinfo);
+		MSG_WriteByte (&buf, i);
+		MSG_WriteShort (&buf, flags);
+
+		MSG_WriteByte (&buf, ent->v.frame);
+
+		for (j = 0 ; j < 3 ; j++)
+			if (flags & (DF_ORIGIN << j))
+				MSG_WriteCoord (&buf, origin[j]);
+
+		for (j = 0 ; j < 3 ; j++)
+			if (flags & (DF_ANGLES << j))
+				MSG_WriteAngle16 (&buf, angles[j]);
+
+		if (flags & DF_MODEL)
+			MSG_WriteByte (&buf, ent->v.modelindex);
+
+		if (flags & DF_SKINNUM)
+			MSG_WriteByte (&buf, ent->v.skin);
+
+		if (flags & DF_EFFECTS)
+			MSG_WriteByte (&buf, ent->v.effects);
+
+		if (flags & DF_WEAPONFRAME)
+			MSG_WriteByte (&buf, ent->v.weaponframe);
 
 		if (buf.cursize > MAX_MSGLEN/2)
 		{
@@ -2440,7 +2511,7 @@ void SV_MVDStream_Poll (void)
 			}
 		}
 
-		if (count > (int)qtv_maxstreams.value)
+		if (count >= (int)qtv_maxstreams.value)
 		{	//sorry
 			char *goawaymessage = "QTVSV 1\nERROR: This server enforces a limit on the number of proxies connected at any one time. Please try again later\n\n";
 
