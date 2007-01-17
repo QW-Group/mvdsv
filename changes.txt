@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.117 2007/01/08 20:02:18 disconn3ct Exp $
+$Id: changes.txt,v 1.118 2007/01/17 18:39:04 tonik Exp $
 
 MVDSV v0.25.03-CVS build 25?? (200?.??.??)
 ----
@@ -27,9 +27,14 @@ MVDSV v0.25.03-CVS build 25?? (200?.??.??)
 - remove function SV_Check_ktpro. Use qbool is_ktpro insteand
 
 * Tonik <tonik@users.sourceforge.net>
-- ZQ_CLIENTCOMMAND, ZQ_PAUSE, ZQ_QC_STRINGS, DP_QC_CVAR_STRING, DP_QC_RANDOMVEC, DP_QC_TRACEBOX
+- add QSG extension framework. MVDSV starts up in QSG mode unless KTPro is detected or sv_ktpro_mode is enabled
+- add ZQ_CLIENTCOMMAND, ZQ_PAUSE, ZQ_QC_STRINGS, DP_QC_CVAR_STRING, DP_QC_RANDOMVEC, DP_QC_TRACEBOX
 - Remove "msg" and "rate", useless user commands
 - Fixes join/observe problems
+- NetQuake-like PM_NudgePosition() (English: don't get stuck on hip2m5)
+- 'sv_cheats' cvar and 'devmap' command. Cheats can now be toggled without restarting the server
+- add MSVC 2005 project files
+
 
 MVDSV v0.25 build 2500 (2006.10.25)
 ----
