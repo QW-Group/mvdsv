@@ -1,7 +1,8 @@
 
-$Id: changes.txt,v 1.118 2007/01/17 18:39:04 tonik Exp $
+$Id: changes.txt,v 1.119 2007/01/19 16:05:06 vvd0 Exp $
 
-MVDSV v0.25.03-CVS build 25?? (200?.??.??)
+MVDSV v0.26 build 2600 (2007.02.02)
+MVDSV v0.25.10-CVS build 25?? (2007.0?.??)
 ----
 * qqshka <qqshka@users.sourceforge.net>
 - changed QVM API version to 12, G_FINDRADIUS worked now and also added G_MAKEVECTORS,
