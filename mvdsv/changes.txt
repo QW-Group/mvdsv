@@ -1,7 +1,7 @@
 
-$Id: changes.txt,v 1.119 2007/01/19 16:05:06 vvd0 Exp $
+$Id: changes.txt,v 1.120 2007/02/09 20:06:45 vvd0 Exp $
 
-MVDSV v0.26 build 2600 (2007.02.02)
+MVDSV v0.26 build 2626 (2007.02.28)
 MVDSV v0.25.10-CVS build 25?? (2007.0?.??)
 ----
 * qqshka <qqshka@users.sourceforge.net>
@@ -25,7 +25,7 @@ MVDSV v0.25.10-CVS build 25?? (2007.0?.??)
 - new cvar qtv_password - password for connecting to qtv
 - renamed cvars mvd_streamport and mvd_maxstreams to qtv_streamport and qtv_maxstreams
 - Z_EXT_JOIN_OBSERVE protocol extensions (ported from ZQuake)
-- remove function SV_Check_ktpro. Use qbool is_ktpro insteand
+- remove function SV_Check_ktpro. Use qbool is_ktpro instead
 
 * Tonik <tonik@users.sourceforge.net>
 - add QSG extension framework. MVDSV starts up in QSG mode unless KTPro is detected or sv_ktpro_mode is enabled
