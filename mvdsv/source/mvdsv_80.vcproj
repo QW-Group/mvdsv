@@ -79,7 +79,7 @@
 				OutputFile="../mvdsv_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile="SRelease_71/mvdsv-current.pdb"
+				ProgramDatabaseFile="SRelease_80/mvdsv-current.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
