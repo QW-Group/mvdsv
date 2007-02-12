@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.120 2007/02/09 20:06:45 vvd0 Exp $
+$Id: changes.txt,v 1.121 2007/02/12 16:30:14 vvd0 Exp $
 
 MVDSV v0.26 build 2626 (2007.02.28)
 MVDSV v0.25.10-CVS build 25?? (2007.0?.??)
@@ -395,6 +395,9 @@ MVDSV v0.179 Beta DEVELOP build 2033 (2005.07.15)
   (EXPERIMENTAL)
   (because we have no sources of ktpro :-()
 (by kreon and VVD, idea by gLAd)
+- new cvar sv_mod_msg_file - file name with description of mod messages,
+  there is an example - ktpro_frags.txt (must be in same dir as mvdsv started)
+  default: "" - integrated in sources, have to work with Id Software's qwprogs.dat.
 - qvm engine updated to version 7
 (Thanks to SD-Angel)
 - key *qvm was moved from serverinfo to localinfo
