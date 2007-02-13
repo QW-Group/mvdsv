@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.18 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: sv_phys.c,v 1.19 2007/02/13 14:18:16 tonik Exp $
 */
 // sv_phys.c
 
@@ -996,7 +996,7 @@ void SV_Physics (void)
 
 #ifdef USE_PR2
 	savesvpl = sv_player;
-	savehc = host_client;
+	savehc = sv_client;
 
 	// so spec will have right goalentity - if speccing someone
 	// qqshka {
@@ -1006,11 +1006,11 @@ void SV_Physics (void)
 			if ( cl->state == cs_free )
 				continue;
 
-			host_client = cl;
+			sv_client = cl;
 			ent = cl->edict;
 
-			if( host_client->spectator && host_client->spec_track > 0 )
-				ent->v.goalentity = EDICT_TO_PROG(svs.clients[host_client->spec_track-1].edict);
+			if( sv_client->spectator && sv_client->spec_track > 0 )
+				ent->v.goalentity = EDICT_TO_PROG(svs.clients[sv_client->spec_track-1].edict);
 		}
 	// }
 
@@ -1021,7 +1021,7 @@ void SV_Physics (void)
 		if ( !cl->isBot )
 			continue;
 
-		host_client = cl;
+		sv_client = cl;
 		sv_player = cl->edict;
 
 		SV_PreRunCmd();
@@ -1037,7 +1037,7 @@ void SV_Physics (void)
 		cl->delta_sequence = -1;	// no delta unless requested
 	}
 	sv_player = savesvpl;
-	host_client = savehc;
+	sv_client = savehc;
 #endif
 }
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.93 2007/01/14 20:02:33 tonik Exp $
+	$Id: sv_main.c,v 1.94 2007/02/13 14:18:16 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -31,7 +31,7 @@ int		host_hunklevel;
 
 int		current_skill;			// for entity spawnflags checking
 
-client_t	*host_client;			// current client
+client_t	*sv_client;			// current client
 
 char		master_rcon_password[128] = "";	//bliP: password for remote server commands
 
@@ -2104,7 +2104,7 @@ void SV_Cmd_Ban_f(void)
 	char		reason[80] = "", arg2[32], arg2c[sizeof(arg2)], *s;
 
 	// set up the edict
-	ent = host_client->edict;
+	ent = sv_client->edict;
 
 // ============
 // get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
@@ -2205,7 +2205,7 @@ void SV_Cmd_Banip_f(void)
 	char		arg2[32], arg2c[sizeof(arg2)];
 
 	// set up the edict
-	ent = host_client->edict;
+	ent = sv_client->edict;
 
 // ============
 // get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
@@ -2275,7 +2275,7 @@ void SV_Cmd_Banremove_f(void)
 	int		id;
 
 	// set up the edict
-	ent = host_client->edict;
+	ent = sv_client->edict;
 
 // ============
 // get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support

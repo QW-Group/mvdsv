@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.44 2007/01/14 20:14:14 tonik Exp $
+	$Id: sv_ccmds.c,v 1.45 2007/02/13 14:18:16 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -243,7 +243,7 @@ log_t	logs[MAX_LOG] =
 ==================
 SV_SetPlayer
  
-Sets host_client and sv_player to the player with idnum Cmd_Argv(1)
+Sets sv_client and sv_player to the player with idnum Cmd_Argv(1)
 ==================
 */
 qbool SV_SetPlayer (void)
@@ -260,8 +260,8 @@ qbool SV_SetPlayer (void)
 			continue;
 		if (cl->userid == idnum)
 		{
-			host_client = cl;
-			sv_player = host_client->edict;
+			sv_client = cl;
+			sv_player = sv_client->edict;
 			return true;
 		}
 	}
@@ -290,9 +290,9 @@ void SV_God_f (void)
 
 	sv_player->v.flags = (int)sv_player->v.flags ^ FL_GODMODE;
 	if (!((int)sv_player->v.flags & FL_GODMODE) )
-		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode OFF\n");
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "godmode OFF\n");
 	else
-		SV_ClientPrintf (host_client, PRINT_HIGH, "godmode ON\n");
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "godmode ON\n");
 }
 
 
@@ -310,12 +310,12 @@ void SV_Noclip_f (void)
 	if (sv_player->v.movetype != MOVETYPE_NOCLIP)
 	{
 		sv_player->v.movetype = MOVETYPE_NOCLIP;
-		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip ON\n");
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "noclip ON\n");
 	}
 	else
 	{
 		sv_player->v.movetype = MOVETYPE_WALK;
-		SV_ClientPrintf (host_client, PRINT_HIGH, "noclip OFF\n");
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "noclip OFF\n");
 	}
 }
 
@@ -1574,7 +1574,7 @@ void SV_User_f (void)
 	if (!SV_SetPlayer ())
 		return;
 
-	Info_Print (host_client->userinfo);
+	Info_Print (sv_client->userinfo);
 }
 
 /*

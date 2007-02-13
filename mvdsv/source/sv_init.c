@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.29 2007/01/14 20:14:13 tonik Exp $
+	$Id: sv_init.c,v 1.30 2007/02/13 14:18:16 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -172,16 +172,16 @@ static void SV_SaveSpawnparms (void)
 	// serverflags is the only game related thing maintained
 	svs.serverflags = pr_global_struct->serverflags;
 
-	for (i=0, host_client = svs.clients ; i<MAX_CLIENTS ; i++, host_client++)
+	for (i=0, sv_client = svs.clients ; i<MAX_CLIENTS ; i++, sv_client++)
 	{
-		if (host_client->state != cs_spawned)
+		if (sv_client->state != cs_spawned)
 			continue;
 
 		// needs to reconnect
-		host_client->state = cs_connected;
+		sv_client->state = cs_connected;
 
 		// call the progs to get default spawn parms for the new client
-		pr_global_struct->self = EDICT_TO_PROG(host_client->edict);
+		pr_global_struct->self = EDICT_TO_PROG(sv_client->edict);
 #ifdef USE_PR2
 		if (sv_vm)
 			PR2_GameSetChangeParms();
@@ -189,7 +189,7 @@ static void SV_SaveSpawnparms (void)
 #endif
 			PR_ExecuteProgram (pr_global_struct->SetChangeParms);
 		for (j=0 ; j<NUM_SPAWN_PARMS ; j++)
-			host_client->spawn_parms[j] = (&pr_global_struct->parm1)[j];
+			sv_client->spawn_parms[j] = (&pr_global_struct->parm1)[j];
 
 	}
 }
