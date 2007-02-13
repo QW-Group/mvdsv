@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.45 2007/02/13 14:18:16 tonik Exp $
+	$Id: sv_ccmds.c,v 1.46 2007/02/13 14:20:46 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -1852,6 +1852,7 @@ void SV_InitOperatorCommands (void)
 	if (COM_CheckParm ("-cheats"))
 	{
 		sv_allow_cheats = true;
+		Cvar_SetValue (&sv_cheats, 1);
 		Info_SetValueForStarKey (svs.info, "*cheats", "ON", MAX_SERVERINFO_STRING);
 	}
 
