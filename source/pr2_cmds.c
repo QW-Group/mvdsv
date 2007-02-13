@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.43 2007/01/14 20:02:33 tonik Exp $
+ *  $Id: pr2_cmds.c,v 1.44 2007/02/13 14:18:16 tonik Exp $
  */
 
 #ifdef USE_PR2
@@ -2306,7 +2306,7 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 	val = PR2_GetEdictFieldValue( ent, "gravity" );
 	if ( val )
 		val->_float = 1.0;
-	host_client->maxspeed = sv_maxspeed.value;
+	sv_client->maxspeed = sv_maxspeed.value;
 	val = PR2_GetEdictFieldValue( ent, "maxspeed" );
 	if ( val )
 		val->_float = sv_maxspeed.value;
@@ -2319,7 +2319,7 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 		val->_int = 1;
 
 	newcl->name = PR2_GetString( ent->v.netname );
-	memset( newcl->stats, 0, sizeof( host_client->stats ) );
+	memset( newcl->stats, 0, sizeof( sv_client->stats ) );
 	SZ_Clear( &newcl->netchan.message );
 	newcl->netchan.drop_count = 0;
 	newcl->netchan.incoming_sequence = 1;

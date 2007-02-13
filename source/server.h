@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.43 2007/01/14 20:14:13 tonik Exp $
+	$Id: server.h,v 1.44 2007/02/13 14:18:16 tonik Exp $
 */
 
 // server.h
@@ -511,8 +511,7 @@ extern	server_t	sv;	// local server
 extern	demo_t		demo;	// server demo struct
 extern	entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
 
-extern	client_t	*host_client;
-
+extern	client_t	*sv_client;
 extern	edict_t		*sv_player;
 
 #define	MODEL_NAME_LEN	5

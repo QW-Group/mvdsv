@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.29 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: sv_send.c,v 1.30 2007/02/13 14:18:16 tonik Exp $
 */
 
 #include "qwsvdef.h"
@@ -64,9 +64,9 @@ void SV_FlushRedirect (void)
 	}
 	else if (sv_redirected == RD_CLIENT && sv_redirectbufcount < MAX_REDIRECTMESSAGES)
 	{
-		ClientReliableWrite_Begin (host_client, svc_print, strlen(outputbuf)+3);
-		ClientReliableWrite_Byte (host_client, PRINT_HIGH);
-		ClientReliableWrite_String (host_client, outputbuf);
+		ClientReliableWrite_Begin (sv_client, svc_print, strlen(outputbuf)+3);
+		ClientReliableWrite_Byte (sv_client, PRINT_HIGH);
+		ClientReliableWrite_String (sv_client, outputbuf);
 		sv_redirectbufcount++;
 	}
 	else if (sv_redirected == RD_MOD)
@@ -773,20 +773,20 @@ static void SV_UpdateToReliableMessages (void)
 	edict_t *ent;
 
 	// check for changes to be sent over the reliable streams to all clients
-	for (i=0, host_client = svs.clients ; i<MAX_CLIENTS ; i++, host_client++)
+	for (i=0, sv_client = svs.clients ; i<MAX_CLIENTS ; i++, sv_client++)
 	{
-		if (host_client->state != cs_spawned)
+		if (sv_client->state != cs_spawned)
 			continue;
 
-		if (host_client->sendinfo)
+		if (sv_client->sendinfo)
 		{
-			host_client->sendinfo = false;
-			SV_FullClientUpdate (host_client, &sv.reliable_datagram);
+			sv_client->sendinfo = false;
+			SV_FullClientUpdate (sv_client, &sv.reliable_datagram);
 		}
 
-		ent = host_client->edict;
+		ent = sv_client->edict;
 
-		if (host_client->old_frags != (int)ent->v.frags)
+		if (sv_client->old_frags != (int)ent->v.frags)
 		{
 			for (j=0, client = svs.clients ; j<MAX_CLIENTS ; j++, client++)
 			{
@@ -805,33 +805,33 @@ static void SV_UpdateToReliableMessages (void)
 				MSG_WriteShort((sizebuf_t*)demo.dbuf, (int) ent->v.frags);
 			}
 
-			host_client->old_frags = (int) ent->v.frags;
+			sv_client->old_frags = (int) ent->v.frags;
 		}
 
 		// maxspeed/entgravity changes
-		if (fofs_gravity && host_client->entgravity != EdictFieldFloat(ent, fofs_gravity))
+		if (fofs_gravity && sv_client->entgravity != EdictFieldFloat(ent, fofs_gravity))
 		{
-			host_client->entgravity = EdictFieldFloat(ent, fofs_gravity);
-			ClientReliableWrite_Begin(host_client, svc_entgravity, 5);
-			ClientReliableWrite_Float(host_client, host_client->entgravity);
+			sv_client->entgravity = EdictFieldFloat(ent, fofs_gravity);
+			ClientReliableWrite_Begin(sv_client, svc_entgravity, 5);
+			ClientReliableWrite_Float(sv_client, sv_client->entgravity);
 			if (sv.mvdrecording)
 			{
 				MVDWrite_Begin(dem_single, i, 5);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_entgravity);
-				MSG_WriteFloat((sizebuf_t*)demo.dbuf, host_client->entgravity);
+				MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->entgravity);
 			}
 		}
 
-		if (fofs_maxspeed && host_client->maxspeed != EdictFieldFloat(ent, fofs_maxspeed))
+		if (fofs_maxspeed && sv_client->maxspeed != EdictFieldFloat(ent, fofs_maxspeed))
 		{
-			host_client->maxspeed = EdictFieldFloat(ent, fofs_maxspeed);
-			ClientReliableWrite_Begin(host_client, svc_maxspeed, 5);
-			ClientReliableWrite_Float(host_client, host_client->maxspeed);
+			sv_client->maxspeed = EdictFieldFloat(ent, fofs_maxspeed);
+			ClientReliableWrite_Begin(sv_client, svc_maxspeed, 5);
+			ClientReliableWrite_Float(sv_client, sv_client->maxspeed);
 			if (sv.mvdrecording)
 			{
 				MVDWrite_Begin(dem_single, i, 5);
 				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_maxspeed);
-				MSG_WriteFloat((sizebuf_t*)demo.dbuf, host_client->maxspeed);
+				MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->maxspeed);
 			}
 		}
 
