@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.81 2007/01/08 19:35:02 disconn3ct Exp $
+	$Id: sv_user.c,v 1.82 2007/02/13 14:11:55 tonik Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -231,14 +231,14 @@ static void Cmd_New_f (void)
 	// send the movevars
 	MSG_WriteFloat(&host_client->netchan.message, movevars.gravity);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.stopspeed);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.maxspeed);
+	MSG_WriteFloat(&host_client->netchan.message, host_client->maxspeed);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.spectatormaxspeed);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.accelerate);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.airaccelerate);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.wateraccelerate);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.friction);
 	MSG_WriteFloat(&host_client->netchan.message, movevars.waterfriction);
-	MSG_WriteFloat(&host_client->netchan.message, movevars.entgravity);
+	MSG_WriteFloat(&host_client->netchan.message, host_client->entgravity);
 
 	if (host_client->rip_vip)
 	{
