@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="qwsv"
 	ProjectGUID="{617E4627-FBC6-4834-9C6B-B178EACE973E}"
 	>
@@ -75,7 +75,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib winmm.lib user32.lib gdi32.lib advapi32.lib shell32.lib"
+				AdditionalDependencies="wsock32.lib winmm.lib"
 				OutputFile="../mvdsv_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -169,7 +169,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib winmm.lib user32.lib gdi32.lib advapi32.lib shell32.lib"
+				AdditionalDependencies="wsock32.lib winmm.lib"
 				OutputFile="../mvdsv-debug_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
