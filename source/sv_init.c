@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.30 2007/02/13 14:18:16 tonik Exp $
+	$Id: sv_init.c,v 1.31 2007/03/02 11:11:27 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -226,6 +226,7 @@ This is only called from the SV_Map_f() function.
 ================
 */
 dfunction_t *ED_FindFunction (char *name);
+qbool SV_MVD_Re_Record(void);
 
 void SV_SpawnServer (char *mapname, qbool devmap)
 {
@@ -300,7 +301,9 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 
 	// wipe the entire per-level structure
+	// NOTE: this aloso set sv.mvdrecording to false, so calling SV_MVD_Re_Record() at end of function
 	memset (&sv, 0, sizeof(sv));
+
 
 	sv.datagram.maxsize = sizeof(sv.datagram_buf);
 	sv.datagram.data = sv.datagram_buf;
@@ -520,5 +523,8 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 		}
 
 	Con_DPrintf ("Server spawned.\n");
+
+	// we change map - clear whole demo struct and sent initial state to all dest if any (for QTV only I thought)
+	SV_MVD_Re_Record();
 }
 

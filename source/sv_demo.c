@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.70 2007/03/01 12:04:59 qqshka Exp $
+    $Id: sv_demo.c,v 1.71 2007/03/02 11:11:27 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1605,18 +1605,11 @@ static void SV_WriteSetMVDMessage (void)
 	DestFlush(false);
 }
 
+void SV_MVD_SendInitialGamestate(mvddest_t *dest);
+
 static qbool SV_MVD_Record (mvddest_t *dest)
 {
-	qbool first_dest = !sv.mvdrecording; // if we are not recording yet, that must be first dest
-	sizebuf_t	buf;
-	unsigned char buf_data[MAX_MSGLEN];
 	int i;
-	unsigned int n;
-	char *s, info[MAX_INFO_STRING];
-
-	client_t *player;
-	char *gamedir;
-	int seq = 1;
 
 	if (!dest)
 		return false;
@@ -1636,15 +1629,58 @@ static qbool SV_MVD_Record (mvddest_t *dest)
 
 		demo.datagram.maxsize = sizeof(demo.datagram_data);
 		demo.datagram.data = demo.datagram_data;
-
-		sv.mvdrecording = true;
 	}
 	//	else
 	//		SV_WriteRecordMVDMessage(&buf, dem_read);
+
+	if (dest != demo.dest) {
+		//
+		// seems we initializing new dest
+		//
+		dest->nextdest = demo.dest;
+		demo.dest = dest;
+
+		SV_MVD_SendInitialGamestate(dest);
+	}
+	else
+	{
+		//
+		// map change, sent initial stats to dests
+		//
+		SV_MVD_SendInitialGamestate(NULL);
+	}
+
+	// done
+	return true;
+}
+
+// we change map - clear whole demo struct and sent initial state to all dest if any (for QTV only I thought)
+qbool SV_MVD_Re_Record(void)
+{
+	return SV_MVD_Record (demo.dest);
+}
+
+void SV_MVD_SendInitialGamestate(mvddest_t *dest)
+{
+//	qbool first_dest = !sv.mvdrecording; // if we are not recording yet, that must be first dest
+	sizebuf_t	buf;
+	unsigned char buf_data[MAX_MSGLEN];
+	unsigned int n;
+	char *s, info[MAX_INFO_STRING];
+
+	client_t *player;
+	char *gamedir;
+	int seq = 1, i;
+
+	if (!demo.dest)
+		return;
+
+
+	sv.mvdrecording = true; // NOTE:  afaik wrongly set to false on map change, so restore it here
+	
+	
 	demo.pingtime = demo.time = sv.time;
 
-	dest->nextdest = demo.dest;
-	demo.dest = dest;
 
 	singledest = dest;
 
@@ -1830,7 +1866,7 @@ static qbool SV_MVD_Record (mvddest_t *dest)
 
 	// that need only if that non first dest, demo code suppose we alredy have this, and do not send
 	// this set proper model origin and angles etc for players
-	for (i = 0; i < MAX_CLIENTS && !first_dest; i++)
+	for (i = 0; i < MAX_CLIENTS /* && !first_dest */ ; i++)
 	{
 		vec3_t origin, angles;
 		edict_t *ent;
@@ -1916,9 +1952,6 @@ static qbool SV_MVD_Record (mvddest_t *dest)
 	SV_WriteSetMVDMessage();
 
 	singledest = NULL;
-
-	// done
-	return true;
 }
 
 /*
