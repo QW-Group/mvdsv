@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="qwdtools"
 	ProjectGUID="{0251665C-50AC-4BB5-9E5D-0B2D25617845}"
 	>
@@ -168,7 +168,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
 				OutputFile="../../qwdtools_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -486,28 +485,6 @@
 		<Filter
 			Name="Asm Files"
 			>
-			<File
-				RelativePath="..\bothtoolsa.s"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
-						Outputs="$(OUTDIR)\$(InputName).obj"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
-						Outputs="$(OUTDIR)\$(InputName).obj"
-					/>
-				</FileConfiguration>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>
