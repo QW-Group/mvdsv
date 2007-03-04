@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.30 2007/02/13 14:18:16 tonik Exp $
+	$Id: sv_send.c,v 1.31 2007/03/04 12:30:50 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -868,9 +868,9 @@ static void SV_UpdateToReliableMessages (void)
 	SZ_Clear (&sv.datagram);
 }
 
-#ifdef _WIN32
-#pragma optimize( "", off )
-#endif
+//#ifdef _WIN32
+//#pragma optimize( "", off )
+//#endif
 
 
 
@@ -1136,9 +1136,9 @@ void SV_SendDemoMessage(void)
 }
 
 
-#ifdef _WIN32
-#pragma optimize( "", on )
-#endif
+//#ifdef _WIN32
+//#pragma optimize( "", on )
+//#endif
 
 
 
