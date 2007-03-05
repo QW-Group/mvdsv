@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.33 2007/01/04 07:38:12 qqshka Exp $
+    $Id: common.c,v 1.34 2007/03/05 17:27:15 vvd0 Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -1100,32 +1100,4 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 	crc &= 0xff;
 
 	return crc;
-}
-
-
-//============================================================================
-
-///////////////////////////////////////////////////////////////
-//	MD4-based checksum utility functions
-//
-//	Copyright (C) 2000       Jeff Teunissen <d2deek@pmail.net>
-//
-//	Author: Jeff Teunissen	<d2deek@pmail.net>
-//	Date: 01 Jan 2000
-
-unsigned Com_BlockChecksum (void *buffer, int length)
-{
-	int digest[4];
-	unsigned val;
-
-	mdfour ((unsigned char *)digest, (unsigned char *)buffer, length);
-
-	val = digest[0] ^ digest[1] ^ digest[2] ^ digest[3];
-
-	return val;
-}
-
-void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf)
-{
-	mdfour ( outbuf, (unsigned char *) buffer, len );
 }

@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.8 2006/08/17 15:20:27 vvd0 Exp $
+#	$Id: Makefile.GNU,v 1.9 2007/03/05 17:29:07 vvd0 Exp $
 #
 
 MAINDIR=.
@@ -89,7 +89,7 @@ SV_OBJS = \
 		$(SV_DIR)/cvar.o \
 		$(SV_DIR)/fs.o \
 		$(SV_DIR)/mathlib.o \
-		$(SV_DIR)/mdfour.o \
+		$(SV_DIR)/md4.o \
 		$(SV_DIR)/net_chan.o \
 		$(SV_DIR)/net.o \
 		$(SV_DIR)/pmove.o \

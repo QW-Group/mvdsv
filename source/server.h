@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.44 2007/02/13 14:18:16 tonik Exp $
+	$Id: server.h,v 1.45 2007/03/05 17:27:22 vvd0 Exp $
 */
 
 // server.h
@@ -48,7 +48,7 @@ typedef struct packet_s
 	struct packet_s *next;
 } packet_t;
 
-#define MAX_DELAYED_PACKETS 512
+#define MAX_DELAYED_PACKETS 1024 // maxclients 32 * 77fps * max minping 0.3 = 739.2
 #define MAP_NAME_LEN 64
 typedef struct
 {

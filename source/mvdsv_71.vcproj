@@ -49,10 +49,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="../mvdsv-current_71.exe"
+				OutputFile="../mvdsv_71.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile="SRelease_71/mvdsv-current.pdb"
+				ProgramDatabaseFile="SRelease_71/mvdsv.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -61,7 +61,7 @@
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SRelease_71/qwsv.tlb"
+				TypeLibraryName="SRelease_71/mvdsv.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -113,18 +113,18 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="../mvdsv-debug_60.exe"
+				OutputFile="../mvdsv-debug_71.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="SDebug_71/mvdsv-debug.pdb"
+				ProgramDatabaseFile="SDebug_71/mvdsv.pdb"
 				GenerateMapFile="TRUE"
-				MapFileName="SDebug_71/mvdsv-debug.map"
+				MapFileName="SDebug_71/mvdsv.map"
 				SubSystem="2"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SDebug_71/qwsv.tlb"
+				TypeLibraryName="SDebug_71/mvdsv.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -175,6 +175,25 @@
 			</File>
 			<File
 				RelativePath="cmd.c">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						PreprocessorDefinitions=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="cmodel.c">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -251,6 +270,22 @@
 			</File>
 			<File
 				RelativePath="fs.c">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						PreprocessorDefinitions=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						PreprocessorDefinitions=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="mathlib.c">
@@ -272,7 +307,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="mdfour.c">
+				RelativePath="md4.c">
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool
@@ -671,25 +706,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="cmodel.c">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						PreprocessorDefinitions=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="sv_move.c">
 				<FileConfiguration
 					Name="Release|Win32">
@@ -938,6 +954,9 @@
 				RelativePath="cmd.h">
 			</File>
 			<File
+				RelativePath="cmodel.h">
+			</File>
+			<File
 				RelativePath="common.h">
 			</File>
 			<File
@@ -957,12 +976,6 @@
 			</File>
 			<File
 				RelativePath="mathlib.h">
-			</File>
-			<File
-				RelativePath="mdfour.h">
-			</File>
-			<File
-				RelativePath="cmodel.h">
 			</File>
 			<File
 				RelativePath="modelgen.h">

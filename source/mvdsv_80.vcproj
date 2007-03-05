@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="qwsv"
 	ProjectGUID="{617E4627-FBC6-4834-9C6B-B178EACE973E}"
 	>
@@ -18,7 +18,6 @@
 			OutputDirectory="SRelease_80"
 			IntermediateDirectory="SRelease_80"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			WholeProgramOptimization="1"
@@ -37,7 +36,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SRelease_71/qwsv.tlb"
+				TypeLibraryName="SRelease_80/mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -79,7 +78,7 @@
 				OutputFile="../mvdsv_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile="SRelease_80/mvdsv-current.pdb"
+				ProgramDatabaseFile="SRelease_80/mvdsv.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -117,7 +116,6 @@
 			OutputDirectory="SDebug_80"
 			IntermediateDirectory="SDebug_80"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -135,7 +133,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SDebug_71/qwsv.tlb"
+				TypeLibraryName="SDebug_71/mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -174,9 +172,9 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="SDebug_80/mvdsv-debug.pdb"
+				ProgramDatabaseFile="SDebug_80/mvdsv.pdb"
 				GenerateMapFile="true"
-				MapFileName="SDebug_80/mvdsv-debug.map"
+				MapFileName="SDebug_80/mvdsv.map"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -386,7 +384,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="mdfour.c"
+				RelativePath="md4.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1232,10 +1230,6 @@
 			</File>
 			<File
 				RelativePath="mathlib.h"
-				>
-			</File>
-			<File
-				RelativePath="mdfour.h"
 				>
 			</File>
 			<File
