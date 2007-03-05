@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="qwdtools"
 	ProjectGUID="{0251665C-50AC-4BB5-9E5D-0B2D25617845}"
 	>
@@ -18,7 +18,6 @@
 			OutputDirectory="Debug_80"
 			IntermediateDirectory="Debug_80"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -36,7 +35,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Debug_71/qwdtools.tlb"
+				TypeLibraryName="Debug_80/qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -77,9 +76,9 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="Debug_80/qwdtools-debug.pdb"
+				ProgramDatabaseFile="Debug_80/qwdtools.pdb"
 				GenerateMapFile="true"
-				MapFileName="Debug_80/qwdtools-debug.map"
+				MapFileName="Debug_80/qwdtools.map"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -113,7 +112,6 @@
 			OutputDirectory="Release_80"
 			IntermediateDirectory="Release_80"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
@@ -131,7 +129,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Release_71/qwdtools.tlb"
+				TypeLibraryName="Release_80/qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -485,6 +483,28 @@
 		<Filter
 			Name="Asm Files"
 			>
+			<File
+				RelativePath="..\bothtoolsa.s"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
+						Outputs="$(OUTDIR)\$(InputName).obj"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
+						Outputs="$(OUTDIR)\$(InputName).obj"
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
