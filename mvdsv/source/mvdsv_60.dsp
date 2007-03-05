@@ -50,7 +50,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo /o"SRelease_60/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"../mvdsv-current_60.exe"
+# ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"../mvdsv_60.exe"
 # SUBTRACT LINK32 /profile /pdb:none /incremental:yes /map /debug /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
@@ -109,6 +109,10 @@ SOURCE=bothtools.c
 SOURCE=cmd.c
 # End Source File
 # Begin Source File
+ 
+SOURCE=cmodel.c
+# End Source File
+# Begin Source File
 
 SOURCE=common.c
 # End Source File
@@ -130,7 +134,7 @@ SOURCE=mathlib.c
 # End Source File
 # Begin Source File
 
-SOURCE=mdfour.c
+SOURCE=md4.c
 # End Source File
 # Begin Source File
 
@@ -214,10 +218,6 @@ SOURCE=sv_mod_frags.c
 # End Source File
 # Begin Source File
 
-SOURCE=cmodel.c
-# End Source File
-# Begin Source File
-
 SOURCE=sv_move.c
 # End Source File
 # Begin Source File
@@ -298,6 +298,10 @@ SOURCE=bspfile.h
 SOURCE=cmd.h
 # End Source File
 # Begin Source File
+ 
+SOURCE=cmodel.h
+# End Source File
+# Begin Source File
 
 SOURCE=common.h
 # End Source File
@@ -324,14 +328,6 @@ SOURCE=log.h
 # Begin Source File
 
 SOURCE=mathlib.h
-# End Source File
-# Begin Source File
-
-SOURCE=mdfour.h
-# End Source File
-# Begin Source File
-
-SOURCE=cmodel.h
 # End Source File
 # Begin Source File
 
