@@ -45,9 +45,9 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="Debug_71/qwdtools-debug.pdb"
+				ProgramDatabaseFile="Debug_71/qwdtools.pdb"
 				GenerateMapFile="TRUE"
-				MapFileName="Debug_71/qwdtools-debug.map"
+				MapFileName="Debug_71/qwdtools.map"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
@@ -108,7 +108,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
 				OutputFile="../../qwdtools_71.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
