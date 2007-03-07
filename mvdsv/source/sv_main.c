@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.94 2007/02/13 14:18:16 tonik Exp $
+	$Id: sv_main.c,v 1.95 2007/03/07 21:46:18 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -787,6 +787,7 @@ A connection request that did not come from the master
 */
 int SV_VIPbyIP(netadr_t adr);
 int SV_VIPbyPass (char *pass);
+extern void MVD_PlayerReset(int player);
 
 #ifdef USE_PR2
 extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
@@ -1093,6 +1094,16 @@ static void SVC_DirectConnect (void)
 		PR_ExecuteProgram (pr_global_struct->SetNewParms);
 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
 		newcl->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+
+	// mvd/qtv related stuff
+	// Well, here is a chance what player connect after demo recording started,
+	// so demo.info[edictnum - 1].model == player_model so SV_MVDWritePackets() will not wrote player model index,
+	// so client during playback this demo will got invisible model, because model index will be 0.
+	// Fixing that.
+	// Btw, struct demo contain different client specific structs, may be they need clearing too, not sure.
+	// Also, we have Cmd_Join_f()/Cmd_Observe_f() which have close behaviour to SVC_DirectConnect(),
+	// so I put same demo fix in mentioned functions too.
+	MVD_PlayerReset(NUM_FOR_EDICT(newcl->edict) - 1);
 
 	/*
 	if (newcl->vip && newcl->spectator)
