@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.83 2007/02/13 14:18:16 tonik Exp $
+	$Id: sv_user.c,v 1.84 2007/03/07 21:46:18 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2186,6 +2186,8 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 }
 
 extern cvar_t maxclients, maxspectators;
+extern void MVD_PlayerReset(int player);
+
 /*
 ==================
 Cmd_Join_f
@@ -2285,6 +2287,9 @@ static void Cmd_Join_f (void)
 	else
 #endif
 		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
+
+	// look in SVC_DirectConnect() for for extended comment whats this for
+	MVD_PlayerReset(NUM_FOR_EDICT(sv_player) - 1);
 
 	// send notification to all clients
 	sv_client->sendinfo = true;
@@ -2391,6 +2396,9 @@ static void Cmd_Observe_f (void)
 		PR2_GamePutClientInServer(1); // let mod know we put spec not player
 	}
 #endif
+
+	// look in SVC_DirectConnect() for for extended comment whats this for
+	MVD_PlayerReset(NUM_FOR_EDICT(sv_player) - 1);
 
 	// send notification to all clients
 	sv_client->sendinfo = true;

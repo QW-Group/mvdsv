@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.71 2007/03/02 11:11:27 qqshka Exp $
+    $Id: sv_demo.c,v 1.72 2007/03/07 21:46:16 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1603,6 +1603,22 @@ static void SV_WriteSetMVDMessage (void)
 	DemoWrite (&len, 4);
 
 	DestFlush(false);
+}
+
+// mvd/qtv related stuff
+// Well, here is a chance what player connect after demo recording started,
+// so demo.info[edictnum - 1].model == player_model so SV_MVDWritePackets() will not wrote player model index,
+// so client during playback this demo will got invisible model, because model index will be 0.
+// Fixing that.
+// Btw, struct demo contain different client specific structs, may be they need clearing too, not sure.
+void MVD_PlayerReset(int player)
+{
+	if (player < 0 || player >= MAX_CLIENTS) { // protect from lamers
+		Con_Printf("MVD_PlayerReset: wrong player num %d\n", player);
+		return;
+	}
+
+	memset(&(demo.info[player]), 0, sizeof(demo.info[0]));
 }
 
 void SV_MVD_SendInitialGamestate(mvddest_t *dest);
