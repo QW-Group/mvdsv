@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.84 2007/03/07 21:46:18 qqshka Exp $
+	$Id: sv_user.c,v 1.85 2007/03/08 23:04:33 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2247,12 +2247,16 @@ static void Cmd_Join_f (void)
 	}
 
 	sv_client->old_frags = 0;
-	SetUpClientEdict (sv_client, sv_client->edict);
 
+	// this is like SVC_DirectConnect.
 	// turn the spectator into a player
 	sv_client->spectator = false;
+	sv_client->spec_track = 0;
 	Info_RemoveKey (sv_client->userinfo, "*spectator");
 	Info_RemoveKey (sv_client->userinfoshort, "*spectator");
+
+	// like Cmd_Spawn_f()
+	SetUpClientEdict (sv_client, sv_client->edict);
 
 	// call the progs to get default spawn parms for the new client
 #ifdef USE_PR2
@@ -2347,12 +2351,16 @@ static void Cmd_Observe_f (void)
 		PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
 
 	sv_client->old_frags = 0;
-	SetUpClientEdict (sv_client, sv_client->edict);
 
+	// this is like SVC_DirectConnect.
 	// turn the player into a spectator
 	sv_client->spectator = true;
+	sv_client->spec_track = 0;
 	Info_SetValueForStarKey (sv_client->userinfo, "*spectator", "1", MAX_INFO_STRING);
 	Info_SetValueForStarKey (sv_client->userinfoshort, "*spectator", "1", MAX_INFO_STRING);
+
+	// like Cmd_Spawn_f()
+	SetUpClientEdict (sv_client, sv_client->edict);
 
 	// call the progs to get default spawn parms for the new client
 #ifdef USE_PR2
