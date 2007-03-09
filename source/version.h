@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: version.h,v 1.45 2007/01/19 16:05:07 vvd0 Exp $
+	$Id: version.h,v 1.46 2007/03/09 17:25:57 vvd0 Exp $
 */
 // version.h
 
@@ -62,8 +62,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #define	QW_VERSION			"2.40"
-#define QWE_VERSION			"0.25.10-CVS"
-#define QWE_VERNUM			0.2510
+#define QWE_VERSION			"0.25.20-CVS"
+#define QWE_VERNUM			0.2520
 #define SERVER_NAME			"MVDSV"
 #define QWDTOOLS_NAME		"QWDtools"
 #define PROJECT_NAME		SERVER_NAME
