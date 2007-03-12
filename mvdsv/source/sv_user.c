@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.85 2007/03/08 23:04:33 qqshka Exp $
+	$Id: sv_user.c,v 1.86 2007/03/12 03:24:57 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -231,14 +231,14 @@ static void Cmd_New_f (void)
 	// send the movevars
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.gravity);
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.stopspeed);
-	MSG_WriteFloat(&sv_client->netchan.message, sv_client->maxspeed);
+	MSG_WriteFloat(&sv_client->netchan.message, /* sv_client->maxspeed */ movevars.maxspeed); // FIXME: this does't work, Tonik?
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.spectatormaxspeed);
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.accelerate);
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.airaccelerate);
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.wateraccelerate);
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.friction);
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.waterfriction);
-	MSG_WriteFloat(&sv_client->netchan.message, sv_client->entgravity);
+	MSG_WriteFloat(&sv_client->netchan.message, /* sv_client->entgravity */ movevars.entgravity); // FIXME: this does't work, Tonik?
 
 	if (sv_client->rip_vip)
 	{
