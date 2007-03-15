@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.44 2007/02/13 14:18:16 tonik Exp $
+ *  $Id: pr2_cmds.c,v 1.45 2007/03/15 00:24:14 qqshka Exp $
  */
 
 #ifdef USE_PR2
@@ -1501,9 +1501,24 @@ PF2_changelevel
 void PF2_changelevel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	static int last_spawncount;
-	char*s = VM_POINTER(base,mask,stack[0].string);
+	char *s = VM_POINTER(base,mask,stack[0].string);
+	char expanded[MAX_QPATH];
+	FILE *f;
+
+	// check to make sure the level exists.
+	// this is work around for bellow check about two changelevels,
+	// which lock server in one map if we trying switch to map which does't exist
+	snprintf(expanded, MAX_QPATH, "maps/%s.bsp", s);
+	COM_FOpenFile (expanded, &f);
+	if (!f)
+	{
+		Sys_Printf ("Can't find %s\n", expanded);
+		return;
+	}
+	fclose (f);
 
 	// make sure we don't issue two changelevels
+	// this check is evil and cause lock on one map, if /map command fail for some reason
 	if (svs.spawncount == last_spawncount)
 		return;
 	last_spawncount = svs.spawncount;
