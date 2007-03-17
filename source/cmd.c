@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: cmd.c,v 1.21 2007/01/08 18:44:20 disconn3ct Exp $
+    $Id: cmd.c,v 1.22 2007/03/17 06:05:44 qqshka Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -803,6 +803,9 @@ void Cmd_ExpandString (char *data, char *dest)
 				buf[i] = 0;
 				if ( (var = Cvar_FindVar(buf)) != NULL )
 					bestvar = var;
+
+				if (i >= (int)sizeof(buf)-1)
+					break; // there no more space in buf
 			}
 
 			if (bestvar)
