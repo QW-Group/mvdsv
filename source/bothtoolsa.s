@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: bothtoolsa.s,v 1.1 2006/08/14 15:37:28 vvd0 Exp $
+	$Id: bothtoolsa.s,v 1.2 2007/03/21 20:37:15 vvd0 Exp $
 */
 
 #include "asm_i386.h"
@@ -39,7 +39,8 @@
 .globl C(ShortSwap)
 C(ShortSwap):
 
-	movzwl	val(%esp),%eax
+/*	movzwl	val(%esp),%eax*/
+	movw	val(%esp),%ax
 	xchgb	%al,%ah
 	ret
 
