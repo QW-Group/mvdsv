@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.31 2007/03/02 11:11:27 qqshka Exp $
+	$Id: sv_init.c,v 1.32 2007/03/21 20:37:15 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -286,9 +286,9 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	current_skill = (int) (skill.value + 0.5);
 	if (current_skill < 0)
 		current_skill = 0;
+	Cvar_Set (&skill, va("%d", current_skill));
 	if (current_skill > 3)
 		current_skill = 3;
-	Cvar_Set (&skill, va("%d", current_skill));
 
 	if ((sv_cheats.value || devmap) && !sv_allow_cheats) {
 		sv_allow_cheats = true;
