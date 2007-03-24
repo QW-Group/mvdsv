@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.87 2007/03/23 14:52:53 tonik Exp $
+	$Id: sv_user.c,v 1.88 2007/03/24 11:04:12 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2246,12 +2246,10 @@ static void Cmd_Join_f (void)
 			PR_ExecuteProgram (SpectatorDisconnect);
 	}
 
-	sv_client->old_frags = 0;
-	sv_client->spec_track = 0;
-	sv_client->connection_started = realtime;
-
 	// this is like SVC_DirectConnect.
 	// turn the spectator into a player
+	sv_client->old_frags = 0;
+	sv_client->connection_started = realtime;
 	sv_client->spectator = false;
 	sv_client->spec_track = 0;
 	Info_RemoveKey (sv_client->userinfo, "*spectator");
@@ -2352,12 +2350,10 @@ static void Cmd_Observe_f (void)
 #endif
 		PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
 
-	sv_client->old_frags = 0;
-	sv_client->spec_track = 0;
-	sv_client->connection_started = realtime;
-
 	// this is like SVC_DirectConnect.
 	// turn the player into a spectator
+	sv_client->old_frags = 0;
+	sv_client->connection_started = realtime;
 	sv_client->spectator = true;
 	sv_client->spec_track = 0;
 	Info_SetValueForStarKey (sv_client->userinfo, "*spectator", "1", MAX_INFO_STRING);
