@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.95 2007/03/07 21:46:18 qqshka Exp $
+	$Id: sv_main.c,v 1.96 2007/03/31 15:11:25 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -2862,6 +2862,17 @@ static void PausedTic (void)
 	}
 }
 
+static void KtproAirstepFix(void)
+{
+// ktpro is old school, do not allow pm_airstep
+	extern cvar_t	pm_airstep;	
+
+	if (is_ktpro && pm_airstep.value) {
+		Con_Printf("Forcing pm_airstep to 0 in ktpro\n");
+		Cvar_SetValue (&pm_airstep, 0);
+	}
+}
+
 /*
 ==================
 SV_Frame
@@ -2880,6 +2891,9 @@ void SV_Frame (double time1)
 
 	// keep the random time dependent
 	rand ();
+
+	// do not allow pm_airstep it ktpro
+	KtproAirstepFix();
 
 	// decide the simulation time
 	if (!sv.paused)
@@ -2971,7 +2985,7 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_waterfriction;
 	extern	cvar_t	sv_nailhack;
 
-	//extern	cvar_t	pm_airstep;
+	extern	cvar_t	pm_airstep;
 	//extern	cvar_t	pm_pground;
 	//extern	cvar_t	pm_slidefix;
 	extern	cvar_t	pm_ktjump;
@@ -3067,7 +3081,7 @@ void SV_InitLocal (void)
 	//Cvar_Register (&pm_bunnyspeedcap);
 	Cvar_Register (&pm_ktjump);
 	//Cvar_Register (&pm_slidefix);
-	//Cvar_Register (&pm_airstep);
+	Cvar_Register (&pm_airstep);
 	//Cvar_Register (&pm_pground);
 
 	Cvar_Register (&filterban);

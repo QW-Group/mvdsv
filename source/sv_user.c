@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.88 2007/03/24 11:04:12 qqshka Exp $
+	$Id: sv_user.c,v 1.89 2007/03/31 15:11:25 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2106,6 +2106,47 @@ static void Cmd_MinPing_f (void)
 
 /*
 ==============
+Cmd_AirStep_f
+==============
+*/
+static void Cmd_AirStep_f (void)
+{
+	int val;
+	unsigned char red_airstep[64] = "pm_airstep";
+
+	switch (Cmd_Argc())
+	{
+	case 2:
+		if (is_ktpro)
+			Con_Printf("Can't change pm_airstep: ktpro detected\n");
+		else if (GameStarted())
+			Con_Printf("Can't change pm_airstep: demo recording in progress or serverinfo key status not equal 'Standby'.\n");
+		else
+		{
+			val = Q_atoi(Cmd_Argv(1));
+			if (val != 0 && val != 1)
+				Con_Printf("Value must be 0 or 1.\n");
+			else {
+				float old = pm_airstep.value; // remember
+				Cvar_SetValue (&pm_airstep, val); // set new value
+
+				if (pm_airstep.value != old) { // seems value was changed
+					SV_BroadcastPrintf (2, "%s turns %s %s\n", 
+								sv_client->name, Q_redtext(red_airstep), pm_airstep.value ? "on" : "off");
+					break;
+				}
+			}
+		}
+	case 1:
+		Con_Printf("pm_airstep = %s\n", pm_airstep.string);
+		break;
+	default:
+		Con_Printf("usage: airstep [0 | 1]\n");
+	}
+}
+
+/*
+==============
 Cmd_ShowMapsList_f
 ==============
 */
@@ -2478,6 +2519,7 @@ static ucmd_t ucmds[] =
 	{"demoinfo", SV_MVDInfo_f, false},
 	{"lastscores", SV_LastScores_f, false},
 	{"minping", Cmd_MinPing_f, true},
+	{"airstep", Cmd_AirStep_f, true},
 	{"maps", Cmd_ShowMapsList_f, false},
 	{"ban", SV_Cmd_Ban_f, true}, // internal server ban support
 	{"banip", SV_Cmd_Banip_f, true}, // internal server ban support
