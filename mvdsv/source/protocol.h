@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: protocol.h,v 1.13 2007/01/08 19:35:02 disconn3ct Exp $
+	$Id: protocol.h,v 1.14 2007/04/06 21:15:13 qqshka Exp $
 */
 // protocol.h -- communications protocols
 #ifndef __PROTOCOL_H__
@@ -288,6 +288,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // what our server supports
 #define SERVER_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME|Z_EXT_JOIN_OBSERVE|Z_EXT_PF_ONGROUND)
 
+//===============================================
+
+// fte protocol extensions.
+
+#define PROTOCOL_VERSION_FTE			(('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24))
+
+#ifdef PROTOCOL_VERSION_FTE
+
+#define PEXT_CHUNKEDDOWNLOADS	0x20000000	//alternate file download method. Hopefully it'll give quadroupled download speed, especially on higher pings.
+
+#endif
 
 /*
 ==========================================================

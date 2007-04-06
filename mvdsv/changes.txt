@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.124 2007/04/02 15:39:11 qqshka Exp $
+$Id: changes.txt,v 1.125 2007/04/06 21:14:23 qqshka Exp $
 
 MVDSV v0.26 build 2666 (2007.04.09)
 MVDSV v0.25.21-CVS build 26?? (2007.0?.??)
@@ -11,6 +11,8 @@ MVDSV v0.25.21-CVS build 26?? (2007.0?.??)
 - changed QVM API version to 11 due to i've add G_CMD_TOKENIZE, g_strlcpy, g_strlcat
 - allow pm_airstep server variable, with value 1 you can run/jump over stairs, but you loose some speed still.
 - added "airstep" user cmd, toggle pm_airstep, blocked in ktpro.
+- added framework for FTE's protocol extensions, however here no checkfteextension() or something like this.
+- added PEXT_CHUNKEDDOWNLOADS, we support only this FTE's extension, at least atm.
 
 * VVD <vvd0@users.sourceforge.net>
 - cvar skill have no upper limit now

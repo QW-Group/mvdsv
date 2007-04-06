@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.31 2007/03/04 12:30:50 qqshka Exp $
+	$Id: sv_send.c,v 1.32 2007/04/06 21:15:13 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -969,9 +969,10 @@ void SV_SendClientMessages (void)
 
 		if (c->state == cs_spawned)
 			SV_SendClientDatagram (c, i);
-		else
-			Netchan_Transmit (&c->netchan, 0, NULL);	// just update reliable
-
+		else {
+			Netchan_Transmit (&c->netchan, c->datagram.cursize, c->datagram.data);	// just update reliable
+			c->datagram.cursize = 0;
+		}
 	}
 }
 
