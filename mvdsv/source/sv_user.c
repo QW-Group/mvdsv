@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.90 2007/04/06 21:15:13 qqshka Exp $
+	$Id: sv_user.c,v 1.91 2007/04/08 18:32:35 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1443,21 +1443,36 @@ Cmd_StopDownload_f
 static void Cmd_StopDownload_f(void)
 {
 	unsigned char	download_stopped[] = "Download stopped and download queue cleared.\n";
-	if (sv_client->download)
+
+	if (!sv_client->download)
+		return;
+
+	sv_client->downloadcount = sv_client->downloadsize;
+	fclose (sv_client->download);
+	sv_client->download = NULL;
+	sv_client->file_percent = 0; //bliP: file percent
+	// qqshka: set normal rate
+	sv_client->netchan.rate = 1. / SV_BoundRate(false, Q_atoi(Info_ValueForKey (sv_client->userinfo, "rate")));
+#ifdef PEXT_CHUNKEDDOWNLOADS
+	if (sv_client->fteprotocolextensions & PEXT_CHUNKEDDOWNLOADS)
 	{
-		sv_client->downloadcount = sv_client->downloadsize;
-		fclose (sv_client->download);
-		sv_client->download = NULL;
-		sv_client->file_percent = 0; //bliP: file percent
-		sv_client->netchan.rate = 1. / SV_BoundRate(false,
-			Q_atoi(Info_ValueForKey (sv_client->userinfo, "rate")));
-		// qqshka: set normal rate
+		char *name = ""; // FIXME: FTE's chunked dl does't support "cmd stopdl", work around
+
+		ClientReliableWrite_Begin (sv_client, svc_download, 10+strlen(name));
+		ClientReliableWrite_Long (sv_client, -1);
+		ClientReliableWrite_Long (sv_client, -3); // -3 = dl was stopped
+		ClientReliableWrite_String (sv_client, name);
+	}
+	else
+#endif
+	{
 		ClientReliableWrite_Begin (sv_client, svc_download, 6);
 		ClientReliableWrite_Short (sv_client, 0);
 		ClientReliableWrite_Byte (sv_client, 100);
-		sv_client->demonum[0] = 0;
-		Con_Printf ((char *)Q_redtext(download_stopped));
 	}
+
+	sv_client->demonum[0] = 0;
+	Con_Printf ((char *)Q_redtext(download_stopped));
 }
 //=============================================================================
 
