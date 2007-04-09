@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.91 2007/04/08 18:32:35 qqshka Exp $
+	$Id: sv_user.c,v 1.92 2007/04/09 15:06:41 vvd0 Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -1879,6 +1879,29 @@ static void Cmd_PTrack_f (void)
 	ent->v.goalentity = EDICT_TO_PROG(tent);
 }
 
+/*
+=================
+Cmd_Rate_f
+
+Change the bandwidth estimate for a client
+=================
+*/
+static void Cmd_Rate_f (void)
+{
+	int		rate;
+
+	if (Cmd_Argc() != 2)
+	{
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "Current rate is %i\n",
+		                 (int)(1.0/sv_client->netchan.rate + 0.5));
+		return;
+	}
+
+	rate = SV_BoundRate (sv_client->download != NULL, Q_atoi(Cmd_Argv(1)));
+
+	SV_ClientPrintf (sv_client, PRINT_HIGH, "Net rate set to %i\n", rate);
+	sv_client->netchan.rate = 1.0/rate;
+}
 
 //bliP: upload files ->
 /*
@@ -2589,6 +2612,7 @@ static ucmd_t ucmds[] =
 	{"pings", Cmd_Pings_f, false},
 
 	// issued by hand at client consoles
+	{"rate", Cmd_Rate_f, true},
 	{"kill", Cmd_Kill_f, true},
 	{"pause", Cmd_Pause_f, true},
 
