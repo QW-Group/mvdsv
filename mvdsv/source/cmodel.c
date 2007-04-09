@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: cmodel.c,v 1.5 2006/11/25 23:32:37 disconn3ct Exp $
+    $Id: cmodel.c,v 1.6 2007/04/09 14:41:07 disconn3ct Exp $
 */
 // cmodel.c
 
@@ -944,20 +944,16 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	// load the file
 	buf = (unsigned int *) COM_LoadTempFile (name);
-	if (!buf) {
-		Con_Printf ("CM_LoadMap: %s not found\n", name); // disconnect: we should write some error message insteand of Con_Printf
-		return NULL;
-	}
+	if (!buf)
+		SV_Error ("CM_LoadMap: %s not found", name);
 
 	COM_FileBase (name, loadname);
 
 	header = (dheader_t *)buf;
 
 	i = LittleLong (header->version);
-	if (i != Q1_BSPVERSION && i != HL_BSPVERSION) {
-		Con_Printf ("CM_LoadMap: %s has wrong version number (%i should be %i)\n", name, i, Q1_BSPVERSION);
-		return NULL;
-	}
+	if (i != Q1_BSPVERSION && i != HL_BSPVERSION)
+		SV_Error ("CM_LoadMap: %s has wrong version number (%i should be %i)", name, i, Q1_BSPVERSION);
 
 	map_halflife = (i == HL_BSPVERSION);
 
