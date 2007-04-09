@@ -1,5 +1,5 @@
 
-$Id: changes.txt,v 1.125 2007/04/06 21:14:23 qqshka Exp $
+$Id: changes.txt,v 1.126 2007/04/09 14:41:25 disconn3ct Exp $
 
 MVDSV v0.26 build 2666 (2007.04.09)
 MVDSV v0.25.21-CVS build 26?? (2007.0?.??)
@@ -25,8 +25,6 @@ MVDSV v0.25.21-CVS build 26?? (2007.0?.??)
 - increased maximum of fps in qwdtools from 100 to 1000
 
 * disconnect <disconn3ct@users.sourceforge.net>
-- changed behavior of server while loading corrupted maps: load previous map instead SV_Error
-  (quit with error)
 - qtv was updated to version v1
 - new cvar qtv_password - password for connecting to qtv
 - renamed cvars mvd_streamport and mvd_maxstreams to qtv_streamport and qtv_maxstreams
