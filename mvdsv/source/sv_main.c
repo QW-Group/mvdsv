@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.97 2007/04/06 21:15:13 qqshka Exp $
+	$Id: sv_main.c,v 1.98 2007/04/16 13:47:57 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -778,7 +778,7 @@ static void SVC_GetChallenge (void)
 		over += 4;
 	}
 #endif
-	Netchan_OutOfBand(net_from, over-buf, buf);
+	Netchan_OutOfBand(net_from, over-buf, (byte*) buf);
 }
 
 static qbool ValidateUserInfo (char *userinfo)
@@ -1309,7 +1309,7 @@ void SV_Admin_f (void)
 {
 	client_t *cl;
 	int i = 0;
-	
+
 	if (Cmd_Argc () == 2 && !strcmp (Cmd_Argv (1), "off") && WatcherId &&
 			NET_CompareAdr (WatcherId->netchan.remote_address, net_from))
 	{
@@ -2104,7 +2104,7 @@ void SV_BanList (void)
 	Con_Printf ("%s\n"
 				"\235\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236"
 				"\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236\236\237\n"
-				"%3.3s|%15.15s|%4.4s|%9.9s\n", 
+				"%3.3s|%15.15s|%4.4s|%9.9s\n",
 				Q_redtext(blist), Q_redtext(id), Q_redtext(ipmask), Q_redtext(type), Q_redtext(expire));
 
 	Do_BanList(ipft_safe);
@@ -2117,7 +2117,7 @@ qbool SV_CanAddBan (ipfilter_t *f)
 
 	if (f->compare == 0)
 		return false;
-	
+
 	for (i=0 ; i<numipfilters ; i++)
 		if (ipfilters[i].mask == f->mask && ipfilters[i].compare == f->compare && ipfilters[i].type == ipft_safe)
 			return false; // can't add filter f because present "safe" filter
@@ -2912,7 +2912,7 @@ static void PausedTic (void)
 static void KtproAirstepFix(void)
 {
 // ktpro is old school, do not allow pm_airstep
-	extern cvar_t	pm_airstep;	
+	extern cvar_t	pm_airstep;
 
 	if (is_ktpro && pm_airstep.value) {
 		Con_Printf("Forcing pm_airstep to 0 in ktpro\n");
