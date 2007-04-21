@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.73 2007/03/30 17:42:24 qqshka Exp $
+    $Id: sv_demo.c,v 1.74 2007/04/21 16:28:26 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -451,9 +451,9 @@ void SV_MVD_RunPendingConnections (void)
 								char hash[512];
 								int md4sum[4];
 								
-								snprintf(hash, sizeof(hash), "%s%s", p->challenge, qtv_password.string);
+								snprintf (hash, sizeof(hash), "%s%s", p->challenge, qtv_password.string);
 								Com_BlockFullChecksum (hash, strlen(hash), (unsigned char*)md4sum);
-								sprintf(hash, "%X%X%X%X", md4sum[0], md4sum[1], md4sum[2], md4sum[3]);
+								snprintf (hash, sizeof(hash), "%X%X%X%X", md4sum[0], md4sum[1], md4sum[2], md4sum[3]);
 								p->hasauthed = !strcmp(password, hash);
 							}
 							break;
