@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.c,v 1.15 2007/01/14 20:02:33 tonik Exp $
+	$Id: cvar.c,v 1.16 2007/04/21 15:27:09 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -324,17 +324,38 @@ Cvar_CvarList_f
 List all cvars
 TODO: allow cvar name mask as a parameter, e.g. cvarlist cl_*
 */
-void Cvar_CvarList_f (void)
-{
-	cvar_t	*var;
-	int i;
 
-	for (var=cvar_vars, i=0 ; var ; var=var->next, i++)
-		Con_Printf("%c%c%c %s\n",
+static int Cvar_CvarCompare (const void *p1, const void *p2)
+{
+	return strcmp ((*((cvar_t **) p1))->name, (*((cvar_t **) p2))->name);
+}
+
+static void Cvar_CvarList_f (void)
+{
+	int i, count;
+	cvar_t *sorted_cvars[512];
+	cvar_t *var;
+
+#define MAX_SORTED_CVARS (sizeof (sorted_cvars) / sizeof (sorted_cvars[0]))
+
+	for (var = cvar_vars, count = 0; var && count < MAX_SORTED_CVARS; var = var->next, count++)
+		sorted_cvars[count] = var;
+	qsort (sorted_cvars, count, sizeof (cvar_t *), Cvar_CvarCompare);
+
+	if (count == MAX_SORTED_CVARS)
+		assert (!"count == MAX_SORTED_CVARS");
+
+	Con_Printf ("List of cvars:\n");
+	for (i = 0; i < count; i++)
+	{
+		var = sorted_cvars[i];
+
+		Con_Printf ("%c%c%c %s\n",
 		           var->flags & CVAR_ARCHIVE ? '*' : ' ',
 		           var->flags & CVAR_USERINFO ? 'u' : ' ',
 		           var->flags & CVAR_SERVERINFO ? 's' : ' ',
 		           var->name);
+	}
 
 	Con_Printf ("------------\n%d variables\n", i);
 }

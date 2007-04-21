@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: cmd.c,v 1.22 2007/03/17 06:05:44 qqshka Exp $
+    $Id: cmd.c,v 1.23 2007/04/21 15:27:09 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -748,13 +748,32 @@ qbool Cmd_Exists (char *cmd_name)
 	return false;
 }
 
-void Cmd_CmdList_f (void)
+static int Cmd_CommandCompare (const void *p1, const void *p2)
 {
-	cmd_function_t	*cmd;
-	int	i;
+	return strcmp ((*((cmd_function_t **) p1))->name, (*((cmd_function_t **) p2))->name);
+}
 
-	for (cmd=cmd_functions, i=0 ; cmd ; cmd=cmd->next, i++)
-		Con_Printf("%s\n", cmd->name);
+static void Cmd_CmdList_f (void)
+{
+	int	i, count;
+	cmd_function_t *sorted_cmds[127];
+	cmd_function_t *cmd;
+
+#define MAX_SORTED_CMDS (sizeof (sorted_cmds) / sizeof (sorted_cmds[0]))
+
+	for (cmd = cmd_functions, count = 0; cmd && count < MAX_SORTED_CMDS; cmd = cmd->next, count++)
+		sorted_cmds[count] = cmd;
+	qsort (sorted_cmds, count, sizeof (cmd_function_t *), Cmd_CommandCompare);
+
+	if (count == MAX_SORTED_CMDS)
+		assert (!"count == MAX_SORTED_CMDS");
+
+	Con_Printf ("List of commands:\n");
+	for (i = 0; i < count; i++)
+	{
+		cmd = sorted_cmds[i];
+		Con_Printf ("%s\n", cmd->name);
+	}
 
 	Con_Printf ("------------\n%d commands\n", i);
 }
