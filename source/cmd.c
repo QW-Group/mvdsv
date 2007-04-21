@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: cmd.c,v 1.23 2007/04/21 15:27:09 disconn3ct Exp $
+    $Id: cmd.c,v 1.24 2007/04/21 15:41:54 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -755,9 +755,10 @@ static int Cmd_CommandCompare (const void *p1, const void *p2)
 
 static void Cmd_CmdList_f (void)
 {
-	int	i, count;
-	cmd_function_t *sorted_cmds[127];
+	int	i, m, count;
+	cmd_function_t *sorted_cmds[128];
 	cmd_function_t *cmd;
+	char *pattern;
 
 #define MAX_SORTED_CMDS (sizeof (sorted_cmds) / sizeof (sorted_cmds[0]))
 
@@ -768,14 +769,21 @@ static void Cmd_CmdList_f (void)
 	if (count == MAX_SORTED_CMDS)
 		assert (!"count == MAX_SORTED_CMDS");
 
+	pattern = (Cmd_Argc() > 1) ? Cmd_Argv (1) : NULL;
+
+	m = 0;
 	Con_Printf ("List of commands:\n");
 	for (i = 0; i < count; i++)
 	{
 		cmd = sorted_cmds[i];
+		if (pattern && !Q_glob_match (pattern, cmd->name))
+			continue;
+
 		Con_Printf ("%s\n", cmd->name);
+		m++;
 	}
 
-	Con_Printf ("------------\n%d commands\n", i);
+	Con_Printf ("------------\n%d/%d %scommands\n", m, count, (pattern) ? "matching " : "");
 }
 
 

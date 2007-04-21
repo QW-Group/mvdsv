@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.c,v 1.16 2007/04/21 15:27:09 disconn3ct Exp $
+	$Id: cvar.c,v 1.17 2007/04/21 15:41:54 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -332,9 +332,10 @@ static int Cvar_CvarCompare (const void *p1, const void *p2)
 
 static void Cvar_CvarList_f (void)
 {
-	int i, count;
+	int i, m, count;
 	cvar_t *sorted_cvars[512];
 	cvar_t *var;
+	char *pattern;
 
 #define MAX_SORTED_CVARS (sizeof (sorted_cvars) / sizeof (sorted_cvars[0]))
 
@@ -345,19 +346,25 @@ static void Cvar_CvarList_f (void)
 	if (count == MAX_SORTED_CVARS)
 		assert (!"count == MAX_SORTED_CVARS");
 
+	pattern = (Cmd_Argc() > 1) ? Cmd_Argv (1) : NULL;
+
+	m = 0;
 	Con_Printf ("List of cvars:\n");
 	for (i = 0; i < count; i++)
 	{
 		var = sorted_cvars[i];
+		if (pattern && !Q_glob_match (pattern, var->name))
+			continue;
 
 		Con_Printf ("%c%c%c %s\n",
 		           var->flags & CVAR_ARCHIVE ? '*' : ' ',
 		           var->flags & CVAR_USERINFO ? 'u' : ' ',
 		           var->flags & CVAR_SERVERINFO ? 's' : ' ',
 		           var->name);
+		m++;
 	}
 
-	Con_Printf ("------------\n%d variables\n", i);
+	Con_Printf ("------------\n%d/%d %svariables\n", m, count, (pattern) ? "matching " : "");
 }
 
 /*
