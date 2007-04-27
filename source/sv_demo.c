@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.74 2007/04/21 16:28:26 disconn3ct Exp $
+    $Id: sv_demo.c,v 1.75 2007/04/27 19:02:37 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -1360,6 +1360,7 @@ static mvddest_t *SV_InitRecordFile (char *name)
 
 	char path[MAX_OSPATH];
 
+	Con_DPrintf("SV_InitRecordFile: Demo name: \"%s\"\n", name);
 	file = fopen (name, "wb");
 	if (!file)
 	{
@@ -1510,6 +1511,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 		Q_free(lastdemosname[lastdemospos]);
 	lastdemosname[lastdemospos] = Q_malloc(name_len);
 	strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
+	Con_DPrintf("SV_MVDStop: Demo name for 'cmd dl .': \"%s\"\n", lastdemosname[lastdemospos]);
 
 	numclosed = DestCloseAllFlush(false, mvdonly);
 
