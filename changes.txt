@@ -1,5 +1,9 @@
 
-$Id: changes.txt,v 1.127 2007/04/09 15:06:40 vvd0 Exp $
+$Id: changes.txt,v 1.128 2007/05/02 18:36:52 vvd0 Exp $
+
+MVDSV v0.26.01-CVS build 2??? (2007.0?.??)
+----
+
 
 MVDSV v0.26 build 2666 (2007.04.09)
 ----
