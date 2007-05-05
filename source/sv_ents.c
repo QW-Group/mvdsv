@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_ents.c,v 1.14 2006/11/25 23:32:37 disconn3ct Exp $
+	$Id: sv_ents.c,v 1.15 2007/05/05 17:02:22 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -285,15 +285,6 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 SV_WritePlayersToClient
 =============
 */
-
-#define DF_ORIGIN	1
-#define DF_ANGLES	(1<<3)
-#define DF_EFFECTS	(1<<6)
-#define DF_SKINNUM	(1<<7)
-#define DF_DEAD		(1<<8)
-#define DF_GIB		(1<<9)
-#define DF_WEAPONFRAME	(1<<10)
-#define DF_MODEL	(1<<11)
 
 #define TruePointContents(p) CM_HullPointContents(&sv.worldmodel->hulls[0], 0, p)
 

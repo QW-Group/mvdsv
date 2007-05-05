@@ -14,34 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: dem_send.c,v 1.8 2006/11/25 23:26:21 disconn3ct Exp $
+	$Id: dem_send.c,v 1.9 2007/05/05 17:02:22 qqshka Exp $
 */
 
 #include "defs.h"
 
 #define ISDEAD(i) ( (i) >=41 && (i) <=102 )
-
-float adjustangle(float current, float ideal, float fraction)
-{
-	float move;
-
-	move = ideal - current;
-	if (ideal > current)
-	{
-
-		if (move >= 180)
-			move = move - 360;
-	}
-	else
-	{
-		if (move <= -180)
-			move = move + 360;
-	}
-
-	move *= fraction;
-
-	return (current + move);
-}
 
 void Interpolate(int num, frame_t *frame, demoinfo_t *demoinfo)
 {
