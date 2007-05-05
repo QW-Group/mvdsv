@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.32 2007/04/06 21:15:13 qqshka Exp $
+	$Id: sv_send.c,v 1.33 2007/05/05 17:02:22 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -973,6 +973,26 @@ void SV_SendClientMessages (void)
 			Netchan_Transmit (&c->netchan, c->datagram.cursize, c->datagram.data);	// just update reliable
 			c->datagram.cursize = 0;
 		}
+	}
+}
+
+void SV_MVDPings (void)
+{
+	client_t *client;
+	int j;
+
+	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
+	{
+		if (client->state != cs_spawned)
+			continue;
+
+		MVDWrite_Begin (dem_all, 0, 7);
+		MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updateping);
+		MSG_WriteByte((sizebuf_t*)demo.dbuf,  j);
+		MSG_WriteShort((sizebuf_t*)demo.dbuf,  SV_CalcPing(client));
+		MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatepl);
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, j);
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, client->lossage);
 	}
 }
 

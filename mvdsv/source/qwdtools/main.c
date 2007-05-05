@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: main.c,v 1.18 2007/04/09 15:06:41 vvd0 Exp $
+    $Id: main.c,v 1.19 2007/05/05 17:02:22 qqshka Exp $
 */
 
 #include "defs.h"
@@ -700,8 +700,6 @@ __inline void GetDemoTimes(double *mintime, double *nearest)
 			*nearest = t;
 	}
 }
-
-float adjustangle(float current, float ideal, float fraction);
 
 void AddEntities(packet_entities_t *to, frame_t *prev, frame_t *next)
 {
