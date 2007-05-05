@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.76 2007/05/05 16:52:51 qqshka Exp $
+    $Id: sv_demo.c,v 1.77 2007/05/05 23:59:29 qqshka Exp $
 */
 
 // sv_demo.c - mvd demo related code
@@ -128,7 +128,7 @@ void DestFlush (qbool compleate)
 			break;
 
 		case DEST_BUFFEREDFILE:
-			if (d->cacheused+demo_size_padding > d->maxcachesize || compleate)
+			if (d->cacheused + demo_size_padding > d->maxcachesize || compleate)
 			{
 				len = fwrite(d->cache, 1, d->cacheused, d->file);
 				if (len < d->cacheused)
@@ -175,6 +175,7 @@ void DestFlush (qbool compleate)
 	}
 }
 
+// if param "mvdonly" == true then close only demos, not QTV's steams
 static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
 {
 	int numclosed = 0;
@@ -800,6 +801,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 
 	if (!demo.dest)
 		sv.mvdrecording = false;
+
 	if (numclosed)
 	{
 		if (!reason)
@@ -909,15 +911,25 @@ void MVD_PlayerReset(int player)
 qbool SV_MVD_Record (mvddest_t *dest)
 {
 	int i;
+	qbool map_change = (dest == demo.dest); // some magical guessing is this is a map change
 
 	if (!dest)
 		return false;
 
 	DestFlush(true);
 
+	if (map_change && !demo.dest)
+		return false; // seems we close all dests with DestFlush() few line above, so in mapchange case nothing to do here
+
 	if (!sv.mvdrecording)
 	{
-		memset(&demo, 0, sizeof(demo));
+		// this is either mapchange and we have QTV connected
+		// or we just use /record or whatever command first time and here no recording yet
+
+    	// and here we memset() not whole demo_t struct, but part,
+    	// so demo.dest and demo.pendingdest is not overwriten
+		memset(&demo, 0, ((int)&(((demo_t *)0)->mem_set_point)));
+
 		for (i = 0; i < UPDATE_BACKUP; i++)
 		{
 			demo.recorder.frames[i].entities.entities = demo_entities[i];
@@ -929,24 +941,23 @@ qbool SV_MVD_Record (mvddest_t *dest)
 		demo.datagram.maxsize = sizeof(demo.datagram_data);
 		demo.datagram.data = demo.datagram_data;
 	}
-	//	else
-	//		SV_WriteRecordMVDMessage(&buf, dem_read);
 
-	if (dest != demo.dest) {
+	if (map_change)
+	{
 		//
-		// seems we initializing new dest
+		// map change, sent initial stats to all dests
+		//
+		SV_MVD_SendInitialGamestate(NULL);
+	}
+	else
+	{
+		//
+		// seems we initializing new dest, sent initial stats only to this dest
 		//
 		dest->nextdest = demo.dest;
 		demo.dest = dest;
 
 		SV_MVD_SendInitialGamestate(dest);
-	}
-	else
-	{
-		//
-		// map change, sent initial stats to dests
-		//
-		SV_MVD_SendInitialGamestate(NULL);
 	}
 
 	// done
@@ -974,8 +985,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	if (!demo.dest)
 		return;
 
-
-	sv.mvdrecording = true; // NOTE:  afaik wrongly set to false on map change, so restore it here
+	sv.mvdrecording = true; // NOTE:  afaik set to false on map change, so restore it here
 	
 	
 	demo.pingtime = demo.time = sv.time;
@@ -1402,6 +1412,8 @@ static void SV_MVDEasyRecord_f (void)
 static void MVD_Init (void)
 {
 	int p, size = MIN_DEMO_MEMORY;
+
+	memset(&demo, 0, sizeof(demo)); // clear whole demo struct at least once
 	
 	Cvar_Register (&sv_demofps);
 	Cvar_Register (&sv_demoPings);
