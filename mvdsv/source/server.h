@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.46 2007/04/06 21:15:13 qqshka Exp $
+	$Id: server.h,v 1.47 2007/05/05 16:52:51 qqshka Exp $
 */
 
 // server.h
@@ -331,6 +331,46 @@ typedef struct {
 #define DEMO_FRAMES 64
 #define DEMO_FRAMES_MASK (DEMO_FRAMES - 1)
 
+//qtv proxies are meant to send a small header now, bit like http
+//this header gives supported version numbers and stuff
+typedef struct mvdpendingdest_s
+{
+	qbool error; //disables writers, quit ASAP.
+	int socket;
+
+	char inbuffer[2048];
+	char outbuffer[2048];
+
+	char challenge[64];
+	int hasauthed;
+
+	int insize;
+	int outsize;
+
+	struct mvdpendingdest_s *nextdest;
+} mvdpendingdest_t;
+
+typedef struct mvddest_s
+{
+	qbool error; //disables writers, quit ASAP.
+
+	enum {DEST_NONE, DEST_FILE, DEST_BUFFEREDFILE, DEST_STREAM} desttype;
+
+	int socket;
+	FILE *file;
+
+	char name[MAX_QPATH];
+	char path[MAX_QPATH];
+
+	char *cache;
+	int cacheused;
+	int maxcachesize;
+
+	unsigned int totalsize;
+
+	struct mvddest_s *nextdest;
+} mvddest_t;
+
 typedef struct
 {
 	demobuf_t		*dbuf;
@@ -345,8 +385,6 @@ typedef struct
 	qbool			fixangle[MAX_CLIENTS];
 	float			fixangletime[MAX_CLIENTS];
 	vec3_t			angles[MAX_CLIENTS];
-// unused, now we must use same in demo.dest list
-//	char			name[MAX_OSPATH], path[MAX_OSPATH];
 	int				parsecount;
 	int				lastwritten;
 	demo_frame_t	frames[DEMO_FRAMES];
@@ -359,6 +397,16 @@ typedef struct
 	struct mvdpendingdest_s *pendingdest;
 } demo_t;
 
+// player flags in mvd demos
+
+#define DF_ORIGIN		(1<<0)
+#define DF_ANGLES		(1<<3)
+#define DF_EFFECTS		(1<<6)
+#define DF_SKINNUM		(1<<7)
+#define DF_DEAD			(1<<8)
+#define DF_GIB			(1<<9)
+#define DF_WEAPONFRAME	(1<<10)
+#define DF_MODEL		(1<<11)
 
 //=============================================================================
 
@@ -694,26 +742,79 @@ void SV_ClearReliable (client_t *cl); // clear cl->netchan.message and backbuf
 //
 // sv_demo.c
 //
-void SV_MVDPings (void);
-void SV_MVDWriteToDisk(int type, int to, float time);
 void MVDWrite_Begin(byte type, int to, int size);
 void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
+
+void SV_MVDWriteToDisk(int type, int to, float time);
 void SV_MVDStop (int reason, qbool mvdonly);
 void SV_MVDStop_f (void);
 void SV_MVDWritePackets (int num);
-void SV_MVDStream_Poll(void);
+void SV_MVD_SendInitialGamestate(mvddest_t *dest);
+qbool SV_MVD_Record (mvddest_t *dest);
+
+mvddest_t *DestByName (char *name);
+
+int DemoWriteDest (void *data, int len, mvddest_t *d);
 
 extern demo_t	demo; // server demo struct
 
+extern cvar_t	sv_demoUseCache;
+extern cvar_t	sv_demoCacheSize;
+extern cvar_t	sv_demoMaxDirSize;
+extern cvar_t	sv_demoClearOld;
+extern cvar_t	sv_demoDir;
 extern cvar_t	sv_demofps;
 extern cvar_t	sv_demoPings;
 extern cvar_t	sv_demoNoVis;
-extern cvar_t	sv_demoUseCache;
 extern cvar_t	sv_demoMaxSize;
-extern cvar_t	sv_demoMaxDirSize;
+extern cvar_t	sv_demoExtraNames;
+
+extern cvar_t	sv_demoPrefix;
+extern cvar_t	sv_demoSuffix;
+extern cvar_t	sv_demotxt;
+extern cvar_t	sv_onrecordfinish;
+
+extern cvar_t	sv_ondemoremove;
+extern cvar_t	sv_demoRegexp;
 
 void SV_MVDInit (void);
 char *SV_MVDNum(int num);
+
+//
+// sv_demo_misc.c
+//
+
+char	*SV_PrintTeams (void);
+void	Run_sv_demotxt_and_sv_onrecordfinish (mvddest_t *d, qbool destroyfiles);
+qbool	SV_DirSizeCheck (void);
+char	*SV_CleanName (unsigned char *name);
+int		Dem_CountPlayers ();
+char	*Dem_Team (int num);
+char	*Dem_PlayerName (int num);
+char	*Dem_PlayerNameTeam (char *t);
+int		Dem_CountTeamPlayers (char *t);
+char	*quote (char *str);
+void	CleanName_Init ();
+void	SV_LastScores_f (void);
+void	SV_DemoList_f (void);
+void	SV_DemoListRegex_f (void);
+void	SV_MVDRemove_f (void);
+void	SV_MVDRemoveNum_f (void);
+void	SV_MVDInfoAdd_f (void);
+void	SV_MVDInfoRemove_f (void);
+void	SV_MVDInfo_f (void);
+void	SV_LastScores_f (void);
+
+//
+// sv_demo_qtv.c
+//
+
+extern cvar_t	qtv_streamport;
+extern cvar_t	qtv_maxstreams;
+extern cvar_t	qtv_password;
+
+void SV_MVDStream_Poll(void);
+void QTV_Init(void);
 
 //
 // sv_login.c

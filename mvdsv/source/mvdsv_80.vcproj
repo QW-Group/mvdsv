@@ -744,6 +744,14 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\sv_demo_misc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\sv_demo_qtv.c"
+				>
+			</File>
+			<File
 				RelativePath="sv_ents.c"
 				>
 				<FileConfiguration

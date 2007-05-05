@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-   $Id: bothtools.c,v 1.15 2006/11/25 23:32:37 disconn3ct Exp $
+   $Id: bothtools.c,v 1.16 2007/05/05 16:52:51 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -594,3 +594,26 @@ void COM_DefaultExtension (char *path, char *extension)
 	strncat (path, extension, MAX_OSPATH);
 }
 
+//=====================================================
+
+float adjustangle (float current, float ideal, float fraction)
+{
+	float move;
+
+	move = ideal - current;
+	if (ideal > current)
+	{
+
+		if (move >= 180)
+			move = move - 360;
+	}
+	else
+	{
+		if (move <= -180)
+			move = move + 360;
+	}
+
+	move *= fraction;
+
+	return (current + move);
+}
