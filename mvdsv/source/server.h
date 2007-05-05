@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.47 2007/05/05 16:52:51 qqshka Exp $
+	$Id: server.h,v 1.48 2007/05/05 23:59:28 qqshka Exp $
 */
 
 // server.h
@@ -392,6 +392,8 @@ typedef struct
 	byte			buffer[20*MAX_MSGLEN];
 	int				bufsize;
 	int				forceFrame;
+
+	char			mem_set_point; // fields below, like ->dest and ->pendingdest must not be memset to 0
 
 	struct mvddest_s *dest;
 	struct mvdpendingdest_s *pendingdest;

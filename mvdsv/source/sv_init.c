@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.32 2007/03/21 20:37:15 vvd0 Exp $
+	$Id: sv_init.c,v 1.33 2007/05/05 23:59:29 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -301,7 +301,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 
 	// wipe the entire per-level structure
-	// NOTE: this aloso set sv.mvdrecording to false, so calling SV_MVD_Re_Record() at end of function
+	// NOTE: this also set sv.mvdrecording to false, so calling SV_MVD_Re_Record() at end of function
 	memset (&sv, 0, sizeof(sv));
 
 
