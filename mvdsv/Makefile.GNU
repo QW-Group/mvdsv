@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.9 2007/03/05 17:29:07 vvd0 Exp $
+#	$Id: Makefile.GNU,v 1.10 2007/05/05 19:56:20 qqshka Exp $
 #
 
 MAINDIR=.
@@ -68,6 +68,8 @@ SV_OBJS = \
 \
 		$(SV_DIR)/sv_ccmds.o \
 		$(SV_DIR)/sv_demo.o \
+		$(SV_DIR)/sv_demo_misc.o \
+		$(SV_DIR)/sv_demo_qtv.o \
 		$(SV_DIR)/sv_ents.o \
 		$(SV_DIR)/sv_init.o \
 		$(SV_DIR)/sv_login.o \
