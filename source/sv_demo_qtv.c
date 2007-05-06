@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_qtv.c,v 1.1 2007/05/05 16:52:51 qqshka Exp $
+    $Id: sv_demo_qtv.c,v 1.2 2007/05/06 23:03:34 qqshka Exp $
 */
 
 //	sv_demo_qtv.c - misc QTV's code
@@ -211,22 +211,30 @@ void SV_MVD_RunPendingConnections (void)
 		if (p->outsize && !p->error)
 		{
 			len = send(p->socket, p->outbuffer, p->outsize, 0);
+
+/*  // man says: The calls return the number of characters sent, or -1 if an error occurred.   
+  	// so 0 is legal or what?
+
 			if (len == 0) //client died
 				p->error = true;
-			else if (len > 0)	//we put some data through
+			else
+*/
+			if (len > 0)	//we put some data through
 			{	//move up the buffer
 				p->outsize -= len;
 				memmove(p->outbuffer, p->outbuffer+len, p->outsize );
 			}
 			else
 			{ //error of some kind. would block or something
-				if (qerrno != EWOULDBLOCK)
+				if (qerrno != EWOULDBLOCK && qerrno != EAGAIN)
 					p->error = true;
 			}
 		}
+
 		if (!p->error)
 		{
 			len = recv(p->socket, p->inbuffer + p->insize, sizeof(p->inbuffer) - p->insize - 1, 0);
+
 			if (len > 0)
 			{ //fixme: cope with extra \rs
 				char *end;
@@ -523,7 +531,7 @@ void SV_MVD_RunPendingConnections (void)
 			{	//error of some kind. would block or something
 				int err;
 				err = qerrno;
-				if (err != EWOULDBLOCK)
+				if (err != EWOULDBLOCK && err != EAGAIN)
 					p->error = true;
 			}
 		}
