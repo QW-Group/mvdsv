@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sys.h,v 1.17 2007/01/14 19:17:57 tonik Exp $
+	$Id: sys.h,v 1.18 2007/05/06 16:16:43 disconn3ct Exp $
 */
 // sys.h -- non-portable functions
 
@@ -52,11 +52,11 @@ typedef struct
 	int	numdirs;
 } dir_t;
 
-int		Sys_FileTime (char *path);
-void	Sys_mkdir (char *path);
-int		Sys_rmdir (char *path);
-int		Sys_remove (char *path);
-dir_t	Sys_listdir (char *path, char *ext, int sort_type);
+int		Sys_FileTime (const char *path);
+void	Sys_mkdir (const char *path);
+int		Sys_rmdir (const char *path);
+int		Sys_remove (const char *path);
+dir_t	Sys_listdir (const char *path, const char *ext, int sort_type);
 int		Sys_compare_by_date (const void *a, const void *b);
 int		Sys_compare_by_name (const void *a, const void *b);
 #define SORT_NO			0
@@ -92,7 +92,7 @@ void Sys_Init (void);
 
 void Sys_Sleep (unsigned long ms);
 
-int Sys_Script(char *path, char *args);
+int Sys_Script (const char *path, const char *args);
 
 #ifdef _WIN32
 
@@ -141,8 +141,8 @@ typedef void *DL_t;
 
 #endif /* _WIN32 */
 
-DL_t Sys_DLOpen(const char *path);
-qbool Sys_DLClose(DL_t dl);
-void *Sys_DLProc(DL_t dl, const char *name);
+DL_t Sys_DLOpen (const char *path);
+qbool Sys_DLClose( DL_t dl);
+void *Sys_DLProc (DL_t dl, const char *name);
 
 #endif /* !__SYS_H__ */

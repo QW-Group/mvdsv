@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: defs.h,v 1.15 2007/01/14 19:34:37 tonik Exp $
+    $Id: defs.h,v 1.16 2007/05/06 16:17:00 disconn3ct Exp $
 */
 
 #ifndef __DEFS_H__
@@ -199,7 +199,7 @@ typedef struct
 
 void Sys_fclose (FILE **hndl);
 void Sys_Exit (int i);
-void Sys_mkdir (char *path);
+void Sys_mkdir (const char *path);
 void Sys_Error (char *error, ...);
 void Sys_Printf (char *fmt, ...);
 void Dem_Stop(source_t *s);

@@ -16,10 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.36 2007/01/14 20:02:33 tonik Exp $
+	$Id: sv_sys_win.c,v 1.37 2007/05/06 16:16:43 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
+#include <mmsystem.h>
 
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
@@ -42,10 +43,10 @@ static qbool	isdaemon = false;
 Sys_FileTime
 ================
 */
-int	Sys_FileTime (char *path)
+int	Sys_FileTime (const char *path)
 {
-	struct	_stat	buf;
-	return _stat(path, &buf) == -1 ? -1 : buf.st_mtime;
+	struct _stat buf;
+	return _stat (path, &buf) == -1 ? -1 : buf.st_mtime;
 }
 
 /*
@@ -53,7 +54,7 @@ int	Sys_FileTime (char *path)
 Sys_mkdir
 ================
 */
-void Sys_mkdir (char *path)
+void Sys_mkdir (const char *path)
 {
 	_mkdir(path);
 }
@@ -63,7 +64,7 @@ void Sys_mkdir (char *path)
 Sys_remove
 ================
 */
-int Sys_remove (char *path)
+int Sys_remove (const char *path)
 {
 	return remove(path);
 }
@@ -74,7 +75,7 @@ int Sys_remove (char *path)
 Sys_rmdir
 ================
 */
-int Sys_rmdir (char *path)
+int Sys_rmdir (const char *path)
 {
 	return _rmdir(path);
 }
@@ -86,7 +87,7 @@ Sys_listdir
 ================
 */
 
-dir_t Sys_listdir (char *path, char *ext, int sort_type)
+dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 {
 	static file_t	list[MAX_DIRFILES];
 	dir_t	dir;
@@ -613,12 +614,12 @@ qbool NET_Sleep ()
 	return false;
 }
 
-void Sys_Sleep(unsigned long ms)
+void Sys_Sleep (unsigned long ms)
 {
-	Sleep(ms);
+	Sleep (ms);
 }
 
-int Sys_Script(char *path, char *args)
+int Sys_Script (const char *path, const char *args)
 {
 	STARTUPINFO			si;
 	PROCESS_INFORMATION	pi;
@@ -639,19 +640,19 @@ int Sys_Script(char *path, char *args)
 	                      FALSE, 0/*DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
 }
 
-DL_t Sys_DLOpen(const char *path)
+DL_t Sys_DLOpen (const char *path)
 {
-	return LoadLibrary(path);
+	return LoadLibrary (path);
 }
 
-qbool Sys_DLClose(DL_t dl)
+qbool Sys_DLClose (DL_t dl)
 {
-	return FreeLibrary(dl);
+	return FreeLibrary (dl);
 }
 
-void *Sys_DLProc(DL_t dl, const char *name)
+void *Sys_DLProc (DL_t dl, const char *name)
 {
-	return GetProcAddress(dl, name);
+	return GetProcAddress (dl, name);
 }
 
 __inline void Sys_Telnet (void)

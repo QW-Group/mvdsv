@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.98 2007/04/16 13:47:57 disconn3ct Exp $
+	$Id: sv_main.c,v 1.99 2007/05/06 16:16:42 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -41,7 +41,7 @@ cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map 
 cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic
 
-qbool OnChange_sysselecttimeout_var (cvar_t *var, char *string);
+qbool OnChange_sysselecttimeout_var (cvar_t *var, const char *string);
 cvar_t	sys_select_timeout = {"sys_select_timeout",
 #ifdef _WIN32
 							"10000"
@@ -78,7 +78,7 @@ cvar_t	sv_rconlim = {"sv_rconlim", "10"};	// rcon bandwith limit: requests per s
 
 //bliP: telnet log level
 //cvar_t	telnet_log_level = {"telnet_log_level", "0"}; // logging level telnet console
-qbool OnChange_telnetloglevel_var (cvar_t *var, char *string);
+qbool OnChange_telnetloglevel_var (cvar_t *var, const char *string);
 cvar_t  telnet_log_level = {"telnet_log_level", "0", 0, OnChange_telnetloglevel_var};
 //<-
 
@@ -87,7 +87,7 @@ cvar_t	frag_log_type = {"frag_log_type", "0"};
 //		0 - old style (  qwsv - v0.165)
 //		1 - new style (v0.168 - v0.172)
 
-qbool OnChange_qconsolelogsay_var (cvar_t *var, char *string);
+qbool OnChange_qconsolelogsay_var (cvar_t *var, const char *string);
 cvar_t	qconsole_log_say = {"qconsole_log_say", "0", 0, OnChange_qconsolelogsay_var};
 // logging "say" and "say_team" messages to the qconsole_PORT.log file
 
@@ -112,7 +112,7 @@ cvar_t	download_map_url = {"download_map_url", ""};
 cvar_t	sv_specprint = {"sv_specprint", "0"};
 cvar_t	sv_reconnectlimit = {"sv_reconnectlimit", "0"};
 
-qbool OnChange_admininfo_var (cvar_t *var, char *string);
+qbool OnChange_admininfo_var (cvar_t *var, const char *string);
 cvar_t  sv_admininfo = {"sv_admininfo", "", 0, OnChange_admininfo_var};
 
 cvar_t	sv_unfake = {"sv_unfake", "0"}; //bliP: 24/9 kickfake to unfake
@@ -122,7 +122,7 @@ cvar_t	sv_allowlastscores = {"sv_allowlastscores", "1"};
 
 cvar_t	sv_maxlogsize = {"sv_maxlogsize", "0"};
 //bliP: 24/9 ->
-qbool OnChange_logdir_var (cvar_t *var, char *string);
+qbool OnChange_logdir_var (cvar_t *var, const char *string);
 cvar_t  sv_logdir = {"sv_logdir", ".", 0, OnChange_logdir_var};
 
 cvar_t  sv_speedcheck = {"sv_speedcheck", "0"};
@@ -140,7 +140,7 @@ cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 cvar_t	sv_default_name = {"sv_default_name", "unnamed"};
 
-qbool sv_mod_msg_file_OnChange(cvar_t *cvar, char *value);
+qbool sv_mod_msg_file_OnChange(cvar_t *cvar, const char *value);
 cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", 0, sv_mod_msg_file_OnChange};
 
 //
@@ -3405,9 +3405,9 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 
 //============================================================================
 
-qbool OnChange_sysselecttimeout_var (cvar_t *var, char *value)
+qbool OnChange_sysselecttimeout_var (cvar_t *var, const char *value)
 {
-	int t = Q_atoi(value);
+	int t = Q_atoi (value);
 	if (t <= 1000000 && t >= 10)
 	{
 		select_timeout.tv_sec  =  t / 1000000;
@@ -3422,7 +3422,7 @@ qbool OnChange_sysselecttimeout_var (cvar_t *var, char *value)
 	return true;
 }
 //bliP: 24/9 logdir ->
-qbool OnChange_logdir_var (cvar_t *var, char *value)
+qbool OnChange_logdir_var (cvar_t *var, const char *value)
 {
 	if (strstr(value, ".."))
 		return true;
@@ -3433,7 +3433,7 @@ qbool OnChange_logdir_var (cvar_t *var, char *value)
 //<-
 
 //bliP: admininfo ->
-qbool OnChange_admininfo_var (cvar_t *var, char *value)
+qbool OnChange_admininfo_var (cvar_t *var, const char *value)
 {
 	if (value[0])
 		Info_SetValueForStarKey (svs.info, "*admin", value, MAX_SERVERINFO_STRING);
@@ -3444,13 +3444,13 @@ qbool OnChange_admininfo_var (cvar_t *var, char *value)
 //<-
 
 //bliP: telnet log level ->
-qbool OnChange_telnetloglevel_var (cvar_t *var, char *value)
+qbool OnChange_telnetloglevel_var (cvar_t *var, const char *value)
 {
 	logs[TELNET_LOG].log_level = Q_atoi(value);
 	return false;
 }
 //<-
-qbool OnChange_qconsolelogsay_var (cvar_t *var, char *value)
+qbool OnChange_qconsolelogsay_var (cvar_t *var, const char *value)
 {
 	logs[CONSOLE_LOG].log_level = Q_atoi(value);
 	return false;
@@ -3702,12 +3702,12 @@ void SV_Write_Log(int sv_log, int level, char *msg)
 Sys_compare_by functions for sort files in list
 ============
 */
-int Sys_compare_by_date(const void *a, const void *b)
+int Sys_compare_by_date (const void *a, const void *b)
 {
 	return (int)(((file_t *)a)->time - ((file_t *)b)->time);
 }
 
-int Sys_compare_by_name(const void *a, const void *b)
+int Sys_compare_by_name (const void *a, const void *b)
 {
 	return strncmp(((file_t *)a)->name, ((file_t *)b)->name, MAX_DEMO_NAME);
 }
@@ -3755,7 +3755,7 @@ Q_normalizetext
 returns readable extended quake names
 ==================
 */
-unsigned char *Q_normalizetext(unsigned char *str)
+unsigned char *Q_normalizetext (unsigned char *str)
 {
 	extern char chartbl2[];
 	unsigned char	*i;

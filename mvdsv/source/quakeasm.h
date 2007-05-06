@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: quakeasm.h,v 1.5 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: quakeasm.h,v 1.6 2007/05/06 16:16:42 disconn3ct Exp $
 */
 //
 // quakeasm.h: general asm header file
@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __QUAKEASM_H__
 #define __QUAKEASM_H__
 
-#ifdef _WIN32
+#if (defined _WIN32 && !defined id386)
 #define id386
 #endif
 

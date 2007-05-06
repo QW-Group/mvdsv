@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.c,v 1.17 2007/04/21 15:41:54 disconn3ct Exp $
+	$Id: cvar.c,v 1.18 2007/05/06 16:16:41 disconn3ct Exp $
 */
 // cvar.c -- dynamic variable tracking
 
@@ -27,37 +27,17 @@ static cvar_t	*cvar_hash[32];
 static cvar_t	*cvar_vars;
 static char	*cvar_null_string = "";
 
-
-/*
-==========
-Key
-==========
-Returns hash key for a string
-*/
-static int Key (char *name)
-{
-	int	v;
-	int c;
-
-	v = 0;
-	while ( (c = *name++) != 0 )
-		//		v += *name;
-		v += c &~ 32;	// very lame, but works (case insensitivity)
-
-	return v % 32;
-}
-
 /*
 ============
 Cvar_FindVar
 ============
 */
-cvar_t *Cvar_FindVar (char *var_name)
+cvar_t *Cvar_FindVar (const char *var_name)
 {
-	cvar_t	*var;
-	int		key;
+	cvar_t *var;
+	int key;
 
-	key = Key (var_name);
+	key = Com_HashKey (var_name);
 
 	for (var=cvar_hash[key] ; var ; var=var->hash_next)
 		if (!strcasecmp (var_name, var->name))
@@ -71,7 +51,7 @@ cvar_t *Cvar_FindVar (char *var_name)
 Cvar_Value
 ============
 */
-float Cvar_Value (char *var_name)
+float Cvar_Value (const char *var_name)
 {
 	cvar_t	*var;
 
@@ -87,7 +67,7 @@ float Cvar_Value (char *var_name)
 Cvar_String
 ============
 */
-char *Cvar_String (char *var_name)
+char *Cvar_String (const char *var_name)
 {
 	cvar_t *var;
 
@@ -105,7 +85,7 @@ void SV_SendServerInfoChange(char *key, char *value);
 Cvar_Set
 ============
 */
-void Cvar_Set (cvar_t *var, char *value)
+void Cvar_Set (cvar_t *var, const char *value)
 {
 	static qbool changing = false;
 
@@ -118,7 +98,7 @@ void Cvar_Set (cvar_t *var, char *value)
 	if (var->OnChange && !changing)
 	{
 		changing = true;
-		if (var->OnChange(var, value))
+		if (var->OnChange (var, value))
 		{
 			changing = false;
 			return;
@@ -126,19 +106,18 @@ void Cvar_Set (cvar_t *var, char *value)
 		changing = false;
 	}
 
-	Q_free (var->string);	// free the old value string
+	Q_free (var->string); // free the old value string
 
-	var->string = (char *) Q_malloc (strlen(value)+1);
-	strlcpy (var->string, value, strlen(value) + 1);
+	var->string = (char *) Q_malloc (strlen (value) + 1);
+	strlcpy (var->string, value, strlen (value) + 1);
 	var->value = Q_atof (var->string);
 
 	if (var->flags & CVAR_SERVERINFO)
 	{
-		if (strcmp(var->string, Info_ValueForKey (svs.info, var->name)))
+		if (strcmp(var->string, (const char *) Info_ValueForKey (svs.info, var->name)))
 		{
-			// Con_Printf("var->name = %s, value = %s, var->string = %s\n", var->name, value, var->string);
 			Info_SetValueForKey (svs.info, var->name, var->string, MAX_SERVERINFO_STRING);
-			SV_SendServerInfoChange(var->name, var->string);
+			SV_SendServerInfoChange (var->name, var->string);
 		}
 	}
 }
@@ -148,7 +127,7 @@ void Cvar_Set (cvar_t *var, char *value)
 Cvar_SetROM
 ============
 */
-void Cvar_SetROM (cvar_t *var, char *value)
+void Cvar_SetROM (cvar_t *var, const char *value)
 {
 	int saved_flags;
 
@@ -166,7 +145,7 @@ void Cvar_SetROM (cvar_t *var, char *value)
 Cvar_SetByName
 ============
 */
-void Cvar_SetByName (char *var_name, char *value)
+void Cvar_SetByName (const char *var_name, const char *value)
 {
 	cvar_t	*var;
 
@@ -185,16 +164,18 @@ void Cvar_SetByName (char *var_name, char *value)
 Cvar_SetValue
 ============
 */
-void Cvar_SetValue (cvar_t *var, float value)
+void Cvar_SetValue (cvar_t *var, const float value)
 {
-	char	val[32];
+	char val[32];
 	int	i;
 
-	snprintf (val, sizeof(val), "%f", value);
-	for (i=strlen(val)-1 ; i>0 && val[i]=='0' ; i--)
+	snprintf (val, sizeof (val), "%f", value);
+	for (i = strlen (val) - 1; i > 0 && val[i]=='0'; i--)
 		val[i] = 0;
+
 	if (val[i] == '.')
 		val[i] = 0;
+
 	Cvar_Set (var, val);
 }
 
@@ -203,11 +184,11 @@ void Cvar_SetValue (cvar_t *var, float value)
 Cvar_SetValueByName
 ============
 */
-void Cvar_SetValueByName (char *var_name, float value)
+void Cvar_SetValueByName (const char *var_name, const float value)
 {
-	char	val[32];
+	char val[32];
 
-	snprintf (val, sizeof(val), "%.8g",value);
+	snprintf (val, sizeof (val), "%.8g", value);
 	Cvar_SetByName (var_name, val);
 }
 
@@ -239,7 +220,7 @@ void Cvar_Register (cvar_t *variable)
 	}
 
 	// link the variable in
-	key = Key (variable->name);
+	key = Com_HashKey (variable->name);
 	variable->hash_next = cvar_hash[key];
 	cvar_hash[key] = variable;
 	variable->next = cvar_vars;
@@ -356,9 +337,7 @@ static void Cvar_CvarList_f (void)
 		if (pattern && !Q_glob_match (pattern, var->name))
 			continue;
 
-		Con_Printf ("%c%c%c %s\n",
-		           var->flags & CVAR_ARCHIVE ? '*' : ' ',
-		           var->flags & CVAR_USERINFO ? 'u' : ' ',
+		Con_Printf ("%c %s\n",
 		           var->flags & CVAR_SERVERINFO ? 's' : ' ',
 		           var->name);
 		m++;
@@ -372,7 +351,7 @@ static void Cvar_CvarList_f (void)
 Cvar_Create
 ===========
 */
-cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
+cvar_t *Cvar_Create (const char *name, char *string, int cvarflags)
 {
 	cvar_t		*v;
 	int			key;
@@ -385,7 +364,7 @@ cvar_t *Cvar_Create (char *name, char *string, int cvarflags)
 	v->next = cvar_vars;
 	cvar_vars = v;
 
-	key = Key (name);
+	key = Com_HashKey (name);
 	v->hash_next = cvar_hash[key];
 	cvar_hash[key] = v;
 
@@ -406,12 +385,12 @@ Cvar_Delete
 ===========
 returns true if the cvar was found (and deleted)
 */
-qbool Cvar_Delete (char *name)
+qbool Cvar_Delete (const char *name)
 {
 	cvar_t	*var, *prev;
 	int		key;
 
-	key = Key (name);
+	key = Com_HashKey (name);
 
 	prev = NULL;
 	for (var = cvar_hash[key] ; var ; var=var->hash_next)

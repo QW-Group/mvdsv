@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_sys_unix.c,v 1.54 2007/01/14 20:29:11 tonik Exp $
+    $Id: sv_sys_unix.c,v 1.55 2007/05/06 16:16:43 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -53,7 +53,7 @@ Sys_FileTime
 returns -1 if not present
 ============
 */
-int	Sys_FileTime (char *path)
+int	Sys_FileTime (const char *path)
 {
 	struct stat buf;
 	return stat(path, &buf) == -1 ? -1 : buf.st_mtime;
@@ -81,7 +81,7 @@ Sys_mkdir
 
 ============
 */
-void Sys_mkdir (char *path)
+void Sys_mkdir (const char *path)
 {
 	if (mkdir (path, 0777) != -1)
 		return;
@@ -94,7 +94,7 @@ void Sys_mkdir (char *path)
 Sys_remove
 ================
 */
-int Sys_remove (char *path)
+int Sys_remove (const char *path)
 {
 	return unlink(path);
 }
@@ -105,7 +105,7 @@ int Sys_remove (char *path)
 Sys_rmdir
 ================
 */
-int Sys_rmdir (char *path)
+int Sys_rmdir (const char *path)
 {
 	return rmdir(path);
 }
@@ -117,7 +117,7 @@ Sys_listdir
 ================
 */
 
-dir_t Sys_listdir (char *path, char *ext, int sort_type)
+dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 {
 	static file_t list[MAX_DIRFILES];
 	dir_t dir;
@@ -566,7 +566,7 @@ void Sys_Sleep(unsigned long ms)
 	usleep(ms*1000);
 }
 
-int Sys_Script(char *path, char *args)
+int Sys_Script (const char *path, const char *args)
 {
 	char str[1024];
 

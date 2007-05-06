@@ -15,12 +15,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_windows.c,v 1.16 2006/06/19 16:46:16 vvd0 Exp $
+	$Id: sv_windows.c,v 1.17 2007/05/06 16:16:43 disconn3ct Exp $
 */
 
 #ifndef _CONSOLE //bliP: console compile
 
 #include "qwsvdef.h"
+#include <shellapi.h>
 
 COLORREF EditBoxBgColor, EditBoxColor;
 HBRUSH g_hbrBackground;

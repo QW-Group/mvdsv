@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.35 2007/04/21 15:41:55 disconn3ct Exp $
+    $Id: common.c,v 1.36 2007/05/06 16:16:41 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -395,9 +395,9 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 //===========================================================================
 
-void SZ_Init (sizebuf_t *buf, byte *data, int length)
+void SZ_Init (sizebuf_t *buf, byte *data, size_t length)
 {
-	memset (buf, 0, sizeof(*buf));
+	memset (buf, 0, sizeof (*buf));
 	buf->data = data;
 	buf->maxsize = length;
 }
@@ -408,22 +408,22 @@ void SZ_Clear (sizebuf_t *buf)
 	buf->overflowed = false;
 }
 
-void *SZ_GetSpace (sizebuf_t *buf, int length)
+void *SZ_GetSpace (sizebuf_t *buf, size_t length)
 {
 	void *data;
 
 	if (buf->cursize + length > buf->maxsize)
 	{
 		if (!buf->allowoverflow)
-			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%i/%i/%i)",
+			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%d/%d/%d)",
 			           buf->cursize, length, buf->maxsize);
 
 		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i/%i is > full buffer size",
+			Sys_Error ("SZ_GetSpace: %d/%d is > full buffer size",
 			           length, buf->maxsize);
 
 		// because Con_Printf may be redirected
-		Sys_Printf ("SZ_GetSpace: overflow: cur = %i, len = %i, max = %i\n",
+		Sys_Printf ("SZ_GetSpace: overflow: cur = %d, len = %d, max = %d\n",
 		            buf->cursize, length, buf->maxsize);
 		SZ_Clear (buf);
 		buf->overflowed = true;
@@ -435,21 +435,19 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	return data;
 }
 
-void SZ_Write (sizebuf_t *buf, void *data, int length)
+void SZ_Write (sizebuf_t *buf, const void *data, size_t length)
 {
-	memcpy (SZ_GetSpace(buf,length),data,length);
+	memcpy (SZ_GetSpace (buf, length), data, length);
 }
 
-void SZ_Print (sizebuf_t *buf, char *data)
+void SZ_Print (sizebuf_t *buf, const char *data)
 {
-	int len;
-
-	len = strlen(data)+1;
+	size_t len = strlen (data) + 1;
 
 	if (!buf->cursize || buf->data[buf->cursize-1])
-		memcpy ((byte *)SZ_GetSpace(buf, len),data,len); // no trailing 0
+		memcpy ((byte *)SZ_GetSpace (buf, len), data, len); // no trailing 0
 	else
-		memcpy ((byte *)SZ_GetSpace(buf, len-1)-1,data,len); // write over trailing 0
+		memcpy ((byte *)SZ_GetSpace (buf, len - 1) - 1, data, len); // write over trailing 0
 }
 
 
@@ -667,7 +665,7 @@ Returns the position (1 to argc-1) in the program's argument list
 where the given parameter appears, or 0 if not present
 ================
 */
-int COM_CheckParm (char *parm)
+int COM_CheckParm (const char *parm)
 {
 	int i;
 
@@ -696,7 +694,7 @@ Searches the string for the given
 key and returns the associated value, or an empty string.
 ===============
 */
-char *Info_ValueForKey (char *s, char *key)
+char *Info_ValueForKey (char *s, const char *key)
 {
 	char	pkey[512];
 	static	char value[4][512]; // use two buffers so compares
@@ -782,7 +780,7 @@ char *Info_KeyNameForKeyNum (char *s, int key)
 }
 
 
-void Info_RemoveKey (char *s, char *key)
+void Info_RemoveKey (char *s, const char *key)
 {
 	char *start;
 	char pkey[512];
@@ -876,7 +874,7 @@ void Info_RemovePrefixedKeys (char *start, char prefix)
 }
 
 
-void Info_SetValueForStarKey (char *s, char *key, char *value, unsigned int maxsize)
+void Info_SetValueForStarKey (char *s, const char *key, const char *value, unsigned int maxsize)
 {
 	char _new[1024], *v;
 	int c;
@@ -946,7 +944,7 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, unsigned int maxs
 	*s = 0;
 }
 
-void Info_SetValueForKey (char *s, char *key, char *value, unsigned int maxsize)
+void Info_SetValueForKey (char *s, const char *key, const char *value, unsigned int maxsize)
 {
 	if (key[0] == '*')
 	{
@@ -1000,7 +998,7 @@ void Info_Print (char *s)
 	}
 }
 
-void Info_CopyStarKeys (char *from, char *to)
+void Info_CopyStarKeys (const char *from, char *to)
 {
 	char key[512];
 	char value[512];
@@ -1102,9 +1100,7 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 	return crc;
 }
 
-
 //============================================================================
-
 
 static qbool Q_glob_match_after_star (const char *pattern, const char *text)
 {
@@ -1168,4 +1164,23 @@ qbool Q_glob_match (const char *pattern, const char *text)
 	}
 
 	return (*text == '\0');
+}
+
+//============================================================================
+
+/*
+==========
+Com_HashKey
+==========
+*/
+int Com_HashKey (const char *name)
+{
+	int	v;
+	unsigned char c;
+
+	v = 0;
+	while ( (c = *name++) != 0 )
+		v += c &~ 32;	// make it case insensitive
+
+	return v % 32;
 }

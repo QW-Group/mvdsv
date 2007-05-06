@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_misc.c,v 1.1 2007/05/05 16:52:51 qqshka Exp $
+    $Id: sv_demo_misc.c,v 1.2 2007/05/06 16:16:42 disconn3ct Exp $
 */
 
 // sv_demo_misc.c - misc demo related stuff, helpers
@@ -131,7 +131,7 @@ char *SV_CleanName (unsigned char *name)
 }
 
 // only one .. is allowed (security)
-qbool sv_demoDir_OnChange (cvar_t *cvar, char *value)
+qbool sv_demoDir_OnChange (cvar_t *cvar, const char *value)
 {
 	if (!value[0])
 		return true;

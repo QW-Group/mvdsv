@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    1$Id: common.h,v 1.24 2007/04/21 15:41:54 disconn3ct Exp $
+    1$Id: common.h,v 1.25 2007/05/06 16:16:41 disconn3ct Exp $
 */
 // common.h  -- general definitions
 
@@ -26,26 +26,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //============================================================================
 typedef struct sizebuf_s
 {
-	qbool	allowoverflow;	// if false, do a Sys_Error
-	qbool	overflowed;	// set to true if the buffer size failed
-	byte	*data;
-	int	maxsize;
-	int	cursize;
+	qbool allowoverflow;	// if false, do a Sys_Error
+	qbool overflowed;	// set to true if the buffer size failed
+	byte *data;
+	size_t maxsize;
+	size_t cursize;
 } sizebuf_t;
 
 void SZ_Clear (sizebuf_t *buf);
-void SZ_Init (sizebuf_t *buf, byte *data, int length);
-void *SZ_GetSpace (sizebuf_t *buf, int length);
-void SZ_Write (sizebuf_t *buf, void *data, int length);
-void SZ_Print (sizebuf_t *buf, char *data); // strcats onto the sizebuf
-
-//============================================================================
-
-typedef struct link_s
-{
-	struct link_s	*prev, *next;
-} link_t;
-
+void SZ_Init (sizebuf_t *buf, byte *data, size_t length);
+void *SZ_GetSpace (sizebuf_t *buf, size_t length);
+void SZ_Write (sizebuf_t *buf, const void *data, size_t length);
+void SZ_Print (sizebuf_t *buf, const char *data); // strcats onto the sizebuf
 
 //============================================================================
 
@@ -84,9 +76,9 @@ void MSG_ReadDeltaUsercmd (struct usercmd_s *from, struct usercmd_s *cmd);
 
 //============================================================================
 
-unsigned char *Q_normalizetext(unsigned char *name); //bliP: red to white text
-unsigned char *Q_redtext(unsigned char *str); //bliP: white to red text
-unsigned char *Q_yelltext(unsigned char *str); //VVD: white to red text and yellow numbers
+unsigned char *Q_normalizetext (unsigned char *name); //bliP: red to white text
+unsigned char *Q_redtext (unsigned char *str); //bliP: white to red text
+unsigned char *Q_yelltext (unsigned char *str); //VVD: white to red text and yellow numbers
 
 //============================================================================
 
@@ -100,20 +92,20 @@ char *COM_ParseToken (const char *data, const char *punctuation);
 extern int com_argc;
 extern char **com_argv;
 
-int COM_CheckParm (char *parm);
+int COM_CheckParm (const char *parm);
 
 void COM_InitArgv (int argc, char **argv);
 
 //============================================================================
 
-char *Info_ValueForKey (char *s, char *key);
+char *Info_ValueForKey (char *s, const char *key);
 char *Info_KeyNameForKeyNum (char *s, int key);
-void Info_RemoveKey (char *s, char *key);
+void Info_RemoveKey (char *s, const char *key);
 void Info_RemovePrefixedKeys (char *start, char prefix);
-void Info_SetValueForKey (char *s, char *key, char *value, unsigned int maxsize);
-void Info_SetValueForStarKey (char *s, char *key, char *value, unsigned int maxsize);
+void Info_SetValueForKey (char *s, const char *key, const char *value, unsigned int maxsize);
+void Info_SetValueForStarKey (char *s, const char *key, const char *value, unsigned int maxsize);
 void Info_Print (char *s);
-void Info_CopyStarKeys (char *from, char *to);
+void Info_CopyStarKeys (const char *from, char *to);
 
 unsigned Com_BlockChecksum (void *buffer, int length);
 void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);
@@ -122,5 +114,9 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 //============================================================================
 
 qbool Q_glob_match (const char *pattern, const char *text);
+
+//============================================================================
+
+int Com_HashKey (const char *name);
 
 #endif /* !__COMMON_H__ */

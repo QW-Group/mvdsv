@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-   $Id: bothtools.c,v 1.16 2007/05/05 16:52:51 qqshka Exp $
+   $Id: bothtools.c,v 1.17 2007/05/06 16:16:40 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -54,13 +54,14 @@ char *va(char *format, ...)
 ============================================================================
 */
 
-int Q_atoi (char *str)
+int Q_atoi (const char *str)
 {
-	int		val;
-	int		sign;
-	int		c;
+	int	val;
+	int	sign;
+	int	c;
 
-	if (!str) return 0;
+	if (!str)
+		return 0;
 
 	for (; *str && *str <= ' '; str++);
 
@@ -120,14 +121,15 @@ int Q_atoi (char *str)
 }
 
 
-float Q_atof (char *str)
+float Q_atof (const char *str)
 {
 	double	val;
 	int		sign;
 	int		c;
 	int		decimal, total;
 
-	if (!str) return 0;
+	if (!str)
+		return 0;
 
 	for (; *str && *str <= ' '; str++);
 
@@ -230,7 +232,9 @@ int snprintf(char *buffer, size_t count, char const *format, ...)
 	va_end(argptr);
 	return ret;
 }
+#endif
 
+#if (_MSC_VER && (_MSC_VER < 1400))
 int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 {
 	int ret;
@@ -248,7 +252,7 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
  *
  *  // VVD
  */
-size_t strlcpy(char *dst, char *src, size_t siz)
+size_t strlcpy(char *dst, const char *src, size_t siz)
 {
 	register char *d = dst;
 	register const char *s = src;
@@ -277,7 +281,7 @@ size_t strlcpy(char *dst, char *src, size_t siz)
 	return(s - src - 1);	/* count does not include NUL */
 }
 
-size_t strlcat(char *dst, char *src, size_t siz)
+size_t strlcat(char *dst, const char *src, size_t siz)
 {
 	register char *d = dst;
 	register const char *s = src;
@@ -308,14 +312,14 @@ size_t strlcat(char *dst, char *src, size_t siz)
 #endif
 
 #if !defined(__FreeBSD__) && !defined(__APPLE__) && !defined(__DragonFly__)
-char *strnstr(char *s, char *find, size_t slen)
+char *strnstr (const char *s, const char *find, size_t slen)
 {
 	char c, sc;
 	size_t len;
 
 	if ((c = *find++) != '\0')
 	{
-		len = strlen(find);
+		len = strlen (find);
 		do
 		{
 			do
@@ -327,7 +331,7 @@ char *strnstr(char *s, char *find, size_t slen)
 			if (len > slen)
 				return (NULL);
 		}
-		while (strncmp(s, find, len) != 0);
+		while (strncmp (s, find, len) != 0);
 		s--;
 	}
 	return ((char *)s);
@@ -361,7 +365,8 @@ char *strcasestr(register const char *s, register const char *find)
 }
 #endif
 
-int strchrn(char* str, char c)
+#ifdef _WIN32
+int strchrn (const char* str, const char c)
 {
 	int i = 0;
 	while (*str)
@@ -369,6 +374,8 @@ int strchrn(char* str, char c)
 			++i;
 	return i;
 }
+#endif
+
 /*
 ============================================================================
 
@@ -545,7 +552,7 @@ void *Q_malloc (size_t size)
 COM_StripExtension
 ============
 */
-void COM_StripExtension (char *in, char *out)
+void COM_StripExtension (const char *in, char *out)
 {
 	strlcpy(out, in, strrchr(in, '.') - in + 1);
 }
@@ -555,7 +562,7 @@ void COM_StripExtension (char *in, char *out)
 COM_FileExtension
 ============
 */
-char *COM_FileExtension (char *in)
+char *COM_FileExtension (const char *in)
 {
 	static char exten[8];
 	int i;
@@ -578,11 +585,11 @@ If path doesn't have a .EXT, append extension
 (extension should include the .)
 ==================
 */
-void COM_DefaultExtension (char *path, char *extension)
+void COM_DefaultExtension (char *path, const char *extension)
 {
 	char *src;
 
-	src = path + strlen(path) - 1;
+	src = path + strlen (path) - 1;
 
 	while (*src != '/' && src != path)
 	{
@@ -596,7 +603,7 @@ void COM_DefaultExtension (char *path, char *extension)
 
 //=====================================================
 
-float adjustangle (float current, float ideal, float fraction)
+float adjustangle (const float current, const float ideal, const float fraction)
 {
 	float move;
 
