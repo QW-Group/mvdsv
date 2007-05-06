@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_mod_frags.c,v 1.13 2007/01/14 20:38:31 tonik Exp $
+	$Id: sv_mod_frags.c,v 1.14 2007/05/06 16:16:43 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -44,7 +44,7 @@ void free_qwmsg_t(qwmsg_t **qwmsg1)
 		}
 }
 
-qbool sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
+qbool sv_mod_msg_file_OnChange(cvar_t *cvar, const char *value)
 {
 	FILE *fp = NULL;
 	char *str_tok, buf[128];
@@ -58,10 +58,8 @@ qbool sv_mod_msg_file_OnChange(cvar_t *cvar, char *value)
 	if (fp == NULL)
 	{
 		if (value[0])
-		{
 			Sys_Printf("WARNING: sv_mod_msg_file_OnChange: can't open file %s.\n", value);
-			*value = '\0';
-		}
+
 		for (i = 0; i < MOD_MSG_MAX && qwmsg_def[i].str; i++)
 		{
 			qwmsg[i] = (qwmsg_t *) Q_malloc (sizeof(qwmsg_t));

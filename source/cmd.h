@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cmd.h,v 1.7 2006/06/19 16:46:15 vvd0 Exp $
+	$Id: cmd.h,v 1.8 2007/05/06 16:16:41 disconn3ct Exp $
 */
 
 // cmd.h -- Command buffer and command execution
@@ -42,26 +42,26 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 
 typedef struct cbuf_s {
 	char	text_buf[MAXCMDBUF];
-	int	text_start;
-	int	text_end;
+	int		text_start;
+	int		text_end;
 	qbool	wait;
 } cbuf_t;
 
-extern cbuf_t	cbuf_main;
-extern cbuf_t	*cbuf_current;
+extern cbuf_t cbuf_main;
+extern cbuf_t *cbuf_current;
 
-void Cbuf_AddTextEx (cbuf_t *cbuf, char *text);
-void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text);
+void Cbuf_AddTextEx (cbuf_t *cbuf, const char *text);
+void Cbuf_InsertTextEx (cbuf_t *cbuf, const char *text);
 void Cbuf_ExecuteEx (cbuf_t *cbuf);
 
 void Cbuf_Init (void);
 // allocates an initial text buffer that will grow as needed
 
-void Cbuf_AddText (char *text);
+void Cbuf_AddText (const char *text);
 // as new commands are generated from the console or keybindings,
 // the text is added to the end of the command buffer.
 
-void Cbuf_InsertText (char *text);
+void Cbuf_InsertText (const char *text);
 // when a command wants to issue other commands immediately, the text is
 // inserted at the beginning of the buffer, before any remaining unexecuted
 // commands.
@@ -87,20 +87,20 @@ typedef struct cmd_function_s
 {
 	struct cmd_function_s	*hash_next;
 	struct cmd_function_s	*next;
-	char			*name;
-	xcommand_t		function;
+	const char				*name;
+	xcommand_t				function;
 } cmd_function_t;
 
 void Cmd_Init (void);
 
-void Cmd_AddCommand (char *cmd_name, xcommand_t function);
+void Cmd_AddCommand (const char *cmd_name, xcommand_t function);
 // called by the init functions of other parts of the program to
 // register commands and functions to call for them.
 // The cmd_name is referenced later, so it should not be in temp memory
 // if function is NULL, the command will be forwarded to the server
 // as a clc_stringcmd instead of executed locally
 
-qbool Cmd_Exists (char *cmd_name);
+qbool Cmd_Exists (const char *cmd_name);
 // used by the cvar code to check for cvar / command name overlap
 
 int Cmd_Argc (void);
@@ -110,7 +110,7 @@ char *Cmd_Args (void);
 // functions. Cmd_Argv () will return an empty string, not a NULL
 // if arg > argc, so string operations are always safe.
 
-void Cmd_ExpandString (char *data, char *dest);
+void Cmd_ExpandString (const char *data, char *dest);
 // Expands all $cvar or $macro expressions.
 // dest should point to a 1024-byte buffer
 
@@ -118,7 +118,7 @@ void Cmd_TokenizeString (char *text);
 // Takes a null terminated string.  Does not need to be /n terminated.
 // breaks the string up into arg tokens.
 
-void Cmd_ExecuteString (char *text);
+void Cmd_ExecuteString (const char *text);
 // Parses a single line of text into arguments and tries to execute it
 // as if it was typed at the console
 
@@ -133,11 +133,11 @@ typedef struct cmd_alias_s
 {
 	struct cmd_alias_s	*hash_next;
 	struct cmd_alias_s	*next;
-	char	name[MAX_ALIAS_NAME];
-	char	*value;
+	char				name[MAX_ALIAS_NAME];
+	char				*value;
 } cmd_alias_t;
 
-qbool Cmd_DeleteAlias (char *name);	// return true if successful
+qbool Cmd_DeleteAlias (const char *name);	// return true if successful
 
 #define MAX_ARGS 80
 

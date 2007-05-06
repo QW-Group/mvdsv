@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: tools.c,v 1.18 2006/11/25 23:26:21 disconn3ct Exp $
+    $Id: tools.c,v 1.19 2007/05/06 16:17:01 disconn3ct Exp $
 */
 
 #include "defs.h"
@@ -415,16 +415,14 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	return data;
 }
 
-void SZ_Write (sizebuf_t *buf, void *data, int length)
+void SZ_Write (sizebuf_t *buf, const void *data, size_t length)
 {
 	memcpy (SZ_GetSpace(buf,length),data,length);
 }
 
-void SZ_Print (sizebuf_t *buf, char *data)
+void SZ_Print (sizebuf_t *buf, const char *data)
 {
-	int		len;
-
-	len = strlen(data)+1;
+	size_t len = strlen(data) + 1;
 
 	if (!buf->cursize || buf->data[buf->cursize-1])
 		memcpy ((byte *)SZ_GetSpace(buf, len),data,len); // no trailing 0

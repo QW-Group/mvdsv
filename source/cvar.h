@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: cvar.h,v 1.8 2007/01/14 20:02:33 tonik Exp $
+	$Id: cvar.h,v 1.9 2007/05/06 16:16:41 disconn3ct Exp $
 */
 
 // cvar.h
@@ -58,21 +58,19 @@ interface from being ambiguous.
 */
 
 // cvar flags
-#define CVAR_ARCHIVE		1
-#define CVAR_USERINFO		2       // mirrored to userinfo
-#define CVAR_SERVERINFO		4	// mirrored to serverinfo
-#define CVAR_ROM		64	// read only
-#define	CVAR_USER_CREATED	128	// created by a set command
+#define CVAR_SERVERINFO		1	// mirrored to serverinfo
+#define CVAR_ROM			2	// read only
+#define	CVAR_USER_CREATED	4	// created by a set command
 
 typedef struct cvar_s
 {
-	char	*name;
-	char	*string;
-	int	flags;
-	qbool	(*OnChange)(struct cvar_s *var, char *value);
-	float	value;
-	struct cvar_s *hash_next;
-	struct cvar_s *next;
+	char			*name;
+	char			*string;
+	int				flags;
+	qbool			(*OnChange) (struct cvar_s *var, const char *value);
+	float			value;
+	struct cvar_s	*hash_next;
+	struct cvar_s	*next;
 } cvar_t;
 
 
@@ -80,25 +78,25 @@ void  Cvar_Register (cvar_t *variable);
 // registers a cvar that already has the name, string, and optionally the
 // archive elements set.
 
-void Cvar_Set (cvar_t *var, char *value);
+void Cvar_Set (cvar_t *var, const char *value);
 // equivalent to "<name> <variable>" typed at the console
 
-void Cvar_SetROM (cvar_t *var, char *value);
+void Cvar_SetROM (cvar_t *var, const char *value);
 // force a set even if the cvar is read only
 
-void Cvar_SetByName (char *var_name, char *value);
+void Cvar_SetByName (const char *var_name, const char *value);
 // equivalent to "<name> <variable>" typed at the console
 
-void Cvar_SetValue (cvar_t *var, float value);
+void Cvar_SetValue (cvar_t *var, const float value);
 // expands value to a string and calls Cvar_Set
 
-void Cvar_SetValueByName (char *var_name, float value);
+void Cvar_SetValueByName (const char *var_name, const float value);
 // expands value to a string and calls Cvar_Set
 
-float Cvar_Value (char *var_name);
+float Cvar_Value (const char *var_name);
 // returns 0 if not defined or non numeric
 
-char *Cvar_String (char *var_name);
+char *Cvar_String (const char *var_name);
 // returns an empty string if not defined
 
 qbool Cvar_Command (void);
@@ -106,10 +104,10 @@ qbool Cvar_Command (void);
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
 
-cvar_t *Cvar_FindVar (char *var_name);
-qbool Cvar_Delete (char *name);
+cvar_t *Cvar_FindVar (const char *var_name);
+qbool Cvar_Delete (const char *name);
 
-cvar_t *Cvar_Create (char *name, char *string, int cvarflags);
+cvar_t *Cvar_Create (const char *name, char *string, int cvarflags);
 
 void Cvar_Init (void);
 

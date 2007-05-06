@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: cmd.c,v 1.24 2007/04/21 15:41:54 disconn3ct Exp $
+    $Id: cmd.c,v 1.25 2007/05/06 16:16:40 disconn3ct Exp $
 */
 // cmd.c -- Quake script command processing module
 
@@ -51,8 +51,8 @@ void Cmd_Wait_f (void)
 */
 
 
-void Cbuf_AddText (char *text) { Cbuf_AddTextEx (&cbuf_main, text); }
-void Cbuf_InsertText (char *text) { Cbuf_InsertTextEx (&cbuf_main, text); }
+void Cbuf_AddText (const  char *text) { Cbuf_AddTextEx (&cbuf_main, text); }
+void Cbuf_InsertText (const char *text) { Cbuf_InsertTextEx (&cbuf_main, text); }
 void Cbuf_Execute () { Cbuf_ExecuteEx (&cbuf_main); }
 
 /*
@@ -73,11 +73,11 @@ Cbuf_AddText
 Adds command text at the end of the buffer
 ============
 */
-void Cbuf_AddTextEx (cbuf_t *cbuf, char *text)
+void Cbuf_AddTextEx (cbuf_t *cbuf, const char *text)
 {
-	int		len;
-	int		new_start;
-	int		new_bufsize;
+	size_t len;
+	unsigned int new_start;
+	unsigned int new_bufsize;
 
 	len = strlen (text);
 
@@ -113,11 +113,11 @@ Adds command text immediately after the current command
 Adds a \n to the text
 ============
 */
-void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text)
+void Cbuf_InsertTextEx (cbuf_t *cbuf, const char *text)
 {
-	int		len;
-	int		new_start;
-	int		new_bufsize;
+	size_t len;
+	unsigned int new_start;
+	unsigned int new_bufsize;
 
 	len = strlen(text);
 
@@ -365,33 +365,6 @@ void Cmd_Echo_f (void)
 /*
 =============================================================================
  
-								HASH
- 
-=============================================================================
-*/
-
-/*
-==========
-Key
-==========
-Returns hash key for a string
-*/
-static int Key (char *name)
-{
-	int	v;
-	int c;
-
-	v = 0;
-	while ( (c = *name++) != 0 )
-		//		v += *name;
-		v += c &~ 32;	// make it case insensitive
-
-	return v % 32;
-}
-
-/*
-=============================================================================
- 
 								ALIASES
  
 =============================================================================
@@ -408,7 +381,7 @@ Creates a new command that executes a command string (possibly ; seperated)
 ===============
 */
 
-char *CopyString (char *in)
+static char *CopyString (const char *in)
 {
 	char *out;
 
@@ -455,7 +428,7 @@ void Cmd_Alias_f (void)
 	}
 #endif
 
-	key = Key(s);
+	key = Com_HashKey (s);
 
 	// if the alias already exists, reuse it
 	for (a = cmd_alias_hash[key] ; a ; a=a->hash_next)
@@ -490,12 +463,12 @@ void Cmd_Alias_f (void)
 }
 
 
-qbool Cmd_DeleteAlias (char *name)
+qbool Cmd_DeleteAlias (const char *name)
 {
 	cmd_alias_t	*a, *prev;
 	int			key;
 
-	key = Key (name);
+	key = Com_HashKey (name);
 
 	prev = NULL;
 	for (a = cmd_alias_hash[key] ; a ; a = a->hash_next)
@@ -614,9 +587,7 @@ Cmd_Argv
 */
 char *Cmd_Argv (int arg)
 {
-	if ( arg >= cmd_argc )
-		return cmd_null_string;
-	return cmd_argv[arg];
+	return (arg >= cmd_argc) ? cmd_null_string : cmd_argv[arg];
 }
 
 /*
@@ -669,7 +640,7 @@ void Cmd_TokenizeString (char *text)
 			return;
 
 		if (cmd_argc == 1)
-			cmd_args = text;
+			cmd_args = (char *) text;
 
 		text = COM_Parse (text);
 		if (!text)
@@ -682,7 +653,6 @@ void Cmd_TokenizeString (char *text)
 			cmd_argc++;
 		}
 	}
-
 }
 
 
@@ -691,7 +661,7 @@ void Cmd_TokenizeString (char *text)
 Cmd_AddCommand
 ============
 */
-void Cmd_AddCommand (char *cmd_name, xcommand_t function)
+void Cmd_AddCommand (const char *cmd_name, xcommand_t function)
 {
 	cmd_function_t	*cmd;
 	int	key;
@@ -706,7 +676,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 		return;
 	}
 
-	key = Key (cmd_name);
+	key = Com_HashKey (cmd_name);
 
 	// fail if the command already exists
 	for (cmd=cmd_hash_array[key] ; cmd ; cmd=cmd->hash_next)
@@ -733,12 +703,12 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 Cmd_Exists
 ============
 */
-qbool Cmd_Exists (char *cmd_name)
+qbool Cmd_Exists (const char *cmd_name)
 {
 	int	key;
 	cmd_function_t	*cmd;
 
-	key = Key (cmd_name);
+	key = Com_HashKey (cmd_name);
 	for (cmd=cmd_hash_array[key] ; cmd ; cmd=cmd->hash_next)
 	{
 		if (!strcasecmp (cmd_name, cmd->name))
@@ -795,8 +765,7 @@ Expands all $cvar expressions to cvar values
 Note: dest must point to a 1024 byte buffer
 ================
 */
-char *TP_MacroString (char *s);
-void Cmd_ExpandString (char *data, char *dest)
+void Cmd_ExpandString (const char *data, char *dest)
 {
 	unsigned int	c;
 	char	buf[255];
@@ -889,7 +858,7 @@ FIXME: lookupnoadd the token to speed search?
 */
 extern qbool PR_ConsoleCmd(void);
 
-void Cmd_ExecuteString (char *text)
+void Cmd_ExecuteString (const char *text)
 {
 	cmd_function_t	*cmd;
 	cmd_alias_t	*a;
@@ -903,7 +872,7 @@ void Cmd_ExecuteString (char *text)
 	if (!Cmd_Argc())
 		return;		// no tokens
 
-	key = Key (cmd_argv[0]);
+	key = Com_HashKey (cmd_argv[0]);
 
 	// check functions
 	for (cmd=cmd_hash_array[key] ; cmd ; cmd=cmd->hash_next)
@@ -939,7 +908,7 @@ void Cmd_ExecuteString (char *text)
 }
 
 
-static qbool is_numeric (char *c)
+static qbool is_numeric (const char *c)
 {
 	return (*c >= '0' && *c <= '9') ||
 	       ((*c == '-' || *c == '+') && (c[1] == '.' || (c[1]>='0' && c[1]<='9'))) ||
