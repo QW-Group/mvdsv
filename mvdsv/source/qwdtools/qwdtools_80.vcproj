@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="qwdtools"
 	ProjectGUID="{0251665C-50AC-4BB5-9E5D-0B2D25617845}"
 	>
@@ -57,7 +57,7 @@
 				ProgramDataBaseFileName="Debug_80/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				CompileAs="1"
+				CompileAs="2"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
