@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.37 2007/05/07 14:17:36 disconn3ct Exp $
+    $Id: common.c,v 1.38 2007/05/07 23:12:37 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -395,7 +395,7 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 //===========================================================================
 
-void SZ_Init (sizebuf_t *buf, byte *data, size_t length)
+void SZ_Init (sizebuf_t *buf, byte *data, int length)
 {
 	memset (buf, 0, sizeof (*buf));
 	buf->data = data;
@@ -408,7 +408,7 @@ void SZ_Clear (sizebuf_t *buf)
 	buf->overflowed = false;
 }
 
-void *SZ_GetSpace (sizebuf_t *buf, size_t length)
+void *SZ_GetSpace (sizebuf_t *buf, size_t int)
 {
 	void *data;
 
@@ -435,14 +435,14 @@ void *SZ_GetSpace (sizebuf_t *buf, size_t length)
 	return data;
 }
 
-void SZ_Write (sizebuf_t *buf, const void *data, size_t length)
+void SZ_Write (sizebuf_t *buf, const void *data, int length)
 {
 	memcpy (SZ_GetSpace (buf, length), data, length);
 }
 
 void SZ_Print (sizebuf_t *buf, const char *data)
 {
-	size_t len = strlen (data) + 1;
+	int len = strlen (data) + 1;
 
 	if (!buf->cursize || buf->data[buf->cursize-1])
 		memcpy ((byte *)SZ_GetSpace (buf, len), data, len); // no trailing 0
