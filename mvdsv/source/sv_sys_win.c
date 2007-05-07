@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_sys_win.c,v 1.37 2007/05/06 16:16:43 disconn3ct Exp $
+	$Id: sv_sys_win.c,v 1.38 2007/05/07 14:17:40 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -493,11 +493,12 @@ void Sys_Printf (char *fmt, ...)
 		return;
 
 	va_start (argptr, fmt);
-	vsnprintf (text, MAXCMDBUF, fmt, argptr);
+	vsnprintf ((char *)text, MAXCMDBUF, fmt, argptr);
 	va_end (argptr);
 
 #ifndef _CONSOLE
-	if (!isdaemon) ConsoleAddText(text);
+	if (!isdaemon)
+		ConsoleAddText((char *)text);
 #endif //_CONSOLE
 
 	for (p = text; *p; p++)
@@ -505,7 +506,7 @@ void Sys_Printf (char *fmt, ...)
 		*p = chartbl2[*p];
 		if (telnetport && telnet_connected && authenticated)
 		{
-			send (telnet_iosock, p, 1, 0);
+			send (telnet_iosock, (char *) p, 1, 0);
 			if (*p == '\n') // demand for M$ WIN 2K telnet support
 				send (telnet_iosock, "\r", 1, 0);
 		}
@@ -517,7 +518,7 @@ void Sys_Printf (char *fmt, ...)
 	}
 
 	if (telnetport && telnet_connected && authenticated)
-		SV_Write_Log(TELNET_LOG, 3, text);
+		SV_Write_Log(TELNET_LOG, 3, (char *) text);
 #ifdef _CONSOLE
 	if (!((int)sys_nostdout.value || isdaemon))
 		fflush(stdout);
@@ -652,7 +653,7 @@ qbool Sys_DLClose (DL_t dl)
 
 void *Sys_DLProc (DL_t dl, const char *name)
 {
-	return GetProcAddress (dl, name);
+	return (void *) GetProcAddress (dl, name);
 }
 
 __inline void Sys_Telnet (void)
@@ -684,7 +685,7 @@ __inline void Sys_Telnet (void)
 	}
 	else
 	{
-		if ((telnet_iosock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
+		if ((telnet_iosock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, (int *) &sockaddr_len)) > 0)
 		{
 			//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
 			//			{

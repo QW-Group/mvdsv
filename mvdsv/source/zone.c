@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: zone.c,v 1.12 2006/06/05 12:46:10 vvd0 Exp $
+	$Id: zone.c,v 1.13 2007/05/07 14:17:40 disconn3ct Exp $
 */
 // zone.c - memory management
 
@@ -344,19 +344,19 @@ Cache_Move
 */
 void Cache_Move ( cache_system_t *c)
 {
-	cache_system_t		*new;
+	cache_system_t *nuw;
 
 	// we are clearing up space at the bottom, so only allocate it late
-	new = Cache_TryAlloc (c->size, true);
-	if (new)
+	nuw = Cache_TryAlloc (c->size, true);
+	if (nuw)
 	{
 		//		Con_Printf ("cache_move ok\n");
 
-		memcpy ( new+1, c+1, c->size - sizeof(cache_system_t) );
-		new->user = c->user;
-		memcpy (new->name, c->name, sizeof(new->name));
+		memcpy ( nuw+1, c+1, c->size - sizeof(cache_system_t) );
+		nuw->user = c->user;
+		memcpy (nuw->name, c->name, sizeof(nuw->name));
 		Cache_Free (c->user);
-		new->user->data = (void *)(new+1);
+		nuw->user->data = (void *)(nuw+1);
 	}
 	else
 	{
@@ -449,7 +449,7 @@ Size should already include the header and padding
 */
 cache_system_t *Cache_TryAlloc (int size, qbool nobottom)
 {
-	cache_system_t	*cs, *new;
+	cache_system_t	*cs, *nuw;
 
 	// is the cache completely empty?
 
@@ -458,62 +458,62 @@ cache_system_t *Cache_TryAlloc (int size, qbool nobottom)
 		if (hunk_size - hunk_high_used - hunk_low_used < size)
 			Sys_Error ("Cache_TryAlloc: %i is greater then free hunk", size);
 
-		new = (cache_system_t *) (hunk_base + hunk_low_used);
-		memset (new, 0, sizeof(*new));
-		new->size = size;
+		nuw = (cache_system_t *) (hunk_base + hunk_low_used);
+		memset (nuw, 0, sizeof(*nuw));
+		nuw->size = size;
 
-		cache_head.prev = cache_head.next = new;
-		new->prev = new->next = &cache_head;
+		cache_head.prev = cache_head.next = nuw;
+		nuw->prev = nuw->next = &cache_head;
 
-		Cache_MakeLRU (new);
-		return new;
+		Cache_MakeLRU (nuw);
+		return nuw;
 	}
 
 	// search from the bottom up for space
 
-	new = (cache_system_t *) (hunk_base + hunk_low_used);
+	nuw = (cache_system_t *) (hunk_base + hunk_low_used);
 	cs = cache_head.next;
 
 	do
 	{
 		if (!nobottom || cs != cache_head.next)
 		{
-			if ( (byte *)cs - (byte *)new >= size)
+			if ( (byte *)cs - (byte *)nuw >= size)
 			{	// found space
-				memset (new, 0, sizeof(*new));
-				new->size = size;
+				memset (nuw, 0, sizeof(*nuw));
+				nuw->size = size;
 
-				new->next = cs;
-				new->prev = cs->prev;
-				cs->prev->next = new;
-				cs->prev = new;
+				nuw->next = cs;
+				nuw->prev = cs->prev;
+				cs->prev->next = nuw;
+				cs->prev = nuw;
 
-				Cache_MakeLRU (new);
+				Cache_MakeLRU (nuw);
 
-				return new;
+				return nuw;
 			}
 		}
 
 		// continue looking
-		new = (cache_system_t *)((byte *)cs + cs->size);
+		nuw = (cache_system_t *)((byte *)cs + cs->size);
 		cs = cs->next;
 
 	} while (cs != &cache_head);
 
 	// try to allocate one at the very end
-	if ( hunk_base + hunk_size - hunk_high_used - (byte *)new >= size)
+	if ( hunk_base + hunk_size - hunk_high_used - (byte *)nuw >= size)
 	{
-		memset (new, 0, sizeof(*new));
-		new->size = size;
+		memset (nuw, 0, sizeof(*nuw));
+		nuw->size = size;
 
-		new->next = &cache_head;
-		new->prev = cache_head.prev;
-		cache_head.prev->next = new;
-		cache_head.prev = new;
+		nuw->next = &cache_head;
+		nuw->prev = cache_head.prev;
+		cache_head.prev->next = nuw;
+		cache_head.prev = nuw;
 
-		Cache_MakeLRU (new);
+		Cache_MakeLRU (nuw);
 
-		return new;
+		return nuw;
 	}
 
 	return NULL;		// couldn't allocate
@@ -685,7 +685,7 @@ Memory_Init
 */
 void Memory_Init (void *buf, int size)
 {
-	hunk_base = buf;
+	hunk_base = (byte *) buf;
 	hunk_size = size;
 	hunk_low_used = 0;
 	hunk_high_used = 0;

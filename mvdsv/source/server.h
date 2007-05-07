@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.48 2007/05/05 23:59:28 qqshka Exp $
+	$Id: server.h,v 1.49 2007/05/07 14:17:38 disconn3ct Exp $
 */
 
 // server.h
@@ -342,7 +342,7 @@ typedef struct mvdpendingdest_s
 	char outbuffer[2048];
 
 	char challenge[64];
-	int hasauthed;
+	qbool hasauthed;
 
 	int insize;
 	int outsize;
@@ -350,11 +350,12 @@ typedef struct mvdpendingdest_s
 	struct mvdpendingdest_s *nextdest;
 } mvdpendingdest_t;
 
+typedef enum {DEST_NONE, DEST_FILE, DEST_BUFFEREDFILE, DEST_STREAM} desttype_t;
 typedef struct mvddest_s
 {
 	qbool error; //disables writers, quit ASAP.
 
-	enum {DEST_NONE, DEST_FILE, DEST_BUFFEREDFILE, DEST_STREAM} desttype;
+	desttype_t desttype;
 
 	int socket;
 	FILE *file;

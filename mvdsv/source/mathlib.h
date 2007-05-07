@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: mathlib.h,v 1.10 2007/05/06 16:16:41 disconn3ct Exp $
+	$Id: mathlib.h,v 1.11 2007/05/07 14:17:37 disconn3ct Exp $
 */
 // mathlib.h
 #ifndef __MATHLIB_H__
@@ -67,7 +67,13 @@ float VectorNormalize (vec3_t v);		// returns vector length
 void VectorScale (vec3_t in, vec_t scale, vec3_t out);
 
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
+#ifdef __cplusplus
+extern "C" {
+#endif
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct mplane_s *plane);
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 float anglemod(float a);
 
 #define PlaneDiff(point, plane) (																			\

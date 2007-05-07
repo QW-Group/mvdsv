@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.79 2007/05/06 23:03:34 qqshka Exp $
+    $Id: sv_demo.c,v 1.80 2007/05/07 14:17:39 disconn3ct Exp $
 */
 
 // sv_demo.c - mvd demo related code
@@ -165,6 +165,7 @@ void DestFlush (qbool compleate)
 			break;
 
 		case DEST_NONE:
+		default:
 			Sys_Error("DestFlush encoundered bad dest.");
 		}
 
@@ -230,6 +231,7 @@ int DemoWriteDest (void *data, int len, mvddest_t *d)
 			d->cacheused += len;
 			break;
 		case DEST_NONE:
+		default:
 			Sys_Error("DemoWriteDest encoundered bad dest.");
 	}
 	return len;
@@ -799,7 +801,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 		lastdemospos &= 0xF;
 	if (lastdemosname[lastdemospos])
 		Q_free(lastdemosname[lastdemospos]);
-	lastdemosname[lastdemospos] = Q_malloc(name_len);
+	lastdemosname[lastdemospos] = (char *) Q_malloc(name_len);
 	strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
 	Con_DPrintf("SV_MVDStop: Demo name for 'cmd dl .': \"%s\"\n", lastdemosname[lastdemospos]);
 

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.36 2007/05/06 16:16:41 disconn3ct Exp $
+    $Id: common.c,v 1.37 2007/05/07 14:17:36 disconn3ct Exp $
 */
 // common.c -- misc functions used in client and server
 
@@ -50,7 +50,7 @@ void MSG_WriteChar (sizebuf_t *sb, int c)
 		Sys_Error ("MSG_WriteChar: range error");
 #endif
 
-	buf = SZ_GetSpace (sb, 1);
+	buf = (byte *) SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
 
@@ -63,7 +63,7 @@ void MSG_WriteByte (sizebuf_t *sb, int c)
 		Sys_Error ("MSG_WriteByte: range error");
 #endif
 
-	buf = SZ_GetSpace (sb, 1);
+	buf = (byte *) SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
 
@@ -76,7 +76,7 @@ void MSG_WriteShort (sizebuf_t *sb, int c)
 		Sys_Error ("MSG_WriteShort: range error");
 #endif
 
-	buf = SZ_GetSpace (sb, 2);
+	buf = (byte *) SZ_GetSpace (sb, 2);
 	buf[0] = c&0xff;
 	buf[1] = c>>8;
 }
@@ -85,7 +85,7 @@ void MSG_WriteLong (sizebuf_t *sb, int c)
 {
 	byte *buf;
 
-	buf = SZ_GetSpace (sb, 4);
+	buf = (byte *) SZ_GetSpace (sb, 4);
 	buf[0] = c&0xff;
 	buf[1] = (c>>8)&0xff;
 	buf[2] = (c>>16)&0xff;

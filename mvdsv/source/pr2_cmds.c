@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_cmds.c,v 1.45 2007/03/15 00:24:14 qqshka Exp $
+ *  $Id: pr2_cmds.c,v 1.46 2007/05/07 14:17:38 disconn3ct Exp $
  */
 
 #ifdef USE_PR2
@@ -54,7 +54,7 @@ void PR2_RunError(char *error, ...)
 
 	sv_error = true;
 	if( sv_vm->type == VM_BYTECODE )
-		QVM_StackTrace( sv_vm->hInst );
+		QVM_StackTrace( (qvm_t *) sv_vm->hInst );
 
 	Con_Printf("%s\n", string);
 
@@ -76,7 +76,7 @@ void PF2_GetEntityToken(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 {
 
 	pr2_ent_data_ptr = COM_Parse(pr2_ent_data_ptr);
-	strlcpy(VM_POINTER(base,mask,stack[0].string), com_token,  stack[1]._int);
+	strlcpy((char*)VM_POINTER(base,mask,stack[0].string), com_token,  stack[1]._int);
 
 	retval->_int= pr2_ent_data_ptr != NULL;
 }
@@ -93,7 +93,7 @@ void PF2_conprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 
 void PF2_Error(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	PR2_RunError(VM_POINTER(base, mask, stack->string));
+	PR2_RunError((char *)VM_POINTER(base, mask, stack->string));
 }
 
 void PF2_Spawn(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
@@ -114,7 +114,7 @@ void PF2_precache_sound(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 	if (sv.state != ss_loading)
 		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
 		             "functions");
-	s = VM_POINTER(base,mask,stack[0].string);
+	s = (char *) VM_POINTER(base,mask,stack[0].string);
 	PR2_CheckEmptyString(s);
 
 	for (i = 0; i < MAX_SOUNDS; i++)
@@ -140,7 +140,7 @@ void PF2_precache_model(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
 		             "functions");
 
-	s = VM_POINTER(base,mask,stack[0].string);
+	s = (char *) VM_POINTER(base,mask,stack[0].string);
 	PR2_CheckEmptyString(s);
 
 	for (i = 0; i < MAX_MODELS; i++)
@@ -228,7 +228,7 @@ void PF2_setmodel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	cmodel_t	*mod;
 
 	e = EDICT_NUM(stack[0]._int);
-	m = VM_POINTER(base,mask,stack[1].string);
+	m = (char *) VM_POINTER(base,mask,stack[1].string);
 	if(!m)
 		m = "";
 	// check to see if model was properly precached
@@ -282,7 +282,7 @@ void PF2_sprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 	client_t *client, *cl;
 	int entnum = stack[0]._int;
 	int level = stack[1]._int;
-	char *s = VM_POINTER(base,mask,stack[2].string);
+	char *s = (char *) VM_POINTER(base,mask,stack[2].string);
 	int i;
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)
@@ -323,7 +323,7 @@ void PF2_centerprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 {
 	client_t *cl, *spec;
 	int entnum = stack[0]._int;
-	char *s = VM_POINTER(base,mask,stack[1].string);
+	char *s = (char *) VM_POINTER(base,mask,stack[1].string);
 	int i;
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)
@@ -382,7 +382,7 @@ void PF2_ambientsound(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*r
 	pos[1] = stack[1]._float;
 	pos[2] = stack[2]._float;
 
-	samp 		= VM_POINTER(base,mask,stack[3].string);
+	samp = (char *) VM_POINTER(base,mask,stack[3].string);
 	if( !samp )
 		samp = "";
 	vol 		= stack[4]._float;
@@ -430,7 +430,7 @@ void PF2_sound(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	edict_t         *entity         = EDICT_NUM(stack[0]._int);
 	int             channel         = stack[1]._int;
-	char            *sample         = VM_POINTER(base,mask,stack[2].string);
+	char            *sample         = (char *) VM_POINTER(base,mask,stack[2].string);
 	int             volume          = stack[3]._float * 255;
 	float           attenuation     = stack[4]._float;
 
@@ -672,7 +672,7 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 		PR2_RunError("Parm 0 not a client");
 
-	str = VM_POINTER(base,mask,stack[1].string);
+	str = (char *) VM_POINTER(base,mask,stack[1].string);
 	if( !str )
 		PR2_RunError("PF2_stuffcmd: NULL pointer");
 
@@ -731,7 +731,7 @@ localcmd (string)
 */
 void PF2_localcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Cbuf_AddText(VM_POINTER(base,mask,stack[0].string));
+	Cbuf_AddText((char *)VM_POINTER(base,mask,stack[0].string));
 }
 
 void PF2_executecmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
@@ -764,8 +764,8 @@ void PF2_readcmd (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	extern 	redirect_t sv_redirected;
 	redirect_t old;
 
-	str = VM_POINTER(base,mask,stack[0].string);
-	buf = VM_POINTER(base,mask,stack[1].string);
+	str = (char *) VM_POINTER(base,mask,stack[0].string);
+	buf = (char *) VM_POINTER(base,mask,stack[1].string);
 	sizebuff = stack[2]._int;
 
 	Cbuf_Execute();
@@ -804,7 +804,7 @@ void PF2_redirectcmd (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*r
 
 	extern redirect_t sv_redirected;
 
-	str = VM_POINTER(base,mask,stack[1].string);
+	str = (char *) VM_POINTER(base,mask,stack[1].string);
 	if ( sv_redirected )
 	{
 		Cbuf_AddText (str);
@@ -812,13 +812,13 @@ void PF2_redirectcmd (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*r
 		return;
 	}
 
-	entnum = NUM_FOR_EDICT(VM_POINTER(base,mask,stack[0]._int));
+	entnum = NUM_FOR_EDICT((edict_t *)VM_POINTER(base,mask,stack[0]._int));
 
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 		PR2_RunError ("Parm 0 not a client");
 
 
-	SV_BeginRedirect( RD_MOD + entnum );
+	SV_BeginRedirect( (redirect_t) (RD_MOD + entnum ));
 	Cbuf_AddText (str);
 	Cbuf_Execute();
 	SV_EndRedirect();
@@ -835,7 +835,7 @@ float   trap_cvar( const char *var );
 void PF2_cvar(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 
-	retval->_float =  Cvar_Value(VM_POINTER(base,mask,stack[0].string));
+	retval->_float =  Cvar_Value((char *)VM_POINTER(base,mask,stack[0].string));
 }
 
 /*
@@ -856,8 +856,8 @@ void PF2_cvar_string(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	if( ( buff_off + buffsize ) &(~mask))
 		return;
 
-	strlcpy(VM_POINTER(base,mask,buff_off),
-	        Cvar_String(VM_POINTER(base,mask,stack[0].string)), buffsize);
+	strlcpy((char *)VM_POINTER(base,mask,buff_off),
+	        Cvar_String((char *)VM_POINTER(base,mask,stack[0].string)), buffsize);
 }
 
 /*
@@ -869,7 +869,7 @@ void    trap_cvar_set( const char *var, const char *val );
 */
 void PF2_cvar_set(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Cvar_SetByName(VM_POINTER(base,mask,stack[0].string),VM_POINTER(base,mask,stack[1].string));
+	Cvar_SetByName((char *) VM_POINTER(base,mask,stack[0].string), (char *) VM_POINTER(base,mask,stack[1].string));
 }
 /*
 =================
@@ -880,7 +880,7 @@ void    trap_cvar_set_float( const char *var, float val );
 */
 void PF2_cvar_set_float(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Cvar_SetValueByName( VM_POINTER(base,mask,stack[0].string), stack[1]._float);
+	Cvar_SetValueByName((char *)VM_POINTER(base,mask,stack[0].string), stack[1]._float);
 }
 
 /*
@@ -901,8 +901,8 @@ void PF2_FindRadius( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t 
 	vec3_t	eorg;
 	float rad;
 
-	e = NUM_FOR_EDICT( VM_POINTER( base, mask, stack[0]._int ) );
-	org = VM_POINTER( base, mask, stack[1]._int );
+	e = NUM_FOR_EDICT( (edict_t *) VM_POINTER( base, mask, stack[0]._int ) );
+	org = (float *) VM_POINTER( base, mask, stack[1]._int );
 	rad = stack[2]._float;
 
 	for ( e++; e < sv.num_edicts; e++ )
@@ -1030,7 +1030,7 @@ void PF2_lightstyle(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 	char*	val;
 
 	style 	= stack[0]._int;
-	val	= VM_POINTER(base,mask,stack[1]._int);
+	val	= (char *) VM_POINTER(base,mask,stack[1]._int);
 
 	// change the string in sv
 	sv.lightstyles[style] = val;
@@ -1162,7 +1162,7 @@ void PF2_Find (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 	e  = NUM_FOR_EDICT((edict_t *) VM_POINTER(base,mask,stack[0]._int));
 	fofs = stack[1]._int;
 
-	str = VM_POINTER(base,mask,stack[2].string);
+	str = (char *) VM_POINTER(base,mask,stack[2].string);
 
 	if(!str)
 		PR2_RunError ("PF2_Find: bad search string");
@@ -1172,7 +1172,7 @@ void PF2_Find (byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 		ed = EDICT_NUM(e);
 		if (ed->free)
 			continue;
-		t= VM_POINTER(base,mask,*(int*)((char *) ed + fofs));
+		t = (char *) VM_POINTER(base,mask,*(int*)((char *) ed + fofs));
 		if (!t)
 			continue;
 		if (!strcmp(t,str))
@@ -1395,7 +1395,7 @@ void PF2_WriteCoord(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 void PF2_WriteString(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	int to     = stack[0]._int;
-	char* data = VM_POINTER(base,mask,stack[1].string);
+	char* data = (char *) VM_POINTER(base,mask,stack[1].string);
 
 	if (to == MSG_ONE)
 	{
@@ -1452,7 +1452,7 @@ void PF2_makestatic(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 
 	MSG_WriteByte(&sv.signon, svc_spawnstatic);
 
-	MSG_WriteByte(&sv.signon, SV_ModelIndex(VM_POINTER(base,mask,ent->v.model)));
+	MSG_WriteByte(&sv.signon, SV_ModelIndex((char *) VM_POINTER(base,mask,ent->v.model)));
 
 	MSG_WriteByte(&sv.signon, ent->v.frame);
 	MSG_WriteByte(&sv.signon, ent->v.colormap);
@@ -1501,7 +1501,7 @@ PF2_changelevel
 void PF2_changelevel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	static int last_spawncount;
-	char *s = VM_POINTER(base,mask,stack[0].string);
+	char *s = (char *) VM_POINTER(base,mask,stack[0].string);
 	char expanded[MAX_QPATH];
 	FILE *f;
 
@@ -1587,8 +1587,8 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 
 	//	edict_t	*e;
 	int		e1 	= stack[0]._int;
-	char		*key	= VM_POINTER(base,mask,stack[1].string);
-	char		*valbuff= VM_POINTER(base,mask,stack[2].string);
+	char		*key	= (char *) VM_POINTER(base,mask,stack[1].string);
+	char		*valbuff= (char *) VM_POINTER(base,mask,stack[2].string);
 	char		*value;
 	int		sizebuff= stack[3]._int;
 
@@ -1741,7 +1741,7 @@ PF2_cmdargv
 void PF2_cmdargv(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 //(int arg, char *valbuff, int sizebuff)
 {
-	strlcpy(VM_POINTER(base,mask,stack[1].string), Cmd_Argv(stack[0]._int), stack[2]._int);
+	strlcpy((char *) VM_POINTER(base,mask,stack[1].string), Cmd_Argv(stack[0]._int), stack[2]._int);
 }
 
 /*
@@ -1752,7 +1752,7 @@ PF2_cmdargs
 void PF2_cmdargs(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 //(char *valbuff, int sizebuff)
 {
-	strlcpy(VM_POINTER(base,mask,stack[0].string), Cmd_Args(), stack[1]._int);
+	strlcpy((char *) VM_POINTER(base,mask,stack[0].string), Cmd_Args(), stack[1]._int);
 }
 
 /*
@@ -1763,7 +1763,7 @@ PF2_tokenize
 void PF2_tokenize(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 //(char *str)
 {
-	Cmd_TokenizeString(VM_POINTER(base,mask,stack[0].string));
+	Cmd_TokenizeString((char *) VM_POINTER(base,mask,stack[0].string));
 }
 
 void PF2_fixme(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
@@ -1772,19 +1772,19 @@ void PF2_fixme(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 
 void PF2_memset(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int= PR2_SetString(memset(VM_POINTER(base,mask,stack[0].string),stack[1]._int,stack[2]._int));
+	retval->_int= PR2_SetString((char *) memset(VM_POINTER(base,mask,stack[0].string),stack[1]._int,stack[2]._int));
 }
 
 void PF2_memcpy(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int= PR2_SetString( memcpy( VM_POINTER(base,mask,stack[0].string),
+	retval->_int= PR2_SetString( (char *) memcpy( VM_POINTER(base,mask,stack[0].string),
 	                                     VM_POINTER(base,mask,stack[1].string),
 	                                     stack[2]._int));
 }
 void PF2_strncpy(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int= PR2_SetString( strncpy( VM_POINTER(base,mask,stack[0].string),
-	                                      VM_POINTER(base,mask,stack[1].string),
+	retval->_int= PR2_SetString( strncpy( (char *) VM_POINTER(base,mask,stack[0].string),
+	                                      (char *) VM_POINTER(base,mask,stack[1].string),
 	                                      stack[2]._int));
 }
 
@@ -1845,7 +1845,7 @@ void PF2_FS_OpenFile(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 {
 	char *name=(char*)VM_POINTER(base,mask,stack[0].string);
 	fileHandle_t* handle=(fileHandle_t*)VM_POINTER(base,mask,stack[1]._int);
-	fsMode_t fmode = stack[2]._int;
+	fsMode_t fmode = (fsMode_t) stack[2]._int;
 	int i;
 	char    fname[MAX_OSPATH];
 	char   *gpath = NULL;
@@ -1963,7 +1963,7 @@ void PF2_FS_SeekFile(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 {
 	fileHandle_t fnum =  stack[0]._int;
 	int offset = stack[1]._int;
-	fsOrigin_t type = stack[2]._int;
+	fsOrigin_t type = (fsOrigin_t) stack[2]._int;
 	fnum--;
 
 	if (fnum < 0 || fnum >= MAX_PR2_FILES)
@@ -2147,7 +2147,7 @@ void PF2_FS_GetFileList(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 		qbool	is_dir;
 #ifdef _WIN32
 		filename = fd.cFileName;
-		is_dir = fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+		is_dir = (qbool) (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
 		size = fd.nFileSizeLow;
 #else
 		filename = dstruct->d_name;
@@ -2207,36 +2207,36 @@ void PF2_Map_Extension(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*
 ////////////////////
 void PF2_strcmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int=  strcmp( VM_POINTER(base,mask,stack[0].string),
-	                       VM_POINTER(base,mask,stack[1].string));
+	retval->_int=  strcmp( (char *) VM_POINTER(base,mask,stack[0].string),
+	                       (char *) VM_POINTER(base,mask,stack[1].string));
 }
 
 void PF2_strncmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int=  strncmp( VM_POINTER(base,mask,stack[0].string),
-	                        VM_POINTER(base,mask,stack[1].string),stack[2]._int);
+	retval->_int=  strncmp( (char *) VM_POINTER(base,mask,stack[0].string),
+	                        (char *) VM_POINTER(base,mask,stack[1].string),stack[2]._int);
 }
 
 void PF2_stricmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int=  strcasecmp( VM_POINTER(base,mask,stack[0].string),
-	                           VM_POINTER(base,mask,stack[1].string));
+	retval->_int=  strcasecmp( (char *) VM_POINTER(base,mask,stack[0].string),
+	                           (char *) VM_POINTER(base,mask,stack[1].string));
 }
 
 void PF2_strnicmp(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int=  strncasecmp( VM_POINTER(base,mask,stack[0].string),
-	                            VM_POINTER(base,mask,stack[1].string),stack[2]._int);
+	retval->_int=  strncasecmp( (char *) VM_POINTER(base,mask,stack[0].string),
+	                            (char *) VM_POINTER(base,mask,stack[1].string),stack[2]._int);
 }
 
 void PF2_strlcpy(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 { // (char *dst, char *src, size_t siz)
-	retval->_int = strlcpy( VM_POINTER(base,mask,stack[0].string), VM_POINTER(base,mask,stack[1].string), stack[2]._int );
+	retval->_int = strlcpy( (char *) VM_POINTER(base,mask,stack[0].string), (char *) VM_POINTER(base,mask,stack[1].string), stack[2]._int );
 }
 
 void PF2_strlcat(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 { // (char *dst, char *src, size_t siz)
-	retval->_int = strlcat( VM_POINTER(base,mask,stack[0].string), VM_POINTER(base,mask,stack[1].string), stack[2]._int );
+	retval->_int = strlcat( (char *) VM_POINTER(base,mask,stack[0].string), (char *) VM_POINTER(base,mask,stack[1].string), stack[2]._int );
 }
 
 /////////Bot Functions
@@ -2244,10 +2244,10 @@ extern cvar_t maxclients, maxspectators;
 void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
 {
 	client_t *cl, *newcl = NULL;
-	char   *name = VM_POINTER( base, mask, stack[0].string );
+	char   *name = (char *) VM_POINTER( base, mask, stack[0].string );
 	int     bottomcolor = stack[1]._int;
 	int     topcolor = stack[2]._int;
-	char   *skin = VM_POINTER( base, mask, stack[3].string );
+	char   *skin = (char *) VM_POINTER( base, mask, stack[3].string );
 	int     edictnum;
 	int     clients, spectators, i;
 	extern char *shortinfotbl[];
@@ -2419,8 +2419,8 @@ void PF2_SetBotUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2va
 {
 	client_t *cl;
 	int     entnum = stack[0]._int;
-	char   *key = VM_POINTER( base, mask, stack[1].string );
-	char   *value = VM_POINTER( base, mask, stack[2].string );
+	char   *key = (char *) VM_POINTER( base, mask, stack[1].string );
+	char   *value = (char *) VM_POINTER( base, mask, stack[2].string );
 	int     i;
 	extern char *shortinfotbl[];
 
@@ -2441,15 +2441,15 @@ void PF2_SetBotUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2va
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
 		if ( key[0] == '_' || !strcmp( key, shortinfotbl[i] ) )
 		{
-			char   *new = Info_ValueForKey( cl->userinfo, key );
+			char *nuw = Info_ValueForKey( cl->userinfo, key );
 
-			Info_SetValueForKey( cl->userinfoshort, key, new, MAX_INFO_STRING );
+			Info_SetValueForKey( cl->userinfoshort, key, nuw, MAX_INFO_STRING );
 
 			i = cl - svs.clients;
 			MSG_WriteByte( &sv.reliable_datagram, svc_setinfo );
 			MSG_WriteByte( &sv.reliable_datagram, i );
 			MSG_WriteString( &sv.reliable_datagram, key );
-			MSG_WriteString( &sv.reliable_datagram, new );
+			MSG_WriteString( &sv.reliable_datagram, nuw );
 			break;
 		}
 
@@ -2501,9 +2501,9 @@ PF2_QVMstrftime
 void PF2_QVMstrftime(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 //(char *valbuff, int sizebuff, char *fmt, int offset)
 {
-	char	*valbuff = VM_POINTER(base,mask,stack[0].string);
+	char	*valbuff = (char *) VM_POINTER(base,mask,stack[0].string);
 	int		sizebuff = stack[1]._int;
-	char	*fmt = VM_POINTER(base,mask,stack[2].string);
+	char	*fmt = (char *) VM_POINTER(base,mask,stack[2].string);
 	int		offset = stack[3]._int;
 
 	struct tm *newtime;
@@ -2535,7 +2535,10 @@ void PF2_QVMstrftime(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 
 void PF2_makevectors(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	AngleVectors (VM_POINTER(base,mask,stack[0].string), pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
+	AngleVectors ((float *) VM_POINTER(base,mask,stack[0].string),
+		pr_global_struct->v_forward,
+		pr_global_struct->v_right,
+		pr_global_struct->v_up);
 }
 
 //===========================================================================

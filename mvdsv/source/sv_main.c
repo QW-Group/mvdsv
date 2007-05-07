@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.99 2007/05/06 16:16:42 disconn3ct Exp $
+	$Id: sv_main.c,v 1.100 2007/05/07 14:17:40 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -175,8 +175,6 @@ cvar_t registered = {"registered", "1", CVAR_ROM};
 // We need this cvar, because ktpro didn't allow to go at some placeses of, for example, start map.
 
 cvar_t sv_ktpro_mode = {"sv_ktpro_mode", "auto"};
-
-log_t	logs[MAX_LOG];
 
 qbool sv_error = 0;
 qbool server_cfg_done = false;
@@ -814,7 +812,8 @@ extern char *shortinfotbl[];
 static void SVC_DirectConnect (void)
 {
 	int clients, spectators, vips, qport, version1, challenge, i, edictnum;
-	qbool spass = false, vip, spectator;
+	qbool spass = false, vip;
+	int spectator;
 	client_t *cl, *newcl;
 	char userinfo[1024];
 	char *s, *key;
@@ -3210,7 +3209,7 @@ void SV_InitLocal (void)
 	svs.log[1].cursize = 0;
 	svs.log[1].allowoverflow = true;
 
-	packet_freeblock = Hunk_AllocName (MAX_DELAYED_PACKETS * sizeof(packet_t), "delayed_packets");
+	packet_freeblock = (packet_t *) Hunk_AllocName (MAX_DELAYED_PACKETS * sizeof(packet_t), "delayed_packets");
 
 	for (i = 0; i < MAX_DELAYED_PACKETS; i++) {
 		SZ_Init (&packet_freeblock[i].msg, packet_freeblock[i].buf, sizeof(packet_freeblock[i].buf));

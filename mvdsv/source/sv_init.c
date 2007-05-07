@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_init.c,v 1.33 2007/05/05 23:59:29 qqshka Exp $
+	$Id: sv_init.c,v 1.34 2007/05/07 14:17:40 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -324,7 +324,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	// and allocate edicts
 #ifdef USE_PR2
 	sv.time = 1.0;
-	sv_vm = VM_Load(sv_vm, (int)sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
+	sv_vm = (vm_t *) VM_Load(sv_vm, (vm_type_t) (int) sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
 	if ( sv_vm )
 		PR2_InitProg();
 	else

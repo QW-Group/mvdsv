@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-   $Id: bothtools.c,v 1.17 2007/05/06 16:16:40 disconn3ct Exp $
+   $Id: bothtools.c,v 1.18 2007/05/07 14:17:36 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -423,6 +423,9 @@ float FloatSwap (float f)
 }*/
 
 #ifndef id386
+#ifdef __cplusplus
+extern "C" {
+#endif
 short ShortSwap (short s)
 {
 	union
@@ -465,6 +468,9 @@ float FloatSwap (float f)
 	dat2.b[3] = dat1.b[0];
 	return dat2.f;
 }
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 #endif
 
 #ifdef __PDP_ENDIAN__Q__

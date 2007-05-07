@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.19 2006/11/25 23:32:37 disconn3ct Exp $
+ *  $Id: pr2_vm.c,v 1.20 2007/05/07 14:17:38 disconn3ct Exp $
  */
 /*
   Quake3 compatible virtual machine
@@ -148,12 +148,12 @@ void VM_Unload( vm_t * vm )
 	{
 	case VM_NATIVE:
 		if ( vm->hInst )
-			if ( !Sys_DLClose( vm->hInst ) )
+			if ( !Sys_DLClose( (DL_t) vm->hInst ) )
 				SV_Error( "VM_Unload: couldn't unload module %s\n", vm->name );
 		vm->hInst = NULL;
 		break;
 	case VM_BYTECODE:
-		VM_UnloadQVM( vm->hInst );
+		VM_UnloadQVM( (qvm_t*) vm->hInst );
 		break;
 	case VM_NONE:
 		return;
@@ -181,14 +181,14 @@ qbool VM_LoadNative( vm_t * vm )
 	if ( !vm->hInst )
 		return false;
 
-	dllEntry = Sys_DLProc( vm->hInst, "dllEntry" );
-	vm->vmMain = Sys_DLProc( vm->hInst, "vmMain" );
+	dllEntry = (void (EXPORT_FN *)(void *)) Sys_DLProc( (DL_t) vm->hInst, "dllEntry" );
+	vm->vmMain = (int (EXPORT_FN *)(int,int,int,int,int,int,int,int,int,int,int,int,int)) Sys_DLProc( (DL_t) vm->hInst, "vmMain" );
 	if ( !dllEntry || !vm->vmMain )
 	{
 		VM_Unload( vm );
 		SV_Error( "VM_LoadNative: couldn't initialize module %s", name );
 	}
-	dllEntry( vm->syscall );
+	dllEntry( (void *) vm->syscall );
 
 	//	Info_SetValueForStarKey( svs.info, "*qvm", DLEXT, MAX_SERVERINFO_STRING );
 	Info_SetValueForStarKey( localinfo, "*qvm", DLEXT, MAX_LOCALINFO_STRING );
@@ -217,7 +217,7 @@ void VM_PrintInfo( vm_t * vm)
 		break;
 	case VM_BYTECODE:
 		Con_DPrintf("bytecode interpreted\n");
-		if((qvm=vm->hInst))
+		if((qvm=(qvm_t *)vm->hInst))
 		{
 			Con_DPrintf("     code  length: %8xh\n", qvm->len_cs*sizeof(qvm->cs[0]));
 			Con_DPrintf("instruction count: %8d\n", qvm->len_cs);
@@ -385,7 +385,7 @@ qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall1 )
 
 		for ( i = 0; i < header->instructionCount; i++, dst++ )
 		{
-			op = *src++;
+			op = (opcode_t) *src++;
 			dst->opcode = op;
 			switch ( op )
 			{
@@ -501,7 +501,7 @@ int VM_Call( vm_t * vm, int command, int arg0, int arg1, int arg2, int arg3, int
 	case VM_NATIVE:
 		return vm->vmMain( command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11 );
 	case VM_BYTECODE:
-		return QVM_Exec( vm->hInst, command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
+		return QVM_Exec( (qvm_t*) vm->hInst, command, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10,
 		                 arg11 );
 	case VM_NONE:
 		Sys_Error( "VM_Call with VM_NONE type vm" );

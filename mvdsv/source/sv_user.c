@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.92 2007/04/09 15:06:41 vvd0 Exp $
+	$Id: sv_user.c,v 1.93 2007/05/07 14:17:40 disconn3ct Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2008,7 +2008,8 @@ char *shortinfotbl[] =
 static void Cmd_SetInfo_f (void)
 {
 	extern cvar_t sv_forcenick, sv_login;
-	int i, saved_state;
+	int i;
+	sv_client_state_t saved_state;
 	char oldval[MAX_INFO_STRING];
 
 	if (sv_kickuserinfospamtime.value > 0 && (int)sv_kickuserinfospamcount.value > 0)
@@ -2153,28 +2154,28 @@ static void Cmd_SetInfo_f (void)
 	for (i = 0; shortinfotbl[i] != NULL; i++)
 		if (!strcmp(Cmd_Argv(1), shortinfotbl[i]))
 		{
-			char *new = Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1));
-			Info_SetValueForKey (sv_client->userinfoshort, Cmd_Argv(1), new, MAX_INFO_STRING);
+			char *nuw = Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1));
+			Info_SetValueForKey (sv_client->userinfoshort, Cmd_Argv(1), nuw, MAX_INFO_STRING);
 
 			i = sv_client - svs.clients;
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
 			MSG_WriteByte (&sv.reliable_datagram, i);
 			MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));
-			MSG_WriteString (&sv.reliable_datagram, new);
+			MSG_WriteString (&sv.reliable_datagram, nuw);
 			break;
 		}
 
 	// if start key send to others
 	if (Cmd_Argv(1)[0] == '*')
 	{
-		char *new = Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1));
-		Info_SetValueForKey (sv_client->userinfoshort, Cmd_Argv(1), new, MAX_INFO_STRING);
+		char *nuw = Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1));
+		Info_SetValueForKey (sv_client->userinfoshort, Cmd_Argv(1), nuw, MAX_INFO_STRING);
 
 		i = sv_client - svs.clients;
 		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
 		MSG_WriteByte (&sv.reliable_datagram, i);
 		MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));
-		MSG_WriteString (&sv.reliable_datagram, new);
+		MSG_WriteString (&sv.reliable_datagram, nuw);
 	}
 }
 
