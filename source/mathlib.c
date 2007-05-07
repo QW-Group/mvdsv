@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: mathlib.c,v 1.8 2006/06/19 16:46:15 vvd0 Exp $
+	$Id: mathlib.c,v 1.9 2007/05/07 14:17:37 disconn3ct Exp $
 */
 // mathlib.c -- math primitives
 
@@ -48,11 +48,16 @@ BOPS_Error
 Split out like this for ASM to call.
 ==================
 */
+#ifdef __cplusplus
+extern "C" {
+#endif
 void BOPS_Error (void)
 {
 	Sys_Error ("BoxOnPlaneSide:  Bad signbits");
 }
-
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 #ifndef id386
 
 /*
@@ -62,6 +67,9 @@ BoxOnPlaneSide
 Returns 1, 2, or 1 + 2
 ==================
 */
+#ifdef __cplusplus
+extern "C" {
+#endif
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 {
 	float dist1, dist2;
@@ -161,7 +169,9 @@ int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
 
 	return sides;
 }
-
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 #endif /* id386 */
 
 

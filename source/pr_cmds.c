@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.38 2007/01/14 20:02:33 tonik Exp $
+	$Id: pr_cmds.c,v 1.39 2007/05/07 14:17:38 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -331,21 +331,21 @@ void PF_normalize (void)
 {
 	float	*value1;
 	vec3_t	newvalue;
-	float	new;
+	float	nuw;
 
 	value1 = G_VECTOR(OFS_PARM0);
 
-	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2]*value1[2];
-	new = sqrt(new);
+	nuw = value1[0] * value1[0] + value1[1] * value1[1] + value1[2]*value1[2];
+	nuw = sqrt(nuw);
 
-	if (new == 0)
+	if (nuw == 0)
 		newvalue[0] = newvalue[1] = newvalue[2] = 0;
 	else
 	{
-		new = 1/new;
-		newvalue[0] = value1[0] * new;
-		newvalue[1] = value1[1] * new;
-		newvalue[2] = value1[2] * new;
+		nuw = 1/nuw;
+		newvalue[0] = value1[0] * nuw;
+		newvalue[1] = value1[1] * nuw;
+		newvalue[2] = value1[2] * nuw;
 	}
 
 	VectorCopy (newvalue, G_VECTOR(OFS_RETURN));
@@ -361,14 +361,14 @@ scalar vlen(vector)
 void PF_vlen (void)
 {
 	float	*value1;
-	float	new;
+	float	nuw;
 
 	value1 = G_VECTOR(OFS_PARM0);
 
-	new = value1[0] * value1[0] + value1[1] * value1[1] + value1[2]*value1[2];
-	new = sqrt(new);
+	nuw = value1[0] * value1[0] + value1[1] * value1[1] + value1[2]*value1[2];
+	nuw = sqrt(nuw);
 
-	G_FLOAT(OFS_RETURN) = new;
+	G_FLOAT(OFS_RETURN) = nuw;
 }
 
 /*
@@ -1122,7 +1122,7 @@ void PF_redirectcmd (void)
 
 	Cbuf_AddText (s);
 
-	SV_BeginRedirect(RD_MOD + entnum);
+	SV_BeginRedirect((redirect_t) (RD_MOD + entnum));
 	Cbuf_Execute();
 	SV_EndRedirect();
 }
@@ -2945,7 +2945,7 @@ void PR_InitBuiltins (void)
 		if (ext_builtins[i].num + 1 > pr_numbuiltins)
 			pr_numbuiltins = ext_builtins[i].num + 1;
 
-	pr_builtins = Q_malloc(pr_numbuiltins * sizeof(builtin_t));
+	pr_builtins = (builtin_t *) Q_malloc(pr_numbuiltins * sizeof(builtin_t));
 	memcpy (pr_builtins, std_builtins, num_id_builtins * sizeof(builtin_t));
 	for (i = num_id_builtins; i < pr_numbuiltins; i++)
 		pr_builtins[i] = PF_Fixme;

@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_misc.c,v 1.2 2007/05/06 16:16:42 disconn3ct Exp $
+    $Id: sv_demo_misc.c,v 1.3 2007/05/07 14:17:39 disconn3ct Exp $
 */
 
 // sv_demo_misc.c - misc demo related stuff, helpers
@@ -217,7 +217,7 @@ void Run_sv_demotxt_and_sv_onrecordfinish (mvddest_t *d, qbool destroyfiles)
 	if (sv_onrecordfinish.string[0] && !destroyfiles) // dont gzip deleted demos
 	{
 		extern redirect_t sv_redirected;
-		int old = sv_redirected;
+		redirect_t old = sv_redirected;
 		char *p;
 	
 		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
@@ -591,7 +591,7 @@ void SV_MVDRemove_f (void)
 		if (*sv_ondemoremove.string)
 		{
 			extern redirect_t sv_redirected;
-			int old = sv_redirected;
+			redirect_t old = sv_redirected;
 
 			sv_redirected = RD_NONE; // this script is called always from the console
 			Cmd_TokenizeString(va("script %s \"%s\" \"%s\"", sv_ondemoremove.string, sv_demoDir.string, name));
@@ -639,7 +639,7 @@ void SV_MVDRemoveNum_f (void)
 			if (*sv_ondemoremove.string)
 			{
 				extern redirect_t sv_redirected;
-				int old = sv_redirected;
+				redirect_t old = sv_redirected;
 
 				sv_redirected = RD_NONE; // this script is called always from the console
 				Cmd_TokenizeString(va("script %s \"%s\" \"%s\"", sv_ondemoremove.string, sv_demoDir.string, name));

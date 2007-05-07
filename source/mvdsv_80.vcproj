@@ -145,8 +145,8 @@
 				Optimization="0"
 				PreprocessorDefinitions="WIN32_LEAN_AND_MEAN;_DEBUG;id386;USE_PR2;__LITTLE_ENDIAN__Q__"
 				MinimalRebuild="true"
-				ExceptionHandling="0"
-				SmallerTypeCheck="true"
+				ExceptionHandling="1"
+				SmallerTypeCheck="false"
 				RuntimeLibrary="3"
 				EnableFunctionLevelLinking="true"
 				DefaultCharIsUnsigned="true"
@@ -157,10 +157,11 @@
 				ObjectFile="SDebug_80/"
 				ProgramDataBaseFileName="SDebug_80/"
 				BrowseInformation="1"
+				BrowseInformationFile="SDebug_80/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
-				CompileAs="1"
+				CompileAs="2"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1148,8 +1149,26 @@
 				</FileConfiguration>
 			</File>
 			<Filter
-				Name="pcre.c"
+				Name="pcre"
 				>
+				<File
+					RelativePath="pcre\chartables.c"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
 				<File
 					RelativePath="pcre\get.c"
 					>
@@ -1337,26 +1356,8 @@
 				>
 			</File>
 			<Filter
-				Name="pcre.h"
+				Name="pcre"
 				>
-				<File
-					RelativePath="pcre\chartables.c"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCustomBuildTool"
-						/>
-					</FileConfiguration>
-				</File>
 				<File
 					RelativePath="pcre\config.h"
 					>

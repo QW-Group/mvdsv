@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_ccmds.c,v 1.46 2007/02/13 14:20:46 tonik Exp $
+	$Id: sv_ccmds.c,v 1.47 2007/05/07 14:17:39 disconn3ct Exp $
 */
 
 #include "qwsvdef.h"
@@ -534,7 +534,7 @@ void SV_ListFiles_f (void)
 		return;
 	}
 
-	key = (Cmd_Argc() == 3) ? Cmd_Argv(2) : "";
+	key = (Cmd_Argc() == 3) ? Cmd_Argv(2) : (char *) "";
 
 	//directories...
 	for (; list->name[0]; list++)
@@ -807,7 +807,7 @@ void SV_Kick_f (void)
 			saved_state = cl->state;
 			cl->state = cs_free; // HACK: don't broadcast to this client
 			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked%s\n", cl->name, reason);
-			cl->state = saved_state;
+			cl->state = (sv_client_state_t) saved_state;
 			SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game%s\n", reason);
 			SV_LogPlayer(cl, va("kick%s\n", reason), 1); //bliP: logging
 			SV_DropClient (cl);
@@ -1205,7 +1205,7 @@ void SV_Status_f (void)
 						(int)cl->edict->v.frags, cl->userid, (int)sv_use_dns.value ? SV_Resolve(s) : s);
 				if (cl->realip.ip.ip[0])
 					Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
-				Con_Printf (cl->spectator ? "(s)" : "");
+				Con_Printf (cl->spectator ? (char *) "(s)" : (char *) "");
 
 				switch (cl->state)
 				{

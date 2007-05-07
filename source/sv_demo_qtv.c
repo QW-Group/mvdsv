@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_qtv.c,v 1.2 2007/05/06 23:03:34 qqshka Exp $
+    $Id: sv_demo_qtv.c,v 1.3 2007/05/07 14:17:39 disconn3ct Exp $
 */
 
 //	sv_demo_qtv.c - misc QTV's code
@@ -82,7 +82,7 @@ static int MVD_StreamStartListening (int port)
 		Sys_Error ("MVD_StreamStartListening: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
 	}
 
-	if( bind (sock, (void *)&address, sizeof(address)) == -1)
+	if( bind (sock, (struct sockaddr *)&address, sizeof(address)) == -1)
 	{
 		closesocket(sock);
 		return INVALID_SOCKET;
@@ -140,7 +140,7 @@ void SV_MVDStream_Poll (void)
 		return;
 
 	addrlen = sizeof(addr);
-	client = accept(listensocket, (struct sockaddr *)&addr, &addrlen);
+	client = accept (listensocket, (struct sockaddr *)&addr, &addrlen);
 
 	if (client == INVALID_SOCKET)
 		return;
@@ -264,14 +264,14 @@ void SV_MVD_RunPendingConnections (void)
 					int versiontouse = 0;
 					int raw = 0;
 					char password[256] = "";
-					enum {
+					typedef enum {
 						QTVAM_NONE,
 						QTVAM_PLAIN,
 						QTVAM_CCITT,
 						QTVAM_MD4,
 						QTVAM_MD5,
-					} authmethod = QTVAM_NONE;
-
+					} authmethod_t;
+					authmethod_t authmethod = QTVAM_NONE;
 					start = p->inbuffer;
 
 					lineend = strchr(start, '\n');
@@ -334,7 +334,7 @@ void SV_MVD_RunPendingConnections (void)
 							}
 							else if (!strcmp(com_token, "AUTH"))
 							{
-								unsigned int thisauth;
+								authmethod_t thisauth;
 								start = COM_ParseToken(start, NULL);
 								if (!strcmp(com_token, "NONE"))
 									thisauth = QTVAM_PLAIN;

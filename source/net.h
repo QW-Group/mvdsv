@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: net.h,v 1.23 2006/07/24 13:41:13 disconn3ct Exp $
+	$Id: net.h,v 1.24 2007/05/07 14:17:38 disconn3ct Exp $
 */
 
 // net.h -- quake's interface to the networking layer
@@ -66,8 +66,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INVALID_SOCKET	-1
 #endif
 
+#ifndef SOCKET_ERROR
+#define SOCKET_ERROR -1
+#endif
+
 #ifdef _WIN32
-typedef unsigned int socklen_t;
+typedef int socklen_t;
 #endif
 
 #define	PORT_ANY -1
@@ -118,8 +122,8 @@ extern	cvar_t	auth_timeout;
 
 void	NET_Init (int *serverport, int *telnetport);
 void	NET_Shutdown (void);
-qbool	NET_GetPacket (void);
-void	NET_SendPacket (int length, void *data, netadr_t to);
+int		NET_GetPacket (void);
+void	NET_SendPacket (int length, const void *data, netadr_t to);
 //qbool	NET_Sleep ();
 
 qbool	NET_CompareAdr (netadr_t a, netadr_t b);
