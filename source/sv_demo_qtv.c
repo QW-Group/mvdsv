@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_qtv.c,v 1.3 2007/05/07 14:17:39 disconn3ct Exp $
+    $Id: sv_demo_qtv.c,v 1.4 2007/05/11 11:29:04 qqshka Exp $
 */
 
 //	sv_demo_qtv.c - misc QTV's code
@@ -106,6 +106,7 @@ void SV_MVDStream_Poll (void)
 	qbool wanted;
 	mvddest_t *dest;
 	char *ip;
+	unsigned long _true = true;
 
 	if (!sv.state || !(int)qtv_streamport.value)
 		wanted = false;
@@ -144,6 +145,12 @@ void SV_MVDStream_Poll (void)
 
 	if (client == INVALID_SOCKET)
 		return;
+
+	if (ioctlsocket (client, FIONBIO, &_true) == SOCKET_ERROR) {
+		Con_Printf ("SV_MVDStream_Poll: ioctl FIONBIO: (%i): %s\n", qerrno, strerror (qerrno));
+		closesocket(client);
+		return;
+	}
 
 	if ((int)qtv_maxstreams.value > 0)
 	{
