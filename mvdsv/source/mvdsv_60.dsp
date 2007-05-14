@@ -109,7 +109,7 @@ SOURCE=bothtools.c
 SOURCE=cmd.c
 # End Source File
 # Begin Source File
- 
+
 SOURCE=cmodel.c
 # End Source File
 # Begin Source File
@@ -191,6 +191,14 @@ SOURCE=sv_ccmds.c
 # Begin Source File
 
 SOURCE=sv_demo.c
+# End Source File
+# Begin Source File
+
+SOURCE=sv_demo_misc.c
+# End Source File
+# Begin Source File
+
+SOURCE=sv_demo_qtv.c
 # End Source File
 # Begin Source File
 
@@ -298,7 +306,7 @@ SOURCE=bspfile.h
 SOURCE=cmd.h
 # End Source File
 # Begin Source File
- 
+
 SOURCE=cmodel.h
 # End Source File
 # Begin Source File

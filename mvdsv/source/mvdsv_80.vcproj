@@ -753,11 +753,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\sv_demo_misc.c"
+				RelativePath="sv_demo_misc.c"
 				>
 			</File>
 			<File
-				RelativePath=".\sv_demo_qtv.c"
+				RelativePath="sv_demo_qtv.c"
 				>
 			</File>
 			<File

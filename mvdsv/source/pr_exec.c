@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-   $Id: pr_exec.c,v 1.9 2006/11/25 23:32:37 disconn3ct Exp $
+   $Id: pr_exec.c,v 1.10 2007/05/14 17:21:41 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -675,10 +675,16 @@ char *PR_GetString(int num)
 	if (num < 0)
 	{
 		//Con_DPrintf("GET:%d == %s\n", num, pr_strtbl[-num]);
-		if (num <= -MAX_PRSTR)
-			return pr_newstrtbl[-(num + MAX_PRSTR)];
+		num = -num;
+		if (num >= 2 * MAX_PRSTR)
+		{
+			Con_Printf("PR_GetString: num = %d\n", num);// May be will be better to generate PR_RunError?
+			return NULL;
+		}
+		if (num >= MAX_PRSTR)
+			return pr_newstrtbl[num - MAX_PRSTR];
 
-		return pr_strtbl[-num];
+		return pr_strtbl[num];
 	}
 	return pr_strings + num;
 }

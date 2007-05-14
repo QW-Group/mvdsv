@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: pr_cmds.c,v 1.39 2007/05/07 14:17:38 disconn3ct Exp $
+	$Id: pr_cmds.c,v 1.40 2007/05/14 17:21:41 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -803,15 +803,16 @@ void PF_executecmd (void)
 	pr_global_struct->other = old_other;
 }
 
-#define MAX_PR_STRING_SIZE 2048
+#define MAX_PR_STRING_SIZE	2048
+#define MAX_PR_STRINGS		64
 
 int		pr_string_index = 0;
-char	pr_string_buf[8][MAX_PR_STRING_SIZE];
+char	pr_string_buf[MAX_PR_STRINGS][MAX_PR_STRING_SIZE];
 char	*pr_string_temp = pr_string_buf[0];
 
 void PF_SetTempString(void)
 {
-	pr_string_temp = pr_string_buf[pr_string_index++&7];
+	pr_string_temp = pr_string_buf[(++pr_string_index) & (MAX_PR_STRINGS - 1)];
 }
 
 
@@ -868,10 +869,12 @@ void PF_argv (void)
 
 	if (num < 0 || num >= Cmd_Argc())
 		RETURN_STRING("");
-
-	snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_Argv(num));
-	G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
-	PF_SetTempString();
+	else {
+		snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_Argv(num));
+		RETURN_STRING(pr_string_temp);
+//		G_INT(OFS_RETURN) = PR_SetString(pr_string_temp);
+		PF_SetTempString();
+	}
 }
 
 /*
