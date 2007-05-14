@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-   $Id: bothtools.c,v 1.18 2007/05/07 14:17:36 disconn3ct Exp $
+   $Id: bothtools.c,v 1.19 2007/05/14 17:21:40 vvd0 Exp $
 */
 
 #include "qwsvdef.h"
@@ -37,8 +37,7 @@ char *va(char *format, ...)
 	static char string[MAX_STRINGS][1024];
 	static int index1 = 0;
 
-	index1 %= MAX_STRINGS;
-	//index = (++index1)&(MAX_STRINGS - 1);
+	index1 &= (MAX_STRINGS - 1);
 	va_start (argptr, format);
 	vsnprintf (string[index1], sizeof(string[0]), format, argptr);
 	va_end (argptr);
