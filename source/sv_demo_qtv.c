@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_qtv.c,v 1.4 2007/05/11 11:29:04 qqshka Exp $
+    $Id: sv_demo_qtv.c,v 1.5 2007/05/18 10:20:50 qqshka Exp $
 */
 
 //	sv_demo_qtv.c - misc QTV's code
@@ -219,14 +219,13 @@ void SV_MVD_RunPendingConnections (void)
 		{
 			len = send(p->socket, p->outbuffer, p->outsize, 0);
 
-/*  // man says: The calls return the number of characters sent, or -1 if an error occurred.   
-  	// so 0 is legal or what?
-
 			if (len == 0) //client died
-				p->error = true;
-			else
-*/
-			if (len > 0)	//we put some data through
+			{
+//				p->error = true;
+				// man says: The calls return the number of characters sent, or -1 if an error occurred.   
+				// so 0 is legal or what?
+			}
+			else if (len > 0)	//we put some data through
 			{	//move up the buffer
 				p->outsize -= len;
 				memmove(p->outbuffer, p->outbuffer+len, p->outsize );
