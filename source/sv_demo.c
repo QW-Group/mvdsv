@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.81 2007/05/18 10:20:50 qqshka Exp $
+    $Id: sv_demo.c,v 1.82 2007/05/19 00:59:58 qqshka Exp $
 */
 
 // sv_demo.c - mvd demo related code
@@ -168,8 +168,9 @@ void DestFlush (qbool compleate)
 			Sys_Error("DestFlush encoundered bad dest.");
 		}
 
-		if ((unsigned int)sv_demoMaxSize.value && d->totalsize > ((unsigned int)sv_demoMaxSize.value * 1024))
-			d->error = 2;	//abort, but don't kill it.
+		if (d->desttype != DEST_STREAM) // no max size for stream
+			if ((unsigned int)sv_demoMaxSize.value && d->totalsize > ((unsigned int)sv_demoMaxSize.value * 1024))
+				d->error = 2;	//abort, but don't kill it.
 
 		while (d->nextdest && d->nextdest->error)
 		{
