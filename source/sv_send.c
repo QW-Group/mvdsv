@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.33 2007/05/05 17:02:22 qqshka Exp $
+	$Id: sv_send.c,v 1.34 2007/05/22 16:06:27 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1008,6 +1008,7 @@ void SV_SendDemoMessage(void)
 	sizebuf_t	msg;
 	edict_t		*ent;
 	int			stats[MAX_CL_STATS];
+	qbool 		write_entities = true;
 	float		min_fps;
 	extern		cvar_t sv_demofps;
 	extern		cvar_t sv_demoPings;
@@ -1041,13 +1042,21 @@ void SV_SendDemoMessage(void)
 		cls |= 1 << i;
 	}
 
+// this if(!cls) is optional, just help get rid of warning "Not enough buffered" in QTV
 	if (!cls)
 	{
-		SZ_Clear (&demo.datagram);
-		DemoWriteQTVTimePad((int)((sv.time - demo.time)*1000));
-		DestFlush(false);
-		demo.time = sv.time;
-		return;
+		if (!demo.datagram.cursize && !demo.dbuf->cursize)
+		{
+			SZ_Clear (&demo.datagram);
+			DemoWriteQTVTimePad((int)((sv.time - demo.time)*1000));
+			DestFlush(false);
+
+// qqshka: no, we can't return here
+//			demo.time = sv.time;
+//			return;
+		}
+
+		write_entities = false; // there no clients, so do not send entities, this save some CPU/bandwidth
 	}
 
 	msg.data = buf;
@@ -1116,7 +1125,9 @@ void SV_SendDemoMessage(void)
 	msg.cursize = 0;
 	if (!demo.recorder.delta_sequence)
 		demo.recorder.delta_sequence = -1;
-	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
+
+	if (write_entities)
+		SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
 
 	if (msg.overflowed)
 	{
