@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: tools.h,v 1.11 2007/05/06 16:17:01 disconn3ct Exp $
+	$Id: tools.h,v 1.12 2007/05/24 13:08:22 disconn3ct Exp $
 */
 
 #ifndef __TOOLS_H__
@@ -64,7 +64,7 @@ flist_t;
 
 void SZ_Clear (sizebuf_t *buf);
 void *SZ_GetSpace (sizebuf_t *buf, int length);
-void SZ_Write (sizebuf_t *buf, const void *data, size_t length);
+void SZ_Write (sizebuf_t *buf, const void *data, int length);
 void SZ_Print (sizebuf_t *buf, const char *data);	// strcats onto the sizebuf
 
 
