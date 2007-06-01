@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.49 2007/05/07 14:17:38 disconn3ct Exp $
+	$Id: server.h,v 1.50 2007/06/01 19:24:46 vvd0 Exp $
 */
 
 // server.h
@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	MAX_MASTERS 8 // max recipients for heartbeat packets
 
-#define	MAX_SIGNON_BUFFERS 8
+#define	MAX_SIGNON_BUFFERS 16
 
 // sv_specprint stuff
 #define SPECPRINT_CENTERPRINT	0x1

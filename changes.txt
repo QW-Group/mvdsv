@@ -1,8 +1,10 @@
 
-$Id: changes.txt,v 1.128 2007/05/02 18:36:52 vvd0 Exp $
+$Id: changes.txt,v 1.129 2007/06/01 19:24:43 vvd0 Exp $
 
 MVDSV v0.26.01-CVS build 2??? (2007.0?.??)
 ----
+- MAX_SIGNON_BUFFERS was increased from 8 to 16 for support single player map shadow with skill 3
+(Thanks to Parboil)
 
 
 MVDSV v0.26 build 2666 (2007.04.09)
