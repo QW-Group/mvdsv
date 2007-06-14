@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.93 2007/05/07 14:17:40 disconn3ct Exp $
+	$Id: sv_user.c,v 1.94 2007/06/14 15:42:44 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -861,20 +861,65 @@ static qbool SV_DownloadNextFile (void)
 
 /*
 ==================
+SV_CompleteDownoload
+==================
+
+This is a sub routine for  SV_NextDownload(), called when download complete, we set up some fields for sv_client.
+
+*/
+
+void SV_CompleteDownoload(void)
+{
+	unsigned char download_completed[] = "Download completed.\n";
+
+	if (!sv_client->download)
+		return;
+
+	fclose (sv_client->download);
+	sv_client->download = NULL;
+	sv_client->file_percent = 0; //bliP: file percent
+	// qqshka: set normal rate
+	sv_client->netchan.rate = 1. / SV_BoundRate(false,	Q_atoi(Info_ValueForKey (sv_client->userinfo, "rate")));
+
+	Con_Printf((char *)Q_redtext(download_completed));
+
+	if (SV_DownloadNextFile())
+		return;
+
+	// if map changed tell the client to reconnect
+	if (sv_client->spawncount != svs.spawncount)
+	{
+		char *str = "changing\nreconnect\n";
+
+		ClientReliableWrite_Begin (sv_client, svc_stufftext, strlen(str)+2);
+		ClientReliableWrite_String (sv_client, str);
+	}
+}
+
+
+/*
+==================
 Cmd_NextDownload_f
 ==================
 */
 
 #ifdef PEXT_CHUNKEDDOWNLOADS
 
-void SV_NextChunkedDownload(int chunknum)
+// qqshka: percent is optional, u can't relay on it
+
+void SV_NextChunkedDownload(int chunknum, int percent)
 {
 #define CHUNKSIZE 1024
 	char buffer[CHUNKSIZE];
 	int i;
 
+	sv_client->file_percent = bound(0, percent, 100); //bliP: file percent
+
 	if (chunknum < 0)
-		return; // hm, what about upper limit?
+	{  // qqshka: FTE's chunked download does't have any way of signaling what client complete dl-ing, so doing it this way.
+		SV_CompleteDownoload();
+		return;
+	}
 
 	if (sv_client->datagram.cursize + CHUNKSIZE+5+50 > sv_client->datagram.maxsize)
 		return;	//choked!
@@ -907,7 +952,6 @@ static void Cmd_NextDownload_f (void)
 	int		percent;
 	int		size;
 	double	clear, frametime;
-	unsigned char download_completed[] = "Download completed.\n";
 
 	if (!sv_client->download)
 		return;
@@ -915,9 +959,7 @@ static void Cmd_NextDownload_f (void)
 #ifdef PEXT_CHUNKEDDOWNLOADS
 	if (sv_client->fteprotocolextensions & PEXT_CHUNKEDDOWNLOADS)
 	{
-		extern void	SV_NextChunkedDownload(int chunknum);
-
-		SV_NextChunkedDownload(atoi(Cmd_Argv(1)));
+		SV_NextChunkedDownload(atoi(Cmd_Argv(1)), atoi(Cmd_Argv(2)));
 		return;
 	}
 #endif
@@ -961,29 +1003,8 @@ static void Cmd_NextDownload_f (void)
 	ClientReliableWrite_SZ (sv_client, buffer, r);
 	sv_client->file_percent = percent; //bliP: file percent
 
-	if (sv_client->downloadcount != sv_client->downloadsize)
-		return;
-
-	fclose (sv_client->download);
-	sv_client->download = NULL;
-	sv_client->file_percent = 0; //bliP: file percent
-	sv_client->netchan.rate = 1. / SV_BoundRate(false,
-		Q_atoi(Info_ValueForKey (sv_client->userinfo, "rate")));
-	// qqshka: set normal rate
-
-	Con_Printf((char *)Q_redtext(download_completed));
-
-	if (SV_DownloadNextFile())
-		return;
-
-	// if map changed tell the client to reconnect
-	if (sv_client->spawncount != svs.spawncount)
-	{
-		char *str = "changing\nreconnect\n";
-
-		ClientReliableWrite_Begin (sv_client, svc_stufftext, strlen(str)+2);
-		ClientReliableWrite_String (sv_client, str);
-	}
+	if (sv_client->downloadcount == sv_client->downloadsize)
+		SV_CompleteDownoload();
 }
 
 static void OutofBandPrintf(netadr_t where, char *fmt, ...)
