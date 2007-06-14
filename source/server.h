@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: server.h,v 1.50 2007/06/01 19:24:46 vvd0 Exp $
+	$Id: server.h,v 1.51 2007/06/14 20:04:56 qqshka Exp $
 */
 
 // server.h
@@ -347,6 +347,8 @@ typedef struct mvdpendingdest_s
 	int insize;
 	int outsize;
 
+	double io_time; // when last IO occur on socket, so we can timeout this dest
+
 	struct mvdpendingdest_s *nextdest;
 } mvdpendingdest_t;
 
@@ -368,6 +370,8 @@ typedef struct mvddest_s
 	int maxcachesize;
 
 	unsigned int totalsize;
+
+	double io_time; // when last IO occur on socket, so we can timeout this dest
 
 	struct mvddest_s *nextdest;
 } mvddest_t;
@@ -815,6 +819,9 @@ void	SV_LastScores_f (void);
 extern cvar_t	qtv_streamport;
 extern cvar_t	qtv_maxstreams;
 extern cvar_t	qtv_password;
+extern cvar_t	qtv_pendingtimeout;
+extern cvar_t	qtv_streamtimeout;
+
 
 void SV_MVDStream_Poll(void);
 void QTV_Init(void);

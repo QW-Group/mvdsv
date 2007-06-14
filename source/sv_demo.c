@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.82 2007/05/19 00:59:58 qqshka Exp $
+    $Id: sv_demo.c,v 1.83 2007/06/14 20:04:56 qqshka Exp $
 */
 
 // sv_demo.c - mvd demo related code
@@ -140,6 +140,14 @@ void DestFlush (qbool compleate)
 			break;
 
 		case DEST_STREAM:
+			if (d->io_time + qtv_streamtimeout.value <= sv.time)
+			{
+				// problem what send() have internal buffer, so send() success some time even peer side does't read,
+				// this may take some time before internal buffer overflow and timeout trigger, depends of buffer size.
+				Con_Printf("Stream timeout\n");
+				d->error = true;
+			}
+
 			if (d->cacheused && !d->error)
 			{
 				len = send(d->socket, d->cache, d->cacheused, 0);
@@ -154,6 +162,8 @@ void DestFlush (qbool compleate)
 				{ //move up the buffer
 					d->cacheused -= len;
 					memmove(d->cache, d->cache+len, d->cacheused);
+
+					d->io_time = sv.time; // update IO activity
 				}
 				else
 				{ //error of some kind. would block or something

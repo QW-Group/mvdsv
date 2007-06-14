@@ -14,16 +14,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_qtv.c,v 1.5 2007/05/18 10:20:50 qqshka Exp $
+    $Id: sv_demo_qtv.c,v 1.6 2007/06/14 20:04:56 qqshka Exp $
 */
 
 //	sv_demo_qtv.c - misc QTV's code
 
 #include "qwsvdef.h"
 
-cvar_t	qtv_streamport		= {"qtv_streamport",	"0"};
-cvar_t	qtv_maxstreams		= {"qtv_maxstreams",	"1"};
-cvar_t	qtv_password		= {"qtv_password",		""};
+cvar_t	qtv_streamport		= {"qtv_streamport",		"0"};
+cvar_t	qtv_maxstreams		= {"qtv_maxstreams",		"1"};
+cvar_t	qtv_password		= {"qtv_password",			""};
+cvar_t	qtv_pendingtimeout	= {"qtv_pendingtimeout",	"5"};  // 5  seconds must be enough
+cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"10"}; // 10 seconds
 
 static mvddest_t *SV_InitStream (int socket1)
 {
@@ -35,6 +37,7 @@ static mvddest_t *SV_InitStream (int socket1)
 	dst->socket = socket1;
 	dst->maxcachesize = 0x8000;	//is this too small?
 	dst->cache = (char *) Q_malloc(dst->maxcachesize);
+	dst->io_time = sv.time;
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
 
@@ -47,6 +50,7 @@ static void SV_MVD_InitPendingStream (int socket1, char *ip)
 	unsigned int i;
 	dst = (mvdpendingdest_t*) Q_malloc(sizeof(mvdpendingdest_t));
 	dst->socket = socket1;
+	dst->io_time = sv.time;
 
 	strlcpy(dst->challenge, ip, sizeof(dst->challenge));
 	for (i = strlen(dst->challenge); i < sizeof(dst->challenge)-1; i++)
@@ -191,6 +195,13 @@ void SV_MVD_RunPendingConnections (void)
 	if (!demo.pendingdest)
 		return;
 
+	for (p = demo.pendingdest; p; p = p->nextdest)
+		if (p->io_time + qtv_pendingtimeout.value <= sv.time)
+		{
+			Con_Printf("Pending dest timeout\n");
+			p->error = true;
+		}
+
 	while (demo.pendingdest && demo.pendingdest->error)
 	{
 		np = demo.pendingdest->nextdest;
@@ -226,9 +237,13 @@ void SV_MVD_RunPendingConnections (void)
 				// so 0 is legal or what?
 			}
 			else if (len > 0)	//we put some data through
-			{	//move up the buffer
+			{
+				p->io_time = sv.time; // update IO activity
+
+				//move up the buffer
 				p->outsize -= len;
 				memmove(p->outbuffer, p->outbuffer+len, p->outsize );
+
 			}
 			else
 			{ //error of some kind. would block or something
@@ -244,6 +259,9 @@ void SV_MVD_RunPendingConnections (void)
 			if (len > 0)
 			{ //fixme: cope with extra \rs
 				char *end;
+
+				p->io_time = sv.time; // update IO activity
+
 				p->insize += len;
 				p->inbuffer[p->insize] = 0;
 
@@ -581,4 +599,6 @@ void QTV_Init(void)
 	Cvar_Register (&qtv_streamport);
 	Cvar_Register (&qtv_maxstreams);
 	Cvar_Register (&qtv_password);
+	Cvar_Register (&qtv_pendingtimeout);
+	Cvar_Register (&qtv_streamtimeout);
 }
