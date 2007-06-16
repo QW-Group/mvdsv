@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_qtv.c,v 1.6 2007/06/14 20:04:56 qqshka Exp $
+    $Id: sv_demo_qtv.c,v 1.7 2007/06/16 03:58:21 qqshka Exp $
 */
 
 //	sv_demo_qtv.c - misc QTV's code
@@ -99,8 +99,9 @@ static int MVD_StreamStartListening (int port)
 
 void SV_MVDStream_Poll (void)
 {
-	static int listensocket=INVALID_SOCKET;
+	static int listensocket = INVALID_SOCKET;
 	static int listenport;
+	static qbool warned = false;
 
 	int client;
 	netadr_t na;
@@ -110,38 +111,53 @@ void SV_MVDStream_Poll (void)
 	qbool wanted;
 	mvddest_t *dest;
 	char *ip;
+	int streamport = bound(0, (int)qtv_streamport.value, 64000); // so user can't specifie something stupid
 	unsigned long _true = true;
 
-	if (!sv.state || !(int)qtv_streamport.value)
+	if (!sv.state || !streamport)
 		wanted = false;
-	else if (listenport && (int)qtv_streamport.value != listenport)	//easy way to switch... disable for a frame. :)
+	else if (listenport && streamport != listenport)	//easy way to switch... disable for a frame. :)
 	{
-		listenport = (int)qtv_streamport.value;
+		listenport = streamport;
 		wanted = false;
 	}
 	else
 	{
-		listenport = (int)qtv_streamport.value;
+		listenport = streamport;
 		wanted = true;
 	}
 
-	if (wanted && listensocket==INVALID_SOCKET)
+	if (wanted && listensocket == INVALID_SOCKET)
 	{
 		listensocket = MVD_StreamStartListening(listenport);
-/*		if (listensocket==INVALID_SOCKET && qtv_streamport.modified) @@@
+
+		if (listensocket == INVALID_SOCKET)
 		{
-			Con_Printf("Cannot open TCP port %i for QTV\n", listenport);
-			qtv_streamport.modified = false;
+			static double last_time_warned = 0;
+
+			if (!warned || last_time_warned + 60 < sv.time)
+			{
+				Con_Printf("WARNING: Cannot open TCP port %i for QTV\n", listenport);
+				last_time_warned = sv.time; // so we repeat warning time to time
+				warned = true;
+			}
 		}
-*/
+		else
+		{
+			Con_Printf("Opening TCP port %i for QTV\n", listenport);
+			warned = false; // we succseed, so forget about warning
+		}
 	}
-	else if (!wanted && listensocket!=INVALID_SOCKET)
+	else if (!wanted && listensocket != INVALID_SOCKET)
 	{
+		Con_Printf("Closing TCP port for QTV\n");
 		closesocket(listensocket);
 		listensocket = INVALID_SOCKET;
+		warned = false; // closing socket, forget about warning so we can warn then open it again
 		return;
 	}
-	if (listensocket==INVALID_SOCKET)
+
+	if (listensocket == INVALID_SOCKET)
 		return;
 
 	addrlen = sizeof(addr);
