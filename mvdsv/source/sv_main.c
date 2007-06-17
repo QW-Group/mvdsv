@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.100 2007/05/07 14:17:40 disconn3ct Exp $
+	$Id: sv_main.c,v 1.101 2007/06/17 03:18:24 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -2886,16 +2886,8 @@ static void SV_CheckVars (void)
 			if (cl->state < cs_preconnected)
 				continue;
 
-			if (cl->download)
-			{
-				val = Info_ValueForKey (cl->userinfo, "drate");
-				if (!*val)
-					val = Info_ValueForKey (cl->userinfo, "rate");
-			}
-			else
-				val = Info_ValueForKey (cl->userinfo, "rate");
-
-			cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(val));
+			val = Info_ValueForKey (cl->userinfo, cl->download ? "drate" : "rate");
+			cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(*val ? val : "99999"));
 		}
 	}
 }
@@ -3373,15 +3365,8 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	strlcpy (cl->team, Info_ValueForKey (cl->userinfo, "team"), sizeof(cl->team));
 
 	// rate
-	if (cl->download)
-	{
-		val = Info_ValueForKey (cl->userinfo, "drate");
-		if (!Q_atoi(val))
-			val = Info_ValueForKey (cl->userinfo, "rate");
-	}
-	else
-		val = Info_ValueForKey (cl->userinfo, "rate");
-	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(val));
+	val = Info_ValueForKey (cl->userinfo, cl->download ? "drate" : "rate");
+	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(*val ? val : "99999"));
 
 	// message level
 	val = Info_ValueForKey (cl->userinfo, "msg");

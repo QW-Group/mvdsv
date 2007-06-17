@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.94 2007/06/14 15:42:44 qqshka Exp $
+	$Id: sv_user.c,v 1.95 2007/06/17 03:18:24 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -871,6 +871,7 @@ This is a sub routine for  SV_NextDownload(), called when download complete, we 
 void SV_CompleteDownoload(void)
 {
 	unsigned char download_completed[] = "Download completed.\n";
+	char *val;
 
 	if (!sv_client->download)
 		return;
@@ -879,7 +880,8 @@ void SV_CompleteDownoload(void)
 	sv_client->download = NULL;
 	sv_client->file_percent = 0; //bliP: file percent
 	// qqshka: set normal rate
-	sv_client->netchan.rate = 1. / SV_BoundRate(false,	Q_atoi(Info_ValueForKey (sv_client->userinfo, "rate")));
+	val = Info_ValueForKey (sv_client->userinfo, "rate");
+	sv_client->netchan.rate = 1. / SV_BoundRate(false,	Q_atoi(*val ? val : "99999"));
 
 	Con_Printf((char *)Q_redtext(download_completed));
 
@@ -1223,8 +1225,9 @@ static void Cmd_Download_f(void)
 	{
 		fclose (sv_client->download);
 		sv_client->download = NULL;
+		// set normal rate
 		val = Info_ValueForKey (sv_client->userinfo, "rate");
-		sv_client->netchan.rate = 1.0/SV_BoundRate(false, Q_atoi(val));
+		sv_client->netchan.rate = 1.0 / SV_BoundRate(false, Q_atoi(*val ? val : "99999"));
 	}
 
 	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0])
@@ -1316,9 +1319,9 @@ static void Cmd_Download_f(void)
 		goto deny_download;
 	}
 
+	// set donwload rate
 	val = Info_ValueForKey (sv_client->userinfo, "drate");
-	if (Q_atoi(val))
-		sv_client->netchan.rate = 1. / SV_BoundRate(true, Q_atoi(val));
+	sv_client->netchan.rate = 1. / SV_BoundRate(true, Q_atoi(*val ? val : "99999"));
 
 	// all checks passed, start downloading
 
@@ -1464,6 +1467,7 @@ Cmd_StopDownload_f
 static void Cmd_StopDownload_f(void)
 {
 	unsigned char	download_stopped[] = "Download stopped and download queue cleared.\n";
+	char *val;
 
 	if (!sv_client->download)
 		return;
@@ -1473,7 +1477,8 @@ static void Cmd_StopDownload_f(void)
 	sv_client->download = NULL;
 	sv_client->file_percent = 0; //bliP: file percent
 	// qqshka: set normal rate
-	sv_client->netchan.rate = 1. / SV_BoundRate(false, Q_atoi(Info_ValueForKey (sv_client->userinfo, "rate")));
+	val = Info_ValueForKey (sv_client->userinfo, "rate");
+	sv_client->netchan.rate = 1. / SV_BoundRate(false, Q_atoi(*val ? val : "99999"));
 #ifdef PEXT_CHUNKEDDOWNLOADS
 	if (sv_client->fteprotocolextensions & PEXT_CHUNKEDDOWNLOADS)
 	{
