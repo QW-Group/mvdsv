@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.95 2007/06/17 03:18:24 qqshka Exp $
+	$Id: sv_user.c,v 1.96 2007/06/18 00:45:31 qqshka Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -38,6 +38,10 @@ cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "3"};
 cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "30"};
 
 cvar_t	sv_maxuploadsize = {"sv_maxuploadsize", "1048576"};
+
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+cvar_t  sv_downloadchunksperframe = {"sv_downloadchunksperframe", "2"};
+#endif
 
 extern	vec3_t	player_mins;
 
@@ -905,11 +909,11 @@ Cmd_NextDownload_f
 ==================
 */
 
-#ifdef PEXT_CHUNKEDDOWNLOADS
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 
 // qqshka: percent is optional, u can't relay on it
 
-void SV_NextChunkedDownload(int chunknum, int percent)
+void SV_NextChunkedDownload(int chunknum, int percent, int chunked_download_number)
 {
 #define CHUNKSIZE 1024
 	char buffer[CHUNKSIZE];
@@ -923,8 +927,17 @@ void SV_NextChunkedDownload(int chunknum, int percent)
 		return;
 	}
 
-	if (sv_client->datagram.cursize + CHUNKSIZE+5+50 > sv_client->datagram.maxsize)
-		return;	//choked!
+	if (sv_client->download_chunks_perframe)
+	{
+		int maxchunks = bound(1, (int)sv_downloadchunksperframe.value, 5);
+		// too much requests or client sent something wrong
+		if (sv_client->download_chunks_perframe >= maxchunks || chunked_download_number < 1)
+			return;
+	}
+
+	if (!sv_client->download_chunks_perframe) // ignore "rate" if not first packet per frame
+		if (sv_client->datagram.cursize + CHUNKSIZE+5+50 > sv_client->datagram.maxsize)
+			return;	//choked!
 
 	if (fseek(sv_client->download, sv_client->download_position + chunknum*CHUNKSIZE, SEEK_SET))
 		return; // FIXME: ERROR of some kind
@@ -933,16 +946,37 @@ void SV_NextChunkedDownload(int chunknum, int percent)
 
 	if (i > 0)
 	{
+		byte data[1+ (sizeof("\\chunk")-1) + 4 + 1 + 4 + CHUNKSIZE]; // byte + (sizeof("\\chunk")-1) + long + byte + long + CHUNKSIZE
+		sizebuf_t *msg, msg_oob;
+
+		if (sv_client->download_chunks_perframe)
+		{
+			msg = &msg_oob;
+
+			SZ_Init (&msg_oob, data, sizeof(data));
+
+			MSG_WriteByte(msg, A2C_PRINT);
+			SZ_Write(msg, "\\chunk", sizeof("\\chunk")-1);
+			MSG_WriteLong(msg, chunked_download_number); // return back, so they sure what it proper chunk
+		}
+		else
+			msg = &sv_client->datagram;
+
 		if (i != CHUNKSIZE)
 			memset(buffer+i, 0, CHUNKSIZE-i);
 
-		MSG_WriteByte(&sv_client->datagram, svc_download);
-		MSG_WriteLong(&sv_client->datagram, chunknum);
-		SZ_Write(&sv_client->datagram, buffer, CHUNKSIZE);
+		MSG_WriteByte(msg, svc_download);
+		MSG_WriteLong(msg, chunknum);
+		SZ_Write(msg, buffer, CHUNKSIZE);
+
+		if (sv_client->download_chunks_perframe)
+			Netchan_OutOfBand (sv_client->netchan.remote_address, msg->cursize, msg->data);
 	}
 	else {
 		; // FIXME: EOF/READ ERROR
 	}
+
+	sv_client->download_chunks_perframe++;
 }
 
 #endif
@@ -958,10 +992,10 @@ static void Cmd_NextDownload_f (void)
 	if (!sv_client->download)
 		return;
 
-#ifdef PEXT_CHUNKEDDOWNLOADS
-	if (sv_client->fteprotocolextensions & PEXT_CHUNKEDDOWNLOADS)
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+	if (sv_client->fteprotocolextensions & FTE_PEXT_CHUNKEDDOWNLOADS)
 	{
-		SV_NextChunkedDownload(atoi(Cmd_Argv(1)), atoi(Cmd_Argv(2)));
+		SV_NextChunkedDownload(atoi(Cmd_Argv(1)), atoi(Cmd_Argv(2)), atoi(Cmd_Argv(3)));
 		return;
 	}
 #endif
@@ -1325,8 +1359,8 @@ static void Cmd_Download_f(void)
 
 	// all checks passed, start downloading
 
-#ifdef PEXT_CHUNKEDDOWNLOADS
-	if (sv_client->fteprotocolextensions & PEXT_CHUNKEDDOWNLOADS)
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+	if (sv_client->fteprotocolextensions & FTE_PEXT_CHUNKEDDOWNLOADS)
 	{
 		ClientReliableWrite_Begin (sv_client, svc_download, 10+strlen(name));
 		ClientReliableWrite_Long (sv_client, -1);
@@ -1365,8 +1399,8 @@ static void Cmd_Download_f(void)
 
 deny_download:
 
-#ifdef PEXT_CHUNKEDDOWNLOADS
-	if (sv_client->fteprotocolextensions & PEXT_CHUNKEDDOWNLOADS)
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+	if (sv_client->fteprotocolextensions & FTE_PEXT_CHUNKEDDOWNLOADS)
 	{
 		ClientReliableWrite_Begin (sv_client, svc_download, 10+strlen(name));
 		ClientReliableWrite_Long (sv_client, -1);
@@ -1479,8 +1513,8 @@ static void Cmd_StopDownload_f(void)
 	// qqshka: set normal rate
 	val = Info_ValueForKey (sv_client->userinfo, "rate");
 	sv_client->netchan.rate = 1. / SV_BoundRate(false, Q_atoi(*val ? val : "99999"));
-#ifdef PEXT_CHUNKEDDOWNLOADS
-	if (sv_client->fteprotocolextensions & PEXT_CHUNKEDDOWNLOADS)
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+	if (sv_client->fteprotocolextensions & FTE_PEXT_CHUNKEDDOWNLOADS)
 	{
 		char *name = ""; // FIXME: FTE's chunked dl does't support "cmd stopdl", work around
 
@@ -3190,6 +3224,9 @@ void SV_ExecuteClientMessage (client_t *cl)
 	// this is a valid, sequenced packet, so process it
 	svs.stats.packets++;
 	cl->send_message = true; // reply at end of frame
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+	cl->download_chunks_perframe = 0;
+#endif
 
 	// calc ping time
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
@@ -3357,4 +3394,7 @@ void SV_UserInit (void)
 	Cvar_Register (&sv_kickuserinfospamtime);
 	Cvar_Register (&sv_kickuserinfospamcount);
 	Cvar_Register (&sv_maxuploadsize);
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+	Cvar_Register (&sv_downloadchunksperframe);
+#endif
 }

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.101 2007/06/17 03:18:24 qqshka Exp $
+	$Id: sv_main.c,v 1.102 2007/06/18 00:45:31 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -3177,8 +3177,8 @@ void SV_InitLocal (void)
 	for (i=0 ; i<MAX_MODELS ; i++)
 		snprintf (localmodels[i], MODEL_NAME_LEN, "*%i", i);
 
-#ifdef PEXT_CHUNKEDDOWNLOADS
-	svs.fteprotocolextensions |= PEXT_CHUNKEDDOWNLOADS;
+#ifdef FTE_PEXT_CHUNKEDDOWNLOADS
+	svs.fteprotocolextensions |= FTE_PEXT_CHUNKEDDOWNLOADS;
 #endif
 
 //	Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);
