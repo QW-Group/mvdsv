@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_misc.c,v 1.3 2007/05/07 14:17:39 disconn3ct Exp $
+    $Id: sv_demo_misc.c,v 1.4 2007/06/18 15:26:48 qqshka Exp $
 */
 
 // sv_demo_misc.c - misc demo related stuff, helpers
@@ -404,7 +404,11 @@ void SV_DemoList (qbool use_regex)
 	}
 
 	for (d = demo.dest; d; d = d->nextdest)
+	{
+		if (d->desttype == DEST_STREAM)
+			continue; // streams are not saved on to HDD, so inogre it...
 		dir.size += d->totalsize;
+	}
 
 	Con_Printf("\ndirectory size: %.1fMB\n", (float)dir.size / (1024 * 1024));
 	if ((int)sv_demoMaxDirSize.value)
