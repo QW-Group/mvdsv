@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  
-	$Id: sv_send.c,v 1.34 2007/05/22 16:06:27 qqshka Exp $
+	$Id: sv_send.c,v 1.35 2007/06/24 00:53:14 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -1010,7 +1010,7 @@ void SV_SendDemoMessage(void)
 	int			stats[MAX_CL_STATS];
 	qbool 		write_entities = true;
 	float		min_fps;
-	extern		cvar_t sv_demofps;
+	extern		cvar_t sv_demofps, sv_demoIdlefps;
 	extern		cvar_t sv_demoPings;
 
 	SV_MVD_RunPendingConnections();
@@ -1027,13 +1027,6 @@ void SV_SendDemoMessage(void)
 		}
 	}
 
-	min_fps = max(4.0, (int)sv_demofps.value ? (int)sv_demofps.value : 20.0);
-
-	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
-		return;
-
-	demo.forceFrame = 0;
-
 	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
 	{
 		if (c->state != cs_spawned)
@@ -1041,6 +1034,21 @@ void SV_SendDemoMessage(void)
 
 		cls |= 1 << i;
 	}
+
+	// if no players, use idle fps
+	if (cls)
+		min_fps = max(4.0, (int)sv_demofps.value ? (int)sv_demofps.value : 20.0);
+	else
+		min_fps = bound(4.0, (int)sv_demoIdlefps.value, 30);
+
+	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
+		return;
+
+	demo.forceFrame = 0;
+
+/*
+// qqshka - I turned this block off, this help fly while qtving and no players on server
+//
 
 // this if(!cls) is optional, just help get rid of warning "Not enough buffered" in QTV
 	if (!cls)
@@ -1058,6 +1066,7 @@ void SV_SendDemoMessage(void)
 
 		write_entities = false; // there no clients, so do not send entities, this save some CPU/bandwidth
 	}
+*/
 
 	msg.data = buf;
 	msg.maxsize = sizeof(buf);

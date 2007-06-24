@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo.c,v 1.83 2007/06/14 20:04:56 qqshka Exp $
+    $Id: sv_demo.c,v 1.84 2007/06/24 00:53:14 qqshka Exp $
 */
 
 // sv_demo.c - mvd demo related code
@@ -29,6 +29,7 @@ cvar_t	sv_demoMaxDirSize	= {"sv_demoMaxDirSize",	"102400"};
 cvar_t	sv_demoClearOld		= {"sv_demoClearOld",	"0"};
 cvar_t	sv_demoDir			= {"sv_demoDir",		"demos", 0, sv_demoDir_OnChange};
 cvar_t	sv_demofps			= {"sv_demofps",		"30"};
+cvar_t	sv_demoIdlefps		= {"sv_demoIdlefps",	"10"};
 cvar_t	sv_demoPings		= {"sv_demopings",		"3"};
 cvar_t	sv_demoNoVis		= {"sv_demonovis",		"1"};
 cvar_t	sv_demoMaxSize		= {"sv_demoMaxSize",	"20480"};
@@ -1434,6 +1435,7 @@ static void MVD_Init (void)
 	memset(&demo, 0, sizeof(demo)); // clear whole demo struct at least once
 	
 	Cvar_Register (&sv_demofps);
+	Cvar_Register (&sv_demoIdlefps);
 	Cvar_Register (&sv_demoPings);
 	Cvar_Register (&sv_demoNoVis);
 	Cvar_Register (&sv_demoUseCache);
