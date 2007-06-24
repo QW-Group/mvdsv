@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_qtv.c,v 1.7 2007/06/16 03:58:21 qqshka Exp $
+    $Id: sv_demo_qtv.c,v 1.8 2007/06/24 00:51:59 qqshka Exp $
 */
 
 //	sv_demo_qtv.c - misc QTV's code
@@ -25,7 +25,7 @@ cvar_t	qtv_streamport		= {"qtv_streamport",		"0"};
 cvar_t	qtv_maxstreams		= {"qtv_maxstreams",		"1"};
 cvar_t	qtv_password		= {"qtv_password",			""};
 cvar_t	qtv_pendingtimeout	= {"qtv_pendingtimeout",	"5"};  // 5  seconds must be enough
-cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"10"}; // 10 seconds
+cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"45"}; // 45 seconds
 
 static mvddest_t *SV_InitStream (int socket1)
 {
