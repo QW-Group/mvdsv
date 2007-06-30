@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.96 2007/06/18 00:45:31 qqshka Exp $
+	$Id: sv_user.c,v 1.97 2007/06/30 13:06:15 tonik Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2307,7 +2307,7 @@ static void Cmd_AirStep_f (void)
 		if (is_ktpro)
 			Con_Printf("Can't change pm_airstep: ktpro detected\n");
 		else if (GameStarted())
-			Con_Printf("Can't change pm_airstep: demo recording in progress or serverinfo key status not equal 'Standby'.\n");
+			Con_Printf("Can't change pm_airstep: demo recording in progress or serverinfo key status is not 'Standby'.\n");
 		else
 		{
 			val = Q_atoi(Cmd_Argv(1));
@@ -2316,6 +2316,8 @@ static void Cmd_AirStep_f (void)
 			else {
 				float old = pm_airstep.value; // remember
 				Cvar_SetValue (&pm_airstep, val); // set new value
+				if (pm_airstep.value != old)
+					Cvar_SetValue (&pm_pground, val); // airstep works best with pm_pground on
 
 				if (pm_airstep.value != old) { // seems value was changed
 					SV_BroadcastPrintf (2, "%s turns %s %s\n", 
