@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.97 2007/06/30 13:06:15 tonik Exp $
+	$Id: sv_user.c,v 1.98 2007/06/30 13:08:30 tonik Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2300,6 +2300,11 @@ static void Cmd_AirStep_f (void)
 {
 	int val;
 	unsigned char red_airstep[64] = "pm_airstep";
+
+	if (sv_client->spectator) {
+		Con_Printf("Spectators can't change pm_airstep\n");
+		return;
+	}
 
 	switch (Cmd_Argc())
 	{
