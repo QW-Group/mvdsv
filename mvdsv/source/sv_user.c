@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_user.c,v 1.99 2007/07/01 23:23:21 tonik Exp $
+	$Id: sv_user.c,v 1.100 2007/07/02 18:04:45 tonik Exp $
 */
 // sv_user.c -- server code for moving users
 
@@ -2320,12 +2320,7 @@ static void Cmd_AirStep_f (void)
 				Con_Printf("Value must be 0 or 1.\n");
 			else {
 				float old = pm_airstep.value; // remember
-				Cvar_SetValue (&pm_airstep, val); // set new value
-
-// pm_pground is not currently getting registered so this is commented out,
-// because setting an unregistered cvar can really fuck things up
-//				if (pm_airstep.value != old)
-//					Cvar_SetValue (&pm_pground, val); // airstep works best with pm_pground on
+				Cvar_Set (&pm_airstep, val ? "1" : ""); // set new value
 
 				if (pm_airstep.value != old) { // seems value was changed
 					SV_BroadcastPrintf (2, "%s turns %s %s\n", 
