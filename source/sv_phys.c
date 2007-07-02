@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.19 2007/02/13 14:18:16 tonik Exp $
+	$Id: sv_phys.c,v 1.20 2007/07/02 18:04:45 tonik Exp $
 */
 // sv_phys.c
 
@@ -55,10 +55,21 @@ cvar_t	sv_waterfriction	= { "sv_waterfriction", "4"};
 cvar_t	pm_ktjump		= { "pm_ktjump", "1", CVAR_SERVERINFO};
 cvar_t	pm_bunnyspeedcap	= { "pm_bunnyspeedcap", "", CVAR_SERVERINFO};
 cvar_t	pm_slidefix		= { "pm_slidefix", "", CVAR_SERVERINFO};
-cvar_t	pm_airstep		= { "pm_airstep", "", CVAR_SERVERINFO};
-cvar_t	pm_pground		= { "pm_pground", "", CVAR_SERVERINFO};
+qbool OnChange_pm_airstep (cvar_t *var, const char *value);
+cvar_t	pm_airstep		= { "pm_airstep", "", CVAR_SERVERINFO, OnChange_pm_airstep};
+cvar_t	pm_pground		= { "pm_pground", "", CVAR_SERVERINFO|CVAR_ROM};
 
 double	sv_frametime;
+
+
+// when pm_airstep is 1, set pm_pground to 1, and vice versa
+// airstep works best with pground on
+qbool OnChange_pm_airstep (cvar_t *var, const char *value)
+{
+	float val = Q_atoi(value);
+	Cvar_SetROM (&pm_pground, val ? "1" : "");
+	return false;
+}
 
 
 void SV_Physics_Toss (edict_t *ent);
