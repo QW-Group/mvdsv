@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_main.c,v 1.103 2007/07/02 18:04:44 tonik Exp $
+	$Id: sv_main.c,v 1.104 2007/07/03 09:31:36 qqshka Exp $
 */
 
 #include "qwsvdef.h"
@@ -3119,8 +3119,8 @@ void SV_InitLocal (void)
 	//Cvar_Register (&pm_bunnyspeedcap);
 	Cvar_Register (&pm_ktjump);
 	//Cvar_Register (&pm_slidefix);
-	Cvar_Register (&pm_airstep);
 	Cvar_Register (&pm_pground);
+	Cvar_Register (&pm_airstep);
 
 	Cvar_Register (&filterban);
 
