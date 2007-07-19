@@ -20,6 +20,7 @@
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.cod;*.sbr;*.dep;*.bsc;*.res;*.asm;*.manifest;$(TargetPath)"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -75,6 +76,7 @@
 				OutputFile="../../qwdtools-debug_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="Debug_80/qwdtools.pdb"
 				GenerateMapFile="true"
@@ -87,6 +89,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -114,6 +117,7 @@
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.cod;*.sbr;*.dep;*.bsc;*.res;*.asm;*.manifest;$(TargetPath)"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -169,6 +173,7 @@
 				OutputFile="../../qwdtools_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				GenerateManifest="false"
 				ProgramDatabaseFile="Release_80/qwdtools.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -182,6 +187,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				EmbedManifest="false"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
