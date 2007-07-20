@@ -1,6 +1,6 @@
 # Quick-and-dirty Makefile for gas2masm
 #
-#	$Id: Makefile,v 1.3 2006/06/13 18:22:18 vvd0 Exp $
+#	$Id$
 #
 
 all:	gas2masm
