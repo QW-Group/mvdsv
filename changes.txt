@@ -4,22 +4,32 @@ $Id$
 MVDSV v0.27 revision 643 (2007.07.20)
 ----
 * Tonik <tonik@users.sourceforge.net>
-* pm_pground is functional now.  It cannot be changed directly; its value is set automatically when pm_airstep changes:  pm_airstep 1 enables pm_pground, pm_airstep 0 disables.
+* pm_pground is functional now.  It cannot be changed directly; its value is set automatically
+  when pm_airstep changes:  pm_airstep 1 enables pm_pground, pm_airstep 0 disables.
 
 * qqshka <qqshka@users.sourceforge.net>
-- sending objects to qtv now even no players on server, but with low fps, this allow camera fly even no players on server.
+- sending objects to qtv now even no players on server, but with low fps, this allow camera
+  fly even no players on server.
 - qtv_streamtimeout default to 45 now
 - cmd demolist show right dir size now, even if qtv connected.
-- Adding evil hack, allowing ppl dl with ~370kb/s, admins must set sv_downloadchunkspersecond to 5 for that, by default that 2, it mean ~150kb/s, but u require latest ezquake 1.9 from CVS for that. That all haxed chunked download from FTE.
-- now setinfo "drate" optional and if not present assuming it 99999, sure still with respect to sv_maxdownloadrate, so empty value gives maximum download rate server allowed.
+- Adding evil hack, allowing ppl dl with ~370kb/s, admins must set sv_downloadchunkspersecond
+  to 5 for that, by default that 2, it mean ~150kb/s, but u require latest ezquake 1.9 from CVS
+  for that. That all haxed chunked download from FTE.
+- now setinfo "drate" optional and if not present assuming it 99999, sure still with respect
+  to sv_maxdownloadrate, so empty value gives maximum download rate server allowed.
 - Print warning if can't open QTV port
-- Added: qtv_pendingtimeout and qtv_streamtimeout variables, this variables must help drop hanged TCP-QTV connections, unfortunatelly qtv_streamtimeout work not so good, timeout detection may take some long time, we need something like PING-PONG like IRC have.
-- client must sent command "nextdl -1" when file download ends(via reliable channel), this way mvdsv's queue functional ok.
-- "nextdl" command have second optional parammeter, percent, so mvdsv show client's download percent as packet lost in +showscores.
+- Added: qtv_pendingtimeout and qtv_streamtimeout variables, this variables must help
+  drop hanged TCP-QTV connections, unfortunatelly qtv_streamtimeout work not so good,
+  timeout detection may take some long time, we need something like PING-PONG like IRC have.
+- client must sent command "nextdl -1" when file download ends(via reliable channel),
+  this way mvdsv's queue functional ok.
+- "nextdl" command have second optional parammeter, percent, so mvdsv show client's download
+  percent as packet lost in +showscores.
 - BUGFIX: now ignore sv_demomaxsize for qtv streams, so no unexpected disconnects I hope...
 
 * VVD <vvd0@users.sourceforge.net>
-- MAX_SIGNON_BUFFERS was increased from 8 to 16 for support single player map shadow with skill 3 (Thanks to Parboil)
+- MAX_SIGNON_BUFFERS was increased from 8 to 16 for support single player map shadow with skill 3
+(Thanks to Parboil)
 - added Con_DPrintf in demo recording for debuging 'cmd dl .' command
   
 * disconnect <disconn3ct@users.sourceforge.net>
