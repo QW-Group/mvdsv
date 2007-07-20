@@ -20,8 +20,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="1"
-			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest;$(TargetPath)"
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest*;$(TargetPath)"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -51,14 +51,15 @@
 				TreatWChar_tAsBuiltInType="false"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="0"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
 				AssemblerOutput="2"
-				AssemblerListingLocation="$(IntDir)\$(TargetName).cod"
-				ObjectFile="$(IntDir)\$(TargetName).obj"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				GenerateXMLDocumentationFiles="false"
 				XMLDocumentationFileName=""
 				BrowseInformation="1"
-				BrowseInformationFile="$(IntDir)\$(TargetName).sbr"
+				BrowseInformationFile="$(IntDir)\"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
@@ -80,8 +81,9 @@
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				GenerateMapFile="true"
 				MapFileName="$(TargetDir)$(TargetName).map"
-				MapExports="true"
+				MapExports="false"
 				SubSystem="1"
+				OptimizeForWindows98="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -89,7 +91,10 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				DependencyInformationFile="$(IntDir)\$(TargetName).dep"
 				VerboseOutput="false"
+				GenerateCatalogFiles="false"
+				UpdateFileHashes="true"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -115,8 +120,8 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="1"
-			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest;$(TargetPath)"
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest*;$(TargetPath)"
 			WholeProgramOptimization="0"
 			>
 			<Tool
@@ -147,11 +152,12 @@
 				TreatWChar_tAsBuiltInType="false"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
-				AssemblerListingLocation="$(IntDir)\$(TargetName).cod"
-				ObjectFile="$(IntDir)\$(TargetName).obj"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				XMLDocumentationFileName=""
-				BrowseInformationFile="$(IntDir)\$(TargetName).sbr"
+				BrowseInformationFile="$(IntDir)\"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="0"
@@ -189,7 +195,7 @@
 				Name="VCManifestTool"
 				DependencyInformationFile="$(IntDir)\$(TargetName).dep"
 				VerboseOutput="false"
-				GenerateCatalogFiles="true"
+				GenerateCatalogFiles="false"
 				UpdateFileHashes="true"
 			/>
 			<Tool
