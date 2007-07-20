@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_vm.c,v 1.20 2007/05/07 14:17:38 disconn3ct Exp $
+ *  $Id$
  */
 /*
   Quake3 compatible virtual machine

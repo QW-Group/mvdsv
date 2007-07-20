@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: world.h,v 1.7 2006/08/01 11:58:47 vvd0 Exp $
+    $Id$
 */
 
 #ifndef __WORLD_H__

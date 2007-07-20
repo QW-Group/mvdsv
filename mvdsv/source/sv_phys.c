@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	$Id: sv_phys.c,v 1.20 2007/07/02 18:04:45 tonik Exp $
+	$Id$
 */
 // sv_phys.c
 

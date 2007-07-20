@@ -8,7 +8,7 @@
 #
 # Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
 #
-#	$Id: Makefile.BSD,v 1.12 2007/05/05 19:56:20 qqshka Exp $
+#	$Id$
 #
 
 #MAINDIR			!=	/bin/pwd

@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: marge.c,v 1.7 2006/05/26 14:39:28 disconn3ct Exp $
+    $Id$
 */
 
 #include "defs.h"

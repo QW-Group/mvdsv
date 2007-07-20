@@ -11,7 +11,7 @@ Test Vectors (from FIPS PUB 180-1)
 A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
 
-	$Id: sha1.h,v 1.10 2006/10/27 14:34:51 disconn3ct Exp $
+	$Id$
 */
 
 #ifndef __SHA1_H__

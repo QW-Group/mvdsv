@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: sv_demo_misc.c,v 1.4 2007/06/18 15:26:48 qqshka Exp $
+    $Id$
 */
 
 // sv_demo_misc.c - misc demo related stuff, helpers
