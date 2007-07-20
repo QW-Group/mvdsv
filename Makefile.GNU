@@ -5,7 +5,7 @@
 #
 # ELF only
 #
-#	$Id: Makefile.GNU,v 1.10 2007/05/05 19:56:20 qqshka Exp $
+#	$Id$
 #
 
 MAINDIR=.

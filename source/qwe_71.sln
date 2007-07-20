@@ -1,29 +1,23 @@
-Microsoft Visual Studio Solution File, Format Version 8.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwdtools", "qwdtools/qwdtools_71.vcproj", "{0251665C-50AC-4BB5-9E5D-0B2D25617845}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwdtools", "qwdtools\qwdtools_71.vcproj", "{0251665C-50AC-4BB5-9E5D-0B2D25617845}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwsv", "mvdsv_71.vcproj", "{617E4627-FBC6-4834-9C6B-B178EACE973E}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwsv", "mvdsv_71.vcproj", "{4A02A275-B5F3-4FC1-8430-F5A5A2FB5424}"
 EndProject
 Global
-	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
-		Release = Release
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ProjectConfiguration) = postSolution
-		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Debug.ActiveCfg = Debug|Win32
-		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Debug.Build.0 = Debug|Win32
-		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Release.ActiveCfg = Release|Win32
-		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Release.Build.0 = Release|Win32
-		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Debug.ActiveCfg = Debug|Win32
-		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Debug.Build.0 = Debug|Win32
-		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Release.ActiveCfg = Release|Win32
-		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Release.Build.0 = Release|Win32
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Debug|Win32.Build.0 = Debug|Win32
+		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Release|Win32.ActiveCfg = Release|Win32
+		{0251665C-50AC-4BB5-9E5D-0B2D25617845}.Release|Win32.Build.0 = Release|Win32
+		{4A02A275-B5F3-4FC1-8430-F5A5A2FB5424}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4A02A275-B5F3-4FC1-8430-F5A5A2FB5424}.Release|Win32.ActiveCfg = Release|Win32
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

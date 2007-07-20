@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c,v 1.10 2007/01/14 20:34:04 tonik Exp $
+	$Id$
 */
 
 #include "qwsvdef.h"

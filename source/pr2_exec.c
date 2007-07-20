@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- *  $Id: pr2_exec.c,v 1.9 2006/06/19 16:46:16 vvd0 Exp $
+ *  $Id$
  */
 
 #ifdef USE_PR2

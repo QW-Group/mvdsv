@@ -20,7 +20,8 @@
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.cod;*.sbr;*.dep;*.bsc;*.res;*.asm;*.manifest;$(TargetPath)"
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest*;$(TargetPath)"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -36,7 +37,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Debug_80/qwdtools.tlb"
+				TypeLibraryName="Debug_80\qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -44,21 +45,29 @@
 				Optimization="0"
 				InlineFunctionExpansion="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;__LITTLE_ENDIAN__Q__"
-				StringPooling="true"
+				PreprocessorDefinitions="_DEBUG;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;_CRT_DISABLE_PERFCRIT_LOCKS;__LITTLE_ENDIAN__Q__"
+				StringPooling="false"
+				MinimalRebuild="true"
 				ExceptionHandling="0"
-				RuntimeLibrary="0"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="true"
-				EnableFunctionLevelLinking="false"
+				EnableFunctionLevelLinking="true"
+				DefaultCharIsUnsigned="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="Debug_80/qwdtools.pch"
-				AssemblerListingLocation="Debug_80/"
-				ObjectFile="Debug_80/"
-				ProgramDataBaseFileName="Debug_80/"
+				PrecompiledHeaderFile="$(TargetDir)$(TargetName).pch"
+				AssemblerOutput="2"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
+				XMLDocumentationFileName=""
+				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				CompileAs="2"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="4"
+				CompileAs="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -73,15 +82,17 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../qwdtools-debug_80.exe"
+				OutputFile="..\..\qwdtools-debug_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				GenerateManifest="false"
+				GenerateManifest="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="Debug_80/qwdtools.pdb"
+				AssemblyDebug="1"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				GenerateMapFile="true"
-				MapFileName="Debug_80/qwdtools.map"
+				MapFileName="$(TargetDir)$(TargetName).map"
 				SubSystem="1"
+				OptimizeForWindows98="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -90,6 +101,8 @@
 			<Tool
 				Name="VCManifestTool"
 				EmbedManifest="false"
+				DependencyInformationFile="$(IntDir)\$(TargetName).dep"
+				UpdateFileHashes="true"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -117,7 +130,8 @@
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.cod;*.sbr;*.dep;*.bsc;*.res;*.asm;*.manifest;$(TargetPath)"
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest*;$(TargetPath)"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -133,26 +147,29 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Release_80/qwdtools.tlb"
+				TypeLibraryName="Release_80\qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="3"
-				InlineFunctionExpansion="0"
-				EnableIntrinsicFunctions="true"
+				Optimization="1"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="false"
 				FavorSizeOrSpeed="2"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="NDEBUG;_CONSOLE;__LITTLE_ENDIAN__Q__"
+				PreprocessorDefinitions="NDEBUG;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;_CRT_DISABLE_PERFCRIT_LOCKS;__LITTLE_ENDIAN__Q__"
 				StringPooling="true"
 				ExceptionHandling="0"
-				RuntimeLibrary="0"
-				StructMemberAlignment="3"
+				RuntimeLibrary="2"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="false"
-				PrecompiledHeaderFile="Release_80/qwdtools.pch"
-				AssemblerListingLocation="Release_80/"
-				ObjectFile="Release_80/"
-				ProgramDataBaseFileName="Release_80/"
+				DefaultCharIsUnsigned="true"
+				PrecompiledHeaderFile="$(TargetDir)$(TargetName).pch"
+				AssemblerListingLocation="$(IntDir)\"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\"
+				XMLDocumentationFileName=""
+				BrowseInformationFile="$(IntDir)\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="1"
@@ -170,11 +187,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../qwdtools_80.exe"
+				OutputFile="..\..\qwdtools_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				GenerateManifest="false"
-				ProgramDatabaseFile="Release_80/qwdtools.pdb"
+				GenerateManifest="true"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
+				GenerateMapFile="true"
+				MapFileName="$(TargetDir)$(TargetName).map"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -188,6 +207,8 @@
 			<Tool
 				Name="VCManifestTool"
 				EmbedManifest="false"
+				DependencyInformationFile="$(IntDir)\$(TargetName).dep"
+				UpdateFileHashes="true"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"

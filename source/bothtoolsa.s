@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: bothtoolsa.s,v 1.2 2007/03/21 20:37:15 vvd0 Exp $
+	$Id$
 */
 
 #include "asm_i386.h"

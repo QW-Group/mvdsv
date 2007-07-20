@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="qwsv"
 	ProjectGUID="{617E4627-FBC6-4834-9C6B-B178EACE973E}"
+	RootNamespace="qwsv"
 	>
 	<Platforms>
 		<Platform
@@ -21,7 +22,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
-			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.cod;*.sbr;*.dep;*.bsc;*.res;*.asm;*.manifest;$(TargetPath)"
+			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest*;$(TargetPath)"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -38,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SRelease_80/mvdsv.tlb"
+				TypeLibraryName="SRelease_80\mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -55,11 +56,12 @@
 				EnableFunctionLevelLinking="false"
 				DefaultCharIsUnsigned="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="$(IntDir)\mvdsv.pch"
+				PrecompiledHeaderFile="$(TargetDir)$(TargetName).pch"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\"
-				BrowseInformation="1"
+				ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
+				XMLDocumentationFileName=""
+				BrowseInformation="0"
 				BrowseInformationFile="$(IntDir)\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -79,14 +81,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="../mvdsv_80.exe"
+				OutputFile="..\mvdsv_80.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				GenerateManifest="false"
+				GenerateManifest="true"
 				IgnoreAllDefaultLibraries="false"
-				ProgramDatabaseFile="$(IntDir)\mvdsv.pdb"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				GenerateMapFile="true"
-				MapFileName="$(IntDir)\mvdsv.map"
+				MapFileName="$(TargetDir)$(TargetName).map"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -99,7 +101,9 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
-				EmbedManifest="false"
+				EmbedManifest="true"
+				DependencyInformationFile="$(IntDir)\$(TargetName).dep"
+				UpdateFileHashes="true"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -128,7 +132,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
-			DeleteExtensionsOnClean="*.obj;*.ilk;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.pgc;*.pgd;*.cod;*.sbr;*.dep;*.bsc;*.res;*.asm;*.manifest;$(TargetPath)"
+			DeleteExtensionsOnClean="*.asm;*.bsc;*.cod;*.dep;*.idb;*.ilk;*.obj;*.pgc;*.pgd;*.res;*.rsp;*.sbr;*.tlb;*.tlh;*.tli;*.tmp;*.manifest*;$(TargetPath)"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -144,7 +148,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SDebug_71/mvdsv.tlb"
+				TypeLibraryName="SDebug_80\mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -152,24 +156,26 @@
 				Optimization="0"
 				PreprocessorDefinitions="_DEBUG;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;_CRT_DISABLE_PERFCRIT_LOCKS;id386;USE_PR2;__LITTLE_ENDIAN__Q__"
 				MinimalRebuild="true"
-				ExceptionHandling="1"
+				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
 				SmallerTypeCheck="false"
 				RuntimeLibrary="3"
 				EnableFunctionLevelLinking="true"
 				DefaultCharIsUnsigned="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="$(IntDir)\mvdsv.pch"
+				PrecompiledHeaderFile="$(TargetDir)$(TargetName).pch"
 				AssemblerOutput="2"
 				AssemblerListingLocation="$(IntDir)\"
 				ObjectFile="$(IntDir)\"
-				ProgramDataBaseFileName="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
+				XMLDocumentationFileName=""
 				BrowseInformation="1"
 				BrowseInformationFile="$(IntDir)\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
-				CompileAs="2"
+				CompileAs="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -185,15 +191,18 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="../mvdsv-debug_80.exe"
+				OutputFile="..\mvdsv-debug_80.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				GenerateManifest="false"
+				GenerateManifest="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)\mvdsv.pdb"
+				AssemblyDebug="1"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				GenerateMapFile="true"
-				MapFileName="$(IntDir)\mvdsv.map"
+				MapFileName="$(TargetDir)$(TargetName).map"
+				MapExports="false"
 				SubSystem="2"
+				OptimizeForWindows98="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -201,7 +210,9 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
-				EmbedManifest="false"
+				EmbedManifest="true"
+				DependencyInformationFile="$(IntDir)\$(TargetName).dep"
+				UpdateFileHashes="true"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"

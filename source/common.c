@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    $Id: common.c,v 1.39 2007/05/08 04:48:37 jhodge Exp $
+    $Id$
 */
 // common.c -- misc functions used in client and server
 
