@@ -380,7 +380,7 @@ void SV_MVD_RunPendingConnections (void)
 									thisauth = QTVAM_PLAIN;
 								else if (!strcmp(com_token, "PLAIN"))
 									thisauth = QTVAM_PLAIN;
-								else if (!strcmp(com_token, "CCIT"))
+								else if (!strcmp(com_token, "CCITT"))
 									thisauth = QTVAM_CCITT;
 								else if (!strcmp(com_token, "MD4"))
 									thisauth = QTVAM_MD4;
@@ -438,7 +438,7 @@ void SV_MVD_RunPendingConnections (void)
 							CRC_Init(&ushort_result);
 							CRC_AddBlock(&ushort_result, (byte *) p->challenge, strlen(p->challenge));
 							CRC_AddBlock(&ushort_result, (byte *) qtv_password.string, strlen(qtv_password.string));
-							p->hasauthed = (ushort_result == atoi(password));
+							p->hasauthed = (ushort_result == Q_atoi(password));
 							break;
 						case QTVAM_MD4:
 							{
