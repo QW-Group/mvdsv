@@ -570,6 +570,9 @@ void SV_MVDWritePackets (int num)
 			if (cl->parsecount != demo.lastwritten)
 				continue; // not valid
 
+			if (!cl->parsecount && svs.clients[i].state != cs_spawned)
+				continue; // not valid, occur on first frame
+
 			nexttime = playertime = time1 - cl->sec;
 
 			for (j = demo.lastwritten+1, valid = false; nexttime < time1 && j < demo.parsecount; j++)
@@ -618,7 +621,7 @@ void SV_MVDWritePackets (int num)
 			}
 
 			for (j=0; j < 3; j++)
-				if (origin[j] != demoinfo->origin[i])
+				if (origin[j] != demoinfo->origin[j])
 					flags |= DF_ORIGIN << j;
 
 			if (cl->fixangle || demo.fixangletime[i] != cl->cmdtime)
