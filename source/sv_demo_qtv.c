@@ -65,6 +65,7 @@ static int MVD_StreamStartListening (int port)
 	int sock;
 
 	struct sockaddr_in	address;
+	struct linger lingeropt;
 	//	int fromlen;
 
 	unsigned long nonblocking = true;
@@ -73,26 +74,51 @@ static int MVD_StreamStartListening (int port)
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons((short)port);
 
-
-
 	if ((sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
 	{
-		Sys_Error ("MVD_StreamStartListening: socket: (%i): %s\n", qerrno, strerror(qerrno));
+		Con_Printf ("MVD_StreamStartListening: socket: (%i): %s\n", qerrno, strerror(qerrno));
+		return INVALID_SOCKET;
 	}
 
-	if (ioctlsocket (sock, FIONBIO, &nonblocking) == -1)
+	// hard close: in case of closesocket(), socket will be closen after SOCKET_CLOSE_TIME or earlier
+	memset(&lingeropt, 0, sizeof(lingeropt));
+	lingeropt.l_onoff  = 1;
+	lingeropt.l_linger = SOCKET_CLOSE_TIME;
+
+	if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (void*)&lingeropt, sizeof(lingeropt)) == -1)
 	{
+		Con_Printf ("MVD_StreamStartListening: setsockopt SO_LINGER: (%i): %s\n", qerrno, strerror (qerrno));
 		closesocket(sock);
-		Sys_Error ("MVD_StreamStartListening: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
-	}
+		return INVALID_SOCKET;
+    }
 
-	if( bind (sock, (struct sockaddr *)&address, sizeof(address)) == -1)
+	if (ioctlsocket(sock, FIONBIO, &nonblocking) == -1)
 	{
+		Con_Printf ("MVD_StreamStartListening: ioctl FIONBIO: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(sock);
 		return INVALID_SOCKET;
 	}
 
-	listen(sock, 2);
+	if(bind(sock, (struct sockaddr *)&address, sizeof(address)) == -1)
+	{
+		Con_Printf ("MVD_StreamStartListening: bind: (%i): %s\n", qerrno, strerror(qerrno));
+		closesocket(sock);
+		return INVALID_SOCKET;
+	}
+
+	if(listen(sock, 2) == -1)
+	{
+		Con_Printf ("MVD_StreamStartListening: listen: (%i): %s\n", qerrno, strerror(qerrno));
+		closesocket(sock);
+		return INVALID_SOCKET;
+	}
+
+	if (!TCP_Set_KEEPALIVE(sock))
+	{
+		Con_Printf ("MVD_StreamStartListening: TCP_Set_KEEPALIVE: failed\n");
+		closesocket(sock);
+		return INVALID_SOCKET;
+	}
 
 	return sock;
 }
@@ -107,6 +133,7 @@ void SV_MVDStream_Poll (void)
 	netadr_t na;
 	struct sockaddr_qstorage addr;
 	socklen_t addrlen;
+	struct linger lingeropt;
 	int count;
 	qbool wanted;
 	mvddest_t *dest;
@@ -166,8 +193,27 @@ void SV_MVDStream_Poll (void)
 	if (client == INVALID_SOCKET)
 		return;
 
+	// hard close: in case of closesocket(), socket will be closen after SOCKET_CLOSE_TIME or earlier
+	memset(&lingeropt, 0, sizeof(lingeropt));
+	lingeropt.l_onoff  = 1;
+	lingeropt.l_linger = SOCKET_CLOSE_TIME;
+
+	if (setsockopt(client, SOL_SOCKET, SO_LINGER, (void*)&lingeropt, sizeof(lingeropt)) == -1)
+	{
+		Con_Printf ("SV_MVDStream_Poll: setsockopt SO_LINGER: (%i): %s\n", qerrno, strerror (qerrno));
+		closesocket(client);
+		return;
+    }
+
 	if (ioctlsocket (client, FIONBIO, &_true) == SOCKET_ERROR) {
 		Con_Printf ("SV_MVDStream_Poll: ioctl FIONBIO: (%i): %s\n", qerrno, strerror (qerrno));
+		closesocket(client);
+		return;
+	}
+
+	if (!TCP_Set_KEEPALIVE(client))
+	{
+		Con_Printf ("SV_MVDStream_Poll: TCP_Set_KEEPALIVE: failed\n");
 		closesocket(client);
 		return;
 	}
