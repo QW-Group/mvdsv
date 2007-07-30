@@ -34,8 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
 #define EAFNOSUPPORT	WSAEAFNOSUPPORT
 
-#define SOCKET_CLOSE_TIME 30
-
 #define qerrno	WSAGetLastError()
 #else //_WIN32
 #define qerrno	errno
@@ -133,6 +131,8 @@ qbool	NET_CompareBaseAdr (netadr_t a, netadr_t b);
 char	*NET_AdrToString (netadr_t a);
 char	*NET_BaseAdrToString (netadr_t a);
 qbool	NET_StringToAdr (char *s, netadr_t *a);
+
+#define SOCKET_CLOSE_TIME 30
 
 qbool	TCP_Set_KEEPALIVE(int sock);
 
