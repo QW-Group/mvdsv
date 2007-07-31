@@ -305,7 +305,7 @@ qbool TCP_Set_KEEPALIVE(int sock)
 
 	iOptVal = 60;
 
-	if (setsockopt(newsock, SOL_TCP, TCP_KEEPIDLE, (void*)&iOptVal, sizeof(iOptVal)) == -1) {
+	if (setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, (void*)&iOptVal, sizeof(iOptVal)) == -1) {
 		Con_Printf ("TCP_Set_KEEPALIVE: setsockopt TCP_KEEPIDLE: (%i): %s\n", qerrno, strerror(qerrno));
 		return false;
 	}
@@ -313,7 +313,7 @@ qbool TCP_Set_KEEPALIVE(int sock)
 //  The time (in seconds) between individual keepalive probes.
 	iOptVal = 30;
 
-	if (setsockopt(newsock, SOL_TCP, TCP_KEEPINTVL, (void*)&iOptVal, sizeof(iOptVal)) == -1) {
+	if (setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, (void*)&iOptVal, sizeof(iOptVal)) == -1) {
 		Con_Printf ("TCP_Set_KEEPALIVE: setsockopt TCP_KEEPINTVL: (%i): %s\n", qerrno, strerror(qerrno));
 		return false;
 	}
@@ -321,7 +321,7 @@ qbool TCP_Set_KEEPALIVE(int sock)
 //  The maximum number of keepalive probes TCP should send before dropping the connection. 
 	iOptVal = 6;
 
-	if (setsockopt(newsock, SOL_TCP, TCP_KEEPCNT, (void*)&iOptVal, sizeof(iOptVal)) == -1) {
+	if (setsockopt(sock, SOL_TCP, TCP_KEEPCNT, (void*)&iOptVal, sizeof(iOptVal)) == -1) {
 		Con_Printf ("TCP_Set_KEEPALIVE: setsockopt TCP_KEEPCNT: (%i): %s\n", qerrno, strerror(qerrno));
 		return false;
 	}

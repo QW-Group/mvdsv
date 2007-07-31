@@ -47,6 +47,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#ifdef __linux__
+#include <netinet/tcp.h>
+#endif
+
 #ifdef __sun__
 #include <sys/filio.h>
 #endif //__sun__
