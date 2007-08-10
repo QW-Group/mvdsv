@@ -2281,7 +2281,7 @@ static void Cmd_MinPing_f (void)
 			if (minping < 0 || minping > 300)
 				Con_Printf("Value must be >= 0 and <= 300.\n");
 			else
-				Cvar_SetValue (&sv_minping, minping);
+				Cvar_SetValue (&sv_minping, (int)minping);
 		}
 	case 1:
 		Con_Printf("sv_minping = %s\n", sv_minping.string);
