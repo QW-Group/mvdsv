@@ -1311,9 +1311,9 @@ void SV_Check_maps_f(void)
 		if (!list->name[0]) continue;
 
 		key = va("%d", i);
+		s = Info_ValueForKey(localinfo, key);
 		Info_SetValueForKey (localinfo, key, list->name, MAX_LOCALINFO_STRING);
 
-		s = Info_ValueForKey(localinfo, key);
 		if (localinfoChanged)
 		{
 			pr_global_struct->time = sv.time;
@@ -1340,9 +1340,9 @@ void SV_Check_maps_f(void)
 		if (j <= maps_id1) continue;
 
 		key = va("%d", i);
+		s = Info_ValueForKey(localinfo, key);
 		Info_SetValueForKey (localinfo, key, list->name, MAX_LOCALINFO_STRING);
 
-		s = Info_ValueForKey(localinfo, key);
 		if (localinfoChanged)
 		{
 			pr_global_struct->time = sv.time;
@@ -1358,6 +1358,7 @@ void SV_Check_maps_f(void)
 	for (; i <= LOCALINFO_MAPS_LIST_END; i++)
 	{
 		key = va("%d", i);
+		s = Info_ValueForKey(localinfo, key);
 		Info_SetValueForKey (localinfo, key, "", MAX_LOCALINFO_STRING);
 
 		if (localinfoChanged)
