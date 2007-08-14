@@ -187,7 +187,13 @@ void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
 
 qbool GameStarted(void)
 {
-	return sv.mvdrecording || strncasecmp(Info_ValueForKey(svs.info, "status"), "Standby", 8);
+	mvddest_t *d;
+
+	for (d = demo.dest; d; d = d->nextdest)
+		if (d->desttype != DEST_STREAM) // oh, its not stream, treat as "game is started"
+			break;
+
+	return (d || strncasecmp(Info_ValueForKey(svs.info, "status"), "Standby", 8));
 }
 /*
 ================
