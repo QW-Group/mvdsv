@@ -6,6 +6,7 @@ MVDSV v0.28 (200?.??.??)
 * d3urk (d3urk@users.sourceforge.net)
 	- Fixed flood resulting of incorrect use of minping command parameter.
 	- Fixed localinfo in order to handle properly oldvalue of localinfo.
+	- rcon command now display which player called it.
 
 
 MVDSV v0.27 revision 643 (2007.07.20)
