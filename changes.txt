@@ -1,10 +1,17 @@
 
 $Id$
 
+MVDSV v0.28 (200?.??.??)
+----
+* d3urk (d3urk@users.sourceforge.net)
+	- Fixed flood resulting of incorrect use of minping command parameter.
+	- Fixed localinfo in order to handle properly oldvalue of localinfo.
+
+
 MVDSV v0.27 revision 643 (2007.07.20)
 ----
 * Tonik <tonik@users.sourceforge.net>
-* pm_pground is functional now.  It cannot be changed directly; its value is set automatically
+- pm_pground is functional now.  It cannot be changed directly; its value is set automatically
   when pm_airstep changes:  pm_airstep 1 enables pm_pground, pm_airstep 0 disables.
 
 * qqshka <qqshka@users.sourceforge.net>
