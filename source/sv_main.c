@@ -1494,7 +1494,7 @@ static void SVC_RemoteCommand (char *remote_command)
 			strlcat(str, " ", sizeof(str));
 		}
 
-		Con_Printf("Rcon from %s: %s\n", plain, str);
+		Con_Printf("Rcon from %s: %s\n", cl->name, str);
 		Cmd_ExecuteString(str);
 	}
 	else
