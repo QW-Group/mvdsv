@@ -27,8 +27,9 @@ cvar_t	qtv_password		= {"qtv_password",			""};
 cvar_t	qtv_pendingtimeout	= {"qtv_pendingtimeout",	"5"};  // 5  seconds must be enough
 cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"45"}; // 45 seconds
 
-static mvddest_t *SV_InitStream (int socket1)
+static mvddest_t *SV_InitStream (int socket1, netadr_t na)
 {
+	static int lastdest = 0;
 	mvddest_t *dst;
 
 	dst = (mvddest_t *) Q_malloc (sizeof(mvddest_t));
@@ -38,21 +39,24 @@ static mvddest_t *SV_InitStream (int socket1)
 	dst->maxcachesize = 0x8000;	//is this too small?
 	dst->cache = (char *) Q_malloc(dst->maxcachesize);
 	dst->io_time = sv.time;
+	dst->id = ++lastdest;
+	dst->na = na;
 
 	SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
 
 	return dst;
 }
 
-static void SV_MVD_InitPendingStream (int socket1, char *ip)
+static void SV_MVD_InitPendingStream (int socket1, netadr_t na)
 {
 	mvdpendingdest_t *dst;
 	unsigned int i;
 	dst = (mvdpendingdest_t*) Q_malloc(sizeof(mvdpendingdest_t));
 	dst->socket = socket1;
 	dst->io_time = sv.time;
+	dst->na = na;
 
-	strlcpy(dst->challenge, ip, sizeof(dst->challenge));
+	strlcpy(dst->challenge, NET_AdrToString(dst->na), sizeof(dst->challenge));
 	for (i = strlen(dst->challenge); i < sizeof(dst->challenge)-1; i++)
 		dst->challenge[i] = rand()%(127-33) + 33;	//generate a random challenge
 
@@ -137,7 +141,6 @@ void SV_MVDStream_Poll (void)
 	int count;
 	qbool wanted;
 	mvddest_t *dest;
-	char *ip;
 	int streamport = bound(0, (int)qtv_streamport.value, 64000); // so user can't specifie something stupid
 	unsigned long _true = true;
 
@@ -240,10 +243,9 @@ void SV_MVDStream_Poll (void)
 	}
 
 	SockadrToNetadr(&addr, &na);
-	ip = NET_AdrToString(na);
-	Con_Printf("MVD streaming client connected from %s\n", ip);
+	Con_Printf("MVD streaming client connected from %s\n", NET_AdrToString(na));
 
-	SV_MVD_InitPendingStream(client, ip);
+	SV_MVD_InitPendingStream(client, na);
 }
 
 void SV_MVD_RunPendingConnections (void)
@@ -579,7 +581,7 @@ void SV_MVD_RunPendingConnections (void)
 						}
 						else
 						{
-							SV_MVD_Record(SV_InitStream(p->socket));
+							SV_MVD_Record(SV_InitStream(p->socket, p->na));
 							p->socket = -1;	//so it's not cleared wrongly.
 						}
 						p->error = true;
@@ -593,7 +595,7 @@ void SV_MVD_RunPendingConnections (void)
 								 "\n");
 							send(p->socket, e, strlen(e), 0);
 							e = NULL;
-							SV_MVD_Record(SV_InitStream(p->socket));
+							SV_MVD_Record(SV_InitStream(p->socket, p->na));
 							p->socket = -1;	//so it's not cleared wrongly.
 						}
 						else
@@ -654,6 +656,71 @@ void DemoWriteQTVTimePad (int msecs)	//broadcast to all proxies
 	}
 }
 
+void Qtv_List_f(void)
+{
+	mvddest_t *d;
+	int cnt;
+
+	for (cnt = 0, d = demo.dest; d; d = d->nextdest)
+	{
+		if (d->desttype != DEST_STREAM)
+			continue; // not qtv
+
+		if (!cnt) // print banner
+			Con_Printf ("QTV list:\n"
+						"%4.4s %s\n", "#Id", "Addr");
+
+		cnt++;
+
+		Con_Printf ("%4d %s\n", d->id, NET_AdrToString(d->na));
+	}
+
+	if (!cnt)
+		Con_Printf ("QTV list: empty\n");
+}
+
+void Qtv_Close_f(void)
+{
+	mvddest_t *d;
+	int id, cnt;
+	qbool all;
+
+	if (Cmd_Argc() < 2 || !*Cmd_Argv(1))  // not less than one param, first param non empty
+	{
+		Con_Printf ("Usage: %s <#id | all>\n", Cmd_Argv(0));
+		return;
+	}
+
+	for (d = demo.dest; d; d = d->nextdest)
+		if (d->desttype == DEST_STREAM)
+			break; // at least one qtv present
+
+	if (!d) {
+		Con_Printf ("QTV list alredy empty\n");
+		return;
+	}
+
+	id  = atoi(Cmd_Argv(1));
+	all = !strcasecmp(Cmd_Argv(1), "all");
+	cnt = 0;
+
+	for (d = demo.dest; d; d = d->nextdest)
+	{
+		if (d->desttype != DEST_STREAM)
+			continue; // not qtv
+
+		if (all || d->id == id) {
+			Con_Printf ("QTV id:%d aka %s will be dropped asap\n", d->id, NET_AdrToString(d->na));
+			d->error = true;
+			cnt++;
+		}
+	}
+
+	if (!cnt)
+		Con_Printf ("QTV id:%d not found\n", id);
+}
+
+
 //====================================
 
 void QTV_Init(void)
@@ -663,4 +730,7 @@ void QTV_Init(void)
 	Cvar_Register (&qtv_password);
 	Cvar_Register (&qtv_pendingtimeout);
 	Cvar_Register (&qtv_streamtimeout);
+
+	Cmd_AddCommand ("qtv_list", Qtv_List_f);
+	Cmd_AddCommand ("qtv_close", Qtv_Close_f);
 }

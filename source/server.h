@@ -350,7 +350,8 @@ typedef struct mvdpendingdest_s
 	int insize;
 	int outsize;
 
-	double io_time; // when last IO occur on socket, so we can timeout this dest
+	double			io_time; // when last IO occur on socket, so we can timeout this dest
+	netadr_t		na;
 
 	struct mvdpendingdest_s *nextdest;
 } mvdpendingdest_t;
@@ -374,7 +375,11 @@ typedef struct mvddest_s
 
 	unsigned int totalsize;
 
-	double io_time; // when last IO occur on socket, so we can timeout this dest
+// { used by QTV
+	double			io_time; // when last IO occur on socket, so we can timeout this dest
+	int				id; // dest id, used by QTV only
+	netadr_t		na;
+// }
 
 	struct mvddest_s *nextdest;
 } mvddest_t;
