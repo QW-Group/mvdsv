@@ -127,65 +127,55 @@ static int MVD_StreamStartListening (int port)
 	return sock;
 }
 
+static int		listensocket	= INVALID_SOCKET;
+static int		listenport		= 0;
+static double	warned_time		= 0;
+
+static void SV_CheckQTVPort(void)
+{
+	qbool changed;
+	int streamport = bound(0, (int)qtv_streamport.value, 64000); // so user can't specifie something stupid
+
+	// if we have non zero stream port, but fail to open listen socket, repeat open listen socket after some time
+	changed = ( streamport != listenport || (streamport && listensocket == INVALID_SOCKET && (warned_time && warned_time + 10 < sv.time)) );
+
+	// port not changed
+	if (!changed)
+		return;
+
+	warned_time = sv.time; // so we repeat warning time to time
+
+	if (listensocket != INVALID_SOCKET)
+	{
+		Con_Printf("Closing TCP port %d for QTV\n", listenport);
+		closesocket(listensocket); // so we close socket
+		listensocket = INVALID_SOCKET; // and mark as closed
+	}
+
+	// port was changed, lets remember
+	listenport = streamport;
+
+	if (!listenport)
+		return; // they just wanna turn it off
+
+	if ((listensocket = MVD_StreamStartListening(listenport)) == INVALID_SOCKET)
+		Con_Printf("WARNING: Cannot open TCP port %d for QTV\n", listenport);
+	else
+		Con_Printf("Opening TCP port %d for QTV\n", listenport);
+}
+
 void SV_MVDStream_Poll (void)
 {
-	static int listensocket = INVALID_SOCKET;
-	static int listenport;
-	static qbool warned = false;
-
 	int client;
 	netadr_t na;
 	struct sockaddr_qstorage addr;
 	socklen_t addrlen;
 	struct linger lingeropt;
 	int count;
-	qbool wanted;
 	mvddest_t *dest;
-	int streamport = bound(0, (int)qtv_streamport.value, 64000); // so user can't specifie something stupid
 	unsigned long _true = true;
 
-	if (!sv.state || !streamport)
-		wanted = false;
-	else if (listenport && streamport != listenport)	//easy way to switch... disable for a frame. :)
-	{
-		listenport = streamport;
-		wanted = false;
-	}
-	else
-	{
-		listenport = streamport;
-		wanted = true;
-	}
-
-	if (wanted && listensocket == INVALID_SOCKET)
-	{
-		listensocket = MVD_StreamStartListening(listenport);
-
-		if (listensocket == INVALID_SOCKET)
-		{
-			static double last_time_warned = 0;
-
-			if (!warned || last_time_warned + 60 < sv.time)
-			{
-				Con_Printf("WARNING: Cannot open TCP port %i for QTV\n", listenport);
-				last_time_warned = sv.time; // so we repeat warning time to time
-				warned = true;
-			}
-		}
-		else
-		{
-			Con_Printf("Opening TCP port %i for QTV\n", listenport);
-			warned = false; // we succseed, so forget about warning
-		}
-	}
-	else if (!wanted && listensocket != INVALID_SOCKET)
-	{
-		Con_Printf("Closing TCP port for QTV\n");
-		closesocket(listensocket);
-		listensocket = INVALID_SOCKET;
-		warned = false; // closing socket, forget about warning so we can warn then open it again
-		return;
-	}
+	SV_CheckQTVPort(); // open/close/switch qtv port
 
 	if (listensocket == INVALID_SOCKET)
 		return;
