@@ -136,7 +136,8 @@ char	*NET_AdrToString (netadr_t a);
 char	*NET_BaseAdrToString (netadr_t a);
 qbool	NET_StringToAdr (char *s, netadr_t *a);
 
-#define SOCKET_CLOSE_TIME 30
+// I turned this off atm, probably cause problems
+//#define SOCKET_CLOSE_TIME 30
 
 qbool	TCP_Set_KEEPALIVE(int sock);
 

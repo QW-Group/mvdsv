@@ -832,6 +832,7 @@ extern cvar_t	qtv_streamtimeout;
 
 
 void SV_MVDStream_Poll(void);
+void SV_MVDCloseStreams(void);
 void QTV_Init(void);
 
 //

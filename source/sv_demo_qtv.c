@@ -69,7 +69,9 @@ static int MVD_StreamStartListening (int port)
 	int sock;
 
 	struct sockaddr_in	address;
+#ifdef SOCKET_CLOSE_TIME
 	struct linger lingeropt;
+#endif
 	//	int fromlen;
 
 	unsigned long nonblocking = true;
@@ -84,6 +86,7 @@ static int MVD_StreamStartListening (int port)
 		return INVALID_SOCKET;
 	}
 
+#ifdef SOCKET_CLOSE_TIME
 	// hard close: in case of closesocket(), socket will be closen after SOCKET_CLOSE_TIME or earlier
 	memset(&lingeropt, 0, sizeof(lingeropt));
 	lingeropt.l_onoff  = 1;
@@ -95,6 +98,7 @@ static int MVD_StreamStartListening (int port)
 		closesocket(sock);
 		return INVALID_SOCKET;
     }
+#endif
 
 	if (ioctlsocket(sock, FIONBIO, &nonblocking) == -1)
 	{
@@ -126,6 +130,21 @@ static int MVD_StreamStartListening (int port)
 
 	return sock;
 }
+
+void SV_MVDCloseStreams(void)
+{
+	mvddest_t *d;
+	mvdpendingdest_t *p;
+
+	for (d = demo.dest; d; d = d->nextdest)
+		if (!d->error)
+			d->error = true; // mark demo dests to close later
+
+	for (p = demo.pendingdest; p; p = p->nextdest)
+		if (!p->error)
+			p->error = true; // mark pending dests to close later
+}
+
 
 static int		listensocket	= INVALID_SOCKET;
 static int		listenport		= 0;
@@ -170,15 +189,20 @@ void SV_MVDStream_Poll (void)
 	netadr_t na;
 	struct sockaddr_qstorage addr;
 	socklen_t addrlen;
+#ifdef SOCKET_CLOSE_TIME
 	struct linger lingeropt;
+#endif
 	int count;
 	mvddest_t *dest;
 	unsigned long _true = true;
 
 	SV_CheckQTVPort(); // open/close/switch qtv port
 
-	if (listensocket == INVALID_SOCKET)
+	if (listensocket == INVALID_SOCKET) // we can't accept connection from QTV
+	{
+		SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close socket, so later we can bind to it
 		return;
+	}
 
 	addrlen = sizeof(addr);
 	client = accept (listensocket, (struct sockaddr *)&addr, &addrlen);
@@ -186,6 +210,7 @@ void SV_MVDStream_Poll (void)
 	if (client == INVALID_SOCKET)
 		return;
 
+#ifdef SOCKET_CLOSE_TIME
 	// hard close: in case of closesocket(), socket will be closen after SOCKET_CLOSE_TIME or earlier
 	memset(&lingeropt, 0, sizeof(lingeropt));
 	lingeropt.l_onoff  = 1;
@@ -197,6 +222,7 @@ void SV_MVDStream_Poll (void)
 		closesocket(client);
 		return;
     }
+#endif
 
 	if (ioctlsocket (client, FIONBIO, &_true) == SOCKET_ERROR) {
 		Con_Printf ("SV_MVDStream_Poll: ioctl FIONBIO: (%i): %s\n", qerrno, strerror (qerrno));
