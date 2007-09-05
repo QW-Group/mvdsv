@@ -137,12 +137,12 @@ void SV_MVDCloseStreams(void)
 	mvdpendingdest_t *p;
 
 	for (d = demo.dest; d; d = d->nextdest)
-		if (!d->error)
-			d->error = true; // mark demo dests to close later
+		if (!d->error && d->desttype == DEST_STREAM)
+			d->error = true; // mark demo stream dest to close later
 
 	for (p = demo.pendingdest; p; p = p->nextdest)
 		if (!p->error)
-			p->error = true; // mark pending dests to close later
+			p->error = true; // mark pending dest to close later
 }
 
 
@@ -162,7 +162,7 @@ static void SV_CheckQTVPort(void)
 	if (!changed)
 		return;
 
-	SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close listen socket, so later we can bind to it
+	SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close listen socket, so later we can bind to port again
 
 	warned_time = sv.time; // so we repeat warning time to time
 
@@ -202,7 +202,7 @@ void SV_MVDStream_Poll (void)
 
 	if (listensocket == INVALID_SOCKET) // we can't accept connection from QTV
 	{
-		SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close listen socket, so later we can bind to it
+		SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close listen socket, so later we can bind to port again
 		return;
 	}
 
@@ -738,6 +738,27 @@ void Qtv_Close_f(void)
 		Con_Printf ("QTV id:%d not found\n", id);
 }
 
+void Qtv_Status_f(void)
+{
+	int cnt;
+	mvddest_t *d;
+	mvdpendingdest_t *p;
+
+	Con_Printf ("QTV status\n");
+	Con_Printf ("Listen socket  : %s\n", listensocket == INVALID_SOCKET ? "invalid" : "listen");
+	Con_Printf ("Port           : %d\n", listenport);
+
+	for (cnt = 0, d = demo.dest; d; d = d->nextdest)
+		if (d->desttype == DEST_STREAM)
+			cnt++;
+
+	Con_Printf ("Streams        : %d\n", cnt);
+
+	for (cnt = 0, p = demo.pendingdest; p; p = p->nextdest)
+		cnt++;
+
+	Con_Printf ("Pending streams: %d\n", cnt);
+}
 
 //====================================
 
@@ -751,4 +772,5 @@ void QTV_Init(void)
 
 	Cmd_AddCommand ("qtv_list", Qtv_List_f);
 	Cmd_AddCommand ("qtv_close", Qtv_Close_f);
+	Cmd_AddCommand ("qtv_status", Qtv_Status_f);
 }
