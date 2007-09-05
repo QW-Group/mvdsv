@@ -162,6 +162,8 @@ static void SV_CheckQTVPort(void)
 	if (!changed)
 		return;
 
+	SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close listen socket, so later we can bind to it
+
 	warned_time = sv.time; // so we repeat warning time to time
 
 	if (listensocket != INVALID_SOCKET)
@@ -200,7 +202,7 @@ void SV_MVDStream_Poll (void)
 
 	if (listensocket == INVALID_SOCKET) // we can't accept connection from QTV
 	{
-		SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close socket, so later we can bind to it
+		SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close listen socket, so later we can bind to it
 		return;
 	}
 
