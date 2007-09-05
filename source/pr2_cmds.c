@@ -277,11 +277,16 @@ single print to a specific client
 sprint(clientent, value)
 =================
 */
+
+// trap_SPrint() flags
+#define SPRINT_IGNOREINDEMO   (   1<<0) // do not put such message in mvd demo
+
 void PF2_sprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	client_t *client, *cl;
 	int entnum = stack[0]._int;
 	int level = stack[1]._int;
+	int flags = stack[3]._int; // using this atm just as hint to not put this message in mvd demo
 	char *s = (char *) VM_POINTER(base,mask,stack[2].string);
 	int i;
 
@@ -293,7 +298,10 @@ void PF2_sprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 
 	client = &svs.clients[entnum - 1];
 
-	SV_ClientPrintf(client, level, "%s", s);
+	if (flags & SPRINT_IGNOREINDEMO)
+		SV_ClientPrintf2 (client, level, "%s", s); // this does't go to mvd demo
+	else
+		SV_ClientPrintf  (client, level, "%s", s); // this will be in mvd demo too
 
 	//bliP: spectator print ->
 	if ((int)sv_specprint.value & SPECPRINT_SPRINT)
@@ -304,7 +312,12 @@ void PF2_sprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 				continue;
 
 			if ((cl->spec_track == entnum) && (cl->spec_print & SPECPRINT_SPRINT))
-				SV_ClientPrintf (cl, level, "%s", s);
+			{
+				if (flags & SPRINT_IGNOREINDEMO)
+					SV_ClientPrintf2 (cl, level, "%s", s); // this does't go to mvd demo
+				else
+					SV_ClientPrintf  (cl, level, "%s", s); // this will be in mvd demo too
+			}
 		}
 	}
 	//<-
