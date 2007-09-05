@@ -1544,8 +1544,6 @@ SV_Say
 
 extern func_t ChatMessage;
 
-void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
-
 static void SV_Say (qbool team)
 {
 	client_t *client;
