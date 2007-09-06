@@ -38,7 +38,7 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na)
 	dst->socket = socket1;
 	dst->maxcachesize = 0x8000;	//is this too small?
 	dst->cache = (char *) Q_malloc(dst->maxcachesize);
-	dst->io_time = sv.time;
+	dst->io_time = Sys_DoubleTime();
 	dst->id = ++lastdest;
 	dst->na = na;
 
@@ -53,7 +53,7 @@ static void SV_MVD_InitPendingStream (int socket1, netadr_t na)
 	unsigned int i;
 	dst = (mvdpendingdest_t*) Q_malloc(sizeof(mvdpendingdest_t));
 	dst->socket = socket1;
-	dst->io_time = sv.time;
+	dst->io_time = Sys_DoubleTime();
 	dst->na = na;
 
 	strlcpy(dst->challenge, NET_AdrToString(dst->na), sizeof(dst->challenge));
@@ -156,7 +156,7 @@ static void SV_CheckQTVPort(void)
 	int streamport = bound(0, (int)qtv_streamport.value, 64000); // so user can't specifie something stupid
 
 	// if we have non zero stream port, but fail to open listen socket, repeat open listen socket after some time
-	changed = ( streamport != listenport || (streamport && listensocket == INVALID_SOCKET && (warned_time && warned_time + 10 < sv.time)) );
+	changed = ( streamport != listenport || (streamport && listensocket == INVALID_SOCKET && warned_time + 10 < Sys_DoubleTime()) );
 
 	// port not changed
 	if (!changed)
@@ -164,7 +164,7 @@ static void SV_CheckQTVPort(void)
 
 	SV_MVDCloseStreams(); // also close ative connects if any, this will help actually close listen socket, so later we can bind to port again
 
-	warned_time = sv.time; // so we repeat warning time to time
+	warned_time = Sys_DoubleTime(); // so we repeat warning time to time
 
 	if (listensocket != INVALID_SOCKET)
 	{
@@ -278,7 +278,7 @@ void SV_MVD_RunPendingConnections (void)
 		return;
 
 	for (p = demo.pendingdest; p; p = p->nextdest)
-		if (p->io_time + qtv_pendingtimeout.value <= sv.time)
+		if (p->io_time + qtv_pendingtimeout.value <= Sys_DoubleTime())
 		{
 			Con_Printf("Pending dest timeout\n");
 			p->error = true;
@@ -320,7 +320,7 @@ void SV_MVD_RunPendingConnections (void)
 			}
 			else if (len > 0)	//we put some data through
 			{
-				p->io_time = sv.time; // update IO activity
+				p->io_time = Sys_DoubleTime(); // update IO activity
 
 				//move up the buffer
 				p->outsize -= len;
@@ -342,7 +342,7 @@ void SV_MVD_RunPendingConnections (void)
 			{ //fixme: cope with extra \rs
 				char *end;
 
-				p->io_time = sv.time; // update IO activity
+				p->io_time = Sys_DoubleTime(); // update IO activity
 
 				p->insize += len;
 				p->inbuffer[p->insize] = 0;

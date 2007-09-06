@@ -141,7 +141,7 @@ void DestFlush (qbool compleate)
 			break;
 
 		case DEST_STREAM:
-			if (d->io_time + qtv_streamtimeout.value <= sv.time)
+			if (d->io_time + qtv_streamtimeout.value <= Sys_DoubleTime())
 			{
 				// problem what send() have internal buffer, so send() success some time even peer side does't read,
 				// this may take some time before internal buffer overflow and timeout trigger, depends of buffer size.
@@ -164,7 +164,7 @@ void DestFlush (qbool compleate)
 					d->cacheused -= len;
 					memmove(d->cache, d->cache+len, d->cacheused);
 
-					d->io_time = sv.time; // update IO activity
+					d->io_time = Sys_DoubleTime(); // update IO activity
 				}
 				else
 				{ //error of some kind. would block or something
