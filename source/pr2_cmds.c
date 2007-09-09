@@ -689,6 +689,19 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	if( !str )
 		PR2_RunError("PF2_stuffcmd: NULL pointer");
 
+	// FIXME: evil hack for autotrack from mod
+	if (!strncmp(str, "//at ", sizeof("//at ")-1))
+	{
+		if (sv.mvdrecording && strchr( str, '\n' ))
+		{
+			MVDWrite_Begin(dem_all, 0, 2 + strlen(str));
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
+			MSG_WriteString((sizebuf_t*)demo.dbuf, str);
+		}
+
+		return; // do not send to client
+	}
+
 	cl = &svs.clients[entnum - 1];
 	if (!strncmp(str, "disconnect\n", MAX_STUFFTEXT))
 	{
