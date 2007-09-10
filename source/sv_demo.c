@@ -74,7 +74,7 @@ mvddest_t *DestByName (char *name)
 	return NULL;
 }
 
-static void DestClose (mvddest_t *d, qbool destroyfiles)
+void DestClose (mvddest_t *d, qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
 
@@ -82,7 +82,7 @@ static void DestClose (mvddest_t *d, qbool destroyfiles)
 		Q_free(d->cache);
 	if (d->file)
 		fclose(d->file);
-	if (d->socket)
+	if (d->socket != -1)
 		closesocket(d->socket);
 
 	if (destroyfiles)

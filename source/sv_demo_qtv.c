@@ -30,7 +30,16 @@ cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"45"}; // 45 seconds
 static mvddest_t *SV_InitStream (int socket1, netadr_t na)
 {
 	static int lastdest = 0;
+	int count;
 	mvddest_t *dst;
+
+	count = 0;
+	for (dst = demo.dest; dst; dst = dst->nextdest)
+		if (dst->desttype == DEST_STREAM)
+			count++;
+
+	if (count >= (int)qtv_maxstreams.value)
+		return NULL; //sorry
 
 	dst = (mvddest_t *) Q_malloc (sizeof(mvddest_t));
 
@@ -599,8 +608,21 @@ void SV_MVD_RunPendingConnections (void)
 						}
 						else
 						{
-							SV_MVD_Record(SV_InitStream(p->socket, p->na));
-							p->socket = -1;	//so it's not cleared wrongly.
+							mvddest_t *tmpdest;
+
+							if ((tmpdest = SV_InitStream(p->socket, p->na)))
+							{
+								if (!SV_MVD_Record(tmpdest))
+									DestClose(tmpdest, false); // can't start record for some reason, close dest then
+
+								p->socket = -1;	//so it's not cleared wrongly.
+							}
+							else
+							{
+								// RAW mode, can't sent error, right?
+//								e = ("QTVSV 1\n"
+//									"ERROR: Can't init stream, probably server reach a limit on the number of proxies connected at any one time.\n\n");
+							}
 						}
 						p->error = true;
 					}
@@ -608,13 +630,25 @@ void SV_MVD_RunPendingConnections (void)
 					{
 						if (p->hasauthed == true)
 						{
-							e = ("QTVSV 1\n"
-								 "BEGIN\n"
-								 "\n");
-							send(p->socket, e, strlen(e), 0);
-							e = NULL;
-							SV_MVD_Record(SV_InitStream(p->socket, p->na));
-							p->socket = -1;	//so it's not cleared wrongly.
+							mvddest_t *tmpdest;
+
+							if ((tmpdest = SV_InitStream(p->socket, p->na)))
+							{
+								e = ("QTVSV 1\n"
+								 	"BEGIN\n\n");
+								send(p->socket, e, strlen(e), 0);
+								e = NULL;
+
+								if (!SV_MVD_Record(tmpdest))
+									DestClose(tmpdest, false); // can't start record for some reason, close dest then
+
+								p->socket = -1;	//so it's not cleared wrongly.
+							}
+							else
+							{
+								e = ("QTVSV 1\n"
+									"ERROR: Can't init stream, probably server reach a limit on the number of proxies connected at any one time.\n\n");
+							}
 						}
 						else
 						{

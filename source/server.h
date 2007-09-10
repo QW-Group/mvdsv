@@ -767,7 +767,8 @@ void SV_MVDWritePackets (int num);
 void SV_MVD_SendInitialGamestate(mvddest_t *dest);
 qbool SV_MVD_Record (mvddest_t *dest);
 
-mvddest_t *DestByName (char *name);
+mvddest_t	*DestByName (char *name);
+void		DestClose (mvddest_t *d, qbool destroyfiles);
 
 int DemoWriteDest (void *data, int len, mvddest_t *d);
 
