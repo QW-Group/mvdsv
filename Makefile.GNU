@@ -147,6 +147,9 @@ all : mvdsv qwdtools
 mvdsv : $(SV_OBJS) $(SV_ASM_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o mvdsv $^
 
+vwep : $(SV_OBJS) $(SV_ASM_OBJS)
+	$(CC) -D VWEP_TEST $(CFLAGS) $(LDFLAGS) -o mvdsv $^
+
 qwdtools : $(QWDTOOLS_OBJS) $(QWDTOOLS_ASM_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
 
