@@ -58,7 +58,7 @@ func_t UserInfo_Changed, localinfoChanged;
 func_t ChatMessage;
 
 #ifdef VWEP_TEST
-int		fofs_vw_index, fofs_vw_frame;
+int		fofs_vw_index;
 #endif
 
 cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
@@ -1199,10 +1199,7 @@ void PR_LoadProgs (void)
 	GE_PausedTic = ED_FindFunctionOffset ("GE_PausedTic");
 	GE_ShouldPause = ED_FindFunctionOffset ("GE_ShouldPause");
 #ifdef VWEP_TEST
-	if ((f = ED_FindFunction ("vw_index")) != NULL)
-		fofs_vw_index = (func_t)(f - pr_functions);
-	if ((f = ED_FindFunction ("vw_frame")) != NULL)
-		fofs_vw_frame = (func_t)(f - pr_functions);
+	fofs_vw_index = ED_FindFieldOffset ("vw_index");
 #endif
 
 	CheckKTPro ();
