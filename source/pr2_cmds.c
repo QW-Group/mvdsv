@@ -1815,6 +1815,7 @@ void PF2_tokenize(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 
 void PF2_fixme(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
+	PR2_RunError ("unimplemented bulitin");
 }
 
 void PF2_memset(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
