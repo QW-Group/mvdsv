@@ -36,6 +36,9 @@ char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN]; //clientnames for -progtype 0
 
 int fofs_items2;
 int fofs_maxspeed, fofs_gravity;
+#ifdef VWEP_TEST
+int		fofs_vw_index;
+#endif
 
 /*
 ================
@@ -340,10 +343,16 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	fofs_items2 = ED2_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
 	fofs_maxspeed = ED2_FindFieldOffset ("maxspeed");
 	fofs_gravity = ED2_FindFieldOffset ("gravity");
+#ifdef VWEP_TEST
+	fofs_vw_index = ED2_FindFieldOffset ("vw_index");
+#endif
 #else
 	fofs_items2 = ED_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
 	fofs_maxspeed = ED_FindFieldOffset ("maxspeed");
 	fofs_gravity = ED_FindFieldOffset ("gravity");
+#ifdef VWEP_TEST
+	fofs_vw_index = ED_FindFieldOffset ("vw_index");
+#endif
 #endif
 
 	// leave slots at start for clients only

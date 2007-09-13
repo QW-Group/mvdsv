@@ -57,10 +57,6 @@ func_t mod_ConsoleCmd, mod_UserCmd;
 func_t UserInfo_Changed, localinfoChanged;
 func_t ChatMessage;
 
-#ifdef VWEP_TEST
-int		fofs_vw_index;
-#endif
-
 cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
 /*
 =================
@@ -1198,9 +1194,6 @@ void PR_LoadProgs (void)
 	GE_ClientCommand = ED_FindFunctionOffset ("GE_ClientCommand");
 	GE_PausedTic = ED_FindFunctionOffset ("GE_PausedTic");
 	GE_ShouldPause = ED_FindFunctionOffset ("GE_ShouldPause");
-#ifdef VWEP_TEST
-	fofs_vw_index = ED_FindFieldOffset ("vw_index");
-#endif
 
 	CheckKTPro ();
 }
