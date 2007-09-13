@@ -157,6 +157,27 @@ void PF2_precache_model(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 	PR2_RunError ("PF_precache_model: overflow");
 }
 
+#ifdef VWEP_TEST
+void PF2_precache_vwep_model(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	int 	i;
+	char 	*s;
+
+	if (sv.state != ss_loading)
+		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
+		             "functions");
+
+	i = stack[0]._int;
+	s = (char *) VM_POINTER(base,mask,stack[1].string);
+	PR2_CheckEmptyString(s);
+
+	if (i < 0 || i >= MAX_VWEP_MODELS)
+		PR2_RunError ("PF_precache_vwep_model: bad index %i", i);
+
+	sv.vw_model_name[i] = s;
+}
+#endif
+
 /*
 =================
 PF2_setorigin
@@ -2665,7 +2686,12 @@ pr2_trapcall_t pr2_API[]=
 		PF2_strlcpy,		//g_strlcpy
 		PF2_strlcat,		//g_strlcat
 		PF2_makevectors,	//G_MAKEVECTORS
-		PF2_nextclient		//G_NEXTCLIENT
+		PF2_nextclient,		//G_NEXTCLIENT
+#ifdef VWEP_TEST
+		PF2_precache_vwep_model,//G_PRECACHE_VWEP_MODEL
+#else
+		PF2_fixme,
+#endif
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 
