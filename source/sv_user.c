@@ -390,20 +390,21 @@ static void Cmd_Modellist_f (void)
 #ifdef VWEP_TEST
 	if (n == 0 && (sv_client->extensions & Z_EXT_VWEP) && sv.vw_model_name[0]) {
 		int i;
+		char ss[1024] = "//vwep ";
 		// send VWep precaches
 		for (i = 0, s = sv.vw_model_name; i < MAX_VWEP_MODELS; s++, i++) {
-			if (!sv.vw_model_name[i] || !sv.vw_model_name[i][0])
-				continue;
-			ClientReliableWrite_Begin (sv_client, svc_serverinfo, 20);
-			ClientReliableWrite_String (sv_client, "#vw");
-			ClientReliableWrite_String (sv_client, va("%i %s", i, TrimModelName(*s)));
-			/* ClientReliableWrite_End(); */
+			if (!*s || !**s)
+				break;
+			if (i > 0)
+				strlcat (ss, " ", sizeof(ss));
+			strlcat (ss, TrimModelName(*s), sizeof(ss));
 		}
-		// send end-of-list messsage
-		ClientReliableWrite_Begin (sv_client, svc_serverinfo, 4);
-		ClientReliableWrite_String (sv_client, "#vw");
-		ClientReliableWrite_String (sv_client, "");
-		/* ClientReliableWrite_End(); */
+		strlcat (ss, "\n", sizeof(ss));
+		if (ss[strlen(ss)-1] == '\n')		// didn't overflow?
+		{
+			ClientReliableWrite_Begin (sv_client, svc_stufftext, 2 + strlen(ss));
+			ClientReliableWrite_String (sv_client, ss);
+		}
 	}
 #endif
 

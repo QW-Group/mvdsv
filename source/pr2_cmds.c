@@ -167,14 +167,22 @@ void PF2_precache_vwep_model(byte* base, unsigned int mask, pr2val_t* stack, pr2
 		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
 		             "functions");
 
-	i = stack[0]._int;
-	s = (char *) VM_POINTER(base,mask,stack[1].string);
+	s = (char *) VM_POINTER(base,mask,stack[0].string);
 	PR2_CheckEmptyString(s);
 
-	if (i < 0 || i >= MAX_VWEP_MODELS)
-		PR2_RunError ("PF_precache_vwep_model: bad index %i", i);
+	// the strings are transferred via the stufftext mechanism, hence the stringency
+	if (strchr(s, '"') || strchr(s, ';') || strchr(s, '\n'  ) || strchr(s, '\t') || strchr(s, ' '))
+		PR_RunError ("Bad string\n");
 
-	sv.vw_model_name[i] = s;
+	for (i = 0; i < MAX_VWEP_MODELS; i++)
+	{
+		if (!sv.vw_model_name[i]) {
+			sv.vw_model_name[i] = s;
+			retval->_int = i;
+			return;
+		}
+	}
+	PR_RunError ("PF_precache_vwep_model: overflow");
 }
 #endif
 

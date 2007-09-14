@@ -1478,11 +1478,6 @@ void SV_Serverinfo_f (void)
 		return;
 	}
 
-#ifdef VWEP_TEST
-	if (!strcmp(key, "#vw"))
-		return;		// reserved for VWep precaches
-#endif
-
 	Info_SetValueForKey (svs.info, key, value, MAX_SERVERINFO_STRING);
 
 	// if the key is also a serverinfo cvar, change it too

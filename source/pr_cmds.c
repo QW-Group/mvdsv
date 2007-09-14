@@ -1582,15 +1582,22 @@ static void PF_precache_vwep_model (void)
 	if (sv.state != ss_loading)
 		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
 		
-	i = G_FLOAT(OFS_PARM0);
-	s = G_STRING(OFS_PARM1);
-	G_INT(OFS_RETURN) = G_INT(OFS_PARM1);	// FIXME, remove?
+	s = G_STRING(OFS_PARM0);
 	PR_CheckEmptyString (s);
 
-	if (i < 0 || i >= MAX_VWEP_MODELS)
-		PR_RunError ("PF_precache_vwep_model: bad index %i", i);
+	// the strings are transferred via the stufftext mechanism, hence the stringency
+	if (strchr(s, '"') || strchr(s, ';') || strchr(s, '\n'  ) || strchr(s, '\t') || strchr(s, ' '))
+		PR_RunError ("Bad string\n");
 
-	sv.vw_model_name[i] = s;
+	for (i = 0; i < MAX_VWEP_MODELS; i++)
+	{
+		if (!sv.vw_model_name[i]) {
+			sv.vw_model_name[i] = s;
+			G_INT(OFS_RETURN) = i;
+			return;
+		}
+	}
+	PR_RunError ("PF_precache_vwep_model: overflow");
 }
 #endif
 
@@ -2745,7 +2752,7 @@ static void PF_checkextension (void)
 		"ZQ_QC_STRINGS",			// http://wiki.quakesrc.org/index.php/ZQ_QC_STRINGS
 		"ZQ_QC_TOKENIZE",           // http://wiki.quakesrc.org/index.php/ZQ_QC_TOKENIZE
 #ifdef VWEP_TEST
-		"ZQ_VWEP_TEST",
+		"ZQ_VWEP",
 #endif
 		NULL
 	};
@@ -2895,10 +2902,6 @@ static builtin_t std_builtins[] =
         PF_findmap,		//#104
         PF_listmaps,		//#105
         PF_findmapname,		//#106
-        //<-
-#ifdef VWEP_TEST // FIXME: random builtin number
-		PF_precache_vwep_model,	// #107 but should be #0x5a09
-#endif
     };
 
 #define num_mvdsv_builtins (sizeof(std_builtins)/sizeof(std_builtins[0]))
@@ -2934,6 +2937,9 @@ static struct { int num; builtin_t func; } ext_builtins[] =
 {231, PF_calltimeofday},// void() calltimeofday
 {448, PF_cvar_string},	// string(string varname) cvar_string
 {531,PF_setpause},		//void(float pause) setpause
+#ifdef VWEP_TEST
+{532,PF_precache_vwep_model},	// float(string model) precache_vwep_model = #532;
+#endif
 };
 
 #define num_ext_builtins (sizeof(ext_builtins)/sizeof(ext_builtins[0]))
