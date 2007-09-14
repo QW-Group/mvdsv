@@ -209,11 +209,12 @@ void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...)
 
 	if (sv.mvdrecording)
 	{
-
-		MVDWrite_Begin (dem_single, cl - svs.clients, strlen(string)+3);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
-		MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
+		if (MVDWrite_Begin (dem_single, cl - svs.clients, strlen(string)+3))
+		{
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
+			MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
+		}
 	}
 
 	SV_PrintToClient(cl, level, string);
@@ -269,10 +270,12 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 
 	if (sv.mvdrecording)
 	{
-		MVDWrite_Begin (dem_all, 0, strlen(string)+3);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
-		MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
+		if (MVDWrite_Begin (dem_all, 0, strlen(string)+3))
+		{
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
+			MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
+		}
 	}
 
 	//	SV_Write_Log(MOD_FRAG_LOG, 1, "=== SV_BroadcastPrintf ===\n");
@@ -416,9 +419,10 @@ inrange:
 	{
 		if (reliable)
 		{
-			//MVDWrite_Begin(dem_multiple, cls, sv.multicast.cursize);
-			MVDWrite_Begin(dem_all, 0, sv.multicast.cursize);
-			SZ_Write((sizebuf_t*)demo.dbuf, sv.multicast.data, sv.multicast.cursize);
+			if (MVDWrite_Begin(dem_all, 0, sv.multicast.cursize))
+			{
+				SZ_Write((sizebuf_t*)demo.dbuf, sv.multicast.data, sv.multicast.cursize);
+			}
 		}
 		else
 			SZ_Write(&demo.datagram, sv.multicast.data, sv.multicast.cursize);
@@ -600,12 +604,14 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	// add this to server demo
 	if (sv.mvdrecording && msg->cursize)
 	{
-		MVDWrite_Begin(dem_single, clnum, msg->cursize);
-		SZ_Write((sizebuf_t*)demo.dbuf, msg->data, msg->cursize);
+		if (MVDWrite_Begin(dem_single, clnum, msg->cursize))
+		{
+			SZ_Write((sizebuf_t*)demo.dbuf, msg->data, msg->cursize);
+		}
 	}
 
 	// a fixangle might get lost in a dropped packet.  Oh well.
-	if ( ent->v.fixangle)
+	if (ent->v.fixangle)
 	{
 		MSG_WriteByte (msg, svc_setangle);
 		for (i=0 ; i < 3 ; i++)
@@ -799,10 +805,12 @@ static void SV_UpdateToReliableMessages (void)
 
 			if (sv.mvdrecording)
 			{
-				MVDWrite_Begin(dem_all, 0, 4);
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatefrags);
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, i);
-				MSG_WriteShort((sizebuf_t*)demo.dbuf, (int) ent->v.frags);
+				if (MVDWrite_Begin(dem_all, 0, 4))
+				{
+					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatefrags);
+					MSG_WriteByte((sizebuf_t*)demo.dbuf, i);
+					MSG_WriteShort((sizebuf_t*)demo.dbuf, (int) ent->v.frags);
+				}
 			}
 
 			sv_client->old_frags = (int) ent->v.frags;
@@ -816,9 +824,11 @@ static void SV_UpdateToReliableMessages (void)
 			ClientReliableWrite_Float(sv_client, sv_client->entgravity);
 			if (sv.mvdrecording)
 			{
-				MVDWrite_Begin(dem_single, i, 5);
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_entgravity);
-				MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->entgravity);
+				if (MVDWrite_Begin(dem_single, i, 5))
+				{
+					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_entgravity);
+					MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->entgravity);
+				}
 			}
 		}
 
@@ -829,9 +839,11 @@ static void SV_UpdateToReliableMessages (void)
 			ClientReliableWrite_Float(sv_client, sv_client->maxspeed);
 			if (sv.mvdrecording)
 			{
-				MVDWrite_Begin(dem_single, i, 5);
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_maxspeed);
-				MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->maxspeed);
+				if (MVDWrite_Begin(dem_single, i, 5))
+				{
+					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_maxspeed);
+					MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->maxspeed);
+				}
 			}
 		}
 
@@ -857,8 +869,10 @@ static void SV_UpdateToReliableMessages (void)
 
 	if (sv.mvdrecording && sv.reliable_datagram.cursize)
 	{
-		MVDWrite_Begin(dem_all, 0, sv.reliable_datagram.cursize);
-		SZ_Write((sizebuf_t*)demo.dbuf, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
+		if (MVDWrite_Begin(dem_all, 0, sv.reliable_datagram.cursize))
+		{
+			SZ_Write((sizebuf_t*)demo.dbuf, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
+		}
 	}
 
 	if (sv.mvdrecording)
@@ -986,13 +1000,15 @@ void SV_MVDPings (void)
 		if (client->state != cs_spawned)
 			continue;
 
-		MVDWrite_Begin (dem_all, 0, 7);
-		MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updateping);
-		MSG_WriteByte((sizebuf_t*)demo.dbuf,  j);
-		MSG_WriteShort((sizebuf_t*)demo.dbuf,  SV_CalcPing(client));
-		MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatepl);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, j);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, client->lossage);
+		if (MVDWrite_Begin (dem_all, 0, 7))
+		{
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updateping);
+			MSG_WriteByte((sizebuf_t*)demo.dbuf,  j);
+			MSG_WriteShort((sizebuf_t*)demo.dbuf,  SV_CalcPing(client));
+			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatepl);
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, j);
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, client->lossage);
+		}
 	}
 }
 
@@ -1113,17 +1129,21 @@ void SV_SendDemoMessage(void)
 				demo.stats[i][j] = stats[j];
 				if (stats[j] >=0 && stats[j] <= 255)
 				{
-					MVDWrite_Begin(dem_stats, i, 3);
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestat);
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, stats[j]);
+					if (MVDWrite_Begin(dem_stats, i, 3))
+					{
+						MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestat);
+						MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
+						MSG_WriteByte((sizebuf_t*)demo.dbuf, stats[j]);
+					}
 				}
 				else
 				{
-					MVDWrite_Begin(dem_stats, i, 6);
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestatlong);
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
-					MSG_WriteLong((sizebuf_t*)demo.dbuf, stats[j]);
+					if (MVDWrite_Begin(dem_stats, i, 6))
+					{
+						MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestatlong);
+						MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
+						MSG_WriteLong((sizebuf_t*)demo.dbuf, stats[j]);
+					}
 				}
 			}
 	}
@@ -1145,8 +1165,10 @@ void SV_SendDemoMessage(void)
 	}
 	else
 	{
-		MVDWrite_Begin(dem_all, 0, msg.cursize);
-		SZ_Write((sizebuf_t*)demo.dbuf, msg.data, msg.cursize);
+		if (MVDWrite_Begin(dem_all, 0, msg.cursize))
+		{
+			SZ_Write((sizebuf_t*)demo.dbuf, msg.data, msg.cursize);
+		}
 	}
 
 	// copy the accumulated multicast datagram
@@ -1154,11 +1176,15 @@ void SV_SendDemoMessage(void)
 	if (demo.datagram.cursize)
 	{
 		if (demo.datagram.overflowed)
+		{
 			Con_Printf("WARNING: demo.datagram overflowed in SV_SendDemoMessage\n");
+		}
 		else
 		{
-			MVDWrite_Begin(dem_all, 0, demo.datagram.cursize);
-			SZ_Write ((sizebuf_t*)demo.dbuf, demo.datagram.data, demo.datagram.cursize);
+			if (MVDWrite_Begin(dem_all, 0, demo.datagram.cursize))
+			{
+				SZ_Write ((sizebuf_t*)demo.dbuf, demo.datagram.data, demo.datagram.cursize);
+			}
 		}
 		SZ_Clear (&demo.datagram);
 	}
@@ -1171,6 +1197,9 @@ void SV_SendDemoMessage(void)
 	{
 		SV_MVDWritePackets(1);
 	}
+
+	if (!sv.mvdrecording)
+		return;
 
 	demo.parsecount++;
 	MVDSetMsgBuf(demo.dbuf,&demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf);

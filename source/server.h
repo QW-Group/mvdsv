@@ -757,13 +757,13 @@ void SV_ClearReliable (client_t *cl); // clear cl->netchan.message and backbuf
 //
 // sv_demo.c
 //
-void MVDWrite_Begin(byte type, int to, int size);
+qbool MVDWrite_Begin(byte type, int to, int size);
 void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
 
-void SV_MVDWriteToDisk(int type, int to, float time);
+qbool SV_MVDWriteToDisk(int type, int to, float time);
 void SV_MVDStop (int reason, qbool mvdonly);
 void SV_MVDStop_f (void);
-void SV_MVDWritePackets (int num);
+qbool SV_MVDWritePackets (int num);
 void SV_MVD_SendInitialGamestate(mvddest_t *dest);
 qbool SV_MVD_Record (mvddest_t *dest);
 

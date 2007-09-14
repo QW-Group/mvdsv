@@ -260,7 +260,7 @@ int DemoWrite (void *data, int len) //broadcast to all proxies/mvds
 	return len;
 }
 
-void MVDBuffer_Init (dbuffer_t *dbuffer, byte *buf, size_t size)
+static void MVDBuffer_Init (dbuffer_t *dbuffer, byte *buf, size_t size)
 {
 	demobuffer = dbuffer;
 
@@ -281,6 +281,11 @@ Sets the frame message buffer
 
 void MVDSetMsgBuf (demobuf_t *prev,demobuf_t *cur)
 {
+/* // usage of this function possibile even with !sv.mvdrecording, but seems it correct atm
+	if (!sv.mvdrecording)
+		Sys_Error ("MVDSetBuf: and !sv.mvdrecording");
+*/
+
 	// fix the maxsize of previous msg buffer,
 	// we won't be able to write there anymore
 	if (prev != NULL)
@@ -304,6 +309,9 @@ static void MVDSetBuf (byte type, int to)
 {
 	header_t *p;
 	int pos = 0;
+
+	if (!sv.mvdrecording)
+		Sys_Error ("MVDSetBuf: and !sv.mvdrecording");
 
 	p = (header_t *)demo.dbuf->data;
 
@@ -333,8 +341,11 @@ static void MVDSetBuf (byte type, int to)
 	demo.dbuf->h = p;
 }
 
-void MVDMoveBuf (void)
+static void MVDMoveBuf (void)
 {
+	if (!sv.mvdrecording)
+		Sys_Error ("MVDMoveBuf: and !sv.mvdrecording");
+
 	// set the last message mark to the previous frame (i/e begining of this one)
 	demobuffer->last = demobuffer->end - demo.dbuf->bufsize;
 
@@ -346,10 +357,13 @@ void MVDMoveBuf (void)
 	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
 }
 
-void MVDWrite_Begin (byte type, int to, int size)
+qbool MVDWrite_Begin (byte type, int to, int size)
 {
 	byte *p;
 	qbool move = false;
+
+	if (!sv.mvdrecording)
+		return false;
 
 	// will it fit?
 	while (demo.dbuf->bufsize + size + header > demo.dbuf->maxsize)
@@ -358,7 +372,9 @@ void MVDWrite_Begin (byte type, int to, int size)
 		if (!move && demobuffer->end > demobuffer->start)
 			move = true;
 
-		SV_MVDWritePackets(1);
+		if (!SV_MVDWritePackets(1))
+			return false;
+
 		if (move && demobuffer->start > demo.dbuf->bufsize + header + size)
 			MVDMoveBuf();
 	}
@@ -385,6 +401,8 @@ void MVDWrite_Begin (byte type, int to, int size)
 	demo.dbuf->h->size += size;
 	if ((demobuffer->end += size) > demobuffer->last)
 		demobuffer->last = demobuffer->end;
+
+	return (sv.mvdrecording ? true : false);
 }
 
 /*
@@ -394,14 +412,14 @@ SV_WriteMVDMessage
 Dumps the current net message, prefixed by the length and view angles
 ====================
 */
-static void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
+static qbool SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
 {
 	int		len, i, msec;
 	byte	c;
 	static double prevtime;
 
 	if (!sv.mvdrecording)
-		return;
+		return false;
 
 	msec = (time1 - prevtime) * 1000;
 	prevtime += msec * 0.001;
@@ -439,7 +457,7 @@ static void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
 		default:
 			SV_MVDStop_f ();
 			Con_Printf("bad demo message type:%d", type);
-			return;
+			return false;
 		}
 	}
 	else
@@ -453,6 +471,8 @@ static void SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
 	DemoWrite (msg->data, msg->cursize);
 
 	DestFlush(false);
+
+	return (sv.mvdrecording ? true : false);
 }
 
 /*
@@ -465,12 +485,15 @@ Message is cleared from demobuf after that
 ==============
 */
 
-void SV_MVDWriteToDisk (int type, int to, float time1)
+qbool SV_MVDWriteToDisk (int type, int to, float time1)
 {
 	int pos = 0, oldm, oldd;
 	header_t *p;
 	int size;
 	sizebuf_t msg;
+
+	if (!sv.mvdrecording)
+		return false;
 
 	p = (header_t *)demo.dbuf->data;
 	demo.dbuf->h = NULL;
@@ -490,7 +513,8 @@ void SV_MVDWriteToDisk (int type, int to, float time1)
 				msg.data = p->data;
 				msg.cursize = size;
 
-				SV_WriteMVDMessage(&msg, p->type, p->to, time1);
+				if(!SV_WriteMVDMessage(&msg, p->type, p->to, time1))
+					return false;
 			}
 
 			// data is written so it need to be cleard from demobuf
@@ -519,6 +543,8 @@ void SV_MVDWriteToDisk (int type, int to, float time1)
 		demobuffer->last = demobuffer->end;
 		demobuffer->start = 0;
 	}
+
+	return (sv.mvdrecording ? true : false);
 }
 
 /*
@@ -530,7 +556,7 @@ and writes packets to the disk/memory
 ====================
 */
 
-void SV_MVDWritePackets (int num)
+qbool SV_MVDWritePackets (int num)
 {
 	demo_frame_t	*frame, *nextframe;
 	demo_client_t	*cl, *nextcl = NULL;
@@ -544,7 +570,7 @@ void SV_MVDWritePackets (int num)
 	demoinfo_t		*demoinfo;
 
 	if (!sv.mvdrecording)
-		return;
+		return false;
 
 	msg.data = msg_buf;
 	msg.maxsize = sizeof(msg_buf);
@@ -675,17 +701,34 @@ void SV_MVDWritePackets (int num)
 			demoinfo->model = cl->info.model;
 		}
 
-		SV_MVDWriteToDisk(demo.lasttype,demo.lastto, (float)time1); // this goes first to reduce demo size a bit
-		SV_MVDWriteToDisk(0,0, (float)time1); // now goes the rest
+		// this goes first to reduce demo size a bit
+		if (!SV_MVDWriteToDisk(demo.lasttype,demo.lastto, (float)time1))
+			return false;
+
+		// now goes the rest
+		if (!SV_MVDWriteToDisk(0,0, (float)time1))
+			return false;
+
 		if (msg.cursize)
-			SV_WriteMVDMessage(&msg, dem_all, 0, (float)time1);
+		{
+			if (!SV_WriteMVDMessage(&msg, dem_all, 0, (float)time1))
+				return false;
+		}
+
+		if (!sv.mvdrecording)
+			return false;
 	}
+
+	if (!sv.mvdrecording)
+		return false;
 
 	if (demo.lastwritten > demo.parsecount)
 		demo.lastwritten = demo.parsecount;
 
 	demo.dbuf = &demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf;
 	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
+
+	return true;
 }
 
 /*
@@ -802,9 +845,11 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	demo.dbuf->cursize = 0;
 	demo.dbuf->h = NULL;
 	demo.dbuf->bufsize = 0;
-	MVDWrite_Begin(dem_all, 0, 2+strlen("EndOfDemo"));
-	MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_disconnect);
-	MSG_WriteString ((sizebuf_t*)demo.dbuf, "EndOfDemo");
+	if (MVDWrite_Begin(dem_all, 0, 2+strlen("EndOfDemo")))
+	{
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_disconnect);
+		MSG_WriteString ((sizebuf_t*)demo.dbuf, "EndOfDemo");
+	}
 
 	SV_MVDWritePackets(demo.parsecount - demo.lastwritten + 1);
 	// finish up

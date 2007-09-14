@@ -1551,6 +1551,7 @@ static void SV_Say (qbool team)
 	char	*p;
 	char	*i;
 	char	text[2048] = {0};
+	qbool	write_begin;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -1719,14 +1720,19 @@ static void SV_Say (qbool team)
 	// non-team messages should be seen always, even if not tracking any player
 	if (!team && ((sv_client->spectator && (int)sv_spectalk.value) || !sv_client->spectator))
 	{
-		MVDWrite_Begin (dem_all, 0, strlen(text)+3);
+		write_begin = MVDWrite_Begin (dem_all, 0, strlen(text)+3);
 	}
 	else
-		MVDWrite_Begin (dem_multiple, cls, strlen(text)+3);
+	{
+		write_begin = MVDWrite_Begin (dem_multiple, cls, strlen(text)+3);
+	}
 
-	MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
-	MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
-	MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
+	if (write_begin)
+	{
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
+		MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
+		MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
+	}
 }
 
 

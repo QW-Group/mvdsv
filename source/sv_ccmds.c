@@ -1408,10 +1408,12 @@ void SV_ConSay_f(void)
 
 	if (sv.mvdrecording)
 	{
-		MVDWrite_Begin (dem_all, 0, strlen(text)+3);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
-		MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
+		if (MVDWrite_Begin (dem_all, 0, strlen(text)+3))
+		{
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
+			MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
+			MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
+		}
 	}
 
 	Sys_Printf("%s", text);
