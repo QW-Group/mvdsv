@@ -202,7 +202,9 @@ char *argv0;
 void Sys_Quit (qbool restart)
 {
 	if (restart)
-		if (execv(argv0, com_argv) == -1)
+	{
+// FIXME: restart are buggy atm: does't close sockets and file handlers...
+//		if (execv(argv0, com_argv) == -1)
 		{
 #ifdef _CONSOLE
 			if (!((int)sys_nostdout.value || isdaemon))
@@ -213,6 +215,7 @@ void Sys_Quit (qbool restart)
 #endif
 			Sys_Exit(1);
 		}
+	}
 	Sys_Exit(0);
 }
 

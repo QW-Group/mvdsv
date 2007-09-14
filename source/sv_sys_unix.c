@@ -226,11 +226,14 @@ char	*argv0;
 void Sys_Quit (qbool restart)
 {
 	if (restart)
-		if (execv(argv0, com_argv) == -1)
+	{
+// FIXME: restart are buggy atm: does't close sockets and file handlers...
+//		if (execv(argv0, com_argv) == -1)
 		{
 			Sys_Printf("Restart failed: %s\n", strerror(qerrno));
 			Sys_Exit(1);
 		}
+	}
 	Sys_Exit(0);		// appkit isn't running
 }
 
