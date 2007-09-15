@@ -82,7 +82,7 @@ void DestClose (mvddest_t *d, qbool destroyfiles)
 		Q_free(d->cache);
 	if (d->file)
 		fclose(d->file);
-	if (d->socket != -1)
+	if (d->socket)
 		closesocket(d->socket);
 
 	if (destroyfiles)
