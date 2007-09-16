@@ -2982,6 +2982,11 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 	sv_player->v.button1 = (ucmd->buttons & 4) >> 2;
 	if (ucmd->impulse)
 		sv_player->v.impulse = ucmd->impulse;
+	if (fofs_movement) {
+		EdictFieldVector(sv_player, fofs_movement)[0] = ucmd->forwardmove;
+		EdictFieldVector(sv_player, fofs_movement)[1] = ucmd->sidemove;
+		EdictFieldVector(sv_player, fofs_movement)[2] = ucmd->upmove;
+	}
 	//bliP: cuff
 	if (sv_client->cuff_time > realtime)
 		sv_player->v.button0 = sv_player->v.impulse = 0;

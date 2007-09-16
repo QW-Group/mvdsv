@@ -149,9 +149,11 @@ extern func_t GE_ClientCommand, GE_PausedTic, GE_ShouldPause;
 extern int fofs_vw_index;
 #endif
 extern int fofs_items2; // ZQ_ITEMS2 extension
+extern int fofs_movement;
 extern int fofs_gravity, fofs_maxspeed;
 
 #define EdictFieldFloat(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->_float
+#define EdictFieldVector(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->vector
 
 void PR_RunError (char *error, ...);
 
