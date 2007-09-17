@@ -1573,7 +1573,6 @@ void PF_precache_model (void)
 	PR_RunError ("PF_precache_model: overflow");
 }
 
-#ifdef VWEP_TEST
 static void PF_precache_vwep_model (void)
 {
 	char	*s;
@@ -1599,7 +1598,6 @@ static void PF_precache_vwep_model (void)
 	}
 	PR_RunError ("PF_precache_vwep_model: overflow");
 }
-#endif
 
 
 void PF_coredump (void)
@@ -2751,9 +2749,7 @@ static void PF_checkextension (void)
 		"ZQ_PAUSE",					// http://wiki.quakesrc.org/index.php/ZQ_PAUSE
 		"ZQ_QC_STRINGS",			// http://wiki.quakesrc.org/index.php/ZQ_QC_STRINGS
 		"ZQ_QC_TOKENIZE",           // http://wiki.quakesrc.org/index.php/ZQ_QC_TOKENIZE
-#ifdef VWEP_TEST
 		"ZQ_VWEP",
-#endif
 		NULL
 	};
 	char **pstr, *extension;
@@ -2937,9 +2933,7 @@ static struct { int num; builtin_t func; } ext_builtins[] =
 {231, PF_calltimeofday},// void() calltimeofday
 {448, PF_cvar_string},	// string(string varname) cvar_string
 {531,PF_setpause},		//void(float pause) setpause
-#ifdef VWEP_TEST
 {532,PF_precache_vwep_model},	// float(string model) precache_vwep_model = #532;
-#endif
 };
 
 #define num_ext_builtins (sizeof(ext_builtins)/sizeof(ext_builtins[0]))

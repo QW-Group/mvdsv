@@ -42,10 +42,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_EDICTS				512		// FIXME: ouch! ouch! ouch! - trying to fix...
 #define	MAX_LIGHTSTYLES			64
 #define	MAX_MODELS				256		// these are sent over the net as bytes
-#ifdef VWEP_TEST
-#define MAX_VWEP_MODELS			32		// could be increased to 256
-#endif
 #define	MAX_SOUNDS				256		// so they cannot be blindly increased
+#define MAX_VWEP_MODELS			32		// could be increased to 256
 
 #define	MAX_STYLESTRING			64
 

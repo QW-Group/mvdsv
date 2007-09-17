@@ -145,10 +145,8 @@ extern	int		pr_xstatement;
 extern func_t SpectatorConnect, SpectatorDisconnect, SpectatorThink;
 extern func_t GE_ClientCommand, GE_PausedTic, GE_ShouldPause;
 
-#ifdef VWEP_TEST
-extern int fofs_vw_index;
-#endif
 extern int fofs_items2; // ZQ_ITEMS2 extension
+extern int fofs_vw_index;	// ZQ_VWEP
 extern int fofs_movement;
 extern int fofs_gravity, fofs_maxspeed;
 

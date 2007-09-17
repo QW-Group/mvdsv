@@ -157,7 +157,6 @@ void PF2_precache_model(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t
 	PR2_RunError ("PF_precache_model: overflow");
 }
 
-#ifdef VWEP_TEST
 void PF2_precache_vwep_model(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	int 	i;
@@ -172,7 +171,7 @@ void PF2_precache_vwep_model(byte* base, unsigned int mask, pr2val_t* stack, pr2
 
 	// the strings are transferred via the stufftext mechanism, hence the stringency
 	if (strchr(s, '"') || strchr(s, ';') || strchr(s, '\n'  ) || strchr(s, '\t') || strchr(s, ' '))
-		PR_RunError ("Bad string\n");
+		PR2_RunError ("Bad string\n");
 
 	for (i = 0; i < MAX_VWEP_MODELS; i++)
 	{
@@ -182,9 +181,8 @@ void PF2_precache_vwep_model(byte* base, unsigned int mask, pr2val_t* stack, pr2
 			return;
 		}
 	}
-	PR_RunError ("PF_precache_vwep_model: overflow");
+	PR2_RunError ("PF_precache_vwep_model: overflow");
 }
-#endif
 
 /*
 =================
@@ -2720,11 +2718,7 @@ pr2_trapcall_t pr2_API[]=
 		PF2_strlcat,		//g_strlcat
 		PF2_makevectors,	//G_MAKEVECTORS
 		PF2_nextclient,		//G_NEXTCLIENT
-#ifdef VWEP_TEST
 		PF2_precache_vwep_model,//G_PRECACHE_VWEP_MODEL
-#else
-		PF2_fixme,
-#endif
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 

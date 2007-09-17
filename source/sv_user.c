@@ -330,8 +330,7 @@ static void Cmd_Soundlist_f (void)
 		MSG_WriteByte (&sv_client->netchan.message, 0);
 }
 
-#ifdef VWEP_TEST
-static char *TrimModelName (char *full)
+static char *TrimModelName (const char *full)
 {
 	static char shortn[MAX_QPATH];
 	int len;
@@ -350,7 +349,6 @@ static char *TrimModelName (char *full)
 
 	return shortn;
 }
-#endif
 
 /*
 ==================
@@ -387,7 +385,6 @@ static void Cmd_Modellist_f (void)
 		return;
 	}
 
-#ifdef VWEP_TEST
 	if (n == 0 && (sv_client->extensions & Z_EXT_VWEP) && sv.vw_model_name[0]) {
 		int i;
 		char ss[1024] = "//vwep ";
@@ -406,7 +403,6 @@ static void Cmd_Modellist_f (void)
 			ClientReliableWrite_String (sv_client, ss);
 		}
 	}
-#endif
 
 	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 	//spawns.  These functions are written to not overflow

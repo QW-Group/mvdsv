@@ -278,18 +278,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define Z_EXT_JOIN_OBSERVE	(1<<5)	// server: "join" and "observe" commands are supported
 					// client: on-the-fly spectator <-> player switching supported
 #define Z_EXT_PF_ONGROUND	(1<<6)	// server: PF_ONGROUND is valid for all svc_playerinfo
-#ifdef VWEP_TEST
 #define Z_EXT_VWEP			(1<<7)
-#else
-#define Z_EXT_VWEP			0
-#endif
 
 // what our server supports
-#ifdef VWEP_TEST
 #define SERVER_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME|Z_EXT_JOIN_OBSERVE|Z_EXT_PF_ONGROUND|Z_EXT_VWEP)
-#else
-#define SERVER_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME|Z_EXT_JOIN_OBSERVE|Z_EXT_PF_ONGROUND)
-#endif
 
 //===============================================
 

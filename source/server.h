@@ -73,10 +73,7 @@ typedef struct
 	unsigned	map_checksum2;
 	cmodel_t	*worldmodel;
 	char		*model_precache[MAX_MODELS];	// NULL terminated
-#ifdef VWEP_TEST
-	// TODO: rename to precache to match mvdsv naming?
 	char		*vw_model_name[MAX_VWEP_MODELS];	// NULL terminated
-#endif
 	char		*sound_precache[MAX_SOUNDS];	// NULL terminated
 	char		*lightstyles[MAX_LIGHTSTYLES];
 	cmodel_t	*models[MAX_MODELS];
