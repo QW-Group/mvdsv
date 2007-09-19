@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __SYS_H__
 #define __SYS_H__
 
-#define DEFAULT_MEM_SIZE	(16 * 1024 * 1024) // 16 Mb
+#define DEFAULT_MEM_SIZE	(32 * 1024 * 1024) // 16 Mb
 
 // returns the file size
 // return -1 if file is not present
