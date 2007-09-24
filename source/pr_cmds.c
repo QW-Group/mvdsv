@@ -2480,7 +2480,7 @@ void PF_infokey (void)
 		if (is_ktpro && !strncmp(key, "*version", 9))
 			value = QW_VERSION;
 		else if (is_ktpro && !strncmp(key, "*qwe_version", 13))
-			value = QWE_VERSION;
+			value = QWE_VERSION QWE_DEV;
 		else if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey(localinfo, key);
 	}
