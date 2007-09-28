@@ -28,28 +28,37 @@
 
 #include "qwsvdef.h"
 
-// char *date = "Oct 24 1996";
-//static char *date = __DATE__ ;
-//static char *mon[12] =
-//    { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-//static char mond[12] =
-//    { 31,    28,    31,    30,    31,    30,    31,    31,    30,    31,    30,    31 };
-
 char full_version[SIZEOF_FULL_VERSION];
 
+#if 1
+
+//returns SVN revision number
 int build_number ()
 {
-        char rev[6] = "";
-        char rev_num[] = "$Revision$";
-        int i;
+	static int b = 0;
 
-        i = strlen(rev_num);
-        snprintf(rev, min(sizeof(rev), ((i -1) - 10)), "%s", rev_num + 10); // 10 is end of string "$Revision: "
-        return atoi(rev);
+	if (b)
+		return b;
 
+	{
+		char rev_num[] = "$Revision$";
+
+		if (!strncasecmp(rev_num, "$Revision:", sizeof("$Revision:") - 1))
+			b = atoi(rev_num + sizeof("$Revision:") - 1);
+	}
+
+	return b;
 }
 
-/* replaced with SVN revision number
+#else
+
+char *date = "Oct 24 1996";
+static char *date = __DATE__ ;
+static char *mon[12] =
+    { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+static char mond[12] =
+    { 31,    28,    31,    30,    31,    30,    31,    31,    30,    31,    30,    31 };
+
 // returns days since Dec 21 1999
 int build_number (void)
 {
@@ -80,7 +89,8 @@ int build_number (void)
 	}
 	return b;
 }
-*/
+
+#endif
 
 /*
 =======================
