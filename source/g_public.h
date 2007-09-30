@@ -140,6 +140,7 @@ typedef enum
 	G_MAKEVECTORS,
 	G_NEXTCLIENT,
 	G_PRECACHE_VWEP_MODEL,
+	G_SETPAUSE,
 } gameImport_t;
 
 // !!! new things comes to end of list !!!
