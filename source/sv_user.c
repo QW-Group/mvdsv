@@ -1412,6 +1412,8 @@ deny_download:
 		ClientReliableWrite_Byte (sv_client, 0);
 	}
 
+	SV_DownloadNextFile();
+
 	return;
 }
 
@@ -1529,6 +1531,8 @@ static void Cmd_StopDownload_f(void)
 	}
 
 	sv_client->demonum[0] = 0;
+	sv_client->demolist = false;
+
 	Con_Printf ((char *)Q_redtext(download_stopped));
 }
 //=============================================================================

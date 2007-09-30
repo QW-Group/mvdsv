@@ -813,7 +813,7 @@ stop recording a demo
 */
 void SV_MVDStop (int reason, qbool mvdonly)
 {
-	size_t name_len;
+	mvddest_t *d;
 	int numclosed;
 
 	if (!sv.mvdrecording)
@@ -855,14 +855,22 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	// finish up
 
 	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
-	name_len = strlen(demo.dest->name) + 1;
-	if (++lastdemospos > 15)
-		lastdemospos &= 0xF;
-	if (lastdemosname[lastdemospos])
-		Q_free(lastdemosname[lastdemospos]);
-	lastdemosname[lastdemospos] = (char *) Q_malloc(name_len);
-	strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
-	Con_DPrintf("SV_MVDStop: Demo name for 'cmd dl .': \"%s\"\n", lastdemosname[lastdemospos]);
+	for (d = demo.dest; d; d = d->nextdest)
+		if (d->desttype != DEST_STREAM && d->name[0])
+			break; // we found file dest with non empty name, use it as last demo name
+
+	if (d && d->name[0])
+	{
+		size_t name_len = strlen(demo.dest->name) + 1;
+
+		if (++lastdemospos > 15)
+			lastdemospos &= 0xF;
+		if (lastdemosname[lastdemospos])
+			Q_free(lastdemosname[lastdemospos]);
+		lastdemosname[lastdemospos] = (char *) Q_malloc(name_len);
+		strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
+		Con_DPrintf("SV_MVDStop: Demo name for 'cmd dl .': \"%s\"\n", lastdemosname[lastdemospos]);
+	}
 
 	numclosed = DestCloseAllFlush(false, mvdonly);
 

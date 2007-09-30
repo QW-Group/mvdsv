@@ -442,7 +442,10 @@ char *SV_MVDNum (int num)
 
 	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
 	if (num & 0xFF000000)
-		return lastdemosname[(lastdemospos - (num >> 24) + 1) & 0xF];
+	{
+		char *name = lastdemosname[(lastdemospos - (num >> 24) + 1) & 0xF];
+		return (name && name[0]) ? name : NULL;
+	}
 
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
@@ -453,12 +456,18 @@ char *SV_MVDNum (int num)
 		num += dir.numfiles;
 	}
 	else
+	{
 		--num;
+	}
 
 	if (num > dir.numfiles)
 		return NULL;
 
-	while (list->name[0] && num) {list++; num--;}
+	while (list->name[0] && num)
+	{
+		list++;
+		num--;
+	}
 
 	return list->name[0] ? list->name : NULL;
 }
