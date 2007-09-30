@@ -2619,6 +2619,16 @@ void PF2_makevectors(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		pr_global_struct->v_up);
 }
 
+// a la the ZQ_PAUSE QC extension
+void PF2_setpause(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	qbool pause;
+
+	pause = stack[0]._int ? true : false;
+	if (pause != sv.paused)
+		SV_TogglePause (NULL);
+}
+
 //===========================================================================
 // SysCalls
 //===========================================================================
@@ -2719,6 +2729,7 @@ pr2_trapcall_t pr2_API[]=
 		PF2_makevectors,	//G_MAKEVECTORS
 		PF2_nextclient,		//G_NEXTCLIENT
 		PF2_precache_vwep_model,//G_PRECACHE_VWEP_MODEL
+		PF2_setpause,		//G_SETPAUSE
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 

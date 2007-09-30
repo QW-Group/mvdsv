@@ -185,6 +185,7 @@ typedef enum
 	// The game can issue trap_argc() / trap_argv() commands to get the command
 	// and parameters.  Return qfalse if the game doesn't recognize it as a command.
 	GAME_CLIENT_SAY,			// ( int isTeamSay );
+	GAME_PAUSED_TIC,			// ( int duration );	// duration is in msecs
 
 } gameExport_t;
 

@@ -310,4 +310,13 @@ void PR2_GameConsoleCommand(void)
 	}
 }
 
+//===========================================================================
+// PausedTic
+//===========================================================================
+void PR2_PausedTic(float duration)
+{
+	VM_Call(sv_vm, GAME_PAUSED_TIC, duration*1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+
 #endif /* USE_PR2 */

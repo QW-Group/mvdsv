@@ -53,6 +53,7 @@ void		PR2_EdictBlocked();
 qbool 		PR2_UserInfoChanged();
 void 		PR2_GameShutDown();
 void 		PR2_GameConsoleCommand(void);
+void		PR2_PausedTic(float duration);
 
 char*		PR2_GetString(int);
 int			PR2_SetString(char*s);

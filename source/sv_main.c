@@ -2896,6 +2896,11 @@ static void SV_CheckVars (void)
 
 static void PausedTic (void)
 {
+#ifdef USE_PR2
+	if ( sv_vm )
+		PR2_PausedTic(Sys_DoubleTime() - sv.pausedsince);
+	else
+#endif
 	if (GE_PausedTic) {
 		G_FLOAT(OFS_PARM0) = Sys_DoubleTime() - sv.pausedsince;
 		PR_ExecuteProgram (GE_PausedTic);
