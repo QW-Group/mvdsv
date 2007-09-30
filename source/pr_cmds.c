@@ -1353,7 +1353,7 @@ void PF_cvar_set (void)
 	var_name = G_STRING(OFS_PARM0);
 	val = G_STRING(OFS_PARM1);
 
-	var = Cvar_FindVar(var_name);
+	var = Cvar_Find(var_name);
 	if (!var)
 	{
 		Con_Printf ("PF_cvar_set: variable %s not found\n", var_name);
@@ -2701,7 +2701,7 @@ static void PF_cvar_string (void)
 	cvar_t	*var;
 
 	str = G_STRING(OFS_PARM0);
-	var = Cvar_FindVar(str);
+	var = Cvar_Find(str);
 	if (!var) {
 		G_INT(OFS_RETURN) = 0;
 		return;
@@ -2721,7 +2721,7 @@ void PF_registercvar (void)
 	name = G_STRING(OFS_PARM0);
 	value = G_STRING(OFS_PARM0);
 
-	if (Cvar_FindVar(name)) {
+	if (Cvar_Find(name)) {
 		G_INT(OFS_RETURN) = 0;
 		return;
 	}

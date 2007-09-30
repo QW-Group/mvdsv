@@ -29,10 +29,10 @@ static char	*cvar_null_string = "";
 
 /*
 ============
-Cvar_FindVar
+Cvar_Find
 ============
 */
-cvar_t *Cvar_FindVar (const char *var_name)
+cvar_t *Cvar_Find (const char *var_name)
 {
 	cvar_t *var;
 	int key;
@@ -55,7 +55,7 @@ float Cvar_Value (const char *var_name)
 {
 	cvar_t	*var;
 
-	var = Cvar_FindVar (var_name);
+	var = Cvar_Find (var_name);
 	if (!var)
 		return 0;
 	return Q_atof (var->string);
@@ -71,7 +71,7 @@ char *Cvar_String (const char *var_name)
 {
 	cvar_t *var;
 
-	var = Cvar_FindVar (var_name);
+	var = Cvar_Find (var_name);
 	if (!var)
 		return cvar_null_string;
 	return var->string;
@@ -149,7 +149,7 @@ void Cvar_SetByName (const char *var_name, const char *value)
 {
 	cvar_t	*var;
 
-	var = Cvar_FindVar (var_name);
+	var = Cvar_Find (var_name);
 	if (!var)
 	{	// there is an error in C code if this happens
 		Con_DPrintf ("Cvar_Set: variable %s not found\n", var_name);
@@ -206,7 +206,7 @@ void Cvar_Register (cvar_t *variable)
 	int		key;
 
 	// first check to see if it has already been defined
-	if (Cvar_FindVar (variable->name))
+	if (Cvar_Find (variable->name))
 	{
 		Con_Printf ("Can't register variable %s, already defined\n", variable->name);
 		return;
@@ -249,7 +249,7 @@ qbool Cvar_Command (void)
 	char		string[1024];
 
 	// check variables
-	v = Cvar_FindVar (Cmd_Argv(0));
+	v = Cvar_Find (Cmd_Argv(0));
 	if (!v)
 		return false;
 
@@ -288,7 +288,7 @@ void Cvar_Toggle_f (void)
 		return;
 	}
 
-	var = Cvar_FindVar (Cmd_Argv(1));
+	var = Cvar_Find (Cmd_Argv(1));
 	if (!var)
 	{
 		Con_Printf ("Unknown variable \"%s\"\n", Cmd_Argv(1));
@@ -356,7 +356,7 @@ cvar_t *Cvar_Create (const char *name, char *string, int cvarflags)
 	cvar_t		*v;
 	int			key;
 
-	v = Cvar_FindVar(name);
+	v = Cvar_Find(name);
 	if (v)
 		return v;
 	v = (cvar_t *) Q_malloc (sizeof(cvar_t));
@@ -447,7 +447,7 @@ void Cvar_Set_f (void)
 	}
 
 	var_name = Cmd_Argv (1);
-	var = Cvar_FindVar (var_name);
+	var = Cvar_Find (var_name);
 
 	if (var)
 	{
@@ -483,7 +483,7 @@ void Cvar_Inc_f (void)
 		return;
 	}
 
-	var = Cvar_FindVar (Cmd_Argv(1));
+	var = Cvar_Find (Cmd_Argv(1));
 	if (!var)
 	{
 		Con_Printf ("Unknown variable \"%s\"\n", Cmd_Argv(1));

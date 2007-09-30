@@ -1481,7 +1481,7 @@ void SV_Serverinfo_f (void)
 	Info_SetValueForKey (svs.info, key, value, MAX_SERVERINFO_STRING);
 
 	// if the key is also a serverinfo cvar, change it too
-	var = Cvar_FindVar (key);
+	var = Cvar_Find(key);
 	if (var && (var->flags & CVAR_SERVERINFO))
 	{
 		// a hack - strip the serverinfo flag so that the Cvar_Set

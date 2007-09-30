@@ -104,7 +104,7 @@ qbool Cvar_Command (void);
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
 
-cvar_t *Cvar_FindVar (const char *var_name);
+cvar_t *Cvar_Find (const char *var_name);
 qbool Cvar_Delete (const char *name);
 
 cvar_t *Cvar_Create (const char *name, char *string, int cvarflags);
