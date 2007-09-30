@@ -243,7 +243,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	char *entitystring;
 	char oldmap[MAP_NAME_LEN];
 	extern qbool	sv_allow_cheats;
-	extern cvar_t	sv_cheats;
+	extern cvar_t	sv_cheats, sv_paused;
 
 	// store old map name
 	snprintf (oldmap, MAP_NAME_LEN, "%s", sv.mapname);
@@ -279,6 +279,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 	sv.state = ss_dead;
 	sv.paused = false;
+	Cvar_SetROM(&sv_paused, "0");
 
 	CM_InvalidateMap ();
 	Hunk_FreeToLowMark (host_hunklevel);
