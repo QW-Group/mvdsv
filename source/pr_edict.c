@@ -1127,7 +1127,7 @@ void PR_LoadProgs (void)
 	if (progs->version != PROG_VERSION)
 		SV_Error ("progs.dat has wrong version number (%i should be %i)", progs->version, PROG_VERSION);
 	if (progs->crc != PROGHEADER_CRC)
-		SV_Error ("You must have the progs.dat from QuakeWorld installed");
+		SV_Error ("You must have the qwprogs.dat from QuakeWorld installed");
 
 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
 	pr_strings = (char *)progs + progs->ofs_strings;

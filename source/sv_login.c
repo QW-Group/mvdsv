@@ -116,7 +116,7 @@ void SV_LoadAccounts(void)
 
 	if ( (f = fopen( va("%s/" ACC_FILE, fs_gamedir) ,"rt")) == NULL)
 	{
-		Con_Printf("couldn't open " ACC_FILE "\n");
+		Con_DPrintf("couldn't open " ACC_FILE "\n");
 		// logout
 		num_accounts = 0;
 		for (cl = svs.clients; cl - svs.clients < MAX_CLIENTS; cl++)
