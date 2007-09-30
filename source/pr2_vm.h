@@ -23,9 +23,9 @@
 #ifndef __PR2_VM_H__
 #define __PR2_VM_H__
 
-//#define SAFE_QVM
+#define SAFE_QVM
 #define QVM_RUNAWAY_PROTECTION
-//#define QVM_DATA_PROTECTION
+#define QVM_DATA_PROTECTION
 #define QVM_PROFILE
 
 #ifdef _WIN32
@@ -34,10 +34,10 @@
 #define EXPORT_FN
 #endif
 
-#define OPSTACKSIZE 	0x100
-#define MAX_PROC_CALL 	100
-#define MAX_vmMain_Call  100
-#define MAX_CYCLES	 100000
+#define OPSTACKSIZE		0x100
+#define MAX_PROC_CALL	100
+#define MAX_vmMain_Call	100
+#define MAX_CYCLES		100000
 
 #define VM_POINTER(base,mask,x)	 ((void*)((char *)base+((x)&mask)))
 #define POINTER_TO_VM(base,mask,x)	 ((x)?(int)((char *)(x) - (char*)base)&mask:0)
@@ -45,8 +45,8 @@
 
 typedef union pr2val_s
 {
-	string_t		string;
-	float			_float;
+	string_t	string;
+	float		_float;
 	int			_int;
 	int			edict;
 } pr2val_t;	
@@ -62,21 +62,19 @@ typedef enum vm_type_e
 } vm_type_t;
 
 
-
-struct vm_s {
-// common
+typedef struct vm_s {
+	// common
 	vm_type_t type;
 	char name[MAX_QPATH];
-// shared
+	// shared
 	void *hInst;
 	sys_call_t syscall;
 
-// native
-	int (*vmMain)(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, 
-				int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
-};
-
-typedef struct vm_s vm_t;
+	// native
+	int (*vmMain) (int command, int arg0, int arg1, int arg2, int arg3,
+		int arg4, int arg5, int arg6, int arg7, int arg8, int arg9,
+		int arg10, int arg11);
+} vm_t ;
 
 typedef enum
 {
@@ -166,15 +164,15 @@ typedef enum
 } opcode_t;
 
 typedef union {
-	int     	_int;
+	int				_int;
 	unsigned int	_uint;
-	float		_float;
+	float			_float;
 } qvm_parm_type_t;
 
 
 typedef struct {
-	opcode_t     opcode;
-	qvm_parm_type_t parm;
+	opcode_t		opcode;
+	qvm_parm_type_t	parm;
 } qvm_instruction_t;
 
 typedef struct symbols_s
@@ -184,18 +182,19 @@ typedef struct symbols_s
 	struct symbols_s *next;
 	char name[1];
 }symbols_t;
+
 typedef struct {
-// segments
+	// segments
 	qvm_instruction_t *cs;
 	unsigned char *ds;	// DATASEG + LITSEG + BSSSEG
 	unsigned char *ss;	// q3asm add stack at end of BSSSEG, defaultsize = 0x10000
 
-// pointer registers
-	int	PC;		// program counter, points to cs, goes up
-	int	SP;		// operation stack pointer, initially 0, goes up index of opStack in QVM_Exec
-	int	LP;		// subroutine stack/local vars space, initially points to end of ss
+	// pointer registers
+	int	PC;			// program counter, points to cs, goes up
+	int	SP;			// operation stack pointer, initially 0, goes up index of opStack in QVM_Exec
+	int	LP;			// subroutine stack/local vars space, initially points to end of ss
 
-// status
+	// status
 	int	len_cs;		// size of cs
 	int	len_ds;		// size of ds align up to power of 2
 	int	ds_mask;	// bit mask of len_ds
