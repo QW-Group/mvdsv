@@ -289,7 +289,7 @@ typedef struct
 	float			sec;
 	int				parsecount;
 	qbool			fixangle;
-	vec3_t			angle;
+//	vec3_t			angle; // hrm this is unused
 	float			cmdtime;
 	int				flags;
 	int				frame;
