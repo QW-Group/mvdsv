@@ -193,12 +193,7 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 	char path[MAX_OSPATH];
 
 	snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, dest_path, dest_name);
-
-	Con_Printf("PATH BEFORE: '%s'\n", path);
-
 	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
-
-	Con_Printf("PATH  AFTER: '%s'\n", path);
 
 	if ((int)sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
 	{
