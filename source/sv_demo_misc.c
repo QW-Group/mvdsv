@@ -188,12 +188,17 @@ qbool SV_DirSizeCheck (void)
 	return true;
 }
 
-void Run_sv_demotxt_and_sv_onrecordfinish (mvddest_t *d, qbool destroyfiles)
+void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *dest_path, qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
-	
-	snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
+
+	snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, dest_path, dest_name);
+
+	Con_Printf("PATH BEFORE: '%s'\n", path);
+
 	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+
+	Con_Printf("PATH  AFTER: '%s'\n", path);
 
 	if ((int)sv_demotxt.value && !destroyfiles) // dont keep txt's for deleted demos
 	{
@@ -223,12 +228,15 @@ void Run_sv_demotxt_and_sv_onrecordfinish (mvddest_t *d, qbool destroyfiles)
 		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
 			*p = 0; // strip parameters
 	
-		strlcpy(path, d->name, MAX_OSPATH);
-		strlcpy(path + strlen(d->name) - 3, "txt", MAX_OSPATH - strlen(d->name) + 3);
+		strlcpy(path, dest_name, MAX_OSPATH);
+		strlcpy(path + strlen(dest_name) - 3, "txt", MAX_OSPATH - strlen(dest_name) + 3);
 	
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
-		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" \"%s\" %s", sv_onrecordfinish.string, d->path, d->name, path, p != NULL ? p+1 : ""));
-		if (p) *p = ' ';
+		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, dest_name, path, p != NULL ? p+1 : ""));
+
+		if (p)
+			*p = ' ';
+
 		SV_Script_f();
 	
 		sv_redirected = old;

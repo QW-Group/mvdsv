@@ -198,6 +198,7 @@ static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
 {
 	int numclosed = 0;
 	mvddest_t *d, **prev, *next;
+
 	DestFlush(true); //make sure it's all written.
 
 	prev = &demo.dest;
@@ -205,12 +206,22 @@ static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
 	while (d)
 	{
 		next = d->nextdest;
+
 		if (!mvdonly || d->desttype != DEST_STREAM)
 		{
+			desttype_t dt = d->desttype;
+			char dest_name[sizeof(d->name)];
+			char dest_path[sizeof(d->path)];
+
+			strlcpy(dest_name, d->name, sizeof(dest_name));
+			strlcpy(dest_path, d->path, sizeof(dest_path));
+
 			*prev = d->nextdest;
-			DestClose(d, destroyfiles);
-			Run_sv_demotxt_and_sv_onrecordfinish (d, destroyfiles);
+			DestClose(d, destroyfiles); // NOTE: this free dest struck, so we can't use 'd' below
 			numclosed++;
+
+			if (dt != DEST_STREAM && dest_name[0]) // ignore stream or empty file name
+				Run_sv_demotxt_and_sv_onrecordfinish (dest_name, dest_path, destroyfiles);
 		}
 		else
 			prev = &d->nextdest;
