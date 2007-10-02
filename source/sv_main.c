@@ -243,17 +243,17 @@ void SV_Error (char *error, ...)
 
 	inerror = true;
 
-	va_start (argptr,error);
-	vsnprintf (string, sizeof(string), error, argptr);
+	va_start (argptr, error);
+	vsnprintf (string, sizeof (string), error, argptr);
 	va_end (argptr);
 
-	Con_Printf ("SV_Error: %s\n",string);
+	Con_Printf ("SV_Error: %s\n", string);
 
-	SV_FinalMessage (va("server crashed: %s\n", string));
+	SV_FinalMessage (va ("server crashed: %s\n", string));
 
 	SV_Shutdown ();
 
-	Sys_Error ("SV_Error: %s\n",string);
+	Sys_Error ("SV_Error: %s", string);
 }
 
 static void SV_FreeHeadDelayedPacket(client_t *cl) {
@@ -281,7 +281,7 @@ not just stuck on the outgoing message list, because the server is going
 to totally exit after returning from this function.
 ==================
 */
-void SV_FinalMessage (char *message)
+void SV_FinalMessage (const char *message)
 {
 	client_t *cl;
 	int i;

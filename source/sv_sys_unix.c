@@ -86,7 +86,7 @@ void Sys_mkdir (const char *path)
 	if (mkdir (path, 0777) != -1)
 		return;
 	if (qerrno != EEXIST)
-		Sys_Error ("mkdir %s: (%i): %s\n", path, qerrno, strerror(qerrno));
+		Sys_Error ("mkdir %s: (%i): %s", path, qerrno, strerror(qerrno));
 }
 
 /*
@@ -242,20 +242,28 @@ void Sys_Quit (qbool restart)
 Sys_Error
 ================
 */
-void Sys_Error (char *error, ...)
+void Sys_Error (const char *error, ...)
 {
-	va_list		argptr;
-	char		string[1024];
+	va_list argptr;
+	char string[1024];
 
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
+
 	if (!(int)sys_nostdout.value)
-		printf ("Fatal error: %s\n", string);
-	SV_Write_Log(ERROR_LOG, 1, va("Fatal error: %s\n", string));
+		Sys_Printf ("ERROR: %s\n", string);
+
+	if (logs[ERROR_LOG].sv_logfile)
+	{
+		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", text));
+		fclose (logs[ERROR_LOG].sv_logfile);
+	}
+
 	if ((int)sys_restart_on_error.value)
-		Sys_Quit(true);
-	Sys_Exit(1);
+		Sys_Quit (true);
+
+	Sys_Exit (1);
 }
 
 /*

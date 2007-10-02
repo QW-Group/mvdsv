@@ -27,19 +27,19 @@ va
 
 does a varargs printf into a temp buffer, so I don't need to have
 varargs versions of all text functions.
-FIXME: make this buffer size safe someday
 ============
 */
 #define MAX_STRINGS 16
-char *va(char *format, ...)
+#define STRING_SIZE 1024
+char *va (const char *format, ...)
 {
 	va_list argptr;
-	static char string[MAX_STRINGS][1024];
+	static char string[MAX_STRINGS][STRING_SIZE];
 	static int index1 = 0;
 
 	index1 &= (MAX_STRINGS - 1);
 	va_start (argptr, format);
-	vsnprintf (string[index1], sizeof(string[0]), format, argptr);
+	vsnprintf (string[index1], STRING_SIZE, format, argptr);
 	va_end (argptr);
 
 	return string[index1++];

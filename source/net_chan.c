@@ -129,7 +129,7 @@ void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 	vsnprintf (string, sizeof (string), format, argptr);
 	va_end (argptr);
 
-	Netchan_OutOfBand (adr, strlen(string), (byte *) string);
+	Netchan_OutOfBand (adr, strlen (string), (byte *) string);
 }
 
 

@@ -2591,7 +2591,7 @@ void PF_min (void)
 		G_FLOAT(OFS_RETURN) = f;
 	}
 	else
-		Sys_Error("min: must supply at least 2 floats\n");
+		Sys_Error("min: must supply at least 2 floats");
 }
 
 //DP_QC_MINMAXBOUND
@@ -2611,7 +2611,7 @@ void PF_max (void)
 		G_FLOAT(OFS_RETURN) = f;
 	}
 	else
-		Sys_Error("max: must supply at least 2 floats\n");
+		Sys_Error("max: must supply at least 2 floats");
 }
 
 //DP_QC_MINMAXBOUND

@@ -108,24 +108,20 @@ void Sys_mkdir (const char *path)
 }
 
 
-void Sys_Error (char *error, ...)
+void Sys_Error (const char *error, ...)
 {
-	va_list		argptr;
-	char		text[1024];
+	va_list	argptr;
+	char text[1024];
 
-	va_start (argptr,error);
-	vsnprintf (text, sizeof(text), error,argptr);
+	va_start (argptr, error);
+	vsnprintf (text, sizeof (text), error, argptr);
 	va_end (argptr);
 
 
 	if (sworld.from->file != NULL && sworld.from->file != stdin)
-	{
 		Sys_Printf ("ERROR: %s, at:%d\n", text, ftell(sworld.from->file));
-	}
 	else
-	{
 		Sys_Printf ("ERROR: %s\n", text);
-	}
 
 	Sys_Exit (1);
 }
@@ -1103,7 +1099,7 @@ qbool ClearWorld(void)
 
 	sources = (source_t*) realloc (sources, sizeof(source_t)*sworld.fromcount);
 	if (!sources)
-		Sys_Error ("Not enough memory free; check disk space\n");
+		Sys_Error ("Not enough memory free; check disk space");
 
 	memset(sources, 0, sizeof(source_t)*sworld.fromcount);
 	memset(&world, 0, sizeof(world));

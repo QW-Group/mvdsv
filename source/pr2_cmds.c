@@ -2149,7 +2149,7 @@ void PR2_FS_Restart()
 		}
 	}
 	if(pr2_num_open_files)
-		Sys_Error("PR2_fcloseall: pr2_num_open_files != 0\n");
+		Sys_Error("PR2_fcloseall: pr2_num_open_files != 0");
 	pr2_num_open_files = 0;
 	memset(pr2_fopen_files,0,sizeof(pr2_fopen_files));
 }

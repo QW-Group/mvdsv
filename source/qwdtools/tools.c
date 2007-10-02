@@ -867,7 +867,7 @@ int AddToFileList(flist_t *filelist, char *file)
 
 		// realloc flist table
 		if ( (flist = (char**) realloc (flist, sizeof(char*) * count+1)) == NULL)
-			Sys_Error("faild to alloc memory for file list\n");
+			Sys_Error("faild to alloc memory for file list");
 
 		// alloc memory for file name
 		p = (char*) Q_malloc (strlen(c_file.name)+1);

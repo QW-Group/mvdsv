@@ -130,11 +130,11 @@ int		NET_GetPacket (void);
 void	NET_SendPacket (int length, const void *data, netadr_t to);
 //qbool	NET_Sleep ();
 
-qbool	NET_CompareAdr (netadr_t a, netadr_t b);
-qbool	NET_CompareBaseAdr (netadr_t a, netadr_t b);
-char	*NET_AdrToString (netadr_t a);
-char	*NET_BaseAdrToString (netadr_t a);
-qbool	NET_StringToAdr (char *s, netadr_t *a);
+qbool	NET_CompareAdr (const netadr_t a, const netadr_t b);
+qbool	NET_CompareBaseAdr (const netadr_t a, const netadr_t b);
+char	*NET_AdrToString (const netadr_t a);
+char	*NET_BaseAdrToString (const netadr_t a);
+qbool	NET_StringToAdr (const char *s, netadr_t *a);
 
 // I turned this off atm, probably cause problems
 //#define SOCKET_CLOSE_TIME 30
@@ -203,6 +203,6 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport);
 qbool Netchan_CanPacket (netchan_t *chan);
 qbool Netchan_CanReliable (netchan_t *chan);
 
-void SockadrToNetadr (struct sockaddr_qstorage *s, netadr_t *a);
+void SockadrToNetadr (const struct sockaddr_qstorage *s, netadr_t *a);
 
 #endif /* !__NET_H__ */

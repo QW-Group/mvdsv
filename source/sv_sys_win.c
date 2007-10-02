@@ -224,31 +224,35 @@ void Sys_Quit (qbool restart)
 Sys_Error
 ================
 */
-void Sys_Error (char *error, ...)
+void Sys_Error (const char *error, ...)
 {
-	va_list		argptr;
-	char		text[1024];
+	va_list argptr;
+	char text[1024];
 
-	va_start (argptr,error);
-	vsnprintf (text, sizeof(text), error,argptr);
+	va_start (argptr, error);
+	vsnprintf (text, sizeof (text), error, argptr);
 	va_end (argptr);
+
 #ifdef _CONSOLE
 	if (!((int)sys_nostdout.value || isdaemon))
 		printf ("ERROR: %s\n", text);
 #else
-	if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
-		MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
+	if (!(COM_CheckParm ("-noerrormsgbox") || isdaemon))
+		MessageBox (NULL, text, "Error", 0 /* MB_OK */ );
 	else
-		Sys_Printf("ERROR: %s\n", text);
+		Sys_Printf ("ERROR: %s\n", text);
 
 #endif
+
 	if (logs[ERROR_LOG].sv_logfile)
 	{
-		SV_Write_Log(ERROR_LOG, 1, va("ERROR: %s\n", text));
-		fclose(logs[ERROR_LOG].sv_logfile);
+		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", text));
+		fclose (logs[ERROR_LOG].sv_logfile);
 	}
+
 	if ((int)sys_restart_on_error.value)
-		Sys_Quit(true);
+		Sys_Quit (true);
+
 	Sys_Exit (1);
 }
 
@@ -484,9 +488,9 @@ Sys_Printf
 void Sys_Printf (char *fmt, ...)
 {
 	extern char	chartbl2[];
-	va_list		argptr;
-	unsigned char	text[MAXCMDBUF];
-	unsigned char	*p;
+	va_list argptr;
+	unsigned char text[MAXCMDBUF];
+	unsigned char *p;
 
 	if ((
 #ifdef _CONSOLE

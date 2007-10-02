@@ -200,7 +200,7 @@ typedef struct
 void Sys_fclose (FILE **hndl);
 void Sys_Exit (int i);
 void Sys_mkdir (const char *path);
-void Sys_Error (char *error, ...);
+void Sys_Error (const char *error, ...);
 void Sys_Printf (char *fmt, ...);
 void Dem_Stop(source_t *s);
 

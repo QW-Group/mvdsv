@@ -634,7 +634,7 @@ typedef struct
 
 void SV_Shutdown (void);
 void SV_Frame (double time);
-void SV_FinalMessage (char *message);
+void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
 
 int SV_CalcPing (client_t *cl);

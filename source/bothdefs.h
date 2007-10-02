@@ -220,7 +220,7 @@ float	Q_atof (const char *str);
 #define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
 
 // does a varargs printf into a temp buffer
-char	*va(char *format, ...);
+char	*va (const char *format, ...);
 
 void	*Q_malloc (size_t size);
 #define	Q_free(ptr)	free(ptr)
