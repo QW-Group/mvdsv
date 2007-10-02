@@ -115,8 +115,8 @@ cvar_t	sv_reconnectlimit = {"sv_reconnectlimit", "0"};
 qbool OnChange_admininfo_var (cvar_t *var, const char *string);
 cvar_t  sv_admininfo = {"sv_admininfo", "", 0, OnChange_admininfo_var};
 
-cvar_t	sv_unfake = {"sv_unfake", "0"}; //bliP: 24/9 kickfake to unfake
-cvar_t	sv_kicktop = {"sv_kicktop", "0"};
+cvar_t	sv_unfake = {"sv_unfake", "1"}; //bliP: 24/9 kickfake to unfake
+cvar_t	sv_kicktop = {"sv_kicktop", "1"};
 
 cvar_t	sv_allowlastscores = {"sv_allowlastscores", "1"};
 
@@ -125,12 +125,12 @@ cvar_t	sv_maxlogsize = {"sv_maxlogsize", "0"};
 qbool OnChange_logdir_var (cvar_t *var, const char *string);
 cvar_t  sv_logdir = {"sv_logdir", ".", 0, OnChange_logdir_var};
 
-cvar_t  sv_speedcheck = {"sv_speedcheck", "0"};
+cvar_t  sv_speedcheck = {"sv_speedcheck", "1"};
 //<-
 //<-
 //cvar_t	sv_highchars = {"sv_highchars", "1"};
 cvar_t	sv_phs = {"sv_phs", "1"};
-cvar_t	pausable = {"pausable", "1"};
+cvar_t	pausable = {"pausable", "0"};
 cvar_t	sv_maxrate = {"sv_maxrate", "0"};
 cvar_t	sv_getrealip = {"sv_getrealip", "1"};
 cvar_t	sv_serverip = {"sv_serverip", ""};

@@ -74,7 +74,6 @@ to the new value before sending out any replies.
 
 cvar_t showpackets = {"showpackets", "0"};
 cvar_t showdrop = {"showdrop", "0"};
-cvar_t qport = {"qport", "0"};
 
 /*
 ===============
@@ -84,22 +83,10 @@ Netchan_Init
 */
 void Netchan_Init (void)
 {
-	int port = 0xffff;
+	srand ((unsigned) time (NULL));
 
-	// pick a port value that should be nice and random
-	srand((unsigned)time(NULL));
-	port &= rand();
-	/*
-	#ifdef _WIN32
-		port = ((int)(timeGetTime()*1000) * time(NULL)) & 0xffff;
-	#else
-		port = ((int)(getpid()+getuid()*1000) * time(NULL)) & 0xffff;
-	#endif
-	*/
 	Cvar_Register (&showpackets);
 	Cvar_Register (&showdrop);
-	Cvar_Register (&qport);
-	Cvar_SetValue (&qport, port);
 }
 
 /*
@@ -116,7 +103,7 @@ void Netchan_OutOfBand (netadr_t adr, int length, byte *data)
 
 	// write the packet header
 	send1.data = send_buf;
-	send1.maxsize = sizeof(send_buf);
+	send1.maxsize = sizeof (send_buf);
 	send1.cursize = 0;
 
 	MSG_WriteLong (&send1, -1);	// -1 sequence means out of band
@@ -133,16 +120,16 @@ Netchan_OutOfBandPrint
 Sends a text message in an out-of-band datagram
 ================
 */
-void Netchan_OutOfBandPrint (netadr_t adr, char *format, ...)
+void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
 {
+	char string[8192];
 	va_list argptr;
-	static char string[8192]; // ??? why static? - make program look big :-D
 
 	va_start (argptr, format);
-	vsnprintf (string, sizeof(string), format, argptr);
+	vsnprintf (string, sizeof (string), format, argptr);
 	va_end (argptr);
 
-	Netchan_OutOfBand (adr, strlen(string), (byte *)string);
+	Netchan_OutOfBand (adr, strlen(string), (byte *) string);
 }
 
 
@@ -153,16 +140,16 @@ Netchan_Setup
 called to open a channel to a remote system
 ==============
 */
-void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport1)
+void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
 {
-	memset (chan, 0, sizeof(*chan));
+	memset (chan, 0, sizeof (*chan));
 
 	chan->remote_address = adr;
 	chan->last_received = realtime;
 	chan->message.data = chan->message_buf;
 	chan->message.allowoverflow = true;
-	chan->message.maxsize = sizeof(chan->message_buf);
-	chan->qport = qport1;
+	chan->message.maxsize = sizeof (chan->message_buf);
+	chan->qport = qport;
 	chan->rate = 1.0/2500;
 }
 
@@ -177,9 +164,7 @@ Returns true if the bandwidth choke isn't active
 #define	MAX_BACKUP	400
 qbool Netchan_CanPacket (netchan_t *chan)
 {
-	if (chan->cleartime < realtime + MAX_BACKUP*chan->rate)
-		return true;
-	return false;
+	return (chan->cleartime < realtime + MAX_BACKUP * chan->rate) ? true : false;
 }
 
 
@@ -192,9 +177,7 @@ Returns true if the bandwidth choke isn't
 */
 qbool Netchan_CanReliable (netchan_t *chan)
 {
-	if (chan->reliable_length)
-		return false; // waiting for ack
-	return Netchan_CanPacket (chan);
+	return (chan->reliable_length) ? false : Netchan_CanPacket (chan); // waiting for ack
 }
 
 /*
@@ -228,6 +211,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 			            , NET_AdrToString (chan->remote_address));
 			last_error_time = current_time;
 		}
+
 		return;
 	}
 
@@ -250,7 +234,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 
 	// write the packet header
 	send1.data = send_buf;
-	send1.maxsize = sizeof(send_buf);
+	send1.maxsize = sizeof (send_buf);
 	send1.cursize = 0;
 
 	w1 = chan->outgoing_sequence | (send_reliable<<31);
@@ -309,7 +293,7 @@ qbool Netchan_Process (netchan_t *chan)
 {
 	unsigned sequence, sequence_ack;
 	unsigned reliable_ack, reliable_message;
-	int qport1;
+	int qport;
 
 	if (!NET_CompareAdr (net_from, chan->remote_address))
 		return false;
@@ -320,7 +304,7 @@ qbool Netchan_Process (netchan_t *chan)
 	sequence_ack = MSG_ReadLong ();
 
 	// read the qport
-	qport1 = MSG_ReadShort ();
+	qport = MSG_ReadShort ();
 
 	reliable_message = sequence >> 31;
 	reliable_ack = sequence_ack >> 31;
@@ -369,7 +353,7 @@ qbool Netchan_Process (netchan_t *chan)
 	//
 	// discard stale or duplicated packets
 	//
-	if (sequence <= (unsigned)chan->incoming_sequence)
+	if (sequence <= (unsigned) chan->incoming_sequence)
 	{
 		if ((int)showdrop.value)
 			Con_Printf ("%s:Out of order packet %i at %i\n"
@@ -414,10 +398,10 @@ qbool Netchan_Process (netchan_t *chan)
 	// the message can now be read from the current message pointer
 	// update statistics counters
 	//
-	chan->frame_latency = chan->frame_latency*OLD_AVG
-		+ (chan->outgoing_sequence-sequence_ack)*(1.0-OLD_AVG);
-	chan->frame_rate = chan->frame_rate*OLD_AVG
-		+ (realtime-chan->last_received)*(1.0-OLD_AVG);
+	chan->frame_latency = chan->frame_latency * OLD_AVG
+		+ (chan->outgoing_sequence-sequence_ack) * (1.0 - OLD_AVG);
+	chan->frame_rate = chan->frame_rate * OLD_AVG
+		+ (realtime-chan->last_received) * (1.0 - OLD_AVG);
 	chan->good_count += 1;
 
 	chan->last_received = realtime;
