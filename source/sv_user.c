@@ -30,7 +30,7 @@ cvar_t	sv_spectalk = {"sv_spectalk", "1"};
 cvar_t	sv_sayteam_to_spec = {"sv_sayteam_to_spec", "1"};
 cvar_t	sv_mapcheck = {"sv_mapcheck", "1"};
 cvar_t	sv_minping = {"sv_minping", "0"};
-cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "0"};
+cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "1"};
 
 cvar_t	sv_use_internal_cmd_dl = {"sv_use_internal_cmd_dl", "1"};
 

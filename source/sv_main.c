@@ -98,14 +98,14 @@ cvar_t	spectator_password = {"spectator_password", ""};	// password for entering
 cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
 cvar_t	vip_values = {"vip_values", ""};
 
-cvar_t	allow_download		= {"allow_download", "1"};
-cvar_t	allow_download_skins	= {"allow_download_skins", "1"};
-cvar_t	allow_download_models	= {"allow_download_models", "1"};
-cvar_t	allow_download_sounds	= {"allow_download_sounds", "1"};
+cvar_t	allow_download = {"allow_download", "1"};
+cvar_t	allow_download_skins = {"allow_download_skins", "1"};
+cvar_t	allow_download_models = {"allow_download_models", "1"};
+cvar_t	allow_download_sounds = {"allow_download_sounds", "1"};
 cvar_t	allow_download_maps	= {"allow_download_maps", "1"};
-cvar_t	allow_download_pakmaps	= {"allow_download_pakmaps", "0"};
-cvar_t	allow_download_demos	= {"allow_download_demos", "1"};
-cvar_t	allow_download_other	= {"allow_download_other", "0"};
+cvar_t	allow_download_pakmaps = {"allow_download_pakmaps", "1"};
+cvar_t	allow_download_demos = {"allow_download_demos", "1"};
+cvar_t	allow_download_other = {"allow_download_other", "0"};
 //bliP: init ->
 cvar_t	download_map_url = {"download_map_url", ""};
 
@@ -149,17 +149,16 @@ cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", 0, sv_mod_msg_file_OnChange};
 cvar_t	fraglimit = {"fraglimit","0",CVAR_SERVERINFO};
 cvar_t	timelimit = {"timelimit","0",CVAR_SERVERINFO};
 cvar_t	teamplay = {"teamplay","0",CVAR_SERVERINFO};
-cvar_t	samelevel = {"samelevel","0"};
-cvar_t	maxclients = {"maxclients","8",CVAR_SERVERINFO};
+cvar_t	maxclients = {"maxclients","24",CVAR_SERVERINFO};
 cvar_t	maxspectators = {"maxspectators","8",CVAR_SERVERINFO};
 cvar_t	maxvip_spectators = {"maxvip_spectators","0"/*,CVAR_SERVERINFO*/};
-cvar_t	deathmatch = {"deathmatch","1",CVAR_SERVERINFO};
-cvar_t	spawn = {"spawn","0"};
+cvar_t	deathmatch = {"deathmatch","3",CVAR_SERVERINFO};
 cvar_t	watervis = {"watervis","0",CVAR_SERVERINFO};
 cvar_t	serverdemo = {"serverdemo","",CVAR_SERVERINFO | CVAR_ROM};
-// not mirrored
-cvar_t	skill = {"skill", "1"};
-cvar_t	coop = {"coop", "0"};
+
+cvar_t	samelevel = {"samelevel","1"}; // dont delete this variable - it used by mods
+cvar_t	skill = {"skill", "1"}; // dont delete this variable - it used by mods
+cvar_t	coop = {"coop", "0"}; // dont delete this variable - it used by mods
 
 cvar_t	version = {"version", full_version, CVAR_ROM};
 cvar_t	sv_paused = {"sv_paused", "0", CVAR_ROM};
@@ -168,8 +167,6 @@ cvar_t	hostname = {"hostname", "unnamed", CVAR_SERVERINFO};
 
 cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
 cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login"
-
-cvar_t sv_maxuserid = {"sv_maxuserid", "99"};
 
 cvar_t registered = {"registered", "1", CVAR_ROM};
 // We need this cvar, because ktpro didn't allow to go at some placeses of, for example, start map.
@@ -508,7 +505,8 @@ void SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 		SV_FullClientUpdate (client, &cl->netchan.message);
 }
 
-//Returns a unique userid in 1..<sv_maxuserid> range
+//Returns a unique userid in [1..MAXUSERID] range
+#define MAXUSERID 99
 int SV_GenerateUserID (void)
 {
 	client_t *cl;
@@ -517,7 +515,7 @@ int SV_GenerateUserID (void)
 
 	do {
 		svs.lastuserid++;
-		if (svs.lastuserid == 1 + (int)sv_maxuserid.value)
+		if (svs.lastuserid == 1 + MAXUSERID)
 			svs.lastuserid = 1;
 		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 			if (cl->state != cs_free && cl->userid == svs.lastuserid)
@@ -3102,7 +3100,6 @@ void SV_InitLocal (void)
 	Cvar_Register (&maxvip_spectators);
 	Cvar_Register (&hostname);
 	Cvar_Register (&deathmatch);
-	Cvar_Register (&spawn);
 	Cvar_Register (&watervis);
 	Cvar_Register (&serverdemo);
 	Cvar_Register (&sv_paused);
@@ -3163,7 +3160,6 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_mod_msg_file);
 	Cvar_Register (&sv_forcenick);
 	Cvar_Register (&sv_registrationinfo);
-	Cvar_Register (&sv_maxuserid);
 	Cvar_Register (&registered);
 	Cvar_Register (&sv_ktpro_mode);
 
