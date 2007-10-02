@@ -294,7 +294,7 @@ void MVDSetMsgBuf (demobuf_t *prev,demobuf_t *cur)
 {
 /* // usage of this function possibile even with !sv.mvdrecording, but seems it correct atm
 	if (!sv.mvdrecording)
-		Sys_Error ("MVDSetBuf: and !sv.mvdrecording");
+		Sys_Error ("MVDSetMsgBuf: and !sv.mvdrecording");
 */
 
 	// fix the maxsize of previous msg buffer,
