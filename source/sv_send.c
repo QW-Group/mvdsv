@@ -1191,7 +1191,7 @@ void SV_SendDemoMessage(void)
 
 	demo.recorder.delta_sequence = demo.recorder.netchan.incoming_sequence&255;
 	demo.recorder.netchan.incoming_sequence++;
-	demo.frames[demo.parsecount&DEMO_FRAMES_MASK].time = demo.time = sv.time;
+	demo.frames[demo.parsecount&UPDATE_MASK].time = demo.time = sv.time;
 
 	if (demo.parsecount - demo.lastwritten > 60) // that's a backup of 3sec in 20fps, should be enough
 	{
@@ -1202,7 +1202,7 @@ void SV_SendDemoMessage(void)
 		return;
 
 	demo.parsecount++;
-	MVDSetMsgBuf(demo.dbuf,&demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf);
+	MVDSetMsgBuf(demo.dbuf,&demo.frames[demo.parsecount&UPDATE_MASK].buf);
 }
 
 

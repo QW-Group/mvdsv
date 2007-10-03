@@ -328,9 +328,6 @@ typedef struct {
 	int				maxsize;
 } dbuffer_t;
 
-#define DEMO_FRAMES 64
-#define DEMO_FRAMES_MASK (DEMO_FRAMES - 1)
-
 //qtv proxies are meant to send a small header now, bit like http
 //this header gives supported version numbers and stuff
 typedef struct mvdpendingdest_s
@@ -397,7 +394,7 @@ typedef struct
 	vec3_t			angles[MAX_CLIENTS];
 	int				parsecount;
 	int				lastwritten;
-	demo_frame_t	frames[DEMO_FRAMES];
+	demo_frame_t	frames[UPDATE_BACKUP];
 	demoinfo_t		info[MAX_CLIENTS];
 	byte			buffer[20*MAX_MSGLEN];
 	int				bufsize;
@@ -580,7 +577,7 @@ extern	cvar_t	sv_specprint;	//bliP: spectator print
 extern	server_static_t	svs;	// persistant server info
 extern	server_t	sv;	// local server
 extern	demo_t		demo;	// server demo struct
-extern	entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; // client entities
+extern	entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP][MAX_PACKET_ENTITIES]; // client entities
 
 extern	client_t	*sv_client;
 extern	edict_t		*sv_player;

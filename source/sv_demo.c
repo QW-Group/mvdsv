@@ -54,8 +54,7 @@ int  				lastdemospos;
 
 mvddest_t			*singledest;
 
-entity_state_t		demo_entities[UPDATE_MASK+1][MAX_DEMO_PACKET_ENTITIES];
-client_frame_t		demo_frames[UPDATE_MASK+1];
+static entity_state_t		demo_entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES]; // used for pseudo client aka 'demo.recorder' during demo recording
 
 
 #define MAXSIZE (demobuffer->end < demobuffer->last ? \
@@ -592,7 +591,7 @@ qbool SV_MVDWritePackets (int num)
 	// 'num' frames to write
 	for ( ; num; num--, demo.lastwritten++)
 	{
-		frame = &demo.frames[demo.lastwritten&DEMO_FRAMES_MASK];
+		frame = &demo.frames[demo.lastwritten&UPDATE_MASK];
 		time1 = frame->time;
 		nextframe = frame;
 		msg.cursize = 0;
@@ -614,7 +613,7 @@ qbool SV_MVDWritePackets (int num)
 
 			for (j = demo.lastwritten+1, valid = false; nexttime < time1 && j < demo.parsecount; j++)
 			{
-				nextframe = &demo.frames[j&DEMO_FRAMES_MASK];
+				nextframe = &demo.frames[j&UPDATE_MASK];
 				nextcl = &nextframe->clients[i];
 
 				if (nextcl->parsecount != j)
@@ -736,7 +735,7 @@ qbool SV_MVDWritePackets (int num)
 	if (demo.lastwritten > demo.parsecount)
 		demo.lastwritten = demo.parsecount;
 
-	demo.dbuf = &demo.frames[demo.parsecount&DEMO_FRAMES_MASK].buf;
+	demo.dbuf = &demo.frames[demo.parsecount&UPDATE_MASK].buf;
 	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
 
 	return true;

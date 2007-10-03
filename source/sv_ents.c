@@ -304,7 +304,7 @@ static void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs
 	edict_t *ent;
 
 
-	demo_frame = &demo.frames[demo.parsecount&DEMO_FRAMES_MASK];
+	demo_frame = &demo.frames[demo.parsecount&UPDATE_MASK];
 
 	for (j=0,cl=svs.clients, dcl = demo_frame->clients; j<MAX_CLIENTS ; j++,cl++, dcl++)
 	{
