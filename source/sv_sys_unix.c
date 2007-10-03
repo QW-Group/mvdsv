@@ -256,7 +256,7 @@ void Sys_Error (const char *error, ...)
 
 	if (logs[ERROR_LOG].sv_logfile)
 	{
-		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", text));
+		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", string));
 		fclose (logs[ERROR_LOG].sv_logfile);
 	}
 
