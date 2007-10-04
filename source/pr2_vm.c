@@ -614,7 +614,7 @@ int QVM_Exec( register qvm_t * qvm, int command, int arg0, int arg1, int arg2, i
 	profile_t *profile_func = NULL;
 	symbols_t *sym;
 #endif
-	int     savePC, saveSP, saveLP, ivar;
+	int     savePC, saveSP, saveLP, ivar = 0;
 	qvm_instruction_t op;
 
 	savePC = qvm->PC;
