@@ -541,8 +541,8 @@ typedef struct
 #define SERVERINFO_KTPRO_BUILD			"build"
 
 // all versions of ktx with such serverinfo's keys support maps in localinfo
-#define SERVERINFO_KTX_VERSION			"xmod"
-#define SERVERINFO_KTX_BUILD			"xbuild"
+#define SERVERINFO_KTX_VERSION			"ktxver"
+#define SERVERINFO_KTX_BUILD			"ktxbuild"
 // }
 
 #define MAX_REDIRECTMESSAGES	128
