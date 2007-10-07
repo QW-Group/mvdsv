@@ -406,12 +406,13 @@ void SV_Map (qbool now)
 		changed = false;
 
 		// uh, is it possible ?
-		COM_FOpenFile (expanded, &f);
+		FS_FOpenFile (expanded, &f);
 		if (!f)
 		{
 			Sys_Printf ("Can't find %s\n", expanded);
 			return;
 		}
+
 		fclose (f);
 
 		if (sv.mvdrecording)
@@ -461,12 +462,13 @@ void SV_Map (qbool now)
 	// check to make sure the level exists
 	snprintf (expanded, MAX_QPATH, "maps/%s.bsp", level);
 
-	COM_FOpenFile (expanded, &f);
+	FS_FOpenFile (expanded, &f);
 	if (!f)
 	{
 		Con_Printf ("Can't find %s\n", expanded);
 		return;
 	}
+
 	fclose (f);
 
 	changed = true;
@@ -1707,7 +1709,7 @@ void SV_Gamedir_f (void)
 		return;
 	}
 
-	COM_Gamedir (dir);
+	FS_Gamedir (dir);
 	Info_SetValueForStarKey (svs.info, "*gamedir", dir, MAX_SERVERINFO_STRING);
 }
 
@@ -1737,8 +1739,8 @@ void SV_Snap (int uid)
 		return;
 	}
 
-	COM_CreatePath (va("%s/snap/", fs_gamedir));
-	snprintf(pcxname, sizeof(pcxname), "%d-00.pcx", uid);
+	FS_CreatePath (va ("%s/snap/", fs_gamedir));
+	snprintf (pcxname, sizeof (pcxname), "%d-00.pcx", uid);
 
 	for (i=0 ; i<=99 ; i++)
 	{

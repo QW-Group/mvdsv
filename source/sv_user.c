@@ -1316,14 +1316,14 @@ static void Cmd_Download_f(void)
 		sv_client->download = fopen (name, "rb");
 		if (sv_client->download)
 		{
-			if ((int)developer.value)
+			if ((int) developer.value)
 				Sys_Printf ("FindFile: %s\n", name);
 			sv_client->downloadsize = FS_FileLength (sv_client->download);
 		}
 	}
 	else
 		// <-- bliP
-		sv_client->downloadsize = COM_FOpenFile (name, &sv_client->download);
+		sv_client->downloadsize = FS_FOpenFile (name, &sv_client->download);
 	sv_client->downloadcount = 0;
 
 	if (!sv_client->download)
@@ -2037,8 +2037,8 @@ static void Cmd_Upload_f (void)
 	}
 
 	sv_client->remote_snap = false;
-	COM_CreatePath(sv_client->uploadfn); //fixed, need to create path
-	snprintf(str, sizeof(str), "cmd fileul \"%s\"\n", Cmd_Argv(1));
+	FS_CreatePath (sv_client->uploadfn); //fixed, need to create path
+	snprintf (str, sizeof (str), "cmd fileul \"%s\"\n", Cmd_Argv(1));
 	ClientReliableWrite_Begin (sv_client, svc_stufftext, strlen(str) + 2);
 	ClientReliableWrite_String (sv_client, str);
 }

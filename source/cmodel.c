@@ -943,11 +943,11 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	}
 
 	// load the file
-	buf = (unsigned int *) COM_LoadTempFile (name);
+	buf = (unsigned int *) FS_LoadTempFile (name, NULL);
 	if (!buf)
 		SV_Error ("CM_LoadMap: %s not found", name);
 
-	COM_FileBase (name, loadname);
+	FS_FileBase (name, loadname);
 
 	header = (dheader_t *)buf;
 

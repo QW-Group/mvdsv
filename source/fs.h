@@ -80,9 +80,7 @@ typedef struct searchpath_s
 
 // ------ Variables ------ //
 
-extern int fs_filesize;
 extern char fs_gamedir[MAX_OSPATH];
-extern char fs_basedir[MAX_OSPATH];
 
 /*
 =============================================================================
@@ -94,19 +92,18 @@ FUNCTION PROTOTYPES
 // ------ Main functions ------ //
 void FS_Init (void);
 void FS_Init_Commands(void);
-int FS_FileLength (FILE *f);
-void COM_FileBase (char *in, char *out);
+long FS_FileLength (FILE *f);
+void FS_FileBase (char *in, char *out);
 
-void COM_WriteFile (char *filename, void *data, int len);
-int COM_FOpenFile (char *filename, FILE **file);
+void FS_WriteFile (char *filename, void *data, int len);
+int FS_FOpenFile (char *filename, FILE **file);
 
-pack_t *COM_LoadPackFile (char *packfile);
-byte *COM_LoadStackFile (char *path, void *buffer, int bufsize);
-byte *COM_LoadTempFile (char *path);
-byte *COM_LoadHunkFile (char *path);
-void COM_CreatePath (char *path);
-char *COM_NextPath (char *prevpath);
-void COM_Gamedir (char *dir);
+pack_t *FS_LoadPackFile (char *packfile);
+byte *FS_LoadTempFile (char *path, int *len);
+byte *FS_LoadHunkFile (char *path, int *len);
+void FS_CreatePath (char *path);
+char *FS_NextPath (char *prevpath);
+void FS_Gamedir (char *dir);
 
 // ------ Other functions ------ //
 

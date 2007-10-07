@@ -158,7 +158,7 @@ void Hunk_Print (qbool all)
 Hunk_AllocName
 ===================
 */
-void *Hunk_AllocName_f (int size, char *name, qbool clean)
+void *Hunk_AllocName (int size, char *name)
 {
 	hunk_t	*h;
 
@@ -179,8 +179,7 @@ void *Hunk_AllocName_f (int size, char *name, qbool clean)
 
 	Cache_FreeLow (hunk_low_used);
 
-	if (clean)
-		memset (h, 0, size);
+	memset (h, 0, size);
 
 	h->size = size;
 	h->sentinel = HUNK_SENTINEL;
@@ -188,12 +187,6 @@ void *Hunk_AllocName_f (int size, char *name, qbool clean)
 
 	return (void *)(h+1);
 }
-
-void *Hunk_AllocName (int size, char *name)
-{
-	return Hunk_AllocName_f(size, name, true);
-}
-
 
 /*
 ===================

@@ -1092,8 +1092,9 @@ static void CheckKTPro (void)
 void PR_LoadProgs (void)
 {
 	int	i;
-	char	num[32];
-	char	name[MAX_OSPATH];
+	char num[32];
+	char name[MAX_OSPATH];
+	int filesize;
 
 	// flush the non-C variable lookup cache
 	for (i = 0; i < GEFV_CACHESIZE; i++)
@@ -1103,17 +1104,17 @@ void PR_LoadProgs (void)
 	PF_clear_strtbl();
 
 	snprintf(name, sizeof(name), "%s.dat", sv_progsname.string);
-	progs = (dprograms_t *)COM_LoadHunkFile (name);
+	progs = (dprograms_t *)FS_LoadHunkFile (name, &filesize);
 	if (!progs)
-		progs = (dprograms_t *)COM_LoadHunkFile ("qwprogs.dat");
+		progs = (dprograms_t *)FS_LoadHunkFile ("qwprogs.dat", &filesize);
 	if (!progs)
-		progs = (dprograms_t *)COM_LoadHunkFile ("progs.dat");
+		progs = (dprograms_t *)FS_LoadHunkFile ("progs.dat", &filesize);
 	if (!progs)
 		SV_Error ("PR_LoadProgs: couldn't load progs.dat");
-	Con_DPrintf ("Programs occupy %iK.\n", fs_filesize/1024);
+	Con_DPrintf ("Programs occupy %iK.\n", filesize/1024);
 
 	// add prog crc to the serverinfo
-	snprintf (num, sizeof(num), "%i", CRC_Block ((byte *)progs, fs_filesize));
+	snprintf (num, sizeof(num), "%i", CRC_Block ((byte *)progs, filesize));
 #ifdef USE_PR2
 	Info_SetValueForStarKey( localinfo, "*qvm", "DAT", MAX_LOCALINFO_STRING );
 	//	Info_SetValueForStarKey (svs.info, "*qvm", "DAT", MAX_SERVERINFO_STRING);

@@ -198,21 +198,25 @@ static void SV_SaveSpawnparms (void)
 
 static unsigned SV_CheckModel(char *mdl)
 {
-	unsigned char stackbuf[1024]; // avoid dirtying the cache heap
 	unsigned char *buf;
 	unsigned short crc;
+	int filesize;
+	int mark;
 
-	buf = (byte *)COM_LoadStackFile (mdl, stackbuf, sizeof(stackbuf));
+	mark = Hunk_LowMark ();
+	buf = (byte *) FS_LoadHunkFile (mdl, &filesize);
 	if (!buf)
 	{
-		if (!strcmp(mdl, "progs/player.mdl"))
+		if (!strcmp (mdl, "progs/player.mdl"))
 			return 33168;
-		else if (!strcmp(mdl, "progs/eyes.mdl"))
+		else if (!strcmp (mdl, "progs/eyes.mdl"))
 			return 6967;
 		else
 			SV_Error ("SV_CheckModel: could not load %s\n", mdl);
 	}
-	crc = CRC_Block(buf, fs_filesize);
+
+	crc = CRC_Block (buf, filesize);
+	Hunk_FreeToLowMark (mark);
 
 	return crc;
 }
@@ -463,13 +467,12 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	// load and spawn all other entities
 	entitystring = NULL;
 	if ((int)sv_loadentfiles.value) {
-		entitystring = (char *) COM_LoadHunkFile (va("maps/%s.ent", sv.mapname));
+		entitystring = (char *) FS_LoadHunkFile (va ("maps/%s.ent", sv.mapname), NULL);
 		if (entitystring) {
 			Con_DPrintf ("Using entfile maps/%s.ent\n", sv.mapname);
-//			Info_SetValueForStarKey (svs.info, "*entfile", va("%i",
-//					CRC_Block((byte *)entitystring, fs_filesize)), MAX_SERVERINFO_STRING);
 		}
 	}
+
 	if (!entitystring) {
 		Info_SetValueForStarKey (svs.info,  "*entfile", "", MAX_SERVERINFO_STRING);
 		entitystring = CM_EntityString();

@@ -1586,12 +1586,13 @@ void PF2_changelevel(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	// this is work around for bellow check about two changelevels,
 	// which lock server in one map if we trying switch to map which does't exist
 	snprintf(expanded, MAX_QPATH, "maps/%s.bsp", s);
-	COM_FOpenFile (expanded, &f);
+	FS_FOpenFile (expanded, &f);
 	if (!f)
 	{
 		Sys_Printf ("Can't find %s\n", expanded);
 		return;
 	}
+
 	fclose (f);
 
 	// make sure we don't issue two changelevels
@@ -1959,7 +1960,7 @@ void PF2_FS_OpenFile(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	case FS_READ_BIN:
 	case FS_READ_TXT:
 
-		while ( ( gpath = COM_NextPath( gpath ) ) )
+		while ( ( gpath = FS_NextPath( gpath ) ) )
 		{
 			snprintf( fname, sizeof( fname ), "%s/%s" , gpath, name );
 			pr2_fopen_files[i].handle = fopen(fname, cmodes[fmode]);
