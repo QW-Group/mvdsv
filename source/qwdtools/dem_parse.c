@@ -571,7 +571,7 @@ void Dem_ParsePrint (void)
 			while ((p = strstr(p, "\n")) != NULL && p[1])
 			{
 				memmove(p+8, p + 1, strlen(p));
-				strncpy(p+1, "        ", 7);
+				memcpy(p+1, "       ", 7);
 				p++;
 			}
 			fprintf(sworld.log.file, "%2d:%.2d> %s", (int)(world.time/60), (int) world.time % 60, logbuf);

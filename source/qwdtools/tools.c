@@ -44,7 +44,7 @@ Handles byte ordering and avoids alignment errors
 // writing functions
 //
 
-void MSG_WriteChar (sizebuf_t *sb, int c)
+void MSG_WriteChar (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -52,7 +52,7 @@ void MSG_WriteChar (sizebuf_t *sb, int c)
 	buf[0] = c;
 }
 
-void MSG_WriteByte (sizebuf_t *sb, int c)
+void MSG_WriteByte (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -60,7 +60,7 @@ void MSG_WriteByte (sizebuf_t *sb, int c)
 	buf[0] = c;
 }
 
-void MSG_WriteShort (sizebuf_t *sb, int c)
+void MSG_WriteShort (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -69,7 +69,7 @@ void MSG_WriteShort (sizebuf_t *sb, int c)
 	buf[1] = c>>8;
 }
 
-void MSG_WriteLong (sizebuf_t *sb, int c)
+void MSG_WriteLong (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -80,7 +80,7 @@ void MSG_WriteLong (sizebuf_t *sb, int c)
 	buf[3] = c>>24;
 }
 
-void MSG_WriteFloat (sizebuf_t *sb, float f)
+void MSG_WriteFloat (sizebuf_t *sb, const float f)
 {
 	union
 	{
@@ -95,7 +95,7 @@ void MSG_WriteFloat (sizebuf_t *sb, float f)
 	SZ_Write (sb, &dat.l, 4);
 }
 
-void MSG_WriteString (sizebuf_t *sb, char *s)
+void MSG_WriteString (sizebuf_t *sb, const char *s)
 {
 	if (!s)
 		SZ_Write (sb, (void *) "", 1);
@@ -103,22 +103,22 @@ void MSG_WriteString (sizebuf_t *sb, char *s)
 		SZ_Write (sb, s, strlen(s)+1);
 }
 
-void MSG_WriteCoord (sizebuf_t *sb, float f)
+void MSG_WriteCoord (sizebuf_t *sb, const float f)
 {
 	MSG_WriteShort (sb, (int)(f*8));
 }
 
-void MSG_WriteAngle (sizebuf_t *sb, float f)
+void MSG_WriteAngle (sizebuf_t *sb, const float f)
 {
 	MSG_WriteByte (sb, Q_rint(f*256.0/360.0) & 255);
 }
 
-void MSG_WriteAngle16 (sizebuf_t *sb, float f)
+void MSG_WriteAngle16 (sizebuf_t *sb, const float f)
 {
 	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
 }
 
-void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from1, usercmd_t *cmd)
+void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from1, const usercmd_t *cmd)
 {
 	int bits;
 
@@ -171,13 +171,13 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from1, usercmd_t *cmd)
 // reading functions
 //
 int	msg_readcount;
-qbool	msg_badread;
+qbool msg_badread;
 
-qbool MSG_Forward (sizebuf_t *sb, int start, int count)
+qbool MSG_Forward (sizebuf_t *sb, const int start, const int count)
 {
 	msg_readcount = start;
 
-	if (msg_readcount+count > net_message.cursize)
+	if (msg_readcount + count > net_message.cursize)
 	{
 		msg_badread = true;
 		return false;
@@ -352,7 +352,7 @@ float MSG_ReadAngle16 (void)
 	return MSG_ReadShort() * (360.0/65536);
 }
 
-void MSG_ReadDeltaUsercmd (usercmd_t *from1, usercmd_t *move)
+void MSG_ReadDeltaUsercmd (const usercmd_t *from1, usercmd_t *move)
 {
 	int bits;
 
@@ -363,27 +363,22 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from1, usercmd_t *move)
 	// read current angles
 	if (bits & CM_ANGLE1)
 		move->angles[0] = MSG_ReadAngle16 ();
-
 	if (bits & CM_ANGLE2)
 		move->angles[1] = MSG_ReadAngle16 ();
-
 	if (bits & CM_ANGLE3)
 		move->angles[2] = MSG_ReadAngle16 ();
 
 	// read movement
 	if (bits & CM_FORWARD)
 		move->forwardmove = MSG_ReadShort ();
-
 	if (bits & CM_SIDE)
 		move->sidemove = MSG_ReadShort ();
-
 	if (bits & CM_UP)
 		move->upmove = MSG_ReadShort ();
 
 	// read buttons
 	if (bits & CM_BUTTONS)
 		move->buttons = MSG_ReadByte ();
-
 	if (bits & CM_IMPULSE)
 		move->impulse = MSG_ReadByte ();
 
@@ -398,7 +393,7 @@ void SZ_Clear (sizebuf_t *buf)
 	buf->cursize = 0;
 }
 
-void *SZ_GetSpace (sizebuf_t *buf, int length)
+void *SZ_GetSpace (sizebuf_t *buf, const int length)
 {
 	void *data;
 
@@ -415,7 +410,7 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	return data;
 }
 
-void SZ_Write (sizebuf_t *buf, const void *data, int length)
+void SZ_Write (sizebuf_t *buf, const void *data, const int length)
 {
 	memcpy (SZ_GetSpace(buf,length), data, length);
 }
@@ -786,7 +781,7 @@ void ForceExtension (char *path, char *extension)
 	if (src >= path && !strcmp(src, extension))
 		return;
 
-	strncat (path, extension, MAX_OSPATH);
+	strlcat (path, extension, MAX_OSPATH);
 }
 
 char *TemplateName (char *from1, char *to, char *ch)

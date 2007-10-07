@@ -179,7 +179,7 @@ void ShowNotifyIcon(void)
 	tnid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
 	tnid.uCallbackMessage = WM_TRAY;
 	tnid.hIcon = icon;
-	lstrcpyn(tnid.szTip, va(SERVER_NAME ":%d", sv_port), sizeof(tnid.szTip));
+	strlcpy(tnid.szTip, va(SERVER_NAME ":%d", sv_port), sizeof(tnid.szTip));
 
 	Shell_NotifyIcon(NIM_ADD, &tnid);
 
@@ -195,7 +195,7 @@ void UpdateNotifyIconMessage(char *msg)
 	tnid.hWnd = DlgHwnd;
 	tnid.uID = IDI_ICON2;
 	tnid.uFlags = NIF_TIP;
-	lstrcpyn(tnid.szTip, msg, sizeof(tnid.szTip));
+	strlcpy(tnid.szTip, msg, sizeof(tnid.szTip));
 
 	Shell_NotifyIcon(NIM_MODIFY, &tnid);
 }

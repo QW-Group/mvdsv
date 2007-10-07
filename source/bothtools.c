@@ -603,7 +603,7 @@ void COM_DefaultExtension (char *path, const char *extension)
 		src--;
 	}
 
-	strncat (path, extension, MAX_OSPATH);
+	strlcat (path, extension, MAX_OSPATH);
 }
 
 //=====================================================

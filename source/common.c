@@ -41,7 +41,7 @@ Handles byte ordering and avoids alignment errors
 
 // writing functions
 
-void MSG_WriteChar (sizebuf_t *sb, int c)
+void MSG_WriteChar (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -54,7 +54,7 @@ void MSG_WriteChar (sizebuf_t *sb, int c)
 	buf[0] = c;
 }
 
-void MSG_WriteByte (sizebuf_t *sb, int c)
+void MSG_WriteByte (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -67,7 +67,7 @@ void MSG_WriteByte (sizebuf_t *sb, int c)
 	buf[0] = c;
 }
 
-void MSG_WriteShort (sizebuf_t *sb, int c)
+void MSG_WriteShort (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -81,7 +81,7 @@ void MSG_WriteShort (sizebuf_t *sb, int c)
 	buf[1] = c>>8;
 }
 
-void MSG_WriteLong (sizebuf_t *sb, int c)
+void MSG_WriteLong (sizebuf_t *sb, const int c)
 {
 	byte *buf;
 
@@ -92,7 +92,7 @@ void MSG_WriteLong (sizebuf_t *sb, int c)
 	buf[3] = c>>24;
 }
 
-void MSG_WriteFloat (sizebuf_t *sb, float f)
+void MSG_WriteFloat (sizebuf_t *sb, const float f)
 {
 	union
 	{
@@ -115,22 +115,22 @@ void MSG_WriteString (sizebuf_t *sb, const char *s)
 		SZ_Write (sb, s, strlen(s)+1);
 }
 
-void MSG_WriteCoord (sizebuf_t *sb, float f)
+void MSG_WriteCoord (sizebuf_t *sb, const float f)
 {
 	MSG_WriteShort (sb, (int)(f*8));
 }
 
-void MSG_WriteAngle (sizebuf_t *sb, float f)
+void MSG_WriteAngle (sizebuf_t *sb, const float f)
 {
 	MSG_WriteByte (sb, Q_rint(f*256.0/360.0) & 255);
 }
 
-void MSG_WriteAngle16 (sizebuf_t *sb, float f)
+void MSG_WriteAngle16 (sizebuf_t *sb, const float f)
 {
 	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
 }
 
-void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
+void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd)
 {
 	int bits;
 
@@ -173,6 +173,7 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, usercmd_t *from, usercmd_t *cmd)
 		MSG_WriteByte (buf, cmd->buttons);
 	if (bits & CM_IMPULSE)
 		MSG_WriteByte (buf, cmd->impulse);
+
 	MSG_WriteByte (buf, cmd->msec);
 }
 
@@ -188,7 +189,7 @@ void MSG_BeginReading (void)
 	msg_badread = false;
 }
 
-int MSG_GetReadCount(void)
+int MSG_GetReadCount (void)
 {
 	return msg_readcount;
 }
@@ -198,13 +199,13 @@ int MSG_ReadChar (void)
 {
 	int c;
 
-	if (msg_readcount+1 > net_message.cursize)
+	if (msg_readcount + 1 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (signed char)net_message.data[msg_readcount];
+	c = (signed char) net_message.data[msg_readcount];
 	msg_readcount++;
 
 	return c;
@@ -214,13 +215,13 @@ int MSG_ReadByte (void)
 {
 	int c;
 
-	if (msg_readcount+1 > net_message.cursize)
+	if (msg_readcount + 1 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (unsigned char)net_message.data[msg_readcount];
+	c = (unsigned char) net_message.data[msg_readcount];
 	msg_readcount++;
 
 	return c;
@@ -230,14 +231,14 @@ int MSG_ReadShort (void)
 {
 	int c;
 
-	if (msg_readcount+2 > net_message.cursize)
+	if (msg_readcount + 2 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (short)(net_message.data[msg_readcount]
-	            + (net_message.data[msg_readcount+1]<<8));
+	c = (short) (net_message.data[msg_readcount]
+		+ (net_message.data[msg_readcount+1]<<8));
 
 	msg_readcount += 2;
 
@@ -248,16 +249,16 @@ int MSG_ReadLong (void)
 {
 	int c;
 
-	if (msg_readcount+4 > net_message.cursize)
+	if (msg_readcount + 4 > net_message.cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
 	c = net_message.data[msg_readcount]
-	    + (net_message.data[msg_readcount+1]<<8)
-	    + (net_message.data[msg_readcount+2]<<16)
-	    + (net_message.data[msg_readcount+3]<<24);
+		+ (net_message.data[msg_readcount+1]<<8)
+		+ (net_message.data[msg_readcount+2]<<16)
+		+ (net_message.data[msg_readcount+3]<<24);
 
 	msg_readcount += 4;
 
@@ -293,14 +294,16 @@ char *MSG_ReadString (void)
 	do
 	{
 		c = MSG_ReadByte ();
+
 		if (c == 255) // skip these to avoid security problems
 			continue; // with old clients and servers
+
 		if (c == -1 || c == 0)
 			break;
+
 		string[l] = c;
 		l++;
-	}
-	while (l < sizeof(string) - 1);
+	} while (l < sizeof (string) - 1);
 
 	string[l] = 0;
 
@@ -316,14 +319,16 @@ char *MSG_ReadStringLine (void)
 	do
 	{
 		c = MSG_ReadByte ();
+
 		if (c == 255)
 			continue;
+
 		if (c == -1 || c == 0 || c == '\n')
 			break;
+
 		string[l] = c;
 		l++;
-	}
-	while (l < sizeof(string) - 1);
+	} while (l < sizeof (string) - 1);
 
 	string[l] = 0;
 
@@ -332,20 +337,20 @@ char *MSG_ReadStringLine (void)
 
 float MSG_ReadCoord (void)
 {
-	return MSG_ReadShort() * (1.0/8);
+	return MSG_ReadShort () * (1.0 / 8);
 }
 
 float MSG_ReadAngle (void)
 {
-	return MSG_ReadChar() * (360.0/256);
+	return MSG_ReadChar () * (360.0 / 256);
 }
 
 float MSG_ReadAngle16 (void)
 {
-	return MSG_ReadShort() * (360.0/65536);
+	return MSG_ReadShort () * (360.0 / 65536);
 }
 
-void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
+void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move)
 {
 	int bits;
 
@@ -355,31 +360,19 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 	// read current angles
 	if (bits & CM_ANGLE1)
-	{
 		move->angles[0] = MSG_ReadAngle16 ();
-	}
 	if (bits & CM_ANGLE2)
-	{
 		move->angles[1] = MSG_ReadAngle16 ();
-	}
 	if (bits & CM_ANGLE3)
-	{
 		move->angles[2] = MSG_ReadAngle16 ();
-	}
 
 	// read movement
 	if (bits & CM_FORWARD)
-	{
 		move->forwardmove = MSG_ReadShort ();
-	}
 	if (bits & CM_SIDE)
-	{
 		move->sidemove = MSG_ReadShort ();
-	}
 	if (bits & CM_UP)
-	{
 		move->upmove = MSG_ReadShort ();
-	}
 
 	// read buttons
 	if (bits & CM_BUTTONS)
@@ -395,7 +388,7 @@ void MSG_ReadDeltaUsercmd (usercmd_t *from, usercmd_t *move)
 
 //===========================================================================
 
-void SZ_Init (sizebuf_t *buf, byte *data, int length)
+void SZ_Init (sizebuf_t *buf, byte *data, const int length)
 {
 	memset (buf, 0, sizeof (*buf));
 	buf->data = data;
@@ -408,7 +401,7 @@ void SZ_Clear (sizebuf_t *buf)
 	buf->overflowed = false;
 }
 
-void *SZ_GetSpace (sizebuf_t *buf, int length)
+void *SZ_GetSpace (sizebuf_t *buf, const int length)
 {
 	void *data;
 
@@ -481,7 +474,7 @@ char *COM_Parse (char *data)
 	// skip whitespace
 	while (true)
 	{
-		while ( (c = *data) == ' ' || c == '\t' || c == '\r' || c == '\n')
+		while ((c = *data) == ' ' || c == '\t' || c == '\r' || c == '\n')
 			data++;
 
 		if (c == 0)
@@ -504,14 +497,17 @@ char *COM_Parse (char *data)
 		while (1)
 		{
 			c = *data++;
-			if (c=='\"' || !c)
+			if (c == '\"' || !c)
 			{
 				com_token[len] = 0;
+
 				if (!c)
 					data--;
+
 				return data;
 			}
-			if (len < MAX_COM_TOKEN-1)
+
+			if (len < MAX_COM_TOKEN - 1)
 			{
 				com_token[len] = c;
 				len++;
@@ -539,8 +535,8 @@ char *COM_Parse (char *data)
 #define DEFAULT_PUNCTUATION "(,{})(\':;=!><&|+"
 char *COM_ParseToken (const char *data, const char *punctuation)
 {
-	int		c;
-	int		len;
+	int c;
+	int	len;
 
 	if (!punctuation)
 		punctuation = DEFAULT_PUNCTUATION;
@@ -554,56 +550,63 @@ char *COM_ParseToken (const char *data, const char *punctuation)
 		return NULL;
 	}
 
-// skip whitespace
+	// skip whitespace
 skipwhite:
-	while ( (c = *(unsigned char*)data) <= ' ')
+	while ((c = *(unsigned char *) data) <= ' ')
 	{
 		if (c == 0)
 		{
 			com_tokentype = TTP_UNKNOWN;
-			return NULL;			// end of file;
+			return NULL; // end of file;
 		}
+
 		data++;
 	}
 
-// skip // comments
-	if (c=='/')
+	// skip // comments
+	if (c == '/')
 	{
 		if (data[1] == '/')
 		{
 			while (*data && *data != '\n')
 				data++;
+
 			goto skipwhite;
 		}
 		else if (data[1] == '*')
 		{
-			data+=2;
+			data += 2;
+
 			while (*data && (*data != '*' || data[1] != '/'))
 				data++;
-			data+=2;
+
+			data += 2;
 			goto skipwhite;
 		}
 	}
 
 
-// handle quoted strings specially
+	// handle quoted strings specially
 	if (c == '\"')
 	{
 		com_tokentype = TTP_STRING;
 		data++;
 		while (1)
 		{
-			if (len >= TOKENSIZE-1)
+			if (len >= TOKENSIZE - 1)
 			{
 				com_token[len] = '\0';
-				return (char*)data;
+				return (char*) data;
 			}
+
 			c = *data++;
+
 			if (c=='\"' || !c)
 			{
 				com_token[len] = 0;
-				return (char*)data;
+				return (char*) data;
 			}
+
 			com_token[len] = c;
 			len++;
 		}
@@ -611,30 +614,32 @@ skipwhite:
 
 	com_tokentype = TTP_UNKNOWN;
 
-// parse single characters
-	if (strchr(punctuation, c))
+	// parse single characters
+	if (strchr (punctuation, c))
 	{
 		com_token[len] = c;
 		len++;
 		com_token[len] = 0;
-		return (char*)(data+1);
+		return (char*) (data + 1);
 	}
 
-// parse a regular word
+	// parse a regular word
 	do
 	{
-		if (len >= TOKENSIZE-1)
+		if (len >= TOKENSIZE - 1)
 			break;
+
 		com_token[len] = c;
 		data++;
 		len++;
 		c = *data;
-		if (strchr(punctuation, c))
+		if (strchr (punctuation, c))
 			break;
-	} while (c>32);
+
+	} while (c > 32);
 
 	com_token[len] = 0;
-	return (char*)data;
+	return (char*) data;
 }
 
 /*
@@ -645,12 +650,9 @@ COM_InitArgv
 */
 void COM_InitArgv (int argc, char **argv)
 {
-	for (com_argc=0 ; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc) ; com_argc++)
+	for (com_argc = 0; (com_argc < MAX_NUM_ARGVS) && (com_argc < argc); com_argc++)
 	{
-		if (argv[com_argc])
-			largv[com_argc] = argv[com_argc];
-		else
-			largv[com_argc] = "";
+			largv[com_argc] = (argv[com_argc]) ? argv[com_argc] : "";
 	}
 
 	largv[com_argc] = "";
@@ -669,7 +671,7 @@ int COM_CheckParm (const char *parm)
 {
 	int i;
 
-	for (i=1 ; i<com_argc ; i++)
+	for (i = 1; i < com_argc; i++)
 	{
 		if (!strcmp (parm,com_argv[i]))
 			return i;
@@ -1080,10 +1082,11 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 	byte *p;
 	byte chkb[60 + 4];
 
-	p = chktbl + ((unsigned int)sequence % (sizeof(chktbl) - 4));
+	p = chktbl + ((unsigned int) sequence % (sizeof (chktbl) - 4));
 
 	if (length > 60)
 		length = 60;
+
 	memcpy (chkb, base, length);
 
 	chkb[length] = (sequence & 0xff) ^ p[0];
@@ -1120,6 +1123,7 @@ static qbool Q_glob_match_after_star (const char *pattern, const char *text)
 	{
 		if (tolower(*t) == c1 && Q_glob_match (p - 1, t))
 			return true;
+
 		if (*t++ == '\0')
 			return false;
 	}
@@ -1152,13 +1156,13 @@ qbool Q_glob_match (const char *pattern, const char *text)
 					return false;
 				break;
 			case '\\':
-				if (tolower(*pattern++) != tolower(*text++))
+				if (tolower (*pattern++) != tolower (*text++))
 					return false;
 				break;
 			case '*':
-				return Q_glob_match_after_star(pattern, text);
+				return Q_glob_match_after_star (pattern, text);
 			default:
-				if (tolower(c) != tolower(*text++))
+				if (tolower (c) != tolower (*text++))
 					return false;
 		}
 	}
@@ -1180,7 +1184,7 @@ int Com_HashKey (const char *name)
 
 	v = 0;
 	while ( (c = *name++) != 0 )
-		v += c &~ 32;	// make it case insensitive
+		v += c &~ 32; // make it case insensitive
 
 	return v % 32;
 }

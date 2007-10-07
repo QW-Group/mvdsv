@@ -891,11 +891,10 @@ void SV_Cuff_f (void)
 		{
 			for (i = 3; i < c; i++)
 			{
-				strncat (reason, Cmd_Argv(i), sizeof(reason) - 2 - strlen(reason));
+				strlcat (reason, Cmd_Argv(i), sizeof(reason) - 1 - strlen(reason));
 				if (i < c - 1)
-					strncat (reason, " ", sizeof(reason) - 1 - strlen(reason));
+					strlcat (reason, " ", sizeof(reason) - strlen(reason));
 			}
-			reason[sizeof(reason) - 1] = 0;
 		}
 
 		if (mins)
@@ -979,11 +978,10 @@ void SV_Mute_f (void)
 		{
 			for (i = 3; i < c; i++)
 			{
-				strncat (reason, Cmd_Argv(i), sizeof(reason) - 2 - strlen(reason));
+				strlcat (reason, Cmd_Argv(i), sizeof(reason) - 1 - strlen(reason));
 				if (i < c - 1)
-					strncat (reason, " ", sizeof(reason) - 1 - strlen(reason));
+					strlcat (reason, " ", sizeof(reason) - strlen(reason));
 			}
-			reason[sizeof(reason) - 1] = 0;
 		}
 
 		if (mins)
