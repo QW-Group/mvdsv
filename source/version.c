@@ -41,10 +41,10 @@ int build_number ()
 		return b;
 
 	{
-		char rev_num[] = "$LastChangedRevision$";
+		char rev_num[] = "$Revision$";
 
-		if (!strncasecmp(rev_num, "$LastChangedRevision:", sizeof("$LastChangedRevision:") - 1))
-			b = atoi(rev_num + sizeof("$LastChangedRevision:") - 1);
+		if (!strncasecmp(rev_num, "$Revision:", sizeof("$Revision:") - 1))
+			b = atoi(rev_num + sizeof("$Revision:") - 1);
 	}
 
 	return b;

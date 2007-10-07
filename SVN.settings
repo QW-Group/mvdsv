@@ -1,0 +1,11 @@
+Windows  %USERPROFILE%\Application Data\Subversion\config  
+Linux  ~/.subversion/config  
+
+
+
+[miscellany]
+enable-auto-props = yes
+
+[auto-props]
+*.c = svn:eol-style=native;svn:keywords=Revision
+*.h = svn:eol-style=native;;svn:keywords=Revision
