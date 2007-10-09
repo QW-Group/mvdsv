@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gas2masm", "gas2masm_90.vcproj", "{8D6D5F0D-C9BD-4046-94DB-2023D838B8F9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_90|Win32 = Debug_90|Win32
+		Release_90|Win32 = Release_90|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8D6D5F0D-C9BD-4046-94DB-2023D838B8F9}.Debug_90|Win32.ActiveCfg = Debug_90|Win32
+		{8D6D5F0D-C9BD-4046-94DB-2023D838B8F9}.Debug_90|Win32.Build.0 = Debug_90|Win32
+		{8D6D5F0D-C9BD-4046-94DB-2023D838B8F9}.Release_90|Win32.ActiveCfg = Release_90|Win32
+		{8D6D5F0D-C9BD-4046-94DB-2023D838B8F9}.Release_90|Win32.Build.0 = Release_90|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
