@@ -3,6 +3,10 @@ $Id$
 
 MVDSV v0.28 (200?.??.??)
 ----
+* VVD (vvd0@users.sourceforge.net)
+	- bugfix from 0.21-develop: "cmd dl ." didn't work if demo was compressed (sv_onrecordfinish)
+	- sv_demoMaxDirSize can be more than 2Gb now - float limit
+
 * d3urk (d3urk@users.sourceforge.net)
 	- Fixed flood resulting of incorrect use of minping command parameter.
 	- Fixed localinfo in order to handle properly oldvalue of localinfo.
