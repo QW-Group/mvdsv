@@ -1469,7 +1469,6 @@ static void SV_MVDEasyRecord_f (void)
 	Sys_mkdir(va("%s/%s", fs_gamedir, sv_demoDir.string));
 
 	// FIXME: very SLOW
-
 	if (!(name3 = quote(name2)))
 		return;
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string),

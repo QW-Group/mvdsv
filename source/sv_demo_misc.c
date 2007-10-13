@@ -113,7 +113,7 @@ char *SV_CleanName (unsigned char *name)
 	static char text[1024];
 	char *out = text;
 
-	if (!*name)
+	if (!name || !*name)
 	{
 		*out = '\0';
 		return text;
@@ -160,7 +160,7 @@ qbool SV_DirSizeCheck (void)
 	if ((int)sv_demoMaxDirSize.value)
 	{
 		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_NO/*BY_DATE*/);
-		if (dir.size > ((int)sv_demoMaxDirSize.value * 1024))
+		if ((float)dir.size > sv_demoMaxDirSize.value * 1024)
 		{
 			if ((int)sv_demoClearOld.value <= 0)
 			{
@@ -447,7 +447,31 @@ char *SV_MVDNum (int num)
 	if (num & 0xFF000000)
 	{
 		char *name = lastdemosname[(lastdemospos - (num >> 24) + 1) & 0xF];
-		return (name && name[0]) ? name : NULL;
+		char *name2;
+		int c;
+
+		if (!(name2 = quote(name)))
+			return NULL;
+		if ((c = strlen(name2)) > 5)
+			name2[c - 5] = '\0'; // crop quoted extension '\.mvd'
+
+		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string),
+						  va("^%s%s", name2, sv_demoRegexp.string), SORT_NO);
+		list = dir.files;
+		if (dir.numfiles > 1)
+		{
+			Con_Printf("SV_MVDNum: where are %d demos with name: %s%s\n",
+						dir.numfiles, name2, sv_demoRegexp.string);
+		}
+		if (!dir.numfiles)
+		{
+			Con_Printf("SV_MVDNum: where are no demos with name: %s%s\n",
+						name2, sv_demoRegexp.string);
+			return NULL;
+		}
+		Q_free(name2);
+		//Con_Printf("%s", dir.files[0].name);
+		return dir.files[0].name;
 	}
 
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
