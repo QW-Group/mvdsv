@@ -435,8 +435,6 @@ void SV_DemoListRegex_f (void)
 
 char *SV_MVDNum (int num)
 {
-	extern char *lastdemosname[16];
-	extern int  lastdemospos;
 	file_t	*list;
 	dir_t	dir;
 
@@ -446,7 +444,7 @@ char *SV_MVDNum (int num)
 	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
 	if (num & 0xFF000000)
 	{
-		char *name = lastdemosname[(lastdemospos - (num >> 24) + 1) & 0xF];
+		char *name = demo.lastdemosname[(demo.lastdemospos - (num >> 24) + 1) & 0xF];
 		char *name2;
 		int c;
 

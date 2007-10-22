@@ -45,7 +45,7 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na)
 
 	dst->desttype = DEST_STREAM;
 	dst->socket = socket1;
-	dst->maxcachesize = 0x8000;	//is this too small?
+	dst->maxcachesize = 65536;	//is this too small?
 	dst->cache = (char *) Q_malloc(dst->maxcachesize);
 	dst->io_time = Sys_DoubleTime();
 	dst->id = ++lastdest;
@@ -612,7 +612,7 @@ void SV_MVD_RunPendingConnections (void)
 
 							if ((tmpdest = SV_InitStream(p->socket, p->na)))
 							{
-								if (!SV_MVD_Record(tmpdest))
+								if (!SV_MVD_Record(tmpdest, false))
 									DestClose(tmpdest, false); // can't start record for some reason, close dest then
 
 								p->socket = -1;	//so it's not cleared wrongly.
@@ -639,7 +639,7 @@ void SV_MVD_RunPendingConnections (void)
 								send(p->socket, e, strlen(e), 0);
 								e = NULL;
 
-								if (!SV_MVD_Record(tmpdest))
+								if (!SV_MVD_Record(tmpdest, false))
 									DestClose(tmpdest, false); // can't start record for some reason, close dest then
 
 								p->socket = -1;	//so it's not cleared wrongly.
@@ -678,6 +678,7 @@ void SV_MVD_RunPendingConnections (void)
 	}
 }
 
+/*
 void DemoWriteQTVTimePad (int msecs)	//broadcast to all proxies
 {
 	mvddest_t *d;
@@ -707,6 +708,7 @@ void DemoWriteQTVTimePad (int msecs)	//broadcast to all proxies
 		}
 	}
 }
+*/
 
 void Qtv_List_f(void)
 {

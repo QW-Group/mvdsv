@@ -34,6 +34,7 @@ typedef struct sizebuf_s
 } sizebuf_t;
 
 void SZ_Clear (sizebuf_t *buf);
+void SZ_InitEx (sizebuf_t *buf, byte *data, const int length, qbool allowoverflow);
 void SZ_Init (sizebuf_t *buf, byte *data, const int length);
 void *SZ_GetSpace (sizebuf_t *buf, const int length);
 void SZ_Write (sizebuf_t *buf, const void *data, int length);

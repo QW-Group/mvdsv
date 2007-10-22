@@ -325,6 +325,10 @@ void PF2_sprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 
 	client = &svs.clients[entnum - 1];
 
+	// do not print to client in such state
+	if (client->state < cs_connected)
+		return;
+
 	if (flags & SPRINT_IGNOREINDEMO)
 		SV_ClientPrintf2 (client, level, "%s", s); // this does't go to mvd demo
 	else
@@ -381,8 +385,8 @@ void PF2_centerprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	{
 		if (MVDWrite_Begin(dem_single, entnum - 1, 2 + strlen(s)))
 		{
-			MSG_WriteByte((sizebuf_t *) demo.dbuf, svc_centerprint);
-			MSG_WriteString((sizebuf_t *) demo.dbuf, s);
+			MVD_MSG_WriteByte(svc_centerprint);
+			MVD_MSG_WriteString(s);
 		}
 	}
 
@@ -725,8 +729,8 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 		{
 			if (MVDWrite_Begin(dem_all, 0, 2 + strlen(str)))
 			{
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
-				MSG_WriteString((sizebuf_t*)demo.dbuf, str);
+				MVD_MSG_WriteByte(svc_stufftext);
+				MVD_MSG_WriteString(str);
 			}
 		}
 
@@ -754,8 +758,8 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2 + strlen(buf)))
 			{
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_stufftext);
-				MSG_WriteString((sizebuf_t*)demo.dbuf, buf);
+				MVD_MSG_WriteByte(svc_stufftext);
+				MVD_MSG_WriteString(buf);
 			}
 		}
 
@@ -1110,9 +1114,9 @@ void PF2_lightstyle(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 	{
 		if (MVDWrite_Begin(dem_all, 0, strlen(val) + 3))
 		{
-			MSG_WriteByte((sizebuf_t *) demo.dbuf, svc_lightstyle);
-			MSG_WriteChar((sizebuf_t *) demo.dbuf, style);
-			MSG_WriteString((sizebuf_t *) demo.dbuf, val);
+			MVD_MSG_WriteByte(svc_lightstyle);
+			MVD_MSG_WriteChar(style);
+			MVD_MSG_WriteString(val);
 		}
 	}
 }
@@ -1347,7 +1351,7 @@ void PF2_WriteByte(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1))
 			{
-				MSG_WriteByte((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteByte(data);
 			}
 		}
 	}
@@ -1369,7 +1373,7 @@ void PF2_WriteChar(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1))
 			{
-				MSG_WriteByte((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteByte(data);
 			}
 		}
 	}
@@ -1391,7 +1395,7 @@ void PF2_WriteShort(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2))
 			{
-				MSG_WriteShort((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteShort(data);
 			}
 		}
 	}
@@ -1413,7 +1417,7 @@ void PF2_WriteLong(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retv
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 4))
 			{
-				MSG_WriteLong((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteLong(data);
 			}
 		}
 	}
@@ -1435,7 +1439,7 @@ void PF2_WriteAngle(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1))
 			{
-				MSG_WriteByte((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteByte(data);
 			}
 		}
 	}
@@ -1457,7 +1461,7 @@ void PF2_WriteCoord(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*ret
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2))
 			{
-				MSG_WriteCoord((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteCoord(data);
 			}
 		}
 	}
@@ -1479,7 +1483,7 @@ void PF2_WriteString(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1 + strlen(data)))
 			{
-				MSG_WriteString((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteString(data);
 			}
 		}
 	}
@@ -1502,7 +1506,7 @@ void PF2_WriteEntity(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2))
 			{
-				MSG_WriteShort((sizebuf_t *) demo.dbuf, data);
+				MVD_MSG_WriteShort(data);
 			}
 		}
 	}

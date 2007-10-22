@@ -232,7 +232,6 @@ This is only called from the SV_Map_f() function.
 ================
 */
 dfunction_t *ED_FindFunction (char *name);
-qbool SV_MVD_Re_Record(void);
 
 void SV_SpawnServer (char *mapname, qbool devmap)
 {
@@ -308,7 +307,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 
 	// wipe the entire per-level structure
-	// NOTE: this also set sv.mvdrecording to false, so calling SV_MVD_Re_Record() at end of function
+	// NOTE: this also set sv.mvdrecording to false, so calling SV_MVD_Record() at end of function
 	memset (&sv, 0, sizeof(sv));
 
 
@@ -535,6 +534,6 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	Con_DPrintf ("Server spawned.\n");
 
 	// we change map - clear whole demo struct and sent initial state to all dest if any (for QTV only I thought)
-	SV_MVD_Re_Record();
+	SV_MVD_Record(NULL, true);
 }
 

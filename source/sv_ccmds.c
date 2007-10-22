@@ -1410,9 +1410,9 @@ void SV_ConSay_f(void)
 	{
 		if (MVDWrite_Begin (dem_all, 0, strlen(text)+3))
 		{
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, PRINT_CHAT);
-			MSG_WriteString ((sizebuf_t*)demo.dbuf, text);
+			MVD_MSG_WriteByte (svc_print);
+			MVD_MSG_WriteByte (PRINT_CHAT);
+			MVD_MSG_WriteString (text);
 		}
 	}
 

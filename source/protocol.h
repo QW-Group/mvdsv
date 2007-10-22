@@ -155,13 +155,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // demo recording
 //
 
-#define dem_cmd		0
-#define dem_read	1
-#define dem_set		2
+#define dem_cmd			0
+#define dem_read		1 // not used now by mvdsv
+#define dem_set			2 // not used now by mvdsv
 #define dem_multiple	3
-#define	dem_single	4
-#define dem_stats	5
-#define dem_all		6
+#define	dem_single		4
+#define dem_stats		5
+#define dem_all			6
 
 //==============================================
 

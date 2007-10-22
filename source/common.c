@@ -388,11 +388,17 @@ void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move)
 
 //===========================================================================
 
-void SZ_Init (sizebuf_t *buf, byte *data, const int length)
+void SZ_InitEx (sizebuf_t *buf, byte *data, const int length, qbool allowoverflow)
 {
 	memset (buf, 0, sizeof (*buf));
 	buf->data = data;
 	buf->maxsize = length;
+	buf->allowoverflow = allowoverflow;
+}
+
+void SZ_Init (sizebuf_t *buf, byte *data, const int length)
+{
+	SZ_InitEx (buf, data, length, false);
 }
 
 void SZ_Clear (sizebuf_t *buf)

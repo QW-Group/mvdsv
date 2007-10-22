@@ -211,9 +211,9 @@ void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...)
 	{
 		if (MVDWrite_Begin (dem_single, cl - svs.clients, strlen(string)+3))
 		{
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
-			MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
+			MVD_MSG_WriteByte (svc_print);
+			MVD_MSG_WriteByte (level);
+			MVD_MSG_WriteString (string);
 		}
 	}
 
@@ -272,9 +272,9 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 	{
 		if (MVDWrite_Begin (dem_all, 0, strlen(string)+3))
 		{
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_print);
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, level);
-			MSG_WriteString ((sizebuf_t*)demo.dbuf, string);
+			MVD_MSG_WriteByte (svc_print);
+			MVD_MSG_WriteByte (level);
+			MVD_MSG_WriteString (string);
 		}
 	}
 
@@ -421,7 +421,7 @@ inrange:
 		{
 			if (MVDWrite_Begin(dem_all, 0, sv.multicast.cursize))
 			{
-				SZ_Write((sizebuf_t*)demo.dbuf, sv.multicast.data, sv.multicast.cursize);
+				MVD_SZ_Write(sv.multicast.data, sv.multicast.cursize);
 			}
 		}
 		else
@@ -606,7 +606,7 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	{
 		if (MVDWrite_Begin(dem_single, clnum, msg->cursize))
 		{
-			SZ_Write((sizebuf_t*)demo.dbuf, msg->data, msg->cursize);
+			MVD_SZ_Write(msg->data, msg->cursize);
 		}
 	}
 
@@ -807,9 +807,9 @@ static void SV_UpdateToReliableMessages (void)
 			{
 				if (MVDWrite_Begin(dem_all, 0, 4))
 				{
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatefrags);
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, i);
-					MSG_WriteShort((sizebuf_t*)demo.dbuf, (int) ent->v.frags);
+					MVD_MSG_WriteByte(svc_updatefrags);
+					MVD_MSG_WriteByte(i);
+					MVD_MSG_WriteShort((int)ent->v.frags);
 				}
 			}
 
@@ -826,8 +826,8 @@ static void SV_UpdateToReliableMessages (void)
 			{
 				if (MVDWrite_Begin(dem_single, i, 5))
 				{
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_entgravity);
-					MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->entgravity);
+					MVD_MSG_WriteByte(svc_entgravity);
+					MVD_MSG_WriteFloat(sv_client->entgravity);
 				}
 			}
 		}
@@ -841,8 +841,8 @@ static void SV_UpdateToReliableMessages (void)
 			{
 				if (MVDWrite_Begin(dem_single, i, 5))
 				{
-					MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_maxspeed);
-					MSG_WriteFloat((sizebuf_t*)demo.dbuf, sv_client->maxspeed);
+					MVD_MSG_WriteByte(svc_maxspeed);
+					MVD_MSG_WriteFloat(sv_client->maxspeed);
 				}
 			}
 		}
@@ -871,12 +871,12 @@ static void SV_UpdateToReliableMessages (void)
 	{
 		if (MVDWrite_Begin(dem_all, 0, sv.reliable_datagram.cursize))
 		{
-			SZ_Write((sizebuf_t*)demo.dbuf, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
+			MVD_SZ_Write(sv.reliable_datagram.data, sv.reliable_datagram.cursize);
 		}
 	}
 
 	if (sv.mvdrecording)
-		SZ_Write(&demo.datagram, sv.datagram.data, sv.datagram.cursize); // FIZME: ???
+		SZ_Write(&demo.datagram, sv.datagram.data, sv.datagram.cursize); // FIXME: ???
 
 	SZ_Clear (&sv.reliable_datagram);
 	SZ_Clear (&sv.datagram);
@@ -1002,95 +1002,24 @@ void SV_MVDPings (void)
 
 		if (MVDWrite_Begin (dem_all, 0, 7))
 		{
-			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updateping);
-			MSG_WriteByte((sizebuf_t*)demo.dbuf,  j);
-			MSG_WriteShort((sizebuf_t*)demo.dbuf,  SV_CalcPing(client));
-			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatepl);
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, j);
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, client->lossage);
+			MVD_MSG_WriteByte (svc_updateping);
+			MVD_MSG_WriteByte (j);
+			MVD_MSG_WriteShort(SV_CalcPing(client));
+			MVD_MSG_WriteByte (svc_updatepl);
+			MVD_MSG_WriteByte (j);
+			MVD_MSG_WriteByte (client->lossage);
 		}
 	}
 }
 
-void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
-void DemoWriteQTVTimePad(int msecs);
-void DestFlush(qbool compleate);
-void SV_MVD_RunPendingConnections(void);
-void SV_SendDemoMessage(void)
+void MVD_WriteStats(void)
 {
-	int			i, j, cls = 0;
 	client_t	*c;
-	byte		buf[MSG_BUF_SIZE];
-	sizebuf_t	msg;
+	int i, j;
 	edict_t		*ent;
 	int			stats[MAX_CL_STATS];
-	qbool 		write_entities = true;
-	float		min_fps;
-	extern		cvar_t sv_demofps, sv_demoIdlefps;
-	extern		cvar_t sv_demoPings;
 
-	SV_MVD_RunPendingConnections();
-
-	if (!sv.mvdrecording)
-		return;
-
-	if ((int)sv_demoPings.value)
-	{
-		if (sv.time - demo.pingtime > sv_demoPings.value)
-		{
-			SV_MVDPings();
-			demo.pingtime = sv.time;
-		}
-	}
-
-	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
-	{
-		if (c->state != cs_spawned)
-			continue;	// datagrams only go to spawned
-
-		cls |= 1 << i;
-	}
-
-	// if no players, use idle fps
-	if (cls)
-		min_fps = max(4.0, (int)sv_demofps.value ? (int)sv_demofps.value : 20.0);
-	else
-		min_fps = bound(4.0, (int)sv_demoIdlefps.value, 30);
-
-	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
-		return;
-
-	demo.forceFrame = 0;
-
-/*
-// qqshka - I turned this block off, this help fly while qtving and no players on server
-//
-
-// this if(!cls) is optional, just help get rid of warning "Not enough buffered" in QTV
-	if (!cls)
-	{
-		if (!demo.datagram.cursize && !demo.dbuf->cursize)
-		{
-			SZ_Clear (&demo.datagram);
-			DemoWriteQTVTimePad((int)((sv.time - demo.time)*1000));
-			DestFlush(false);
-
-// qqshka: no, we can't return here
-//			demo.time = sv.time;
-//			return;
-		}
-
-		write_entities = false; // there no clients, so do not send entities, this save some CPU/bandwidth
-	}
-*/
-
-	msg.data = buf;
-	msg.maxsize = sizeof(buf);
-	msg.cursize = 0;
-	msg.allowoverflow = true;
-	msg.overflowed = false;
-
-	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
+	for (i = 0, c = svs.clients ; i < MAX_CLIENTS ; i++, c++)
 	{
 		if (c->state != cs_spawned)
 			continue;	// datagrams only go to spawned
@@ -1123,71 +1052,130 @@ void SV_SendDemoMessage(void)
 		// stuff the sigil bits into the high bits of items for sbar
 		stats[STAT_ITEMS] = (int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
 
-		for (j=0 ; j<MAX_CL_STATS ; j++)
+		for (j = 0 ; j < MAX_CL_STATS; j++)
+		{
 			if (stats[j] != demo.stats[i][j])
 			{
 				demo.stats[i][j] = stats[j];
-				if (stats[j] >=0 && stats[j] <= 255)
+				if (stats[j] >= 0 && stats[j] <= 255)
 				{
 					if (MVDWrite_Begin(dem_stats, i, 3))
 					{
-						MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestat);
-						MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
-						MSG_WriteByte((sizebuf_t*)demo.dbuf, stats[j]);
+						MVD_MSG_WriteByte(svc_updatestat);
+						MVD_MSG_WriteByte(j);
+						MVD_MSG_WriteByte(stats[j]);
 					}
 				}
 				else
 				{
 					if (MVDWrite_Begin(dem_stats, i, 6))
 					{
-						MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_updatestatlong);
-						MSG_WriteByte((sizebuf_t*)demo.dbuf, j);
-						MSG_WriteLong((sizebuf_t*)demo.dbuf, stats[j]);
+						MVD_MSG_WriteByte(svc_updatestatlong);
+						MVD_MSG_WriteByte(j);
+						MVD_MSG_WriteLong(stats[j]);
 					}
 				}
 			}
+		}
 	}
+}
+
+void DestFlush(qbool compleate);
+void SV_MVD_RunPendingConnections(void);
+
+void SV_SendDemoMessage(void)
+{
+	int			i, cls = 0;
+	client_t	*c;
+	sizebuf_t	msg;
+	byte		msg_buf[MAX_MVD_SIZE]; // data without mvd header
+
+	float		min_fps;
+	extern		cvar_t sv_demofps, sv_demoIdlefps;
+	extern		cvar_t sv_demoPings;
+
+	SV_MVD_RunPendingConnections();
+
+	DestFlush(false); // so qtv disconnect detected better
+
+	if (!sv.mvdrecording)
+		return;
+
+	if ((int)sv_demoPings.value)
+	{
+		if (sv.time - demo.pingtime > sv_demoPings.value)
+		{
+			SV_MVDPings();
+			demo.pingtime = sv.time;
+		}
+	}
+
+	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++)
+	{
+		if (c->state != cs_spawned)
+			continue;	// datagrams only go to spawned
+
+		cls |= 1 << i;
+	}
+
+	// if no players, use idle fps
+	if (cls)
+		min_fps = max(4.0, (int)sv_demofps.value ? (int)sv_demofps.value : 20.0);
+	else
+		min_fps = bound(4.0, (int)sv_demoIdlefps.value, 30);
+
+	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
+		return;
+
+	demo.forceFrame = 0;
+
+	MVD_WriteStats();
 
 	// send over all the objects that are in the PVS
 	// this will include clients, a packetentities, and
 	// possibly a nails update
-	msg.cursize = 0;
+	SZ_InitEx(&msg, msg_buf, sizeof(msg_buf), true);
+
 	if (!demo.recorder.delta_sequence)
 		demo.recorder.delta_sequence = -1;
 
-	if (write_entities)
-		SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
+	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
 
 	if (msg.overflowed)
 	{
-		Con_Printf("WARNING: msg overflowed in SV_SendDemoMessage\n");
-		SZ_Clear(&msg); // Not needed?
+		Sys_Printf("WARNING: msg overflowed in SV_SendDemoMessage\n");
 	}
 	else
 	{
-		if (MVDWrite_Begin(dem_all, 0, msg.cursize))
+		if (msg.cursize)
 		{
-			SZ_Write((sizebuf_t*)demo.dbuf, msg.data, msg.cursize);
+			if (MVDWrite_Begin(dem_all, 0, msg.cursize))
+			{
+				MVD_SZ_Write(msg.data, msg.cursize);
+			}
 		}
 	}
 
+	SZ_Clear(&msg);
+
 	// copy the accumulated multicast datagram
 	// for this client out to the message
-	if (demo.datagram.cursize)
+	if (demo.datagram.overflowed)
 	{
-		if (demo.datagram.overflowed)
-		{
-			Con_Printf("WARNING: demo.datagram overflowed in SV_SendDemoMessage\n");
-		}
-		else
+		Sys_Printf("WARNING: demo.datagram overflowed in SV_SendDemoMessage\n");
+	}
+	else
+	{
+		if (demo.datagram.cursize)
 		{
 			if (MVDWrite_Begin(dem_all, 0, demo.datagram.cursize))
 			{
-				SZ_Write ((sizebuf_t*)demo.dbuf, demo.datagram.data, demo.datagram.cursize);
+				MVD_SZ_Write (demo.datagram.data, demo.datagram.cursize);
 			}
 		}
-		SZ_Clear (&demo.datagram);
 	}
+
+	SZ_Clear (&demo.datagram);
 
 	demo.recorder.delta_sequence = demo.recorder.netchan.incoming_sequence&255;
 	demo.recorder.netchan.incoming_sequence++;
@@ -1202,7 +1190,6 @@ void SV_SendDemoMessage(void)
 		return;
 
 	demo.parsecount++;
-	MVDSetMsgBuf(demo.dbuf,&demo.frames[demo.parsecount&UPDATE_MASK].buf);
 }
 
 

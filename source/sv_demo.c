@@ -43,24 +43,53 @@ cvar_t	sv_onrecordfinish	= {"sv_onRecordFinish", ""};
 cvar_t	sv_ondemoremove		= {"sv_onDemoRemove",	""};
 cvar_t	sv_demoRegexp		= {"sv_demoRegexp",		"\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
-
-static dbuffer_t	*demobuffer;
-static int 			header = (char *)&((header_t*)0)->data - (char *)NULL;
-
-
-// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
-char 				*lastdemosname[16];
-int  				lastdemospos;
-
 mvddest_t			*singledest;
 
 static entity_state_t		demo_entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES]; // used for pseudo client aka 'demo.recorder' during demo recording
 
+// { MVD writing functions, just wrappers
 
-#define MAXSIZE (demobuffer->end < demobuffer->last ? \
-				demobuffer->start - demobuffer->end : \
-				demobuffer->maxsize - demobuffer->end)
+void MVD_MSG_WriteChar (const int c)
+{
+	MSG_WriteChar (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, c);
+}
 
+void MVD_MSG_WriteByte (const int c)
+{
+	MSG_WriteByte (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, c);
+}
+
+void MVD_MSG_WriteShort (const int c)
+{
+	MSG_WriteShort (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, c);
+}
+
+void MVD_MSG_WriteLong (const int c)
+{
+	MSG_WriteLong (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, c);
+}
+
+void MVD_MSG_WriteFloat (const float f)
+{
+	MSG_WriteFloat (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, f);
+}
+
+void MVD_MSG_WriteString (const char *s)
+{
+	MSG_WriteString (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, s);
+}
+
+void MVD_MSG_WriteCoord (const float f)
+{
+	MSG_WriteCoord (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, f);
+}
+
+void MVD_SZ_Write (const void *data, int length)
+{
+	SZ_Write (&demo.frames[demo.parsecount&UPDATE_MASK]._buf_, data, length);
+}
+
+// }
 
 mvddest_t *DestByName (char *name)
 {
@@ -270,147 +299,117 @@ int DemoWrite (void *data, int len) //broadcast to all proxies/mvds
 	return len;
 }
 
-static void MVDBuffer_Init (dbuffer_t *dbuffer, byte *buf, size_t size)
-{
-	demobuffer = dbuffer;
-
-	demobuffer->data = buf;
-	demobuffer->maxsize = size;
-	demobuffer->start = 0;
-	demobuffer->end = 0;
-	demobuffer->last = 0;
-}
-
 /*
-==============
-MVDSetMsgBuf
-
-Sets the frame message buffer
-==============
+====================
+MVDWrite_Begin
+====================
 */
 
-void MVDSetMsgBuf (demobuf_t *prev,demobuf_t *cur)
+static qbool MVDWrite_BeginEx (byte type, int to, int size)
 {
-/* // usage of this function possibile even with !sv.mvdrecording, but seems it correct atm
-	if (!sv.mvdrecording)
-		Sys_Error ("MVDSetMsgBuf: and !sv.mvdrecording");
-*/
-
-	// fix the maxsize of previous msg buffer,
-	// we won't be able to write there anymore
-	if (prev != NULL)
-		prev->maxsize = prev->bufsize;
-
-	demo.dbuf = cur;
-	memset(demo.dbuf, 0, sizeof(*demo.dbuf));
-
-	demo.dbuf->data = demobuffer->data + demobuffer->end;
-	demo.dbuf->maxsize = MAXSIZE;
-}
-
-/*
-==============
-MVDSetBuf
-
-Sets position in the buf for writing to specific client
-==============
-*/
-static void MVDSetBuf (byte type, int to)
-{
-	header_t *p;
-	int pos = 0;
-
-	if (!sv.mvdrecording)
-		Sys_Error ("MVDSetBuf: and !sv.mvdrecording");
-
-	p = (header_t *)demo.dbuf->data;
-
-	while (pos < demo.dbuf->bufsize)
-	{
-		pos += header + p->size;
-
-		if (type == p->type && to == p->to && !p->full)
-		{
-			demo.dbuf->cursize = pos;
-			demo.dbuf->h = p;
-			return;
-		}
-
-		p = (header_t *)(p->data + p->size);
-	}
-	// type&&to not exist in the buf, so add it
-
-	p->type = type;
-	p->to = to;
-	p->size = 0;
-	p->full = 0;
-
-	demo.dbuf->bufsize += header;
-	demo.dbuf->cursize = demo.dbuf->bufsize;
-	demobuffer->end += header;
-	demo.dbuf->h = p;
-}
-
-static void MVDMoveBuf (void)
-{
-	if (!sv.mvdrecording)
-		Sys_Error ("MVDMoveBuf: and !sv.mvdrecording");
-
-	// set the last message mark to the previous frame (i/e begining of this one)
-	demobuffer->last = demobuffer->end - demo.dbuf->bufsize;
-
-	// move buffer to the begining of demo buffer
-	memmove(demobuffer->data, demo.dbuf->data, demo.dbuf->bufsize);
-	demo.dbuf->data = demobuffer->data;
-	demobuffer->end = demo.dbuf->bufsize;
-	demo.dbuf->h = NULL; // it will be setup again
-	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
-}
-
-qbool MVDWrite_Begin (byte type, int to, int size)
-{
-	byte *p;
-	qbool move = false;
+	qbool new_mvd_msg;
 
 	if (!sv.mvdrecording)
 		return false;
 
-	// will it fit?
-	while (demo.dbuf->bufsize + size + header > demo.dbuf->maxsize)
+	// we alredy overflowed, sorry but it no go
+	if (demo.frames[demo.parsecount&UPDATE_MASK]._buf_.overflowed)
+		return false; // ERROR
+
+	if (size > MAX_MVD_SIZE)
 	{
-		// if we reached the end of buffer move msgbuf to the begining
-		if (!move && demobuffer->end > demobuffer->start)
-			move = true;
-
-		if (!SV_MVDWritePackets(1))
-			return false;
-
-		if (move && demobuffer->start > demo.dbuf->bufsize + header + size)
-			MVDMoveBuf();
+		Sys_Printf("MVDWrite_Begin: bad demo message size: %d > MAX_MVD_SIZE\n", size);
+		return false; // ERROR
 	}
 
-	if (demo.dbuf->h == NULL || demo.dbuf->h->type != type || demo.dbuf->h->to != to || demo.dbuf->h->full)
+	// check we have proper demo message type
+	switch (type)
 	{
-		MVDSetBuf(type, to);
+	case dem_all: case dem_multiple: case dem_single: case dem_stats:
+		break;
+	default:
+		Sys_Printf("MVDWrite_Begin: bad demo message type: %d\n", type);
+		return false; // ERROR
 	}
 
-	if (demo.dbuf->h->size + size > MAX_MSGLEN)
+	new_mvd_msg =    demo.frames[demo.parsecount&UPDATE_MASK].lasttype != type
+				  || demo.frames[demo.parsecount&UPDATE_MASK].lastto   != to
+				  || demo.frames[demo.parsecount&UPDATE_MASK].lastsize + size > MAX_MVD_SIZE;
+
+	if (new_mvd_msg)
 	{
-		demo.dbuf->h->full = 1;
-		MVDSetBuf(type, to);
+		// we need add mvd header for next message since "type" or "to" differ from previous message,
+		// or it first message in this frame.
+
+		MVD_MSG_WriteByte(0); // 0 milliseconds
+
+		demo.frames[demo.parsecount&UPDATE_MASK].lasttype = type;
+		demo.frames[demo.parsecount&UPDATE_MASK].lastto   = to;
+		demo.frames[demo.parsecount&UPDATE_MASK].lastsize = size; // set initial size
+
+		switch (type)
+		{
+		case dem_all:
+			MVD_MSG_WriteByte(dem_all);
+			break;
+		case dem_multiple:
+			MVD_MSG_WriteByte(dem_multiple);
+			MVD_MSG_WriteLong(to);
+			break;
+		case dem_single:
+		case dem_stats:
+			MVD_MSG_WriteByte(type | (to << 3)); // msg "type" and "to" incapsulated in one byte
+			break;
+		default:
+			return false; // ERROR: wrong type
+		}
+
+		MVD_MSG_WriteLong(size); // msg size
+
+		if (demo.frames[demo.parsecount&UPDATE_MASK]._buf_.overflowed)
+			return false; // ERROR: overflow
+
+		// THIS IS TRICKY, SORRY.
+		// remember size offset, so latter we can access it
+		demo.frames[demo.parsecount&UPDATE_MASK].lastsize_offset = demo.frames[demo.parsecount&UPDATE_MASK]._buf_.cursize - 4;
+	}
+	else
+	{
+		// we must alredy have mvd header here of previous message, so just change size in header
+		byte *buf;
+		int lastsize;
+
+		demo.frames[demo.parsecount&UPDATE_MASK].lastsize += size;
+
+		// THIS IS TRICKY, SORRY.
+		// and here we use size offset
+		lastsize = demo.frames[demo.parsecount&UPDATE_MASK].lastsize;
+
+		buf = demo.frames[demo.parsecount&UPDATE_MASK]._buf_.data + demo.frames[demo.parsecount&UPDATE_MASK].lastsize_offset;
+
+		buf[0] = lastsize&0xff;
+		buf[1] = (lastsize>> 8)&0xff;
+		buf[2] = (lastsize>>16)&0xff;
+		buf[3] = (lastsize>>24)&0xff;
 	}
 
-	// we have to make room for new data
-	if (demo.dbuf->cursize != demo.dbuf->bufsize)
-	{
-		p = demo.dbuf->data + demo.dbuf->cursize;
-		memmove(p+size, p, demo.dbuf->bufsize - demo.dbuf->cursize);
-	}
+	return (sv.mvdrecording ? true : false);
+}
 
-	demo.dbuf->bufsize += size;
-	demo.dbuf->h->size += size;
-	if ((demobuffer->end += size) > demobuffer->last)
-		demobuffer->last = demobuffer->end;
+qbool MVDWrite_Begin (byte type, int to, int size)
+{
+	if (!sv.mvdrecording)
+		return false;
+
+	if (!MVDWrite_BeginEx(type, to, size))
+	{
+		Con_DPrintf("MVDWrite_Begin: error\n");
+
+		if (sv.mvdrecording)
+			SV_MVDStop(4, false); // stop all mvd recording
+
+		return false;
+	}
 
 	return (sv.mvdrecording ? true : false);
 }
@@ -418,21 +417,23 @@ qbool MVDWrite_Begin (byte type, int to, int size)
 /*
 ====================
 SV_WriteMVDMessage
-
-Dumps the current net message, prefixed by the length and view angles
 ====================
 */
-static qbool SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
+static qbool SV_WriteMVDMessage (sizebuf_t *msg, float time1)
 {
-	int		len, i, msec;
+	static double prevtime;  // FIXME: since it static, and noone reset it, on new map prevtime > time1, this is wrong
+
+	int		len, msec;
 	byte	c;
-	static double prevtime;
 
 	if (!sv.mvdrecording)
 		return false;
 
+	if (msg && msg->overflowed)
+		return false; // ERROR
+
 	msec = (time1 - prevtime) * 1000;
-	prevtime += msec * 0.001;
+	prevtime += 0.001 * msec;
 
 	if (msec > 255)
 		msec = 255;
@@ -442,117 +443,22 @@ static qbool SV_WriteMVDMessage (sizebuf_t *msg, int type, int to, float time1)
 	c = msec;
 	DemoWrite(&c, sizeof(c));
 
-	if (demo.lasttype != type || demo.lastto != to)
-	{
-		demo.lasttype = type;
-		demo.lastto = to;
-		switch (demo.lasttype)
-		{
-		case dem_all:
-			c = dem_all;
-			DemoWrite (&c, sizeof(c));
-			break;
-		case dem_multiple:
-			c = dem_multiple;
-			DemoWrite (&c, sizeof(c));
+	c = dem_all;
+	DemoWrite (&c, sizeof(c));
 
-			i = LittleLong(demo.lastto);
-			DemoWrite (&i, sizeof(i));
-			break;
-		case dem_single:
-		case dem_stats:
-			c = demo.lasttype + (demo.lastto << 3);
-			DemoWrite (&c, sizeof(c));
-			break;
-		default:
-			SV_MVDStop_f ();
-			Con_Printf("bad demo message type:%d", type);
-			return false;
-		}
+	if (msg && msg->cursize)
+	{
+		len = LittleLong (msg->cursize);
+		DemoWrite (&len, 4);
+		DemoWrite (msg->data, msg->cursize);
 	}
 	else
 	{
-		c = dem_read;
-		DemoWrite (&c, sizeof(c));
+		len = LittleLong (0);
+		DemoWrite (&len, 4);
 	}
-
-	len = LittleLong (msg->cursize);
-	DemoWrite (&len, 4);
-	DemoWrite (msg->data, msg->cursize);
 
 	DestFlush(false);
-
-	return (sv.mvdrecording ? true : false);
-}
-
-/*
-==============
-SV_MVDWriteToDisk
-
-Writes to disk a message meant for specifc client
-or all messages if type == 0
-Message is cleared from demobuf after that
-==============
-*/
-
-qbool SV_MVDWriteToDisk (int type, int to, float time1)
-{
-	int pos = 0, oldm, oldd;
-	header_t *p;
-	int size;
-	sizebuf_t msg;
-
-	if (!sv.mvdrecording)
-		return false;
-
-	p = (header_t *)demo.dbuf->data;
-	demo.dbuf->h = NULL;
-
-	oldm = demo.dbuf->bufsize;
-	oldd = demobuffer->start;
-	while (pos < demo.dbuf->bufsize)
-	{
-		size = p->size;
-		pos += header + size;
-
-		// no type means we are writing to disk everything
-		if (!type || (p->type == type && p->to == to))
-		{
-			if (size)
-			{
-				msg.data = p->data;
-				msg.cursize = size;
-
-				if(!SV_WriteMVDMessage(&msg, p->type, p->to, time1))
-					return false;
-			}
-
-			// data is written so it need to be cleard from demobuf
-			if (demo.dbuf->data != (byte*)p)
-				memmove(demo.dbuf->data + size + header, demo.dbuf->data, (byte*)p - demo.dbuf->data);
-
-			demo.dbuf->bufsize -= size + header;
-			demo.dbuf->data += size + header;
-			pos -= size + header;
-			demo.dbuf->maxsize -= size + header;
-			demobuffer->start += size + header;
-		}
-		// move along
-		p = (header_t *)(p->data + size);
-	}
-
-	if (demobuffer->start == demobuffer->last)
-	{
-		if (demobuffer->start == demobuffer->end)
-		{
-			demobuffer->end = 0; // demobuffer is empty
-			demo.dbuf->data = demobuffer->data;
-		}
-
-		// go back to begining of the buffer
-		demobuffer->last = demobuffer->end;
-		demobuffer->start = 0;
-	}
 
 	return (sv.mvdrecording ? true : false);
 }
@@ -566,7 +472,7 @@ and writes packets to the disk/memory
 ====================
 */
 
-qbool SV_MVDWritePackets (int num)
+static qbool SV_MVDWritePacketsEx (int num)
 {
 	demo_frame_t	*frame, *nextframe;
 	demo_client_t	*cl, *nextcl = NULL;
@@ -576,14 +482,14 @@ qbool SV_MVDWritePackets (int num)
 	float			f;
 	vec3_t			origin, angles;
 	sizebuf_t		msg;
-	byte			msg_buf[MAX_MSGLEN];
+	byte			msg_buf[MAX_MVD_SIZE]; // data without mvd header
 	demoinfo_t		*demoinfo;
 
 	if (!sv.mvdrecording)
 		return false;
 
-	msg.data = msg_buf;
-	msg.maxsize = sizeof(msg_buf);
+	// allow overflow, but cancel demo recording in case of overflow
+	SZ_InitEx(&msg, msg_buf, sizeof(msg_buf), true);
 
 	if (num > demo.parsecount - demo.lastwritten + 1)
 		num = demo.parsecount - demo.lastwritten + 1;
@@ -591,12 +497,11 @@ qbool SV_MVDWritePackets (int num)
 	// 'num' frames to write
 	for ( ; num; num--, demo.lastwritten++)
 	{
+		SZ_Clear(&msg);
+
 		frame = &demo.frames[demo.lastwritten&UPDATE_MASK];
 		time1 = frame->time;
 		nextframe = frame;
-		msg.cursize = 0;
-
-		demo.dbuf = &frame->buf;
 
 		// find two frames
 		// one before the exact time (time - msec) and one after,
@@ -711,34 +616,74 @@ qbool SV_MVDWritePackets (int num)
 			demoinfo->model = cl->info.model;
 		}
 
-		// this goes first to reduce demo size a bit
-		if (!SV_MVDWriteToDisk(demo.lasttype,demo.lastto, (float)time1))
-			return false;
-
-		// now goes the rest
-		if (!SV_MVDWriteToDisk(0,0, (float)time1))
-			return false;
-
-		if (msg.cursize)
+		// just write time mark
+		if (!SV_WriteMVDMessage(NULL, (float)time1))
 		{
-			if (!SV_WriteMVDMessage(&msg, dem_all, 0, (float)time1))
-				return false;
+			Con_DPrintf("SV_MVDWritePackets: error: in time mark\n");
+			return false; // ERROR
 		}
 
+		if (demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.overflowed)
+		{
+			Con_DPrintf("SV_MVDWritePackets: error: in _buf_.overflowed\n");
+			return false; // ERROR
+		}
+
+		// write cumulative data from different sources
+		if (demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize)
+			DemoWrite(demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.data, demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize);
+
+		// write data about players
+		if (msg.cursize)
+		{
+			if (!SV_WriteMVDMessage(&msg, (float)time1))
+			{
+				Con_DPrintf("SV_MVDWritePackets: error: in msg\n");
+				return false; // ERROR
+			}
+		}
+
+		// { reset frame for future usage
+		SZ_Clear(&demo.frames[demo.lastwritten&UPDATE_MASK]._buf_);
+
+		demo.frames[demo.lastwritten&UPDATE_MASK].lastto = 0;
+		demo.frames[demo.lastwritten&UPDATE_MASK].lasttype = 0;
+		demo.frames[demo.lastwritten&UPDATE_MASK].lastsize = 0;
+		demo.frames[demo.lastwritten&UPDATE_MASK].lastsize_offset = 0;
+		// }
+
 		if (!sv.mvdrecording)
-			return false;
+		{
+			Con_DPrintf("SV_MVDWritePackets: error: in sv.mvdrecording\n");
+			return false; // ERROR
+		}
 	}
 
 	if (!sv.mvdrecording)
-		return false;
+		return false; // ERROR
 
 	if (demo.lastwritten > demo.parsecount)
 		demo.lastwritten = demo.parsecount;
 
-	demo.dbuf = &demo.frames[demo.parsecount&UPDATE_MASK].buf;
-	demo.dbuf->maxsize = MAXSIZE + demo.dbuf->bufsize;
-
 	return true;
+}
+
+qbool SV_MVDWritePackets (int num)
+{
+	if (!sv.mvdrecording)
+		return false;
+
+	if (!SV_MVDWritePacketsEx(num))
+	{
+		Con_DPrintf("SV_MVDWritePackets: error\n");
+
+		if (sv.mvdrecording)
+			SV_MVDStop(4, false); // stop all mvd recording
+
+		return false;
+	}
+
+	return (sv.mvdrecording ? true : false);
 }
 
 /*
@@ -814,6 +759,32 @@ static mvddest_t *SV_InitRecordFile (char *name)
 	return dst;
 }
 
+static void SV_AddLastDemo(void)
+{
+	char *name = NULL;
+	mvddest_t *d;
+
+	for (d = demo.dest; d; d = d->nextdest)
+	{
+		if (d->desttype != DEST_STREAM && d->name[0])
+		{
+			name = d->name;
+			break; // we found file dest with non empty name, use it as last demo name
+		}
+	}
+
+	if (name && name[0])
+	{
+		size_t name_len = strlen(name) + 1;
+
+		demo.lastdemospos = (demo.lastdemospos + 1) & 0xF;
+		Q_free(demo.lastdemosname[demo.lastdemospos]);
+		demo.lastdemosname[demo.lastdemospos] = (char *) Q_malloc(name_len);
+		strlcpy(demo.lastdemosname[demo.lastdemospos], name, name_len);
+		Con_DPrintf("SV_MVDStop: Demo name for 'cmd dl .': \"%s\"\n", demo.lastdemosname[demo.lastdemospos]);
+	}
+}
+
 /*
 ====================
 SV_MVDStop
@@ -823,8 +794,15 @@ stop recording a demo
 */
 void SV_MVDStop (int reason, qbool mvdonly)
 {
-	mvddest_t *d;
+	static qbool instop = false;
+
 	int numclosed;
+
+	if (instop)
+	{
+		Con_Printf("SV_MVDStop: recursion\n");
+		return;
+	}
 
 	if (!sv.mvdrecording)
 	{
@@ -832,55 +810,47 @@ void SV_MVDStop (int reason, qbool mvdonly)
 		return;
 	}
 
-	if (reason == 2 || reason == 3)
+	instop = true; // SET TO TRUE, DON'T FORGET SET TO FALSE ON RETURN
+
+	if (reason == 2 || reason == 3 || reason == 4)
 	{
-		DestCloseAllFlush(true, mvdonly);
+		if (reason == 4)
+			mvdonly = false; // if serious error, then close all dests including qtv streams
+
 		// stop and remove
+		DestCloseAllFlush(true, mvdonly);
 
 		if (!demo.dest)
 			sv.mvdrecording = false;
 
-		if (reason == 3)
+		if (reason == 4)
+			SV_BroadcastPrintf (PRINT_CHAT, "Error in MVD/QTV recording, recording stopped\n");
+		else if (reason == 3)
 			SV_BroadcastPrintf (PRINT_CHAT, "QTV disconnected\n");
 		else
 			SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
 
 		Cvar_SetROM(&serverdemo, "");
 
+		instop = false; // SET TO FALSE
+
 		return;
 	}
 	
 	// write a disconnect message to the demo file
-	// clearup to be sure message will fit
-	demo.dbuf->cursize = 0;
-	demo.dbuf->h = NULL;
-	demo.dbuf->bufsize = 0;
+	// FIXME: qqshka: add clearup to be sure message will fit!!!
+
 	if (MVDWrite_Begin(dem_all, 0, 2+strlen("EndOfDemo")))
 	{
-		MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_disconnect);
-		MSG_WriteString ((sizebuf_t*)demo.dbuf, "EndOfDemo");
+		MVD_MSG_WriteByte (svc_disconnect);
+		MVD_MSG_WriteString ("EndOfDemo");
 	}
 
-	SV_MVDWritePackets(demo.parsecount - demo.lastwritten + 1);
 	// finish up
+	SV_MVDWritePackets(demo.parsecount - demo.lastwritten + 1);
 
 	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
-	for (d = demo.dest; d; d = d->nextdest)
-		if (d->desttype != DEST_STREAM && d->name[0])
-			break; // we found file dest with non empty name, use it as last demo name
-
-	if (d && d->name[0])
-	{
-		size_t name_len = strlen(demo.dest->name) + 1;
-
-		if (++lastdemospos > 15)
-			lastdemospos &= 0xF;
-		if (lastdemosname[lastdemospos])
-			Q_free(lastdemosname[lastdemospos]);
-		lastdemosname[lastdemospos] = (char *) Q_malloc(name_len);
-		strlcpy(lastdemosname[lastdemospos], demo.dest->name, name_len);
-		Con_DPrintf("SV_MVDStop: Demo name for 'cmd dl .': \"%s\"\n", lastdemosname[lastdemospos]);
-	}
+	SV_AddLastDemo();
 
 	numclosed = DestCloseAllFlush(false, mvdonly);
 
@@ -896,6 +866,8 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	}
 
 	Cvar_SetROM(&serverdemo, "");
+
+	instop = false; // SET TO FALSE
 }
 
 /*
@@ -922,12 +894,10 @@ void SV_MVD_Cancel_f (void)
 
 /*
 ====================
-SV_WriteMVDMessage
-
-Dumps the current net message, prefixed by the length and view angles
+SV_WriteRecordMVDMessage
 ====================
 */
-static void SV_WriteRecordMVDMessage (sizebuf_t *msg, int seq)
+static void SV_WriteRecordMVDMessage (sizebuf_t *msg)
 {
 	int len;
 	byte c;
@@ -941,7 +911,7 @@ static void SV_WriteRecordMVDMessage (sizebuf_t *msg, int seq)
 	c = 0;
 	DemoWrite (&c, sizeof(c));
 
-	c = dem_read;
+	c = dem_all;
 	DemoWrite (&c, sizeof(c));
 
 	len = LittleLong (msg->cursize);
@@ -952,12 +922,11 @@ static void SV_WriteRecordMVDMessage (sizebuf_t *msg, int seq)
 	DestFlush(false);
 }
 
+/*
 static void SV_WriteSetMVDMessage (void)
 {
 	int len;
 	byte c;
-
-	//Con_Printf("write: %ld bytes, %4.4f\n", msg->cursize, realtime);
 
 	if (!sv.mvdrecording)
 		return;
@@ -976,6 +945,7 @@ static void SV_WriteSetMVDMessage (void)
 
 	DestFlush(false);
 }
+*/
 
 // mvd/qtv related stuff
 // Well, here is a chance what player connect after demo recording started,
@@ -993,19 +963,24 @@ void MVD_PlayerReset(int player)
 	memset(&(demo.info[player]), 0, sizeof(demo.info[0]));
 }
 
-qbool SV_MVD_Record (mvddest_t *dest)
+qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
 {
 	int i;
-	qbool map_change = (dest == demo.dest); // some magical guessing is this is a map change
 
-	if (!dest)
-		return false;
+	if (mapchange)
+	{
+		if (dest) // during mapchange dest must be NULL
+			return false;
+	}
+	else
+	{
+		if (!dest) // in non mapchange dest must be not NULL
+			return false;
+	}
 
-	DestFlush(true);
+	DestFlush(true); // this may close some dests...
 
-	if (map_change && !demo.dest)
-		return false; // seems we close all dests with DestFlush() few line above, so in mapchange case nothing to do here
-
+	// If we initialize MVD recording, then reset some data structs
 	if (!sv.mvdrecording)
 	{
 		// this is either mapchange and we have QTV connected
@@ -1015,19 +990,22 @@ qbool SV_MVD_Record (mvddest_t *dest)
     	// so demo.dest and demo.pendingdest is not overwriten
 		memset(&demo, 0, ((int)&(((demo_t *)0)->mem_set_point)));
 
+		memset(demo_entities, 0, sizeof(demo_entities));
+
 		for (i = 0; i < UPDATE_BACKUP; i++)
 		{
+			// set up recorder packet enitities in each frame
 			demo.recorder.frames[i].entities.entities = demo_entities[i];
+
+			// set up buffer for record in each frame
+			SZ_InitEx(&demo.frames[i]._buf_, demo.frames[i]._buf__data, sizeof(demo.frames[0]._buf__data), true);
 		}
 
-		MVDBuffer_Init(&demo.dbuffer, demo.buffer, sizeof(demo.buffer));
-		MVDSetMsgBuf(NULL, &demo.frames[0].buf);
-
-		demo.datagram.maxsize = sizeof(demo.datagram_data);
-		demo.datagram.data = demo.datagram_data;
+		// set up buffer for non releable data
+		SZ_InitEx(&demo.datagram, demo.datagram_data, sizeof(demo.datagram_data), true);
 	}
 
-	if (map_change)
+	if (mapchange)
 	{
 		//
 		// map change, sent initial stats to all dests
@@ -1049,12 +1027,6 @@ qbool SV_MVD_Record (mvddest_t *dest)
 	return true;
 }
 
-// we change map - clear whole demo struct and sent initial state to all dest if any (for QTV only I thought)
-qbool SV_MVD_Re_Record(void)
-{
-	return SV_MVD_Record (demo.dest);
-}
-
 void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 {
 //	qbool first_dest = !sv.mvdrecording; // if we are not recording yet, that must be first dest
@@ -1065,7 +1037,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 	client_t *player;
 	char *gamedir;
-	int seq = 1, i;
+	int i;
 
 	if (!demo.dest)
 		return;
@@ -1130,7 +1102,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	MSG_WriteString (&buf, va("fullserverinfo \"%s\"\n", svs.info) );
 
 	// flush packet
-	SV_WriteRecordMVDMessage (&buf, seq++);
+	SV_WriteRecordMVDMessage (&buf);
 	SZ_Clear (&buf);
 
 	// soundlist
@@ -1146,7 +1118,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		{
 			MSG_WriteByte (&buf, 0);
 			MSG_WriteByte (&buf, n);
-			SV_WriteRecordMVDMessage (&buf, seq++);
+			SV_WriteRecordMVDMessage (&buf);
 			SZ_Clear (&buf);
 			MSG_WriteByte (&buf, svc_soundlist);
 			MSG_WriteByte (&buf, n + 1);
@@ -1159,7 +1131,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	{
 		MSG_WriteByte (&buf, 0);
 		MSG_WriteByte (&buf, 0);
-		SV_WriteRecordMVDMessage (&buf, seq++);
+		SV_WriteRecordMVDMessage (&buf);
 		SZ_Clear (&buf);
 	}
 
@@ -1176,7 +1148,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		{
 			MSG_WriteByte (&buf, 0);
 			MSG_WriteByte (&buf, n);
-			SV_WriteRecordMVDMessage (&buf, seq++);
+			SV_WriteRecordMVDMessage (&buf);
 			SZ_Clear (&buf);
 			MSG_WriteByte (&buf, svc_modellist);
 			MSG_WriteByte (&buf, n + 1);
@@ -1188,7 +1160,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	{
 		MSG_WriteByte (&buf, 0);
 		MSG_WriteByte (&buf, 0);
-		SV_WriteRecordMVDMessage (&buf, seq++);
+		SV_WriteRecordMVDMessage (&buf);
 		SZ_Clear (&buf);
 	}
 
@@ -1198,7 +1170,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	{
 		if (buf.cursize+sv.signon_buffer_size[n] > MAX_MSGLEN/2)
 		{
-			SV_WriteRecordMVDMessage (&buf, seq++);
+			SV_WriteRecordMVDMessage (&buf);
 			SZ_Clear (&buf);
 		}
 		SZ_Write (&buf,
@@ -1208,7 +1180,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 	if (buf.cursize > MAX_MSGLEN/2)
 	{
-		SV_WriteRecordMVDMessage (&buf, seq++);
+		SV_WriteRecordMVDMessage (&buf);
 		SZ_Clear (&buf);
 	}
 
@@ -1217,7 +1189,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 	if (buf.cursize)
 	{
-		SV_WriteRecordMVDMessage (&buf, seq++);
+		SV_WriteRecordMVDMessage (&buf);
 		SZ_Clear (&buf);
 	}
 
@@ -1253,7 +1225,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 		if (buf.cursize > MAX_MSGLEN/2)
 		{
-			SV_WriteRecordMVDMessage (&buf, seq++);
+			SV_WriteRecordMVDMessage (&buf);
 			SZ_Clear (&buf);
 		}
 	}
@@ -1323,7 +1295,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 		if (buf.cursize > MAX_MSGLEN/2)
 		{
-			SV_WriteRecordMVDMessage (&buf, seq++);
+			SV_WriteRecordMVDMessage (&buf);
 			SZ_Clear (&buf);
 		}
 	}
@@ -1341,9 +1313,9 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	MSG_WriteByte (&buf, svc_stufftext);
 	MSG_WriteString (&buf, "skins\n");
 
-	SV_WriteRecordMVDMessage (&buf, seq++);
+	SV_WriteRecordMVDMessage (&buf);
 
-	SV_WriteSetMVDMessage();
+//	SV_WriteSetMVDMessage();
 
 	singledest = NULL;
 }
@@ -1392,7 +1364,7 @@ static void SV_MVD_Record_f (void)
 	//
 	// open the demo file and start recording
 	//
-	SV_MVD_Record (SV_InitRecordFile(name));
+	SV_MVD_Record (SV_InitRecordFile(name), false);
 }
 
 /*
@@ -1486,7 +1458,7 @@ static void SV_MVDEasyRecord_f (void)
 
 	snprintf(name2, sizeof(name2), va("%s/%s/%s.mvd", fs_gamedir, sv_demoDir.string, name2));
 
-	SV_MVD_Record (SV_InitRecordFile(name2));
+	SV_MVD_Record (SV_InitRecordFile(name2), false);
 }
 
 //============================================================
@@ -1534,11 +1506,6 @@ static void MVD_Init (void)
 
 	Cvar_SetROM(&sv_demoCacheSize, va("%d", size/1024));
 	CleanName_Init();
-
-	// clean last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
-	for (p = 0; p < 16; p++)
-		lastdemosname[p] = NULL;
-	lastdemospos = 0;
 }
 
 void SV_MVDInit (void)

@@ -289,44 +289,30 @@ typedef struct
 	float			sec;
 	int				parsecount;
 	qbool			fixangle;
-//	vec3_t			angle; // hrm this is unused
 	float			cmdtime;
 	int				flags;
 	int				frame;
 } demo_client_t;
 
-typedef struct {
-	byte			type;
-	byte			full;
-	int				to;
-	int				size;
-	byte			data[1]; //gcc doesn't allow [] (?)
-} header_t;
-
-typedef struct
-{
-	qbool			allowoverflow; // if false, do a Sys_Error
-	qbool			overflowed; // set to true if the buffer size failed
-	byte			*data;
-	int				maxsize;
-	int				cursize;
-	int				bufsize;
-	header_t 		*h;
-} demobuf_t;
-
 typedef struct
 {
 	demo_client_t	clients[MAX_CLIENTS];
 	double			time;
-	demobuf_t		buf;
+
+// { reset each time frame wroten with SV_MVDWritePackets()
+	sizebuf_t		_buf_;
+	// !!! OUCH OUCH OUCH, 64 frames, so it about 2mb !!!
+	// here data with mvd headers, so it up to 4 mvd msg with maximum size, however basically here alot of small msgs,
+	// so this size pathetic
+	byte			_buf__data[(MAX_MVD_SIZE + 10) * 4];
+
+	int				lastto;
+	int				lasttype;
+	int				lastsize;
+	int				lastsize_offset; // this is tricky
+// }
 
 } demo_frame_t;
-
-typedef struct {
-	byte			*data;
-	int				start, end, last;
-	int				maxsize;
-} dbuffer_t;
 
 //qtv proxies are meant to send a small header now, bit like http
 //this header gives supported version numbers and stuff
@@ -351,6 +337,7 @@ typedef struct mvdpendingdest_s
 } mvdpendingdest_t;
 
 typedef enum {DEST_NONE, DEST_FILE, DEST_BUFFEREDFILE, DEST_STREAM} desttype_t;
+
 typedef struct mvddest_s
 {
 	qbool error; //disables writers, quit ASAP.
@@ -380,30 +367,38 @@ typedef struct mvddest_s
 
 typedef struct
 {
-	demobuf_t		*dbuf;
-	dbuffer_t		dbuffer;
 	sizebuf_t		datagram;
-	byte			datagram_data[MSG_BUF_SIZE];
-	int				lastto;
-	int				lasttype;
-	double			time, pingtime;
-	int				stats[MAX_CLIENTS][MAX_CL_STATS]; // ouch!
+	byte			datagram_data[MAX_MVD_SIZE]; // data without mvd header
+
+	double			time;
+	double			pingtime;
+
 	client_t		recorder;
+
 	qbool			fixangle[MAX_CLIENTS];
 	float			fixangletime[MAX_CLIENTS];
 	vec3_t			angles[MAX_CLIENTS];
-	int				parsecount;
-	int				lastwritten;
+
+	int				stats[MAX_CLIENTS][MAX_CL_STATS];
+
+	int				parsecount;  // current frame, to which we add demo data
+	int				lastwritten; // lastwriten frame
+
 	demo_frame_t	frames[UPDATE_BACKUP];
 	demoinfo_t		info[MAX_CLIENTS];
-	byte			buffer[20*MAX_MSGLEN];
-	int				bufsize;
+
 	int				forceFrame;
 
+	// =====================================
 	char			mem_set_point; // fields below, like ->dest and ->pendingdest must not be memset to 0
+	// =====================================
 
-	struct mvddest_s *dest;
+	struct mvddest_s		*dest;
 	struct mvdpendingdest_s *pendingdest;
+
+	// last recorded demo's names for command "cmd dl . .." (maximum 15 dots)
+	char			*lastdemosname[16];
+	int				lastdemospos;
 } demo_t;
 
 // player flags in mvd demos
@@ -751,15 +746,23 @@ void SV_ClearReliable (client_t *cl); // clear cl->netchan.message and backbuf
 //
 // sv_demo.c
 //
-qbool MVDWrite_Begin(byte type, int to, int size);
-void MVDSetMsgBuf(demobuf_t *prev,demobuf_t *cur);
 
-qbool SV_MVDWriteToDisk(int type, int to, float time);
+void MVD_MSG_WriteChar   (const int c);
+void MVD_MSG_WriteByte   (const int c);
+void MVD_MSG_WriteShort  (const int c);
+void MVD_MSG_WriteLong   (const int c);
+void MVD_MSG_WriteFloat  (const float f);
+void MVD_MSG_WriteString (const char *s);
+void MVD_MSG_WriteCoord  (const float f);
+void MVD_SZ_Write        (const void *data, int length);
+
+qbool MVDWrite_Begin(byte type, int to, int size);
+
 void SV_MVDStop (int reason, qbool mvdonly);
 void SV_MVDStop_f (void);
 qbool SV_MVDWritePackets (int num);
 void SV_MVD_SendInitialGamestate(mvddest_t *dest);
-qbool SV_MVD_Record (mvddest_t *dest);
+qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange);
 
 mvddest_t	*DestByName (char *name);
 void		DestClose (mvddest_t *d, qbool destroyfiles);

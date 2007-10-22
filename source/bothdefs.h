@@ -27,6 +27,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	MSG_BUF_SIZE			8192
 
+// qqshka: Its all messy.
+// For example ezquake (and FTE?) expect maximum message is MSG_BUF_SIZE == 8192 with mvd header which have not fixed size,
+// however fuhquake uses less msg size as I recall.
+// mvd header max size is 10 bytes.
+// 
+// MAX_MVD_SIZE - max size of single mvd message _WITHOUT_ header
+#define	MAX_MVD_SIZE			(MSG_BUF_SIZE - 100)
+
 #define	MINIMUM_MEMORY			0x550000
 
 

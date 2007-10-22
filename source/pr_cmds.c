@@ -298,8 +298,8 @@ void PF_centerprint (void)
 	{
 		if (MVDWrite_Begin (dem_single, entnum - 1, 2 + strlen(s)))
 		{
-			MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_centerprint);
-			MSG_WriteString ((sizebuf_t*)demo.dbuf, s);
+			MVD_MSG_WriteByte (svc_centerprint);
+			MVD_MSG_WriteString (s);
 		}
 	}
 
@@ -751,8 +751,8 @@ void PF_stuffcmd (void)
 		{
 			if (MVDWrite_Begin ( dem_single, cl - svs.clients, 2+strlen(buf)))
 			{
-				MSG_WriteByte ((sizebuf_t*)demo.dbuf, svc_stufftext);
-				MSG_WriteString ((sizebuf_t*)demo.dbuf, buf);
+				MVD_MSG_WriteByte (svc_stufftext);
+				MVD_MSG_WriteString (buf);
 			}
 		}
 
@@ -1730,9 +1730,9 @@ void PF_lightstyle (void)
 	{
 		if (MVDWrite_Begin( dem_all, 0, strlen(val)+3))
 		{
-			MSG_WriteByte((sizebuf_t*)demo.dbuf, svc_lightstyle);
-			MSG_WriteChar((sizebuf_t*)demo.dbuf, style);
-			MSG_WriteString((sizebuf_t*)demo.dbuf, val);
+			MVD_MSG_WriteByte(svc_lightstyle);
+			MVD_MSG_WriteChar(style);
+			MVD_MSG_WriteString(val);
 		}
 	}
 }
@@ -1950,7 +1950,7 @@ void PF_WriteByte (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1))
 			{
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
+				MVD_MSG_WriteByte(G_FLOAT(OFS_PARM1));
 			}
 		}
 	}
@@ -1969,7 +1969,7 @@ void PF_WriteChar (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1))
 			{
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
+				MVD_MSG_WriteByte(G_FLOAT(OFS_PARM1));
 			}
 		}
 	}
@@ -1988,7 +1988,7 @@ void PF_WriteShort (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2))
 			{
-				MSG_WriteShort((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
+				MVD_MSG_WriteShort(G_FLOAT(OFS_PARM1));
 			}
 		}
 	}
@@ -2007,7 +2007,7 @@ void PF_WriteLong (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 4))
 			{
-				MSG_WriteLong((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
+				MVD_MSG_WriteLong(G_FLOAT(OFS_PARM1));
 			}
 		}
 	}
@@ -2026,7 +2026,7 @@ void PF_WriteAngle (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1))
 			{
-				MSG_WriteByte((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
+				MVD_MSG_WriteByte(G_FLOAT(OFS_PARM1));
 			}
 		}
 	}
@@ -2045,7 +2045,7 @@ void PF_WriteCoord (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2))
 			{
-				MSG_WriteCoord((sizebuf_t*)demo.dbuf, G_FLOAT(OFS_PARM1));
+				MVD_MSG_WriteCoord(G_FLOAT(OFS_PARM1));
 			}
 		}
 	}
@@ -2064,7 +2064,7 @@ void PF_WriteString (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 1 + strlen(G_STRING(OFS_PARM1))))
 			{
-				MSG_WriteString((sizebuf_t*)demo.dbuf, G_STRING(OFS_PARM1));
+				MVD_MSG_WriteString(G_STRING(OFS_PARM1));
 			}
 		}
 	}
@@ -2084,7 +2084,7 @@ void PF_WriteEntity (void)
 		{
 			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2))
 			{
-				MSG_WriteShort((sizebuf_t*)demo.dbuf, G_EDICTNUM(OFS_PARM1));
+				MVD_MSG_WriteShort(G_EDICTNUM(OFS_PARM1));
 			}
 		}
 	}
