@@ -38,7 +38,6 @@ precaution against having a malicious server instruct clients to write files
 over areas they shouldn't.
 */
 
-
 /*
 =============================================================================
 
