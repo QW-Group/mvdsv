@@ -1126,7 +1126,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="version.c"
+				RelativePath="build.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"

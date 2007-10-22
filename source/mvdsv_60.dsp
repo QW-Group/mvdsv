@@ -254,7 +254,7 @@ SOURCE=sv_windows.c
 # End Source File
 # Begin Source File
 
-SOURCE=version.c
+SOURCE=build.c
 # End Source File
 # Begin Source File
 

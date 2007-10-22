@@ -1,5 +1,5 @@
 /*
-	version.c
+	build.c
  
 	Build number and version strings
  
@@ -23,7 +23,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
  
-	$Id: version.c 636 2007-07-20 05:07:57Z disconn3ct $
+	$Id: build.c 636 2007-07-20 05:07:57Z disconn3ct $
 */
 
 #include "qwsvdef.h"

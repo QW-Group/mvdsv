@@ -97,7 +97,7 @@ SV_OBJS = \
 		$(SV_DIR)/pmove.o \
 		$(SV_DIR)/pmovetst.o \
 		$(SV_DIR)/sha1.o \
-		$(SV_DIR)/version.o \
+		$(SV_DIR)/build.o \
 		$(SV_DIR)/world.o \
 		$(SV_DIR)/zone.o \
 \
