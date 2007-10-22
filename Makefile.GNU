@@ -13,7 +13,8 @@ SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 BASE_CFLAGS=-Wall -pipe -funsigned-char -DUSE_PR2 -D$(BYTE_ORDER)Q__
-WITH_OPTIMIZED_CFLAGS=YES
+#WITH_OPTIMIZED_CFLAGS=YES
+WITH_OPTIMIZED_CFLAGS=NO
 
 USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
@@ -34,8 +35,8 @@ endif
 LDFLAGS=-lm
 ifeq ($(UNAME),Linux)
 LDFLAGS+=-ldl
-STRIP=-strip
-STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv qwdtools
+echo STRIP=-strip
+echo STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv qwdtools
 else
 ifeq ($(UNAME),SunOS)
 LDFLAGS+= -lsocket -lnsl
@@ -151,4 +152,4 @@ qwdtools : $(QWDTOOLS_OBJS) $(QWDTOOLS_ASM_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
 
 clean : 
-	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o
+	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o mvdsv qwdtools

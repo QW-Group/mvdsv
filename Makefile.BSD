@@ -140,4 +140,4 @@ qwdtools:	${QWDTOOLS_OBJS} ${QWDTOOLS_ASM_OBJS}
 		${CC} ${DO_CFLAGS} ${LDFLAGS} -o qwdtools ${QWDTOOLS_OBJS} ${QWDTOOLS_ASM_OBJS}
 
 clean:
-		-rm -f ${SV_DIR}/*.core ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${QWDTOOLS_DIR}/*.o
+		-rm -f ${SV_DIR}/*.core ${SV_DIR}/*.o ${SV_DIR}/pcre/*.o ${QWDTOOLS_DIR}/*.o mvdsv qwdtools
