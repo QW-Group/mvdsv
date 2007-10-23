@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h" 
-
+ 
 
 /*
 All of Quake's data access is through a hierchal file system, but the contents
