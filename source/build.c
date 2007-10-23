@@ -39,7 +39,7 @@ int build_number ()
 	if (b)
 		return b;
 
-	{
+	{ 
 		char rev_num[] = "$Revision$";
 
 		if (!strncasecmp(rev_num, "$Revision:", sizeof("$Revision:") - 1))
