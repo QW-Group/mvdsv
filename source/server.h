@@ -373,6 +373,10 @@ typedef struct
 	double			time;
 	double			pingtime;
 
+	// SOmething like time of last mvd message, so we can guess delta milliseconds for next message.
+	// you better not relay on this variable...
+	double			prevtime;
+
 	client_t		recorder;
 
 	qbool			fixangle[MAX_CLIENTS];

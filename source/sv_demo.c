@@ -421,8 +421,6 @@ SV_WriteMVDMessage
 */
 static qbool SV_WriteMVDMessage (sizebuf_t *msg, float time1)
 {
-	static double prevtime;  // FIXME: since it static, and noone reset it, on new map prevtime > time1, this is wrong
-
 	int		len, msec;
 	byte	c;
 
@@ -432,13 +430,13 @@ static qbool SV_WriteMVDMessage (sizebuf_t *msg, float time1)
 	if (msg && msg->overflowed)
 		return false; // ERROR
 
-	msec = (time1 - prevtime) * 1000;
-	prevtime += 0.001 * msec;
+	msec = (time1 - demo.prevtime) * 1000;
+	demo.prevtime += 0.001 * msec;
 
 	if (msec > 255)
 		msec = 255;
 	if (msec < 2)
-		msec = 0;
+		msec = 0; // uh, why 0 but not 2? 
 
 	c = msec;
 	DemoWrite(&c, sizeof(c));
