@@ -384,7 +384,6 @@ void SV_MVD_RunPendingConnections (void)
 						QTVAM_PLAIN,
 						QTVAM_CCITT,
 						QTVAM_MD4,
-						QTVAM_MD5,
 					} authmethod_t;
 					authmethod_t authmethod = QTVAM_NONE;
 					start = p->inbuffer;
@@ -423,7 +422,6 @@ void SV_MVD_RunPendingConnections (void)
 //AUTH: specifies an auth method, the exact specs varies based on the method
 //		PLAIN: the password is sent as a PASSWORD line
 //		MD4: the server responds with an "AUTH: MD4\n" line as well as a "CHALLENGE: somerandomchallengestring\n" line, the client sends a new 'initial' request with CHALLENGE: MD4\nRESPONSE: hexbasedmd4checksumhere\n"
-//		MD5: same as md4
 //		CCITT: same as md4, but using the CRC stuff common to all quake engines.
 //		if the supported/allowed auth methods don't match, the connection is silently dropped.
 //SOURCE: which stream to play from, DEFAULT is special. Without qualifiers, it's assumed to be a tcp address.
@@ -459,8 +457,6 @@ void SV_MVD_RunPendingConnections (void)
 									thisauth = QTVAM_CCITT;
 								else if (!strcmp(com_token, "MD4"))
 									thisauth = QTVAM_MD4;
-//								else if (!strcmp(com_token, "MD5"))
-//									thisauth = QTVAM_MD5;
 								else
 								{
 									thisauth = QTVAM_NONE;
@@ -506,15 +502,18 @@ void SV_MVD_RunPendingConnections (void)
 							e = ("QTVSV 1\n"
 								 "PERROR: You need to provide a common auth method.\n\n");
 							break;
+
 						case QTVAM_PLAIN:
 							p->hasauthed = !strcmp(qtv_password.string, password);
 							break;
+
 						case QTVAM_CCITT:
 							CRC_Init(&ushort_result);
 							CRC_AddBlock(&ushort_result, (byte *) p->challenge, strlen(p->challenge));
 							CRC_AddBlock(&ushort_result, (byte *) qtv_password.string, strlen(qtv_password.string));
 							p->hasauthed = (ushort_result == Q_atoi(password));
 							break;
+
 						case QTVAM_MD4:
 							{
 								char hash[512];
@@ -526,7 +525,7 @@ void SV_MVD_RunPendingConnections (void)
 								p->hasauthed = !strcmp(password, hash);
 							}
 							break;
-						case QTVAM_MD5:
+
 						default:
 							e = ("QTVSV 1\n"
 								 "PERROR: FTEQWSV bug detected.\n\n");
@@ -553,31 +552,26 @@ void SV_MVD_RunPendingConnections (void)
 								e = ("QTVSV 1\n"
 									 "PERROR: You need to provide a common auth method.\n\n");
 							break;
+
 						case QTVAM_PLAIN:
 							p->hasauthed = !strcmp(qtv_password.string, password);
 							break;
 
-							if (0)
-							{
 						case QTVAM_CCITT:
-									e =	("QTVSV 1\n"
-										"AUTH: CCITT\n"
-										"CHALLENGE: ");
-							}
-							else if (0)
-							{
+							e =	("QTVSV 1\n"
+								"AUTH: CCITT\n"
+								"CHALLENGE: ");
+
+							send(p->socket, e, strlen(e), 0);
+							send(p->socket, p->challenge, strlen(p->challenge), 0);
+							e = "\n\n";
+							send(p->socket, e, strlen(e), 0);
+							continue;
+
 						case QTVAM_MD4:
-									e = ("QTVSV 1\n"
-										"AUTH: MD4\n"
-										"CHALLENGE: ");
-							}
-							else
-							{
-						case QTVAM_MD5:
-									e = ("QTVSV 1\n"
-										"AUTH: MD5\n"
-										"CHALLENGE: ");
-							}
+							e = ("QTVSV 1\n"
+								"AUTH: MD4\n"
+								"CHALLENGE: ");
 
 							send(p->socket, e, strlen(e), 0);
 							send(p->socket, p->challenge, strlen(p->challenge), 0);
