@@ -1454,8 +1454,12 @@ static void SVC_RemoteCommand (char *remote_command)
 			continue;
 		if (cl->netchan.remote_address.port != net_from.port)
 			continue;
+
 		strlcpy(plain, cl->name, sizeof(plain));
 		Q_normalizetext((unsigned char*)plain);
+
+		// we found what we need
+		break;
 	}
 
 	if (do_cmd)
@@ -1487,7 +1491,6 @@ static void SVC_RemoteCommand (char *remote_command)
 			strlcat(str, " ", sizeof(str));
 		}
 
-		Con_Printf("Rcon from %s: %s\n", cl->name, str);
 		Cmd_ExecuteString(str);
 	}
 	else
