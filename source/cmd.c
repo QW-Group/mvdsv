@@ -203,10 +203,19 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		// don't execute lines without ending \n; this fixes problems with
 		// partially stuffed aliases not being executed properly
 
-		memcpy(line, text, i);
-		line[i] = 0;
-		if (i > 0 && line[i - 1] == '\r')
-			line[i - 1] = 0;	// remove DOS ending CR
+		if (i < sizeof(line))
+		{
+			memcpy(line, text, i);
+			line[i] = 0;
+
+			if (i > 0 && line[i - 1] == '\r')
+				line[i - 1] = 0;	// remove DOS ending CR
+		}
+		else
+		{
+			line[0] = 0;
+			Sys_Printf("Cbuf_ExecuteEx: too long\n");
+		}
 
 		// delete the text from the command buffer and move remaining commands down
 		// this is necessary because commands (exec, alias) can insert data at the
