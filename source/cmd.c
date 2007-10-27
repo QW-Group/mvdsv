@@ -623,7 +623,7 @@ Parses the given string into command line tokens.
 */
 void Cmd_TokenizeString (char *text)
 {
-	size_t idx;
+	size_t idx, token_len;
 	static char argv_buf[MAX_MSGLEN + MAX_ARGS];
 
 	idx = 0;
@@ -654,13 +654,20 @@ void Cmd_TokenizeString (char *text)
 		text = COM_Parse (text);
 		if (!text)
 			return;
-		if (cmd_argc < MAX_ARGS && sizeof(argv_buf) - 1 > idx)
-		{
-			cmd_argv[cmd_argc] = argv_buf + idx;
-			strlcpy (cmd_argv[cmd_argc], com_token, sizeof(argv_buf) - idx);
-			idx += strlen(com_token) + 1;
-			cmd_argc++;
-		}
+
+		if (cmd_argc >= MAX_ARGS)
+			return;			
+
+		token_len = strlen(com_token);
+
+		if (idx + token_len + 1 > sizeof(argv_buf))
+			return;
+
+		cmd_argv[cmd_argc] = argv_buf + idx;
+		strlcpy (cmd_argv[cmd_argc], com_token, sizeof(argv_buf) - idx);
+		cmd_argc++;
+
+		idx += token_len + 1;
 	}
 }
 
