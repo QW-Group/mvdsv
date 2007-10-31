@@ -38,7 +38,7 @@ The game starts with a Cbuf_AddText ("exec quake.rc\n"); Cbuf_Execute ();
 #ifndef __CMD_H__
 #define __CMD_H__
 
-#define MAXCMDBUF 16384
+#define MAXCMDBUF 65536
 
 typedef struct cbuf_s {
 	char	text_buf[MAXCMDBUF];
