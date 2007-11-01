@@ -416,19 +416,20 @@ qbool MVDWrite_Begin (byte type, int to, int size)
 
 /*
 ====================
-SV_WriteMVDMessage
+MVD_FrameDeltaTime
+
+Get frame time mark (delta between two demo frames).
+
+Also advance demo.prevtime.
+
 ====================
 */
-static qbool SV_WriteMVDMessage (sizebuf_t *msg, float time1)
+static byte MVD_FrameDeltaTime (double time1)
 {
-	int		len, msec;
-	byte	c;
+	int	msec;
 
 	if (!sv.mvdrecording)
-		return false;
-
-	if (msg && msg->overflowed)
-		return false; // ERROR
+		return 0;
 
 	msec = (time1 - demo.prevtime) * 1000;
 	demo.prevtime += 0.001 * msec;
@@ -437,6 +438,25 @@ static qbool SV_WriteMVDMessage (sizebuf_t *msg, float time1)
 		msec = 255;
 	if (msec < 2)
 		msec = 0; // uh, why 0 but not 2? 
+
+	return (byte)msec;
+}
+
+/*
+====================
+MVD_WriteMessage
+====================
+*/
+static qbool MVD_WriteMessage (sizebuf_t *msg, byte msec)
+{
+	int		len;
+	byte	c;
+
+	if (!sv.mvdrecording)
+		return false;
+
+	if (msg && msg->overflowed)
+		return false; // ERROR
 
 	c = msec;
 	DemoWrite(&c, sizeof(c));
@@ -481,6 +501,7 @@ static qbool SV_MVDWritePacketsEx (int num)
 	vec3_t			origin, angles;
 	sizebuf_t		msg;
 	byte			msg_buf[MAX_MVD_SIZE]; // data without mvd header
+	byte			msec;
 	demoinfo_t		*demoinfo;
 
 	if (!sv.mvdrecording)
@@ -614,12 +635,8 @@ static qbool SV_MVDWritePacketsEx (int num)
 			demoinfo->model = cl->info.model;
 		}
 
-		// just write time mark
-		if (!SV_WriteMVDMessage(NULL, (float)time1))
-		{
-			Con_DPrintf("SV_MVDWritePackets: error: in time mark\n");
-			return false; // ERROR
-		}
+		// get frame time mark (delta between two frames)
+		msec = MVD_FrameDeltaTime(time1);
 
 		if (demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.overflowed)
 		{
@@ -629,12 +646,21 @@ static qbool SV_MVDWritePacketsEx (int num)
 
 		// write cumulative data from different sources
 		if (demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize)
+		{
+			// well, first byte must be milliseconds, set it then
+			demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.data[0] = msec;
 			DemoWrite(demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.data, demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize);
 
-		// write data about players
-		if (msg.cursize)
+			msec = 0; // That matter, we wrote time mark, so next data(if any) in this frame follow with zero milliseconds offset, since it same frame.
+					  // NOTE: demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize possibile to be zero, in this case we wrote msec below...
+		}
+
+		// Write data about players, if we have data.
+		// also if we does't have data and did't wrote msec above, we wrote it here, even packet will be empty, this will break fuh,
+		// but I think I correct, also it doubtfull what we did't wrote msec above.
+		if (msg.cursize || msec)
 		{
-			if (!SV_WriteMVDMessage(&msg, (float)time1))
+			if (!MVD_WriteMessage(&msg, msec))
 			{
 				Con_DPrintf("SV_MVDWritePackets: error: in msg\n");
 				return false; // ERROR
