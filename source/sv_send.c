@@ -632,9 +632,24 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	// Z_EXT_TIME protocol extension
 	// every now and then, send an update so that extrapolation
 	// on client side doesn't stray too far off
+#ifdef FTE_PEXT_ACCURATETIMINGS
+	if (client->fteprotocolextensions & FTE_PEXT_ACCURATETIMINGS)
+	{	//the fte pext causes the server to send out accurate timings, allowing for perfect interpolation.
+		if (sv.physicstime - client->lastservertimeupdate > 0)
+		{
+			MSG_WriteByte(msg, svc_updatestatlong);
+			MSG_WriteByte(msg, STAT_TIME);
+			MSG_WriteLong(msg, (int)(sv.physicstime * 1000));
+
+			client->lastservertimeupdate = sv.physicstime;
+		}
+	}
+	else
+#endif
 	if ((SERVER_EXTENSIONS & Z_EXT_SERVERTIME) && (client->extensions & Z_EXT_SERVERTIME))
-	{
-		if (realtime - client->lastservertimeupdate > 5) {
+	{	//the zquake ext causes the server to send out peridoic timings, allowing for moderatly accurate game time.
+		if (realtime - client->lastservertimeupdate > 5)
+		{
 			MSG_WriteByte(msg, svc_updatestatlong);
 			MSG_WriteByte(msg, STAT_TIME);
 			MSG_WriteLong(msg, (int) (sv.time * 1000));

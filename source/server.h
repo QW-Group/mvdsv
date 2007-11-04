@@ -57,7 +57,9 @@ typedef struct
 	double		time;
 	double		old_time;			// bumped by SV_Physics
 
-	int		lastcheck;			// used by PF_checkclient
+	double		physicstime;		// last time physics was run
+
+	int			lastcheck;			// used by PF_checkclient
 	double		lastchecktime;			// for monster ai
 
 	qbool		paused;				// are we paused?

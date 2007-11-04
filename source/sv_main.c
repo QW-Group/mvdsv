@@ -3183,6 +3183,10 @@ void SV_InitLocal (void)
 	for (i=0 ; i<MAX_MODELS ; i++)
 		snprintf (localmodels[i], MODEL_NAME_LEN, "*%i", i);
 
+#ifdef FTE_PEXT_ACCURATETIMINGS
+	svs.fteprotocolextensions |= FTE_PEXT_ACCURATETIMINGS;
+#endif
+
 #ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 	svs.fteprotocolextensions |= FTE_PEXT_CHUNKEDDOWNLOADS;
 #endif

@@ -978,6 +978,8 @@ void SV_Physics (void)
 	else
 		sv_frametime = 0.1; // initialization frame
 
+	sv.physicstime = sv.time;
+
 	pr_global_struct->frametime = sv_frametime;
 
 	SV_ProgStartFrame ();
