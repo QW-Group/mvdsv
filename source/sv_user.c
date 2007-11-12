@@ -1378,7 +1378,7 @@ static void Cmd_Download_f(void)
 		if (download_map_url.string[0])
 		{
 			name += 5;
-			COM_StripExtension(name, name);
+			//COM_StripExtension(name, name); 
 			SV_ClientPrintf (sv_client, PRINT_HIGH, "Download this map faster:\n");
 			SV_ClientPrintf (sv_client, PRINT_HIGH, "%s%s\n\n",
 			                 download_map_url.string, name);
