@@ -533,7 +533,7 @@ typedef struct
 
 // maps in localinfo supported only by ktpro & ktx mods {
 #define LOCALINFO_MAPS_LIST_START		1000
-#define LOCALINFO_MAPS_LIST_END			1999
+#define LOCALINFO_MAPS_LIST_END			4999
 
 #define LOCALINFO_MAPS_KTPRO_VERSION	1.63
 #define LOCALINFO_MAPS_KTPRO_VERSION_S	"1.63"
