@@ -2592,6 +2592,8 @@ void PF2_QVMstrftime(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*re
 	struct tm *newtime;
 	time_t long_time;
 
+	retval->_int = 0;
+
 	if (sizebuff <= 0 || !valbuff) {
 		Con_DPrintf("PF2_QVMstrftime: wrong buffer\n");
 		return;
