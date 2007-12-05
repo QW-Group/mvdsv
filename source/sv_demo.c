@@ -1487,7 +1487,7 @@ static void SV_MVDEasyRecord_f (void)
 
 //============================================================
 
-#define MIN_DEMO_MEMORY 0x100000
+#define MIN_DEMO_MEMORY 0x1000000
 
 static void MVD_Init (void)
 {
