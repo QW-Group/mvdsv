@@ -21,6 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
+
+// minimal chache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
+#define DEMO_CACHE_MIN_SIZE 0x1000000
+
+// flush demo cache if we have less than this free bytes
+#define DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS	65536
+
+
 qbool	sv_demoDir_OnChange(cvar_t *cvar, const char *value);
 
 cvar_t	sv_demoUseCache		= {"sv_demoUseCache",	"0"};
@@ -124,8 +132,9 @@ void DestClose (mvddest_t *d, qbool destroyfiles)
 	Q_free(d);
 }
 
-#define demo_size_padding 0x1000
-
+//
+// compleate - just force flush for chached dests (dest->desttype == DEST_BUFFEREDFILE)
+//
 void DestFlush (qbool compleate)
 {
 	int len;
@@ -157,11 +166,14 @@ void DestFlush (qbool compleate)
 			break;
 
 		case DEST_BUFFEREDFILE:
-			if (d->cacheused + demo_size_padding > d->maxcachesize || compleate)
+			if (d->cacheused + DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS > d->maxcachesize || compleate)
 			{
 				len = fwrite(d->cache, 1, d->cacheused, d->file);
-				if (len < d->cacheused)
+				if (len != d->cacheused)
+				{
+					Sys_Printf("DestFlush: fwrite() error\n");
 					d->error = true;
+				}
 				fflush(d->file);
 
 				d->cacheused = 0;
@@ -173,7 +185,7 @@ void DestFlush (qbool compleate)
 			{
 				// problem what send() have internal buffer, so send() success some time even peer side does't read,
 				// this may take some time before internal buffer overflow and timeout trigger, depends of buffer size.
-				Con_Printf("Stream timeout\n");
+				Sys_Printf("DestFlush: stream timeout\n");
 				d->error = true;
 			}
 
@@ -197,19 +209,27 @@ void DestFlush (qbool compleate)
 				else
 				{ //error of some kind. would block or something
 					if (qerrno != EWOULDBLOCK && qerrno != EAGAIN)
+					{
+						Sys_Printf("DestFlush: error on stream\n");
 						d->error = true;
+					}
 				}
 			}
 			break;
 
 		case DEST_NONE:
 		default:
-			Sys_Error("DestFlush encoundered bad dest.");
+			Sys_Error("DestFlush: encountered bad dest.");
 		}
 
 		if (d->desttype != DEST_STREAM) // no max size for stream
+		{
 			if ((unsigned int)sv_demoMaxSize.value && d->totalsize > ((unsigned int)sv_demoMaxSize.value * 1024))
-				d->error = 2;	//abort, but don't kill it.
+			{
+				Sys_Printf("DestFlush: sv_demoMaxSize = %db trigger for dest\n", (int)sv_demoMaxSize.value);
+				d->error = true;
+			}
+		}
 
 		while (d->nextdest && d->nextdest->error)
 		{
@@ -262,41 +282,54 @@ static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
 
 int DemoWriteDest (void *data, int len, mvddest_t *d)
 {
+	int ret;
+
 	if (d->error)
 		return 0;
+
 	d->totalsize += len;
+
 	switch(d->desttype)
 	{
 		case DEST_FILE:
-			fwrite(data, len, 1, d->file);
-			break;
-		case DEST_BUFFEREDFILE:	//these write to a cache, which is flushed later
-		case DEST_STREAM:
-			if (d->cacheused+len > d->maxcachesize)
+			ret = fwrite(data, 1, len, d->file);
+			if (ret != len)
 			{
+				Sys_Printf("DemoWriteDest: fwrite() error\n");
 				d->error = true;
 				return 0;
 			}
-			memcpy(d->cache+d->cacheused, data, len);
+
+			break;
+		case DEST_BUFFEREDFILE:	//these write to a cache, which is flushed later
+		case DEST_STREAM:
+			if (d->cacheused + len > d->maxcachesize)
+			{
+				Sys_Printf("DemoWriteDest: cache overflow %d > %d\n", d->cacheused + len, d->maxcachesize);
+				d->error = true;
+				return 0;
+			}
+			memcpy(d->cache + d->cacheused, data, len);
 			d->cacheused += len;
+
 			break;
 		case DEST_NONE:
 		default:
-			Sys_Error("DemoWriteDest encoundered bad dest.");
+			Sys_Error("DemoWriteDest: encountered bad dest.");
 	}
 	return len;
 }
 
-int DemoWrite (void *data, int len) //broadcast to all proxies/mvds
+static void DemoWrite (void *data, int len) //broadcast to all proxies/mvds
 {
 	mvddest_t *d;
 	for (d = demo.dest; d; d = d->nextdest)
 	{
 		if (singledest && singledest != d)
 			continue;
+
 		DemoWriteDest(data, len, d);
 	}
-	return len;
 }
 
 /*
@@ -475,8 +508,6 @@ static qbool MVD_WriteMessage (sizebuf_t *msg, byte msec)
 		len = LittleLong (0);
 		DemoWrite (&len, 4);
 	}
-
-	DestFlush(false);
 
 	return (sv.mvdrecording ? true : false);
 }
@@ -743,7 +774,7 @@ static mvddest_t *SV_InitRecordFile (char *name)
 	{
 		dst->desttype = DEST_BUFFEREDFILE;
 		dst->file = file;
-		dst->maxcachesize = (int) sv_demoCacheSize.value; // 0x81000
+		dst->maxcachesize = 1024 * (int) sv_demoCacheSize.value;
 		dst->cache = (char *) Q_malloc (dst->maxcachesize);
 	}
 
@@ -942,8 +973,6 @@ static void SV_WriteRecordMVDMessage (sizebuf_t *msg)
 	DemoWrite (&len, 4);
 
 	DemoWrite (msg->data, msg->cursize);
-
-	DestFlush(false);
 }
 
 /*
@@ -966,8 +995,6 @@ static void SV_WriteSetMVDMessage (void)
 	DemoWrite (&len, 4);
 	len = LittleLong(0);
 	DemoWrite (&len, 4);
-
-	DestFlush(false);
 }
 */
 
@@ -1001,8 +1028,6 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
 		if (!dest) // in non mapchange dest must be not NULL
 			return false;
 	}
-
-	DestFlush(true); // this may close some dests...
 
 	// If we initialize MVD recording, then reset some data structs
 	if (!sv.mvdrecording)
@@ -1487,11 +1512,9 @@ static void SV_MVDEasyRecord_f (void)
 
 //============================================================
 
-#define MIN_DEMO_MEMORY 0x1000000
-
 static void MVD_Init (void)
 {
-	int p, size = MIN_DEMO_MEMORY;
+	int p, size = DEMO_CACHE_MIN_SIZE;
 
 	memset(&demo, 0, sizeof(demo)); // clear whole demo struct at least once
 	
@@ -1522,10 +1545,10 @@ static void MVD_Init (void)
 			Sys_Error ("MVD_Init: you must specify a size in KB after -democache");
 	}
 
-	if (size < MIN_DEMO_MEMORY)
+	if (size < DEMO_CACHE_MIN_SIZE)
 	{
-		Con_Printf("Minimum memory size for demo cache is %dk\n", MIN_DEMO_MEMORY / 1024);
-		size = MIN_DEMO_MEMORY;
+		Con_Printf("Minimum memory size for demo cache is %dk\n", DEMO_CACHE_MIN_SIZE / 1024);
+		size = DEMO_CACHE_MIN_SIZE;
 	}
 
 	Cvar_SetROM(&sv_demoCacheSize, va("%d", size/1024));

@@ -1111,18 +1111,10 @@ void SV_SendDemoMessage(void)
 
 	SV_MVD_RunPendingConnections();
 
-	DestFlush(false); // so qtv disconnect detected better
-
 	if (!sv.mvdrecording)
-		return;
-
-	if ((int)sv_demoPings.value)
 	{
-		if (sv.time - demo.pingtime > sv_demoPings.value)
-		{
-			SV_MVDPings();
-			demo.pingtime = sv.time;
-		}
+		DestFlush(false); // well, this may help close some fucked up dests
+		return;
 	}
 
 	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++)
@@ -1143,6 +1135,15 @@ void SV_SendDemoMessage(void)
 		return;
 
 	demo.forceFrame = 0;
+
+	if ((int)sv_demoPings.value)
+	{
+		if (sv.time - demo.pingtime > sv_demoPings.value)
+		{
+			SV_MVDPings();
+			demo.pingtime = sv.time;
+		}
+	}
 
 	MVD_WriteStats();
 
@@ -1200,6 +1201,9 @@ void SV_SendDemoMessage(void)
 	{
 		SV_MVDWritePackets(1);
 	}
+
+	// flush once per demo frame
+	DestFlush(false);
 
 	if (!sv.mvdrecording)
 		return;
