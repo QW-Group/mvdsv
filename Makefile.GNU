@@ -12,7 +12,11 @@ MAINDIR=.
 SV_DIR=$(MAINDIR)/source
 QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
-BASE_CFLAGS=-Wall -pipe -funsigned-char -DUSE_PR2 -D$(BYTE_ORDER)Q__
+# to compile mvdsv as 32bit on 64bit target platform use next:
+# for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
+FORCE32BITFLAGS=
+
+BASE_CFLAGS=-Wall -pipe -funsigned-char -DUSE_PR2 -D$(BYTE_ORDER)Q__ $(FORCE32BITFLAGS)
 WITH_OPTIMIZED_CFLAGS=YES
 
 USE_ASM=-Did386

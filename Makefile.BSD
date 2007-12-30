@@ -16,7 +16,11 @@ MAINDIR			=	.
 SV_DIR			=	${MAINDIR}/source
 QWDTOOLS_DIR	=	${MAINDIR}/source/qwdtools
 
-DO_CFLAGS		=	${CFLAGS} -Wall -pipe -funsigned-char -DUSE_PR2 -D${BYTE_ORDER}Q__
+# to compile mvdsv as 32bit on 64bit target platform use next:
+# for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
+FORCE32BITFLAGS =
+
+DO_CFLAGS		=	${CFLAGS} -Wall -pipe -funsigned-char -DUSE_PR2 -D${BYTE_ORDER}Q__ ${FORCE32BITFLAGS}
 
 .if !defined(NOKQUEUE) && (${UNAME} == "FreeBSD" || ${UNAME} == "DragonFly")
 DO_CFLAGS		+=	-DKQUEUE
