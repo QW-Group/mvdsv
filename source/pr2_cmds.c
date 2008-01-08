@@ -707,11 +707,16 @@ Sends text over to the client's execution buffer
 stuffcmd (clientent, value)
 =================
 */
+
+// trap_stuffcmd() flags
+#define STUFFCMD_IGNOREINDEMO   (   1<<0) // do not put in mvd demo
+
 void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
 	char *str=NULL, *buf=NULL;
 	client_t *cl, *spec;
 	int entnum = stack[0]._int;
+	int flags = stack[2]._int; // using this atm just as hint to not put this in mvd demo
 	int j;
 
 
@@ -725,16 +730,22 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	// FIXME: evil hack for autotrack from mod
 	if (!strncmp(str, "//at ", sizeof("//at ")-1))
 	{
-		if (sv.mvdrecording && strchr( str, '\n' ))
+		if (strchr( str, '\n' )) // we have \n trail
 		{
-			if (MVDWrite_Begin(dem_all, 0, 2 + strlen(str)))
+			if (!(flags & STUFFCMD_IGNOREINDEMO)) // STUFFCMD_IGNOREINDEMO flag is NOT set
 			{
-				MVD_MSG_WriteByte(svc_stufftext);
-				MVD_MSG_WriteString(str);
+				if (sv.mvdrecording)
+				{
+					if (MVDWrite_Begin(dem_all, 0, 2 + strlen(str)))
+					{
+						MVD_MSG_WriteByte(svc_stufftext);
+						MVD_MSG_WriteString(str);
+					}
+				}
 			}
 		}
 
-		return; // do not send to client
+		return; // do not send to client in any case
 	}
 
 	cl = &svs.clients[entnum - 1];
@@ -754,12 +765,16 @@ void PF2_stuffcmd(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 	{
 		ClientReliableWrite_Begin(cl, svc_stufftext, 2 + strlen(buf));
 		ClientReliableWrite_String(cl, buf);
-		if (sv.mvdrecording)
+
+		if (!(flags & STUFFCMD_IGNOREINDEMO)) // STUFFCMD_IGNOREINDEMO flag is NOT set
 		{
-			if (MVDWrite_Begin(dem_single, cl - svs.clients, 2 + strlen(buf)))
+			if (sv.mvdrecording)
 			{
-				MVD_MSG_WriteByte(svc_stufftext);
-				MVD_MSG_WriteString(buf);
+				if (MVDWrite_Begin(dem_single, cl - svs.clients, 2 + strlen(buf)))
+				{
+					MVD_MSG_WriteByte(svc_stufftext);
+					MVD_MSG_WriteString(buf);
+				}
 			}
 		}
 
