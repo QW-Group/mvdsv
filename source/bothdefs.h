@@ -233,6 +233,8 @@ char	*va (const char *format, ...);
 void	*Q_malloc (size_t size);
 #define	Q_free(ptr)	free(ptr)
 
+char	*Q_strdup (const char *src);
+
 void	COM_StripExtension (const char *in, char *out);
 char	*COM_FileExtension (const char *in);
 void	COM_DefaultExtension (char *path, const char *extension);

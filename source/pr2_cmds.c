@@ -2177,104 +2177,134 @@ void PR2_FS_Restart()
 /*
 int 	trap_FS_GetFileList(  const char *path, const char *extension, char *listbuf, int bufsize );
 */
+
+static int GetFileList_Compare (const void *p1, const void *p2)
+{
+	return strcmp (*((char**)p1), *((char**)p2));
+}
+
+#define FILELIST_GAMEDIR_ONLY	(1<<0) // if set then search in gamedir only
+#define FILELIST_WITH_PATH		(1<<1) // include path to file
+#define FILELIST_WITH_EXT		(1<<2) // include extension of file
+
 void PF2_FS_GetFileList(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	char    fname[MAX_OSPATH];
-	char*path,*ext,*listbuff,*dirptr;
-	char		*gamedir;
-#ifdef _WIN32
-	typedef void *HANDLE;
-	HANDLE	h;
-	WIN32_FIND_DATA fd;
-#else
-	DIR *d;
-	struct dirent	*dstruct;
-	struct stat		fileinfo;
-#endif
+	extern	searchpath_t *com_searchpaths; // evil, because this must be used in fs.c only...
+
+	char 	*list[MAX_DIRFILES];
+	const 	int	list_cnt = sizeof(list) / sizeof(list[0]);
+
+	dir_t	dir;
+
+	searchpath_t *search;
+	char	netpath[MAX_OSPATH], *fullname;
+
+	char	*path, *ext, *listbuff, *dirptr;
+
 	int pathoffset 		= stack[0]._int;
 	int extoffset  		= stack[1]._int;
-	int listbuffoffset  	= stack[2]._int;
+	int listbuffoffset 	= stack[2]._int;
 	int buffsize		= stack[3]._int;
+	int flags			= stack[4]._int;
+
 	int numfiles = 0;
+	int i, j;
 
 	retval->_int = 0;
 
-	if( ( listbuffoffset ) &(~mask))
+	if( ( listbuffoffset ) & (~mask))
 		return;
-
-	if( ( listbuffoffset + buffsize ) &(~mask))
+	if( ( listbuffoffset + buffsize ) & (~mask))
 		return;
 	if( ( extoffset ) & (~mask))
 		return;
 	if( ( pathoffset ) & (~mask))
 		return;
 
+	memset(list, 0, sizeof(list));
+
 	path = (char*)VM_POINTER(base,mask,pathoffset);
 	ext  = (char*)VM_POINTER(base,mask,extoffset);;
 
 	listbuff = (char*)VM_POINTER(base,mask,listbuffoffset);
-	dirptr = listbuff;
-	*dirptr = 0;
-/*
-	gamedir = Info_ValueForKey (svs.info, "*gamedir");
-	if (!gamedir[0])
-		gamedir = "qw";
-*/
-	gamedir = fs_gamedir;
+	dirptr   = listbuff;
+	*dirptr  = 0;
 
-	snprintf( fname, sizeof( fname ), "%s/%s/*%s" , gamedir, path, ext );
+	if (strstr( path, ".." ) || strstr( path, "::" ))
+		return; // do not allow relative paths
 
-#ifdef _WIN32
-	h = FindFirstFile ( fname, &fd);
-	if (h == INVALID_HANDLE_VALUE)
+	// search through the path, one element at a time
+	for (i = 0, search = com_searchpaths ; i < list_cnt && search ; search = search->next)
 	{
-#else
-	if (!(d = opendir(fname)))
-	{
-#endif
-		return;
-	}
-#ifndef _WIN32
-	dstruct = readdir (d);
-#endif
-	do
-	{
-		int size;
-		int namelen;
-		char* filename;
-		qbool	is_dir;
-#ifdef _WIN32
-		filename = fd.cFileName;
-		is_dir = (qbool) (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-		size = fd.nFileSizeLow;
-#else
-		filename = dstruct->d_name;
-		snprintf( fname, sizeof( fname ), "%s/%s/%s" , gamedir, path, filename );
-		stat (fname, &fileinfo);
-		is_dir = S_ISDIR( fileinfo.st_mode );
-		size = fileinfo.st_size;
-#endif
-		if (is_dir)
+		if (search->pack)
+			continue; // is the element a pak file?
+
+		// if FILELIST_GAMEDIR_ONLY set then search in gamedir only
+		if ((flags & FILELIST_GAMEDIR_ONLY) && strcmp(search->filename, fs_gamedir))
 			continue;
 
-		namelen = strlen(filename)+1;
+		snprintf (netpath, sizeof (netpath), "%s/%s", search->filename, path);
+
+		// reg exp search...
+		dir = Sys_listdir(netpath, ext, SORT_NO);
+
+		for (j = 0; i < list_cnt && dir.files[j].name[0]; j++, i++)
+		{
+			if (flags & FILELIST_WITH_PATH)
+			{
+				// with path
+				snprintf (netpath, sizeof (netpath), "%s/%s", search->filename, dir.files[j].name);
+				fullname = netpath;
+
+				// skip "./" prefix
+				if (!strncmp(fullname, "./", sizeof("./") - 1))
+					fullname += 2;
+			}
+			else
+			{
+				// just name
+				fullname = dir.files[j].name;
+			}
+
+			// skip file extension
+			if (!(flags & FILELIST_WITH_EXT))
+				COM_StripExtension (fullname, fullname);
+
+			list[i] = Q_strdup(fullname); // a bit below we will free it
+		}
+	}
+
+	// sort it, this will help exclude duplicates a bit below
+	qsort (list, i, sizeof(list[0]), GetFileList_Compare);
+
+	// copy
+	for (i = 0; i < list_cnt && list[i]; i++)
+	{
+		size_t namelen = strlen(list[i]) + 1;
+
 		if(dirptr + namelen > listbuff + buffsize)
 			break;
-		strlcpy(dirptr,filename,namelen);
-		dirptr+= namelen;
+
+		if (!*list[i])
+			continue; // hrm, empty
+
+		// simple way to exclude duplicates, since we sorted it above!
+		if (i && !strcmp(list[i-1], list[i]))
+			continue;
+
+//		Con_Printf("%4d %s\n", i, list[i]);
+
+		strlcpy(dirptr, list[i], namelen);
+		dirptr += namelen;
+
 		numfiles++;
-#ifdef _WIN32
-
 	}
-	while ( FindNextFile(h, &fd) );
-	FindClose (h);
-#else
 
-	}
-	while ((dstruct = readdir (d)));
-	closedir (d);
-#endif
 	retval->_int = numfiles;
+
+	// free allocated mem
+	for (i = 0; i < list_cnt; i++)
+		Q_free(list[i]);
 }
 
 /*

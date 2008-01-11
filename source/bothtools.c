@@ -551,6 +551,20 @@ void *Q_malloc (size_t size)
 	return p;
 }
 
+/*
+===================
+Q_strdup
+===================
+*/
+char *Q_strdup (const char *src)
+{
+	char *p = strdup(src);
+
+	if (!p)
+		Sys_Error ("Q_strdup: Not enough memory free\n");
+	return p;
+}
+
 
 /*
 ============
