@@ -108,7 +108,7 @@ static void FS_AddGameDirectory (char *dir)
 	if ((p = strrchr (dir, '/')) != NULL)
 		strlcpy (gamedirfile, ++p, MAX_OSPATH);
 	else
-		strlcpy (gamedirfile, p, MAX_OSPATH);
+		strlcpy (gamedirfile, dir, MAX_OSPATH);
 
 	strlcpy (fs_gamedir, dir, MAX_OSPATH);
 
