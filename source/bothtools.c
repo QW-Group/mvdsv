@@ -573,7 +573,13 @@ COM_StripExtension
 */
 void COM_StripExtension (const char *in, char *out)
 {
-	strlcpy(out, in, strrchr(in, '.') - in + 1);
+	char *p = strrchr(in, '.');
+
+	// extension may absent, so better check it	
+	if (p)
+		strlcpy(out, in, strrchr(in, '.') - in + 1);
+	else
+		strlcpy(out, in, strlen(in) + 1);
 }
 
 /*
