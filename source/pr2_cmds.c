@@ -58,7 +58,7 @@ void PR2_RunError(char *error, ...)
 
 	Con_Printf("%s\n", string);
 
-	SV_Error("Program error");
+	SV_Error("Program error: %s", string);
 }
 
 void PR2_CheckEmptyString(char *s)
