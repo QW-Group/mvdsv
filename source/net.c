@@ -493,8 +493,9 @@ void NET_Shutdown (void)
 			closesocket (telnet_iosock); // FIXME: check return value
 		closesocket (net_telnetsocket); // FIXME: check return value
 	}
-
+	// TODO: add here close of QTV sockets
 #ifdef _WIN32
 	WSACleanup ();
 #endif
+	net_socket = -1;
 }

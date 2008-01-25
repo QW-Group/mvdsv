@@ -173,7 +173,7 @@ cvar_t registered = {"registered", "1", CVAR_ROM};
 
 cvar_t sv_ktpro_mode = {"sv_ktpro_mode", "auto"};
 
-qbool sv_error = 0;
+qbool sv_error = false;
 qbool server_cfg_done = false;
 
 client_t *WatcherId = NULL; // QW262

@@ -228,6 +228,7 @@ void Sys_Quit (qbool restart)
 	if (restart)
 	{
 // FIXME: restart are buggy atm: does't close sockets and file handlers...
+// TODO: net.c(486): add close of QTV sockets and turn on restart back
 //		if (execv(argv0, com_argv) == -1)
 		{
 			Sys_Printf("Restart failed: %s\n", strerror(qerrno));
@@ -244,8 +245,16 @@ Sys_Error
 */
 void Sys_Error (const char *error, ...)
 {
+	static qbool inerror = false;
 	va_list argptr;
 	char string[1024];
+
+	sv_error = true;
+
+	if (inerror)
+		Sys_Exit (1);
+
+	inerror = true;
 
 	va_start (argptr,error);
 	vsnprintf (string, sizeof(string), error, argptr);
@@ -257,8 +266,12 @@ void Sys_Error (const char *error, ...)
 	if (logs[ERROR_LOG].sv_logfile)
 	{
 		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", string));
-		fclose (logs[ERROR_LOG].sv_logfile);
+//		fclose (logs[ERROR_LOG].sv_logfile);
 	}
+
+// FIXME: hack - checking SV_Shutdown with net_socket set in -1 NET_Shutdown
+	if (net_socket != -1)
+		SV_Shutdown ();
 
 	if ((int)sys_restart_on_error.value)
 		Sys_Quit (true);
