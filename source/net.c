@@ -80,20 +80,26 @@ qbool NET_CompareAdr (const netadr_t a, const netadr_t b)
 
 char *NET_AdrToString (const netadr_t a)
 {
-	static char s[32]; // 22 should be OK too
+	static char s[MAX_STRINGS][32]; // 22 should be OK too
+	static int idx = 0;
 
-	snprintf (s, sizeof(s), "%i.%i.%i.%i:%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3], ntohs (a.port));
+	idx %= MAX_STRINGS;
 
-	return s;
+	snprintf (s[idx], sizeof(s[0]), "%i.%i.%i.%i:%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3], ntohs (a.port));
+
+	return s[idx++];
 }
 
 char *NET_BaseAdrToString (const netadr_t a)
 {
-	static char s[32]; // 16 should be OK too
+	static char s[MAX_STRINGS][32]; // 16 should be OK too
+	static int idx = 0;
 
-	snprintf (s, sizeof(s), "%i.%i.%i.%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3]);
+	idx %= MAX_STRINGS;
 
-	return s;
+	snprintf (s[idx], sizeof(s[0]), "%i.%i.%i.%i", a.ip.ip[0], a.ip.ip[1], a.ip.ip[2], a.ip.ip[3]);
+
+	return s[idx++];
 }
 
 /*

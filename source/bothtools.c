@@ -29,7 +29,6 @@ does a varargs printf into a temp buffer, so I don't need to have
 varargs versions of all text functions.
 ============
 */
-#define MAX_STRINGS 16
 #define STRING_SIZE 1024
 char *va (const char *format, ...)
 {

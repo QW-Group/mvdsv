@@ -228,6 +228,9 @@ float	Q_atof (const char *str);
 #define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
 
 // does a varargs printf into a temp buffer
+
+#define MAX_STRINGS 16 // well, this used not only for va, anyway, static buffers is evil...
+
 char	*va (const char *format, ...);
 
 void	*Q_malloc (size_t size);
