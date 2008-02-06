@@ -88,8 +88,10 @@ if [ x$1 != x ]; then
 UNAME=$1
 else
 UNAME=`uname`
+BRANCH=`uname -m`
 fi
 echo UNAME="${UNAME}" >> Makefile
+echo BRANCH="${BRANCH}" >> Makefile
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
@@ -98,9 +100,15 @@ FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 	echo "Configuration completed."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
+	if [ ${BRANCH} = x86_64 ]; then
+	echo "${UNAME} ${BRANCH} system - use GNU32 Makefile."
+	cat Makefile.GNU32 >> Makefile
+	echo "Configuration completed."
+	else
 	echo "${UNAME} system - use GNU Makefile."
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
+	fi
 	;;
 *)
 	echo ""
