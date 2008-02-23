@@ -1082,7 +1082,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	sizebuf_t	buf;
 	unsigned char buf_data[MAX_MSGLEN];
 	unsigned int n;
-	char *s, info[MAX_INFO_STRING];
+	char *s, info[MAX_EXT_INFO_STRING];
 
 	client_t *player;
 	char *gamedir;
@@ -1264,7 +1264,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		MSG_WriteByte (&buf, i);
 		MSG_WriteFloat (&buf, realtime - player->connection_started);
 
-		strlcpy (info, player->userinfoshort, MAX_INFO_STRING);
+		strlcpy (info, player->_userinfoshort_, sizeof(info));
 		Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);

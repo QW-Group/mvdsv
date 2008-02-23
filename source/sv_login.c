@@ -639,7 +639,7 @@ void SV_ParseLogin(client_t *cl)
 		//VVD: forcenick ->
 		if ((int)sv_forcenick.value && cl->login)
 		{
-			Info_SetValueForKey (cl->userinfo, "name", cl->login, MAX_INFO_STRING);
+			Info_SetValueForKey (cl->_userinfo_, "name", cl->login, sizeof(cl->_userinfo_));
 			strlcpy (cl->name, cl->login, CLIENT_NAME_LEN);
 			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 			MSG_WriteString (&cl->netchan.message, va("name %s\n", cl->login));

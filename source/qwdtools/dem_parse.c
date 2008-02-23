@@ -169,7 +169,8 @@ Dem_ParseServerData
 */
 void Dem_ParseServerData (void)
 {
-	char	str[MAX_INFO_STRING], str2[MAX_INFO_STRING];
+	char	str[1024];  // gamedir
+	char    str2[1024]; // full level name, may be pretty long
 	int	protover, count;
 
 	count = 0;
@@ -190,7 +191,7 @@ void Dem_ParseServerData (void)
 	count += 4;
 
 	// game directory
-	strlcpy(str,MSG_ReadString (), sizeof(str));
+	strlcpy(str, MSG_ReadString(), sizeof(str));
 	count += strlen(str)+1;
 
 	if (from->format == mvd)
@@ -626,7 +627,7 @@ void Dem_UpdateUserinfo (void)
 	MSG_WriteByte(msgbuf, svc_updateuserinfo);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 	strlcpy(world.players[slot].name, player->name, MAX_SCOREBOARDNAME);
-	strlcpy(world.players[slot].userinfo, player->userinfo, MAX_INFO_STRING);
+	strlcpy(world.players[slot].userinfo, player->userinfo, sizeof(world.players[0].userinfo));
 	world.players[slot].spectator = player->spectator;
 }
 

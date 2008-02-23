@@ -396,8 +396,8 @@ void SV_DropClient (client_t *drop)
 	drop->old_frags = 0;
 	drop->edict->v.frags = 0.0;
 	drop->name[0] = 0;
-	memset (drop->userinfo, 0, sizeof(drop->userinfo));
-	memset (drop->userinfoshort, 0, sizeof(drop->userinfoshort));
+	memset (drop->_userinfo_, 0, sizeof(drop->_userinfo_));
+	memset (drop->_userinfoshort_, 0, sizeof(drop->_userinfoshort_));
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
@@ -454,7 +454,7 @@ Writes all update values to a sizebuf
 */
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
-	char info[MAX_INFO_STRING];
+	char info[MAX_EXT_INFO_STRING];
 	int i;
 
 	i = client - svs.clients;
@@ -477,7 +477,7 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	MSG_WriteByte (buf, i);
 	MSG_WriteFloat (buf, realtime - client->connection_started);
 
-	strlcpy (info, client->userinfoshort, MAX_INFO_STRING);
+	strlcpy (info, client->_userinfoshort_, sizeof(info));
 	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 	MSG_WriteByte (buf, svc_updateuserinfo);
@@ -495,7 +495,7 @@ Writes all update values to a client's reliable stream
 */
 void SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 {
-	ClientReliableCheckBlock(cl, 24 + strlen(client->userinfo));
+	ClientReliableCheckBlock(cl, 24 + strlen(client->_userinfo_));
 	if (cl->num_backbuf)
 	{
 		SV_FullClientUpdate (client, &cl->backbuf);
@@ -569,8 +569,8 @@ static void SVC_Status (void)
 			        ( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
 			          ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
 			{
-				top    = Q_atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
-				bottom = Q_atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
+				top    = Q_atoi(Info_ValueForKey (cl->_userinfo_, "topcolor"));
+				bottom = Q_atoi(Info_ValueForKey (cl->_userinfo_, "bottomcolor"));
 				top    = (top    < 0) ? 0 : ((top    > 13) ? 13 : top);
 				bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
 				ping   = SV_CalcPing (cl);
@@ -591,7 +591,7 @@ static void SVC_Status (void)
 
 				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i", cl->userid, frags,
 				            (int)(realtime - cl->connection_started)/60, ping, name,
-				            Info_ValueForKey (cl->userinfo, "skin"), top, bottom);
+				            Info_ValueForKey (cl->_userinfo_, "skin"), top, bottom);
 
 				if (opt & STATUS_SHOWTEAMS)
 					Con_Printf (" \"%s\"\n", cl->team);
@@ -820,7 +820,7 @@ static void SVC_DirectConnect (void)
 	int spectator;
 	client_t *cl, *newcl;
 	char userinfo[1024];
-	char *s, *key;
+	char *s;
 	netadr_t adr;
 	edict_t *ent;
 #ifdef PROTOCOL_VERSION_FTE
@@ -915,7 +915,7 @@ static void SVC_DirectConnect (void)
 		}
 
 		Info_RemoveKey (userinfo, "spectator"); // remove passwd
-		Info_SetValueForStarKey (userinfo, "*spectator", "1", MAX_INFO_STRING);
+		Info_SetValueForStarKey (userinfo, "*spectator", "1", sizeof(userinfo));
 		if ((spectator = Q_atoi(s)) == 0)
 			spectator = true;
 	}
@@ -1031,7 +1031,7 @@ static void SVC_DirectConnect (void)
 				   (int)sv_forcespec_onfull.value == 2) || (int)sv_forcespec_onfull.value == 1))
 			{
 				Netchan_OutOfBandPrint (adr, "%c\nserver is full: connecting as spectator\n", A2C_PRINT);
-				Info_SetValueForStarKey (userinfo, "*spectator", "1", MAX_INFO_STRING);
+				Info_SetValueForStarKey (userinfo, "*spectator", "1", sizeof(userinfo));
 				spectator = true;
 			}
 			else
@@ -1053,7 +1053,7 @@ static void SVC_DirectConnect (void)
 	newcl->fteprotocolextensions = protextsupported;
 #endif
 
-	strlcpy (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
+	strlcpy (newcl->_userinfo_, userinfo, sizeof(newcl->_userinfo_));
 
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
@@ -1073,8 +1073,8 @@ static void SVC_DirectConnect (void)
 	newcl->vip = vip;
 
 	// extract extensions mask
-	newcl->extensions = Q_atoi(Info_ValueForKey(newcl->userinfo, "*z_ext"));
-	Info_RemoveKey (newcl->userinfo, "*z_ext");
+	newcl->extensions = Q_atoi(Info_ValueForKey(newcl->_userinfo_, "*z_ext"));
+	Info_RemoveKey (newcl->_userinfo_, "*z_ext");
 
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
@@ -1091,30 +1091,26 @@ static void SVC_DirectConnect (void)
 	memset(newcl->name, 0, CLIENT_NAME_LEN);
 #endif
 
-	if (vip) s = va("%d", vip);
-	else s = "";
+	s = ( vip ? va("%d", vip) : "" );
 
-	Info_SetValueForStarKey (newcl->userinfo, "*VIP", s, MAX_INFO_STRING);
+	Info_SetValueForStarKey (newcl->_userinfo_, "*VIP", s, sizeof(newcl->_userinfo_));
+
 	// copy the most important userinfo into userinfoshort
+	// {
 
 	// parse some info from the info strings
 	SV_ExtractFromUserinfo (newcl, true);
 
 	for (i = 0; shortinfotbl[i] != NULL; i++)
 	{
-		s = Info_ValueForKey(newcl->userinfo, shortinfotbl[i]);
-		Info_SetValueForStarKey (newcl->userinfoshort, shortinfotbl[i], s, MAX_INFO_STRING);
+		s = Info_ValueForKey(newcl->_userinfo_, shortinfotbl[i]);
+		Info_SetValueForStarKey (newcl->_userinfoshort_, shortinfotbl[i], s, sizeof(newcl->_userinfoshort_));
 	}
 
 	// move star keys to infoshort
-	for (i= 1; (key = Info_KeyNameForKeyNum(newcl->userinfo, i)) != NULL; i++)
-	{
-		if (key[0] != '*')
-			continue;
+	Info_CopyStarKeys( newcl->_userinfo_, newcl->_userinfoshort_, sizeof(newcl->_userinfoshort_) );
 
-		s = Info_ValueForKey(newcl->userinfo, key);
-		Info_SetValueForStarKey (newcl->userinfoshort, key, s, MAX_INFO_STRING);
-	}
+	// }
 
 	// JACK: Init the floodprot stuff.
 	for (i=0; i<10; i++)
@@ -2844,7 +2840,7 @@ SV_CheckVars
 
 static void SV_CheckVars (void)
 {
-	static char pw[MAX_INFO_STRING]="", spw[MAX_INFO_STRING]="", vspw[MAX_INFO_STRING]="";
+	static char pw[MAX_KEY_STRING] = {0}, spw[MAX_KEY_STRING] = {0}, vspw[MAX_KEY_STRING]= {0};
 	static float old_maxrate = 0, old_maxdlrate = 0;
 	int v;
 
@@ -2852,9 +2848,9 @@ static void SV_CheckVars (void)
 	if (strcmp(password.string, pw) ||
 		strcmp(spectator_password.string, spw) || strcmp(vip_password.string, vspw))
 	{
-		strlcpy (pw, password.string, MAX_INFO_STRING);
-		strlcpy (spw, spectator_password.string, MAX_INFO_STRING);
-		strlcpy (vspw, vip_password.string, MAX_INFO_STRING);
+		strlcpy (pw, password.string, sizeof(pw));
+		strlcpy (spw, spectator_password.string, sizeof(spw));
+		strlcpy (vspw, vip_password.string, sizeof(vspw));
 		Cvar_Set (&password, pw);
 		Cvar_Set (&spectator_password, spw);
 		Cvar_Set (&vip_password, vspw);
@@ -2889,7 +2885,7 @@ static void SV_CheckVars (void)
 			if (cl->state < cs_preconnected)
 				continue;
 
-			val = Info_ValueForKey (cl->userinfo, cl->download ? "drate" : "rate");
+			val = Info_ValueForKey (cl->_userinfo_, cl->download ? "drate" : "rate");
 			cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(*val ? val : "99999"));
 		}
 	}
@@ -3237,7 +3233,7 @@ static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qbool wa
 		SV_ClientPrintf (cl, PRINT_HIGH, "WARNING: You can't set setinfo %s %s %i.\n",
 		                 key, limit > 0 ? ">" : "<", limit);
 
-	Info_SetValueForKey (cl->userinfo, key, va("%i", limit), MAX_INFO_STRING);
+	Info_SetValueForKey (cl->_userinfo_, key, va("%i", limit), sizeof(cl->_userinfo_));
 
 	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 	MSG_WriteString (&cl->netchan.message, va("setinfo \"%s\" \"%i\"\n", key, limit));
@@ -3245,7 +3241,7 @@ static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qbool wa
 
 static void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
 {
-	char *value_c = Info_ValueForKey (cl->userinfo, key);
+	char *value_c = Info_ValueForKey (cl->_userinfo_, key);
 	int value = Q_atoi(value_c);
 
 	if (value > limit)
@@ -3265,22 +3261,24 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	int		i, limit;
 	client_t	*client;
 	int		dupc = 1;
-	char	newname[80];
+	char	newname[CLIENT_NAME_LEN];
 
 	if (namechanged)
 	{
 		// name for C code
-		val = Info_ValueForKey (cl->userinfo, "name");
+		val = Info_ValueForKey (cl->_userinfo_, "name");
 
 		// trim user name
 		strlcpy (newname, val, sizeof(newname));
 
 		for (p = val; *p; p++)
+		{
 			if ((*p & 127) == '\\' || *p == '\r' || *p == '\n' || *p == '$' || *p == '"' || *p == ';')
 			{ // illegal characters in name, set some default
 				strlcpy(newname, sv_default_name.string, sizeof(newname));
 				break;
 			}
+		}
 
 		for (p = newname; *p && (*p & 127) == ' '; p++)
 			; // empty operator
@@ -3289,31 +3287,34 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 			strlcpy(newname, p, sizeof(newname));
 
 		for (p = newname + strlen(newname) - 1; p >= newname; p--)
+		{
 			if (*p && (*p & 127) != ' ') // skip spaces in suffix, if any
 			{
 				p[1] = 0;
 				break;
 			}
+		}
 
 		if (strcmp(val, newname))
 		{
-			Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING);
-			val = Info_ValueForKey (cl->userinfo, "name");
+			Info_SetValueForKey (cl->_userinfo_, "name", newname, sizeof(cl->_userinfo_));
+			val = Info_ValueForKey (cl->_userinfo_, "name");
 		}
 
 		if (!val[0] || !strcasecmp(val, "console"))
 		{
-			Info_SetValueForKey (cl->userinfo, "name", sv_default_name.string, MAX_INFO_STRING);
-			val = Info_ValueForKey (cl->userinfo, "name");
+			Info_SetValueForKey (cl->_userinfo_, "name", sv_default_name.string, sizeof(cl->_userinfo_));
+			val = Info_ValueForKey (cl->_userinfo_, "name");
 		}
 
 		// check to see if another user by the same name exists
-		while (1)
+		while ( 1 )
 		{
-			for (i=0, client = svs.clients ; i<MAX_CLIENTS ; i++, client++)
+			for (i = 0, client = svs.clients ; i<MAX_CLIENTS ; i++, client++)
 			{
 				if (client->state != cs_spawned || client == cl)
 					continue;
+
 				if (!strcasecmp(client->name, val))
 					break;
 			}
@@ -3331,9 +3332,9 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 						p = val + 4;
 				}
 
-				snprintf(newname, sizeof(newname), "(%d)%-.40s", dupc++, p);
-				Info_SetValueForKey (cl->userinfo, "name", newname, MAX_INFO_STRING);
-				val = Info_ValueForKey (cl->userinfo, "name");
+				snprintf(newname, sizeof(newname), "(%d)%-.10s", dupc++, p);
+				Info_SetValueForKey (cl->_userinfo_, "name", newname, sizeof(cl->_userinfo_));
+				val = Info_ValueForKey (cl->_userinfo_, "name");
 			}
 			else
 				break;
@@ -3369,20 +3370,20 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	}
 
 	// team
-	strlcpy (cl->team, Info_ValueForKey (cl->userinfo, "team"), sizeof(cl->team));
+	strlcpy (cl->team, Info_ValueForKey (cl->_userinfo_, "team"), sizeof(cl->team));
 
 	// rate
-	val = Info_ValueForKey (cl->userinfo, cl->download ? "drate" : "rate");
+	val = Info_ValueForKey (cl->_userinfo_, cl->download ? "drate" : "rate");
 	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(*val ? val : "99999"));
 
 	// message level
-	val = Info_ValueForKey (cl->userinfo, "msg");
-	if (strlen(val))
+	val = Info_ValueForKey (cl->_userinfo_, "msg");
+	if (val[0])
 		cl->messagelevel = Q_atoi(val);
 
 	//bliP: spectator print ->
-	val = Info_ValueForKey(cl->userinfo, "sp");
-	if (strlen(val))
+	val = Info_ValueForKey(cl->_userinfo_, "sp");
+	if (val[0])
 		cl->spec_print = Q_atoi(val);
 	//<-
 	// Added by VVD {
@@ -3625,7 +3626,7 @@ void SV_LogPlayer(client_t *cl, char *msg, int level)
 	                NET_BaseAdrToString(cl->netchan.remote_address),
 	                NET_BaseAdrToString(cl->realip),
 	                cl->netchan.remote_address.port,
-	                cl->userinfo
+	                cl->_userinfo_
 	               )
 	            );
 }

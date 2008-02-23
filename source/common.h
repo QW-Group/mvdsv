@@ -97,14 +97,15 @@ void COM_InitArgv (int argc, char **argv);
 
 //============================================================================
 
+//char *Info_KeyNameForKeyNum (char *s, int key);
+
 char *Info_ValueForKey (char *s, const char *key);
-char *Info_KeyNameForKeyNum (char *s, int key);
 void Info_RemoveKey (char *s, const char *key);
 void Info_RemovePrefixedKeys (char *start, char prefix);
 void Info_SetValueForKey (char *s, const char *key, const char *value, unsigned int maxsize);
 void Info_SetValueForStarKey (char *s, const char *key, const char *value, unsigned int maxsize);
 void Info_Print (char *s);
-void Info_CopyStarKeys (const char *from, char *to);
+void Info_CopyStarKeys (const char *from, char *to, unsigned int maxsize);
 
 unsigned Com_BlockChecksum (void *buffer, int length);
 void Com_BlockFullChecksum (void *buffer, int len, unsigned char *outbuf);

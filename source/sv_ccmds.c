@@ -1572,7 +1572,7 @@ void SV_User_f (void)
 	if (!SV_SetPlayer ())
 		return;
 
-	Info_Print (sv_client->userinfo);
+	Info_Print (sv_client->_userinfo_);
 }
 
 /*

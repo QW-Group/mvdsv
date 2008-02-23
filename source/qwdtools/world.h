@@ -46,7 +46,7 @@ typedef struct
 #define	MAX_SCOREBOARDNAME	16
 typedef struct player_info_s
 {
-	char	userinfo[MAX_INFO_STRING];
+	char	userinfo[MAX_EXT_INFO_STRING];
 	char	name[MAX_SCOREBOARDNAME];
 	int		stats[MAX_CL_STATS];	// health, etc
 	qbool	spectator;

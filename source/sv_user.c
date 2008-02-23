@@ -173,8 +173,8 @@ static void Cmd_New_f (void)
 			else
 				Sys_Printf ("Client %s connected\n", sv_client->name);
 
-			Info_SetValueForStarKey (sv_client->userinfo, "*VIP",
-			                         sv_client->vip ? va("%d", sv_client->vip) : "", MAX_INFO_STRING);
+			Info_SetValueForStarKey (sv_client->_userinfo_, "*VIP",
+			                         sv_client->vip ? va("%d", sv_client->vip) : "", sizeof(sv_client->_userinfo_));
 
 			// now we are connected
 			sv_client->state = cs_connected;
@@ -786,13 +786,13 @@ static void Cmd_Begin_f (void)
 	//check he's not cheating
 	if (!sv_client->spectator)
 	{
-		if (!*Info_ValueForKey (sv_client->userinfo, "pmodel") ||
-		        !*Info_ValueForKey (sv_client->userinfo, "emodel")) //bliP: typo? 2nd pmodel to emodel
+		if (!*Info_ValueForKey (sv_client->_userinfo_, "pmodel") ||
+		        !*Info_ValueForKey (sv_client->_userinfo_, "emodel")) //bliP: typo? 2nd pmodel to emodel
 			SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: missing player/eyes model checksum\n", sv_client->name);
 		else
 		{
-			pmodel = Q_atoi(Info_ValueForKey (sv_client->userinfo, "pmodel"));
-			emodel = Q_atoi(Info_ValueForKey (sv_client->userinfo, "emodel"));
+			pmodel = Q_atoi(Info_ValueForKey (sv_client->_userinfo_, "pmodel"));
+			emodel = Q_atoi(Info_ValueForKey (sv_client->_userinfo_, "emodel"));
 
 			if (pmodel != sv.model_player_checksum || emodel != sv.eyes_player_checksum)
 				SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: non standard player/eyes model detected\n", sv_client->name);
@@ -881,7 +881,7 @@ void SV_CompleteDownoload(void)
 	sv_client->download = NULL;
 	sv_client->file_percent = 0; //bliP: file percent
 	// qqshka: set normal rate
-	val = Info_ValueForKey (sv_client->userinfo, "rate");
+	val = Info_ValueForKey (sv_client->_userinfo_, "rate");
 	sv_client->netchan.rate = 1. / SV_BoundRate(false,	Q_atoi(*val ? val : "99999"));
 
 	Con_Printf((char *)Q_redtext(download_completed));
@@ -1257,7 +1257,7 @@ static void Cmd_Download_f(void)
 		fclose (sv_client->download);
 		sv_client->download = NULL;
 		// set normal rate
-		val = Info_ValueForKey (sv_client->userinfo, "rate");
+		val = Info_ValueForKey (sv_client->_userinfo_, "rate");
 		sv_client->netchan.rate = 1.0 / SV_BoundRate(false, Q_atoi(*val ? val : "99999"));
 	}
 
@@ -1351,7 +1351,7 @@ static void Cmd_Download_f(void)
 	}
 
 	// set donwload rate
-	val = Info_ValueForKey (sv_client->userinfo, "drate");
+	val = Info_ValueForKey (sv_client->_userinfo_, "drate");
 	sv_client->netchan.rate = 1. / SV_BoundRate(true, Q_atoi(*val ? val : "99999"));
 
 	// all checks passed, start downloading
@@ -1510,7 +1510,7 @@ static void Cmd_StopDownload_f(void)
 	sv_client->download = NULL;
 	sv_client->file_percent = 0; //bliP: file percent
 	// qqshka: set normal rate
-	val = Info_ValueForKey (sv_client->userinfo, "rate");
+	val = Info_ValueForKey (sv_client->_userinfo_, "rate");
 	sv_client->netchan.rate = 1. / SV_BoundRate(false, Q_atoi(*val ? val : "99999"));
 #ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 	if (sv_client->fteprotocolextensions & FTE_PEXT_CHUNKEDDOWNLOADS)
@@ -2075,7 +2075,7 @@ static void Cmd_SetInfo_f (void)
 	extern cvar_t sv_forcenick, sv_login;
 	int i;
 	sv_client_state_t saved_state;
-	char oldval[MAX_INFO_STRING];
+	char oldval[MAX_EXT_INFO_STRING];
 
 	if (sv_kickuserinfospamtime.value > 0 && (int)sv_kickuserinfospamcount.value > 0)
 	{
@@ -2107,7 +2107,8 @@ static void Cmd_SetInfo_f (void)
 	{
 		case 1:
 			Con_Printf ("User info settings:\n");
-			Info_Print (sv_client->userinfo);
+			Info_Print (sv_client->_userinfo_);
+			Con_DPrintf ("[%d/%d]\n", strlen(sv_client->_userinfo_), sizeof(sv_client->_userinfo_));
 			return;
 		case 3:
 			break;
@@ -2122,7 +2123,7 @@ static void Cmd_SetInfo_f (void)
 	if (strstr(Cmd_Argv(1), "\\") || strstr(Cmd_Argv(2), "\\"))
 		return;		// illegal char
 
-	strlcpy(oldval, Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1)), MAX_INFO_STRING);
+	strlcpy(oldval, Info_ValueForKey(sv_client->_userinfo_, Cmd_Argv(1)), sizeof(oldval));
 
 #ifdef USE_PR2
 	if(sv_vm)
@@ -2135,7 +2136,7 @@ static void Cmd_SetInfo_f (void)
 	}
 #endif
 
-	Info_SetValueForKey (sv_client->userinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_INFO_STRING);
+	Info_SetValueForKey (sv_client->_userinfo_, Cmd_Argv(1), Cmd_Argv(2), sizeof(sv_client->_userinfo_));
 	// name is extracted below in ExtractFromUserInfo
 	//	strlcpy (sv_client->name, Info_ValueForKey (sv_client->userinfo, "name")
 	//		, CLIENT_NAME_LEN);
@@ -2143,7 +2144,7 @@ static void Cmd_SetInfo_f (void)
 	//	sv_client->sendinfo = true;
 
 	//Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1));
-	if (!strcmp(Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1)), oldval))
+	if (!strcmp(Info_ValueForKey(sv_client->_userinfo_, Cmd_Argv(1)), oldval))
 		return; // key hasn't changed
 
 	if (!strcmp(Cmd_Argv(1), "name"))
@@ -2161,8 +2162,7 @@ static void Cmd_SetInfo_f (void)
 		{
 			SV_ClientPrintf(sv_client, PRINT_CHAT,
 			                "You can't change your name while logged in on this server.\n");
-			Info_SetValueForKey (sv_client->userinfo, "name",
-			                     sv_client->login, MAX_INFO_STRING);
+			Info_SetValueForKey (sv_client->_userinfo_, "name", sv_client->login, sizeof(sv_client->_userinfo_));
 			strlcpy (sv_client->name, sv_client->login, CLIENT_NAME_LEN);
 			MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
 			MSG_WriteString (&sv_client->netchan.message,
@@ -2211,16 +2211,17 @@ static void Cmd_SetInfo_f (void)
 		pr_global_struct->self = EDICT_TO_PROG(sv_client->edict);
 		G_INT(OFS_PARM0) = PR_SetTmpString(Cmd_Argv(1));
 		G_INT(OFS_PARM1) = PR_SetTmpString(oldval);
-		G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1)));
+		G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(sv_client->_userinfo_, Cmd_Argv(1)));
 		PR_ExecuteProgram (UserInfo_Changed);
 	}
 
-
 	for (i = 0; shortinfotbl[i] != NULL; i++)
+	{
 		if (!strcmp(Cmd_Argv(1), shortinfotbl[i]))
 		{
-			char *nuw = Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1));
-			Info_SetValueForKey (sv_client->userinfoshort, Cmd_Argv(1), nuw, MAX_INFO_STRING);
+			char *nuw = Info_ValueForKey(sv_client->_userinfo_, Cmd_Argv(1));
+
+			Info_SetValueForKey (sv_client->_userinfoshort_, Cmd_Argv(1), nuw, sizeof(sv_client->_userinfoshort_));
 
 			i = sv_client - svs.clients;
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
@@ -2229,18 +2230,6 @@ static void Cmd_SetInfo_f (void)
 			MSG_WriteString (&sv.reliable_datagram, nuw);
 			break;
 		}
-
-	// if start key send to others
-	if (Cmd_Argv(1)[0] == '*')
-	{
-		char *nuw = Info_ValueForKey(sv_client->userinfo, Cmd_Argv(1));
-		Info_SetValueForKey (sv_client->userinfoshort, Cmd_Argv(1), nuw, MAX_INFO_STRING);
-
-		i = sv_client - svs.clients;
-		MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
-		MSG_WriteByte (&sv.reliable_datagram, i);
-		MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));
-		MSG_WriteString (&sv.reliable_datagram, nuw);
 	}
 }
 
@@ -2490,8 +2479,8 @@ static void Cmd_Join_f (void)
 	sv_client->connection_started = realtime;
 	sv_client->spectator = false;
 	sv_client->spec_track = 0;
-	Info_RemoveKey (sv_client->userinfo, "*spectator");
-	Info_RemoveKey (sv_client->userinfoshort, "*spectator");
+	Info_RemoveKey (sv_client->_userinfo_, "*spectator");
+	Info_RemoveKey (sv_client->_userinfoshort_, "*spectator");
 
 	// like Cmd_Spawn_f()
 	SetUpClientEdict (sv_client, sv_client->edict);
@@ -2594,8 +2583,8 @@ static void Cmd_Observe_f (void)
 	sv_client->connection_started = realtime;
 	sv_client->spectator = true;
 	sv_client->spec_track = 0;
-	Info_SetValueForStarKey (sv_client->userinfo, "*spectator", "1", MAX_INFO_STRING);
-	Info_SetValueForStarKey (sv_client->userinfoshort, "*spectator", "1", MAX_INFO_STRING);
+	Info_SetValueForStarKey (sv_client->_userinfo_, "*spectator", "1", sizeof(sv_client->_userinfo_));
+	Info_SetValueForStarKey (sv_client->_userinfoshort_, "*spectator", "1", sizeof(sv_client->_userinfoshort_));
 
 	// like Cmd_Spawn_f()
 	SetUpClientEdict (sv_client, sv_client->edict);
@@ -3336,7 +3325,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 				break;
 
 #ifdef CHAT_ICON_EXPERIMENTAL
-			s = Info_ValueForKey(cl->userinfoshort, "chat");
+			s = Info_ValueForKey(cl->_userinfoshort_, "chat");
 			if ( s[0] ) {
 // allow movement while in console
 //				newcmd.forwardmove = newcmd.sidemove = newcmd.upmove = 0;

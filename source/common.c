@@ -744,6 +744,10 @@ char *Info_ValueForKey (char *s, const char *key)
 	}
 }
 
+/*
+
+// WARNING:		non standard behavior for Info_* function, this function may return NULL
+			 	while other functions always return at least ""
 
 char *Info_KeyNameForKeyNum (char *s, int key)
 {
@@ -786,6 +790,8 @@ char *Info_KeyNameForKeyNum (char *s, int key)
 		s++;
 	}
 }
+
+*/
 
 
 void Info_RemoveKey (char *s, const char *key)
@@ -1006,7 +1012,7 @@ void Info_Print (char *s)
 	}
 }
 
-void Info_CopyStarKeys (const char *from, char *to)
+void Info_CopyStarKeys (const char *from, char *to, unsigned int maxsize)
 {
 	char key[512];
 	char value[512];
@@ -1032,7 +1038,7 @@ void Info_CopyStarKeys (const char *from, char *to)
 		if (*from)
 			from++;
 		if (key[0] == '*')
-			Info_SetValueForStarKey (to, key, value, MAX_INFO_STRING);
+			Info_SetValueForStarKey (to, key, value, maxsize);
 	}
 }
 

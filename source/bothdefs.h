@@ -146,10 +146,13 @@ typedef enum qbool_e {false, true} qbool;
 typedef bool qbool;
 #endif
 
-#define	MAX_INFO_STRING			196
+// not used anymore in mvdsv
+//#define	MAX_INFO_STRING			196
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
 #define	MAX_KEY_STRING			64
+
+#define	MAX_EXT_INFO_STRING     1024
 
 #ifndef NULL
 #define NULL ((void *)0)

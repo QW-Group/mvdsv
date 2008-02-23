@@ -1750,7 +1750,7 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 			}
 		}
 		else
-			value = Info_ValueForKey(cl->userinfo, key);
+			value = Info_ValueForKey(cl->_userinfo_, key);
 	}
 	else
 		value = "";
@@ -2426,7 +2426,7 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 		retval->_int = 0;
 		return;
 	}
-	snprintf( newcl->userinfo, sizeof( newcl->userinfo ),
+	snprintf( newcl->_userinfo_, sizeof( newcl->_userinfo_ ),
 	          "\\name\\%s\\topcolor\\%d\\bottomcolor\\%d\\emodel\\6967\\pmodel\\13845\\skin\\%s\\*bot\\1",
 	          name, topcolor, bottomcolor, skin );
 
@@ -2467,15 +2467,21 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 	newcl->netchan.drop_count = 0;
 	newcl->netchan.incoming_sequence = 1;
 
+	// copy the most important userinfo into userinfoshort
+	// {
+
 	SV_ExtractFromUserinfo( newcl, true );
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
 	{
-		s = Info_ValueForKey( newcl->userinfo, shortinfotbl[i] );
-		Info_SetValueForStarKey( newcl->userinfoshort, shortinfotbl[i], s, MAX_INFO_STRING );
+		s = Info_ValueForKey( newcl->_userinfo_, shortinfotbl[i] );
+		Info_SetValueForStarKey( newcl->_userinfoshort_, shortinfotbl[i], s, sizeof(newcl->_userinfoshort_) );
 	}
+
 	// move star keys to infoshort
-	Info_CopyStarKeys( newcl->userinfo, newcl->userinfoshort );
+	Info_CopyStarKeys( newcl->_userinfo_, newcl->_userinfoshort_, sizeof(newcl->_userinfoshort_) );
+
+	// }
 
 	newcl->disable_updates_stop = -1.0;	// Vladis
 
@@ -2509,12 +2515,10 @@ void RemoveBot(client_t *cl)
 	cl->edict->v.frags = 0.0;
 	cl->name[0] = 0;
 	cl->state = cs_free;
-	memset( cl->userinfo, 0, sizeof( cl->userinfo ) );
-	memset( cl->userinfoshort, 0, sizeof( cl->userinfoshort ) );
+	memset( cl->_userinfo_, 0, sizeof( cl->_userinfo_ ) );
+	memset( cl->_userinfoshort_, 0, sizeof( cl->_userinfoshort_ ) );
 	SV_FullClientUpdate( cl, &sv.reliable_datagram );
 	cl->isBot = 0;
-
-
 }
 
 void PF2_Remove_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
@@ -2563,15 +2567,16 @@ void PF2_SetBotUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2va
 		Con_Printf( "tried to change userinfo a non-botclient %d \n", entnum );
 		return;
 	}
-	Info_SetValueForKey( cl->userinfo, key, value, MAX_INFO_STRING );
+	Info_SetValueForKey( cl->_userinfo_, key, value, sizeof(cl->_userinfo_) );
 	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
+	{
 		if ( key[0] == '_' || !strcmp( key, shortinfotbl[i] ) )
 		{
-			char *nuw = Info_ValueForKey( cl->userinfo, key );
+			char *nuw = Info_ValueForKey( cl->_userinfo_, key );
 
-			Info_SetValueForKey( cl->userinfoshort, key, nuw, MAX_INFO_STRING );
+			Info_SetValueForKey( cl->_userinfoshort_, key, nuw, sizeof(cl->_userinfoshort_) );
 
 			i = cl - svs.clients;
 			MSG_WriteByte( &sv.reliable_datagram, svc_setinfo );
@@ -2580,8 +2585,7 @@ void PF2_SetBotUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2va
 			MSG_WriteString( &sv.reliable_datagram, nuw );
 			break;
 		}
-
-
+	}
 }
 
 void PF2_SetBotCMD( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )

@@ -2501,7 +2501,7 @@ void PF_infokey (void)
 		else if (!strncmp(key, "login", 6))
 			value = cl->login;
 		else
-			value = Info_ValueForKey (cl->userinfo, key);
+			value = Info_ValueForKey (cl->_userinfo_, key);
 	}
 	else
 		value = "";
