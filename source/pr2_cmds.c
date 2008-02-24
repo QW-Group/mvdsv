@@ -2691,10 +2691,12 @@ void PF2_SetUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t
 {
 	client_t *cl;
 	int     entnum = stack[0]._int;
-	char   *key = (char *) VM_POINTER( base, mask, stack[1].string );
-	char   *value = (char *) VM_POINTER( base, mask, stack[2].string );
+	char   *k = (char *) VM_POINTER( base, mask, stack[1].string );
+	char   *v = (char *) VM_POINTER( base, mask, stack[2].string );
+	char   key[MAX_KEY_STRING];
+	char   value[MAX_KEY_STRING];
 	int    flags = stack[3]._int;
-	char   s[MAX_KEY_STRING * 4] = {0};
+	char   s[MAX_KEY_STRING * 4];
 	int     i;
 	extern char *shortinfotbl[];
 
@@ -2715,11 +2717,13 @@ void PF2_SetUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t
 
 	// tokenize
 
-	snprintf( s, sizeof(s), "PF2_SetUserInfo \"%s\" \"%s\"", key, value );
+	snprintf( s, sizeof(s), "PF2_SetUserInfo \"%-.*s\" \"%-.*s\"", sizeof(key), k, sizeof(value), v );
 
 	Cmd_TokenizeString( s );
-	key   = Cmd_Argv(1);
-	value = Cmd_Argv(2);
+
+	// well, PR2_UserInfoChanged() may call PF2_SetUserInfo() again, so we better save thouse
+	strlcpy( key, Cmd_Argv(1), sizeof(key) );
+	strlcpy( value, Cmd_Argv(2), sizeof(value) );
 
 	if( sv_vm )
 	{
