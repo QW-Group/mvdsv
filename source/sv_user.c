@@ -2606,9 +2606,9 @@ static void Cmd_Observe_f (void)
 #endif
 	   )
 	{
-	// copy spawn parms out of the client_t
-	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
-		sv_client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+		// copy spawn parms out of the client_t
+		for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
+			sv_client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
 
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
