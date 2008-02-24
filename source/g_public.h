@@ -141,6 +141,7 @@ typedef enum
 	G_NEXTCLIENT,
 	G_PRECACHE_VWEP_MODEL,
 	G_SETPAUSE,
+	G_SETUSERINFO,
 } gameImport_t;
 
 // !!! new things comes to end of list !!!

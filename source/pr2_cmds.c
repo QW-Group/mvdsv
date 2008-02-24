@@ -2685,6 +2685,78 @@ void PF2_setpause(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 		SV_TogglePause (NULL);
 }
 
+#define SETUSERINFO_STAR          (1<<0) // allow set star keys
+
+void PF2_SetUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * retval )
+{
+	client_t *cl;
+	int     entnum = stack[0]._int;
+	char   *key = (char *) VM_POINTER( base, mask, stack[1].string );
+	char   *value = (char *) VM_POINTER( base, mask, stack[2].string );
+	int    flags = stack[3]._int;
+	char   s[MAX_KEY_STRING * 4] = {0};
+	int     i;
+	extern char *shortinfotbl[];
+
+	if ( entnum < 1 || entnum > MAX_CLIENTS )
+	{
+		Con_Printf( "tried to change userinfo a non-client %d \n", entnum );
+		return;
+	}
+
+	cl = &svs.clients[entnum - 1];
+
+	// well, our API is weird
+	if ( cl->isBot )
+	{
+		PF2_SetBotUserInfo( base, mask, stack, retval );
+		return;
+	}
+
+	// tokenize
+
+	snprintf( s, sizeof(s), "PF2_SetUserInfo \"%s\" \"%s\"", key, value );
+
+	Cmd_TokenizeString( s );
+	key   = Cmd_Argv(1);
+	value = Cmd_Argv(2);
+
+	if( sv_vm )
+	{
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = EDICT_TO_PROG(cl->edict);
+
+		if( PR2_UserInfoChanged() )
+			return;
+	}
+
+	if ( flags & SETUSERINFO_STAR )
+		Info_SetValueForStarKey( cl->_userinfo_, key, value, sizeof(cl->_userinfo_) );
+	else
+		Info_SetValueForKey( cl->_userinfo_, key, value, sizeof(cl->_userinfo_) );
+
+	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
+
+	for ( i = 0; shortinfotbl[i] != NULL; i++ )
+	{
+		if ( !strcmp( key, shortinfotbl[i] ) )
+		{
+			char *nuw = Info_ValueForKey( cl->_userinfo_, key );
+
+			// well, here we do not have if ( flags & SETUSERINFO_STAR ) because shortinfotbl[] does't have any star key
+
+			Info_SetValueForKey( cl->_userinfoshort_, key, nuw, sizeof(cl->_userinfoshort_) );
+
+			i = cl - svs.clients;
+			MSG_WriteByte( &sv.reliable_datagram, svc_setinfo );
+			MSG_WriteByte( &sv.reliable_datagram, i );
+			MSG_WriteString( &sv.reliable_datagram, key );
+			MSG_WriteString( &sv.reliable_datagram, nuw );
+			break;
+		}
+	}
+}
+
 //===========================================================================
 // SysCalls
 //===========================================================================
@@ -2786,6 +2858,7 @@ pr2_trapcall_t pr2_API[]=
 		PF2_nextclient,		//G_NEXTCLIENT
 		PF2_precache_vwep_model,//G_PRECACHE_VWEP_MODEL
 		PF2_setpause,		//G_SETPAUSE
+		PF2_SetUserInfo,	//G_SETUSERINFO
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 
