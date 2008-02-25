@@ -1716,7 +1716,7 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 			snprintf(ov, sizeof(ov), "%s", date.str);
 		}
 		else if ((value = Info_ValueForKey(svs.info, key)) == NULL || !*value)
-			value = Info_ValueForKey(localinfo, key);
+			value = Info_Get(&_localinfo_, key);
 	}
 	else if (e1 > 0 && e1 <= MAX_CLIENTS)
 	{

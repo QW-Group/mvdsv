@@ -534,6 +534,9 @@ typedef struct
 #define	MULTICAST_PVS_R			5
 
 // maps in localinfo supported only by ktpro & ktx mods {
+
+#define MAX_LOCALINFOS 10000
+
 #define LOCALINFO_MAPS_LIST_START		1000
 #define LOCALINFO_MAPS_LIST_END			4999
 
@@ -587,7 +590,8 @@ extern	edict_t		*sv_player;
 
 #define	MODEL_NAME_LEN	5
 extern	char		localmodels[MAX_MODELS][MODEL_NAME_LEN]; // inline model names for precache
-extern	char		localinfo[MAX_LOCALINFO_STRING+1];
+//extern	char		localinfo[MAX_LOCALINFO_STRING+1];
+extern  ctxinfo_t _localinfo_;
 
 extern	int		host_hunklevel;
 

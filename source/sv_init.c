@@ -28,7 +28,9 @@ entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP][MAX_PACKET_ENTITIES]; // 
 
 char	localmodels[MAX_MODELS][5];	// inline model names for precache
 
-char localinfo[MAX_LOCALINFO_STRING+1]; // local game info
+//char localinfo[MAX_LOCALINFO_STRING+1]; // local game info
+ctxinfo_t _localinfo_;
+
 #ifdef USE_PR2
 //storage for client names for -progtype 0 (VM_NONE)
 char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN]; //clientnames for -progtype 0

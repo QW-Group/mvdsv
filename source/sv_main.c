@@ -2581,7 +2581,7 @@ static char *DecodeArgs(char *args)
 			*s = 0;
 
 			if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
-				value = Info_ValueForKey(localinfo, key);
+				value = Info_Get(&_localinfo_, key);
 
 			*p++ = '\"';
 			if (ch == '$')
@@ -3623,6 +3623,9 @@ SV_Init
 */
 void SV_Init (quakeparms_t *parms)
 {
+	memset(&_localinfo_, 0, sizeof(_localinfo_));
+	_localinfo_.max = MAX_LOCALINFOS;
+
 	COM_InitArgv (parms->argc, parms->argv);
 
 	if (COM_CheckParm ("-minmemory"))

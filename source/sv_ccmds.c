@@ -1311,8 +1311,8 @@ void SV_Check_maps_f(void)
 		if (!list->name[0]) continue;
 
 		key = va("%d", i);
-		s = Info_ValueForKey(localinfo, key);
-		Info_SetValueForKey (localinfo, key, list->name, MAX_LOCALINFO_STRING);
+		s = Info_Get(&_localinfo_, key);
+		Info_Set (&_localinfo_, key, list->name);
 
 		if (localinfoChanged)
 		{
@@ -1320,7 +1320,7 @@ void SV_Check_maps_f(void)
 			pr_global_struct->self = 0;
 			G_INT(OFS_PARM0) = PR_SetTmpString(key);
 			G_INT(OFS_PARM1) = PR_SetTmpString(s);
-			G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, key));
+			G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, key));
 			PR_ExecuteProgram (localinfoChanged);
 		}
 		i++;
@@ -1335,13 +1335,13 @@ void SV_Check_maps_f(void)
 		if (!list->name[0]) continue;
 
 		for (j = LOCALINFO_MAPS_LIST_START; j <= maps_id1; j++)
-			if (!strncmp(Info_ValueForKey(localinfo, va("%d", j)), list->name, MAX_KEY_STRING))
+			if (!strncmp(Info_Get(&_localinfo_, va("%d", j)), list->name, MAX_KEY_STRING))
 				break;
 		if (j <= maps_id1) continue;
 
 		key = va("%d", i);
-		s = Info_ValueForKey(localinfo, key);
-		Info_SetValueForKey (localinfo, key, list->name, MAX_LOCALINFO_STRING);
+		s = Info_Get(&_localinfo_, key);
+		Info_Set (&_localinfo_, key, list->name);
 
 		if (localinfoChanged)
 		{
@@ -1349,7 +1349,7 @@ void SV_Check_maps_f(void)
 			pr_global_struct->self = 0;
 			G_INT(OFS_PARM0) = PR_SetTmpString(key);
 			G_INT(OFS_PARM1) = PR_SetTmpString(s);
-			G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, key));
+			G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, key));
 			PR_ExecuteProgram (localinfoChanged);
 		}
 		i++;
@@ -1358,8 +1358,8 @@ void SV_Check_maps_f(void)
 	for (; i <= LOCALINFO_MAPS_LIST_END; i++)
 	{
 		key = va("%d", i);
-		s = Info_ValueForKey(localinfo, key);
-		Info_SetValueForKey (localinfo, key, "", MAX_LOCALINFO_STRING);
+		s = Info_Get(&_localinfo_, key);
+		Info_Set(&_localinfo_, key, "");
 
 		if (localinfoChanged)
 		{
@@ -1367,7 +1367,7 @@ void SV_Check_maps_f(void)
 			pr_global_struct->self = 0;
 			G_INT(OFS_PARM0) = PR_SetTmpString(key);
 			G_INT(OFS_PARM1) = PR_SetTmpString(s);
-			G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, key));
+			G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, key));
 			PR_ExecuteProgram (localinfoChanged);
 		}
 	}
@@ -1509,16 +1509,19 @@ void SV_Localinfo_f (void)
 
 	if (Cmd_Argc() == 1)
 	{
+		char info[MAX_LOCALINFO_STRING];
+
 		Con_Printf ("Local info settings:\n");
-		Info_Print (localinfo);
-		Con_Printf ("[%d/%d]\n", strlen(localinfo), MAX_LOCALINFO_STRING);
+		Info_ReverseConvert(&_localinfo_, info, sizeof(info));
+		Info_Print (info);
+		Con_Printf ("[%d/%d]\n", strlen(info), sizeof(info));
 		return;
 	}
 
 	//bliP: sane localinfo usage (mercury) ->
 	if (Cmd_Argc() == 2)
 	{
-		s = Info_ValueForKey(localinfo, Cmd_Argv(1));
+		s = Info_Get(&_localinfo_, Cmd_Argv(1));
 		if (*s)
 			Con_Printf ("Localinfo %s: \"%s\"\n", Cmd_Argv(1), s);
 		else
@@ -1539,8 +1542,8 @@ void SV_Localinfo_f (void)
 		return;
 	}
 
-	s = Info_ValueForKey(localinfo, Cmd_Argv(1));
-	Info_SetValueForKey (localinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_LOCALINFO_STRING);
+	s = Info_Get(&_localinfo_, Cmd_Argv(1));
+	Info_Set (&_localinfo_, Cmd_Argv(1), Cmd_Argv(2));
 
 	if (localinfoChanged)
 	{
@@ -1548,7 +1551,7 @@ void SV_Localinfo_f (void)
 		pr_global_struct->self = 0;
 		G_INT(OFS_PARM0) = PR_SetTmpString(Cmd_Argv(1));
 		G_INT(OFS_PARM1) = PR_SetTmpString(s);
-		G_INT(OFS_PARM2) = PR_SetTmpString(Info_ValueForKey(localinfo, Cmd_Argv(1)));
+		G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, Cmd_Argv(1)));
 		PR_ExecuteProgram (localinfoChanged);
 	}
 }

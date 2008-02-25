@@ -2482,7 +2482,7 @@ void PF_infokey (void)
 		else if (is_ktpro && !strncmp(key, "*qwe_version", 13))
 			value = QWE_VERSION QWE_DEV;
 		else if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
-			value = Info_ValueForKey(localinfo, key);
+			value = Info_Get(&_localinfo_, key);
 	}
 	else if (e1 <= MAX_CLIENTS)
 	{

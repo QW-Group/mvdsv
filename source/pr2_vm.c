@@ -191,7 +191,7 @@ qbool VM_LoadNative( vm_t * vm )
 	dllEntry( (void *) vm->syscall );
 
 	//	Info_SetValueForStarKey( svs.info, "*qvm", DLEXT, MAX_SERVERINFO_STRING );
-	Info_SetValueForStarKey( localinfo, "*qvm", DLEXT, MAX_LOCALINFO_STRING );
+	Info_SetStar( &_localinfo_, "*qvm", DLEXT );
 	Info_SetValueForStarKey( svs.info, "*progs", DLEXT, MAX_SERVERINFO_STRING );
 	vm->type = VM_NATIVE;
 	return true;
@@ -324,7 +324,7 @@ qbool VM_LoadBytecode( vm_t * vm, sys_callex_t syscall1 )
 		return false;
 
 	// add qvm crc to the serverinfo
-	Info_SetValueForStarKey( localinfo, "*qvm", "QVM", MAX_LOCALINFO_STRING );
+	Info_SetStar( &_localinfo_, "*qvm", "QVM" );
 	//	Info_SetValueForStarKey( svs.info, "*qvm", "QVM", MAX_SERVERINFO_STRING );
 
 	snprintf( num, sizeof(num), "%i", CRC_Block( ( byte * ) buff, filesize ) );

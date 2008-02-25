@@ -2364,7 +2364,7 @@ static void Cmd_ShowMapsList_f(void)
 	for (i = LOCALINFO_MAPS_LIST_START; i <= LOCALINFO_MAPS_LIST_END; i++)
 	{
 		key = va("%d", i);
-		value = Info_ValueForKey(localinfo, key);
+		value = Info_Get(&_localinfo_, key);
 		if (*value)
 		{
 
