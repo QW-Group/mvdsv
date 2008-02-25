@@ -1750,7 +1750,7 @@ void PF2_infokey(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval
 			}
 		}
 		else
-			value = Info_ValueForKey(cl->_userinfo_, key);
+			value = Info_Get(&cl->_userinfo_ctx_, key);
 	}
 	else
 		value = "";
@@ -2384,6 +2384,7 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 	eval_t *val;
 	string_t savenetname;
 	int old_self;
+	char info[MAX_EXT_INFO_STRING];
 
 
 
@@ -2426,9 +2427,15 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 		retval->_int = 0;
 		return;
 	}
-	snprintf( newcl->_userinfo_, sizeof( newcl->_userinfo_ ),
+
+	memset(&newcl->_userinfo_ctx_, 0, sizeof(newcl->_userinfo_ctx_));
+	memset(&newcl->_userinfoshort_ctx_, 0, sizeof(newcl->_userinfoshort_ctx_));
+
+	snprintf( info, sizeof( info ),
 	          "\\name\\%s\\topcolor\\%d\\bottomcolor\\%d\\emodel\\6967\\pmodel\\13845\\skin\\%s\\*bot\\1",
 	          name, topcolor, bottomcolor, skin );
+
+	Info_Convert(&newcl->_userinfo_ctx_, info);
 
 	newcl->state = cs_spawned;
 	newcl->userid = SV_GenerateUserID();
@@ -2474,12 +2481,12 @@ void PF2_Add_Bot( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t * r
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
 	{
-		s = Info_ValueForKey( newcl->_userinfo_, shortinfotbl[i] );
-		Info_SetValueForStarKey( newcl->_userinfoshort_, shortinfotbl[i], s, sizeof(newcl->_userinfoshort_) );
+		s = Info_Get( &newcl->_userinfo_ctx_, shortinfotbl[i] );
+		Info_SetStar( &newcl->_userinfoshort_ctx_, shortinfotbl[i], s );
 	}
 
 	// move star keys to infoshort
-	Info_CopyStarKeys( newcl->_userinfo_, newcl->_userinfoshort_, sizeof(newcl->_userinfoshort_) );
+	Info_CopyStar( &newcl->_userinfo_ctx_, &newcl->_userinfoshort_ctx_ );
 
 	// }
 
@@ -2515,8 +2522,12 @@ void RemoveBot(client_t *cl)
 	cl->edict->v.frags = 0.0;
 	cl->name[0] = 0;
 	cl->state = cs_free;
-	memset( cl->_userinfo_, 0, sizeof( cl->_userinfo_ ) );
-	memset( cl->_userinfoshort_, 0, sizeof( cl->_userinfoshort_ ) );
+
+	Info_RemoveAll(&cl->_userinfo_ctx_);
+	Info_RemoveAll(&cl->_userinfoshort_ctx_);
+//	memset( cl->_userinfo_, 0, sizeof( cl->_userinfo_ ) );
+//	memset( cl->_userinfoshort_, 0, sizeof( cl->_userinfoshort_ ) );
+
 	SV_FullClientUpdate( cl, &sv.reliable_datagram );
 	cl->isBot = 0;
 }
@@ -2567,16 +2578,16 @@ void PF2_SetBotUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2va
 		Con_Printf( "tried to change userinfo a non-botclient %d \n", entnum );
 		return;
 	}
-	Info_SetValueForKey( cl->_userinfo_, key, value, sizeof(cl->_userinfo_) );
+	Info_Set( &cl->_userinfo_ctx_, key, value );
 	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
 	{
 		if ( key[0] == '_' || !strcmp( key, shortinfotbl[i] ) )
 		{
-			char *nuw = Info_ValueForKey( cl->_userinfo_, key );
+			char *nuw = Info_Get( &cl->_userinfo_ctx_, key );
 
-			Info_SetValueForKey( cl->_userinfoshort_, key, nuw, sizeof(cl->_userinfoshort_) );
+			Info_Set( &cl->_userinfoshort_ctx_, key, nuw );
 
 			i = cl - svs.clients;
 			MSG_WriteByte( &sv.reliable_datagram, svc_setinfo );
@@ -2735,9 +2746,9 @@ void PF2_SetUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t
 	}
 
 	if ( flags & SETUSERINFO_STAR )
-		Info_SetValueForStarKey( cl->_userinfo_, key, value, sizeof(cl->_userinfo_) );
+		Info_SetStar( &cl->_userinfo_ctx_, key, value );
 	else
-		Info_SetValueForKey( cl->_userinfo_, key, value, sizeof(cl->_userinfo_) );
+		Info_Set( &cl->_userinfo_ctx_, key, value );
 
 	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
 
@@ -2745,11 +2756,11 @@ void PF2_SetUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t
 	{
 		if ( !strcmp( key, shortinfotbl[i] ) )
 		{
-			char *nuw = Info_ValueForKey( cl->_userinfo_, key );
+			char *nuw = Info_Get( &cl->_userinfo_ctx_, key );
 
 			// well, here we do not have if ( flags & SETUSERINFO_STAR ) because shortinfotbl[] does't have any star key
 
-			Info_SetValueForKey( cl->_userinfoshort_, key, nuw, sizeof(cl->_userinfoshort_) );
+			Info_Set( &cl->_userinfoshort_ctx_, key, nuw );
 
 			i = cl - svs.clients;
 			MSG_WriteByte( &sv.reliable_datagram, svc_setinfo );

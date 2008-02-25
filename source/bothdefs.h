@@ -237,7 +237,7 @@ float	Q_atof (const char *str);
 char	*va (const char *format, ...);
 
 void	*Q_malloc (size_t size);
-#define	Q_free(ptr)	free(ptr)
+#define	Q_free(ptr)	if(ptr) { free(ptr); ptr = NULL; }
 
 char	*Q_strdup (const char *src);
 

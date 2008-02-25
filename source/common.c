@@ -1042,6 +1042,331 @@ void Info_CopyStarKeys (const char *from, char *to, unsigned int maxsize)
 	}
 }
 
+//============================================================
+//
+// Alternative variant manipulation with info strings
+//
+//============================================================
+
+// this is seems to be "better" than Com_HashKey()
+static unsigned long Info_HashKey (const char *str)
+{
+	unsigned long hash = 0;
+	int c;
+
+	// the (c&~32) makes it case-insensitive
+	// hash function known as sdbm, used in gawk
+	while ((c = *str++))
+        hash = (c &~ 32) + (hash << 6) + (hash << 16) - hash;
+
+    return hash;
+}
+
+// used internally
+static info_t *_Info_Get (ctxinfo_t *ctx, const char *name)
+{
+	info_t *a;
+	int key;
+
+	if (!ctx || !name || !name[0])
+		return NULL;
+
+	key = Info_HashKey (name) % INFO_HASHPOOL_SIZE;
+
+	for (a = ctx->info_hash[key]; a; a = a->hash_next)
+		if (!strcasecmp(name, a->name))
+			return a;
+
+	return NULL;
+}
+
+char *Info_Get(ctxinfo_t *ctx, const char *name)
+{
+	info_t *a = _Info_Get(ctx, name);
+
+	return a ? a->value: "";
+}
+
+qbool Info_SetStar (ctxinfo_t *ctx, const char *name, const char *value)
+{
+	info_t	*a;
+	int key;
+
+	if (!value)
+		value = "";
+
+	if (!ctx || !name || !name[0])
+		return false;
+
+	// empty value, instead of set just remove it
+	if (!value[0])
+	{
+		return Info_Remove(ctx, name);
+	}
+
+	if (strchr(name, '\\') || strchr(value, '\\'))
+		return false;
+	if (strchr(name, 128 + '\\') || strchr(value, 128 + '\\'))
+		return false;
+	if (strchr(name, '"') || strchr(value, '"'))
+		return false;
+	if (strchr(name, '\r') || strchr(value, '\r')) // bad for print functions
+		return false;
+	if (strchr(name, '\n') || strchr(value, '\n')) // bad for print functions
+		return false;
+	if (strchr(name, '$') || strchr(value, '$')) // variable expansion may be exploited, escaping this
+		return false;
+	if (strchr(name, ';') || strchr(value, ';')) // interpreter may be haxed, escaping this
+		return false;
+
+	if (strlen(name) >= MAX_KEY_STRING || strlen(value) >= MAX_KEY_STRING)
+		return false; // too long name/value, its wrong
+
+	key = Info_HashKey(name) % INFO_HASHPOOL_SIZE;
+
+	// if already exists, reuse it
+	for (a = ctx->info_hash[key]; a; a = a->hash_next)
+		if (!strcasecmp(name, a->name))
+		{
+			Q_free (a->value);
+			break;
+		}
+
+	// not found, create new one
+	if (!a)
+	{
+		if (ctx->cur >= ctx->max)
+			return false; // too much infos
+
+		a = (info_t *) Q_malloc (sizeof(info_t));
+		a->next = ctx->info_list;
+		ctx->info_list = a;
+		a->hash_next = ctx->info_hash[key];
+		ctx->info_hash[key] = a;
+
+		ctx->cur++; // increase counter
+
+		// copy name
+		a->name = Q_strdup (name);
+	}
+
+	// copy value
+	a->value = Q_strdup (value);
+
+	return true;
+}
+
+qbool Info_Set (ctxinfo_t *ctx, const char *name, const char *value)
+{
+	if (!value)
+		value = "";
+
+	if (!ctx || !name || !name[0])
+		return false;
+
+	if (name[0] == '*')
+	{
+		Con_Printf ("Can't set * keys\n");
+		return false;
+	}
+
+	return Info_SetStar (ctx, name, value);
+}
+
+// used internally
+static void _Info_Free(info_t *a)
+{
+	if (!a)
+		return;
+
+	Q_free (a->name);
+	Q_free (a->value);
+	Q_free (a);
+}
+
+qbool Info_Remove (ctxinfo_t *ctx, const char *name)
+{
+	info_t *a, *prev;
+	int key;
+
+	if (!ctx || !name || !name[0])
+		return false;
+
+	key = Info_HashKey (name) % INFO_HASHPOOL_SIZE;
+
+	prev = NULL;
+	for (a = ctx->info_hash[key]; a; a = a->hash_next)
+	{
+		if (!strcasecmp(name, a->name))
+		{
+			// unlink from hash
+			if (prev)
+				prev->hash_next = a->hash_next;
+			else
+				ctx->info_hash[key] = a->hash_next;
+			break;
+		}
+		prev = a;
+	}
+
+	if (!a)
+		return false;	// not found
+
+	prev = NULL;
+	for (a = ctx->info_list; a; a = a->next)
+	{
+		if (!strcasecmp(name, a->name))
+		{
+			// unlink from info list
+			if (prev)
+				prev->next = a->next;
+			else
+				ctx->info_list = a->next;
+
+			// free
+			_Info_Free(a);
+
+			ctx->cur--; // decrease counter
+
+			return true;
+		}
+		prev = a;
+	}
+
+	Sys_Error("Info_Remove: info list broken");
+	return false; // shut up compiler
+}
+
+// remove all infos
+void Info_RemoveAll (ctxinfo_t *ctx)
+{
+	info_t	*a, *next;
+
+	if (!ctx)
+		return;
+
+	for (a = ctx->info_list; a; a = next) {
+		next = a->next;
+
+		// free
+		_Info_Free(a);
+	}
+	ctx->info_list = NULL;
+	ctx->cur = 0; // set counter to 0
+
+	// clear hash
+	memset (ctx->info_hash, 0, sizeof(ctx->info_hash));
+}
+
+qbool Info_Convert(ctxinfo_t *ctx, char *str)
+{
+	char name[MAX_KEY_STRING], value[MAX_KEY_STRING], *start;
+
+	if (!ctx)
+		return false;
+
+	for ( ; str && str[0]; )
+	{
+		if (!(str = strchr(str, '\\')))
+			break;
+
+		start = str; // start of name
+
+		if (!(str = strchr(start + 1, '\\')))  // end of name
+			break;
+
+		strlcpy(name, start + 1, min(str - start, (int)sizeof(name)));
+
+		start = str; // start of value
+
+		str = strchr(start + 1, '\\'); // end of value
+
+		strlcpy(value, start + 1, str ? min(str - start, (int)sizeof(value)) : (int)sizeof(value));
+
+		Info_SetStar(ctx, name, value);
+	}
+
+	return true;
+}
+
+qbool Info_ReverseConvert(ctxinfo_t *ctx, char *str, int size)
+{
+	info_t *a;
+	int next_size;
+	
+	char *start = str;
+
+	if (!ctx)
+		return false;
+
+	if (!str || size < 1)
+		return false;
+
+	str[0] = 0;
+
+	for (a = ctx->info_list; a; a = a->next)
+	{
+		if (!a->value[0])
+			continue; // empty
+
+		next_size = size - 2 - strlen(a->name) - strlen(a->value);
+
+		if (next_size < 1)
+		{
+			// sigh, next snprintf will not fit
+			return false;
+		}
+
+		snprintf(str, size, "\\%s\\%s", a->name, a->value);
+		str += (size - next_size);
+		size = next_size;
+	}
+
+	return true;
+}
+
+qbool Info_CopyStar(ctxinfo_t *ctx_from, ctxinfo_t *ctx_to)
+{
+	info_t *a;
+
+	if (!ctx_from || !ctx_to)
+		return false;
+
+	if (ctx_from == ctx_to)
+		return true; // hrm
+
+	for (a = ctx_from->info_list; a; a = a->next)
+	{
+		if (a->name[0] != '*')
+			continue; // not a star key
+
+		// do we need check status of this function?
+		Info_SetStar (ctx_to, a->name, a->value);
+	}
+
+	return true;
+}
+
+void Info_PrintList(ctxinfo_t *ctx)
+{
+	info_t *a;
+	int cnt = 0;
+
+	if (!ctx)
+		return;
+
+	for (a = ctx->info_list; a; a = a->next)
+	{
+		Con_Printf("%-20s %s\n", a->name, a->value);
+		cnt++;
+	}
+
+	
+	Con_DPrintf("%d infos\n", cnt);
+}
+
+//============================================================================
+
 static byte chktbl[1024] = {
 	0x78,0xd2,0x94,0xe3,0x41,0xec,0xd6,0xd5,0xcb,0xfc,0xdb,0x8a,0x4b,0xcc,0x85,0x01,
 	0x23,0xd2,0xe5,0xf2,0x29,0xa7,0x45,0x94,0x4a,0x62,0xe3,0xa5,0x6f,0x3f,0xe1,0x7a,

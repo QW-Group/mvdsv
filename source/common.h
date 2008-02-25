@@ -95,6 +95,52 @@ int COM_CheckParm (const char *parm);
 
 void COM_InitArgv (int argc, char **argv);
 
+//============================================================
+// Alternative variant manipulation with info strings
+//============================================================
+
+#define INFO_HASHPOOL_SIZE 256
+
+#define MAX_CLIENT_INFOS 128
+
+typedef struct info_s {
+	struct info_s	*hash_next;
+	struct info_s	*next;
+
+	char				*name;
+	char				*value;
+
+} info_t;
+
+typedef struct ctxinfo_s {
+
+	info_t	*info_hash[INFO_HASHPOOL_SIZE];
+	info_t	*info_list;
+
+	int		cur; // current infos
+	int		max; // max    infos
+
+} ctxinfo_t;
+
+// return value for given key
+char			*Info_Get(ctxinfo_t *ctx, const char *name);
+// set value for given key
+qbool			Info_Set (ctxinfo_t *ctx, const char *name, const char *value);
+// set value for given star key
+qbool			Info_SetStar (ctxinfo_t *ctx, const char *name, const char *value);
+// remove given key
+qbool			Info_Remove (ctxinfo_t *ctx, const char *name);
+// remove all infos
+void			Info_RemoveAll (ctxinfo_t *ctx);
+// convert old way infostring to new way: \name\qqshka\noaim\1 to hashed variant
+qbool			Info_Convert(ctxinfo_t *ctx, char *str);
+// convert new way to old way
+qbool			Info_ReverseConvert(ctxinfo_t *ctx, char *str, int size);
+// copy star keys from ont ctx to other
+qbool			Info_CopyStar(ctxinfo_t *ctx_from, ctxinfo_t *ctx_to);
+// just print all key value pairs
+void			Info_PrintList(ctxinfo_t *ctx);
+
 //============================================================================
 
 //char *Info_KeyNameForKeyNum (char *s, int key);

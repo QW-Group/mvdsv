@@ -396,8 +396,11 @@ void SV_DropClient (client_t *drop)
 	drop->old_frags = 0;
 	drop->edict->v.frags = 0.0;
 	drop->name[0] = 0;
-	memset (drop->_userinfo_, 0, sizeof(drop->_userinfo_));
-	memset (drop->_userinfoshort_, 0, sizeof(drop->_userinfoshort_));
+
+	Info_RemoveAll(&drop->_userinfo_ctx_);
+	Info_RemoveAll(&drop->_userinfoshort_ctx_);
+//	memset (drop->_userinfo_, 0, sizeof(drop->_userinfo_));
+//	memset (drop->_userinfoshort_, 0, sizeof(drop->_userinfoshort_));
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
@@ -477,7 +480,7 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	MSG_WriteByte (buf, i);
 	MSG_WriteFloat (buf, realtime - client->connection_started);
 
-	strlcpy (info, client->_userinfoshort_, sizeof(info));
+	Info_ReverseConvert(&client->_userinfoshort_ctx_, info, sizeof(info));
 	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 	MSG_WriteByte (buf, svc_updateuserinfo);
@@ -495,7 +498,11 @@ Writes all update values to a client's reliable stream
 */
 void SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 {
-	ClientReliableCheckBlock(cl, 24 + strlen(client->_userinfo_));
+	char info[MAX_EXT_INFO_STRING];
+
+	Info_ReverseConvert(&client->_userinfoshort_ctx_, info, sizeof(info));
+
+	ClientReliableCheckBlock(cl, 24 + strlen(info));
 	if (cl->num_backbuf)
 	{
 		SV_FullClientUpdate (client, &cl->backbuf);
@@ -569,8 +576,8 @@ static void SVC_Status (void)
 			        ( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
 			          ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
 			{
-				top    = Q_atoi(Info_ValueForKey (cl->_userinfo_, "topcolor"));
-				bottom = Q_atoi(Info_ValueForKey (cl->_userinfo_, "bottomcolor"));
+				top    = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "topcolor"));
+				bottom = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "bottomcolor"));
 				top    = (top    < 0) ? 0 : ((top    > 13) ? 13 : top);
 				bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
 				ping   = SV_CalcPing (cl);
@@ -591,7 +598,7 @@ static void SVC_Status (void)
 
 				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i", cl->userid, frags,
 				            (int)(realtime - cl->connection_started)/60, ping, name,
-				            Info_ValueForKey (cl->_userinfo_, "skin"), top, bottom);
+				            Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
 
 				if (opt & STATUS_SHOWTEAMS)
 					Con_Printf (" \"%s\"\n", cl->team);
@@ -798,153 +805,184 @@ static qbool ValidateUserInfo (char *userinfo)
 	return true;
 }
 
-/*
-==================
-SVC_DirectConnect
+//==============================================
 
-A connection request that did not come from the master
-==================
-*/
-int SV_VIPbyIP(netadr_t adr);
-int SV_VIPbyPass (char *pass);
-extern void MVD_PlayerReset(int player);
-
-#ifdef USE_PR2
-extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
-#endif
-extern char *shortinfotbl[];
-static void SVC_DirectConnect (void)
+void FixMaxClientsCvars(void)
 {
-	int clients, spectators, vips, qport, version1, challenge, i, edictnum;
-	qbool spass = false, vip;
-	int spectator;
-	client_t *cl, *newcl;
-	char userinfo[1024];
-	char *s;
-	netadr_t adr;
-	edict_t *ent;
-#ifdef PROTOCOL_VERSION_FTE
-	unsigned int protextsupported = 0;
-#endif
+	if ((int)maxclients.value > MAX_CLIENTS)
+		Cvar_SetValue (&maxclients, MAX_CLIENTS);
 
+	if ((int)maxspectators.value > MAX_CLIENTS)
+		Cvar_SetValue (&maxspectators, MAX_CLIENTS);
 
-	version1 = Q_atoi(Cmd_Argv(1));
-	if (version1 != PROTOCOL_VERSION)
-	{
-//		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
-		Netchan_OutOfBandPrint (net_from, "%c\nServer is version " QW_VERSION ".\n", A2C_PRINT);
-		Con_Printf ("* rejected connect from version %i\n", version1);
-		return;
-	}
+	if ((int)maxvip_spectators.value > MAX_CLIENTS)
+		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS);
 
-	qport = Q_atoi(Cmd_Argv(2));
+	if ((int)maxspectators.value + maxclients.value > MAX_CLIENTS)
+		Cvar_SetValue (&maxspectators, MAX_CLIENTS - (int)maxclients.value);
 
-	challenge = Q_atoi(Cmd_Argv(3));
+	if ((int)maxspectators.value + maxclients.value + maxvip_spectators.value > MAX_CLIENTS)
+		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS - (int)maxclients.value - (int)maxspectators.value);
 
-	// note an extra byte is needed to replace spectator key
-	strlcpy (userinfo, Cmd_Argv(4), sizeof(userinfo));
-	if (!ValidateUserInfo(userinfo))
-	{
-		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo. Restart your qwcl\n", A2C_PRINT);
-		return;
-	}
+}
 
-#ifdef PROTOCOL_VERSION_FTE
+//==============================================
 
-//
-// WARNING: WARNING: WARNING: using Cmd_TokenizeString() so do all Cmd_Argv() above.
-//
+// see if the challenge is valid
+qbool CheckChallange( int challenge )
+{
+	int i;
 
-	while(!msg_badread)
-	{
-		Cmd_TokenizeString(MSG_ReadStringLine());
-		switch(Q_atoi(Cmd_Argv(0)))
-		{
-		case PROTOCOL_VERSION_FTE:
-			protextsupported = Q_atoi(Cmd_Argv(1));
-			Con_DPrintf("Client supports 0x%x fte extensions\n", protextsupported);
-			break;
-		}
-	}
-
-	msg_badread = false;
-
-#endif
-
-	// see if the challenge is valid
 	for (i = 0; i < MAX_CHALLENGES; i++)
 	{
 		if (NET_CompareBaseAdr (net_from, svs.challenges[i].adr))
 		{
 			if (challenge == svs.challenges[i].challenge)
 				break;		// good
+
 			Netchan_OutOfBandPrint (net_from, "%c\nBad challenge.\n", A2C_PRINT);
-			return;
+			return false;
 		}
 	}
+
 	if (i == MAX_CHALLENGES)
 	{
 		Netchan_OutOfBandPrint (net_from, "%c\nNo challenge for address.\n", A2C_PRINT);
-		return;
+		return false;
 	}
 
-	// check for password or spectator_password
-	s = Info_ValueForKey (userinfo, "spectator");
+	return true;
+}
 
-	vip = false;
+//==============================================
+
+qbool CheckProtocol( int ver )
+{
+	if (ver != PROTOCOL_VERSION)
+	{
+//		Netchan_OutOfBandPrint (net_from, "%c\nServer is version %4.2f.\n", A2C_PRINT, QW_VERSION);
+		Netchan_OutOfBandPrint (net_from, "%c\nServer is version " QW_VERSION ".\n", A2C_PRINT);
+		Con_Printf ("* rejected connect from version %i\n", ver);
+		return false;
+	}
+
+	return true;
+}
+
+//==============================================
+
+qbool CheckUserinfo( char *userinfobuf, unsigned int bufsize, char *userinfo )
+{
+	strlcpy (userinfobuf, userinfo, bufsize);
+
+	// and now validate userinfo
+	if ( !ValidateUserInfo( userinfobuf ) )
+	{
+		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo. Restart your qwcl\n", A2C_PRINT);
+		return false;
+	}
+
+	return true;
+}
+
+//==============================================
+
+int SV_VIPbyIP(netadr_t adr);
+int SV_VIPbyPass (char *pass);
+
+qbool CheckPasswords( char *userinfo, int userinfo_size, qbool *spass_ptr, qbool *vip_ptr, int *spectator_ptr )
+{
+	int spectator;
+	qbool spass, vip;
+
+	char *s = Info_ValueForKey (userinfo, "spectator");
+	char *pwd;
+
+	spass = vip = spectator = false;
+
 	if (s[0] && strcmp(s, "0"))
 	{
 		spass = true;
 
-		if ((vip = SV_VIPbyPass(s)) == 0 &&
-			(vip = SV_VIPbyPass(Info_ValueForKey (userinfo, "password"))) == 0) // first the pass, then ip
-			vip = SV_VIPbyIP(net_from);
+		// first the pass, then ip
+		if ( !( vip = SV_VIPbyPass( s ) ) )
+		{
+			if ( !( vip = SV_VIPbyPass( Info_ValueForKey( userinfo, "password") ) ) )
+			{
+				vip = SV_VIPbyIP( net_from );
+			}
+		}
 
-		if (spectator_password.string[0] &&
-		        strcasecmp(spectator_password.string, "none") &&
-		        strcmp(spectator_password.string, s) )
-		{	// failed
-			spass = false;
+		pwd = spectator_password.string;
+
+		if (pwd[0] && strcasecmp(pwd, "none") && strcmp(pwd, s))
+		{
+			spass = false; // failed
 		}
 
 		if (!vip && !spass)
 		{
 			Con_Printf ("%s:spectator password failed\n", NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_from, "%c\nrequires a spectator password\n\n", A2C_PRINT);
-			return;
+
+			return false;
 		}
 
 		Info_RemoveKey (userinfo, "spectator"); // remove passwd
-		Info_SetValueForStarKey (userinfo, "*spectator", "1", sizeof(userinfo));
-		if ((spectator = Q_atoi(s)) == 0)
+		Info_SetValueForStarKey (userinfo, "*spectator", "1", userinfo_size);
+
+		spectator = Q_atoi(s);
+
+		if (!spectator)
 			spectator = true;
 	}
 	else
 	{
 		s = Info_ValueForKey (userinfo, "password");
-		if ((vip = SV_VIPbyPass(s)) == 0) // first the pass, then ip
-			vip = SV_VIPbyIP(net_from);
 
-		if (!vip && password.string[0] &&
-		        strcasecmp(password.string, "none") &&
-		        strcmp(password.string, s) )
+		// first the pass, then ip
+		if (!(vip = SV_VIPbyPass(s)))
+		{
+			vip = SV_VIPbyIP(net_from);
+		}
+
+		pwd = password.string;
+
+		if (!vip && pwd[0] && strcasecmp(pwd, "none") && strcmp(pwd, s))
 		{
 			Con_Printf ("%s:password failed\n", NET_AdrToString (net_from));
 			Netchan_OutOfBandPrint (net_from, "%c\nserver requires a password\n\n", A2C_PRINT);
-			return;
+
+			return false;
 		}
+
+		Info_RemoveKey (userinfo, "spectator"); // remove "spectator 0" for example
+
 		spectator = false;
 	}
 
 	Info_RemoveKey (userinfo, "password"); // remove passwd
 
-	adr = net_from;
+	// copy 
+	*spass_ptr     = spass;
+	*vip_ptr       = vip;
+	*spectator_ptr = spectator;
 
-	// if there is already a slot for this ip, reuse (changed from drop) it
+	return true;
+}
+
+//==============================================
+
+qbool CheckReConnect( netadr_t adr, int qport )
+{
+	int i;
+	client_t *cl;
+
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
 		if (cl->state == cs_free)
 			continue;
+
 		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) &&
 			(cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port))
 		{
@@ -952,7 +990,8 @@ static void SVC_DirectConnect (void)
 			if ((realtime - cl->lastconnect) < sv_reconnectlimit.value * 1000)
 			{
 				Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
-				return;
+
+				return false;
 			}
 			//<-
 
@@ -962,7 +1001,7 @@ static void SVC_DirectConnect (void)
 				// if client core dumped, then allow to reuse slot (EXPERIMENTAL)
 				SV_DropClient (cl);
 				SV_ClearReliable (cl);	// don't send the disconnect
-				//return;
+				//return false;
 			}
 
 			Con_Printf ("%s:reconnect\n", NET_AdrToString (adr));
@@ -971,25 +1010,115 @@ static void SVC_DirectConnect (void)
 				SV_DropClient (cl);
 				SV_ClearReliable (cl);	// don't send the disconnect
 			}
+
 			cl->state = cs_free;
 			break;
 		}
 	}
 
+	return true;
+}
+
+/*
+==================
+SVC_DirectConnect
+
+A connection request that did not come from the master
+==================
+*/
+extern void MVD_PlayerReset(int player);
+
+#ifdef USE_PR2
+extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
+#endif
+extern char *shortinfotbl[];
+
+static void SVC_DirectConnect (void)
+{
+	int spectator;
+	qbool spass, vip, rip_vip;
+
+	int clients, spectators, vips;
+	int qport, i, edictnum;
+
+	client_t *cl, *newcl;
+
+	char userinfo[1024];
+	char *s;
+	netadr_t adr;
+	edict_t *ent;
+
+#ifdef PROTOCOL_VERSION_FTE
+	unsigned int protextsupported = 0;
+#endif
+
+	// check version/protocol
+	if ( !CheckProtocol( Q_atoi( Cmd_Argv( 1 ) ) ) )
+		return; // wrong protocol number
+
+	// get qport
+	qport = Q_atoi( Cmd_Argv( 2 ) );
+
+	// see if the challenge is valid
+	if ( !CheckChallange( Q_atoi( Cmd_Argv( 3 ) ) ) )
+		return; // wrong challange
+
+	// and now validate userinfo
+	if ( !CheckUserinfo( userinfo, sizeof( userinfo ), Cmd_Argv( 4 ) ) )
+		return; // wrong userinfo
+
+#ifdef PROTOCOL_VERSION_FTE
+
+//
+// WARNING: WARNING: WARNING: using Cmd_TokenizeString() so do all Cmd_Argv() above.
+//
+
+	while( !msg_badread )
+	{
+		Cmd_TokenizeString( MSG_ReadStringLine() );
+
+		switch( Q_atoi( Cmd_Argv( 0 ) ) )
+		{
+		case PROTOCOL_VERSION_FTE:
+			protextsupported = Q_atoi( Cmd_Argv( 1 ) );
+			Con_DPrintf("Client supports 0x%x fte extensions\n", protextsupported);
+			break;
+		}
+	}
+
+	msg_badread = false;
+
+#endif
+
+	spass = vip = rip_vip = spectator = false;
+
+	// check for password or spectator_password
+	if ( !CheckPasswords( userinfo, sizeof(userinfo), &spass, &vip, &spectator) )
+		return; // pass was wrong
+
+	adr = net_from;
+
+	// if there is already a slot for this ip, reuse (changed from drop) it
+	if ( !CheckReConnect( adr, qport ) )
+		return; // can't do that for some reason
+
 	// count up the clients and spectators
 	clients = spectators = vips = 0;
 	newcl = NULL;
+
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
 		if (cl->state == cs_free)
 		{
 			if (!newcl)
-				memset ((newcl = cl), 0, sizeof(*newcl)); // grab first available slot
+				newcl = cl; // grab first available slot
+
 			continue;
 		}
 
 		if (cl->vip)
 			vips++;
+
 		if (cl->spectator)
 		{
 			if (!cl->vip)
@@ -999,61 +1128,59 @@ static void SVC_DirectConnect (void)
 			clients++;
 	}
 
+	FixMaxClientsCvars();
+
 	// if at server limits, refuse connection
-	if ((int)maxclients.value > MAX_CLIENTS)
-		Cvar_SetValue (&maxclients, MAX_CLIENTS);
-	if ((int)maxspectators.value > MAX_CLIENTS)
-		Cvar_SetValue (&maxspectators, MAX_CLIENTS);
-	if ((int)maxvip_spectators.value > MAX_CLIENTS)
-		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS);
 
-	if ((int)maxspectators.value + maxclients.value > MAX_CLIENTS)
-		Cvar_SetValue (&maxspectators, MAX_CLIENTS - (int)maxclients.value);
-	if ((int)maxspectators.value + maxclients.value + maxvip_spectators.value > MAX_CLIENTS)
-		Cvar_SetValue (&maxvip_spectators, MAX_CLIENTS - (int)maxclients.value - (int)maxspectators.value);
-
-	if ( (vip && spectator && vips >= (int)maxvip_spectators.value &&
-	        (spectators >= (int)maxspectators.value || !spass))
-	        || (!vip && spectator && (spectators >= (int)maxspectators.value || !spass))
-	        || (!spectator && clients >= (int)maxclients.value)
-                || !newcl)
+	if (    (vip && spectator && vips >= (int)maxvip_spectators.value && (spectators >= (int)maxspectators.value || !spass))
+         || (!vip && spectator && (spectators >= (int)maxspectators.value || !spass))
+	     || (!spectator && clients >= (int)maxclients.value)
+         || !newcl
+       )
 	{
 		Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
-		if (spectator == 2 && (int)maxvip_spectators.value > vips && !vip)
+
+		// no way to connect does't matter VIP or whatever, just no free slots
+		if (!newcl)
 		{
-			newcl->rip_vip = 1; // yet can be connected if realip is on vip list
-			newcl->vip = 1; // :)
+			Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
+			return;
 		}
-		else
+
+		// !!! SPECTATOR 2 FEATURE !!!
+		if (spectator == 2 && !vip &&  vips < (int)maxvip_spectators.value)
 		{
-			if (!spectator && spectators < (int)maxspectators.value &&
-				( (Q_atoi(Info_ValueForKey (userinfo, "svf")) & SVF_SPEC_ONFULL &&
-				   (int)sv_forcespec_onfull.value == 2) || (int)sv_forcespec_onfull.value == 1))
-			{
-				Netchan_OutOfBandPrint (adr, "%c\nserver is full: connecting as spectator\n", A2C_PRINT);
-				Info_SetValueForStarKey (userinfo, "*spectator", "1", sizeof(userinfo));
-				spectator = true;
-			}
-			else
-			{
-				Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
-				return;
-			}
+			vip = rip_vip = 1; // yet can be connected if realip is on vip list
+		}
+		else if (    !spectator && spectators < (int)maxspectators.value
+				  && (
+				  	      (    (Q_atoi(Info_ValueForKey(userinfo, "svf")) & SVF_SPEC_ONFULL)
+				  	      	&& (int)sv_forcespec_onfull.value == 2
+				  	      ) 
+				   	   		|| (int)sv_forcespec_onfull.value == 1
+				   	 )
+				)
+		{
+			Netchan_OutOfBandPrint (adr, "%c\nserver is full: connecting as spectator\n", A2C_PRINT);
+			Info_SetValueForStarKey (userinfo, "*spectator", "1", sizeof(userinfo));
+			spectator = true;
 		}
 	}
 
 	// build a new connection
 	// accept the new client
 	// this is the only place a client_t is ever initialized
-	//memset (newcl, 0, sizeof(*newcl));
-	//we first set newcl->rip_vip and then clean newcl - nice! :-[=]
+	memset (newcl, 0, sizeof(*newcl));
+
 	newcl->userid = SV_GenerateUserID();
 
 #ifdef PROTOCOL_VERSION_FTE
 	newcl->fteprotocolextensions = protextsupported;
 #endif
 
-	strlcpy (newcl->_userinfo_, userinfo, sizeof(newcl->_userinfo_));
+	newcl->_userinfo_ctx_.max      = MAX_CLIENT_INFOS;
+	newcl->_userinfoshort_ctx_.max = MAX_CLIENT_INFOS;
+	Info_Convert(&newcl->_userinfo_ctx_, userinfo);
 
 	for (i = 0; i < UPDATE_BACKUP; i++)
 		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
@@ -1071,10 +1198,11 @@ static void SVC_DirectConnect (void)
 	// spectator mode can ONLY be set at join time
 	newcl->spectator = spectator;
 	newcl->vip = vip;
+	newcl->rip_vip = rip_vip;
 
 	// extract extensions mask
-	newcl->extensions = Q_atoi(Info_ValueForKey(newcl->_userinfo_, "*z_ext"));
-	Info_RemoveKey (newcl->_userinfo_, "*z_ext");
+	newcl->extensions = Q_atoi(Info_Get(&newcl->_userinfo_ctx_, "*z_ext"));
+	Info_Remove (&newcl->_userinfo_ctx_, "*z_ext");
 
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
@@ -1093,7 +1221,7 @@ static void SVC_DirectConnect (void)
 
 	s = ( vip ? va("%d", vip) : "" );
 
-	Info_SetValueForStarKey (newcl->_userinfo_, "*VIP", s, sizeof(newcl->_userinfo_));
+	Info_SetStar (&newcl->_userinfo_ctx_, "*VIP", s);
 
 	// copy the most important userinfo into userinfoshort
 	// {
@@ -1103,12 +1231,12 @@ static void SVC_DirectConnect (void)
 
 	for (i = 0; shortinfotbl[i] != NULL; i++)
 	{
-		s = Info_ValueForKey(newcl->_userinfo_, shortinfotbl[i]);
-		Info_SetValueForStarKey (newcl->_userinfoshort_, shortinfotbl[i], s, sizeof(newcl->_userinfoshort_));
+		s = Info_Get(&newcl->_userinfo_ctx_, shortinfotbl[i]);
+		Info_SetStar (&newcl->_userinfoshort_ctx_, shortinfotbl[i], s);
 	}
 
 	// move star keys to infoshort
-	Info_CopyStarKeys( newcl->_userinfo_, newcl->_userinfoshort_, sizeof(newcl->_userinfoshort_) );
+	Info_CopyStar( &newcl->_userinfo_ctx_, &newcl->_userinfoshort_ctx_ );
 
 	// }
 
@@ -1133,6 +1261,7 @@ static void SVC_DirectConnect (void)
 	else
 #endif
 		PR_ExecuteProgram (pr_global_struct->SetNewParms);
+
 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
 		newcl->spawn_parms[i] = (&pr_global_struct->parm1)[i];
 
@@ -1146,14 +1275,6 @@ static void SVC_DirectConnect (void)
 	// so I put same demo fix in mentioned functions too.
 	MVD_PlayerReset(NUM_FOR_EDICT(newcl->edict) - 1);
 
-	/*
-	if (newcl->vip && newcl->spectator)
-		Con_Printf ("VIP spectator %s connected\n", newcl->name);
-	else if (newcl->spectator)
-		Con_Printf ("Spectator %s connected\n", newcl->name);
-	else
-		Con_DPrintf ("Client %s connected\n", newcl->name);
-	*/
 	newcl->sendinfo = true;
 }
 
@@ -2885,7 +3006,7 @@ static void SV_CheckVars (void)
 			if (cl->state < cs_preconnected)
 				continue;
 
-			val = Info_ValueForKey (cl->_userinfo_, cl->download ? "drate" : "rate");
+			val = Info_Get (&cl->_userinfo_ctx_, cl->download ? "drate" : "rate");
 			cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(*val ? val : "99999"));
 		}
 	}
@@ -3233,7 +3354,7 @@ static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qbool wa
 		SV_ClientPrintf (cl, PRINT_HIGH, "WARNING: You can't set setinfo %s %s %i.\n",
 		                 key, limit > 0 ? ">" : "<", limit);
 
-	Info_SetValueForKey (cl->_userinfo_, key, va("%i", limit), sizeof(cl->_userinfo_));
+	Info_Set (&cl->_userinfo_ctx_, key, va("%i", limit));
 
 	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 	MSG_WriteString (&cl->netchan.message, va("setinfo \"%s\" \"%i\"\n", key, limit));
@@ -3241,7 +3362,7 @@ static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qbool wa
 
 static void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
 {
-	char *value_c = Info_ValueForKey (cl->_userinfo_, key);
+	char *value_c = Info_Get (&cl->_userinfo_ctx_, key);
 	int value = Q_atoi(value_c);
 
 	if (value > limit)
@@ -3266,7 +3387,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	if (namechanged)
 	{
 		// name for C code
-		val = Info_ValueForKey (cl->_userinfo_, "name");
+		val = Info_Get (&cl->_userinfo_ctx_, "name");
 
 		// trim user name
 		strlcpy (newname, val, sizeof(newname));
@@ -3297,14 +3418,14 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 
 		if (strcmp(val, newname))
 		{
-			Info_SetValueForKey (cl->_userinfo_, "name", newname, sizeof(cl->_userinfo_));
-			val = Info_ValueForKey (cl->_userinfo_, "name");
+			Info_Set (&cl->_userinfo_ctx_, "name", newname);
+			val = Info_Get (&cl->_userinfo_ctx_, "name");
 		}
 
 		if (!val[0] || !strcasecmp(val, "console"))
 		{
-			Info_SetValueForKey (cl->_userinfo_, "name", sv_default_name.string, sizeof(cl->_userinfo_));
-			val = Info_ValueForKey (cl->_userinfo_, "name");
+			Info_Set (&cl->_userinfo_ctx_, "name", sv_default_name.string);
+			val = Info_Get (&cl->_userinfo_ctx_, "name");
 		}
 
 		// check to see if another user by the same name exists
@@ -3333,8 +3454,8 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 				}
 
 				snprintf(newname, sizeof(newname), "(%d)%-.10s", dupc++, p);
-				Info_SetValueForKey (cl->_userinfo_, "name", newname, sizeof(cl->_userinfo_));
-				val = Info_ValueForKey (cl->_userinfo_, "name");
+				Info_Set (&cl->_userinfo_ctx_, "name", newname);
+				val = Info_Get (&cl->_userinfo_ctx_, "name");
 			}
 			else
 				break;
@@ -3370,19 +3491,19 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	}
 
 	// team
-	strlcpy (cl->team, Info_ValueForKey (cl->_userinfo_, "team"), sizeof(cl->team));
+	strlcpy (cl->team, Info_Get (&cl->_userinfo_ctx_, "team"), sizeof(cl->team));
 
 	// rate
-	val = Info_ValueForKey (cl->_userinfo_, cl->download ? "drate" : "rate");
+	val = Info_Get (&cl->_userinfo_ctx_, cl->download ? "drate" : "rate");
 	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(*val ? val : "99999"));
 
 	// message level
-	val = Info_ValueForKey (cl->_userinfo_, "msg");
+	val = Info_Get (&cl->_userinfo_ctx_, "msg");
 	if (val[0])
 		cl->messagelevel = Q_atoi(val);
 
 	//bliP: spectator print ->
-	val = Info_ValueForKey(cl->_userinfo_, "sp");
+	val = Info_Get(&cl->_userinfo_ctx_, "sp");
 	if (val[0])
 		cl->spec_print = Q_atoi(val);
 	//<-
@@ -3618,6 +3739,10 @@ SV_LogPlayer
 */
 void SV_LogPlayer(client_t *cl, char *msg, int level)
 {
+	char info[MAX_EXT_INFO_STRING];
+
+	Info_ReverseConvert(&cl->_userinfo_ctx_, info, sizeof(info));
+
 	SV_Write_Log(PLAYER_LOG, level,
 	             va("%s\\%s\\%i\\%s\\%s\\%i%s\n",
 	                msg,
@@ -3626,7 +3751,7 @@ void SV_LogPlayer(client_t *cl, char *msg, int level)
 	                NET_BaseAdrToString(cl->netchan.remote_address),
 	                NET_BaseAdrToString(cl->realip),
 	                cl->netchan.remote_address.port,
-	                cl->_userinfo_
+	                info
 	               )
 	            );
 }

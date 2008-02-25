@@ -1563,6 +1563,8 @@ Examine a users info strings
 */
 void SV_User_f (void)
 {
+	char info[MAX_EXT_INFO_STRING];
+
 	if (Cmd_Argc() != 2)
 	{
 		Con_Printf ("Usage: user <userid>\n");
@@ -1572,7 +1574,9 @@ void SV_User_f (void)
 	if (!SV_SetPlayer ())
 		return;
 
-	Info_Print (sv_client->_userinfo_);
+	Info_ReverseConvert(&sv_client->_userinfo_ctx_, info, sizeof(info));
+	Info_Print(info);
+	Con_DPrintf ("[%d/%d]\n", strlen(info), sizeof(info));
 }
 
 /*

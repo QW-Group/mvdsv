@@ -154,8 +154,10 @@ typedef struct client_s
 	int				lossage;			// loss percentage
 
 	int				userid;				// identifying number
-	char			_userinfo_[MAX_EXT_INFO_STRING];	// infostring
-	char			_userinfoshort_[MAX_EXT_INFO_STRING];	// infostring
+//	char			_userinfo_[MAX_EXT_INFO_STRING];	// infostring
+//	char			_userinfoshort_[MAX_EXT_INFO_STRING];	// infostring
+	ctxinfo_t		_userinfo_ctx_;
+	ctxinfo_t		_userinfoshort_ctx_;
 
 	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
 	double			localtime;			// of last message
