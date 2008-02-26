@@ -1165,6 +1165,11 @@ static void SVC_DirectConnect (void)
 			Info_SetValueForStarKey (userinfo, "*spectator", "1", sizeof(userinfo));
 			spectator = true;
 		}
+		else
+		{
+			Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
+			return;
+		}
 	}
 
 	// build a new connection
