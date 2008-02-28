@@ -528,7 +528,6 @@ static qbool SV_MVDWritePacketsEx (int num)
 	int				i, j, flags;
 	qbool			valid;
 	double			time1, playertime, nexttime;
-	float			f;
 	vec3_t			origin, angles;
 	sizebuf_t		msg;
 	byte			msg_buf[MAX_MVD_SIZE]; // data without mvd header
@@ -590,11 +589,16 @@ static qbool SV_MVDWritePacketsEx (int num)
 
 			if (valid)
 			{
-				f = (time1 - nexttime)/(nexttime - playertime);
-				for (j=0;j<3;j++)
+				float f = 0;
+				float z = nexttime - playertime;
+
+				if ( z )
+					f = (time1 - nexttime) / z;
+
+				for (j = 0; j < 3; j++)
 				{
-					angles[j] = adjustangle(cl->info.angles[j], nextcl->info.angles[j],1.0+f);
-					origin[j] = nextcl->info.origin[j] + f*(nextcl->info.origin[j]-cl->info.origin[j]);
+					angles[j] = adjustangle(cl->info.angles[j], nextcl->info.angles[j], 1.0 + f);
+					origin[j] = nextcl->info.origin[j] + f * (nextcl->info.origin[j] - cl->info.origin[j]);
 				}
 			}
 			else
@@ -606,11 +610,11 @@ static qbool SV_MVDWritePacketsEx (int num)
 			// now write it to buf
 			flags = cl->flags;
 
-			for (j=0; j < 3; j++)
+			for (j = 0; j < 3; j++)
 				if (origin[j] != demoinfo->origin[j])
 					flags |= DF_ORIGIN << j;
 
-			for (j=0; j < 3; j++)
+			for (j = 0; j < 3; j++)
 				if (angles[j] != demoinfo->angles[j])
 					flags |= DF_ANGLES << j;
 
@@ -629,11 +633,11 @@ static qbool SV_MVDWritePacketsEx (int num)
 
 			MSG_WriteByte (&msg, cl->frame);
 
-			for (j=0 ; j<3 ; j++)
+			for (j = 0 ; j < 3 ; j++)
 				if (flags & (DF_ORIGIN << j))
 					MSG_WriteCoord (&msg, origin[j]);
 
-			for (j=0 ; j<3 ; j++)
+			for (j = 0 ; j < 3 ; j++)
 				if (flags & (DF_ANGLES << j))
 					MSG_WriteAngle16 (&msg, angles[j]);
 
@@ -675,7 +679,7 @@ static qbool SV_MVDWritePacketsEx (int num)
 			DemoWrite(demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.data, demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize);
 
 			msec = 0; // That matter, we wrote time mark, so next data(if any) in this frame follow with zero milliseconds offset, since it same frame.
-					  // NOTE: demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize possibile to be zero, in this case we wrote msec below...
+					  // NOTE: demo.frames[demo.lastwritten&UPDATE_MASK]._buf_.cursize possible to be zero, in this case we wrote msec below...
 		}
 
 		// Write data about players, if we have data.
