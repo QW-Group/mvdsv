@@ -606,21 +606,13 @@ static qbool SV_MVDWritePacketsEx (int num)
 			// now write it to buf
 			flags = cl->flags;
 
-			if (cl->fixangle)
-			{
-				demo.fixangletime[i] = cl->cmdtime;
-			}
-
 			for (j=0; j < 3; j++)
 				if (origin[j] != demoinfo->origin[j])
 					flags |= DF_ORIGIN << j;
 
-			if (cl->fixangle || demo.fixangletime[i] != cl->cmdtime)
-			{
-				for (j=0; j < 3; j++)
-					if (angles[j] != demoinfo->angles[j])
-						flags |= DF_ANGLES << j;
-			}
+			for (j=0; j < 3; j++)
+				if (angles[j] != demoinfo->angles[j])
+					flags |= DF_ANGLES << j;
 
 			if (cl->info.model != demoinfo->model)
 				flags |= DF_MODEL;

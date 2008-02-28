@@ -384,7 +384,6 @@ typedef struct
 	client_t		recorder;
 
 	qbool			fixangle[MAX_CLIENTS];
-	float			fixangletime[MAX_CLIENTS];
 	vec3_t			angles[MAX_CLIENTS];
 
 	int				stats[MAX_CLIENTS][MAX_CL_STATS];
