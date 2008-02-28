@@ -613,19 +613,19 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 	// a fixangle might get lost in a dropped packet.  Oh well.
 	if (ent->v.fixangle)
 	{
+		ent->v.fixangle = 0;
+		demo.fixangle[clnum] = true;
+
 		MSG_WriteByte (msg, svc_setangle);
 		for (i=0 ; i < 3 ; i++)
 			MSG_WriteAngle (msg, ent->v.angles[i] );
-		VectorCopy(ent->v.angles, demo.angles[clnum]);
-		ent->v.fixangle = 0;
-		demo.fixangle[clnum] = true;
 
 		if (sv.mvdrecording)
 		{
 			MSG_WriteByte (&demo.datagram, svc_setangle);
 			MSG_WriteByte (&demo.datagram, clnum);
 			for (i=0 ; i < 3 ; i++)
-				MSG_WriteAngle (&demo.datagram, demo.angles[clnum][i] );
+				MSG_WriteAngle (&demo.datagram, ent->v.angles[i] );
 		}
 	}
 
