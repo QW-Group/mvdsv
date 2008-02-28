@@ -524,7 +524,7 @@ and writes packets to the disk/memory
 static qbool SV_MVDWritePacketsEx (int num)
 {
 	demo_frame_t	*frame, *nextframe;
-	demo_client_t	*cl, *nextcl = NULL;
+	demo_client_t	*cl, *nextcl = NULL, *last_cl;
 	int				i, j, flags;
 	qbool			valid;
 	double			time1, playertime, nexttime;
@@ -532,7 +532,6 @@ static qbool SV_MVDWritePacketsEx (int num)
 	sizebuf_t		msg;
 	byte			msg_buf[MAX_MVD_SIZE]; // data without mvd header
 	byte			msec;
-	demoinfo_t		*demoinfo;
 
 	if (!sv.mvdrecording)
 		return false;
@@ -555,7 +554,7 @@ static qbool SV_MVDWritePacketsEx (int num)
 		// find two frames
 		// one before the exact time (time - msec) and one after,
 		// then we can interpolte exact position for current frame
-		for (i = 0, cl = frame->clients, demoinfo = demo.info; i < MAX_CLIENTS; i++, cl++, demoinfo++)
+		for (i = 0, cl = frame->clients, last_cl = demo.clients; i < MAX_CLIENTS; i++, cl++, last_cl++)
 		{
 			if (cl->parsecount != demo.lastwritten)
 				continue; // not valid
@@ -565,7 +564,9 @@ static qbool SV_MVDWritePacketsEx (int num)
 
 			nexttime = playertime = time1 - cl->sec;
 
-			for (j = demo.lastwritten+1, valid = false; nexttime < time1 && j < demo.parsecount; j++)
+			valid = false;
+
+			for (j = demo.lastwritten+1; nexttime < time1 && j < demo.parsecount; j++)
 			{
 				nextframe = &demo.frames[j&UPDATE_MASK];
 				nextcl = &nextframe->clients[i];
@@ -597,34 +598,34 @@ static qbool SV_MVDWritePacketsEx (int num)
 
 				for (j = 0; j < 3; j++)
 				{
-					angles[j] = adjustangle(cl->info.angles[j], nextcl->info.angles[j], 1.0 + f);
-					origin[j] = nextcl->info.origin[j] + f * (nextcl->info.origin[j] - cl->info.origin[j]);
+					angles[j] = adjustangle(cl->angles[j], nextcl->angles[j], 1.0 + f);
+					origin[j] = nextcl->origin[j] + f * (nextcl->origin[j] - cl->origin[j]);
 				}
 			}
 			else
 			{
-				VectorCopy(cl->info.origin, origin);
-				VectorCopy(cl->info.angles, angles);
+				VectorCopy(cl->origin, origin);
+				VectorCopy(cl->angles, angles);
 			}
 
 			// now write it to buf
 			flags = cl->flags;
 
 			for (j = 0; j < 3; j++)
-				if (origin[j] != demoinfo->origin[j])
+				if (origin[j] != last_cl->origin[j])
 					flags |= DF_ORIGIN << j;
 
 			for (j = 0; j < 3; j++)
-				if (angles[j] != demoinfo->angles[j])
+				if (angles[j] != last_cl->angles[j])
 					flags |= DF_ANGLES << j;
 
-			if (cl->info.model != demoinfo->model)
+			if (cl->model != last_cl->model)
 				flags |= DF_MODEL;
-			if (cl->info.effects != demoinfo->effects)
+			if (cl->effects != last_cl->effects)
 				flags |= DF_EFFECTS;
-			if (cl->info.skinnum != demoinfo->skinnum)
+			if (cl->skinnum != last_cl->skinnum)
 				flags |= DF_SKINNUM;
-			if (cl->info.weaponframe != demoinfo->weaponframe)
+			if (cl->weaponframe != last_cl->weaponframe)
 				flags |= DF_WEAPONFRAME;
 
 			MSG_WriteByte (&msg, svc_playerinfo);
@@ -641,25 +642,22 @@ static qbool SV_MVDWritePacketsEx (int num)
 				if (flags & (DF_ANGLES << j))
 					MSG_WriteAngle16 (&msg, angles[j]);
 
-
 			if (flags & DF_MODEL)
-				MSG_WriteByte (&msg, cl->info.model);
+				MSG_WriteByte (&msg, cl->model);
 
 			if (flags & DF_SKINNUM)
-				MSG_WriteByte (&msg, cl->info.skinnum);
+				MSG_WriteByte (&msg, cl->skinnum);
 
 			if (flags & DF_EFFECTS)
-				MSG_WriteByte (&msg, cl->info.effects);
+				MSG_WriteByte (&msg, cl->effects);
 
 			if (flags & DF_WEAPONFRAME)
-				MSG_WriteByte (&msg, cl->info.weaponframe);
+				MSG_WriteByte (&msg, cl->weaponframe);
 
-			VectorCopy(cl->info.origin, demoinfo->origin);
-			VectorCopy(cl->info.angles, demoinfo->angles);
-			demoinfo->skinnum = cl->info.skinnum;
-			demoinfo->effects = cl->info.effects;
-			demoinfo->weaponframe = cl->info.weaponframe;
-			demoinfo->model = cl->info.model;
+			cl->flags = flags;
+
+			// save in last_cl what we wrote to msg so later we can delta from it
+			*last_cl = *cl; // struct copy
 		}
 
 		// get frame time mark (delta between two frames)
@@ -1007,7 +1005,7 @@ void MVD_PlayerReset(int player)
 		return;
 	}
 
-	memset(&(demo.info[player]), 0, sizeof(demo.info[0]));
+	memset(&(demo.clients[player]), 0, sizeof(demo.clients[0]));
 }
 
 qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)

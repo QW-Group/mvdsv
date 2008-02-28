@@ -320,37 +320,40 @@ static void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs
 
 			dcl->parsecount = demo.parsecount;
 
-			VectorCopy(ent->v.origin, dcl->info.origin);
-			VectorCopy(ent->v.angles, dcl->info.angles);
-			dcl->info.angles[0] *= -3;
+			VectorCopy(ent->v.origin, dcl->origin);
+			VectorCopy(ent->v.angles, dcl->angles);
+			dcl->angles[0] *= -3;
 #ifdef USE_PR2
 			if( cl->isBot )
-				VectorCopy(ent->v.v_angle, dcl->info.angles);
+				VectorCopy(ent->v.v_angle, dcl->angles);
 #endif
-			dcl->info.angles[2] = 0; // no roll angle
+			dcl->angles[2] = 0; // no roll angle
 
 			if (ent->v.health <= 0)
 			{	// don't show the corpse looking around...
-				dcl->info.angles[0] = 0;
-				dcl->info.angles[1] = ent->v.angles[1];
-				dcl->info.angles[2] = 0;
+				dcl->angles[0] = 0;
+				dcl->angles[1] = ent->v.angles[1];
+				dcl->angles[2] = 0;
 			}
 
-			dcl->info.skinnum = ent->v.skin;
-			dcl->info.effects = ent->v.effects;
-			dcl->info.weaponframe = ent->v.weaponframe;
-			dcl->info.model = ent->v.modelindex;
-			dcl->sec = sv.time - cl->localtime;
-			dcl->frame = ent->v.frame;
-			dcl->flags = 0;
-			dcl->cmdtime = cl->localtime;
-			dcl->fixangle = demo.fixangle[j];
+			dcl->weaponframe = ent->v.weaponframe;
+			dcl->frame       = ent->v.frame;
+			dcl->skinnum     = ent->v.skin;
+			dcl->model       = ent->v.modelindex;
+			dcl->effects     = ent->v.effects;
+			dcl->flags       = 0;
+
+			dcl->fixangle    = demo.fixangle[j];
 			demo.fixangle[j] = 0;
 
+			dcl->cmdtime     = cl->localtime;
+			dcl->sec         = sv.time - cl->localtime;
+			
 			if (ent->v.health <= 0)
 				dcl->flags |= DF_DEAD;
 			if (ent->v.mins[2] != -24)
 				dcl->flags |= DF_GIB;
+
 			continue;
 		}
 

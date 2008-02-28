@@ -279,23 +279,22 @@ typedef struct client_s
 
 typedef struct
 {
+	int				parsecount;
+
 	vec3_t			origin;
 	vec3_t			angles;
 	int				weaponframe;
+	int				frame;
 	int				skinnum;
 	int				model;
 	int				effects;
-} demoinfo_t;
-
-typedef struct
-{
-	demoinfo_t		info;
-	float			sec;
-	int				parsecount;
-	qbool			fixangle;
-	float			cmdtime;
 	int				flags;
-	int				frame;
+
+	qbool			fixangle;
+
+	float			cmdtime;
+	float			sec;
+
 } demo_client_t;
 
 typedef struct
@@ -390,8 +389,8 @@ typedef struct
 	int				parsecount;  // current frame, to which we add demo data
 	int				lastwritten; // lastwriten frame
 
-	demo_frame_t	frames[UPDATE_BACKUP];
-	demoinfo_t		info[MAX_CLIENTS];
+	demo_frame_t	frames[UPDATE_BACKUP]; // here we store all previous frames
+	demo_client_t	clients[MAX_CLIENTS]; // we store here what we wrote last time so we can delta
 
 	int				forceFrame;
 
