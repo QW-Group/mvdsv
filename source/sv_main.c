@@ -399,8 +399,6 @@ void SV_DropClient (client_t *drop)
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);
 	Info_RemoveAll(&drop->_userinfoshort_ctx_);
-//	memset (drop->_userinfo_, 0, sizeof(drop->_userinfo_));
-//	memset (drop->_userinfoshort_, 0, sizeof(drop->_userinfoshort_));
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);

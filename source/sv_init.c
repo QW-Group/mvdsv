@@ -270,8 +270,6 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 			svs.clients[i].state = cs_free;
 			Info_RemoveAll(&svs.clients[i]._userinfo_ctx_);
 			Info_RemoveAll(&svs.clients[i]._userinfoshort_ctx_);
-//			memset(svs.clients[i]._userinfo_, 0, sizeof(svs.clients[i]._userinfo_));
-//			memset(svs.clients[i]._userinfoshort_, 0, sizeof(svs.clients[i]._userinfoshort_));
 			SV_FullClientUpdate(&svs.clients[i], &sv.reliable_datagram);
 			svs.clients[i].isBot = 0;
 		}

@@ -2525,8 +2525,6 @@ void RemoveBot(client_t *cl)
 
 	Info_RemoveAll(&cl->_userinfo_ctx_);
 	Info_RemoveAll(&cl->_userinfoshort_ctx_);
-//	memset( cl->_userinfo_, 0, sizeof( cl->_userinfo_ ) );
-//	memset( cl->_userinfoshort_, 0, sizeof( cl->_userinfoshort_ ) );
 
 	SV_FullClientUpdate( cl, &sv.reliable_datagram );
 	cl->isBot = 0;

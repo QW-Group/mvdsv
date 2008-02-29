@@ -1072,7 +1072,6 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
 
 void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 {
-//	qbool first_dest = !sv.mvdrecording; // if we are not recording yet, that must be first dest
 	sizebuf_t	buf;
 	unsigned char buf_data[MAX_MSGLEN];
 	unsigned int n;
@@ -1259,7 +1258,6 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		MSG_WriteFloat (&buf, realtime - player->connection_started);
 
 		Info_ReverseConvert(&player->_userinfoshort_ctx_, info, sizeof(info));
-//		strlcpy (info, player->_userinfoshort_, sizeof(info));
 		Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 		MSG_WriteByte (&buf, svc_updateuserinfo);
@@ -1276,7 +1274,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 	// that need only if that non first dest, demo code suppose we alredy have this, and do not send
 	// this set proper model origin and angles etc for players
-	for (i = 0; i < MAX_CLIENTS /* && !first_dest */ ; i++)
+	for (i = 0; i < MAX_CLIENTS; i++)
 	{
 		vec3_t origin, angles;
 		edict_t *ent;
