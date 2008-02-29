@@ -970,6 +970,38 @@ static void SV_WriteRecordMVDMessage (sizebuf_t *msg)
 }
 
 /*
+====================
+SV_WriteRecordMVDStatsMessage
+====================
+*/
+static void SV_WriteRecordMVDStatsMessage (sizebuf_t *msg, int client)
+{
+	int len;
+	byte c;
+
+	if (!sv.mvdrecording)
+		return;
+
+	if (!msg->cursize)
+		return;
+
+	if (client < 0 || client >= MAX_CLIENTS)
+		return;
+
+	c = 0;
+	DemoWrite (&c, sizeof(c));
+
+	c = dem_stats | (client << 3) ; // msg "type" and "to" incapsulated in one byte
+	DemoWrite (&c, sizeof(c));
+
+	len = LittleLong (msg->cursize);
+	DemoWrite (&len, 4);
+
+	DemoWrite (msg->data, msg->cursize);
+}
+
+
+/*
 static void SV_WriteSetMVDMessage (void)
 {
 	int len;
@@ -1078,6 +1110,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	char *s, info[MAX_EXT_INFO_STRING];
 
 	client_t *player;
+	edict_t *ent;
 	char *gamedir;
 	int i;
 
@@ -1198,6 +1231,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		n++;
 		s = sv.model_precache[n+1];
 	}
+
 	if (buf.cursize)
 	{
 		MSG_WriteByte (&buf, 0);
@@ -1272,12 +1306,16 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		}
 	}
 
-	// that need only if that non first dest, demo code suppose we alredy have this, and do not send
+	if (buf.cursize)
+	{
+		SV_WriteRecordMVDMessage (&buf);
+		SZ_Clear (&buf);
+	}
+
 	// this set proper model origin and angles etc for players
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
 		vec3_t origin, angles;
-		edict_t *ent;
 		int j, flags;
 
 		player = svs.clients + i;
@@ -1285,6 +1323,10 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 		if (player->state != cs_spawned)
 			continue;
+
+// FIXME: do we need send specs?
+//		if (player->spectator)
+//			continue;
 
 		flags =   (DF_ORIGIN << 0) | (DF_ORIGIN << 1) | (DF_ORIGIN << 2)
 				| (DF_ANGLES << 0) | (DF_ANGLES << 1) | (DF_ANGLES << 2)
@@ -1340,6 +1382,81 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 			SV_WriteRecordMVDMessage (&buf);
 			SZ_Clear (&buf);
 		}
+	}
+
+	// we really need clear buffer before sending stats
+	if (buf.cursize)
+	{
+		SV_WriteRecordMVDMessage (&buf);
+		SZ_Clear (&buf);
+	}
+
+	// send stats
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		int		stats[MAX_CL_STATS];
+		int		j;
+
+		player = svs.clients + i;
+		ent = player->edict;
+
+		if (player->state != cs_spawned)
+			continue;
+
+		if (player->spectator)
+			continue;
+
+		memset(stats, 0, sizeof(stats));
+
+		stats[STAT_HEALTH]       = ent->v.health;
+		stats[STAT_WEAPON]       = SV_ModelIndex(
+#ifdef USE_PR2
+		                         	PR2_GetString(ent->v.weaponmodel)
+#else
+								 	PR_GetString(ent->v.weaponmodel)
+#endif
+		                     );
+		stats[STAT_AMMO]         = ent->v.currentammo;
+		stats[STAT_ARMOR]        = ent->v.armorvalue;
+		stats[STAT_SHELLS]       = ent->v.ammo_shells;
+		stats[STAT_NAILS]        = ent->v.ammo_nails;
+		stats[STAT_ROCKETS]      = ent->v.ammo_rockets;
+		stats[STAT_CELLS]        = ent->v.ammo_cells;
+		stats[STAT_ACTIVEWEAPON] = ent->v.weapon;
+
+		if (ent->v.health > 0) // viewheight for PF_DEAD & PF_GIB is hardwired
+			stats[STAT_VIEWHEIGHT] = ent->v.view_ofs[2];
+
+		// stuff the sigil bits into the high bits of items for sbar
+		stats[STAT_ITEMS] = (int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
+
+		for (j = 0; j < MAX_CL_STATS; j++)
+		{
+			if (stats[j] >= 0 && stats[j] <= 255)
+			{
+				MSG_WriteByte(&buf, svc_updatestat);
+				MSG_WriteByte(&buf, j);
+				MSG_WriteByte(&buf, stats[j]);
+			}
+			else
+			{
+				MSG_WriteByte(&buf, svc_updatestatlong);
+				MSG_WriteByte(&buf, j);
+				MSG_WriteLong(&buf, stats[j]);
+			}
+		}
+
+		if (buf.cursize)
+		{
+			SV_WriteRecordMVDStatsMessage(&buf, i);
+			SZ_Clear (&buf);
+		}
+	}
+
+	// above stats writing must clear buffer
+	if (buf.cursize)
+	{
+		Sys_Error("SV_MVD_SendInitialGamestate: buf.cursize %d", buf.cursize);
 	}
 
 	// send all current light styles
