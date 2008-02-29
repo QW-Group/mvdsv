@@ -1308,8 +1308,6 @@ qbool Info_ReverseConvert(ctxinfo_t *ctx, char *str, int size)
 	info_t *a;
 	int next_size;
 	
-	char *start = str;
-
 	if (!ctx)
 		return false;
 
