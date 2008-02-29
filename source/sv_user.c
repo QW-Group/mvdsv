@@ -2456,6 +2456,12 @@ static void Cmd_Join_f (void)
 		return;
 	}
 
+	if (realtime - sv_client->connection_started < 5)
+	{
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(realtime - sv_client->connection_started));
+		return;
+	}
+
 	// count players already on server
 	numclients = 0;
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
@@ -2563,6 +2569,12 @@ static void Cmd_Observe_f (void)
 
 	if (spectator_password.string[0] && strcmp (spectator_password.string, "none")) {
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "This server requires a %s password. Please disconnect, set the password and reconnect as %s.\n", "spectator", "spectator");
+		return;
+	}
+
+	if (realtime - sv_client->connection_started < 5)
+	{
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(realtime - sv_client->connection_started));
 		return;
 	}
 
