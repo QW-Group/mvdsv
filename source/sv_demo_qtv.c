@@ -27,16 +27,27 @@ cvar_t	qtv_password		= {"qtv_password",			""};
 cvar_t	qtv_pendingtimeout	= {"qtv_pendingtimeout",	"5"};  // 5  seconds must be enough
 cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"45"}; // 45 seconds
 
-static mvddest_t *SV_InitStream (int socket1, netadr_t na)
+static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 {
 	static int lastdest = 0;
 	int count;
 	mvddest_t *dst;
+	char name[sizeof(dst->qtvname)];
+
+	// extract name
+	strlcpy(name, Info_ValueForKey(userinfo, "name"), sizeof(name));
 
 	count = 0;
 	for (dst = demo.dest; dst; dst = dst->nextdest)
+	{
 		if (dst->desttype == DEST_STREAM)
+		{
+			if (name[0] && !strcasecmp(name, dst->qtvname))
+				return NULL; // duplicate name, well empty names may still duplicates...
+
 			count++;
+		}
+	}
 
 	if (count >= (int)qtv_maxstreams.value)
 		return NULL; //sorry
@@ -51,7 +62,12 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na)
 	dst->id = ++lastdest;
 	dst->na = na;
 
-	SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
+	strlcpy(dst->qtvname, name, sizeof(dst->qtvname));
+
+	if (dst->qtvname[0])
+		SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV(%s)!\n", dst->qtvname);
+	else
+		SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
 
 	return dst;
 }
@@ -282,6 +298,7 @@ void SV_MVD_RunPendingConnections (void)
 	int len;
 	mvdpendingdest_t *p;
 	mvdpendingdest_t *np;
+	char userinfo[1024] = {0};
 
 	if (!demo.pendingdest)
 		return;
@@ -475,6 +492,11 @@ void SV_MVD_RunPendingConnections (void)
 							{
 								//compression not supported yet
 							}
+							else if (!strcmp(com_token, "USERINFO"))
+							{
+								start = COM_ParseToken(start, NULL);
+								strlcpy(userinfo, com_token, sizeof(userinfo));
+							}
 							else
 							{
 								//not recognised.
@@ -604,7 +626,7 @@ void SV_MVD_RunPendingConnections (void)
 						{
 							mvddest_t *tmpdest;
 
-							if ((tmpdest = SV_InitStream(p->socket, p->na)))
+							if ((tmpdest = SV_InitStream(p->socket, p->na, userinfo)))
 							{
 								if (!SV_MVD_Record(tmpdest, false))
 									DestClose(tmpdest, false); // can't start record for some reason, close dest then
@@ -626,7 +648,7 @@ void SV_MVD_RunPendingConnections (void)
 						{
 							mvddest_t *tmpdest;
 
-							if ((tmpdest = SV_InitStream(p->socket, p->na)))
+							if ((tmpdest = SV_InitStream(p->socket, p->na, userinfo)))
 							{
 								e = ("QTVSV 1\n"
 								 	"BEGIN\n\n");
@@ -671,6 +693,290 @@ void SV_MVD_RunPendingConnections (void)
 		}
 	}
 }
+
+//============================================================
+//
+// QTV user input
+//
+//============================================================
+
+// { qtv commands
+
+void QTVcmd_Say_f(mvddest_t *d)
+{
+	qbool gameStarted;
+	client_t *client;
+	int		j;
+	char	*p;
+	char	text[1024], text2[1024];
+
+	if (Cmd_Argc () < 2)
+		return;
+
+	if (!strcasecmp(Info_ValueForKey(svs.info, "status"), "Countdown"))
+		gameStarted	= false; // if status is "Countdown" then game is not started yet
+	else
+		gameStarted = GameStarted();
+
+	p = Cmd_Args();
+
+	if (*p == '"')
+	{
+		p++;
+		p[strlen(p)-1] = 0;
+	}
+
+	// for clients and demo
+	snprintf(text, sizeof(text), "#%d:%s: %s\n", d->id, d->qtvname, p);
+	// for server console and logs
+	snprintf(text2, sizeof(text2), "qtv: #%d:%s: %s\n", d->id, d->qtvname, p);
+
+	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
+	{
+		if (client->state != cs_spawned)
+			continue;
+
+		if (gameStarted && !client->spectator)
+			continue; // game started, don't send QTV chat to players, specs still get QTV chat
+
+		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
+	}
+
+	if (sv.mvdrecording)
+	{
+		if (MVDWrite_Begin (dem_all, 0, strlen(text)+3))
+		{
+			MVD_MSG_WriteByte (svc_print);
+			MVD_MSG_WriteByte (PRINT_CHAT);
+			MVD_MSG_WriteString (text);
+		}
+	}
+
+	Sys_Printf("%s", text2);
+	SV_Write_Log(CONSOLE_LOG, 1, text2);
+}
+
+// }
+
+char QTV_cmd[MAX_PROXY_INBUFFER]; // global so it does't allocated on stack, this save some CPU I think
+
+typedef struct
+{
+	char	*name;
+	void	(*func) (mvddest_t *d);
+}
+qtv_ucmd_t;
+
+static qtv_ucmd_t ucmds[] =
+{
+	{"say", 			QTVcmd_Say_f},
+	{"say_team",		QTVcmd_Say_f},
+	{"say_game",		QTVcmd_Say_f},
+
+	{NULL, NULL}
+};
+
+// { qtv utils
+
+typedef struct {
+	unsigned int readpos;
+	unsigned int cursize;
+	unsigned int maxsize;
+	char *data;
+	unsigned int startpos;
+//	qbool overflowed;
+//	qbool allowoverflow;
+} netmsg_t;
+
+static void InitNetMsg(netmsg_t *b, char *buffer, int bufferlength)
+{
+	memset(b, 0, sizeof(netmsg_t));
+
+	b->data    = buffer;
+	b->maxsize = bufferlength;
+}
+
+//probably not the place for these any more..
+static unsigned char ReadByte(netmsg_t *b)
+{
+	if (b->readpos >= b->cursize)
+	{
+		b->readpos = b->cursize+1;
+		return 0;
+	}
+	return b->data[b->readpos++];
+}
+
+static unsigned short ReadShort(netmsg_t *b)
+{
+	int b1, b2;
+	b1 = ReadByte(b);
+	b2 = ReadByte(b);
+
+	return b1 | (b2<<8);
+}
+
+void ReadString(netmsg_t *b, char *string, int maxlen)
+{
+	maxlen--;	//for null terminator
+	while(maxlen)
+	{
+		*string = ReadByte(b);
+		if (!*string)
+			return;
+		string++;
+		maxlen--;
+	}
+	*string++ = '\0';	//add the null
+}
+
+// }
+
+void QTV_ExecuteCmd(mvddest_t *d, char *cmd)
+{
+    char *arg0;
+    qbool found = false;
+	qtv_ucmd_t *u;
+
+//	Sys_Printf("qtv cmd: %s\n", cmd);
+
+	Cmd_TokenizeString (cmd);
+
+	arg0 = Cmd_Argv(0);
+
+//	Sys_RedirectStart(???);
+
+	for (u = ucmds; u->name; u++)
+	{
+		if (!strcmp(arg0, u->name))
+		{
+			if (u->func)
+				u->func(d);
+			found = true;
+			break;
+		}
+	}
+
+	if (!found)
+	{
+		if (developer.value)
+			Sys_Printf("Bad QTV command: %s\n", arg0);
+	}
+
+//	Sys_RedirectStop();
+}
+
+void QTV_ReadInput( mvddest_t *d )
+{
+	int len, parse_end, clc;
+	netmsg_t buf;
+
+	if (d->error)
+		return;
+
+	len = sizeof(d->inbuffer) - d->inbuffersize - 1; // -1 since it null terminated
+
+	if (len)
+	{
+		len = recv(d->socket, d->inbuffer + d->inbuffersize, len, 0);
+
+		if (len == 0)
+		{
+			Sys_Printf("QTV_ReadInput: read error from QTV client, dropping\n");
+			d->error = true;
+			return;
+		}
+		else if (len < 0)
+		{
+			len = 0;
+		}
+
+		d->inbuffersize += len;
+		d->inbuffer[d->inbuffersize] = 0; // null terminated
+	}
+
+	if (d->inbuffersize < 2)
+		return; // we need at least size
+
+	InitNetMsg(&buf, d->inbuffer, d->inbuffersize);
+	buf.cursize	= d->inbuffersize; // we laredy have some data in buffer
+
+	parse_end	= 0;
+
+	while(buf.readpos < buf.cursize)
+	{
+//		Sys_Printf("%d %d\n", buf.readpos, buf.cursize);
+
+		if (buf.readpos > buf.cursize)
+		{
+			d->error = true;
+			Sys_Printf("QTV_ReadInput: Read past end of parse buffer\n");
+			return;
+		}
+
+		buf.startpos = buf.readpos;
+
+		if (buf.cursize - buf.startpos < 2)
+			break; // we need at least size
+
+		len = ReadShort(&buf);
+
+		if (len > (int)sizeof(d->inbuffer) - 1 || len < 3)
+		{
+			d->error = true;
+			Sys_Printf("QTV_ReadInput: can't handle such long/short message: %i\n", len);
+			return;
+		}
+
+		if (len > buf.cursize - buf.startpos)
+			break; // not enough data yet
+
+		parse_end = buf.startpos + len; // so later we know which part of buffer we alredy served
+
+		switch (clc = ReadByte(&buf))
+		{
+		#define qtv_clc_stringcmd    1
+
+		case qtv_clc_stringcmd:
+			QTV_cmd[0] = 0;
+			ReadString(&buf, QTV_cmd, sizeof(QTV_cmd));
+			QTV_ExecuteCmd(d, QTV_cmd);
+			break;
+
+		default:
+			d->error = true;
+			Sys_Printf("QTV_ReadInput: can't handle clc %i\n", clc);
+			return;
+		}
+	}
+
+	if (parse_end)
+	{
+		d->inbuffersize -= parse_end;
+		memmove(d->inbuffer, d->inbuffer + parse_end, d->inbuffersize);
+	}
+}
+
+void QTV_ReadDests( void )
+{
+	mvddest_t *d;
+
+	for (d = demo.dest; d; d = d->nextdest)
+	{
+		if (d->desttype != DEST_STREAM)
+			continue;
+
+		if (d->error)
+			continue;
+
+		QTV_ReadInput(d);
+	}
+}
+
+//============================================================ 
+
+
+
 
 /*
 void DemoWriteQTVTimePad (int msecs)	//broadcast to all proxies

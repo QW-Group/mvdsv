@@ -339,6 +339,8 @@ typedef struct mvdpendingdest_s
 
 typedef enum {DEST_NONE, DEST_FILE, DEST_BUFFEREDFILE, DEST_STREAM} desttype_t;
 
+#define MAX_PROXY_INBUFFER		4096 /* qqshka: too small??? */
+
 typedef struct mvddest_s
 {
 	qbool error; //disables writers, quit ASAP.
@@ -361,6 +363,11 @@ typedef struct mvddest_s
 	double			io_time; // when last IO occur on socket, so we can timeout this dest
 	int				id; // dest id, used by QTV only
 	netadr_t		na;
+
+	char			inbuffer[MAX_PROXY_INBUFFER];
+	int				inbuffersize;
+
+	char			qtvname[64];
 // }
 
 	struct mvddest_s *nextdest;

@@ -1097,6 +1097,7 @@ void MVD_WriteStats(void)
 
 void DestFlush(qbool compleate);
 void SV_MVD_RunPendingConnections(void);
+void QTV_ReadDests( void );
 
 void SV_SendDemoMessage(void)
 {
@@ -1197,13 +1198,17 @@ void SV_SendDemoMessage(void)
 	demo.recorder.netchan.incoming_sequence++;
 	demo.frames[demo.parsecount&UPDATE_MASK].time = demo.time = sv.time;
 
-	if (demo.parsecount - demo.lastwritten > 60) // that's a backup of 3sec in 20fps, should be enough
+//	if (demo.parsecount - demo.lastwritten > 60) // that's a backup of 3sec in 20fps, should be enough
+	if (demo.parsecount - demo.lastwritten > 5)  // lets not wait so much time
 	{
 		SV_MVDWritePackets(1);
 	}
 
 	// flush once per demo frame
 	DestFlush(false);
+
+	// read QTV input once per demo frame
+	QTV_ReadDests();
 
 	if (!sv.mvdrecording)
 		return;
