@@ -3397,7 +3397,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 
 		for (p = val; *p; p++)
 		{
-			if ((*p & 127) == '\\' || *p == '\r' || *p == '\n' || *p == '$' || *p == '"' || *p == ';')
+			if ((*p & 127) == '\\' || *p == '\r' || *p == '\n' || *p == '$' || *p == '#' || *p == '"' || *p == ';')
 			{ // illegal characters in name, set some default
 				strlcpy(newname, sv_default_name.string, sizeof(newname));
 				break;
