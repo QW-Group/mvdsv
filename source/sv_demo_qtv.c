@@ -702,13 +702,17 @@ void SV_MVD_RunPendingConnections (void)
 
 // { qtv commands
 
+// say [say_game] text
+// say_team [say_game] text
+// say_game text
+
 void QTVcmd_Say_f(mvddest_t *d)
 {
 	qbool gameStarted;
 	client_t *client;
 	int		j;
 	char	*p;
-	char	text[1024], text2[1024];
+	char	text[1024], text2[1024], *cmd;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -720,16 +724,33 @@ void QTVcmd_Say_f(mvddest_t *d)
 
 	p = Cmd_Args();
 
-	if (*p == '"')
+	if (*p == '"' && (j = strlen(p)) > 2)
 	{
+		p[j-1] = 0;
 		p++;
-		p[strlen(p)-1] = 0;
 	}
 
+	cmd = Cmd_Argv(0);
+
+	// strip leading say_game but not in case of "cmd say_game say_game"
+	if (strcmp(cmd, "say_game") && !strncasecmp(p, "say_game ", sizeof("say_game ") - 1))
+	{
+		p += sizeof("say_game ") - 1;
+	}
+
+	if (!strcmp(cmd, "say_game"))
+		cmd = "say"; // this makes qtv_%s_game looks right
+
+	if (!strcmp(cmd, "say_team"))
+		gameStarted = true; // send to specs only
+
+	if (gameStarted)
+		cmd = "say_team"; // we can accept only this command, since we will send to specs only
+
 	// for clients and demo
-	snprintf(text, sizeof(text), "#%d:%s: %s\n", d->id, d->qtvname, p);
+	snprintf(text, sizeof(text), "#0:qtv_%s_game:#%d:%s: %s\n", cmd, d->id, d->qtvname, p);
 	// for server console and logs
-	snprintf(text2, sizeof(text2), "qtv: #%d:%s: %s\n", d->id, d->qtvname, p);
+	snprintf(text2, sizeof(text2), "qtv: #0:qtv_%s_game:#%d:%s: %s\n", cmd, d->id, d->qtvname, p);
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
