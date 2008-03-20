@@ -2156,7 +2156,7 @@ void PR2_FS_Restart()
 	int i;
 	if(pr2_num_open_files)
 	{
-		for (i = 0; i <= MAX_PR2_FILES; i++)
+		for (i = 0; i < MAX_PR2_FILES; i++)
 		{
 			if(pr2_fopen_files[i].handle)
 			{

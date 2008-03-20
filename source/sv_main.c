@@ -2980,11 +2980,11 @@ static void SV_CheckVars (void)
 		Cvar_Set (&vip_password, vspw);
 
 		v = 0;
-		if (pw && pw[0] && strcmp(pw, "none"))
+		if (pw[0] && strcmp(pw, "none"))
 			v |= 1;
-		if (spw && spw[0] && strcmp(spw, "none"))
+		if (spw[0] && strcmp(spw, "none"))
 			v |= 2;
-		if (vspw && vspw[0] && strcmp(vspw, "none"))
+		if (vspw[0] && strcmp(vspw, "none"))
 			v |= 4;
 
 		Con_DPrintf ("Updated needpass.\n");
