@@ -1275,6 +1275,8 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	{
 		player = svs.clients + i;
 
+		// there spectators NOT ignored, since this info required, at least userinfo
+
 		MSG_WriteByte (&buf, svc_updatefrags);
 		MSG_WriteByte (&buf, i);
 		MSG_WriteShort (&buf, player->old_frags);
@@ -1324,9 +1326,8 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		if (player->state != cs_spawned)
 			continue;
 
-// FIXME: do we need send specs?
-//		if (player->spectator)
-//			continue;
+		if (player->spectator)
+			continue; // ignore specs
 
 		flags =   (DF_ORIGIN << 0) | (DF_ORIGIN << 1) | (DF_ORIGIN << 2)
 				| (DF_ANGLES << 0) | (DF_ANGLES << 1) | (DF_ANGLES << 2)
