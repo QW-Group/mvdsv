@@ -3112,7 +3112,7 @@ FIXME
 	VectorCopy (pmove.velocity, sv_player->v.velocity);
 	VectorCopy (pmove.angles, sv_player->v.v_angle);
 
-	if (!sv_client->spectator && sv_player->v.solid != SOLID_NOT)
+	if (sv_player->v.solid != SOLID_NOT)
 	{
 		// link into place and touch triggers
 		SV_LinkEdict (sv_player, true);
