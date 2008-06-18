@@ -1188,6 +1188,7 @@ static void Cmd_Download_f(void)
 	extern	cvar_t	sv_demoDir;
 	extern	qbool file_from_pak; // ZOID did file come from pak?
 	int i;
+	qbool allow_dl = false;
 
 	if (Cmd_Argc() != 2)
 	{
@@ -1199,57 +1200,43 @@ static void Cmd_Download_f(void)
 
 	SV_ReplaceChar(name, '\\', '/');
 
-	// hacked by zoid to allow more conrol over download
+	// couple of checks to not allow dl-ing anything except in quake dir
 	if (
-		(
-//		TODO: split name to pathname and filename
-//		and check for 'bad symbols' only in pathname
-			*name == '/' //no absolute
-			|| !strncmp(name, "../", 3) // no leading ../
-			|| strstr (name, "/../") // no /../
-			|| ((i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4)) // no /.. at end
-			|| *name == '.' //relative is pointless
-			|| ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name+i-4,".log",4)) // no logs
+		//TODO: split name to pathname and filename and check for 'bad symbols' only in pathname
+		*name == '/' // no absolute
+		|| !strncmp(name, "../", 3) // no leading ../
+		|| strstr(name, "/../") // no /../
+		|| ((i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4)) // no /.. at end
+		|| *name == '.' //relative is pointless
+		|| ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 5)) // no logs
 #ifdef _WIN32
-			// no leading X:
-		   	|| ( name[1] == ':' && (*name >= 'a' && *name <= 'z' ||
-						*name >= 'A' && *name <= 'Z') )
+		// no leading X:
+	   	|| ( name[0] && name[1] == ':' && (*name >= 'a' && *name <= 'z' ||	*name >= 'A' && *name <= 'Z') )
 #endif //_WIN32
-		)
-		||
-		(
-			!sv_client->special &&
-			(
-			// global allow check
-			!(int)allow_download.value
-			// next up, skin check
-			|| (strncmp(name, "skins/", 6) == 0 && !(int)allow_download_skins.value)
-			// now models
-			|| (strncmp(name, "progs/", 6) == 0 && !(int)allow_download_models.value)
-			// now sounds
-			|| (strncmp(name, "sound/", 6) == 0 && !(int)allow_download_sounds.value)
-			// now maps (note special case for maps, must not be in pak)
-			|| (strncmp(name, "maps/", 5) == 0 && !(int)allow_download_maps.value)
-			// now demos
-			|| (strncmp(name, "demos/", 6) == 0 && !(int)allow_download_demos.value)
-			|| (strncmp(name, "demonum/", 8) == 0 && !(int)allow_download_demos.value)
-			// all other stuff FIXME
-			|| (!(int)allow_download_other.value &&
-		   		!strncmp(name, "skins/", 6) &&
-		   		!strncmp(name, "progs/", 6) &&
-				!strncmp(name, "sound/", 6) &&
-				!strncmp(name, "maps/", 5) &&
-				!strncmp(name, "demos/", 6) &&
-				!strncmp(name, "demonum/", 8))
-			//  MUST be in a subdirectory
-			|| !strstr (name, "/")
-			)
-		)
-		||
-		(
-			strcasestr (name, "pwd.cfg") // disconnect: FIXME: remove it?
-		)
-	) goto deny_download;
+	   )
+		goto deny_download;		
+
+	if (sv_client->special)
+		allow_dl = true; // NOTE: user used techlogin, allow dl anything in quake dir in such case!
+	else if (!strstr(name, "/"))
+		allow_dl = false; // should be in subdir
+	else if (!(int)allow_download.value)
+		allow_dl = false; // global allow check
+	else if (!strncmp(name, "skins/", 6))
+		allow_dl = allow_download_skins.value; // skins
+	else if (!strncmp(name, "progs/", 6))
+		allow_dl = allow_download_models.value; // models
+	else if (!strncmp(name, "sound/", 6))
+		allow_dl = allow_download_sounds.value; // sounds
+	else if (!strncmp(name, "maps/", 5)) // maps, note usage of allow_download_pakmaps a bit below
+		allow_dl = allow_download_maps.value; // maps
+	else if (!strncmp(name, "demos/", 6) || !strncmp(name, "demonum/", 8))
+		allow_dl = allow_download_demos.value; // demos
+	else
+		allow_dl = allow_download_other.value; // all other stuff
+
+	if (!allow_dl)
+		goto deny_download;
 
 	if (sv_client->download)
 	{
@@ -1308,7 +1295,8 @@ static void Cmd_Download_f(void)
 			*p = (char)tolower(*p);
 	}
 
-	// bliP: special download - fixme check this works.... -->
+	sv_client->downloadcount = 0;
+
 	// techlogin download uses simple path from quake folder
 	if (sv_client->special)
 	{
@@ -1321,9 +1309,17 @@ static void Cmd_Download_f(void)
 		}
 	}
 	else
-		// <-- bliP
+	{
 		sv_client->downloadsize = FS_FOpenFile (name, &sv_client->download);
-	sv_client->downloadcount = 0;
+
+		// special check for maps that came from a pak file
+		if (sv_client->download && !strncmp(name, "maps/", 5) && file_from_pak && !(int)allow_download_pakmaps.value)
+		{
+			fclose(sv_client->download);
+			sv_client->download = NULL;
+			goto deny_download;
+		}
+	}
 
 	if (!sv_client->download)
 	{
@@ -1341,13 +1337,6 @@ static void Cmd_Download_f(void)
 	}
 #endif
 
-	// special check for maps that came from a pak file
-	if (!strncmp(name, "maps/", 5) && file_from_pak && !(int)allow_download_pakmaps.value)
-	{
-		fclose(sv_client->download);
-		sv_client->download = NULL;
-		goto deny_download;
-	}
 
 	// set donwload rate
 	val = Info_Get (&sv_client->_userinfo_ctx_, "drate");
