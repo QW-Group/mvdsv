@@ -142,6 +142,7 @@ typedef enum
 	G_PRECACHE_VWEP_MODEL,
 	G_SETPAUSE,
 	G_SETUSERINFO,
+	G_MOVETOGOAL,
 } gameImport_t;
 
 // !!! new things comes to end of list !!!

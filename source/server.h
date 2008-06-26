@@ -650,6 +650,10 @@ void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 qbool SV_CheckBottom (edict_t *ent);
 qbool SV_movestep (edict_t *ent, vec3_t move, qbool relink);
 
+qbool SV_CloseEnough (edict_t *ent, edict_t *goal, float dist);
+qbool SV_StepDirection (edict_t *ent, float yaw, float dist);
+void SV_NewChaseDir (edict_t *actor, edict_t *enemy, float dist);
+
 void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg);
 
 void SV_MoveToGoal (void);

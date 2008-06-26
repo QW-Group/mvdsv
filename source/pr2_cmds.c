@@ -1058,6 +1058,54 @@ void PF2_walkmove(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retva
 
 /*
 ===============
+PF2_MoveToGoal
+ 
+float(float dist) PF2_MoveToGoal
+===============
+*/
+
+void PF2_MoveToGoal(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+{
+	edict_t		*ent, *goal;
+	float		dist;
+
+	//	dfunction_t	*oldf;
+	int			oldself;
+
+	ent  = PROG_TO_EDICT(pr_global_struct->self);
+	goal = PROG_TO_EDICT(ent->v.goalentity);
+	dist = stack[0]._float;
+
+	if ( !( (int)ent->v.flags & (FL_ONGROUND|FL_FLY|FL_SWIM) ) )
+	{
+		retval->_int =  0;
+		return;
+	}
+
+	// if the next step hits the enemy, return immediately
+	if ( PROG_TO_EDICT(ent->v.enemy) != sv.edicts && SV_CloseEnough (ent, goal, dist) )
+		return;
+
+	// save program state, because SV_movestep may call other progs
+	//	oldf = pr_xfunction;
+	oldself = pr_global_struct->self;
+
+	// bump around...
+	if ( (rand()&3)==1 || !SV_StepDirection (ent, ent->v.ideal_yaw, dist))
+	{
+		SV_NewChaseDir (ent, goal, dist);
+	}
+
+	// restore program state
+	//	pr_xfunction = oldf;
+	pr_global_struct->self = oldself;
+}
+
+
+
+
+/*
+===============
 PF2_droptofloor
  
 void(entnum) droptofloor
@@ -2870,6 +2918,7 @@ pr2_trapcall_t pr2_API[]=
 		PF2_precache_vwep_model,//G_PRECACHE_VWEP_MODEL
 		PF2_setpause,		//G_SETPAUSE
 		PF2_SetUserInfo,	//G_SETUSERINFO
+		PF2_MoveToGoal,		//G_MOVETOGOAL
     };
 int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
 

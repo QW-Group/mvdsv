@@ -230,7 +230,8 @@ qbool SV_StepDirection (edict_t *ent, float yaw, float dist)
 	float		delta;
 
 	ent->v.ideal_yaw = yaw;
-	PF_changeyaw();
+
+	PF_changeyaw(); // OUCH OUCH: its relay on what ent == self ? I'm not even mention about PR2...
 
 	yaw = yaw*M_PI*2 / 360;
 	move[0] = cos(yaw)*dist;
@@ -384,6 +385,9 @@ SV_MoveToGoal
  
 ======================
 */
+
+// NOTE: If you change this, then change PF2_MoveToGoal too!!!
+
 void SV_MoveToGoal (void)
 {
 	edict_t		*ent, *goal;
@@ -400,14 +404,12 @@ void SV_MoveToGoal (void)
 	}
 
 	// if the next step hits the enemy, return immediately
-	if ( PROG_TO_EDICT(ent->v.enemy) != sv.edicts &&  SV_CloseEnough (ent, goal, dist) )
+	if ( PROG_TO_EDICT(ent->v.enemy) != sv.edicts && SV_CloseEnough (ent, goal, dist) )
 		return;
 
 	// bump around...
-	if ( (rand()&3)==1 ||
-	        !SV_StepDirection (ent, ent->v.ideal_yaw, dist))
+	if ( (rand()&3)==1 || !SV_StepDirection (ent, ent->v.ideal_yaw, dist))
 	{
 		SV_NewChaseDir (ent, goal, dist);
 	}
 }
-
