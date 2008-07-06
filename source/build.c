@@ -35,17 +35,9 @@ char full_version[SIZEOF_FULL_VERSION];
 int build_number ()
 {
 	static int b = 0;
-
-	if (b)
-		return b;
-
-	{ 
-		char rev_num[] = "$Revision$";
-
-		if (!strncasecmp(rev_num, "$Revision:", sizeof("$Revision:") - 1))
-			b = atoi(rev_num + sizeof("$Revision:") - 1);
-	}
-
+#ifdef SVNREV
+	b = SVNREV - 0; // so if SVNREV is defined but empty, this still able to compile
+#endif
 	return b;
 }
 
