@@ -65,9 +65,9 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 	strlcpy(dst->qtvname, name, sizeof(dst->qtvname));
 
 	if (dst->qtvname[0])
-		SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV(%s)!\n", dst->qtvname);
+		Con_Printf ("Connected to QTV(%s)\n", dst->qtvname);
 	else
-		SV_BroadcastPrintf (PRINT_CHAT, "Smile, you're on QTV!\n");
+		Con_Printf ("Connected to QTV\n");
 
 	return dst;
 }
