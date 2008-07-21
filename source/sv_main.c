@@ -3690,7 +3690,14 @@ void SV_Init (quakeparms_t *parms)
 
 	server_cfg_done  = true;
 
-	// if a map wasn't specified on the command line, spawn start map
+	// if a map wasn't specified on the command line, spawn mvdsv-kg map
+	if (sv.state == ss_dead)
+	{
+		Cmd_ExecuteString ("map mvdsv-kg");
+		SV_Map(true);
+	}
+
+	// last resort - start map
 	if (sv.state == ss_dead)
 	{
 		Cmd_ExecuteString ("map start");
