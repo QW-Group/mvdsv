@@ -107,7 +107,7 @@ cvar_t	allow_download_pakmaps = {"allow_download_pakmaps", "1"};
 cvar_t	allow_download_demos = {"allow_download_demos", "1"};
 cvar_t	allow_download_other = {"allow_download_other", "0"};
 //bliP: init ->
-cvar_t	download_map_url = {"download_map_url", ""};
+cvar_t	download_map_url = {"download_map_url", "http://maps.qw-dev.net/"};
 
 cvar_t	sv_specprint = {"sv_specprint", "0"};
 cvar_t	sv_reconnectlimit = {"sv_reconnectlimit", "0"};
