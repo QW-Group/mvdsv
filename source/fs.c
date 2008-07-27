@@ -164,6 +164,13 @@ void FS_Init (void)
 	com_base_searchpaths = com_searchpaths;
 
 	FS_Init_Commands();
+
+	i = COM_CheckParm ("-game");
+	if (i && i < com_argc-1)
+	{
+		FS_Gamedir (com_argv[i + 1]);
+		Info_SetValueForStarKey (svs.info, "*gamedir", com_argv[i + 1], MAX_SERVERINFO_STRING);
+	}
 }
 
 /*

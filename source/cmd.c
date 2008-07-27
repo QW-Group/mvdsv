@@ -316,7 +316,7 @@ void Cmd_StuffCmds_f (void)
 	}
 
 	if (build[0])
-		Cbuf_InsertText (build);
+		Cbuf_AddText (build);
 
 	Q_free (text);
 	Q_free (build);

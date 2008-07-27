@@ -82,77 +82,58 @@ void SV_Logfile (int sv_log, qbool newlog)
 	char	name[MAX_OSPATH];
 	int		i;
 
+	// newlog - stands for: we want open new log file
+
 	if (logs[sv_log].sv_logfile)
 	{
-		//bliP: logging ->
+		// turn off logging
+
 		fclose (logs[sv_log].sv_logfile);
 		logs[sv_log].sv_logfile = NULL;
+
+		// in case of NON "newlog" we do some additional work and exit function
 		if (!newlog)
 		{
 			Con_Printf ("%s", logs[sv_log].message_off);
 			logs[sv_log].log_level = 0;
 			return;
 		}
-		//<-
 	}
+
+	// always use new log file for frag log
 	if (sv_log == FRAG_LOG || sv_log == MOD_FRAG_LOG)
+		newlog = true;
+
+	for (i = 0; i < 1000; i++)
 	{
-		for (i = 0; i < 1000; ++i)
-		{
-			snprintf (name, sizeof(name), "%s/%s%i.log",
-			          sv_logdir.string, logs[sv_log].file_name, i); //bliP: 24/9 logdir
-			if (Sys_FileTime(name) == -1)
-			{	// can't read it, so create this one
-				if (!(logs[sv_log].sv_logfile = fopen (name, "w")))
-					i = 1000;	// give error
-				break;
-			}
-		}
-		if (i == 1000)
-		{
-			Con_Printf ("Can't open any logfiles.\n");
-			logs[sv_log].sv_logfile = NULL;
-			return;
-		}
-		Con_Printf ("Logging %s to %s\n", logs[sv_log].message_on, name); //bliP: loging to logging
-		logs[sv_log].log_level = 1;
+		snprintf (name, sizeof(name), "%s/%s%d_%04d.log", sv_logdir.string, logs[sv_log].file_name, sv_port, i);
+
+		if (Sys_FileTime(name) == -1)
+			break; // file doesn't exist
 	}
-	else
+
+	if (!newlog) //use last log if possible
+		snprintf (name, sizeof(name), "%s/%s%d_%04d.log",  sv_logdir.string, logs[sv_log].file_name, sv_port, (int)max(0, i - 1));
+
+	Con_Printf ("Logging %s to %s\n", logs[sv_log].message_on, name);
+
+	if (!(logs[sv_log].sv_logfile = fopen (name, "a")))
 	{
-		//bliP: logging ->
-		for (i = 0; i < 1000; i++)
-		{
-			snprintf (name, sizeof(name), "%s/%s%d_%04d.log",
-			          sv_logdir.string, logs[sv_log].file_name, sv_port, i); //bliP: 24/9 logdir
-			if (Sys_FileTime(name) == -1)
-				break; // file doesn't exist
-		}
+		Con_Printf ("Failed.\n");
+		logs[sv_log].sv_logfile = NULL;
+		return;
+	}
 
-		if (!newlog) //use last log if possible
-			snprintf (name, sizeof(name), "%s/%s%d_%04d.log",
-			          sv_logdir.string, logs[sv_log].file_name,
-			          sv_port, (i - 1 > 0) ? i - 1 : 0); //bliP: 24/9 logdir
-
-		Con_Printf ("Logging %s to %s\n", logs[sv_log].message_on, name); //bliP: loging to logging
-		if (!(logs[sv_log].sv_logfile = fopen (name, "a")))
-		{
-			Con_Printf ("Failed.\n");
-			logs[sv_log].sv_logfile = NULL;
-			return;
-		}
-
-		switch (sv_log)
-		{
-		case TELNET_LOG:
-			logs[TELNET_LOG].log_level = Cvar_Value("telnet_log_level");
-			break;
-		case CONSOLE_LOG:
-			logs[CONSOLE_LOG].log_level = Cvar_Value("qconsole_log_say");
-			break;
-		default:
-			logs[sv_log].log_level = 1;
-		}
-		//<-
+	switch (sv_log)
+	{
+	case TELNET_LOG:
+		logs[TELNET_LOG].log_level = Cvar_Value("telnet_log_level");
+		break;
+	case CONSOLE_LOG:
+		logs[CONSOLE_LOG].log_level = Cvar_Value("qconsole_log_say");
+		break;
+	default:
+		logs[sv_log].log_level = 1;
 	}
 }
 
