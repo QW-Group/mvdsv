@@ -244,37 +244,41 @@ Sends text to all active clients
 =================
 */
 char *parse_mod_string(char *str);
-void SV_BroadcastPrintf (int level, char *fmt, ...)
+void SV_DoBroadcastPrintf (int level, int flags, char *string)
 {
-	va_list		argptr;
-	char		string[1024], *fraglog;
+	char		*fraglog;
 	static char	string2[1024] = {0};
 	client_t	*cl;
 	int			i;
 
-	va_start (argptr,fmt);
-	vsnprintf (string, sizeof(string), fmt, argptr);
-	va_end (argptr);
-
 	Sys_Printf ("%s", string);	// print to the console
 
-	for (i=0, cl = svs.clients ; i<MAX_CLIENTS ; i++, cl++)
+	if (!(flags & BPRINT_IGNORECLIENTS))
 	{
-		if (level < cl->messagelevel)
-			continue;
-		if (cl->state < cs_connected)
-			continue;
+		for (i=0, cl = svs.clients ; i<MAX_CLIENTS ; i++, cl++)
+		{
+			if (level < cl->messagelevel)
+				continue;
+			if (cl->state < cs_connected)
+				continue;
 
-		SV_PrintToClient(cl, level, string);
+			if (flags & BPRINT_IGNOREINDEMO)
+				SV_ClientPrintf2 (cl, level, "%s", string); // this does't go to mvd demo
+			else
+				SV_ClientPrintf  (cl, level, "%s", string); // this will be in mvd demo too
+		}
 	}
 
-	if (sv.mvdrecording)
+	if (!(flags & BPRINT_IGNOREINDEMO))
 	{
-		if (MVDWrite_Begin (dem_all, 0, strlen(string)+3))
+		if (sv.mvdrecording)
 		{
-			MVD_MSG_WriteByte (svc_print);
-			MVD_MSG_WriteByte (level);
-			MVD_MSG_WriteString (string);
+			if (MVDWrite_Begin (dem_all, 0, strlen(string)+3))
+			{
+				MVD_MSG_WriteByte (svc_print);
+				MVD_MSG_WriteByte (level);
+				MVD_MSG_WriteString (string);
+			}
 		}
 	}
 
@@ -302,6 +306,31 @@ void SV_BroadcastPrintf (int level, char *fmt, ...)
 	}
 	//	SV_Write_Log(MOD_FRAG_LOG, 1, "==========================\n\n");
 }
+
+void SV_BroadcastPrintf (int level, char *fmt, ...)
+{
+	va_list		argptr;
+	char		string[1024];
+
+	va_start (argptr,fmt);
+	vsnprintf (string, sizeof(string), fmt, argptr);
+	va_end (argptr);
+
+	SV_DoBroadcastPrintf (level, 0, string);
+}
+
+void SV_BroadcastPrintfEx (int level, int flags, char *fmt, ...)
+{
+	va_list		argptr;
+	char		string[1024];
+
+	va_start (argptr,fmt);
+	vsnprintf (string, sizeof(string), fmt, argptr);
+	va_end (argptr);
+
+	SV_DoBroadcastPrintf (level, flags, string);
+}
+
 
 /*
 =================

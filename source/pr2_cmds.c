@@ -292,7 +292,7 @@ bprint(value)
 */
 void PF2_bprint(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
 {
-	SV_BroadcastPrintf(stack[0]._int, "%s", VM_POINTER(base,mask,stack[1].string));
+	SV_BroadcastPrintfEx(stack[0]._int, stack[2]._int, "%s", VM_POINTER(base,mask,stack[1].string));
 }
 
 /*

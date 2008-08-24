@@ -717,6 +717,9 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...);
 void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_BroadcastPrintf (int level, char *fmt, ...);
+#define BPRINT_IGNOREINDEMO  (1<<0) // broad cast print will be not put in demo
+#define BPRINT_IGNORECLIENTS (1<<1) // broad cast print will not be seen by clients, but may be seen in demo
+void SV_BroadcastPrintfEx (int level, int flags, char *fmt, ...);
 void SV_BroadcastCommand (char *fmt, ...);
 void SV_SendClientMessages (void);
 void SV_SendDemoMessage(void);
