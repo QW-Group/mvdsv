@@ -262,10 +262,7 @@ void SV_DoBroadcastPrintf (int level, int flags, char *string)
 			if (cl->state < cs_connected)
 				continue;
 
-			if (flags & BPRINT_IGNOREINDEMO)
-				SV_ClientPrintf2 (cl, level, "%s", string); // this does't go to mvd demo
-			else
-				SV_ClientPrintf  (cl, level, "%s", string); // this will be in mvd demo too
+			SV_PrintToClient(cl, level, string); // this does't go to mvd demo
 		}
 	}
 
