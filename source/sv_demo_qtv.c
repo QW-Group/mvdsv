@@ -1031,6 +1031,33 @@ void DemoWriteQTVTimePad (int msecs)	//broadcast to all proxies
 }
 */
 
+//broadcast to all proxies
+void DemoWriteQTV (sizebuf_t *msg)
+{
+	mvddest_t		*d;
+	sizebuf_t		mvdheader;
+	byte			mvdheader_buf[6];
+
+	SZ_InitEx(&mvdheader, mvdheader_buf, sizeof(mvdheader_buf), false);
+
+	//duration
+	MSG_WriteByte (&mvdheader, 0);
+	//message type
+	MSG_WriteByte (&mvdheader, dem_all);
+	//length
+	MSG_WriteLong (&mvdheader, msg->cursize);
+
+	for (d = demo.dest; d; d = d->nextdest)
+	{
+		if (d->desttype == DEST_STREAM)
+		{
+			DemoWriteDest(mvdheader.data, mvdheader.cursize, d);
+			DemoWriteDest(msg->data, msg->cursize, d);
+		}
+	}
+}
+
+
 void Qtv_List_f(void)
 {
 	mvddest_t *d;

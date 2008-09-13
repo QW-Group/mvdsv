@@ -719,6 +719,8 @@ void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
 void SV_BroadcastPrintf (int level, char *fmt, ...);
 #define BPRINT_IGNOREINDEMO  (1<<0) // broad cast print will be not put in demo
 #define BPRINT_IGNORECLIENTS (1<<1) // broad cast print will not be seen by clients, but may be seen in demo
+#define BPRINT_QTVONLY       (1<<2) // if broad cast print goes to demo, then it will be only qtv sream, but not file
+#define BPRINT_IGNORECONSOLE (1<<3) // broad cast print will not be put in server console
 void SV_BroadcastPrintfEx (int level, int flags, char *fmt, ...);
 void SV_BroadcastCommand (char *fmt, ...);
 void SV_SendClientMessages (void);
@@ -853,6 +855,8 @@ extern cvar_t	qtv_streamtimeout;
 void SV_MVDStream_Poll(void);
 void SV_MVDCloseStreams(void);
 void QTV_Init(void);
+
+void DemoWriteQTV (sizebuf_t *msg);
 
 //
 // sv_login.c

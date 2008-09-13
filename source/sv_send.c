@@ -251,7 +251,8 @@ void SV_DoBroadcastPrintf (int level, int flags, char *string)
 	client_t	*cl;
 	int			i;
 
-	Sys_Printf ("%s", string);	// print to the console
+	if (!(flags & BPRINT_IGNORECONSOLE))
+		Sys_Printf ("%s", string);	// print to the console
 
 	if (!(flags & BPRINT_IGNORECLIENTS))
 	{
@@ -268,13 +269,28 @@ void SV_DoBroadcastPrintf (int level, int flags, char *string)
 
 	if (!(flags & BPRINT_IGNOREINDEMO))
 	{
-		if (sv.mvdrecording)
+		if (flags & BPRINT_QTVONLY)
 		{
-			if (MVDWrite_Begin (dem_all, 0, strlen(string)+3))
+			sizebuf_t		msg;
+			byte			msg_buf[1024];
+
+			SZ_InitEx(&msg, msg_buf, sizeof(msg_buf), true);
+			MSG_WriteByte (&msg, svc_print);
+			MSG_WriteByte (&msg, level);
+			MSG_WriteString (&msg, string);
+
+			DemoWriteQTV(&msg);
+		}
+		else
+		{
+			if (sv.mvdrecording)
 			{
-				MVD_MSG_WriteByte (svc_print);
-				MVD_MSG_WriteByte (level);
-				MVD_MSG_WriteString (string);
+				if (MVDWrite_Begin (dem_all, 0, strlen(string)+3))
+				{
+					MVD_MSG_WriteByte (svc_print);
+					MVD_MSG_WriteByte (level);
+					MVD_MSG_WriteString (string);
+				}
 			}
 		}
 	}
