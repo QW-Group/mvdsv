@@ -2662,6 +2662,10 @@ void SV_Cmd_Banip_f(void);
 void SV_Cmd_Banremove_f(void);
 // } bans
 
+// { qtv
+void Cmd_Qtvusers_f (void);
+// }
+
 typedef struct
 {
 	char	*name;
@@ -2726,6 +2730,8 @@ static ucmd_t ucmds[] =
 
 	{"join", Cmd_Join_f, true},
 	{"observe", Cmd_Observe_f, true},
+
+	{"qtvusers", Cmd_Qtvusers_f, true},
 
 	{NULL, NULL}
 

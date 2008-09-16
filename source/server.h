@@ -275,6 +275,24 @@ typedef struct client_s
 // getting kicked off by the server operator
 // a program error, like an overflowed reliable buffer
 
+typedef enum {
+
+	QUL_NONE = 0,	//
+	QUL_ADD,		// user joined
+	QUL_CHANGE,		// user changed something like name or something
+	QUL_DEL			// user dropped
+
+} qtvuserlist_t;
+
+typedef struct qtvuser_s {
+
+	int					id;								// unique user id
+	char				name[MAX_KEY_STRING];			// client name, well must be unique too
+
+	struct qtvuser_s	*next;							// next qtvuser_s struct in our list
+
+} qtvuser_t;
+
 typedef struct
 {
 	int				parsecount;
@@ -368,6 +386,8 @@ typedef struct mvddest_s
 	int				inbuffersize;
 
 	char			qtvname[64];
+
+	qtvuser_t		*qtvuserlist;
 // }
 
 	struct mvddest_s *nextdest;
@@ -857,6 +877,7 @@ void SV_MVDCloseStreams(void);
 void QTV_Init(void);
 
 void DemoWriteQTV (sizebuf_t *msg);
+void QTVsv_FreeUserList(mvddest_t *d);
 
 //
 // sv_login.c
