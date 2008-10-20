@@ -581,6 +581,8 @@ typedef struct
 // force player enter server as spectator if all players's slots are busy and
 // if there are empty slots for spectators and sv_forcespec_onfull == 2
 #define SVF_SPEC_ONFULL			(1<<0)	
+// do not join server as spectator if server full and sv_forcespec_onfull == 1
+#define SVF_NO_SPEC_ONFULL		(1<<1)	
 
 // } server flags
 

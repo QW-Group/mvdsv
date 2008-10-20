@@ -1152,10 +1152,13 @@ static void SVC_DirectConnect (void)
 		}
 		else if (    !spectator && spectators < (int)maxspectators.value
 				  && (
-				  	      (    (Q_atoi(Info_ValueForKey(userinfo, "svf")) & SVF_SPEC_ONFULL)
-				  	      	&& (int)sv_forcespec_onfull.value == 2
+				  	      ( (int)sv_forcespec_onfull.value == 2
+							&&   (Q_atoi(Info_ValueForKey(userinfo, "svf")) & SVF_SPEC_ONFULL)
 				  	      ) 
-				   	   		|| (int)sv_forcespec_onfull.value == 1
+				   	   		||
+						  ( (int)sv_forcespec_onfull.value == 1
+							&&   !(Q_atoi(Info_ValueForKey(userinfo, "svf")) & SVF_NO_SPEC_ONFULL)
+						  )
 				   	 )
 				)
 		{
