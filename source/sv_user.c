@@ -925,7 +925,7 @@ void SV_NextChunkedDownload(int chunknum, int percent, int chunked_download_numb
 
 	if (sv_client->download_chunks_perframe)
 	{
-		int maxchunks = bound(1, (int)sv_downloadchunksperframe.value, 5);
+		int maxchunks = bound(1, (int)sv_downloadchunksperframe.value, 4);
 		// too much requests or client sent something wrong
 		if (sv_client->download_chunks_perframe >= maxchunks || chunked_download_number < 1)
 			return;
