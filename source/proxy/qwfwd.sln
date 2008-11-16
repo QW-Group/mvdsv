@@ -6,13 +6,19 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug-dll|Win32 = Debug-dll|Win32
 		Release|Win32 = Release|Win32
+		Release-dll|Win32 = Release-dll|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Debug|Win32.ActiveCfg = Debug|Win32
 		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Debug|Win32.Build.0 = Debug|Win32
+		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Debug-dll|Win32.ActiveCfg = Debug-dll|Win32
+		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Debug-dll|Win32.Build.0 = Debug-dll|Win32
 		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Release|Win32.ActiveCfg = Release|Win32
 		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Release|Win32.Build.0 = Release|Win32
+		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Release-dll|Win32.ActiveCfg = Release-dll|Win32
+		{11E3F0BB-FD3B-4F4F-A25A-C8A8C2FB2C15}.Release-dll|Win32.Build.0 = Release-dll|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

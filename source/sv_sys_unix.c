@@ -623,6 +623,19 @@ void *Sys_DLProc(DL_t dl, const char *name)
 	return dlsym(dl, name);
 }
 
+int  Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
+{
+    pthread_t thread;
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_attr_setschedpolicy(&attr, SCHED_OTHER);   // ale gowno
+
+    pthread_create(&thread, &attr, (void *)func, param);
+    return 1;
+}
+
 // Function only_digits was copied from bind (DNS server) sources.
 static int only_digits(const char *s)
 {

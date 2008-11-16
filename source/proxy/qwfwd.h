@@ -56,17 +56,11 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <pthread.h>
 
 #define ioctlsocket		ioctl
 #define closesocket		close
 #define qerrno			errno
 
-#endif
-
-#ifndef _WIN32
-#define DWORD unsigned int
-#define WINAPI
 #endif
 
 #ifndef INVALID_SOCKET
@@ -251,8 +245,6 @@ double			max( double a, double b );
 #endif
 
 double			bound( double a, double b, double c );
-
-int				Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param);
 
 //
 // net.c

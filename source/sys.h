@@ -143,4 +143,12 @@ DL_t Sys_DLOpen (const char *path);
 qbool Sys_DLClose( DL_t dl);
 void *Sys_DLProc (DL_t dl, const char *name);
 
+#ifndef _WIN32
+#define DWORD unsigned int
+#define WINAPI
+#include <pthread.h>
+#endif
+
+int  Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param);
+
 #endif /* !__SYS_H__ */

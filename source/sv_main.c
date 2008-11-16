@@ -143,6 +143,8 @@ cvar_t	sv_default_name = {"sv_default_name", "unnamed"};
 qbool sv_mod_msg_file_OnChange(cvar_t *cvar, const char *value);
 cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", 0, sv_mod_msg_file_OnChange};
 
+cvar_t	sv_qwfwd_port = {"sv_qwfwd_port", "30000"};
+
 //
 // game rules mirrored in svs.info
 //
@@ -3289,6 +3291,8 @@ void SV_InitLocal (void)
 	Cvar_Register (&registered);
 	Cvar_Register (&sv_ktpro_mode);
 
+	Cvar_Register (&sv_qwfwd_port);
+
 // QW262 -->
 	Cmd_AddCommand ("admin", SV_Admin_f);
 // <-- QW262
@@ -3627,6 +3631,9 @@ static void SV_InitNet (void)
 SV_Init
 ====================
 */
+
+qbool FWD_proxy_load(void);
+
 void SV_Init (quakeparms_t *parms)
 {
 	memset(&_localinfo_, 0, sizeof(_localinfo_));
@@ -3682,6 +3689,8 @@ void SV_Init (quakeparms_t *parms)
 	// process command line arguments
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute ();
+
+	FWD_proxy_load();
 
 	if (telnetport)
 	{
@@ -3933,4 +3942,73 @@ unsigned char *Q_yelltext (unsigned char *str)
 			*i = ' ';
 	}
 	return str;
+}
+
+// used for passing params for thread
+typedef struct fwd_params
+{
+	int port;
+} fwd_params_t;
+
+qbool FWD_proxy_load(void)
+{
+	static	void *hInst;	
+	static  fwd_params_t params;
+	static	DWORD (WINAPI *FWD_proc)(void *);
+
+	char    name[MAX_OSPATH];
+	char   *gpath = NULL;
+
+	if (hInst)
+		return false; // alredy loaded
+
+	if ((int)sv_qwfwd_port.value < 1)
+	{
+		Con_DPrintf("QWFWD proxy: loading skipped\n");
+		return false;
+	}
+
+	while ( ( gpath = FS_NextPath( gpath ) ) )
+	{
+		snprintf(name, sizeof(name), "%s/%s." DLEXT, gpath, "qwfwd");
+		hInst = Sys_DLOpen( name );
+
+		if ( hInst )
+		{
+			Con_DPrintf( "QWFWD proxy: LoadLibrary (%s)\n", name );
+			break;
+		}
+	}
+
+	if ( !hInst )
+	{
+		Con_DPrintf( "QWFWD proxy: couldn't load qwfwd." DLEXT "\n");
+		return false;
+	}
+
+	FWD_proc = (DWORD (WINAPI *)(void *)) Sys_DLProc( (DL_t) hInst, "FWD_proc" );
+	if ( !FWD_proc )
+	{
+		if ( !Sys_DLClose( (DL_t) hInst ) )
+			SV_Error( "QWFWD proxy: couldn't unload module qwfwd." DLEXT "\n" );
+
+		hInst = NULL;
+
+		Con_DPrintf( "QWFWD proxy: couldn't initialize module qwfwd." DLEXT "\n");
+		return false;
+	}
+
+	memset(&params, 0, sizeof(params));
+	params.port = (int)sv_qwfwd_port.value;
+
+	if (Sys_CreateThread(FWD_proc, &params))
+	{
+		Con_DPrintf("QWFWD proxy: initialized\n");
+		return true;
+	}
+	else
+	{
+		Con_DPrintf("QWFWD proxy: failed to initialize\n");
+		return false;
+	}
 }

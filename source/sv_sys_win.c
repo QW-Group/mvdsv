@@ -676,6 +676,25 @@ void *Sys_DLProc (DL_t dl, const char *name)
 	return (void *) GetProcAddress (dl, name);
 }
 
+int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
+{
+    DWORD threadid;
+    HANDLE thread;
+
+    thread = CreateThread (
+        NULL,               // pointer to security attributes
+        0,                  // initial thread stack size
+        func,               // pointer to thread function
+        param,              // argument for new thread
+        CREATE_SUSPENDED,   // creation flags
+        &threadid);         // pointer to receive thread ID
+
+    SetThreadPriority(thread, THREAD_PRIORITY_HIGHEST);
+    ResumeThread(thread);
+
+    return 1;
+}
+
 __inline void Sys_Telnet (void)
 {
 	static int			tempsock;

@@ -1,4 +1,4 @@
-EXTRACFLAGS=-Wall -O2 -pthread
+EXTRACFLAGS=-Wall -O2
 CC=gcc $(EXTRACFLAGS)
 STRIP=strip
 
