@@ -55,4 +55,5 @@ int main(int argc, char *argv[])
 	params.port = atoi(argv[1]);
 
 	FWD_proc(&params);
+	return 0;
 }
