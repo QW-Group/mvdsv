@@ -1,4 +1,4 @@
-EXTRACFLAGS=-Wall -O2
+EXTRACFLAGS=-Wall -O2 -fPIC
 CC=gcc $(EXTRACFLAGS)
 STRIP=strip
 
@@ -14,5 +14,9 @@ qwfwd.exe: *.c *.h
 	$(MAKE) qwfwd CFLAGS=-mno-cygwin LDFLAGS="-lwsock32 -lwinmm"
 	mv qwfwd qwfwd.exe
 
+qwfwd-dl: $(OBJS) qwfwd.h
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -shared -Wl,-soname,qwfwd-db.so -o qwfwd-db.so -lm
+	$(STRIP) $(STRIPFLAGS) qwfwd-db.so -o qwfwd.so
+
 clean:
-	rm -rf qwfwd.bin qwfwd.exe qwfwd.db *.o
+	rm -rf qwfwd.bin qwfwd.exe qwfwd.db *.o qwfwd.so qwfwd-db.so
