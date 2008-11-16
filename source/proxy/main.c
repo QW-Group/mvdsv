@@ -6,6 +6,11 @@
 
 #include "qwfwd.h"
 
+#ifndef _WIN32
+#define DWORD unsigned int
+#define WINAPI
+#endif
+
 DWORD WINAPI FWD_proc(void *lpParameter)
 {
 	fwd_params_t *params = lpParameter;
