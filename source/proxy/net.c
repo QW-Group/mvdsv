@@ -184,13 +184,18 @@ void Netchan_OutOfBand(int s, struct sockaddr_in *adr, int length, byte *data)
 	sizebuf_t send1;
 	byte send_buf[MAX_MSGLEN + PACKET_HEADER];
 
-	// write the packet header
-	send1.data = send_buf;
-	send1.maxsize = sizeof(send_buf);
-	send1.cursize = 0;
+	SZ_InitEx(&send1, send_buf, sizeof(send_buf), true);
 
+	// write the packet header
 	MSG_WriteLong(&send1, -1);	// -1 sequence means out of band
+	// write data
 	SZ_Write(&send1, data, length);
+
+	if (send1.overflowed)
+	{
+		Sys_Printf("Netchan_OutOfBand: overflowed\n");
+		return; // ah, should not happens
+	}
 
 	// send the datagram
 	NET_SendPacket(s, send1.cursize, send1.data, adr);
@@ -205,7 +210,7 @@ Sends a text message in an out-of-band datagram
 */
 void Netchan_OutOfBandPrint(int s, struct sockaddr_in *adr, const char *format, ...)
 {
-	char string[8192]; // FIXME: will be truntcated by Netchan_OutOfBand()
+	char string[MAX_MSGLEN + PACKET_HEADER]; // string size should be somehow linked with Netchan_OutOfBand()
 	va_list argptr;
 
 	va_start(argptr, format);

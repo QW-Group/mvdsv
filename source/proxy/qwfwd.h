@@ -97,6 +97,8 @@ typedef struct peer
 	time_t connect;					// connect helper
 	int challenge;					// challenge num
 	char userinfo[MAX_INFO_STRING]; // userinfo
+	char name[MAX_INFO_KEY];		// name, extracted from userinfo
+	int userid;						// unique per proxy userid
 	int qport;						// qport
 	struct sockaddr_in from;		// client addr
 	struct sockaddr_in to;			// remote addr
@@ -143,6 +145,8 @@ typedef struct fwd_params
 //
 // peer.c
 //
+
+peer_t		*peers;
 
 peer_t		*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, qbool link);
 void		FWD_update_peers(void);

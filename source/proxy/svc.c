@@ -130,6 +130,7 @@ static void SVC_DirectConnect (void)
 	{
 		p->qport = qport;
 		strlcpy(p->userinfo, userinfo, sizeof(p->userinfo));
+		Info_ValueForKey(userinfo, "name", p->name, sizeof(p->name));
 		Sys_Printf("peer %s:%d added\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
 	}
 	else
@@ -253,6 +254,73 @@ static void SVC_GetChallenge (void)
 }
 
 /*
+================
+SVC_Status
+
+Responds with all the info that qplug or qspy can see
+This message can be up to around 5k with worst case string lengths.
+================
+*/
+#define STATUS_OLDSTYLE					0
+#define	STATUS_SERVERINFO				1
+#define	STATUS_PLAYERS					2
+#define	STATUS_SPECTATORS				4
+//#define STATUS_SPECTATORS_AS_PLAYERS	8 //for ASE - change only frags: show as "S"
+//#define STATUS_SHOWTEAMS				16
+
+static void SVC_Status (void)
+{
+	sizebuf_t buf;
+
+	static byte buf_data[MSG_BUF_SIZE]; // static  - so it not allocated each time
+	static char tmp[1024]; // static too
+
+	int top, bottom, ping, opt, connect_t;
+	char *name, *frags, *skin;
+	peer_t *cl;
+
+	SZ_InitEx(&buf, buf_data, sizeof(buf_data), true);
+
+	MSG_WriteLong(&buf, -1);	// -1 sequence means out of band
+	MSG_WriteChar(&buf, A2C_PRINT);
+
+	opt = (Cmd_Argc() > 1) ? atoi(Cmd_Argv(1)) : 0;
+
+	if (opt == STATUS_OLDSTYLE || (opt & STATUS_SERVERINFO))
+	{
+		// FIXME: add proper version
+		snprintf(tmp, sizeof(tmp), "\\*version\\qwfwd 0\n");
+		SZ_Print(&buf, tmp);
+	}
+
+	if (opt == STATUS_OLDSTYLE || (opt & (STATUS_PLAYERS | STATUS_SPECTATORS)))
+	{
+		for (cl = peers; cl; cl = cl->next)
+		{
+			top    = 0;//Q_atoi(Info_Get (&cl->_userinfo_ctx_, "topcolor"));
+			bottom = 0;//Q_atoi(Info_Get (&cl->_userinfo_ctx_, "bottomcolor"));
+			top    = (top    < 0) ? 0 : ((top    > 13) ? 13 : top);
+			bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
+			ping   = 666; //SV_CalcPing (cl);
+			name   = cl->name;
+			skin   = "";
+			frags  = "0";
+			connect_t = (int)(time(NULL) - cl->connect)/60; // not like it proper...
+
+			snprintf(tmp, sizeof(tmp), "%i %s %i %i \"%s\" \"%s\" %i %i\n", cl->userid, frags, connect_t, ping, name, skin, top, bottom);
+
+			SZ_Print(&buf, tmp);
+		}
+	}
+
+	if (buf.overflowed)
+		return; // overflowed
+
+	// send the datagram
+	NET_SendPacket(net_from_socket, buf.cursize, buf.data, &net_from);
+}
+
+/*
 =================
 SV_ConnectionlessPacket
 
@@ -281,6 +349,8 @@ void SV_ConnectionlessPacket(void)
 		SVC_DirectConnect ();
 	else if (!strcmp(c,"getchallenge"))
 		SVC_GetChallenge();
+	else if (!strcmp(c,"status"))
+		SVC_Status();
 //	else
 //		Sys_Printf ("SV bad connectionless packet from %s:\n%s\n" , inet_ntoa(net_from.sin_addr), s);
 

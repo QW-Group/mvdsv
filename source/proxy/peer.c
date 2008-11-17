@@ -4,7 +4,8 @@
 
 #include "qwfwd.h"
 
-static peer_t *peers;
+peer_t *peers = NULL;
+static userid = 0;
 
 peer_t *FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, qbool link)
 {
@@ -23,6 +24,8 @@ peer_t *FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_i
 	p->from		= *from;
 	p->to		= to;
 	p->ps		= ps_challenge;
+	p->userid	= ++userid;
+
 	time(&p->last);
 
 	if (link)
