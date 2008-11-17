@@ -5,7 +5,7 @@
 #include "qwfwd.h"
 
 peer_t *peers = NULL;
-static userid = 0;
+static int userid = 0;
 
 peer_t *FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, qbool link)
 {
