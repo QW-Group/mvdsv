@@ -171,7 +171,15 @@ void Sys_Printf(char *fmt, ...)
 
 void Sys_Exit(int code)
 {
+#ifdef APP_DLL
+	#ifdef _WIN32
+		ExitThread(code);
+	#else
+		pthread_exit(NULL); //hrm, that we should provide instead of NULL?
+	#endif
+#else
 	exit(code);
+#endif
 }
 
 void Sys_Error (char *error, ...)
