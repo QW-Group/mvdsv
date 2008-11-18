@@ -192,7 +192,7 @@ void Sys_Error (char *error, ...)
 	va_end (argptr);
 
 	strlcat(text, "\n", sizeof(text));
-	Sys_Printf(text);
+	Sys_Printf("QWFWD: %s", text);
 
 	Sys_Exit (1);
 }

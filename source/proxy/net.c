@@ -80,25 +80,27 @@ int NET_UDP_OpenSocket(int port, qbool do_bind)
 
 	if ((s = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
 	{
-		Sys_Printf("NET_UDP_OpenSocket: socket: (%i): %s", qerrno, strerror (qerrno));
+		Sys_Printf("NET_UDP_OpenSocket: socket: (%i): %s\n", qerrno, strerror (qerrno));
 		return INVALID_SOCKET;
 	}
 
 #ifndef _WIN32
 	if (do_bind)
 	{
-		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (void *)&_true, sizeof(_true)))
-		{
-			Sys_Printf("NET_UDP_OpenSocket: setsockopt SO_REUSEADDR: (%i): %s", qerrno, strerror (qerrno));
-			closesocket(s);
-			return INVALID_SOCKET;
-		}
+// qqshka: funny, but on linux it allow me bind to the same port multiple times...
+// qqshka: it was: Linux xxx 2.6.21-2950.fc8xen #1 SMP Tue Oct 23 12:23:33 EDT 2007 x86_64 x86_64 x86_64 GNU/Linux
+//		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (void *)&_true, sizeof(_true)))
+//		{
+//			Sys_Printf("NET_UDP_OpenSocket: setsockopt SO_REUSEADDR: (%i): %s", qerrno, strerror (qerrno));
+//			closesocket(s);
+//			return INVALID_SOCKET;
+//		}
 	}
 #endif
 
 	if (ioctlsocket(s, FIONBIO, &_true) == SOCKET_ERROR)
 	{
-		Sys_Printf("NET_UDP_OpenSocket: ioctl FIONBIO: (%i): %s", qerrno, strerror (qerrno));
+		Sys_Printf("NET_UDP_OpenSocket: ioctl FIONBIO: (%i): %s\n", qerrno, strerror (qerrno));
 		closesocket(s);
 		return INVALID_SOCKET;
 	}
@@ -114,7 +116,7 @@ int NET_UDP_OpenSocket(int port, qbool do_bind)
 
 		if (bind(s, (struct sockaddr *)&address, sizeof(address)))
 		{
-			Sys_Printf("NET_UDP_OpenSocket: bind: (%i): %s", qerrno, strerror (qerrno));
+			Sys_Printf("NET_UDP_OpenSocket: bind: (%i): %s\n", qerrno, strerror (qerrno));
 			closesocket(s);
 			return INVALID_SOCKET;
 		}

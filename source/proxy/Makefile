@@ -1,4 +1,8 @@
-EXTRACFLAGS=-Wall -O2 -fPIC
+EXTRACFLAGS=-Wall -O2
+ifeq ($(MAKECMDGOALS),qwfwd-dl)
+	EXTRACFLAGS += -m32 -fPIC -pthread -D APP_DLL
+endif
+
 CC=gcc $(EXTRACFLAGS)
 STRIP=strip
 

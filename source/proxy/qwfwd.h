@@ -56,6 +56,7 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <pthread.h>
 
 #define ioctlsocket		ioctl
 #define closesocket		close
