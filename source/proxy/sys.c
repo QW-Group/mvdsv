@@ -5,6 +5,12 @@ Also contain some "misc" functions, have no idea where to put it, u r welcome to
  
 #include "qwfwd.h"
 
+#ifdef APP_DLL
+	#define QWFWD_PREFIX "QWFWD: "
+#else
+	#define QWFWD_PREFIX ""
+#endif
+
 
 #ifdef _WIN32
 
@@ -166,7 +172,7 @@ void Sys_Printf(char *fmt, ...)
 			*t = ' ';
 	}
 
-	printf("%s", string);
+	printf(QWFWD_PREFIX "%s", string);
 }
 
 void Sys_Exit(int code)
@@ -192,7 +198,7 @@ void Sys_Error (char *error, ...)
 	va_end (argptr);
 
 	strlcat(text, "\n", sizeof(text));
-	Sys_Printf("QWFWD: %s", text);
+	Sys_Printf(QWFWD_PREFIX "%s", text);
 
 	Sys_Exit (1);
 }
