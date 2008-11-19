@@ -7,7 +7,8 @@
 peer_t *peers = NULL;
 static int userid = 0;
 
-peer_t *FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, qbool link)
+
+peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, const char *userinfo, int qport, qbool link)
 {
 	peer_t *p;
 	struct sockaddr_in to;
@@ -24,6 +25,9 @@ peer_t *FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_i
 	p->from		= *from;
 	p->to		= to;
 	p->ps		= ps_challenge;
+	p->qport	= qport;
+	strlcpy(p->userinfo, userinfo, sizeof(p->userinfo));
+	Info_ValueForKey(userinfo, "name", p->name, sizeof(p->name));
 	p->userid	= ++userid;
 
 	time(&p->last);

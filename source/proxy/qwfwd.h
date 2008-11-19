@@ -149,7 +149,7 @@ typedef struct fwd_params
 
 peer_t		*peers;
 
-peer_t		*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, qbool link);
+peer_t		*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, const char *userinfo, int qport, qbool link);
 void		FWD_update_peers(void);
 
 //

@@ -126,11 +126,8 @@ static void SVC_DirectConnect (void)
 	// build a new connection
 
 	// this was new peer, lets register it then
-	if ((p = FWD_peer_new(prx, port, &net_from, true)))
+	if ((p = FWD_peer_new(prx, port, &net_from, userinfo, qport, true)))
 	{
-		p->qport = qport;
-		strlcpy(p->userinfo, userinfo, sizeof(p->userinfo));
-		Info_ValueForKey(userinfo, "name", p->name, sizeof(p->name));
 		Sys_Printf("peer %s:%d added\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
 	}
 	else
