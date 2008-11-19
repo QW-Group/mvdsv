@@ -26,7 +26,7 @@ static qbool CheckProtocol( int ver )
 	return true;
 }
 
-qbool CheckUserinfo( char *userinfobuf, unsigned int bufsize, char *userinfo )
+static qbool CheckUserinfo( char *userinfobuf, unsigned int bufsize, char *userinfo )
 {
 	strlcpy (userinfobuf, userinfo, bufsize);
 
@@ -321,6 +321,20 @@ static void SVC_Status (void)
 }
 
 /*
+================
+SVC_Ping
+
+Just responds with an acknowledgement
+================
+*/
+static void SVC_Ping (void)
+{
+	char data = A2A_ACK;
+
+	NET_SendPacket(net_from_socket, 1, &data, &net_from);
+}
+
+/*
 =================
 SV_ConnectionlessPacket
 
@@ -345,8 +359,10 @@ void SV_ConnectionlessPacket(void)
 
 	c = Cmd_Argv(0);
 
-	if (!strcmp(c,"connect"))
-		SVC_DirectConnect ();
+	if (!strcmp(c, "ping") || ( c[0] == A2A_PING && (c[1] == 0 || c[1] == '\n') ) )
+		SVC_Ping();
+	else if (!strcmp(c,"connect"))
+		SVC_DirectConnect();
 	else if (!strcmp(c,"getchallenge"))
 		SVC_GetChallenge();
 	else if (!strcmp(c,"status"))
