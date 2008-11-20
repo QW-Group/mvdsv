@@ -1,26 +1,14 @@
-EXTRACFLAGS=-Wall -O2
-ifeq ($(MAKECMDGOALS),qwfwd-dl)
-	EXTRACFLAGS += -m32 -fPIC -pthread -D APP_DLL
-endif
+#
+# qqshka: this file is work around about difference in BSD and GNU make...
+#
 
-CC=gcc $(EXTRACFLAGS)
-STRIP=strip
+default: qwfwd
 
-STRIPFLAGS=--strip-unneeded --remove-section=.comment
+.PHONY: fixmake
 
-OBJS = clc.o cmd.o info.o main.o msg.o net.o peer.o svc.o sys.o
+fixmake:
+	@./fixmake.sh
 
-qwfwd: $(OBJS) qwfwd.h
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@.db -lm
-	$(STRIP) $(STRIPFLAGS) $@.db -o $@.bin
-
-qwfwd.exe: *.c *.h
-	$(MAKE) qwfwd CFLAGS=-mno-cygwin LDFLAGS="-lwsock32 -lwinmm"
-	mv qwfwd qwfwd.exe
-
-qwfwd-dl: $(OBJS) qwfwd.h
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -shared -Wl,-soname,qwfwd-db.so -o qwfwd-db.so -lm
-	$(STRIP) $(STRIPFLAGS) qwfwd-db.so -o qwfwd.so
-
-clean:
-	rm -rf qwfwd.bin qwfwd.exe qwfwd.db *.o qwfwd.so qwfwd-db.so
+qwfwd qwfwd.exe qwfwd-dl clean:	fixmake
+	@make -f Makefile.tmp $@
+	@rm -rf Makefile.tmp
