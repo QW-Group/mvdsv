@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 # OS determination
 if [ x$1 != x ]; then
 UNAME=$1
@@ -10,16 +9,15 @@ fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-#	echo "${UNAME} system - use BSD Makefile."
-	cp Makefile.BSD Makefile.tmp
+	echo "${UNAME} system - use BSD Makefile."
+	cat Makefile.BSD > Makefile
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-#	echo "${UNAME} system - use GNU Makefile."
-	cp Makefile.GNU Makefile.tmp
+	echo "${UNAME} system - use GNU Makefile."
+	cat Makefile.GNU > Makefile
 	;;
 *)
 	echo "ERROR: Unknown system: ${UNAME}."
 	exit 1
 	;;
 esac
-
