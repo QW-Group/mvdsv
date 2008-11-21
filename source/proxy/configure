@@ -9,12 +9,24 @@ fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	echo "${UNAME} system - use BSD Makefile."
-	cat Makefile.BSD > Makefile
+	echo "${UNAME} system detected."
+	cat Makefile.GNU > Makefile
+	read -p "Compile with gmake is highly recommended, do it now? (y/n) " REPLY
+	if [ "$REPLY" = "y" ]; then
+		gmake
+	else
+		exit 1
+	fi
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-	echo "${UNAME} system - use GNU Makefile."
+	echo "${UNAME} system detected."
 	cat Makefile.GNU > Makefile
+	read -p "Compile using make? (y/n) " REPLY
+	if [ "$REPLY" = "y" ]; then
+		make
+	else
+		exit 1
+	fi
 	;;
 *)
 	echo "ERROR: Unknown system: ${UNAME}."
