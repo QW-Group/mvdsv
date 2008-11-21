@@ -25,8 +25,8 @@ FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 Darwin | MacOSX | Linux | SunOS | GNU)
 	cat Makefile.GNU > Makefile
 	echo "${UNAME} system detected, Makefile created."
-	echo "If you do not want to compile qwfwd now, or you want to compile other than"
-	echo "default target, you can choose no. Here is an example how to do that:"
+	echo "Choose no if you do not want to compile qwfwd now, or you want to compile other"
+	echo "than default target. Here is an example how to build other than default targets:"
 	echo "make qwfwd-dl"
 	read -p "Compile default target now? (y/n) " REPLY
 	if [ "$REPLY" = "y" ]; then
