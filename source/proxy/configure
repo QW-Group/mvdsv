@@ -9,9 +9,13 @@ fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	echo "${UNAME} system detected."
 	cat Makefile.GNU > Makefile
-	read -p "Compile with gmake is highly recommended, do it now? (y/n) " REPLY
+	echo "${UNAME} system detected, Makefile created."
+	echo "Compiling with gmake is mandatory. If you do not want to compile qwfwd now,"
+	echo "you can choose to do it later. However using other than default target still"
+	echo "requires the usage of gmake under FreeBSD. Here is an example how to do that:"
+	echo "gmake qwfwd-dl"
+	read -p "Compile default target now? (y/n) " REPLY
 	if [ "$REPLY" = "y" ]; then
 		gmake
 	else
@@ -19,9 +23,12 @@ FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 	fi
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-	echo "${UNAME} system detected."
 	cat Makefile.GNU > Makefile
-	read -p "Compile using make? (y/n) " REPLY
+	echo "${UNAME} system detected, Makefile created."
+	echo "If you do not want to compile qwfwd now, or you want to compile other than"
+	echo "default target, you can choose no. Here is an example how to do that:"
+	echo "make qwfwd-dl"
+	read -p "Compile default target now? (y/n) " REPLY
 	if [ "$REPLY" = "y" ]; then
 		make
 	else
