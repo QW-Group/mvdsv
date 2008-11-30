@@ -1099,7 +1099,7 @@ static unsigned short ReadShort(netmsg_t *b)
 	return b1 | (b2<<8);
 }
 
-void ReadString(netmsg_t *b, char *string, int maxlen)
+static void ReadString(netmsg_t *b, char *string, int maxlen)
 {
 	maxlen--;	//for null terminator
 	while(maxlen)
@@ -1408,7 +1408,7 @@ void Qtv_Status_f(void)
 
 //====================================
 
-void QTV_Init(void)
+void SV_QTV_Init(void)
 {
 	Cvar_Register (&qtv_streamport);
 	Cvar_Register (&qtv_maxstreams);

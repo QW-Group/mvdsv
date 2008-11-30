@@ -1690,5 +1690,5 @@ void SV_MVDInit (void)
 	Cmd_AddCommand ("demoInfoRemove",	SV_MVDInfoRemove_f);
 	Cmd_AddCommand ("demoInfo",			SV_MVDInfo_f);
 
-	QTV_Init();
+	SV_QTV_Init();
 }
