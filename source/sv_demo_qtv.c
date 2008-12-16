@@ -1031,7 +1031,7 @@ void Cmd_Qtvusers_f (void)
 
 	if (!found)
 	{
-		Con_Printf ("no single qtv connected\n");
+		Con_Printf ("no QTVs connected\n");
 		return;
 	}
 }
