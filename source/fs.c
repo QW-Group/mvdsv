@@ -166,6 +166,8 @@ void FS_Init (void)
 	FS_Init_Commands();
 
 	i = COM_CheckParm ("-game");
+	if (!i)
+		i = COM_CheckParm ("+gamedir");
 	if (i && i < com_argc-1)
 	{
 		FS_Gamedir (com_argv[i + 1]);
