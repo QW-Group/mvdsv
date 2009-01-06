@@ -38,6 +38,63 @@ static qbool	authenticated = false;
 static double	cur_time_auth;
 static qbool	isdaemon = false;
 
+//==============================================================================
+// WINDOWS CMD LINE CRAP
+//==============================================================================
+
+int			argc;
+char		*argv[MAX_NUM_ARGVS];
+static char	exename[1024] = {0}; // static, so it seen in this file only
+
+void ParseCommandLine (char *lpCmdLine) 
+{
+	int i;
+	argc = 1;
+	argv[0] = exename;
+
+	if(!(i = GetModuleFileName(NULL, exename, sizeof(exename)-1))) // here we get loong string, with full path
+		exename[0] = 0; // oh, something bad
+	else 
+	{
+		exename[i] = 0; // ensure null terminator
+//		strlcpy(exename, COM_SkipPath(exename), sizeof(exename));
+	}
+
+	while (*lpCmdLine && (argc < MAX_NUM_ARGVS))
+	{
+		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
+			lpCmdLine++;
+
+		if (*lpCmdLine)
+		{
+			if (*lpCmdLine == '\"')
+			{
+				lpCmdLine++;
+
+				argv[argc] = lpCmdLine;
+				argc++;
+
+				while (*lpCmdLine && *lpCmdLine != '\"') // this include chars less that 32 and greate than 126... is that evil?
+					lpCmdLine++;
+			}
+			else
+			{
+				argv[argc] = lpCmdLine;
+				argc++;
+
+				while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
+					lpCmdLine++;
+			}
+
+			if (*lpCmdLine)
+			{
+				*lpCmdLine = 0;
+				lpCmdLine++;
+			}
+		}
+	}
+}
+
 /*
 ================
 Sys_FileTime
@@ -198,14 +255,13 @@ void Sys_Exit(int code)
 Sys_Quit
 ================
 */
-char *argv0;
 void Sys_Quit (qbool restart)
 {
 	if (restart)
 	{
 // FIXME: restart are buggy atm: does't close sockets and file handlers...
 // TODO: net.c(486): add close of QTV sockets and turn on restart back
-//		if (execv(argv0, com_argv) == -1)
+//		if (execv(argv[0], com_argv) == -1)
 		{
 #ifdef _CONSOLE
 			if (!((int)sys_nostdout.value || isdaemon))
@@ -762,7 +818,6 @@ int main (int argc, char **argv)
 
 	GetConsoleTitle(title, sizeof(title));
 	COM_InitArgv (argc, argv);
-	argv0 = com_argv[0];
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
@@ -825,64 +880,26 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 						int         nCmdShow)
 {
 
-	static MSG		msg;
+	static MSG			msg;
 	static quakeparms_t	parms;
 	static double		newtime, time, oldtime;
-	static char		cwd[1024];
+	static char			cwd[1024];
 	register int		sleep_msec;
+	int					j;
 
 	static struct		timeval	timeout;
 	static fd_set		fdset;
-	//Added by VVD {
-	static int			j;
-	char				*_argv[MAX_NUM_ARGVS];
 	static qbool		disable_gpf = false;
 
-	// get the command line parameters
-	_argv[0] = GetCommandLine();
-	if (_argv[0][0] == '"')
-	{
-		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++);
-		argv0 = (char *) Q_malloc (j);
-		for (j = 1; _argv[0][j] != '"' && _argv[0][j]; j++)
-			argv0[j - 1] = _argv[0][j];
-		argv0[j] = 0;
-		if (_argv[0][j] == '"') _argv[0][j + 1] = 0;
-		parms.argc = 1;
-	}
-	else
-	{
-		parms.argc = 0;
-		argv0 = lpCmdLine = _argv[0];
-	}
-	//Added by VVD }
+	ParseCommandLine(lpCmdLine);
 
-	while (*lpCmdLine && (parms.argc < MAX_NUM_ARGVS))
-	{
-		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
-			lpCmdLine++;
-
-		if (*lpCmdLine)
-		{
-			_argv[parms.argc] = lpCmdLine;
-			parms.argc++;
-
-			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
-				lpCmdLine++;
-
-			if (*lpCmdLine)
-			{
-				*lpCmdLine = 0;
-				lpCmdLine++;
-			}
-		}
-	}
-
-	parms.argv = _argv;
+	memset (&parms, 0, sizeof(parms));
 
 	PR_CleanLogText_Init();
 
-	COM_InitArgv (parms.argc, parms.argv);
+	COM_InitArgv (argc, argv);
+	parms.argc = com_argc;
+	parms.argv = com_argv;
 
 	// create main window
 	if (!CreateMainWindow(hInstance, nCmdShow))
