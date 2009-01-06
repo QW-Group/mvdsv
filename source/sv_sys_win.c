@@ -38,27 +38,51 @@ static qbool	authenticated = false;
 static double	cur_time_auth;
 static qbool	isdaemon = false;
 
+void	PR_CleanLogText_Init(void);
+
 //==============================================================================
 // WINDOWS CMD LINE CRAP
 //==============================================================================
 
-int			argc;
-char		*argv[MAX_NUM_ARGVS];
-static char	exename[1024] = {0}; // static, so it seen in this file only
+static int			argc;
+static char			*argv[MAX_NUM_ARGVS];
 
-void ParseCommandLine (char *lpCmdLine) 
+char *Sys_GetModuleName(void)
 {
+	static char	exename[1024] = {0}; // static
 	int i;
-	argc = 1;
-	argv[0] = exename;
+
+	if (exename[0])
+		return exename;
 
 	if(!(i = GetModuleFileName(NULL, exename, sizeof(exename)-1))) // here we get loong string, with full path
+	{
 		exename[0] = 0; // oh, something bad
+	}
 	else 
 	{
 		exename[i] = 0; // ensure null terminator
-//		strlcpy(exename, COM_SkipPath(exename), sizeof(exename));
 	}
+
+	return exename;
+}
+
+#ifdef _CONSOLE
+void ParseCommandLine (int ac, char **av)
+{
+	argc = 1;
+	argv[0] = Sys_GetModuleName();
+
+	for( ; argc < MAX_NUM_ARGVS && ac > 0; argc++, ac--)
+	{
+		argv[argc] = av[argc-1];
+	}
+}
+#else
+void ParseCommandLine (char *lpCmdLine)
+{
+	argc = 1;
+	argv[0] = Sys_GetModuleName();
 
 	while (*lpCmdLine && (argc < MAX_NUM_ARGVS))
 	{
@@ -94,6 +118,7 @@ void ParseCommandLine (char *lpCmdLine)
 		}
 	}
 }
+#endif
 
 /*
 ================
@@ -684,8 +709,8 @@ qbool NET_Sleep ()
 			if (telnetport && telnet_connected)
 				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
 #ifdef _CONSOLE
-			if (do_stdin)
-				stdin_ready = FD_ISSET(0, &fdset);
+//			if (do_stdin)
+//				stdin_ready = FD_ISSET(0, &fdset);
 #endif //_CONSOLE
 	}
 	return false;
@@ -806,32 +831,37 @@ main
  
 ==================
 */
-char	*newargv[256];
 
-int main (int argc, char **argv)
+int main(int ac, char *av[])
 {
 	quakeparms_t	parms;
-	double		newtime, time, oldtime;
-	static	char	cwd[1024];
-	int		t;
-	int		sleep_msec;
+	double			newtime, time, oldtime;
+	int				j;
+	int				sleep_msec;
 
-	GetConsoleTitle(title, sizeof(title));
+	ParseCommandLine (ac, av);
+
+	memset (&parms, 0, sizeof(parms));
+
+	PR_CleanLogText_Init();
+
 	COM_InitArgv (argc, argv);
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
 	parms.memsize = DEFAULT_MEM_SIZE;
 
-	if ((t = COM_CheckParm ("-heapsize")) != 0 &&
-	        t + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024;
+	j = COM_CheckParm ("-heapsize");
+	if (j && j + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
 
-	if ((t = COM_CheckParm ("-mem")) != 0 &&
-	        t + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[t + 1]) * 1024 * 1024;
+	j = COM_CheckParm ("-mem");
+	if (j && j + 1 < com_argc)
+		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
 	parms.membase = Q_malloc (parms.memsize);
+
+	GetConsoleTitle(title, sizeof(title));
 
 	SV_Init (&parms);
 
@@ -873,7 +903,6 @@ int main (int argc, char **argv)
 
 #else  // _CONSOLE
 
-void PR_CleanLogText_Init(void);
 int APIENTRY WinMain(   HINSTANCE   hInstance,
 						HINSTANCE   hPrevInstance,
 						LPSTR       lpCmdLine,
@@ -883,7 +912,6 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	static MSG			msg;
 	static quakeparms_t	parms;
 	static double		newtime, time, oldtime;
-	static char			cwd[1024];
 	register int		sleep_msec;
 	int					j;
 
