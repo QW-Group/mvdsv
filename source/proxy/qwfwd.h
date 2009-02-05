@@ -213,7 +213,6 @@ size_t			strlcat (char *dst, char *src, size_t siz);
 
 #endif
 
-unsigned int	Sys_Milliseconds (void);
 void			Sys_Printf (char *fmt, ...);
 void			Sys_Exit (int code);
 void			Sys_Error (char *error, ...);
