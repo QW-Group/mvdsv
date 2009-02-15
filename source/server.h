@@ -734,6 +734,7 @@ void SV_BeginRedirect (redirect_t rd);
 void SV_EndRedirect (void);
 
 void SV_Multicast (vec3_t origin, int to);
+void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key);
 void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
     float attenuation);
 void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...);

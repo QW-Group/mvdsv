@@ -380,7 +380,7 @@ MULTICAST_PVS	send to clients potentially visible from org
 MULTICAST_PHS	send to clients potentially hearable from org
 =================
 */
-void SV_Multicast (vec3_t origin, int to)
+void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 {
 	client_t	*client;
 	byte		*mask;
@@ -448,8 +448,9 @@ void SV_Multicast (vec3_t origin, int to)
 		}
 
 inrange:
-		if (reliable)
+		if (reliable || (cl_reliable_key && *cl_reliable_key && *Info_Get(&client->_userinfo_ctx_, cl_reliable_key)))
 		{
+//			Con_Printf ("reliable multicast\n");
 			ClientReliableCheckBlock(client, sv.multicast.cursize);
 			ClientReliableWrite_SZ(client, sv.multicast.data, sv.multicast.cursize);
 		}
@@ -474,6 +475,10 @@ inrange:
 	SZ_Clear (&sv.multicast);
 }
 
+void SV_Multicast (vec3_t origin, int to)
+{
+	SV_MulticastEx(origin, to, NULL);
+}
 
 /*
 ==================
@@ -567,9 +572,9 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		MSG_WriteCoord (&sv.multicast, origin[i]);
 
 	if (use_phs)
-		SV_Multicast (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS);
+		SV_MulticastEx (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS, "rsnd");
 	else
-		SV_Multicast (origin, reliable ? MULTICAST_ALL_R : MULTICAST_ALL);
+		SV_MulticastEx (origin, reliable ? MULTICAST_ALL_R : MULTICAST_ALL, "rsnd");
 }
 
 
