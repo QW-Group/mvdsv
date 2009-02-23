@@ -1019,6 +1019,77 @@ qbool CheckReConnect( netadr_t adr, int qport )
 	return true;
 }
 
+//==============================================
+
+void CountPlayersSpecsVips(int *clients_ptr, int *spectators_ptr, int *vips_ptr, client_t **newcl_ptr)
+{
+	client_t *cl = NULL, *newcl = NULL;
+	int clients = 0, spectators = 0, vips = 0;
+	int i;
+
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+	{
+		if (cl->state == cs_free)
+		{
+			if (!newcl)
+				newcl = cl; // grab first available slot
+
+			continue;
+		}
+
+		if (cl->spectator)
+		{
+			if (cl->vip)
+				vips++;
+			else
+				spectators++;
+		}
+		else
+		{
+			clients++;
+		}
+	}
+
+	if (clients_ptr)
+		*clients_ptr = clients;
+	if (spectators_ptr)
+		*spectators_ptr = spectators;
+	if (vips_ptr)
+		*vips_ptr = vips;
+	if (newcl_ptr)
+		*newcl_ptr = newcl;
+}
+
+//==============================================
+
+qbool SpectatorCanConnect(int vip, int spass, int spectators, int vips)
+{
+	FixMaxClientsCvars(); // not a bad idea
+
+	if (vip)
+	{
+		if (spass && (spectators < (int)maxspectators.value || vips < (int)maxvip_spectators.value))
+			return true;
+	}
+	else
+	{
+		if (spass && spectators < (int)maxspectators.value)
+			return true;
+	}
+
+	return false;
+}
+
+qbool PlayerCanConnect(int clients)
+{
+	FixMaxClientsCvars(); // not a bad idea
+
+	if (clients < (int)maxclients.value)
+		return true;
+
+	return false;
+}
+
 /*
 ==================
 SVC_DirectConnect
@@ -1041,7 +1112,7 @@ static void SVC_DirectConnect (void)
 	int clients, spectators, vips;
 	int qport, i, edictnum;
 
-	client_t *cl, *newcl;
+	client_t *newcl;
 
 	char userinfo[1024];
 	char *s;
@@ -1103,38 +1174,14 @@ static void SVC_DirectConnect (void)
 		return; // can't do that for some reason
 
 	// count up the clients and spectators
-	clients = spectators = vips = 0;
-	newcl = NULL;
-
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-	{
-		if (cl->state == cs_free)
-		{
-			if (!newcl)
-				newcl = cl; // grab first available slot
-
-			continue;
-		}
-
-		if (cl->vip)
-			vips++;
-
-		if (cl->spectator)
-		{
-			if (!cl->vip)
-				spectators++;
-		}
-		else
-			clients++;
-	}
+	CountPlayersSpecsVips(&clients, &spectators, &vips, &newcl);
 
 	FixMaxClientsCvars();
 
 	// if at server limits, refuse connection
 
-	if (    (vip && spectator && vips >= (int)maxvip_spectators.value && (spectators >= (int)maxspectators.value || !spass))
-         || (!vip && spectator && (spectators >= (int)maxspectators.value || !spass))
-	     || (!spectator && clients >= (int)maxclients.value)
+	if (	(spectator && !SpectatorCanConnect(vip, spass, spectators, vips))
+	     || (!spectator && !PlayerCanConnect(clients))
          || !newcl
        )
 	{

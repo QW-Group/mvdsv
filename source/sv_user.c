@@ -2412,8 +2412,11 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 		EdictFieldFloat(ent, fofs_maxspeed) = (int)sv_maxspeed.value;
 }
 
-extern cvar_t maxclients, maxspectators;
+extern cvar_t spectator_password, password;
 extern void MVD_PlayerReset(int player);
+extern void CountPlayersSpecsVips(int *clients_ptr, int *spectators_ptr, int *vips_ptr, client_t **newcl_ptr);
+extern qbool SpectatorCanConnect(int vip, int spass, int spectators, int vips);
+extern qbool PlayerCanConnect(int clients);
 
 /*
 ==================
@@ -2425,9 +2428,7 @@ Set client to player mode without reconnecting
 static void Cmd_Join_f (void)
 {
 	int i;
-	client_t *cl;
-	int numclients;
-	extern cvar_t password;
+	int clients;
 
 	if (sv_client->state != cs_spawned)
 		return;
@@ -2452,12 +2453,9 @@ static void Cmd_Join_f (void)
 	}
 
 	// count players already on server
-	numclients = 0;
-	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
-		if (cl->state != cs_free && !cl->spectator)
-			numclients++;
-	}
-	if (numclients >= (int)maxclients.value) {
+	CountPlayersSpecsVips(&clients, NULL, NULL, NULL);
+	if (!PlayerCanConnect(clients))
+	{
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "Can't join, all player slots full\n");
 		return;
 	}
@@ -2542,9 +2540,7 @@ Set client to spectator mode without reconnecting
 static void Cmd_Observe_f (void)
 {
 	int i;
-	client_t *cl;
-	int numspectators;
-	extern cvar_t maxspectators, spectator_password;
+	int spectators, vips;
 
 	if (sv_client->state != cs_spawned)
 		return;
@@ -2568,13 +2564,11 @@ static void Cmd_Observe_f (void)
 	}
 
 	// count spectators already on server
-	numspectators = 0;
-	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++) {
-		if (cl->state != cs_free && cl->spectator)
-			numspectators++;
-	}
-	if (numspectators >= (int)maxspectators.value) {
-		SV_ClientPrintf (sv_client, PRINT_HIGH, "Can't join, all spectator slots full\n");
+	CountPlayersSpecsVips(NULL, &spectators, &vips, NULL);
+
+	if (!SpectatorCanConnect(sv_client->vip, true/*kinda HACK*/, spectators, vips))
+	{
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "Can't join, all spectator/vip slots full\n");
 		return;
 	}
 
