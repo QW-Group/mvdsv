@@ -3812,13 +3812,17 @@ SV_LogPlayer
 void SV_LogPlayer(client_t *cl, char *msg, int level)
 {
 	char info[MAX_EXT_INFO_STRING];
+	char name[CLIENT_NAME_LEN];
 
 	Info_ReverseConvert(&cl->_userinfo_ctx_, info, sizeof(info));
+	Q_normalizetext(info);
+	strlcpy(name, cl->name, sizeof(name));
+	Q_normalizetext(name);
 
 	SV_Write_Log(PLAYER_LOG, level,
 	             va("%s\\%s\\%i\\%s\\%s\\%i%s\n",
 	                msg,
-	                cl->name,
+	                name,
 	                cl->userid,
 	                NET_BaseAdrToString(cl->netchan.remote_address),
 	                NET_BaseAdrToString(cl->realip),
