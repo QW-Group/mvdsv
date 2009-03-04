@@ -1411,6 +1411,7 @@ Cmd_DemoDownload_f
 ==================
 */
 qbool SV_ExecutePRCommand (void);
+void Cmd_StopDownload_f(void);
 static void Cmd_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
@@ -1432,6 +1433,12 @@ static void Cmd_DemoDownload_f(void)
 		           "where . is the last recorded demo, "
 		           ".. is the second to last recorded demo"
 		           "and where N dots is the Nth to last recorded demo\n");
+		return;
+	}
+
+	if (!strcmp(Cmd_Argv(1), "cancel") || !strcmp(Cmd_Argv(1), "stop"))
+	{
+		Cmd_StopDownload_f(); // should not have any arguments, so it's OK
 		return;
 	}
 
