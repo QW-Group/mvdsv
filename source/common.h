@@ -75,7 +75,7 @@ void MSG_ReadDeltaUsercmd (const struct usercmd_s *from, struct usercmd_s *cmd);
 
 //============================================================================
 
-unsigned char *Q_normalizetext (unsigned char *name); //bliP: red to white text
+char *Q_normalizetext (char *name); //bliP: red to white text
 unsigned char *Q_redtext (unsigned char *str); //bliP: white to red text
 unsigned char *Q_yelltext (unsigned char *str); //VVD: white to red text and yellow numbers
 
