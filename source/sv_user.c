@@ -1411,7 +1411,8 @@ Cmd_DemoDownload_f
 ==================
 */
 qbool SV_ExecutePRCommand (void);
-void Cmd_StopDownload_f(void);
+static void Cmd_StopDownload_f(void);
+
 static void Cmd_DemoDownload_f(void)
 {
 	int		i, num, cmd_argv_i_len;
