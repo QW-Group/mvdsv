@@ -14,7 +14,7 @@ QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 # to compile mvdsv as 32bit on 64bit target platform use next:
 # for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
-FORCE32BITFLAGS=
+# configure script add FORCE32BITFLAGS=-m32
 
 SVNREV=$(shell svnversion -n . 2>/dev/null | sed -e "s/M//")
 
@@ -23,8 +23,8 @@ WITH_OPTIMIZED_CFLAGS=YES
 
 USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
-ifneq (,$(findstring 86,$(shell uname -m)))
-ifeq (,$(findstring 64,$(shell uname -m)))
+ifneq (,$(findstring 86,$(BRANCH)))
+ifeq (,$(findstring 64,$(BRANCH)))
 ifneq ($(UNAME),Darwin)
 ifneq ($(UNAME),MacOSX)
 ASM=$(USE_ASM)

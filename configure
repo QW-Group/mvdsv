@@ -88,31 +88,49 @@ if [ x$1 != x ]; then
 UNAME=$1
 else
 UNAME=`uname`
+fi
+if [ x$2 != x ]; then
+BRANCH=$2
+else
 BRANCH=`uname -m`
+fi
+if [ x$3 = x32 ] || [ x$3 = x64 ]; then
+BITS=$3
+else
+BITS=32
 fi
 echo UNAME="${UNAME}" >> Makefile
 echo BRANCH="${BRANCH}" >> Makefile
+if [ x${BITS} = x32 ]; then
+echo FORCE32BITFLAGS=-m32 >> Makefile
+fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	echo "${UNAME} system - use BSD Makefile."
+	echo "${UNAME} ${BRANCH} ${BITS}bits system - use BSD Makefile."
 	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-	if [ ${BRANCH} = x86_64 ]; then
-	echo "${UNAME} ${BRANCH} system - use GNU32 Makefile."
-	cat Makefile.GNU32 >> Makefile
-	echo "Configuration completed."
-	else
-	echo "${UNAME} system - use GNU Makefile."
+	echo "${UNAME} ${BRANCH} ${BITS}bits system - use BSD Makefile."
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
-	fi
 	;;
+Usage)
+	echo "Usage:"
+	echo "./configure SYSTEM ARCH BITS"
+	echo "SYSTEM: used `uname`
+	echo "Possible values are: FreeBSD, OpenBSD, NetBSD, DragonFly, Darwin, MacOSX, Linux, SunOS, BSD, GNU"
+	echo "Other systems not supported yet."
+	echo "ARCH: used `uname -m`"
+	echo "BITS: 32 or 64"
+	echo "Default BITS=32 because of qvm don't supported by 64 bits mvdsv yet."
+	echo ""
+        ;;
 *)
 	echo ""
 	echo "Unknown system: ${UNAME}."
+	echo ""
 	echo "You must specify the system which you want to compile for:"
 	echo ""
 	echo "./configure FreeBSD               FreeBSD"
@@ -127,8 +145,10 @@ Darwin | MacOSX | Linux | SunOS | GNU)
 	echo "./configure BSD                   for build with BSD Makefile"
 	echo "./configure GNU                   for build with GNU Makefile"
 	echo "./configure                       for auto configure"
+	echo "./configure Usage			for see usage information"
 	echo ""
 	echo "Other systems not supported yet."
 	echo ""
 	;;
 esac
+
