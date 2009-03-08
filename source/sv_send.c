@@ -40,7 +40,7 @@ char	outputbuf[OUTPUTBUF_SIZE];
 redirect_t	sv_redirected;
 static int	sv_redirectbufcount;
 
-extern cvar_t sv_phs;
+extern cvar_t sv_phs, sv_reliable_sound;
 
 /*
 ==================
@@ -448,7 +448,7 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 		}
 
 inrange:
-		if (reliable || (cl_reliable_key && *cl_reliable_key && *Info_Get(&client->_userinfo_ctx_, cl_reliable_key)))
+		if (reliable || (cl_reliable_key && *cl_reliable_key && strcmp("0", Info_Get(&client->_userinfo_ctx_, cl_reliable_key))))
 		{
 //			Con_Printf ("reliable multicast\n");
 			ClientReliableCheckBlock(client, sv.multicast.cursize);
@@ -572,9 +572,9 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 		MSG_WriteCoord (&sv.multicast, origin[i]);
 
 	if (use_phs)
-		SV_MulticastEx (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS, "rsnd");
+		SV_MulticastEx (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS, sv_reliable_sound.value ? "rsnd" : NULL);
 	else
-		SV_MulticastEx (origin, reliable ? MULTICAST_ALL_R : MULTICAST_ALL, "rsnd");
+		SV_MulticastEx (origin, reliable ? MULTICAST_ALL_R : MULTICAST_ALL, sv_reliable_sound.value ? "rsnd" : NULL);
 }
 
 

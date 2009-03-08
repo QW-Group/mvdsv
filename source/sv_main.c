@@ -145,6 +145,8 @@ cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", 0, sv_mod_msg_file_OnChange};
 
 cvar_t	sv_qwfwd_port = {"sv_qwfwd_port", "30000"};
 
+cvar_t	sv_reliable_sound = {"sv_reliable_sound", "1"};
+
 //
 // game rules mirrored in svs.info
 //
@@ -3339,6 +3341,8 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_ktpro_mode);
 
 	Cvar_Register (&sv_qwfwd_port);
+
+	Cvar_Register (&sv_reliable_sound);
 
 // QW262 -->
 	Cmd_AddCommand ("admin", SV_Admin_f);
