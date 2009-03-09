@@ -107,12 +107,12 @@ fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	echo "${UNAME} ${BRANCH} ${BITS}bits system - use BSD Makefile."
+	echo "${UNAME} ${BRANCH} ${BITS}bits system - using BSD Makefile."
 	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-	echo "${UNAME} ${BRANCH} ${BITS}bits system - use BSD Makefile."
+	echo "${UNAME} ${BRANCH} ${BITS}bits system - using GNU Makefile."
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
 	;;
@@ -124,7 +124,7 @@ Usage)
 	echo "Other systems not supported yet."
 	echo "ARCH: used `uname -m`"
 	echo "BITS: 32 or 64"
-	echo "Default BITS=32 because of qvm is not supported by 64 bits mvdsv yet."
+	echo "Defaults to BITS=32 because QVM is not supported by MVDSV compiled at 64 bits yet."
 	echo ""
         ;;
 *)
