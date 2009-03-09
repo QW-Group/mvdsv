@@ -84,24 +84,29 @@ fi
 
 
 # OS determination
+
 if [ x$1 != x ]; then
 UNAME=$1
 else
 UNAME=`uname`
 fi
+
 if [ x$2 != x ]; then
 BRANCH=$2
 else
 BRANCH=`uname -m`
 fi
-if [ x$3 = x32 ] || [ x$3 = x64 ]; then
-BITS=$3
+
+if [ ${BRANCH} = x86_64 ]; then
+BITS=64
 else
 BITS=32
 fi
+
 echo UNAME="${UNAME}" >> Makefile
 echo BRANCH="${BRANCH}" >> Makefile
-if [ x${BITS} = x32 ]; then
+
+if [ x${BITS} = x64 ]; then
 echo FORCE32BITFLAGS=-m32 >> Makefile
 fi
 
