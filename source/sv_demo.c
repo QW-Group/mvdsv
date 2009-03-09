@@ -1622,7 +1622,7 @@ static void SV_MVDEasyRecord_f (void)
 
 	strlcpy(name4, name2, sizeof(name4));
 	snprintf(name2, sizeof(name2), va("%s/%s/%s.mvd", fs_gamedir, sv_demoDir.string, name2));
-	snprintf(name4, sizeof(name4), va("%s/%s.log", sv_demoDir.string, name4));
+	snprintf(name4, sizeof(name4), va("%s/%s.xml", sv_demoDir.string, name4));
 	Cvar_Set(&extralogname,  name4);
 
 	SV_MVD_Record (SV_InitRecordFile(name2), false);

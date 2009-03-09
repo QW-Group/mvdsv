@@ -851,7 +851,7 @@ static qbool SV_DownloadNextFile (void)
 		return SV_DownloadNextFile();
 	}
 	//Con_Printf("downloading demos/%s\n",name);
-	snprintf(n, sizeof(n), "download demos/%s\n", name);
+	snprintf(n, sizeof(n), "Downloading demos/%s\n", name);
 
 	ClientReliableWrite_Begin (sv_client, svc_stufftext, strlen(n) + 2);
 	ClientReliableWrite_String (sv_client, n);
@@ -1208,7 +1208,7 @@ static void Cmd_Download_f(void)
 		|| strstr(name, "/../") // no /../
 		|| ((i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4)) // no /.. at end
 		|| *name == '.' //relative is pointless
-		|| ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 5)) // no logs
+		// || ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 5)) // no logs
 #ifdef _WIN32
 		// no leading X:
 	   	|| ( name[0] && name[1] == ':' && (*name >= 'a' && *name <= 'z' ||	*name >= 'A' && *name <= 'Z') )
@@ -1282,7 +1282,7 @@ static void Cmd_Download_f(void)
 			goto deny_download;
 		}
 		//Con_Printf("downloading demos/%s\n",name);
-		snprintf(n, sizeof(n), "download demos/%s\n", name);
+		snprintf(n, sizeof(n), "Downloading demos/%s\n", name);
 
 		ClientReliableWrite_Begin (sv_client, svc_stufftext,strlen(n) + 2);
 		ClientReliableWrite_String (sv_client, n);
@@ -1367,7 +1367,7 @@ static void Cmd_Download_f(void)
 		{
 			name += 5;
 			//COM_StripExtension(name, name); 
-			SV_ClientPrintf (sv_client, PRINT_HIGH, "Download this map faster:\n");
+			SV_ClientPrintf (sv_client, PRINT_HIGH, "\nDownload this map faster:\n");
 			SV_ClientPrintf (sv_client, PRINT_HIGH, "%s%s\n\n",
 			                 download_map_url.string, name);
 		}
