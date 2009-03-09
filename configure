@@ -119,12 +119,12 @@ Darwin | MacOSX | Linux | SunOS | GNU)
 Usage)
 	echo "Usage:"
 	echo "./configure SYSTEM ARCH BITS"
-	echo "SYSTEM: used `uname`
+	echo "SYSTEM: used `uname`"
 	echo "Possible values are: FreeBSD, OpenBSD, NetBSD, DragonFly, Darwin, MacOSX, Linux, SunOS, BSD, GNU"
 	echo "Other systems not supported yet."
 	echo "ARCH: used `uname -m`"
 	echo "BITS: 32 or 64"
-	echo "Default BITS=32 because of qvm don't supported by 64 bits mvdsv yet."
+	echo "Default BITS=32 because of qvm is supported by 64 bits mvdsv yet."
 	echo ""
         ;;
 *)
@@ -151,4 +151,3 @@ Usage)
 	echo ""
 	;;
 esac
-
