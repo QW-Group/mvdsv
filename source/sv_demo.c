@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_demo.c - mvd demo related code
 
 #include "qwsvdef.h"
+#include "cvar.h"
 
 
 // minimal chache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
@@ -1542,6 +1543,7 @@ static void SV_MVDEasyRecord_f (void)
 	int		c;
 	char	name[MAX_DEMO_NAME];
 	char	name2[MAX_OSPATH*7]; // scream
+	char	name4[MAX_OSPATH*7]; // scream
 	//char	name2[MAX_OSPATH*2];
 	int		i;
 	dir_t	dir;
@@ -1618,7 +1620,10 @@ static void SV_MVDEasyRecord_f (void)
 		Q_free(name3);
 	}
 
+	strlcpy(name4, name2, sizeof(name4));
 	snprintf(name2, sizeof(name2), va("%s/%s/%s.mvd", fs_gamedir, sv_demoDir.string, name2));
+	snprintf(name4, sizeof(name4), va("%s/%s.log", sv_demoDir.string, name4));
+	Cvar_Set(&extralogname,  name4);
 
 	SV_MVD_Record (SV_InitRecordFile(name2), false);
 }

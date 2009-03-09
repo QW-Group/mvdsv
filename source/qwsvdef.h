@@ -112,6 +112,8 @@ extern	quakeparms_t host_parms;
 extern	cvar_t	sys_nostdout;
 extern	cvar_t	developer;
 
+extern	cvar_t	extralogname;
+
 extern	qbool host_initialized; // true if into command execution
 extern	double	realtime; // not bounded in any way, changed at start of every frame, never reset
 

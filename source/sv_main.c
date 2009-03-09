@@ -57,6 +57,8 @@ cvar_t	sys_restart_on_error = {"sys_restart_on_error", "0"};
 
 cvar_t	developer = {"developer", "0"};		// show extra messages
 
+cvar_t	extralogname = {"extralogname", "unset"};
+
 cvar_t	timeout = {"timeout", "65"};		// seconds without any message
 cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 // after disconnect
@@ -3282,6 +3284,8 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_paused);
 
 	Cvar_Register (&developer);
+	
+	Cvar_Register (&extralogname);
 
 	Cvar_Register (&timeout);
 	Cvar_Register (&zombietime);
