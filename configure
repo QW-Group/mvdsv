@@ -124,7 +124,7 @@ Usage)
 	echo "Other systems not supported yet."
 	echo "ARCH: used `uname -m`"
 	echo "BITS: 32 or 64"
-	echo "Default BITS=32 because of qvm is supported by 64 bits mvdsv yet."
+	echo "Default BITS=32 because of qvm is not supported by 64 bits mvdsv yet."
 	echo ""
         ;;
 *)
