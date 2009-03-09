@@ -97,10 +97,13 @@ else
 BRANCH=`uname -m`
 fi
 
-if [ ${BRANCH} = x86_64 ]; then
-BITS=64
+if [ x$3 = x32 ] || [ x$3 = x64 ]; then
+BITS=$3
 else
 BITS=32
+if [ ${BRANCH} = x86_64 ] && [ x$3 = x ]; then
+BITS=64
+fi
 fi
 
 echo UNAME="${UNAME}" >> Makefile
@@ -129,7 +132,7 @@ Usage)
 	echo "Other systems not supported yet."
 	echo "ARCH: used `uname -m`"
 	echo "BITS: 32 or 64"
-	echo "Defaults to BITS=32 because QVM is not supported by MVDSV compiled at 64 bits yet."
+	echo "Defaults to BITS=32 because QVM is not yet supported by MVDSV compiled at 64 bits"
 	echo ""
         ;;
 *)
