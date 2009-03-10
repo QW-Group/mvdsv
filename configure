@@ -91,9 +91,9 @@ else
 UNAME=`uname`
 fi
 
-BRANCH=`uname -m`
+ARCH=`uname -m | sed -e 's/i.86/x86/g' -e 's/Power Macintosh/ppc/g' -e 's/amd64/x86_64/g'`
 echo UNAME="${UNAME}" >> Makefile
-echo BRANCH="${BRANCH}" >> Makefile
+echo ARCH="${ARCH}" >> Makefile
 
 if [ x$2 = x64 ]; then
 BITS=64
@@ -107,12 +107,12 @@ echo SVNREV="${SVNREV}" >> Makefile
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	echo "${UNAME} ${BRANCH} ${BITS}bits system - using BSD Makefile."
+	echo "${UNAME} ${ARCH} ${BITS}bits system - using BSD Makefile."
 	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-	echo "${UNAME} ${BRANCH} ${BITS}bits system - using GNU Makefile."
+	echo "${UNAME} ${ARCH} ${BITS}bits system - using GNU Makefile."
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
 	;;

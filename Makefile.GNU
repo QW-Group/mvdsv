@@ -21,12 +21,10 @@ WITH_OPTIMIZED_CFLAGS=YES
 
 USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
-ifneq (,$(findstring 86,$(BRANCH)))
-ifeq (,$(findstring 64,$(BRANCH)))
+ifeq ($(ARCH),x86)
 ifneq ($(UNAME),Darwin)
 ifneq ($(UNAME),MacOSX)
 ASM=$(USE_ASM)
-endif
 endif
 endif
 endif
