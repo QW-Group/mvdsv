@@ -16,8 +16,6 @@ QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 # for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
 # configure script add FORCE32BITFLAGS=-m32
 
-SVNREV=$(shell svnversion -n . 2>/dev/null | sed -e "s/M//")
-
 BASE_CFLAGS=-Wall -pipe -pthread -funsigned-char -DUSE_PR2 -D$(BYTE_ORDER)Q__ -DSVNREV="$(SVNREV)" $(FORCE32BITFLAGS)
 WITH_OPTIMIZED_CFLAGS=YES
 
