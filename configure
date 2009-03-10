@@ -91,26 +91,25 @@ else
 UNAME=`uname`
 fi
 
-if [ x$2 = x32 ] || [ x$2 = x64 ]; then
-BITS=$2
+BRANCH=`uname -m`
+echo UNAME="${UNAME}" >> Makefile
+echo BRANCH="${BRANCH}" >> Makefile
+
+if [ x$2 = x64 ]; then
+BITS=64
 else
 BITS=32
-fi
-
-echo UNAME="${UNAME}" >> Makefile
-
-if [ x${BITS} = x32 ]; then
 echo FORCE32BITFLAGS=-m32 >> Makefile
 fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	echo "${UNAME} ${BITS}bit system - using BSD Makefile."
+	echo "${UNAME} ${BRANCH} ${BITS}bits system - using BSD Makefile."
 	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-	echo "${UNAME} ${BITS}bit system - using GNU Makefile."
+	echo "${UNAME} ${BRANCH} ${BITS}bits system - using GNU Makefile."
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
 	;;
@@ -120,8 +119,9 @@ Usage)
 	echo "SYSTEM: used `uname`"
 	echo "Possible values are: FreeBSD, OpenBSD, NetBSD, DragonFly, Darwin, MacOSX, Linux, SunOS, BSD, GNU"
 	echo "Other systems not supported yet."
-	echo "BITS: 32 or 64"
-	echo "Defaults to BITS=32 because QVM is not yet supported by MVDSV compiled at 64 bits"
+	echo "BITS: 64"
+	echo "Defaults to BITS=32 because QVM is not yet supported by MVDSV compiled at 64 bits."
+	echo "If you want to turn off force compile 32 bits on 64 bits system use BITS parameter."
 	echo ""
         ;;
 *)
@@ -148,3 +148,4 @@ Usage)
 	echo ""
 	;;
 esac
+
