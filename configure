@@ -91,20 +91,13 @@ else
 UNAME=`uname`
 fi
 
-if [ x$2 != x ]; then
-BRANCH=$2
-else
-BRANCH=`uname -m`
-fi
-
-if [ x$3 = x32 ] || [ x$3 = x64 ]; then
-BITS=$3
+if [ x$2 = x32 ] || [ x$3 = x64 ]; then
+BITS=$2
 else
 BITS=32
 fi
 
 echo UNAME="${UNAME}" >> Makefile
-echo BRANCH="${BRANCH}" >> Makefile
 
 if [ x${BITS} = x32 ]; then
 echo FORCE32BITFLAGS=-m32 >> Makefile
@@ -112,22 +105,21 @@ fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	echo "${UNAME} ${BRANCH} ${BITS}bits system - using BSD Makefile."
+	echo "${UNAME} ${BITS}bit system - using BSD Makefile."
 	cat Makefile.BSD >> Makefile
 	echo "Configuration completed."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
-	echo "${UNAME} ${BRANCH} ${BITS}bits system - using GNU Makefile."
+	echo "${UNAME} ${BITS}bit system - using GNU Makefile."
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
 	;;
 Usage)
 	echo "Usage:"
-	echo "./configure SYSTEM ARCH BITS"
+	echo "./configure SYSTEM BITS"
 	echo "SYSTEM: used `uname`"
 	echo "Possible values are: FreeBSD, OpenBSD, NetBSD, DragonFly, Darwin, MacOSX, Linux, SunOS, BSD, GNU"
 	echo "Other systems not supported yet."
-	echo "ARCH: used `uname -m`"
 	echo "BITS: 32 or 64"
 	echo "Defaults to BITS=32 because QVM is not yet supported by MVDSV compiled at 64 bits"
 	echo ""
