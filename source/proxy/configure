@@ -9,9 +9,9 @@ fi
 
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
-	cat Makefile.GNU > Makefile
+	cat Makefile.BSD > Makefile
 	echo "${UNAME} system detected, Makefile created."
-	echo "REQUIREMENT!: Use gmake or gmake dl to build under BSD."
+	echo "Use make or make dl to build."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
 	cat Makefile.GNU > Makefile
@@ -23,3 +23,4 @@ Darwin | MacOSX | Linux | SunOS | GNU)
 	exit 1
 	;;
 esac
+

@@ -24,3 +24,4 @@ qwfwd-dl: $(OBJS) qwfwd.h
 
 clean:
 	rm -rf qwfwd.bin qwfwd.exe qwfwd.db *.o qwfwd.so qwfwd-db.so
+
