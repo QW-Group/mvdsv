@@ -106,7 +106,7 @@ fi
 echo UNAME="${UNAME}" >> Makefile
 echo BRANCH="${BRANCH}" >> Makefile
 
-if [ x${BITS} = x64 ]; then
+if [ x${BITS} = x32 ]; then
 echo FORCE32BITFLAGS=-m32 >> Makefile
 fi
 
