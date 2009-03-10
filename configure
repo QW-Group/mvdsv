@@ -91,7 +91,7 @@ else
 UNAME=`uname`
 fi
 
-if [ x$2 = x32 ] || [ x$3 = x64 ]; then
+if [ x$2 = x32 ] || [ x$2 = x64 ]; then
 BITS=$2
 else
 BITS=32
