@@ -851,7 +851,7 @@ static qbool SV_DownloadNextFile (void)
 		return SV_DownloadNextFile();
 	}
 	//Con_Printf("downloading demos/%s\n",name);
-	snprintf(n, sizeof(n), "Downloading demos/%s\n", name);
+	snprintf(n, sizeof(n), "download demos/%s\n", name);
 
 	ClientReliableWrite_Begin (sv_client, svc_stufftext, strlen(n) + 2);
 	ClientReliableWrite_String (sv_client, n);
@@ -1282,7 +1282,7 @@ static void Cmd_Download_f(void)
 			goto deny_download;
 		}
 		//Con_Printf("downloading demos/%s\n",name);
-		snprintf(n, sizeof(n), "Downloading demos/%s\n", name);
+		snprintf(n, sizeof(n), "download demos/%s\n", name);
 
 		ClientReliableWrite_Begin (sv_client, svc_stufftext,strlen(n) + 2);
 		ClientReliableWrite_String (sv_client, n);
@@ -1367,7 +1367,7 @@ static void Cmd_Download_f(void)
 		{
 			name += 5;
 			//COM_StripExtension(name, name); 
-			SV_ClientPrintf (sv_client, PRINT_HIGH, "\nDownload this map faster:\n");
+			SV_ClientPrintf (sv_client, PRINT_HIGH, "Download this map faster:\n");
 			SV_ClientPrintf (sv_client, PRINT_HIGH, "%s%s\n\n",
 			                 download_map_url.string, name);
 		}
