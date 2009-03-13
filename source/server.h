@@ -217,6 +217,7 @@ typedef struct client_s
 //Added by VVD {
 	int				demonum[MAX_ARGS];
 	qbool			demolist;
+	qbool			next_dl_xml;
 // } Added by VVD
 
 	int				spec_track;			// entnum of player tracking
@@ -838,6 +839,7 @@ extern cvar_t	sv_demoRegexp;
 
 void SV_MVDInit (void);
 char *SV_MVDNum(int num);
+char *SV_MVDName2Ext (char *name, char *ext);
 
 //
 // sv_demo_misc.c

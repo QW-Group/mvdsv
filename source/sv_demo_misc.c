@@ -497,7 +497,7 @@ char *SV_MVDNum (int num)
 }
 
 #define OVECCOUNT 3
-static char *SV_MVDName2Txt (char *name)
+char *SV_MVDName2Ext (char *name, char *ext)
 {
 	char	s[MAX_OSPATH];
 	int		len;
@@ -506,10 +506,13 @@ static char *SV_MVDName2Txt (char *name)
 	pcre	*preg;
 	const char	*errbuf;
 
-	if (!name)
+	if (!name || !ext)
 		return NULL;
 
-	if (!*name)
+	if (!*name || !*ext)
+		return NULL;
+
+	if (strlen(ext) != 3)
 		return NULL;
 
 	strlcpy(s, name, MAX_OSPATH);
@@ -544,14 +547,19 @@ static char *SV_MVDName2Txt (char *name)
 			len = ovector[0];
 	}
 	s[len++] = '.';
-	s[len++] = 't';
-	s[len++] = 'x';
-	s[len++] = 't';
+	s[len++] = ext[0];
+	s[len++] = ext[1];
+	s[len++] = ext[2];
 	s[len]   = '\0';
 
 	//Con_Printf("%d) %s, %s\n", r, name, s);
 	return va("%s", s);
 }
+static char *SV_MVDName2Txt (char *name)
+{
+	return SV_MVDName2Ext (name, "txt");
+}
+
 
 static char *SV_MVDTxTNum (int num)
 {
