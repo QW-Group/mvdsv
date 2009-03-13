@@ -218,6 +218,7 @@ typedef struct client_s
 	int				demonum[MAX_ARGS];
 	qbool			demolist;
 	qbool			next_dl_xml;
+	char			xml_name[MAX_OSPATH];
 // } Added by VVD
 
 	int				spec_track;			// entnum of player tracking

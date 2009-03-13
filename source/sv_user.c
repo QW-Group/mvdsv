@@ -823,44 +823,55 @@ static qbool SV_DownloadNextFile (void)
 	unsigned char	all_demos_downloaded[]	= "All demos downloaded.\n";
 	unsigned char	incorrect_demo_number[]	= "Incorrect demo number.\n";
 
-	switch (sv_client->demonum[0])
-	{
-	case 1:
-		if (sv_client->demolist)
-		{
-			Con_Printf((char *)Q_redtext(all_demos_downloaded));
-			sv_client->demolist = false;
-		}
-		sv_client->demonum[0] = 0;
-	case 0:
-		return false;
-	default:;
-	}
-
-	num = sv_client->demonum[--(sv_client->demonum[0])];
-	if (num == 0)
-	{
-		Con_Printf((char *)Q_redtext(incorrect_demo_number));
-		sv_client->next_dl_xml = false;
-		return SV_DownloadNextFile();
-	}
-	if (!(name = SV_MVDNum(num)))
-	{
-		Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n",
-			(num & 0xFF000000) ? -(num >> 24) : 
-				((num & 0x00800000) ? (num | 0xFF000000) : num) )));
-		sv_client->next_dl_xml = false;
-		return SV_DownloadNextFile();
-	}
-	//Con_Printf("downloading demos/%s\n",name);
 	if (sv_client->next_dl_xml)
-		snprintf(n, sizeof(n), "download demos/%s\n", SV_MVDName2Ext (name, "xml"));
+	{
+		if (sv_client->xml_name[0])
+			snprintf(n, sizeof(n), "download demos/%s\n", sv_client->xml_name);
+		else
+		{
+			sv_client->next_dl_xml = false;
+			return SV_DownloadNextFile();
+		}
+	}
 	else
+	{
+		switch (sv_client->demonum[0])
+		{
+		case 1:
+			if (sv_client->demolist)
+			{
+				Con_Printf((char *)Q_redtext(all_demos_downloaded));
+				sv_client->demolist = false;
+			}
+			sv_client->demonum[0] = 0;
+		case 0:
+			return false;
+		default:;
+		}
+
+		num = sv_client->demonum[--(sv_client->demonum[0])];
+		if (num == 0)
+		{
+			Con_Printf((char *)Q_redtext(incorrect_demo_number));
+			sv_client->next_dl_xml = false;
+			return SV_DownloadNextFile();
+		}
+		if (!(name = SV_MVDNum(num)))
+		{
+			Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n",
+				(num & 0xFF000000) ? -(num >> 24) : 
+					((num & 0x00800000) ? (num | 0xFF000000) : num) )));
+			sv_client->next_dl_xml = false;
+			return SV_DownloadNextFile();
+		}
 		snprintf(n, sizeof(n), "download demos/%s\n", name);
+		strlcpy(sv_client->xml_name, SV_MVDName2Ext(name, "xml"), sizeof(sv_client->xml_name));
+	}
+	//Sys_Printf("command: %s\n", n);
 
 	ClientReliableWrite_Begin (sv_client, svc_stufftext, strlen(n) + 2);
 	ClientReliableWrite_String (sv_client, n);
-	sv_client->next_dl_xml = !sv_client->next_dl_xml;
+	sv_client->next_dl_xml = !(sv_client->next_dl_xml);
 
 	return true;
 }
@@ -885,7 +896,6 @@ void SV_CompleteDownoload(void)
 	fclose (sv_client->download);
 	sv_client->download = NULL;
 	sv_client->file_percent = 0; //bliP: file percent
-	sv_client->next_dl_xml = false;
 	// qqshka: set normal rate
 	val = Info_Get (&sv_client->_userinfo_ctx_, "rate");
 	sv_client->netchan.rate = 1. / SV_BoundRate(false,	Q_atoi(*val ? val : "99999"));
