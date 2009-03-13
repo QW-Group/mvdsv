@@ -328,7 +328,6 @@ char *Sys_ConsoleInput (void)
 	static char text[256], *t;
 	static unsigned int len = 0;
 
-
 	if (!(telnetport && iosock_ready && telnet_connected) && !(do_stdin && stdin_ready))
 		return NULL;		// the select didn't say it was ready
 
@@ -363,7 +362,6 @@ char *Sys_ConsoleInput (void)
 			}// switch
 		}// do
 		while (len < sizeof(text) - 1 && text[len - 1] != '\n' && text[len - 1] != '\r' && text[len - 1] != 0);
-
 		if (len == 0)
 			return NULL;
 
@@ -409,7 +407,6 @@ char *Sys_ConsoleInput (void)
 			len = 0;
 			return NULL;
 		}
-		len = 0;
 		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
 	}
 	if (do_stdin && stdin_ready)
@@ -422,9 +419,13 @@ char *Sys_ConsoleInput (void)
 			return NULL;
 		}
 		if (len < 1)
+		{
+			len = 0;
 			return NULL;
+		}
 		text[len - 1] = 0;	// rip off the /n and terminate
 	}
+	len = 0;
 	return text;
 }
 
@@ -671,7 +672,7 @@ inline void Sys_Telnet (void)
 			(authenticated && (int)auth_timeout.value &&
 			 realtime - cur_time_auth > auth_timeout.value))
 		{
-			telnet_connected = false;
+			authenticated = telnet_connected = false;
 			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
 			closesocket_k (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));

@@ -1060,3 +1060,4 @@ char *quote (char *str)
 	*s = '\0';
 	return out;
 }
+
