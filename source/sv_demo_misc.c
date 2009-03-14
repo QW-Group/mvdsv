@@ -159,7 +159,8 @@ qbool SV_DirSizeCheck (void)
 
 	if ((int)sv_demoMaxDirSize.value)
 	{
-		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_NO/*BY_DATE*/);
+		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
+//		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_NO/*BY_DATE*/);
 		if ((float)dir.size > sv_demoMaxDirSize.value * 1024)
 		{
 			if ((int)sv_demoClearOld.value <= 0)
@@ -171,15 +172,18 @@ qbool SV_DirSizeCheck (void)
 			n = (int) sv_demoClearOld.value;
 			Con_Printf("Clearing %d old demos\n", n);
 			// HACK!!! HACK!!! HACK!!!
-			if ((int)sv_demotxt.value) // if our server record demos and txts, then to remove
-				n <<= 1;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
+			//if ((int)sv_demotxt.value) // if our server record demos and txts, then to remove
+//				n <<= 1;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
 
-			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
+//			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
 			for (; list->name[0] && n > 0; list++)
 			{
 				if (list->isdir)
 					continue;
 				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name));
+				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(list->name, "txt")));
+				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(list->name, "xml")));
+
 				//Con_Printf("Remove %d - %s/%s/%s\n", n, fs_gamedir, sv_demoDir.string, list->name);
 				n--;
 			}
@@ -565,6 +569,11 @@ static char *SV_MVDTxTNum (int num)
 {
 	return SV_MVDName2Txt (SV_MVDNum(num));
 }
+/*
+static char *SV_MVDExtNum (int num, char *ext)
+{
+	return SV_MVDName2Ext (SV_MVDNum(num), ext);
+}*/
 
 
 void SV_MVDRemove_f (void)
@@ -605,7 +614,8 @@ void SV_MVDRemove_f (void)
 					i++;
 				}
 
-				Sys_remove(SV_MVDName2Txt(path));
+				Sys_remove(SV_MVDName2Ext(path, "txt"));
+				Sys_remove(SV_MVDName2Ext(path, "xml"));
 			}
 		}
 
@@ -648,7 +658,8 @@ void SV_MVDRemove_f (void)
 	else
 		Con_Printf("unable to remove demo %s\n", name);
 
-	Sys_remove(SV_MVDName2Txt(path));
+	Sys_remove(SV_MVDName2Ext(path, "txt"));
+	Sys_remove(SV_MVDName2Ext(path, "xml"));
 }
 
 void SV_MVDRemoveNum_f (void)
@@ -696,7 +707,8 @@ void SV_MVDRemoveNum_f (void)
 		else
 			Con_Printf("unable to remove demo %s\n", name);
 
-		Sys_remove(SV_MVDName2Txt(path));
+		Sys_remove(SV_MVDName2Ext(path, "txt"));
+		Sys_remove(SV_MVDName2Ext(path, "xml"));
 	}
 	else
 		Con_Printf("invalid demo num\n");
@@ -785,7 +797,7 @@ void SV_MVDInfoAdd_f (void)
 
 void SV_MVDInfoRemove_f (void)
 {
-	char *name, path[MAX_OSPATH];
+	char *txtname, *xmlname, txtpath[MAX_OSPATH], xmlpath[MAX_OSPATH], *demoname;
 
 	if (Cmd_Argc() < 2)
 	{
@@ -803,24 +815,33 @@ void SV_MVDInfoRemove_f (void)
 
 //		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
 // FIXME: dunno is this right, just using first dest, also may be we must use demo.dest->path instead of sv_demoDir
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demo.dest->name));
+		snprintf(txtpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(demo.dest->name, "txt"));
+		snprintf(xmlpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(demo.dest->name, "xml"));
 	}
 	else
 	{
-		name = SV_MVDTxTNum(Q_atoi(Cmd_Argv(1)));
+		demoname = SV_MVDNum(Q_atoi(Cmd_Argv(1)));
 
-		if (!name)
+		if (!demoname)
 		{
 			Con_Printf("invalid demo num\n");
 			return;
 		}
+		txtname = SV_MVDName2Ext (demoname, "txt");
+		xmlname = SV_MVDName2Ext (demoname, "xml");
 
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
+		snprintf(txtpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, demoname);
+		snprintf(xmlpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, demoname);
 	}
 
-	if (Sys_remove(path))
-		Con_Printf("failed to remove the file\n");
-	else Con_Printf("file removed\n");
+	if (Sys_remove(txtpath))
+		Con_Printf("failed to remove the file %s\n", txtpath);
+	else
+		Con_Printf("file %s removed\n", txtpath);
+	if (Sys_remove(xmlpath))
+		Con_Printf("failed to remove the file %s\n", xmlpath);
+	else
+		Con_Printf("file %s removed\n", xmlpath);
 }
 
 void SV_MVDInfo_f (void)
