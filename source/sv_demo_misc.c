@@ -195,6 +195,7 @@ qbool SV_DirSizeCheck (void)
 void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *dest_path, qbool destroyfiles)
 {
 	char path[MAX_OSPATH];
+	char matchname[MAX_OSPATH];
 
 	snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, dest_path, dest_name);
 	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
@@ -231,7 +232,11 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 		strlcpy(path + strlen(dest_name) - 3, "txt", MAX_OSPATH - strlen(dest_name) + 3);
 	
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
-		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, dest_name, path, p != NULL ? p+1 : ""));
+		
+		// Only pass matchname argument (no extension)
+		strlcpy(matchname, dest_name, MAX_OSPATH);
+		strlcpy(matchname + strlen(dest_name) - 4, "", MAX_OSPATH - strlen(dest_name));
+		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, matchname, p != NULL ? p+1 : ""));
 
 		if (p)
 			*p = ' ';
@@ -351,7 +356,8 @@ void SV_DemoList (qbool use_regex)
 
 	memset(files, 0, sizeof(files));
 
-	Con_Printf("content of %s/%s/%s\n", fs_gamedir, sv_demoDir.string, sv_demoRegexp.string);
+	Con_Printf("Listing content of %s/%s\n", fs_gamedir, sv_demoDir.string);
+	Con_Printf("(regexp is %s)\n\n", sv_demoRegexp.string);
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])
@@ -404,9 +410,9 @@ void SV_DemoList (qbool use_regex)
 		i = files[j];
 
 		if ((d = DestByName(list[i - 1].name)))
-			Con_Printf("*%d: %s %dk\n", i, list[i - 1].name, d->totalsize / 1024);
+			Con_Printf("*%4d: %s %dk\n", i, list[i - 1].name, d->totalsize / 1024);
 		else
-			Con_Printf("%d: %s %dk\n", i, list[i - 1].name, list[i - 1].size / 1024);
+			Con_Printf("%4d: %s %dk\n", i, list[i - 1].name, list[i - 1].size / 1024);
 	}
 
 	for (d = demo.dest; d; d = d->nextdest)
