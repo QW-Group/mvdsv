@@ -410,9 +410,9 @@ void SV_DemoList (qbool use_regex)
 		i = files[j];
 
 		if ((d = DestByName(list[i - 1].name)))
-			Con_Printf("*%4d: %s %dk\n", i, list[i - 1].name, d->totalsize / 1024);
+			Con_Printf("*%4d: %s (%dk)\n", i, list[i - 1].name, d->totalsize / 1024);
 		else
-			Con_Printf("%4d: %s %dk\n", i, list[i - 1].name, list[i - 1].size / 1024);
+			Con_Printf("%4d: %s (%dk)\n", i, list[i - 1].name, list[i - 1].size / 1024);
 	}
 
 	for (d = demo.dest; d; d = d->nextdest)
@@ -631,7 +631,7 @@ void SV_MVDRemove_f (void)
 		}
 		else
 		{
-			Con_Printf("no matching found\n");
+			Con_Printf("no match found\n");
 		}
 
 		return;
