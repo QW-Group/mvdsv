@@ -3487,7 +3487,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 			val = Info_Get (&cl->_userinfo_ctx_, "name");
 		}
 
-		if (!val[0] || !strcasecmp(val, "console"))
+		if (!val[0] || !strcasecmp(val, "console") || strstr(val, "&c") || strstr(val, "&r"))
 		{
 			Info_Set (&cl->_userinfo_ctx_, "name", sv_default_name.string);
 			val = Info_Get (&cl->_userinfo_ctx_, "name");
