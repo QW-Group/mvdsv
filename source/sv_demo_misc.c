@@ -234,9 +234,14 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
 		
 		// Only pass matchname argument (no extension)
-		strlcpy(matchname, dest_name, MAX_OSPATH);
-		strlcpy(matchname + strlen(dest_name) - 4, "", MAX_OSPATH - strlen(dest_name));
-		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, matchname, p != NULL ? p+1 : ""));
+		int dest_name_len = (int) strlcpy(matchname, dest_name, MAX_OSPATH);
+		dest_name_len -= 4;
+		if (dest_name_len >= 0 && dest_name_len < MAX_OSPATH) {
+			matchname[dest_name_len] = '\0';
+			Cmd_TokenizeString(va("script %s \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, matchname, p != NULL ? p+1 : ""));
+		} else {
+			// ERROR
+		}
 
 		if (p)
 			*p = ' ';
