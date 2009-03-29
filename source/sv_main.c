@@ -4007,6 +4007,7 @@ unsigned char *Q_yelltext (unsigned char *str)
 typedef struct fwd_params
 {
 	int port;
+	char ip[64];
 } fwd_params_t;
 
 qbool FWD_proxy_load(void)
@@ -4015,6 +4016,7 @@ qbool FWD_proxy_load(void)
 	static  fwd_params_t params;
 	static	DWORD (WINAPI *FWD_proc)(void *);
 
+	int		i;
 	char    name[MAX_OSPATH];
 	char   *gpath = NULL;
 
@@ -4059,6 +4061,7 @@ qbool FWD_proxy_load(void)
 
 	memset(&params, 0, sizeof(params));
 	params.port = (int)sv_qwfwd_port.value;
+	strlcpy(params.ip, ((i = COM_CheckParm ("-ip")) != 0 && i < com_argc && *com_argv[i+1]) ? com_argv[i+1] : "0.0.0.0", sizeof(params.ip));
 
 	if (Sys_CreateThread(FWD_proc, &params))
 	{

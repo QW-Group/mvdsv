@@ -73,7 +73,7 @@ void NET_SendPacket(int s, int length, const void *data, struct sockaddr_in *to)
 
 //=============================================================================
 
-int NET_UDP_OpenSocket(int port, qbool do_bind)
+int NET_UDP_OpenSocket(const char *ip, int port, qbool do_bind)
 {
 	int s;
 	unsigned long _true = 1;
@@ -111,7 +111,7 @@ int NET_UDP_OpenSocket(int port, qbool do_bind)
 		memset(&address, 0, sizeof(address));
 
 		address.sin_family = AF_INET;
-		address.sin_addr.s_addr = INADDR_ANY;
+		address.sin_addr.s_addr = (ip && *ip) ? inet_addr(ip) : INADDR_ANY;
 		address.sin_port = htons ((short) port);
 
 		if (bind(s, (struct sockaddr *)&address, sizeof(address)))
@@ -229,7 +229,7 @@ void Netchan_OutOfBandPrint(int s, struct sockaddr_in *adr, const char *format, 
 NET_Init
 ====================
 */
-void NET_Init (int server_port)
+void NET_Init (const char *ip, int server_port)
 {
 #ifdef _WIN32
 	{
@@ -240,7 +240,7 @@ void NET_Init (int server_port)
 	}
 #endif
 
-	if ((net_socket = NET_UDP_OpenSocket(server_port, true)) == INVALID_SOCKET)
+	if ((net_socket = NET_UDP_OpenSocket(ip, server_port, true)) == INVALID_SOCKET)
 		Sys_Error("NET_Init: failed to initialize socket");
 
 	// init the message buffer

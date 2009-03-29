@@ -112,6 +112,7 @@ typedef struct peer
 typedef struct fwd_params
 {
 	int port;
+	char ip[64];
 } fwd_params_t;
 
 #define	MSG_BUF_SIZE		8192
@@ -260,14 +261,14 @@ sizebuf_t			net_message;
 
 int					NET_GetPacket(int s, sizebuf_t *msg);
 void				NET_SendPacket(int s, int length, const void *data, struct sockaddr_in *to);
-int					NET_UDP_OpenSocket(int port, qbool do_bind);
+int					NET_UDP_OpenSocket(const char *ip, int port, qbool do_bind);
 qbool				NET_GetSockAddrIn_ByHostAndPort(struct sockaddr_in *address, const char *host, int port);
 qbool				NET_CompareAddress(struct sockaddr_in *a, struct sockaddr_in *b);
 
 void				Netchan_OutOfBand(int s, struct sockaddr_in *adr, int length, byte *data);
 void				Netchan_OutOfBandPrint(int s, struct sockaddr_in *adr, const char *format, ...);
 
-void				NET_Init(int server_port);
+void				NET_Init(const char *ip, int server_port);
 
 //
 // cmd.c

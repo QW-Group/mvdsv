@@ -17,7 +17,7 @@ peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_i
 	if (!NET_GetSockAddrIn_ByHostAndPort(&to, remote_host, remote_port))
 		return NULL; // failed to resolve host name?
 
-	if ((s = NET_UDP_OpenSocket(0, false)) == INVALID_SOCKET)
+	if ((s = NET_UDP_OpenSocket(NULL, 0, false)) == INVALID_SOCKET)
 		return NULL; // out of sockets?
 
 	p = Sys_malloc(sizeof(*p));

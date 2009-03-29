@@ -15,15 +15,17 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 {
 	fwd_params_t *params = lpParameter;
 	int port;
+	const char *ip;
 
 	if (!params)
 		return 1;
 
+	ip = params->ip;
 	port = params->port;
 
-	NET_Init(port);
+	NET_Init(ip, port);
 
-	Sys_Printf("QW FORWARD PROXY: Ready to rock at port %d\n", port);
+	Sys_Printf("QW FORWARD PROXY: Ready to rock at %s:%d\n", ip, port);
 
 	while(1)
 	{
@@ -52,12 +54,13 @@ int main(int argc, char *argv[])
 
 	if (argc < 2)
 	{
-		Sys_Printf("Usage: %s <port>\n", argv[0]);
+		Sys_Printf("Usage: %s <port> [ip]\n", argv[0]);
 		return 1;
 	}
 
 	memset(&params, 0, sizeof(params));
 	params.port = atoi(argv[1]);
+	strlcpy(params.ip, argc > 2 ? argv[2] : "0.0.0.0", sizeof(params.ip));
 
 	FWD_proc(&params);
 	return 0;
