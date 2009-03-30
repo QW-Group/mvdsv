@@ -224,6 +224,7 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 		extern redirect_t sv_redirected;
 		redirect_t old = sv_redirected;
 		char *p;
+		int dest_name_len;
 	
 		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
 			*p = 0; // strip parameters
@@ -234,7 +235,7 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
 		
 		// Only pass matchname argument (no extension)
-		int dest_name_len = (int) strlcpy(matchname, dest_name, MAX_OSPATH);
+		dest_name_len = (int) strlcpy(matchname, dest_name, MAX_OSPATH);
 		dest_name_len -= 4;
 		if (dest_name_len >= 0 && dest_name_len < MAX_OSPATH) {
 			matchname[dest_name_len] = '\0';
