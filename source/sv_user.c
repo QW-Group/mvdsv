@@ -1437,6 +1437,13 @@ static void Cmd_DemoDownload_f(void)
 	unsigned char	download_queue_cleared[] = "Download queue cleared.\n";
 	unsigned char	download_queue_empty[] = "Download queue empty.\n";
 	unsigned char	download_queue_already_exists[]	= "Download queue already exists.\n";
+	unsigned char	cmdhelp_dldesc[] = "Download a demo from the server your are connected to";
+	unsigned char	cmdhelp_dl[] = "cmd dl";
+	unsigned char	cmdhelp_pound[] = "#";
+	unsigned char	cmdhelp_dot[] = ".";
+	unsigned char	cmdhelp_bs[] = "\\";
+	unsigned char	cmdhelp_stop[] = "stop";
+	unsigned char	cmdhelp_cancel[] = "cancel";
 
 	if (!(int)sv_use_internal_cmd_dl.value)
 		if (SV_ExecutePRCommand())
@@ -1444,13 +1451,21 @@ static void Cmd_DemoDownload_f(void)
 
 	if (Cmd_Argc() < 2)
 	{
-		Con_Printf("usage: cmd dl [\\] # [# [#]]\n"
-		           "where \"#\" is demonum from demo list and "
-		           "\"\\\" clear download queue\n"
-		           "you can also use cmd dl ., .. or any quantity of dots "
-		           "where . is the last recorded demo, "
-		           ".. is the second to last recorded demo"
-		           "and where N dots is the Nth to last recorded demo\n");
+		Con_Printf("\n%s\n"
+			   "Usage:\n"
+			   "  %s %s [%s [%s]]\n"
+		           "    \"#\" is one or several numbers from the demo list\n"
+			   "  %s %s [%s%s [%s%s%s]]\n"
+		           "    Each number of dots represents the Nth last recorded demo\n"
+			   "    (Note that you can mix numbers and groups of dots)\n"
+			   "  %s [%s|%s|%s]\n"
+			   "     \"\\\", \"stop\" or \"cancel\" clear the download queue\n\n",
+			   Q_redtext(cmdhelp_dldesc),
+			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound),
+			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
+			   	Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
+			    Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_bs), Q_redtext(cmdhelp_stop), Q_redtext(cmdhelp_cancel)
+		           );
 		return;
 	}
 

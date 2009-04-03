@@ -159,8 +159,7 @@ qbool SV_DirSizeCheck (void)
 
 	if ((int)sv_demoMaxDirSize.value)
 	{
-		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
-//		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_NO/*BY_DATE*/);
+		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
 		if ((float)dir.size > sv_demoMaxDirSize.value * 1024)
 		{
 			if ((int)sv_demoClearOld.value <= 0)
@@ -170,22 +169,19 @@ qbool SV_DirSizeCheck (void)
 			}
 			list = dir.files;
 			n = (int) sv_demoClearOld.value;
-			Con_Printf("Clearing %d old demos\n", n);
-			// HACK!!! HACK!!! HACK!!!
-			//if ((int)sv_demotxt.value) // if our server record demos and txts, then to remove
-//				n <<= 1;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
-
-//			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
+			Con_Printf("Clearing %d old files\n", n);
+			
 			for (; list->name[0] && n > 0; list++)
 			{
 				if (list->isdir)
+				{
 					continue;
-				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name));
-				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(list->name, "txt")));
-				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(list->name, "xml")));
-
-				//Con_Printf("Remove %d - %s/%s/%s\n", n, fs_gamedir, sv_demoDir.string, list->name);
-				n--;
+				}
+				else
+				{
+					Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(list->name, "*")));
+					n--;
+				}
 			}
 		}
 	}
