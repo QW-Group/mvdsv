@@ -434,7 +434,7 @@ void SV_Map (qbool now)
 
 	if (Cmd_Argc() != 2)
 	{
-		Con_Printf ("map <levelname> : continue game on a new level\n");
+		Con_Printf ("map <levelname> : continue game on a new level (Current map: %s)\n", level);
 		return;
 	}
 
@@ -472,6 +472,76 @@ void SV_ReplaceChar(char *s, char from, char to)
 			if (*s == from)
 				*s = to;
 }
+
+/*==============
+Recursive_Find
+Looks for maps in sub directories
+==============*/
+void Recursive_Find(char *path)
+{
+	int dir_len = strlen(path);
+	DIR *dir;
+
+	Con_Printf("checking dir: %s\n", path);
+
+	dir = opendir(path);
+	if (dir)
+	{
+		struct dirent *de;
+
+		while((de = readdir(dir)) != NULL)
+		{
+			struct stat ss;
+			int file_len = strlen(de -> d_name);
+			int new_len = dir_len + 1 + file_len + 1;
+			char *new_path = (char *)malloc(new_len);
+			if (!new_path)
+			{
+				Con_Printf("out of memory\n");
+				break;
+			}
+
+			snprintf(new_path, new_len, "%s/%s", path, de -> d_name);
+
+			if (stat(new_path, &ss) == 0)
+			{
+				if (S_ISDIR(ss.st_mode))
+				{
+					if (strcmp(de -> d_name, "..") != 0 && strcmp(de -> d_name, ".") != 0)
+					{
+						Con_Printf("\n");
+						Recursive_Find(new_path);
+					}
+				}
+				else if (new_len >= 4 && strcasecmp(&new_path[new_len - 5], ".bsp") == 0)
+				{
+					Con_Printf("%s (%d), ", de -> d_name, ss.st_size);
+				}
+			}
+			else
+			{
+				Con_Printf("error while stat(%s): %d / %s\n", new_path, errno, strerror(errno));
+			}
+
+			free(new_path);
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		Con_Printf("cannot open path %s\n", path);
+	}
+}
+
+void SV_FindBSP_f(void)
+{
+	Con_Printf("Finding files *.bsp\n");
+
+	Recursive_Find("id1/maps");
+}
+
+
 //bliP: ls, rm, rmdir, chmod ->
 /*==================
 SV_ListFiles_f
@@ -1856,6 +1926,8 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("rmdir", SV_RemoveDirectory_f);
 	Cmd_AddCommand ("rm", SV_RemoveFile_f);
 	Cmd_AddCommand ("ls", SV_ListFiles_f);
+
+	Cmd_AddCommand ("findbsp", SV_FindBSP_f);
 
 	Cmd_AddCommand ("mute", SV_Mute_f);
 	Cmd_AddCommand ("cuff", SV_Cuff_f);
