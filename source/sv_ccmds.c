@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 cvar_t	sv_cheats = {"sv_cheats", "0"};
 qbool	sv_allow_cheats = false;
-
+extern	qbool	authenticated;
 int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
 extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
@@ -135,6 +135,19 @@ void SV_Logfile (int sv_log, qbool newlog)
 	default:
 		logs[sv_log].log_level = 1;
 	}
+}
+
+/*
+============
+SV_CloseTelnet_f
+Closes  telnet session so user can disconnect
+============
+*/
+void SV_CloseTelnet_f(void)
+{
+       Con_Printf("Closing telnet socket\n");
+       authenticated = telnet_connected = false;
+       closesocket(telnet_iosock);
 }
 
 /*
@@ -1928,6 +1941,8 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("ls", SV_ListFiles_f);
 
 	Cmd_AddCommand ("findbsp", SV_FindBSP_f);
+
+	Cmd_AddCommand ("exit", SV_CloseTelnet_f);
 
 	Cmd_AddCommand ("mute", SV_Mute_f);
 	Cmd_AddCommand ("cuff", SV_Cuff_f);

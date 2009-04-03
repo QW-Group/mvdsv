@@ -31,11 +31,11 @@ cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
 static qbool	stdin_ready = false;
 // Added by VVD {
 static qbool	iosock_ready = false;
-static qbool	authenticated = false;
 static double	cur_time_auth;
 //static qbool	isdaemon = false;
 static qbool	do_stdin = true;
 // Added by VVD }
+qbool	authenticated;
 
 /*
 ===============================================================================
@@ -455,9 +455,14 @@ void Sys_Printf (char *fmt, ...)
 		*p = chartbl2[*p];
 		if (telnetport && telnet_connected && authenticated)
 		{
-			write (telnet_iosock, p, 1);
+			if (write (telnet_iosock, p, 1) < 1)
+				closesocket(telnet_iosock);
+
 			if (*p == '\n') // demand for M$ WIN 2K telnet support
-				write (telnet_iosock, "\r", 1);
+			{
+				if (write (telnet_iosock, "\r", 1) < 1)
+					closesocket(telnet_iosock);
+			}
 		}
 		if (!(int)sys_nostdout.value)
 			putc(*p, stdout);
@@ -676,6 +681,7 @@ inline void Sys_Telnet (void)
 			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
 			closesocket_k (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
+			cur_time_auth = cur_time_not_auth = realtime;
 		}
 	}
 	else
