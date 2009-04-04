@@ -1942,7 +1942,7 @@ void SV_InitOperatorCommands (void)
 
 	Cmd_AddCommand ("findbsp", SV_FindBSP_f);
 
-	Cmd_AddCommand ("exit", SV_CloseTelnet_f);
+	Cmd_AddCommand ("telnetexit", SV_CloseTelnet_f);
 
 	Cmd_AddCommand ("mute", SV_Mute_f);
 	Cmd_AddCommand ("cuff", SV_Cuff_f);
