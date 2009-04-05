@@ -526,7 +526,7 @@ void Recursive_Find(char *path)
 						Recursive_Find(new_path);
 					}
 				}
-				else if (new_len >= 4 && strcasecmp(&new_path[new_len - 5], ".bsp") == 0)
+				else if (new_len >= 5 && strcasecmp(&new_path[new_len - 5], ".bsp") == 0)
 				{
 					Con_Printf("%s (%d), ", de -> d_name, ss.st_size);
 				}
