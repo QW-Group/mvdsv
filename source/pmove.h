@@ -39,7 +39,7 @@ typedef enum
 	PM_DEAD,			// no acceleration
 	PM_FLY,				// fly, bump into walls
 	PM_NONE,			// can't move
-	PM_FREEZE			// can't move or look around (TODO)
+	PM_LOCK				// server controls origin and view angles
 } pmtype_t;
 
 typedef struct
