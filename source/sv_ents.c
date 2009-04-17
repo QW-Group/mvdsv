@@ -599,7 +599,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 
 	numnails = 0;
 
-	if (fofs_hideentity)
+	if (clent && fofs_hideentity)
 		hideent = ((eval_t *)((byte *)&(clent)->v + fofs_hideentity))->_int / pr_edict_size;
 	else
 		hideent = 0;
