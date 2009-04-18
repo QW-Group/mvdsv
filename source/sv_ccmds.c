@@ -486,6 +486,8 @@ void SV_ReplaceChar(char *s, char from, char to)
 				*s = to;
 }
 
+#ifndef _WIN32
+
 /*==============
 Recursive_Find
 Looks for maps in sub directories
@@ -554,6 +556,7 @@ void SV_FindBSP_f(void)
 	Recursive_Find("id1/maps");
 }
 
+#endif
 
 //bliP: ls, rm, rmdir, chmod ->
 /*==================
@@ -1940,7 +1943,9 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("rm", SV_RemoveFile_f);
 	Cmd_AddCommand ("ls", SV_ListFiles_f);
 
+#ifndef _WIN32
 	Cmd_AddCommand ("findbsp", SV_FindBSP_f);
+#endif
 
 	Cmd_AddCommand ("telnetexit", SV_CloseTelnet_f);
 

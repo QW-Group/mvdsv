@@ -34,7 +34,7 @@ cvar_t	sys_sleep = {"sys_sleep", "8"};
 static char title[16];
 
 static qbool	iosock_ready = false;
-static qbool	authenticated = false;
+qbool  			authenticated = false;
 static double	cur_time_auth;
 static qbool	isdaemon = false;
 
