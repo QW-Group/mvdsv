@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 cvar_t	sv_cheats = {"sv_cheats", "0"};
 qbool	sv_allow_cheats = false;
-extern	qbool	authenticated;
+
 int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
 extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
@@ -135,19 +135,6 @@ void SV_Logfile (int sv_log, qbool newlog)
 	default:
 		logs[sv_log].log_level = 1;
 	}
-}
-
-/*
-============
-SV_CloseTelnet_f
-Closes  telnet session so user can disconnect
-============
-*/
-void SV_CloseTelnet_f(void)
-{
-       Con_Printf("Closing telnet socket\n");
-       authenticated = telnet_connected = false;
-       closesocket(telnet_iosock);
 }
 
 /*
@@ -485,79 +472,6 @@ void SV_ReplaceChar(char *s, char from, char to)
 			if (*s == from)
 				*s = to;
 }
-
-#ifndef _WIN32
-
-/*==============
-Recursive_Find
-Looks for maps in sub directories
-==============*/
-void Recursive_Find(char *path)
-{
-	int dir_len = strlen(path);
-	DIR *dir;
-
-	Con_Printf("checking dir: %s\n", path);
-
-	dir = opendir(path);
-	if (dir)
-	{
-		struct dirent *de;
-
-		while((de = readdir(dir)) != NULL)
-		{
-			struct stat ss;
-			int file_len = strlen(de -> d_name);
-			int new_len = dir_len + 1 + file_len + 1;
-			char *new_path = (char *)malloc(new_len);
-			if (!new_path)
-			{
-				Con_Printf("out of memory\n");
-				break;
-			}
-
-			snprintf(new_path, new_len, "%s/%s", path, de -> d_name);
-
-			if (stat(new_path, &ss) == 0)
-			{
-				if (S_ISDIR(ss.st_mode))
-				{
-					if (strcmp(de -> d_name, "..") != 0 && strcmp(de -> d_name, ".") != 0)
-					{
-						Con_Printf("\n");
-						Recursive_Find(new_path);
-					}
-				}
-				else if (new_len >= 5 && strcasecmp(&new_path[new_len - 5], ".bsp") == 0)
-				{
-					Con_Printf("%s (%d), ", de -> d_name, ss.st_size);
-				}
-			}
-			else
-			{
-				Con_Printf("error while stat(%s): %d / %s\n", new_path, errno, strerror(errno));
-			}
-
-			free(new_path);
-		}
-
-		closedir(dir);
-	}
-	else
-	{
-		Con_Printf("cannot open path %s\n", path);
-	}
-}
-
-void SV_FindBSP_f(void)
-{
-	Con_Printf("Finding files *.bsp\n");
-
-	Recursive_Find("id1/maps");
-}
-
-#endif
-
 //bliP: ls, rm, rmdir, chmod ->
 /*==================
 SV_ListFiles_f
@@ -1942,12 +1856,6 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("rmdir", SV_RemoveDirectory_f);
 	Cmd_AddCommand ("rm", SV_RemoveFile_f);
 	Cmd_AddCommand ("ls", SV_ListFiles_f);
-
-#ifndef _WIN32
-	Cmd_AddCommand ("findbsp", SV_FindBSP_f);
-#endif
-
-	Cmd_AddCommand ("telnetexit", SV_CloseTelnet_f);
 
 	Cmd_AddCommand ("mute", SV_Mute_f);
 	Cmd_AddCommand ("cuff", SV_Cuff_f);

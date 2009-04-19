@@ -121,7 +121,6 @@ extern	int	telnetport;
 extern	int	sv_port;
 extern	int	telnet_iosock;
 extern	qbool	telnet_connected;
-extern	qbool	authenticated;
 extern	cvar_t	not_auth_timeout;
 extern	cvar_t	auth_timeout;
 

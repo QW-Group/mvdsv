@@ -823,55 +823,38 @@ static qbool SV_DownloadNextFile (void)
 	unsigned char	all_demos_downloaded[]	= "All demos downloaded.\n";
 	unsigned char	incorrect_demo_number[]	= "Incorrect demo number.\n";
 
-	if (sv_client->next_dl_xml)
+	switch (sv_client->demonum[0])
 	{
-		if (sv_client->xml_name[0])
-			snprintf(n, sizeof(n), "download demos/%s\n", sv_client->xml_name);
-		else
+	case 1:
+		if (sv_client->demolist)
 		{
-			sv_client->next_dl_xml = false;
-			return SV_DownloadNextFile();
+			Con_Printf((char *)Q_redtext(all_demos_downloaded));
+			sv_client->demolist = false;
 		}
+		sv_client->demonum[0] = 0;
+	case 0:
+		return false;
+	default:;
 	}
-	else
-	{
-		switch (sv_client->demonum[0])
-		{
-		case 1:
-			if (sv_client->demolist)
-			{
-				Con_Printf((char *)Q_redtext(all_demos_downloaded));
-				sv_client->demolist = false;
-			}
-			sv_client->demonum[0] = 0;
-		case 0:
-			return false;
-		default:;
-		}
 
-		num = sv_client->demonum[--(sv_client->demonum[0])];
-		if (num == 0)
-		{
-			Con_Printf((char *)Q_redtext(incorrect_demo_number));
-			sv_client->next_dl_xml = false;
-			return SV_DownloadNextFile();
-		}
-		if (!(name = SV_MVDNum(num)))
-		{
-			Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n",
-				(num & 0xFF000000) ? -(num >> 24) : 
-					((num & 0x00800000) ? (num | 0xFF000000) : num) )));
-			sv_client->next_dl_xml = false;
-			return SV_DownloadNextFile();
-		}
-		snprintf(n, sizeof(n), "download demos/%s\n", name);
-		strlcpy(sv_client->xml_name, SV_MVDName2Ext(name, "xml"), sizeof(sv_client->xml_name));
+	num = sv_client->demonum[--(sv_client->demonum[0])];
+	if (num == 0)
+	{
+		Con_Printf((char *)Q_redtext(incorrect_demo_number));
+		return SV_DownloadNextFile();
 	}
-	//Sys_Printf("command: %s\n", n);
+	if (!(name = SV_MVDNum(num)))
+	{
+		Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n",
+			(num & 0xFF000000) ? -(num >> 24) : 
+				((num & 0x00800000) ? (num | 0xFF000000) : num) )));
+		return SV_DownloadNextFile();
+	}
+	//Con_Printf("downloading demos/%s\n",name);
+	snprintf(n, sizeof(n), "download demos/%s\n", name);
 
 	ClientReliableWrite_Begin (sv_client, svc_stufftext, strlen(n) + 2);
 	ClientReliableWrite_String (sv_client, n);
-	sv_client->next_dl_xml = !(sv_client->next_dl_xml);
 
 	return true;
 }
@@ -1463,8 +1446,8 @@ static void Cmd_DemoDownload_f(void)
 			   Q_redtext(cmdhelp_dldesc),
 			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound),
 			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
-			   	Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
-			    Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_bs), Q_redtext(cmdhelp_stop), Q_redtext(cmdhelp_cancel)
+			   Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
+			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_bs), Q_redtext(cmdhelp_stop), Q_redtext(cmdhelp_cancel)
 		           );
 		return;
 	}
@@ -1517,7 +1500,6 @@ static void Cmd_DemoDownload_f(void)
 			num &= 0x00FFFFFF;
 		sv_client->demonum[sv_client->demonum[0] - i] = num;
 	}
-	sv_client->next_dl_xml = false;
 	SV_DownloadNextFile();
 }
 
@@ -1561,7 +1543,6 @@ static void Cmd_StopDownload_f(void)
 
 	sv_client->demonum[0] = 0;
 	sv_client->demolist = false;
-	sv_client->next_dl_xml = false;
 
 	Con_Printf ((char *)Q_redtext(download_stopped));
 }

@@ -31,11 +31,11 @@ cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
 static qbool	stdin_ready = false;
 // Added by VVD {
 static qbool	iosock_ready = false;
+static qbool	authenticated = false;
 static double	cur_time_auth;
 //static qbool	isdaemon = false;
 static qbool	do_stdin = true;
 // Added by VVD }
-qbool	authenticated;
 
 /*
 ===============================================================================
@@ -328,6 +328,7 @@ char *Sys_ConsoleInput (void)
 	static char text[256], *t;
 	static unsigned int len = 0;
 
+
 	if (!(telnetport && iosock_ready && telnet_connected) && !(do_stdin && stdin_ready))
 		return NULL;		// the select didn't say it was ready
 
@@ -362,6 +363,7 @@ char *Sys_ConsoleInput (void)
 			}// switch
 		}// do
 		while (len < sizeof(text) - 1 && text[len - 1] != '\n' && text[len - 1] != '\r' && text[len - 1] != 0);
+
 		if (len == 0)
 			return NULL;
 
@@ -407,6 +409,7 @@ char *Sys_ConsoleInput (void)
 			len = 0;
 			return NULL;
 		}
+		len = 0;
 		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
 	}
 	if (do_stdin && stdin_ready)
@@ -419,13 +422,9 @@ char *Sys_ConsoleInput (void)
 			return NULL;
 		}
 		if (len < 1)
-		{
-			len = 0;
 			return NULL;
-		}
 		text[len - 1] = 0;	// rip off the /n and terminate
 	}
-	len = 0;
 	return text;
 }
 
@@ -455,14 +454,9 @@ void Sys_Printf (char *fmt, ...)
 		*p = chartbl2[*p];
 		if (telnetport && telnet_connected && authenticated)
 		{
-			if (write (telnet_iosock, p, 1) < 1)
-				closesocket(telnet_iosock);
-
+			write (telnet_iosock, p, 1);
 			if (*p == '\n') // demand for M$ WIN 2K telnet support
-			{
-				if (write (telnet_iosock, "\r", 1) < 1)
-					closesocket(telnet_iosock);
-			}
+				write (telnet_iosock, "\r", 1);
 		}
 		if (!(int)sys_nostdout.value)
 			putc(*p, stdout);
@@ -677,11 +671,10 @@ inline void Sys_Telnet (void)
 			(authenticated && (int)auth_timeout.value &&
 			 realtime - cur_time_auth > auth_timeout.value))
 		{
-			authenticated = telnet_connected = false;
+			telnet_connected = false;
 			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
 			closesocket_k (telnet_iosock);
 			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			cur_time_auth = cur_time_not_auth = realtime;
 		}
 	}
 	else

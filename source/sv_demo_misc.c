@@ -159,7 +159,7 @@ qbool SV_DirSizeCheck (void)
 
 	if ((int)sv_demoMaxDirSize.value)
 	{
-		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_BY_DATE);
+		dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), ".*", SORT_NO/*BY_DATE*/);
 		if ((float)dir.size > sv_demoMaxDirSize.value * 1024)
 		{
 			if ((int)sv_demoClearOld.value <= 0)
@@ -169,19 +169,19 @@ qbool SV_DirSizeCheck (void)
 			}
 			list = dir.files;
 			n = (int) sv_demoClearOld.value;
-			Con_Printf("Clearing %d old files\n", n);
-			
+			Con_Printf("Clearing %d old demos\n", n);
+			// HACK!!! HACK!!! HACK!!!
+			if ((int)sv_demotxt.value) // if our server record demos and txts, then to remove
+				n <<= 1;  // 50 demos, we have to remove 50 demos and 50 txts = 50*2 = 100 files
+
+			qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
 			for (; list->name[0] && n > 0; list++)
 			{
 				if (list->isdir)
-				{
 					continue;
-				}
-				else
-				{
-					Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(list->name, "*")));
-					n--;
-				}
+				Sys_remove(va("%s/%s/%s", fs_gamedir, sv_demoDir.string, list->name));
+				//Con_Printf("Remove %d - %s/%s/%s\n", n, fs_gamedir, sv_demoDir.string, list->name);
+				n--;
 			}
 		}
 	}
@@ -227,7 +227,6 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 		COM_StripExtension(path, path);
 	
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
-		
 		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, path, p != NULL ? p+1 : ""));
 
 		if (p)
@@ -348,8 +347,7 @@ void SV_DemoList (qbool use_regex)
 
 	memset(files, 0, sizeof(files));
 
-	Con_Printf("Listing content of %s/%s\n", fs_gamedir, sv_demoDir.string);
-	Con_Printf("(regexp is %s)\n\n", sv_demoRegexp.string);
+	Con_Printf("Listing content of %s/%s/%s\n", fs_gamedir, sv_demoDir.string, sv_demoRegexp.string);
 	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string, SORT_BY_DATE);
 	list = dir.files;
 	if (!list->name[0])
@@ -499,7 +497,7 @@ char *SV_MVDNum (int num)
 }
 
 #define OVECCOUNT 3
-char *SV_MVDName2Ext (char *name, char *ext)
+static char *SV_MVDName2Txt (char *name)
 {
 	char	s[MAX_OSPATH];
 	int		len;
@@ -508,13 +506,10 @@ char *SV_MVDName2Ext (char *name, char *ext)
 	pcre	*preg;
 	const char	*errbuf;
 
-	if (!name || !ext)
+	if (!name)
 		return NULL;
 
-	if (!*name || !*ext)
-		return NULL;
-
-	if (strlen(ext) != 3)
+	if (!*name)
 		return NULL;
 
 	strlcpy(s, name, MAX_OSPATH);
@@ -549,29 +544,19 @@ char *SV_MVDName2Ext (char *name, char *ext)
 			len = ovector[0];
 	}
 	s[len++] = '.';
-	s[len++] = ext[0];
-	s[len++] = ext[1];
-	s[len++] = ext[2];
+	s[len++] = 't';
+	s[len++] = 'x';
+	s[len++] = 't';
 	s[len]   = '\0';
 
 	//Con_Printf("%d) %s, %s\n", r, name, s);
 	return va("%s", s);
 }
-static char *SV_MVDName2Txt (char *name)
-{
-	return SV_MVDName2Ext (name, "txt");
-}
-
 
 static char *SV_MVDTxTNum (int num)
 {
 	return SV_MVDName2Txt (SV_MVDNum(num));
 }
-/*
-static char *SV_MVDExtNum (int num, char *ext)
-{
-	return SV_MVDName2Ext (SV_MVDNum(num), ext);
-}*/
 
 
 void SV_MVDRemove_f (void)
@@ -612,8 +597,7 @@ void SV_MVDRemove_f (void)
 					i++;
 				}
 
-				Sys_remove(SV_MVDName2Ext(path, "txt"));
-				Sys_remove(SV_MVDName2Ext(path, "xml"));
+				Sys_remove(SV_MVDName2Txt(path));
 			}
 		}
 
@@ -656,8 +640,7 @@ void SV_MVDRemove_f (void)
 	else
 		Con_Printf("unable to remove demo %s\n", name);
 
-	Sys_remove(SV_MVDName2Ext(path, "txt"));
-	Sys_remove(SV_MVDName2Ext(path, "xml"));
+	Sys_remove(SV_MVDName2Txt(path));
 }
 
 void SV_MVDRemoveNum_f (void)
@@ -705,8 +688,7 @@ void SV_MVDRemoveNum_f (void)
 		else
 			Con_Printf("unable to remove demo %s\n", name);
 
-		Sys_remove(SV_MVDName2Ext(path, "txt"));
-		Sys_remove(SV_MVDName2Ext(path, "xml"));
+		Sys_remove(SV_MVDName2Txt(path));
 	}
 	else
 		Con_Printf("invalid demo num\n");
@@ -795,7 +777,7 @@ void SV_MVDInfoAdd_f (void)
 
 void SV_MVDInfoRemove_f (void)
 {
-	char *txtname, *xmlname, txtpath[MAX_OSPATH], xmlpath[MAX_OSPATH], *demoname;
+	char *name, path[MAX_OSPATH];
 
 	if (Cmd_Argc() < 2)
 	{
@@ -813,33 +795,25 @@ void SV_MVDInfoRemove_f (void)
 
 //		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
 // FIXME: dunno is this right, just using first dest, also may be we must use demo.dest->path instead of sv_demoDir
-		snprintf(txtpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(demo.dest->name, "txt"));
-		snprintf(xmlpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Ext(demo.dest->name, "xml"));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demo.dest->name));
 	}
 	else
 	{
-		demoname = SV_MVDNum(Q_atoi(Cmd_Argv(1)));
+		name = SV_MVDTxTNum(Q_atoi(Cmd_Argv(1)));
 
-		if (!demoname)
+		if (!name)
 		{
 			Con_Printf("invalid demo num\n");
 			return;
 		}
-		txtname = SV_MVDName2Ext (demoname, "txt");
-		xmlname = SV_MVDName2Ext (demoname, "xml");
 
-		snprintf(txtpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, demoname);
-		snprintf(xmlpath, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, demoname);
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 	}
 
-	if (Sys_remove(txtpath))
-		Con_Printf("failed to remove the file %s\n", txtpath);
+	if (Sys_remove(path))
+		Con_Printf("failed to remove the file %s\n", path);
 	else
-		Con_Printf("file %s removed\n", txtpath);
-	if (Sys_remove(xmlpath))
-		Con_Printf("failed to remove the file %s\n", xmlpath);
-	else
-		Con_Printf("file %s removed\n", xmlpath);
+		Con_Printf("file %s removed\n", path);
 }
 
 void SV_MVDInfo_f (void)
@@ -1087,4 +1061,3 @@ char *quote (char *str)
 	*s = '\0';
 	return out;
 }
-
