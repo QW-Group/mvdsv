@@ -349,6 +349,8 @@ typedef struct mvdpendingdest_s
 	int insize;
 	int outsize;
 
+	qbool			must_be_qizmo_tcp_connect; // HACK, this stream should not be allowed but just checked ONLY AND ONLY for qizmo tcp connection
+
 	double			io_time; // when last IO occur on socket, so we can timeout this dest
 	netadr_t		na;
 
@@ -472,6 +474,20 @@ typedef struct
 	int				time;
 } challenge_t;
 
+// TCPCONNECT -->
+typedef struct svtcpstream_s
+{
+	int socketnum; // socket
+	qbool waitingforprotocolconfirmation; // wait for "qizmo\n", first 6 bytes before confirming that is tcpconnection
+	int inlen; // how much bytes we have in inbuffer
+	char inbuffer[1500]; // recv buffer
+	qbool drop; // do we need drop that connection ASAP
+	float timeouttime; // I/O timeout
+	netadr_t remoteaddr; // peer remoter addr
+	struct svtcpstream_s *next; // next tcpconnection in list
+} svtcpstream_t;
+// <-- TCPCONNECT
+
 typedef struct
 {
 	int				spawncount;		// number of servers spawned since start,
@@ -485,6 +501,10 @@ typedef struct
 	svstats_t		stats;
 
 	char				info[MAX_SERVERINFO_STRING];
+
+// TCPCONNECT -->
+	svtcpstream_t	*tcpstreams;
+// <-- TCPCONNECT
 
 #ifdef PROTOCOL_VERSION_FTE
 	unsigned int fteprotocolextensions;

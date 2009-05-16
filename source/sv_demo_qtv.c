@@ -72,7 +72,7 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 	return dst;
 }
 
-static void SV_MVD_InitPendingStream (int socket1, netadr_t na)
+static void SV_MVD_InitPendingStream (int socket1, netadr_t na, qbool must_be_qizmo_tcp_connect)
 {
 	mvdpendingdest_t *dst;
 	unsigned int i;
@@ -80,6 +80,7 @@ static void SV_MVD_InitPendingStream (int socket1, netadr_t na)
 	dst->socket = socket1;
 	dst->io_time = Sys_DoubleTime();
 	dst->na = na;
+	dst->must_be_qizmo_tcp_connect = must_be_qizmo_tcp_connect;
 
 	strlcpy(dst->challenge, NET_AdrToString(dst->na), sizeof(dst->challenge));
 	for (i = strlen(dst->challenge); i < sizeof(dst->challenge)-1; i++)
@@ -213,6 +214,7 @@ static void SV_CheckQTVPort(void)
 void SV_MVDStream_Poll (void)
 {
 	int client;
+	qbool must_be_qizmo_tcp_connect = false;
 	netadr_t na;
 	struct sockaddr_qstorage addr;
 	socklen_t addrlen;
@@ -276,19 +278,29 @@ void SV_MVDStream_Poll (void)
 		}
 
 		if (count >= (int)qtv_maxstreams.value)
-		{	//sorry
-			char *goawaymessage = "QTVSV 1\nERROR: This server enforces a limit on the number of proxies connected at any one time. Please try again later\n\n";
+		{
+			// we use + 3 so there qizmo tcp connection have chance...
+			if (count >= (int)qtv_maxstreams.value + 3)
+			{
+				//sorry, there really way too much connections
+				char *goawaymessage = "QTVSV 1\nERROR: This server enforces a limit on the number of proxies connected at any one time. Please try again later\n\n";
 
-			send(client, goawaymessage, strlen(goawaymessage), 0);
-			closesocket(client);
-			return;
+				send(client, goawaymessage, strlen(goawaymessage), 0);
+				closesocket(client);
+				return;
+			}
+			else
+			{
+				// ok, give qizmo tcp connect a chance, but only and only for tcp connect
+				must_be_qizmo_tcp_connect = true;
+			}
 		}
 	}
 
 	SockadrToNetadr(&addr, &na);
 	Con_Printf("MVD streaming client connected from %s\n", NET_AdrToString(na));
 
-	SV_MVD_InitPendingStream(client, na);
+	SV_MVD_InitPendingStream(client, na, must_be_qizmo_tcp_connect);
 }
 
 void SV_MVD_RunPendingConnections (void)
@@ -372,6 +384,51 @@ void SV_MVD_RunPendingConnections (void)
 
 				p->insize += len;
 				p->inbuffer[p->insize] = 0;
+
+// TCPCONNECT -->
+// kinda hack to allow both qtv and qizmo tcp connection work on the same server port
+
+				// check for qizmo tcp connection
+				if (p->insize >=6)
+				{
+					if (strncmp(p->inbuffer, "qizmo\n", 6))
+					{
+						// no. seems it like QTV client... but if we expect qizmo so we better drop it ASAP
+						if (p->must_be_qizmo_tcp_connect)
+						{
+							p->error = true;
+							continue;
+						}
+					}
+					else
+					{
+						// new qizmo tcpconnection
+
+						extern svtcpstream_t *sv_tcp_connection_new(int sock, netadr_t from, char *buf, int buf_len, qbool link);
+						extern int sv_tcp_connection_count(void);
+
+						svtcpstream_t *st = sv_tcp_connection_new(p->socket, p->na, p->inbuffer, p->insize, true);
+
+						// set some timeout
+						st->timeouttime = Sys_DoubleTime() + 10;
+						// send protocol confirmation
+						if (send(st->socketnum, "qizmo\n", 6, 0) != 6)
+						{
+							st->drop = true; // failed miserable to send some chunk of data				
+						}
+
+						if (sv_tcp_connection_count() >= MAX_CLIENTS)
+							st->drop = true;
+
+						p->error = true;
+						p->socket = -1;	//so it's not cleared wrongly.
+						continue;
+					}
+				}
+
+				if (p->must_be_qizmo_tcp_connect)
+					continue; // HACK, this stream should not be allowed but just checked ONLY AND ONLY for qizmo tcp connection
+// <--TCPCONNECT
 
 				for (end = p->inbuffer; ; end++)
 				{

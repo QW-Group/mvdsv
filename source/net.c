@@ -170,42 +170,234 @@ qbool NET_StringToAdr (const char *s, netadr_t *a)
 
 //=============================================================================
 
+// allocate, may link it in, if requested
+svtcpstream_t *sv_tcp_connection_new(int sock, netadr_t from, char *buf, int buf_len, qbool link)
+{
+	svtcpstream_t *st = NULL;
+
+	st = Q_malloc(sizeof(svtcpstream_t));
+	st->waitingforprotocolconfirmation = true;
+	st->socketnum = sock;
+	st->remoteaddr = from;
+	if (buf_len > 0 && buf_len < sizeof(st->inbuffer))
+	{
+		memmove(st->inbuffer, buf, buf_len);
+		st->inlen = buf_len;
+	}
+	else
+		st->drop = true; // yeah, funny
+
+	// link it in if requested
+	if (link)
+	{
+		st->next = svs.tcpstreams;
+		svs.tcpstreams = st;
+	}
+
+	return st;
+}
+
+// free data, may unlink it out if requested
+static void sv_tcp_connection_free(svtcpstream_t *drop, qbool unlink)
+{
+	if (!drop)
+		return; // someone kidding us
+
+	// unlink if requested
+	if (unlink)
+	{
+		if (svs.tcpstreams == drop)
+		{
+			svs.tcpstreams = svs.tcpstreams->next;
+		}
+		else
+		{
+			svtcpstream_t *st = NULL;
+
+			for (st = svs.tcpstreams; st; st = st->next)
+			{
+				if (st->next == drop)
+				{
+					st->next = st->next->next;
+					break;
+				}
+			}
+		}
+	}
+
+	// well, think socket may be zero, but most of the time zero is stdin fd, so better not close it
+	if (drop->socketnum && drop->socketnum != INVALID_SOCKET)
+		closesocket(drop->socketnum);
+
+	Q_free(drop);
+}
+
+int sv_tcp_connection_count(void)
+{
+	svtcpstream_t *st = NULL;
+	int cnt = 0;
+
+	for (st = svs.tcpstreams; st; st = st->next)
+		cnt++;
+
+	return cnt;
+}
+
 int NET_GetPacket (void)
 {
 	int ret;
-	struct sockaddr_qstorage from;
-	socklen_t fromlen = sizeof (from);
 
+	struct sockaddr_qstorage from;
+	socklen_t fromlen;
+
+	fromlen = sizeof (from);
 	ret = recvfrom (net_socket, (char *) net_message_buffer, sizeof (net_message_buffer), 0, (struct sockaddr *) &from, &fromlen);
 	SockadrToNetadr (&from, &net_from);
 	if (ret == SOCKET_ERROR)
 	{
 		if (qerrno == EWOULDBLOCK)
-			return false;
-
-		if (qerrno == EMSGSIZE)
+		{
+			; // it's OK
+		}
+		else if (qerrno == EMSGSIZE)
 		{
 			Con_Printf ("NET_GetPacket: Oversize packet from %s\n", NET_AdrToString (net_from));
-			return false;
 		}
-
-		if (qerrno == ECONNRESET)
+		else if (qerrno == ECONNRESET)
 		{
 			Con_DPrintf ("NET_GetPacket: Connection was forcibly closed by %s\n", NET_AdrToString (net_from));
-			return false;
 		}
-
-		Sys_Error ("NET_GetPacket: recvfrom: (%i): %s", qerrno, strerror (qerrno));
+		else
+		{
+			Sys_Error ("NET_GetPacket: recvfrom: (%i): %s", qerrno, strerror (qerrno));
+		}
 	}
-
-	net_message.cursize = ret;
-	if (ret == sizeof (net_message_buffer))
+	else
 	{
-		Con_Printf ("NET_GetPacket: Oversize packet from %s\n", NET_AdrToString (net_from));
-		return false;
+		if (ret >= sizeof (net_message_buffer))
+		{
+			Con_Printf ("NET_GetPacket: Oversize packet from %s\n", NET_AdrToString (net_from));
+		}
+		else
+		{
+			net_message.cursize = ret;
+			return true; // we got packet!
+		}
 	}
 
-	return ret;
+// TCPCONNECT -->
+//	if (netsrc == NS_SERVER)
+	{
+		float timeval = Sys_DoubleTime();
+		svtcpstream_t *st = NULL, *next = NULL;
+ 
+		for (st = svs.tcpstreams; st; st = next)
+		{
+			next = st->next;
+
+			if (st->socketnum == INVALID_SOCKET || st->drop)
+			{
+				sv_tcp_connection_free(st, true); // free and unlink
+				continue;
+			}
+
+			//due to the above checks about invalid sockets, the socket is always open for st below.
+
+			// check for client timeout
+			if (st->timeouttime < timeval)
+			{
+				st->drop = true;
+				continue;
+			}
+	
+			ret = recv(st->socketnum, st->inbuffer+st->inlen, sizeof(st->inbuffer)-st->inlen, 0);
+			if (ret == 0)
+			{
+				// connection closed
+				st->drop = true;
+				continue;
+			}
+			else if (ret == -1)
+			{
+				int err = qerrno;
+
+				if (err == EWOULDBLOCK)
+				{
+					ret = 0; // it's OK
+				}
+				else
+				{
+					if (err == ECONNABORTED || err == ECONNRESET)
+					{
+						Con_Printf ("Connection lost or aborted\n"); //server died/connection lost.
+					}
+					else
+					{
+						Con_DPrintf ("NET_GetPacket: Error (%i): %s\n", err, strerror(err));
+					}
+
+					st->drop = true;
+					continue;
+				}
+			}
+			else
+			{
+				// update timeout
+				st->timeouttime = Sys_DoubleTime() + 10;
+			}
+
+			st->inlen += ret;
+	
+			if (st->waitingforprotocolconfirmation)
+			{
+				// not enough data
+				if (st->inlen < 6)
+					continue;
+
+				if (strncmp(st->inbuffer, "qizmo\n", 6))
+				{
+					Con_Printf ("Unknown TCP client\n");
+					st->drop = true;
+					continue;
+				}
+
+				// remove leading 6 bytes
+				memmove(st->inbuffer, st->inbuffer+6, st->inlen - (6));
+				st->inlen -= 6;
+				// confirmed
+				st->waitingforprotocolconfirmation = false;
+			}
+
+			// need two bytes for packet len
+			if (st->inlen < 2)
+				continue;
+
+			net_message.cursize = BigShort(*(short*)st->inbuffer);
+			if (net_message.cursize >= sizeof(net_message_buffer))
+			{
+				Con_Printf ("Warning: Oversize packet from %s\n", NET_AdrToString (net_from));
+				st->drop = true;
+				continue;
+			}
+
+			if (net_message.cursize+2 > st->inlen)
+			{
+				//not enough buffered to read a packet out of it.
+				continue;
+			}
+
+			memcpy(net_message_buffer, st->inbuffer+2, net_message.cursize);
+			memmove(st->inbuffer, st->inbuffer+net_message.cursize+2, st->inlen - (net_message.cursize+2));
+			st->inlen -= net_message.cursize+2;
+
+			net_from = st->remoteaddr;
+
+			return true; // we got packet!
+		}
+	}
+// <--TCPCONNECT
+
+	return false; // we don't get packet
 }
 
 //=============================================================================
@@ -213,8 +405,34 @@ int NET_GetPacket (void)
 void NET_SendPacket (int length, const void *data, netadr_t to)
 {
 	struct sockaddr_qstorage addr;
-	socklen_t addrlen = sizeof(struct sockaddr_in);
+	socklen_t addrlen;
 
+// TCPCONNECT -->
+	{
+		svtcpstream_t *st;
+		for (st = svs.tcpstreams; st; st = st->next)
+		{
+			if (st->socketnum == INVALID_SOCKET)
+				continue;
+
+			if (NET_CompareAdr(to, st->remoteaddr))
+			{
+				unsigned short slen = BigShort((unsigned short)length);
+
+				if (	send(st->socketnum, (char*)&slen, sizeof(slen), 0) != (int)sizeof(slen)
+					||	send(st->socketnum, data, length, 0) != length
+				)
+				{
+					st->drop = true; // failed miserable to send some chunk of data
+				}
+
+				return;
+			}
+		}
+	}
+// <--TCPCONNECT
+
+	addrlen = sizeof(struct sockaddr_in);
 	NetadrToSockadr (&to, &addr);
 
 	if (sendto (net_socket, (const char *) data, length, 0, (struct sockaddr *)&addr, addrlen) == SOCKET_ERROR)
