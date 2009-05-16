@@ -481,6 +481,8 @@ typedef struct svtcpstream_s
 	qbool waitingforprotocolconfirmation; // wait for "qizmo\n", first 6 bytes before confirming that is tcpconnection
 	int inlen; // how much bytes we have in inbuffer
 	char inbuffer[1500]; // recv buffer
+	int outlen; // how much bytes we have in outbuffer
+	char outbuffer[1500 * 5]; // send buffer
 	qbool drop; // do we need drop that connection ASAP
 	float timeouttime; // I/O timeout
 	netadr_t remoteaddr; // peer remoter addr

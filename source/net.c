@@ -417,13 +417,38 @@ void NET_SendPacket (int length, const void *data, netadr_t to)
 
 			if (NET_CompareAdr(to, st->remoteaddr))
 			{
+				int sent;
 				unsigned short slen = BigShort((unsigned short)length);
 
-				if (	send(st->socketnum, (char*)&slen, sizeof(slen), 0) != (int)sizeof(slen)
-					||	send(st->socketnum, data, length, 0) != length
-				)
+				if (st->outlen + length + sizeof(slen) >= sizeof(st->outbuffer))
 				{
-					st->drop = true; // failed miserable to send some chunk of data
+					// not enough space, we overflowed
+					return; // well, quake should resist to some packet lost.. so we just drop that packet.
+				}
+
+				// put data in buffer
+				memmove(st->outbuffer + st->outlen, (char*)&slen, sizeof(slen));
+				st->outlen += sizeof(slen);
+				memmove(st->outbuffer + st->outlen, data, length);
+				st->outlen += length;
+
+				sent = send(st->socketnum, st->outbuffer, st->outlen, 0);
+
+				if (sent == 0)
+				{
+					// think it's OK
+				}
+				else if (sent > 0) //we put some data through
+				{ //move up the buffer
+					st->outlen -= sent;
+					memmove(st->outbuffer, st->outbuffer + sent, st->outlen);
+				}
+				else
+				{ //error of some kind. would block or something
+					if (qerrno != EWOULDBLOCK && qerrno != EAGAIN)
+					{
+						st->drop = true; // something cricial, drop than
+					}
 				}
 
 				return;
