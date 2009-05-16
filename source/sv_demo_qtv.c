@@ -408,6 +408,7 @@ void SV_MVD_RunPendingConnections (void)
 						extern int sv_tcp_connection_count(void);
 
 						svtcpstream_t *st = sv_tcp_connection_new(p->socket, p->na, p->inbuffer, p->insize, true);
+						int _true = true;
 
 						// set some timeout
 						st->timeouttime = Sys_DoubleTime() + 10;
@@ -418,7 +419,14 @@ void SV_MVD_RunPendingConnections (void)
 						}
 
 						if (sv_tcp_connection_count() >= MAX_CLIENTS)
+						{
 							st->drop = true;
+						}
+
+						if (setsockopt(st->socketnum, IPPROTO_TCP, TCP_NODELAY, (char *)&_true, sizeof(_true)) == -1)
+						{
+							Con_DPrintf ("SV_MVD_RunPendingConnections: setsockopt: (%i): %s\n", qerrno, strerror(qerrno));
+						}
 
 						p->error = true;
 						p->socket = -1;	//so it's not cleared wrongly.

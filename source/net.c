@@ -329,7 +329,7 @@ int NET_GetPacket (void)
 				{
 					if (err == ECONNABORTED || err == ECONNRESET)
 					{
-						Con_Printf ("Connection lost or aborted\n"); //server died/connection lost.
+						Con_DPrintf ("Connection lost or aborted\n"); //server died/connection lost.
 					}
 					else
 					{
