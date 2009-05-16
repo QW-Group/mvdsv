@@ -373,6 +373,14 @@ int NET_GetPacket (void)
 				continue;
 
 			net_message.cursize = BigShort(*(short*)st->inbuffer);
+			if (net_message.cursize < 0)
+			{
+				net_message.cursize = 0;
+				Con_Printf ("Warning: malformed message from %s\n", NET_AdrToString (net_from));
+				st->drop = true;
+				continue;
+			}
+
 			if (net_message.cursize >= sizeof(net_message_buffer))
 			{
 				Con_Printf ("Warning: Oversize packet from %s\n", NET_AdrToString (net_from));
