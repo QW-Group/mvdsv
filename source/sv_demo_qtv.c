@@ -95,10 +95,6 @@ static int MVD_StreamStartListening (int port)
 	int sock;
 
 	struct sockaddr_in	address;
-#ifdef SOCKET_CLOSE_TIME
-	struct linger lingeropt;
-#endif
-	//	int fromlen;
 
 	unsigned long nonblocking = true;
 
@@ -111,20 +107,6 @@ static int MVD_StreamStartListening (int port)
 		Con_Printf ("MVD_StreamStartListening: socket: (%i): %s\n", qerrno, strerror(qerrno));
 		return INVALID_SOCKET;
 	}
-
-#ifdef SOCKET_CLOSE_TIME
-	// hard close: in case of closesocket(), socket will be closen after SOCKET_CLOSE_TIME or earlier
-	memset(&lingeropt, 0, sizeof(lingeropt));
-	lingeropt.l_onoff  = 1;
-	lingeropt.l_linger = SOCKET_CLOSE_TIME;
-
-	if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (void*)&lingeropt, sizeof(lingeropt)) == -1)
-	{
-		Con_Printf ("MVD_StreamStartListening: setsockopt SO_LINGER: (%i): %s\n", qerrno, strerror (qerrno));
-		closesocket(sock);
-		return INVALID_SOCKET;
-    }
-#endif
 
 	if (ioctlsocket(sock, FIONBIO, &nonblocking) == -1)
 	{
@@ -218,9 +200,6 @@ void SV_MVDStream_Poll (void)
 	netadr_t na;
 	struct sockaddr_qstorage addr;
 	socklen_t addrlen;
-#ifdef SOCKET_CLOSE_TIME
-	struct linger lingeropt;
-#endif
 	int count;
 	mvddest_t *dest;
 	unsigned long _true = true;
@@ -238,20 +217,6 @@ void SV_MVDStream_Poll (void)
 
 	if (client == INVALID_SOCKET)
 		return;
-
-#ifdef SOCKET_CLOSE_TIME
-	// hard close: in case of closesocket(), socket will be closen after SOCKET_CLOSE_TIME or earlier
-	memset(&lingeropt, 0, sizeof(lingeropt));
-	lingeropt.l_onoff  = 1;
-	lingeropt.l_linger = SOCKET_CLOSE_TIME;
-
-	if (setsockopt(client, SOL_SOCKET, SO_LINGER, (void*)&lingeropt, sizeof(lingeropt)) == -1)
-	{
-		Con_Printf ("SV_MVDStream_Poll: setsockopt SO_LINGER: (%i): %s\n", qerrno, strerror (qerrno));
-		closesocket(client);
-		return;
-    }
-#endif
 
 	if (ioctlsocket (client, FIONBIO, &_true) == SOCKET_ERROR) {
 		Con_Printf ("SV_MVDStream_Poll: ioctl FIONBIO: (%i): %s\n", qerrno, strerror (qerrno));
