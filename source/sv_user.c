@@ -578,8 +578,7 @@ static void Cmd_Spawn_f (void)
 	if ( sv_vm )
 	{
 		savenetname = ent->v.netname;
-		memset(&ent->v, 0, pr_edict_size - sizeof(edict_t) +
-		       sizeof(entvars_t));
+		memset(&ent->v, 0, pr_edict_size - sizeof(edict_t) + sizeof(entvars_t));
 		ent->v.netname = savenetname;
 
 		// so spec will have right goalentity - if speccing someone

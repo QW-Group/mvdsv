@@ -1265,7 +1265,7 @@ static void SVC_DirectConnect (void)
 
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
-	ent->free = false;
+	ent->e->free = false;
 	newcl->edict = ent;
 #ifdef USE_PR2
 	//restore pointer to client name
