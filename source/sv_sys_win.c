@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 #include <mmsystem.h>
+#include <io.h>
 
 extern cvar_t sys_restart_on_error;
 extern cvar_t not_auth_timeout;
@@ -280,13 +281,32 @@ void Sys_Exit(int code)
 Sys_Quit
 ================
 */
+
+void myInvalidParameterHandler(const wchar_t* expression,
+   const wchar_t* function, 
+   const wchar_t* file, 
+   unsigned int line, 
+   uintptr_t pReserved)
+{
+	// nothing
+}
+
 void Sys_Quit (qbool restart)
 {
 	if (restart)
 	{
-// FIXME: restart are buggy atm: does't close sockets and file handlers...
-// TODO: net.c(486): add close of QTV sockets and turn on restart back
-//		if (execv(argv[0], com_argv) == -1)
+		int maxfd = 131072; // well, should be enough for everyone...
+
+		_set_invalid_parameter_handler(myInvalidParameterHandler); // so close() does not crash our program on invalid handle...
+
+		// close all file descriptors even stdin stdout and stderr, seems that not hurt...
+		for (; maxfd > -1; maxfd--)
+		{
+			close(maxfd);
+			closesocket(maxfd); // yeah, windows separate sockets and files, so you can't close socket with close() like on *nix.
+		}
+
+		if (execv(argv[0], com_argv) == -1)
 		{
 #ifdef _CONSOLE
 			if (!((int)sys_nostdout.value || isdaemon))

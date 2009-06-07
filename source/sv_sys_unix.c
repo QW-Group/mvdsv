@@ -227,9 +227,13 @@ void Sys_Quit (qbool restart)
 {
 	if (restart)
 	{
-// FIXME: restart are buggy atm: does't close sockets and file handlers...
-// TODO: net.c(486): add close of QTV sockets and turn on restart back
-//		if (execv(argv0, com_argv) == -1)
+		int maxfd = getdtablesize() - 1;
+
+		// close all file descriptors besides stdin stdout and stderr, I am not sure, perhaps I can safely close even those descriptors too.
+		for (; maxfd > 2; maxfd--)
+			close(maxfd);
+
+		if (execv(argv0, com_argv) == -1)
 		{
 			Sys_Printf("Restart failed: %s\n", strerror(qerrno));
 			Sys_Exit(1);
