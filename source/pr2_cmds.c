@@ -2611,6 +2611,9 @@ void PF2_SetBotUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2va
 	int     i;
 	extern char *shortinfotbl[];
 
+	if (strstr(key, "&c") || strstr(key, "&r") || strstr(value, "&c") || strstr(value, "&r"))
+		return;
+
 	if ( entnum < 1 || entnum > MAX_CLIENTS )
 	{
 		Con_Printf( "tried to change userinfo a non-botclient %d \n", entnum );
@@ -2754,6 +2757,9 @@ void PF2_SetUserInfo( byte * base, unsigned int mask, pr2val_t * stack, pr2val_t
 	char   s[MAX_KEY_STRING * 4];
 	int     i;
 	extern char *shortinfotbl[];
+
+	if (strstr(k, "&c") || strstr(k, "&r") || strstr(v, "&c") || strstr(v, "&r"))
+		return;
 
 	if ( entnum < 1 || entnum > MAX_CLIENTS )
 	{

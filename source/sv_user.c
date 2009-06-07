@@ -2145,6 +2145,9 @@ static void Cmd_SetInfo_f (void)
 	if (strstr(Cmd_Argv(1), "\\") || strstr(Cmd_Argv(2), "\\"))
 		return;		// illegal char
 
+	if (strstr(Cmd_Argv(1), "&c") || strstr(Cmd_Argv(1), "&r") || strstr(Cmd_Argv(2), "&c") || strstr(Cmd_Argv(2), "&r"))
+		return;
+
 	strlcpy(oldval, Info_Get(&sv_client->_userinfo_ctx_, Cmd_Argv(1)), sizeof(oldval));
 
 #ifdef USE_PR2

@@ -796,6 +796,9 @@ static void SVC_GetChallenge (void)
 
 static qbool ValidateUserInfo (char *userinfo)
 {
+	if (strstr(userinfo, "&c") || strstr(userinfo, "&r"))
+		return false;
+
 	while (*userinfo)
 	{
 		if (*userinfo == '\\')
@@ -882,7 +885,7 @@ qbool CheckUserinfo( char *userinfobuf, unsigned int bufsize, char *userinfo )
 	// and now validate userinfo
 	if ( !ValidateUserInfo( userinfobuf ) )
 	{
-		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo. Restart your qwcl\n", A2C_PRINT);
+		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo, perhaps &c sequences. Restart your qwcl\n", A2C_PRINT);
 		return false;
 	}
 
