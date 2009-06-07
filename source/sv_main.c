@@ -3558,6 +3558,9 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	}
 
 	// team
+	val = Info_Get (&cl->_userinfo_ctx_, "team");
+	if (strstr(val, "&c") || strstr(val, "&r"))
+		Info_Set (&cl->_userinfo_ctx_, "team", "none");
 	strlcpy (cl->team, Info_Get (&cl->_userinfo_ctx_, "team"), sizeof(cl->team));
 
 	// rate
