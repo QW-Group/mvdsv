@@ -1167,12 +1167,12 @@ qbool Info_SetStar (ctxinfo_t *ctx, const char *name, const char *value)
 	// copy value
 #if 0
 	{
-		// unfortunatelly evil users use non printable/controll chars, so that does not work well
+		// unfortunatelly evil users use non printable/control chars, so that does not work well
 		a->value = Q_strdup (value);
 	}
 #else
 	{
-		// skip some controll chars, doh
+		// skip some control chars, doh
 		char v_buf[MAX_KEY_STRING] = {0}, *v = v_buf;
 		int i;
 
