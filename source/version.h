@@ -62,7 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #define	QW_VERSION			"2.40"
-#define QWE_VERSION			"0.29 RC"
+#define QWE_VERSION			"0.29"
 #define QWE_DEV				""
 #define QWE_VERNUM			0.29
 #define SERVER_NAME			"MVDSV"
