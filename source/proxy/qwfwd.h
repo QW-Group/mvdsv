@@ -251,6 +251,8 @@ double			max( double a, double b );
 
 double			bound( double a, double b, double c );
 
+double			Sys_DoubleTime (void);
+
 //
 // net.c
 //
@@ -305,6 +307,18 @@ qbool				ValidateUserInfo (char *userinfo);
 char				*Info_ValueForKey (const char *s, const char *const key, char *const buffer, size_t buffersize);
 void				Info_RemoveKey (char *s, const char *key);
 void				Info_SetValueForStarKey (char *s, const char *key, const char *value, int maxsize);
+
+//
+// query.c
+//
+
+void				QRY_Init(void);
+void				QRY_QueryMasters(void);
+void				QRY_SV_PingServers(void);
+void				QRY_SV_PingReply();
+qbool				QRY_IsMasterReply(void);
+void				SVC_QRY_ParseMasterReply(void);
+void				SVC_QRY_PingStatus(void);
 
 #ifdef __cplusplus
 }

@@ -23,13 +23,17 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 	ip = params->ip;
 	port = params->port;
 
+	Sys_DoubleTime(); // init time
 	NET_Init(ip, port);
+	QRY_Init();
 
 	Sys_Printf("QW FORWARD PROXY: Ready to rock at %s:%d\n", ip, port);
 
 	while(1)
 	{
-		FWD_update_peers();
+		FWD_update_peers(); // do basic proxy job
+		QRY_QueryMasters(); // request time to time server list from masters
+		QRY_SV_PingServers(); // ping time to time normal qw servers
 	}
 
 	return 0;

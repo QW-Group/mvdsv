@@ -237,3 +237,60 @@ double bound( double a, double b, double c )
 	return ( a >= c ? a : b < a ? a : b > c ? c : b);
 }
 
+#ifdef _WIN32
+
+static double pfreq;
+static __int64 startcount;
+
+static void Sys_InitDoubleTime (void)
+{
+	__int64 freq;
+
+	if (QueryPerformanceFrequency ((LARGE_INTEGER *)&freq) && freq > 0)
+	{
+		// hardware timer available
+		pfreq = (double)freq;
+		QueryPerformanceCounter ((LARGE_INTEGER *)&startcount);
+
+		Sys_Printf("Sys_InitDoubleTime: OK\n");
+	}
+	else
+	{
+		Sys_Error("could not initialize HW timer");
+	}
+}
+
+double Sys_DoubleTime (void)
+{
+
+	__int64 pcount;
+
+	if (!pfreq)
+		Sys_InitDoubleTime();
+
+	QueryPerformanceCounter ((LARGE_INTEGER *)&pcount);
+	// TODO: check for wrapping; is it necessary?
+	return (pcount - startcount) / pfreq;
+}
+
+#else
+
+double Sys_DoubleTime (void)
+{
+	struct timeval tp;
+	struct timezone tzp;
+	static int		secbase;
+
+	gettimeofday(&tp, &tzp);
+
+	if (!secbase)
+	{
+		secbase = tp.tv_sec;
+		return tp.tv_usec/1000000.0;
+	}
+
+	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
+}
+
+#endif
+

@@ -163,6 +163,9 @@ qbool NET_GetSockAddrIn_ByHostAndPort(struct sockaddr_in *address, const char *h
 // return true if adresses equal
 qbool NET_CompareAddress(struct sockaddr_in *a, struct sockaddr_in *b)
 {
+	if (!a || !b)
+		return false;
+
 	return (
 			!memcmp(&a->sin_addr, &b->sin_addr, sizeof(a->sin_addr))
 			&&

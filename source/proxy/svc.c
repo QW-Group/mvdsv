@@ -348,25 +348,37 @@ void SV_ConnectionlessPacket(void)
 	char	*c;
 
 	MSG_BeginReading ();
-	MSG_ReadLong ();		// skip the -1 marker
 
-	s = MSG_ReadStringLine ();
+	if (QRY_IsMasterReply())
+	{
+		SVC_QRY_ParseMasterReply();
 
-	Cmd_TokenizeString (s);
+		Sys_Printf ("SV connectionless packet from %s: master server reply\n", inet_ntoa(net_from.sin_addr));
+	}
+	else
+	{
+		MSG_ReadLong ();		// skip the -1 marker
 
-	c = Cmd_Argv(0);
+		s = MSG_ReadStringLine ();
 
-	if (!strcmp(c, "ping") || ( c[0] == A2A_PING && (c[1] == 0 || c[1] == '\n') ) )
-		SVC_Ping();
-	else if (!strcmp(c,"connect"))
-		SVC_DirectConnect();
-	else if (!strcmp(c,"getchallenge"))
-		SVC_GetChallenge();
-	else if (!strcmp(c,"status"))
-		SVC_Status();
-//	else
-//		Sys_Printf ("SV bad connectionless packet from %s:\n%s\n" , inet_ntoa(net_from.sin_addr), s);
+		Cmd_TokenizeString (s);
 
-	Sys_Printf ("SV connectionless packet from %s:\n%s\n", inet_ntoa(net_from.sin_addr), s);
+		c = Cmd_Argv(0);
+
+		if (!strcmp(c, "ping") || ( c[0] == A2A_PING && (c[1] == 0 || c[1] == '\n') ) )
+			SVC_Ping();
+		else if (!strcmp(c, "pingstatus"))
+			SVC_QRY_PingStatus();
+		else if (!strcmp(c,"connect"))
+			SVC_DirectConnect();
+		else if (!strcmp(c,"getchallenge"))
+			SVC_GetChallenge();
+		else if (!strcmp(c,"status"))
+			SVC_Status();
+	//	else
+	//		Sys_Printf ("SV bad connectionless packet from %s:\n%s\n" , inet_ntoa(net_from.sin_addr), s);
+
+		Sys_Printf ("SV connectionless packet from %s:\n%s\n", inet_ntoa(net_from.sin_addr), s);
+	}
 }
 

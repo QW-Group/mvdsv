@@ -136,8 +136,8 @@ static void FWD_network_update(void)
 	}
 
 	/* Sleep for some time, wake up immidiately if there input packet. */
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	tv.tv_sec = 0;
+	tv.tv_usec = 100000; // 100 ms
 	retval = select(i1, &rfds, (fd_set *)0, (fd_set *)0, &tv);
 
 	if (retval <= 0)
@@ -151,6 +151,13 @@ static void FWD_network_update(void)
 		{
 			if (!NET_GetPacket(net_socket, &net_message))
 				break;
+
+			if (net_message.cursize == 1 && net_message.data[0] == A2A_ACK)
+			{
+				QRY_SV_PingReply();
+
+				continue;
+			}
 
 			MSG_BeginReading();
 			if (MSG_ReadLong() == -1)
