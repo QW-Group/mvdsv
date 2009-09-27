@@ -365,6 +365,10 @@
 				RelativePath=".\sys.c"
 				>
 			</File>
+			<File
+				RelativePath=".\query.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
