@@ -171,7 +171,7 @@ void SVC_QRY_ParseMasterReply(void)
 
 	for (c = 0, i = 6; i + 5 < ret; i += 6, c++)
 	{
-		server_t	*QRY_SV_Add(const char *remote_host, int remote_port); // forward reference
+		static server_t	*QRY_SV_Add(const char *remote_host, int remote_port); // forward reference
 
 		char ip[64];
 		int port = 256 * (int)answer[i+4] + (int)answer[i+5];
