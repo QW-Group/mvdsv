@@ -140,6 +140,8 @@ qbool QRY_IsMasterReply(void)
 	return true;
 }
 
+static server_t *QRY_SV_Add(const char *remote_host, int remote_port); // forward reference
+
 void SVC_QRY_ParseMasterReply(void)
 {
     int				i, c;
@@ -171,8 +173,6 @@ void SVC_QRY_ParseMasterReply(void)
 
 	for (c = 0, i = 6; i + 5 < ret; i += 6, c++)
 	{
-		static server_t	*QRY_SV_Add(const char *remote_host, int remote_port); // forward reference
-
 		char ip[64];
 		int port = 256 * (int)answer[i+4] + (int)answer[i+5];
 
@@ -202,7 +202,7 @@ static server_t	*QRY_SV_new(struct sockaddr_in *addr, qbool link)
 	if (!addr)
 		return NULL; // not funny
 
-	if (sv_count >= MAX_SERVERS)
+	if (QRY_SV_Count() >= MAX_SERVERS)
 		return NULL;
 
 	sv_count++;
