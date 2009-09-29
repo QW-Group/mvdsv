@@ -384,7 +384,7 @@ void SVC_QRY_PingStatus(void)
 	for (sv = servers; sv; sv = sv->next)
 	{
 		MSG_WriteLong(&buf, *(int *)&sv->addr.sin_addr);
-		MSG_WriteShort(&buf, *(short *)&sv->addr.sin_port);
+		MSG_WriteShort(&buf, (short)ntohs(sv->addr.sin_port));
 		MSG_WriteShort(&buf, (short)sv->ping);
 	}
 
