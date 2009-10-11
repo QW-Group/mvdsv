@@ -4,6 +4,7 @@
 
 #include "qwfwd.h"
 
+#define QW_SERVER_RATE (0.1) // seconds, accept fraction, how frequently sent ONE packet to some server, so 0.1 means one packet per 1/10 of second
 #define QW_SERVER_PING_QUERY "\xff\xff\xff\xffk\n"
 #define QW_SERVER_MIN_PING_REQUEST_TIME 60 // seconds, minimal time interval allowed to sent ping, so we do not spam server too fast
 #define QW_SERVER_DEAD_TIME (60 * 60) // seconds, if we do not get reply from server in this time, guess server is DEAD
@@ -315,7 +316,7 @@ void QRY_SV_PingServers(void)
 	if (!servers)
 		return; // nothing to do
 
-	if (current - last < 0.1)
+	if (current - last < QW_SERVER_RATE)
 		return; // do not ping servers too fast
 
 	last = current;
