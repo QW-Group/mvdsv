@@ -204,9 +204,13 @@ static void FWD_network_update(void)
 				MSG_BeginReading();
 				if (MSG_ReadLong() == -1)
 				{
-					if (!MSG_BadRead())
-						CL_ConnectionlessPacket(p);
+					if (MSG_BadRead())
+						continue;
 
+					if (!CL_ConnectionlessPacket(p))
+						continue; // seems we do not need forward it
+
+					NET_SendPacket(net_socket, net_message.cursize, net_message.data, &p->from);
 					continue;
 				}
 

@@ -297,7 +297,7 @@ void				SV_ConnectionlessPacket (void);
 // clc.c
 //
 
-void				CL_ConnectionlessPacket (peer_t *p);
+qbool				CL_ConnectionlessPacket (peer_t *p);
 
 //
 // info.c

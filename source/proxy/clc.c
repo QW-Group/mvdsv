@@ -40,8 +40,9 @@ static void CL_SendConnectPacket(
 }
 
 // Responses to broadcasts, etc
-void CL_ConnectionlessPacket (peer_t *p) 
+qbool CL_ConnectionlessPacket (peer_t *p) 
 {
+	qbool need_forward = false;
 	int c;
 	
 	#ifdef PROTOCOL_VERSION_FTE
@@ -54,7 +55,7 @@ void CL_ConnectionlessPacket (peer_t *p)
 	c = MSG_ReadByte();
 
 	if (MSG_BadRead())
-		return;	// Runt packet
+		return need_forward;	// Runt packet
 
 	switch(c) 
 	{
@@ -117,6 +118,9 @@ void CL_ConnectionlessPacket (peer_t *p)
 
 			Sys_Printf("%s: print\n", inet_ntoa(net_from.sin_addr));
 			Sys_Printf("%s", MSG_ReadString());
+
+			need_forward = true; // so client have chance to see what server trying to say
+
 			break;
 		}
 		case svc_disconnect:
@@ -130,4 +134,6 @@ void CL_ConnectionlessPacket (peer_t *p)
 			break;
 		}
 	}
+
+	return need_forward;
 }
