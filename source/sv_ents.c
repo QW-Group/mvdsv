@@ -351,7 +351,6 @@ static void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs
 			dcl->fixangle    = demo.fixangle[j];
 			demo.fixangle[j] = 0;
 
-			dcl->cmdtime     = cl->localtime;
 			dcl->sec         = sv.time - cl->localtime;
 			
 			if (ent->v.health <= 0)

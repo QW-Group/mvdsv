@@ -309,7 +309,6 @@ typedef struct
 
 	qbool			fixangle;
 
-	float			cmdtime;
 	float			sec;
 
 } demo_client_t;
