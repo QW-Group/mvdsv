@@ -72,7 +72,7 @@ void PR2_Init(void)
 //===========================================================================
 // PR2_GetString
 //===========================================================================
-char *PR2_GetString(int num)
+char *PR2_GetString(intptr_t num)
 {
 	qvm_t *qvm;
 
@@ -109,10 +109,10 @@ char *PR2_GetString(int num)
 // PR2_SetString
 // FIXME for VM
 //===========================================================================
-int PR2_SetString(char *s)
+intptr_t PR2_SetString(char *s)
 {
 	qvm_t *qvm;
-	int off;
+	intptr_t off;
 	if(!sv_vm)
 		return PR_SetString(s);
 
@@ -122,7 +122,7 @@ int PR2_SetString(char *s)
 		return PR_SetString(s);
 
 	case VM_NATIVE:
-		return (int) s;
+		return (intptr_t) s;
 
 	case VM_BYTECODE:
 		qvm = (qvm_t*)(sv_vm->hInst);

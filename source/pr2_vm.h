@@ -39,19 +39,20 @@
 #define MAX_vmMain_Call	100
 #define MAX_CYCLES		100000
 
-#define VM_POINTER(base,mask,x)	 ((void*)((char *)base+((x)&mask)))
-#define POINTER_TO_VM(base,mask,x)	 ((x)?(int)((char *)(x) - (char*)base)&mask:0)
+// this gives gcc warnings unfortunatelly
+//#define VM_POINTER(base,mask,x)		((x)?(void*)((char *)base+((x)&mask)):NULL)
+#define VM_POINTER(base,mask,x)			((void*)((char *)base+((x)&mask)))
+#define POINTER_TO_VM(base,mask,x)		((x)?(intptr_t)((char *)(x) - (char*)base)&mask:0)
 
 
 typedef union pr2val_s
 {
 	string_t	string;
 	float		_float;
-	int			_int;
-	int			edict;
+	intptr_t	_int;
 } pr2val_t;	
 
-typedef int (EXPORT_FN *sys_call_t) (int arg, ...);
+typedef intptr_t (EXPORT_FN *sys_call_t) (intptr_t arg, ...);
 typedef int (*sys_callex_t) (byte *data, unsigned int mask, int fn,  pr2val_t* arg);
 
 typedef enum vm_type_e
@@ -71,7 +72,7 @@ typedef struct vm_s {
 	sys_call_t syscall;
 
 	// native
-	int (*vmMain) (int command, int arg0, int arg1, int arg2, int arg3,
+	intptr_t (*vmMain) (int command, int arg0, int arg1, int arg2, int arg3,
 		int arg4, int arg5, int arg6, int arg7, int arg8, int arg9,
 		int arg10, int arg11);
 } vm_t ;
@@ -244,7 +245,7 @@ typedef enum
 extern char* opcode_names[];
 extern void VM_Unload(vm_t *vm);
 vm_t* VM_Load(vm_t *vm, vm_type_t type, char *name,sys_call_t syscall,sys_callex_t syscallex);
-extern int VM_Call(vm_t *vm, int /*command*/, int /*arg0*/, int , int , int , int , int , 
+extern intptr_t VM_Call(vm_t *vm, int /*command*/, int /*arg0*/, int , int , int , int , int , 
 				int , int , int , int , int , int /*arg11*/);
 void  QVM_StackTrace( qvm_t * qvm );
 
