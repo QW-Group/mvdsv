@@ -3304,6 +3304,9 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_friction);
 	Cvar_Register (&sv_waterfriction);
 
+	Cvar_Register (&sv_antilag);
+	Cvar_Register (&sv_antilag_frac);
+
 	//Cvar_Register (&pm_bunnyspeedcap);
 	Cvar_Register (&pm_ktjump);
 	//Cvar_Register (&pm_slidefix);

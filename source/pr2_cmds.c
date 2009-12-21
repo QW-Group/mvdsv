@@ -504,6 +504,9 @@ void PF2_traceline(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 
 	ent = EDICT_NUM(stack[7]._int);
 
+	if (sv_antilag.value == 2)
+		nomonsters |= MOVE_LAGGED;
+
 	trace = SV_Trace(v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
 	pr_global_struct->trace_allsolid = trace.allsolid;

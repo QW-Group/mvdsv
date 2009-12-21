@@ -294,7 +294,7 @@ static qbool disable_updates; // disables sending entities to the client
 
 
 int SV_PMTypeForClient (client_t *cl);
-static void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs, sizebuf_t *msg)
+static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, edict_t *clent, byte *pvs, sizebuf_t *msg)
 {
 	int msec, pflags, pm_type = 0, pm_code = 0, i, j;
 	demo_frame_t *demo_frame;
@@ -383,6 +383,22 @@ static void SV_WritePlayersToClient (client_t *client, edict_t *clent, byte *pvs
 		{ // Vladis
 			continue;
 		}
+
+		//====================================================
+		// OK, seems we must send info about this player below
+
+#ifdef USE_PR2
+		if (cl->isBot)
+		{
+			VectorCopy(ent->v.origin, frame->playerpositions[j]);
+		}
+		else
+#endif
+		{
+			VectorMA(ent->v.origin, (sv.time - cl->localtime), ent->v.velocity, frame->playerpositions[j]);
+		}
+
+		frame->playerpresent[j] = true;
 
 		pflags = PF_MSEC | PF_COMMAND;
 
@@ -552,6 +568,8 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 
 	// this is the frame we are creating
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
+	if (!sv.paused)
+		memset(frame->playerpresent, 0, sizeof(frame->playerpresent));
 
 	// find the client's PVS
 	clent = client->edict;
@@ -598,7 +616,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	}
 
 	// send over the players in the PVS
-	SV_WritePlayersToClient (client, clent, pvs, msg);
+	SV_WritePlayersToClient (client, frame, clent, pvs, msg);
 
 	// put other visible entities into either a packet_entities or a nails message
 	pack = &frame->entities;

@@ -114,6 +114,14 @@ typedef struct
 
 #define	NUM_SPAWN_PARMS 16
 
+// { sv_antilag related
+typedef struct
+{
+	qbool present;
+	vec3_t laggedpos;
+} laggedentinfo_t;
+// }
+
 typedef enum
 {
 	cs_free,		// can be reused for a new connection
@@ -131,6 +139,12 @@ typedef struct
 	// reply
 	double			senttime;
 	float			ping_time;
+
+// { sv_antilag
+	vec3_t				playerpositions[MAX_CLIENTS];
+	qbool				playerpresent[MAX_CLIENTS];
+// }
+
 	packet_entities_t	entities;
 } client_frame_t;
 
@@ -192,6 +206,12 @@ typedef struct client_s
 
 	double			connection_started;		// or time of disconnect for zombies
 	qbool			send_message;			// set on frames a datagram arived on
+
+// { sv_antilag related
+	laggedentinfo_t	laggedents[MAX_CLIENTS];
+	unsigned int	laggedents_count;
+	float			laggedents_frac;
+// }
 
 // spawn parms are carried from level to level
 	float			spawn_parms[NUM_SPAWN_PARMS];
@@ -565,6 +585,10 @@ typedef struct
 #define	FL_PARTIALGROUND		1024	// not all corners are valid
 #define	FL_WATERJUMP			2048	// player jumping out of water
 
+// { sv_antilag
+#define FL_LAGGEDMOVE			(1<<16)
+// }
+
 #define	SPAWNFLAG_NOT_EASY		256
 #define	SPAWNFLAG_NOT_MEDIUM		512
 #define	SPAWNFLAG_NOT_HARD		1024
@@ -613,6 +637,8 @@ typedef struct
 
 extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
 extern	cvar_t	sv_maxspeed;
+
+extern	cvar_t	sv_antilag, sv_antilag_frac;
 
 extern	int current_skill;
 

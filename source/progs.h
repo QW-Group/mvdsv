@@ -53,6 +53,8 @@ typedef struct sv_edict_s
 	qbool		free;
 	link_t		area;			// linked to a division node or leaf
 
+	int			entnum;
+
 	int			num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
 

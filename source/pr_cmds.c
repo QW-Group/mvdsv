@@ -571,6 +571,9 @@ void PF_traceline (void)
 	nomonsters = G_FLOAT(OFS_PARM2);
 	ent = G_EDICT(OFS_PARM3);
 
+	if (sv_antilag.value == 2)
+		nomonsters |= MOVE_LAGGED;
+
 	trace = SV_Trace (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
 	pr_global_struct->trace_allsolid = trace.allsolid;
@@ -1389,8 +1392,8 @@ static void PF_findradius (void)
 		maxs[i] = org[i] + rad + 1;
 	}
 
-	numtouch = SV_AreaEdicts (mins, maxs, touchlist, MAX_EDICTS, AREA_SOLID);
-	numtouch += SV_AreaEdicts (mins, maxs, &touchlist[numtouch], MAX_EDICTS - numtouch, AREA_TRIGGERS);
+	numtouch = SV_AreaEdicts (mins, maxs, touchlist, MAX_EDICTS, AREA_SOLID, 0);
+	numtouch += SV_AreaEdicts (mins, maxs, &touchlist[numtouch], MAX_EDICTS - numtouch, AREA_TRIGGERS, 0);
 
 	chain = (edict_t *)sv.edicts;
 

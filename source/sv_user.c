@@ -3250,7 +3250,7 @@ The current net_message is parsed for the given client
 */
 void SV_ExecuteClientMessage (client_t *cl)
 {
-	int		c;
+	int		c, i;
 	char		*s;
 	usercmd_t	oldest, oldcmd, newcmd;
 	client_frame_t	*frame;
@@ -3285,6 +3285,23 @@ void SV_ExecuteClientMessage (client_t *cl)
 			cl->delay += 0.001;
 
 		cl->delay = bound(0, cl->delay, 1);
+	}
+
+	cl->laggedents_count = 0; // init at least this
+	cl->laggedents_frac = sv_antilag_frac.value;
+
+	if (sv_antilag.value)
+	{
+//#pragma message("FIXME: make antilag optionally support non-player ents too")
+
+		for (i = 0; i < MAX_CLIENTS; i++)
+		{
+			cl->laggedents[i].present = frame->playerpresent[i];
+			if (cl->laggedents[i].present)
+				VectorCopy(frame->playerpositions[i], cl->laggedents[i].laggedpos);
+		}
+
+		cl->laggedents_count = MAX_CLIENTS; // FIXME: well, FTE do it a bit different way...
 	}
 
 	// make sure the reply sequence number matches the incoming

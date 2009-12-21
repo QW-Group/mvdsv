@@ -349,6 +349,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	{
 		ent = EDICT_NUM(i);
 		ent->e = &sv.sv_edicts[i]; // assigning ->e field in each edict_t
+		ent->e->entnum = i;
 		ent->e->area.ed = ent; // yeah, pretty funny, but this help to find which edict_t own this area (link_t)
 	}
 
