@@ -113,6 +113,8 @@ typedef HMODULE DL_t;
 #include <pwd.h>
 #include <grp.h>
 
+#include <stdint.h> /* for intptr_t */
+
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(__sun__) || defined(__GNUC__) || defined(__APPLE__)
 #include <sys/time.h>
 #include <dirent.h>
@@ -121,7 +123,6 @@ typedef HMODULE DL_t;
 #include <sys/event.h>
 #ifdef __OpenBSD__ // OpenBSD tell me it want it for kqueue
 #include <sys/time.h>
-#include <stdint.h> /* for intptr_t */
 #endif /* !__OpenBSD__ */
 #endif
 #else
