@@ -634,14 +634,14 @@ void SV_AntilagClipSetUp ( areanode_t *node, moveclip_t *clip )
 	}
 	else if (passedict->v.owner)
 	{
-		// !!!! FIXME: svs.clients[passedict->v.owner-1]
-		// I wonder is passedict->v.owner is like 0, 1, 2 or need some conversion like NUM_FOR_EDICT( PROG_TO_EDICT(passedict->v.owner) ) ????
-		if (passedict->v.owner && passedict->v.owner <= MAX_CLIENTS)
+		int owner = PROG_TO_EDICT(passedict->v.owner)->e->entnum;
+
+		if (owner && owner <= MAX_CLIENTS)
 		{
 			clip->type |= MOVE_LAGGED;
-			w.lagents = svs.clients[passedict->v.owner-1].laggedents;
-			w.maxlagents = svs.clients[passedict->v.owner-1].laggedents_count;
-			w.lagentsfrac = svs.clients[passedict->v.owner-1].laggedents_frac;
+			w.lagents = svs.clients[owner-1].laggedents;
+			w.maxlagents = svs.clients[owner-1].laggedents_count;
+			w.lagentsfrac = svs.clients[owner-1].laggedents_frac;
 		}
 	}
 }
