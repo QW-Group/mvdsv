@@ -193,7 +193,7 @@ static void FWD_network_update(void)
 				// first 10 bytes for NON connectionless packet is netchan related shit in QW
 				if (!connectionless && net_message.cursize > 10 && net_message.data[10] == clc_stringcmd)
 				{
-					if (!strcmp(net_message.data + 10 + 1, "drop"))
+					if (!strcmp((char*)net_message.data + 10 + 1, "drop"))
 					{
 //						Sys_Printf("peer drop detected\n");
 						p->ps = ps_drop; // drop peer ASAP
