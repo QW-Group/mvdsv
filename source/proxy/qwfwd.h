@@ -144,6 +144,9 @@ typedef struct fwd_params
 // server to client
 #define	svc_disconnect			2
 
+// client to server
+#define	clc_stringcmd			4		// [string] message
+
 //
 // peer.c
 //
@@ -291,7 +294,7 @@ char				*COM_Parse (char *data);		// Parse a token out of a string
 // svc.c
 //
 
-void				SV_ConnectionlessPacket (void);
+qbool				SV_ConnectionlessPacket (void);
 
 //
 // clc.c

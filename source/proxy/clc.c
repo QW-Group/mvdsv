@@ -116,8 +116,8 @@ qbool CL_ConnectionlessPacket (peer_t *p)
 			}
 			#endif // FTE_PEXT_CHUNKEDDOWNLOADS
 
-			Sys_Printf("%s: print\n", inet_ntoa(net_from.sin_addr));
-			Sys_Printf("%s", MSG_ReadString());
+//			Sys_Printf("%s: print\n", inet_ntoa(net_from.sin_addr));
+//			Sys_Printf("%s", MSG_ReadString());
 
 			need_forward = true; // so client have chance to see what server trying to say
 

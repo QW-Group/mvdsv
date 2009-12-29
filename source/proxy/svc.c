@@ -342,8 +342,9 @@ connectionless packets.
 =================
 */
 
-void SV_ConnectionlessPacket(void)
+qbool SV_ConnectionlessPacket(void)
 {
+	qbool need_forward = false;
 	char	*s;
 	char	*c;
 
@@ -375,10 +376,14 @@ void SV_ConnectionlessPacket(void)
 			SVC_GetChallenge();
 		else if (!strcmp(c,"status"))
 			SVC_Status();
+		else if (!strcmp(c,"rcon"))
+			need_forward = true; // we do not have own rcon command, we forward it to the server...
 	//	else
 	//		Sys_Printf ("SV bad connectionless packet from %s:\n%s\n" , inet_ntoa(net_from.sin_addr), s);
 
-		Sys_Printf ("SV connectionless packet from %s:\n%s\n", inet_ntoa(net_from.sin_addr), s);
+//		Sys_Printf ("SV connectionless packet from %s:\n%s\n", inet_ntoa(net_from.sin_addr), s);
 	}
+
+	return need_forward;
 }
 

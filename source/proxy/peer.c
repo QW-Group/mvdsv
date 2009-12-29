@@ -146,6 +146,9 @@ static void FWD_network_update(void)
 	// if we have input packet on main server/proxy socket, then read it
 	if(FD_ISSET(net_socket, &rfds))
 	{
+		qbool connectionless;
+		int cnt;
+
 		// read it
 		for(;;)
 		{
@@ -160,12 +163,15 @@ static void FWD_network_update(void)
 			}
 
 			MSG_BeginReading();
-			if (MSG_ReadLong() == -1)
-			{
-				if (!MSG_BadRead())
-					SV_ConnectionlessPacket();
+			connectionless = (MSG_ReadLong() == -1);
 
-				continue;
+			if (connectionless)
+			{
+				if (MSG_BadRead())
+					continue;
+
+				if (!SV_ConnectionlessPacket())
+					continue; // seems we do not need forward it
 			}
 
 			// search in peers
@@ -180,7 +186,24 @@ static void FWD_network_update(void)
 				continue;
 
 			if (p->ps >= ps_connected)
-				NET_SendPacket(p->s, net_message.cursize, net_message.data, &p->to);
+			{
+				cnt = 1; // one packet by default
+
+				// check for "drop" aka client disconnect,
+				// first 10 bytes for NON connectionless packet is netchan related shit in QW
+				if (!connectionless && net_message.cursize > 10 && net_message.data[10] == clc_stringcmd)
+				{
+					if (!strcmp(net_message.data + 10 + 1, "drop"))
+					{
+//						Sys_Printf("peer drop detected\n");
+						p->ps = ps_drop; // drop peer ASAP
+						cnt = 3; // send few packets due to possibile packet lost
+					}
+				}
+
+				for ( ; cnt > 0; cnt--)
+					NET_SendPacket(p->s, net_message.cursize, net_message.data, &p->to);
+			}
 
 			time(&p->last);
 		}
