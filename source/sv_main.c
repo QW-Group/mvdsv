@@ -184,8 +184,6 @@ qbool server_cfg_done = false;
 
 client_t *WatcherId = NULL; // QW262
 
-void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
-
 //============================================================================
 
 qbool GameStarted(void)
