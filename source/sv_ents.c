@@ -398,7 +398,12 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, ed
 			VectorMA(ent->v.origin, (sv.time - cl->localtime), ent->v.velocity, frame->playerpositions[j]);
 		}
 
-		frame->playerpresent[j] = true;
+		// antilag: spectators present anyway, players only when alive,
+		// because otherwise we can shoot around corpse and get hit with some timing luck
+		if ( cl->spectator )
+			frame->playerpresent[j] = true;
+		else
+			frame->playerpresent[j] = ent->v.health > 0;
 
 		pflags = PF_MSEC | PF_COMMAND;
 

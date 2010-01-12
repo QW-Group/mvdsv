@@ -650,7 +650,7 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 {
 	trace_t trace;
 	edict_t *touch;
-	vec3_t lp;
+	vec3_t lp, diff;
 	int i;
 
 	for (i = 0; i < w.maxlagents; i++)
@@ -694,6 +694,13 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 			|| clip->boxmaxs[0] < lp[0]+touch->v.mins[0]
 			|| clip->boxmaxs[1] < lp[1]+touch->v.mins[1]
 			|| clip->boxmaxs[2] < lp[2]+touch->v.mins[2] )
+			continue;
+
+		// Check for teleported or something.
+		// Well 200 units is probably too much, but I tested with ping 150 and high players velocity,
+		// its pretty much possibile.
+		VectorSubtract(touch->v.origin, lp, diff);
+		if (diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2] > 200 * 200)
 			continue;
 
 		if (clip->passedict && clip->passedict->v.size[0] && !touch->v.size[0])
