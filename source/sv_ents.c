@@ -282,88 +282,97 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 
 /*
 =============
+SV_MVD_WritePlayersToClient
+=============
+*/
+static void SV_MVD_WritePlayersToClient ( void )
+{
+	int j;
+	demo_frame_t *demo_frame;
+	demo_client_t *dcl;
+	client_t *cl;
+	edict_t *ent;
+
+	if ( !sv.mvdrecording )
+		return;
+
+	demo_frame = &demo.frames[demo.parsecount&UPDATE_MASK];
+
+	for (j = 0, cl = svs.clients, dcl = demo_frame->clients; j < MAX_CLIENTS; j++, cl++, dcl++)
+	{
+		if ( cl->state != cs_spawned || cl->spectator )
+			continue;
+
+		ent = cl->edict;
+
+		dcl->parsecount = demo.parsecount;
+
+		VectorCopy(ent->v.origin, dcl->origin);
+		VectorCopy(ent->v.angles, dcl->angles);
+		dcl->angles[0] *= -3;
+#ifdef USE_PR2
+		if( cl->isBot )
+			VectorCopy(ent->v.v_angle, dcl->angles);
+#endif
+		dcl->angles[2] = 0; // no roll angle
+
+		if (ent->v.health <= 0)
+		{	// don't show the corpse looking around...
+			dcl->angles[0] = 0;
+			dcl->angles[1] = ent->v.angles[1];
+			dcl->angles[2] = 0;
+		}
+
+		dcl->weaponframe = ent->v.weaponframe;
+		dcl->frame       = ent->v.frame;
+		dcl->skinnum     = ent->v.skin;
+		dcl->model       = ent->v.modelindex;
+		dcl->effects     = ent->v.effects;
+		dcl->flags       = 0;
+
+		dcl->fixangle    = demo.fixangle[j];
+		demo.fixangle[j] = 0;
+
+		dcl->sec         = sv.time - cl->localtime;
+		
+		if (ent->v.health <= 0)
+			dcl->flags |= DF_DEAD;
+		if (ent->v.mins[2] != -24)
+			dcl->flags |= DF_GIB;
+
+		continue;
+	}
+}
+
+/*
+=============
 SV_WritePlayersToClient
 =============
 */
 
-#define TruePointContents(p) CM_HullPointContents(&sv.worldmodel->hulls[0], 0, p)
-
-#define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
-
-static qbool disable_updates; // disables sending entities to the client
-
-
 int SV_PMTypeForClient (client_t *cl);
-static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, edict_t *clent, byte *pvs, sizebuf_t *msg)
+static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, byte *pvs, qbool disable_updates, sizebuf_t *msg)
 {
 	int msec, pflags, pm_type = 0, pm_code = 0, i, j;
-	demo_frame_t *demo_frame;
-	demo_client_t *dcl;
 	usercmd_t cmd;
 	client_t *cl;
 	edict_t *ent;
 	int hideent;
 
-	if (clent && fofs_hideentity)
-		hideent = ((eval_t *)((byte *)&(clent)->v + fofs_hideentity))->_int / pr_edict_size;
+	if (fofs_hideentity)
+		hideent = ((eval_t *)((byte *)&(client->edict)->v + fofs_hideentity))->_int / pr_edict_size;
 	else
 		hideent = 0;
 
-	demo_frame = &demo.frames[demo.parsecount&UPDATE_MASK];
-
-	for (j=0,cl=svs.clients, dcl = demo_frame->clients; j<MAX_CLIENTS ; j++,cl++, dcl++)
+	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++)
 	{
 		if (cl->state != cs_spawned)
 			continue;
 
 		ent = cl->edict;
 
-		if (clent == NULL)
-		{
-			if (cl->spectator)
-				continue;
-
-			dcl->parsecount = demo.parsecount;
-
-			VectorCopy(ent->v.origin, dcl->origin);
-			VectorCopy(ent->v.angles, dcl->angles);
-			dcl->angles[0] *= -3;
-#ifdef USE_PR2
-			if( cl->isBot )
-				VectorCopy(ent->v.v_angle, dcl->angles);
-#endif
-			dcl->angles[2] = 0; // no roll angle
-
-			if (ent->v.health <= 0)
-			{	// don't show the corpse looking around...
-				dcl->angles[0] = 0;
-				dcl->angles[1] = ent->v.angles[1];
-				dcl->angles[2] = 0;
-			}
-
-			dcl->weaponframe = ent->v.weaponframe;
-			dcl->frame       = ent->v.frame;
-			dcl->skinnum     = ent->v.skin;
-			dcl->model       = ent->v.modelindex;
-			dcl->effects     = ent->v.effects;
-			dcl->flags       = 0;
-
-			dcl->fixangle    = demo.fixangle[j];
-			demo.fixangle[j] = 0;
-
-			dcl->sec         = sv.time - cl->localtime;
-			
-			if (ent->v.health <= 0)
-				dcl->flags |= DF_DEAD;
-			if (ent->v.mins[2] != -24)
-				dcl->flags |= DF_GIB;
-
-			continue;
-		}
-
 		// ZOID visibility tracking
-		if (ent != clent &&
-		        !(client->spec_track && client->spec_track - 1 == j))
+		if (ent != client->edict && !(client->spec_track && client->spec_track - 1 == j))
 		{
 			if (cl->spectator)
 				continue;
@@ -372,11 +381,15 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, ed
 				continue;
 
 			// ignore if not touching a PV leaf
-			for (i=0 ; i < ent->e->num_leafs ; i++)
-				if (pvs[ent->e->leafnums[i] >> 3] & (1 << (ent->e->leafnums[i]&7) ))
-					break;
-			if (i == ent->e->num_leafs)
-				continue; // not visable
+			if ( pvs )
+			{
+				for (i=0 ; i < ent->e->num_leafs ; i++)
+					if (pvs[ent->e->leafnums[i] >> 3] & (1 << (ent->e->leafnums[i]&7) ))
+						break;
+
+				if (i == ent->e->num_leafs)
+					continue; // not visable
+			}
 		}
 
 		if (disable_updates && client != cl)
@@ -425,7 +438,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, ed
 		{	// only sent origin and velocity to spectators
 			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
 		}
-		else if (ent == clent)
+		else if (ent == client->edict)
 		{	// don't send a lot of data on personal entity
 			pflags &= ~(PF_MSEC|PF_COMMAND);
 			if (ent->v.weaponframe)
@@ -474,7 +487,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, ed
 		if (ent->v.solid == SOLID_BBOX || ent->v.solid == SOLID_SLIDEBOX)
 			pflags |= PF_SOLID;
 
-		if (pm_type == PM_LOCK && ent == clent)
+		if (pm_type == PM_LOCK && ent == client->edict)
 			pflags |= PF_COMMAND;	// send forced view angles
 
 		if (client->spec_track && client->spec_track - 1 == j &&
@@ -512,7 +525,8 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, ed
 			cmd.buttons = 0;	// never send buttons
 			cmd.impulse = 0;	// never send impulses
 
-			if (ent == clent) {
+			if (ent == client->edict)
+			{
 				// this is PM_LOCK, we only want to send view angles
 				VectorCopy(ent->v.v_angle, cmd.angles);
 				cmd.forwardmove = 0;
@@ -560,16 +574,20 @@ svc_playerinfo messages
 
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 {
+	qbool disable_updates; // disables sending entities to the client
 	int e, i, max_packet_entities;
 	packet_entities_t *pack;
 	client_frame_t *frame;
 	entity_state_t *state;
-	edict_t	*clent;
-	client_t *cl;
 	edict_t *ent;
-	vec3_t org;
 	byte *pvs;
 	int hideent;
+
+	if ( recorder )
+	{
+		if ( !sv.mvdrecording )
+			return;
+	}
 
 	// this is the frame we are creating
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
@@ -577,62 +595,53 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 		memset(frame->playerpresent, 0, sizeof(frame->playerpresent));
 
 	// find the client's PVS
-	clent = client->edict;
-	pvs = NULL;
-	if (!recorder)
-	{
-		VectorAdd (clent->v.origin, clent->v.view_ofs, org);
-		pvs = CM_FatPVS (org);
-		if (client->fteprotocolextensions & FTE_PEXT_256PACKETENTITIES)
-			max_packet_entities = 256;
-		else
-			max_packet_entities = MAX_PACKET_ENTITIES;
-	}
-	else
-	{
+	if ( recorder )
+	{// demo
+		hideent = 0;
+		pvs = NULL; // ignore PVS for demos
 		max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
-
-		for (i=0, cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
-		{
-			if (cl->state != cs_spawned)
-				continue;
-
-			if (cl->spectator)
-				continue;
-
-			VectorAdd (cl->edict->v.origin, cl->edict->v.view_ofs, org);
-
-			// disconnect --> "is it correct?"
-			//if (pvs == NULL)
-				pvs = CM_FatPVS (org);
-			//else
-				//	SV_AddToFatPVS (org, sv.worldmodel->nodes, false);
-			// <-- disconnect
-		}
-	}
-	if (clent && client->disable_updates_stop > realtime)
-	{ // Vladis
-		int where = TruePointContents(clent->v.origin); // server flash should not work underwater
-		disable_updates = !ISUNDERWATER(where);
+		disable_updates = false; // updates always allowed in demos
 	}
 	else
-	{
-		disable_updates = false;
+	{// normal client
+		vec3_t org;
+
+		if (fofs_hideentity)
+			hideent = ((eval_t *)((byte *)&(client->edict)->v + fofs_hideentity))->_int / pr_edict_size;
+		else
+			hideent = 0;
+
+		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, org);
+		pvs = CM_FatPVS (org); // search some PVS
+		max_packet_entities = (client->fteprotocolextensions & FTE_PEXT_256PACKETENTITIES) ? 256 : MAX_PACKET_ENTITIES;
+
+		if (client->disable_updates_stop > realtime)
+		{
+			#define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
+
+			// server flash should not work underwater
+			int content = CM_HullPointContents(&sv.worldmodel->hulls[0], 0, client->edict->v.origin);
+			disable_updates = !ISUNDERWATER(content);
+
+			#undef ISUNDERWATER
+		}
+		else
+		{
+			disable_updates = false;
+		}
 	}
 
 	// send over the players in the PVS
-	SV_WritePlayersToClient (client, frame, clent, pvs, msg);
+	if ( recorder )
+		SV_MVD_WritePlayersToClient (); // nice, no params at all!
+	else
+		SV_WritePlayersToClient (client, frame, pvs, disable_updates, msg);
 
 	// put other visible entities into either a packet_entities or a nails message
 	pack = &frame->entities;
 	pack->num_entities = 0;
 
 	numnails = 0;
-
-	if (clent && fofs_hideentity)
-		hideent = ((eval_t *)((byte *)&(clent)->v + fofs_hideentity))->_int / pr_edict_size;
-	else
-		hideent = 0;
 
 	if (!disable_updates)
 	{// Vladis, server flash
@@ -656,7 +665,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			if (e == hideent)
 				continue;
 
-			if (!(int)sv_demoNoVis.value || !recorder)
+			if ( pvs )
 			{
 				// ignore if not touching a PV leaf
 				for (i=0 ; i < ent->e->num_leafs ; i++)
@@ -688,6 +697,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			state->effects = ent->v.effects;
 		}
 	} // server flash
+
 	// encode the packet entities as a delta from the
 	// last packetentities acknowledged by the client
 

@@ -40,7 +40,6 @@ cvar_t	sv_demoDir			= {"sv_demoDir",		"demos", 0, sv_demoDir_OnChange};
 cvar_t	sv_demofps			= {"sv_demofps",		"30"};
 cvar_t	sv_demoIdlefps		= {"sv_demoIdlefps",	"10"};
 cvar_t	sv_demoPings		= {"sv_demopings",		"3"};
-cvar_t	sv_demoNoVis		= {"sv_demonovis",		"1"};
 cvar_t	sv_demoMaxSize		= {"sv_demoMaxSize",	"20480"};
 cvar_t	sv_demoExtraNames	= {"sv_demoExtraNames", "0"};
 
@@ -1639,7 +1638,6 @@ static void MVD_Init (void)
 	Cvar_Register (&sv_demofps);
 	Cvar_Register (&sv_demoIdlefps);
 	Cvar_Register (&sv_demoPings);
-	Cvar_Register (&sv_demoNoVis);
 	Cvar_Register (&sv_demoUseCache);
 	Cvar_Register (&sv_demoCacheSize);
 	Cvar_Register (&sv_demoMaxSize);

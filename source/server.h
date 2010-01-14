@@ -873,7 +873,6 @@ extern cvar_t	sv_demoClearOld;
 extern cvar_t	sv_demoDir;
 extern cvar_t	sv_demofps;
 extern cvar_t	sv_demoPings;
-extern cvar_t	sv_demoNoVis;
 extern cvar_t	sv_demoMaxSize;
 extern cvar_t	sv_demoExtraNames;
 
