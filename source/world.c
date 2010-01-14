@@ -226,7 +226,7 @@ void SV_UnlinkEdict (edict_t *ent)
 SV_AreaEdicts
 ====================
 */
-int SV_AreaEdicts (vec3_t mins, vec3_t maxs, edict_t **edicts, int max_edicts, int area, int clip_type)
+int SV_AreaEdicts (vec3_t mins, vec3_t maxs, edict_t **edicts, int max_edicts, int area)
 {
 	link_t		*l, *start;
 	edict_t		*touch;
@@ -246,14 +246,6 @@ int SV_AreaEdicts (vec3_t mins, vec3_t maxs, edict_t **edicts, int max_edicts, i
 			touch = EDICT_FROM_AREA(l);
 			if (touch->v.solid == SOLID_NOT)
 				continue;
-
-			if (clip_type & MOVE_LAGGED)
-			{
-				//can't touch lagged ents - we do an explicit test for them later.
-				if (touch->e->entnum - 1 < w.maxlagents)
-					if (w.lagents[touch->e->entnum - 1].present)
-						continue;
-			}
 
 			if (mins[0] > touch->v.absmax[0]
 						 || mins[1] > touch->v.absmax[1]
@@ -303,13 +295,13 @@ checkstack:
 SV_TouchLinks
 ====================
 */
-void SV_TouchLinks ( edict_t *ent, areanode_t *node )
+static void SV_TouchLinks ( edict_t *ent, areanode_t *node )
 {
 	int			i, numtouch;
 	edict_t		*touchlist[MAX_EDICTS], *touch;
 	int			old_self, old_other;
 
-	numtouch = SV_AreaEdicts (ent->v.absmin, ent->v.absmax, touchlist, MAX_EDICTS, AREA_TRIGGERS, 0);
+	numtouch = SV_AreaEdicts (ent->v.absmin, ent->v.absmax, touchlist, MAX_EDICTS, AREA_TRIGGERS);
 
 // touch linked edicts
 	for (i = 0; i < numtouch; i++)
@@ -516,7 +508,7 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t *eorg, vec3_t start, vec3_t mi
 	VectorAdd (trace.endpos, offset, trace.endpos);
 
 // did we clip the move?
-	if (trace.fraction < 1 || trace.startsolid )
+	if (trace.fraction < 1 || trace.startsolid)
 		trace.e.ent = ent;
 
 	return trace;
@@ -537,11 +529,15 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 	edict_t		*touchlist[MAX_EDICTS], *touch;
 	trace_t		trace;
 
-	numtouch = SV_AreaEdicts (clip->boxmins, clip->boxmaxs, touchlist, MAX_EDICTS, AREA_SOLID, clip->type);
+	numtouch = SV_AreaEdicts (clip->boxmins, clip->boxmaxs, touchlist, MAX_EDICTS, AREA_SOLID);
 
 // touch linked edicts
 	for (i = 0; i < numtouch; i++)
 	{
+		// might intersect, so do an exact clip
+		if (clip->trace.allsolid)
+			return; // return!!!
+
 		touch = touchlist[i];
 		if (touch == clip->passedict)
 			continue;
@@ -554,9 +550,14 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		if (clip->passedict && clip->passedict->v.size[0] && !touch->v.size[0])
 			continue;	// points never interact
 
-	// might intersect, so do an exact clip
-		if (clip->trace.allsolid)
-			return;
+		if (clip->type & MOVE_LAGGED)
+		{
+			//can't touch lagged ents - we do an explicit test for them later in SV_AntilagClipCheck.
+			if (touch->e->entnum - 1 < w.maxlagents)
+				if (w.lagents[touch->e->entnum - 1].present)
+					continue;
+		}
+
 		if (clip->passedict)
 		{
 			if (PROG_TO_EDICT(touch->v.owner) == clip->passedict)
@@ -569,8 +570,10 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 			trace = SV_ClipMoveToEntity (touch, NULL, clip->start, clip->mins2, clip->maxs2, clip->end);
 		else
 			trace = SV_ClipMoveToEntity (touch, NULL, clip->start, clip->mins, clip->maxs, clip->end);
-		if (trace.allsolid || trace.startsolid ||
-				  trace.fraction < clip->trace.fraction)
+
+#if 0
+//		q1 variant
+		if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
 		{
 			trace.e.ent = touch;
 			if (clip->trace.startsolid)
@@ -579,10 +582,29 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 				clip->trace.startsolid = true;
 			}
 			else
+			{
 				clip->trace = trace;
+			}
 		}
-		else if (trace.startsolid)
+#else
+//		q3 variant
+		if ( trace.allsolid )
+		{
+			clip->trace.allsolid = true;
+		}
+		else if ( trace.startsolid )
+		{
 			clip->trace.startsolid = true;
+		}
+
+		if ( trace.fraction < clip->trace.fraction ) {
+			qbool	oldStart = clip->trace.startsolid; // make sure we keep a startsolid from a previous trace
+
+			trace.e.ent = touch;
+			clip->trace = trace;
+			clip->trace.startsolid |= oldStart;
+		}
+#endif
 	}
 }
 
@@ -655,36 +677,22 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 
 	for (i = 0; i < w.maxlagents; i++)
 	{
+		if (clip->trace.allsolid)
+			return; // return!!!
+
 		if (!w.lagents[i].present)
 			continue;
-		if (clip->trace.allsolid)
-			break;
 
 		touch = EDICT_NUM(i + 1);
 		if (touch->v.solid == SOLID_NOT)
 			continue;
 		if (touch == clip->passedict)
 			continue;
-		if (touch->v.solid == SOLID_TRIGGER/* || touch->v->solid == SOLID_LADDER */)
+		if (touch->v.solid == SOLID_TRIGGER)
 			SV_Error ("Trigger (%s) in clipping list", PR2_GetString(touch->v.classname));
 
 		if ((clip->type & MOVE_NOMONSTERS) && touch->v.solid != SOLID_BSP)
 			continue;
-
-/*
-		if (clip->passedict)
-		{
-			// don't clip corpse against character
-			if (clip.passedict->v->solid == SOLID_CORPSE && (touch->v->solid == SOLID_SLIDEBOX || touch->v->solid == SOLID_CORPSE))
-				continue;
-			// don't clip character against corpse
-			if (clip.passedict->v->solid == SOLID_SLIDEBOX && touch->v->solid == SOLID_CORPSE)
-				continue;
-
-			if (!((int)clip.passedict->xv->dimension_hit & (int)touch->xv->dimension_solid))
-				continue;
-		}
-*/
 
 		VectorInterpolate(touch->v.origin, w.lagentsfrac, w.lagents[i].laggedpos, lp);
 
@@ -716,11 +724,40 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 
 		trace = SV_ClipMoveToEntity (touch, &lp, clip->start, clip->mins, clip->maxs, clip->end);
 
+#if 0
+//		q1 variant
 		if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
 		{
 			trace.e.ent = touch;
-			clip->trace = trace;
+			if (clip->trace.startsolid)
+			{
+				clip->trace = trace;
+				clip->trace.startsolid = true;
+			}
+			else
+			{
+				clip->trace = trace;
+			}
 		}
+#else
+//		q3 variant
+		if ( trace.allsolid )
+		{
+			clip->trace.allsolid = true;
+		}
+		else if ( trace.startsolid )
+		{
+			clip->trace.startsolid = true;
+		}
+
+		if ( trace.fraction < clip->trace.fraction ) {
+			qbool	oldStart = clip->trace.startsolid; // make sure we keep a startsolid from a previous trace
+
+			trace.e.ent = touch;
+			clip->trace = trace;
+			clip->trace.startsolid |= oldStart;
+		}
+#endif
 	}
 }
 

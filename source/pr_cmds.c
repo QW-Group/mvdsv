@@ -1392,8 +1392,8 @@ static void PF_findradius (void)
 		maxs[i] = org[i] + rad + 1;
 	}
 
-	numtouch = SV_AreaEdicts (mins, maxs, touchlist, MAX_EDICTS, AREA_SOLID, 0);
-	numtouch += SV_AreaEdicts (mins, maxs, &touchlist[numtouch], MAX_EDICTS - numtouch, AREA_TRIGGERS, 0);
+	numtouch = SV_AreaEdicts (mins, maxs, touchlist, MAX_EDICTS, AREA_SOLID);
+	numtouch += SV_AreaEdicts (mins, maxs, &touchlist[numtouch], MAX_EDICTS - numtouch, AREA_TRIGGERS);
 
 	chain = (edict_t *)sv.edicts;
 
