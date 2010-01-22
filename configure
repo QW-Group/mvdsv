@@ -95,11 +95,27 @@ ARCH=`uname -m | sed -e 's/i.86/x86/g' -e 's/Power Macintosh/ppc/g' -e 's/amd64/
 echo UNAME="${UNAME}" >> Makefile
 echo ARCH="${ARCH}" >> Makefile
 
+# check for second paramater
 if [ x$2 = x64 ]; then
-BITS=64
+	BITS=64
+elif [ x$2 = x32 ]; then
+	BITS=32
 else
-BITS=32
-echo FORCE32BITFLAGS=-m32 >> Makefile
+	BITS=
+fi
+
+# if BITS not set try autodetection...
+if [ x${BITS} = x ]; then
+	if [ x${ARCH} = xx86_64 ]; then
+		BITS=64
+	else
+		BITS=32
+	fi
+fi
+
+# put FORCE32BITFLAGS=-m32 in Makefile if required...
+if [ x$BITS = x32 ]; then
+	echo FORCE32BITFLAGS=-m32 >> Makefile
 fi
 
 SVNREV=`svnversion -n . 2>/dev/null | sed -e "s/M//"`
@@ -122,9 +138,9 @@ Usage)
 	echo "SYSTEM: used `uname`"
 	echo "Possible values are: FreeBSD, OpenBSD, NetBSD, DragonFly, Darwin, MacOSX, Linux, SunOS, BSD, GNU"
 	echo "Other systems not supported yet."
-	echo "BITS: 64"
-	echo "Defaults to BITS=32 because QVM is not yet supported by MVDSV compiled at 64 bits."
-	echo "If you want to turn off force compile 32 bits on 64 bits system use BITS parameter."
+	echo "BITS: used ${BITS}"
+	echo "Possible values are: 32, 64"
+	echo "If you want to force compile 32 bits on 64 bits system use BITS parameter."
 	echo ""
         ;;
 *)
