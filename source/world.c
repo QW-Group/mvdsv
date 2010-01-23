@@ -571,40 +571,20 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		else
 			trace = SV_ClipMoveToEntity (touch, NULL, clip->start, clip->mins, clip->maxs, clip->end);
 
-#if 0
-//		q1 variant
-		if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
-		{
-			trace.e.ent = touch;
-			if (clip->trace.startsolid)
-			{
-				clip->trace = trace;
-				clip->trace.startsolid = true;
-			}
-			else
-			{
-				clip->trace = trace;
-			}
-		}
-#else
-//		q3 variant
-		if ( trace.allsolid )
-		{
-			clip->trace.allsolid = true;
-		}
-		else if ( trace.startsolid )
-		{
-			clip->trace.startsolid = true;
-		}
+		// qqshka: I have NO idea why we keep startsolid but let do it.
 
-		if ( trace.fraction < clip->trace.fraction ) {
-			qbool	oldStart = clip->trace.startsolid; // make sure we keep a startsolid from a previous trace
+		// make sure we keep a startsolid from a previous trace
+		clip->trace.startsolid |= trace.startsolid;
 
+		if ( trace.allsolid || trace.fraction < clip->trace.fraction )
+		{
+			// set edict
 			trace.e.ent = touch;
+			// make sure we keep a startsolid from a previous trace
+			trace.startsolid |= clip->trace.startsolid;
+			// bit by bit copy trace struct
 			clip->trace = trace;
-			clip->trace.startsolid |= oldStart;
 		}
-#endif
 	}
 }
 
@@ -722,42 +702,25 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 				continue;	// don't clip against owner
 		}
 
-		trace = SV_ClipMoveToEntity (touch, &lp, clip->start, clip->mins, clip->maxs, clip->end);
+		if ((int)touch->v.flags & FL_MONSTER)
+			trace = SV_ClipMoveToEntity (touch, &lp, clip->start, clip->mins2, clip->maxs2, clip->end);
+		else
+			trace = SV_ClipMoveToEntity (touch, &lp, clip->start, clip->mins, clip->maxs, clip->end);
 
-#if 0
-//		q1 variant
-		if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
+		// qqshka: I have NO idea why we keep startsolid but let do it.
+
+		// make sure we keep a startsolid from a previous trace
+		clip->trace.startsolid |= trace.startsolid;
+
+		if ( trace.allsolid || trace.fraction < clip->trace.fraction )
 		{
+			// set edict
 			trace.e.ent = touch;
-			if (clip->trace.startsolid)
-			{
-				clip->trace = trace;
-				clip->trace.startsolid = true;
-			}
-			else
-			{
-				clip->trace = trace;
-			}
-		}
-#else
-//		q3 variant
-		if ( trace.allsolid )
-		{
-			clip->trace.allsolid = true;
-		}
-		else if ( trace.startsolid )
-		{
-			clip->trace.startsolid = true;
-		}
-
-		if ( trace.fraction < clip->trace.fraction ) {
-			qbool	oldStart = clip->trace.startsolid; // make sure we keep a startsolid from a previous trace
-
-			trace.e.ent = touch;
+			// make sure we keep a startsolid from a previous trace
+			trace.startsolid |= clip->trace.startsolid;
+			// bit by bit copy trace struct
 			clip->trace = trace;
-			clip->trace.startsolid |= oldStart;
 		}
-#endif
 	}
 }
 
