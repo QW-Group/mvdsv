@@ -11,12 +11,12 @@ case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 	cat Makefile.BSD > Makefile
 	echo "${UNAME} system detected, Makefile created."
-	echo "Use make or make dl to build."
+	echo "Use make or make qwfwd-dl to build."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
 	cat Makefile.GNU > Makefile
 	echo "${UNAME} system detected, Makefile created."
-	echo "Use make or make dl to build."
+	echo "Use make or make qwfwd-dl to build."
 	;;
 *)
 	echo "ERROR: Unknown system: ${UNAME}."
