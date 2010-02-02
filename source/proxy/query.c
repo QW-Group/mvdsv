@@ -9,10 +9,12 @@
 #define QW_SERVER_MIN_PING_REQUEST_TIME 60 // seconds, minimal time interval allowed to sent ping, so we do not spam server too fast
 #define QW_SERVER_DEAD_TIME (60 * 60) // seconds, if we do not get reply from server in this time, guess server is DEAD
 
+
 #define QW_MASTER_QUERY "c\n"
 #define QW_MASTER_QUERY_TIME (60 * 30) // seconds, how frequently we query masters
 #define QW_MASTER_QUERY_TIME_SHORT 60 // seconds, how frequently we query master if we do not get reply from it yet
 #define QW_MASTERS_FORCE_RE_INIT (60 * 60 * 24) // seconds, force re-init masters time to time, so we add proper masters if there was some ip/dns changes
+#define QW_MASTER_HEARTBEAT_SECONDS (60 * 5) // seconds, frequency of heartbeat
 
 #define QW_DEFAULT_MASTER_SERVERS "master.quakeservers.net asgaard.morphos-team.net"
 #define QW_DEFAULT_MASTER_SERVER_PORT 27000
@@ -21,8 +23,9 @@
 
 #define MAX_SERVERS 512 // we will not add more than that servers to our list, just for some sanity
 
-static cvar_t masters_query = {"masters_query", "1"};
-static cvar_t masters_list	= {"masters", QW_DEFAULT_MASTER_SERVERS};
+static cvar_t masters_query		= {"masters_query",			"1"};
+static cvar_t masters_heartbeat = {"masters_heartbeat",		"1"};
+static cvar_t masters_list		= {"masters",				QW_DEFAULT_MASTER_SERVERS};
 
 // master state enum
 typedef enum
@@ -43,6 +46,10 @@ typedef struct master
 typedef struct masters
 {
 	time_t					init_time;				// this is used to periodical re-init initiation
+
+	time_t					last_heartbeat;			// when we send heartbeat last time
+	int						heartbeat_sequence;		// heartbeat sequence number
+
 	master_t				master[MAX_MASTERS];	// masters fixed size array, I am lazy
 } masters_t;
 
@@ -112,25 +119,34 @@ static qbool QRY_AddMaster(const char *master)
 	return false;
 }
 
+static void QRY_Cmd_Heartbeat_f(void)
+{
+	masters.last_heartbeat = time(NULL) - QW_MASTER_HEARTBEAT_SECONDS - 1; // trigger heartbeat ASAP
+}
+
 // clear masters
 static void QRY_MastersInit(void)
 {
 	memset(&masters, 0, sizeof(masters));
 	masters.init_time = time(NULL);
+
+	QRY_Cmd_Heartbeat_f();  // trigger heartbeat ASAP
 }
 
-// check if "masters" cvar changed and do appropriate action
+// check if "masters" or "masters_query" cvar changed and do appropriate action
 static void QRY_CheckMastersModified(void)
 {
 	char *mlist;
 
+	// for fix issues with DNS and such force masters re-init time to time
 	if (time(NULL) - masters.init_time > QW_MASTERS_FORCE_RE_INIT)
 	{
 		Sys_DPrintf("forcing masters re-init\n");
 		masters_list.modified = true;
 	}
 
-	if (!masters_list.modified)
+	// "masters" and "masters_query" was not modified, do nothing
+	if (!masters_list.modified && !masters_query.modified)
 		return;
 
 	// clear masters
@@ -142,7 +158,7 @@ static void QRY_CheckMastersModified(void)
 		QRY_AddMaster(com_token);
 	}
 
-	masters_list.modified = false;
+	masters_list.modified = masters_query.modified = false;
 }
 
 // query master servers
@@ -151,7 +167,9 @@ static void QRY_QueryMasters(void)
 	int			i;
 	master_t	*m;
 	time_t		current_time = time(NULL);
+	char		buf[] = "xxx.xxx.xxx.xxx:xxxxx";
 
+	// do we need query masters?
 	if (!masters_query.integer)
 		return;
 
@@ -160,11 +178,48 @@ static void QRY_QueryMasters(void)
 		if (m->state != ms_used)
 			continue; // master slot not used
 
-		if (m->next_query >= current_time)
-			continue; // we should wait for proper time
+		if (current_time <= m->next_query)
+			continue; // not yet
 
+		Sys_DPrintf("query master: %s\n", NET_AdrToString(&m->addr, buf, sizeof(buf)));
+		
 		NET_SendPacket(net_socket, sizeof(QW_MASTER_QUERY), QW_MASTER_QUERY, &m->addr);
 		m->next_query = current_time + QW_MASTER_QUERY_TIME_SHORT; // delay next query for some time
+	}
+}
+
+// heartbeat master servers.
+// send a message to the master every few minutes.
+static void QRY_HeartbeatMasters(void)
+{
+	char		string[128];
+	int			i, len;
+	master_t	*m;
+	time_t		current_time = time(NULL);
+	char		buf[] = "xxx.xxx.xxx.xxx:xxxxx";
+
+	// do we need heartbeat masters?
+	if (!masters_heartbeat.integer)
+		return;
+
+	if (current_time < masters.last_heartbeat + QW_MASTER_HEARTBEAT_SECONDS)
+		return; // not yet
+	
+	masters.last_heartbeat = current_time;
+	masters.heartbeat_sequence++;
+	snprintf(string, sizeof(string), "%c\n%i\n%i\n", S2M_HEARTBEAT, masters.heartbeat_sequence, FWD_peers_count());
+	len = strlen(string);
+
+	if (developer.integer > 1)
+		Sys_DPrintf("heartbeat:\n%s\n", string);
+
+	for (i = 0, m = masters.master; i < MAX_MASTERS; i++, m++)
+	{
+		if (m->state != ms_used)
+			continue; // master slot not used
+		
+		Sys_DPrintf("heartbeat master: %s\n", NET_AdrToString(&m->addr, buf, sizeof(buf)));
+		NET_SendPacket(net_socket, len, string, &m->addr);
 	}
 }
 
@@ -184,6 +239,13 @@ void SVC_QRY_ParseMasterReply(void)
 	master_t		*m;
 	int				ret = net_message.cursize;
 	unsigned char	*answer = net_message.data; // not the smartest way, but why copy from one place to another...
+
+	// no point to parse it, we do not query masters
+	if (!masters_query.integer)
+	{
+		Sys_DPrintf("master server reply ignored\n");
+		return;
+	}
 
 	Sys_DPrintf ("master server reply from %s:%d\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
 
@@ -349,6 +411,7 @@ static void QRY_SV_PingServers(void)
 	double			current = Sys_DoubleTime(); // we need double time for ping measurement
 	server_t		*sv;
 
+	// do not ping servers since we do not query masters
 	if (!masters_query.integer)
 		return;
 
@@ -390,8 +453,17 @@ static void QRY_SV_PingServers(void)
 
 void QRY_SV_PingReply(void)
 {
-	server_t *sv = QRY_SV_ByAddr(&net_from);
-	
+	server_t *sv = NULL;
+
+	// ignore server ping reply since we do not query masters and can't keep server list up2date
+	if (!masters_query.integer)
+	{
+		Sys_DPrintf("server reply ignored\n");
+		return;
+	}
+
+	sv = QRY_SV_ByAddr(&net_from);
+
 	if (sv)
 	{
 		double current = Sys_DoubleTime();
@@ -421,7 +493,7 @@ void SVC_QRY_PingStatus(void)
 	MSG_WriteLong(&buf, -1);	// -1 sequence means out of band
 	MSG_WriteChar(&buf, A2C_PRINT);
 
-	// if we does not query masters then we can't proved reliable info
+	// if we does not query masters then we can't proved reliable info, so do not send servers list
 	if (masters_query.integer)
 	{
 		for (sv = servers; sv; sv = sv->next)
@@ -469,6 +541,7 @@ void QRY_Frame(void)
 {
 	QRY_CheckMastersModified();		// check is "masters" variable changed
 	QRY_QueryMasters();				// request time to time server list from masters
+	QRY_HeartbeatMasters();			// send heartbeat to masters time to time
 	QRY_SV_PingServers();			// ping time to time normal qw servers
 }
 
@@ -477,9 +550,11 @@ void QRY_Frame(void)
 void QRY_Init(void)
 {
 	Cvar_Register(&masters_query);
+	Cvar_Register(&masters_heartbeat);
 	Cvar_Register(&masters_list);
 
 	Cmd_AddCommand("svlist", QRY_Cmd_SvList_f);
+	Cmd_AddCommand("heartbeat", QRY_Cmd_Heartbeat_f);
 
 	// clear masters
 	QRY_MastersInit();

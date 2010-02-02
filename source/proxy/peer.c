@@ -265,6 +265,19 @@ static void FWD_network_update(void)
 	} // for (p = peers; p; p = p->next)
 }
 
+int FWD_peers_count(void)
+{
+	int cnt;
+	peer_t *p;
+
+	for (cnt = 0, p = peers; p; p = p->next)
+	{
+		cnt++;
+	}
+
+	return cnt;
+}
+
 //======================================================
 
 static void FWD_Cmd_ClList_f(void)
