@@ -94,6 +94,12 @@ typedef int socklen_t;
 typedef unsigned char byte;
 
 #ifndef _WIN32
+//stricmp is ansi, strcasecmp is unix.
+	#define stricmp strcasecmp
+	#define strnicmp strncasecmp
+#endif
+
+#ifndef _WIN32
 	#ifndef STDIN
 		#define STDIN 0
 	#endif
