@@ -72,6 +72,24 @@ static int sv_count;
 static server_t *servers;
 static masters_t masters;
 
+static master_t	*QRY_Master_ByAddr(struct sockaddr_in *addr)
+{
+	int						i;
+	master_t				*m;
+
+	for (i = 0, m = masters.master; i < MAX_MASTERS; i++, m++)
+	{
+		if (m->state != ms_used)
+			continue; // master slot unused
+
+		if (NET_CompareAddress(addr, &m->addr))
+			return m;
+	}
+
+	return NULL;
+}
+
+
 static qbool QRY_AddMaster(const char *master)
 {
 	int						i, port;
@@ -98,6 +116,12 @@ static qbool QRY_AddMaster(const char *master)
 	if (!NET_GetSockAddrIn_ByHostAndPort(&addr, host, port))
 	{
 		Sys_Printf("failed to add master server: %s\n", master);
+		return false;
+	}
+
+	if (QRY_Master_ByAddr(&addr))
+	{
+		Sys_Printf("failed to add master server: %s - alredy added!\n", master);
 		return false;
 	}
 
