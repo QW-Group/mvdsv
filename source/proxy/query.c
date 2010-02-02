@@ -16,7 +16,7 @@
 #define QW_MASTERS_FORCE_RE_INIT (60 * 60 * 24) // seconds, force re-init masters time to time, so we add proper masters if there was some ip/dns changes
 #define QW_MASTER_HEARTBEAT_SECONDS (60 * 5) // seconds, frequency of heartbeat
 
-#define QW_DEFAULT_MASTER_SERVERS "master.quakeservers.net asgaard.morphos-team.net"
+#define QW_DEFAULT_MASTER_SERVERS "master.quakeservers.net asgaard.morphos-team.net master.quakeworld.nu"
 #define QW_DEFAULT_MASTER_SERVER_PORT 27000
 
 #define MAX_MASTERS 8 // size for masters fixed size array, I am lazy
