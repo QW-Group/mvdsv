@@ -19,7 +19,7 @@ static qbool CheckProtocol( int ver )
 	if (ver != PROTOCOL_VERSION)
 	{
 		Netchan_OutOfBandPrint (net_from_socket, &net_from, "%c\nServer is version " QW_VERSION ".\n", A2C_PRINT);
-		Sys_Printf ("* rejected connect from version %i\n", ver);
+		Sys_DPrintf ("* rejected connect from version %i\n", ver);
 		return false;
 	}
 
@@ -128,11 +128,11 @@ static void SVC_DirectConnect (void)
 	// this was new peer, lets register it then
 	if ((p = FWD_peer_new(prx, port, &net_from, userinfo, qport, true)))
 	{
-		Sys_Printf("peer %s:%d added\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
+		Sys_DPrintf("peer %s:%d added\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
 	}
 	else
 	{
-		Sys_Printf("peer %s:%d was not added\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
+		Sys_DPrintf("peer %s:%d was not added\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
 		return;
 	}
 
@@ -286,7 +286,7 @@ static void SVC_Status (void)
 	if (opt == STATUS_OLDSTYLE || (opt & STATUS_SERVERINFO))
 	{
 		// FIXME: add proper version
-		snprintf(tmp, sizeof(tmp), "\\*version\\qwfwd 0\n");
+		snprintf(tmp, sizeof(tmp), "%s\n", ps.info);
 		SZ_Print(&buf, tmp);
 	}
 
@@ -353,8 +353,6 @@ qbool SV_ConnectionlessPacket(void)
 	if (QRY_IsMasterReply())
 	{
 		SVC_QRY_ParseMasterReply();
-
-		Sys_Printf ("SV connectionless packet from %s: master server reply\n", inet_ntoa(net_from.sin_addr));
 	}
 	else
 	{

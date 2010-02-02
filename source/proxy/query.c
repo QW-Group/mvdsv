@@ -12,13 +12,17 @@
 #define QW_MASTER_QUERY "c\n"
 #define QW_MASTER_QUERY_TIME (60 * 30) // seconds, how frequently we query masters
 #define QW_MASTER_QUERY_TIME_SHORT 60 // seconds, how frequently we query master if we do not get reply from it yet
+#define QW_MASTERS_FORCE_RE_INIT (60 * 60 * 24) // seconds, force re-init masters time to time, so we add proper masters if there was some ip/dns changes
 
-#define QW_DEFAULT_MASTER_SERVER_ADDR "asgaard.morphos-team.net"
+#define QW_DEFAULT_MASTER_SERVERS "master.quakeservers.net asgaard.morphos-team.net"
 #define QW_DEFAULT_MASTER_SERVER_PORT 27000
 
 #define MAX_MASTERS 8 // size for masters fixed size array, I am lazy
 
 #define MAX_SERVERS 512 // we will not add more than that servers to our list, just for some sanity
+
+static cvar_t masters_query = {"masters_query", "1"};
+static cvar_t masters_list	= {"masters", QW_DEFAULT_MASTER_SERVERS};
 
 // master state enum
 typedef enum
@@ -38,7 +42,8 @@ typedef struct master
 // all masters in one struct
 typedef struct masters
 {
-	master_t				master[MAX_MASTERS]; // masters fixed size array, I am lazy
+	time_t					init_time;				// this is used to periodical re-init initiation
+	master_t				master[MAX_MASTERS];	// masters fixed size array, I am lazy
 } masters_t;
 
 // single server struct
@@ -56,10 +61,11 @@ typedef struct server
 	struct server			*next;			// next server in linked list
 } server_t;
 
+static int sv_count;
 static server_t *servers;
 static masters_t masters;
 
-qbool QRY_AddMaster(const char *master)
+static qbool QRY_AddMaster(const char *master)
 {
 	int						i, port;
 	master_t				*m;
@@ -106,19 +112,48 @@ qbool QRY_AddMaster(const char *master)
 	return false;
 }
 
-void QRY_Init(void)
+// clear masters
+static void QRY_MastersInit(void)
 {
 	memset(&masters, 0, sizeof(masters));
+	masters.init_time = time(NULL);
+}
 
-	QRY_AddMaster(QW_DEFAULT_MASTER_SERVER_ADDR);
+// check if "masters" cvar changed and do appropriate action
+static void QRY_CheckMastersModified(void)
+{
+	char *mlist;
+
+	if (time(NULL) - masters.init_time > QW_MASTERS_FORCE_RE_INIT)
+	{
+		Sys_DPrintf("forcing masters re-init\n");
+		masters_list.modified = true;
+	}
+
+	if (!masters_list.modified)
+		return;
+
+	// clear masters
+	QRY_MastersInit();
+
+	// add all masters
+	for ( mlist = masters_list.string; (mlist = COM_Parse(mlist)); )
+	{
+		QRY_AddMaster(com_token);
+	}
+
+	masters_list.modified = false;
 }
 
 // query master servers
-void QRY_QueryMasters(void)
+static void QRY_QueryMasters(void)
 {
 	int			i;
 	master_t	*m;
 	time_t		current_time = time(NULL);
+
+	if (!masters_query.integer)
+		return;
 
 	for (i = 0, m = masters.master; i < MAX_MASTERS; i++, m++)
 	{
@@ -150,6 +185,8 @@ void SVC_QRY_ParseMasterReply(void)
 	int				ret = net_message.cursize;
 	unsigned char	*answer = net_message.data; // not the smartest way, but why copy from one place to another...
 
+	Sys_DPrintf ("master server reply from %s:%d\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
+
 	// is it reply from registered master server or someone trying to do some evil things?
 	for (i = 0, m = masters.master; i < MAX_MASTERS; i++, m++)
 	{
@@ -170,7 +207,7 @@ void SVC_QRY_ParseMasterReply(void)
 		return;
 	}
 
-//	Sys_Printf("Master server returned %d bytes\n", ret);
+	Sys_DPrintf("master server returned %d bytes\n", ret);
 
 	for (c = 0, i = 6; i + 5 < ret; i += 6, c++)
 	{
@@ -181,15 +218,14 @@ void SVC_QRY_ParseMasterReply(void)
 			(int)answer[i+0], (int)answer[i+1],
 			(int)answer[i+2], (int)answer[i+3]);
 
-//		Sys_Printf("SERVER: %4d %s:%d\n", c, ip, port);
+		if (developer.integer > 1)
+			Sys_DPrintf("SERVER: %4d %s:%d\n", c, ip, port);
 
 		QRY_SV_Add(ip, port);
 	}
 }
 
 //========================================
-
-static int sv_count;
 
 static int QRY_SV_Count(void)
 {
@@ -305,13 +341,16 @@ static server_t	*QRY_SV_Add(const char *remote_host, int remote_port)
 	return sv;
 }
 
-void QRY_SV_PingServers(void)
+static void QRY_SV_PingServers(void)
 {
 	static int		idx;
 	static double	last;
 
 	double			current = Sys_DoubleTime(); // we need double time for ping measurement
 	server_t		*sv;
+
+	if (!masters_query.integer)
+		return;
 
 	if (!servers)
 		return; // nothing to do
@@ -332,7 +371,7 @@ void QRY_SV_PingServers(void)
 	// check for dead server
 	if (!sv->reply && sv->ping_sent_at - sv->ping_reply_at > QW_SERVER_DEAD_TIME)
 	{
-		Sys_Printf("dead -> %s:%d\n", inet_ntoa(sv->addr.sin_addr), (int)ntohs(sv->addr.sin_port));
+		Sys_DPrintf("dead -> %s:%d\n", inet_ntoa(sv->addr.sin_addr), (int)ntohs(sv->addr.sin_port));
 
 		QRY_SV_free(sv, true); // remove damn server, however master server may add it back...
 		idx--; // step back index
@@ -382,11 +421,15 @@ void SVC_QRY_PingStatus(void)
 	MSG_WriteLong(&buf, -1);	// -1 sequence means out of band
 	MSG_WriteChar(&buf, A2C_PRINT);
 
-	for (sv = servers; sv; sv = sv->next)
+	// if we does not query masters then we can't proved reliable info
+	if (masters_query.integer)
 	{
-		MSG_WriteLong(&buf, *(int *)&sv->addr.sin_addr);
-		MSG_WriteShort(&buf, (short)ntohs(sv->addr.sin_port));
-		MSG_WriteShort(&buf, (short)sv->ping);
+		for (sv = servers; sv; sv = sv->next)
+		{
+			MSG_WriteLong(&buf, *(int *)&sv->addr.sin_addr);
+			MSG_WriteShort(&buf, (short)ntohs(sv->addr.sin_port));
+			MSG_WriteShort(&buf, (short)sv->ping);
+		}
 	}
 
 	if (buf.overflowed)
@@ -397,4 +440,47 @@ void SVC_QRY_PingStatus(void)
 
 	// send the datagram
 	NET_SendPacket(net_from_socket, buf.cursize, buf.data, &net_from);
+}
+//==============================================
+
+static void QRY_Cmd_SvList_f(void)
+{
+	server_t	*sv;
+	int idx;
+	char ipport[] = "xxx.xxx.xxx.xxx:xxxxx";
+
+	Sys_Printf("=== server list ===\n");
+	Sys_Printf("### %-*s ping\n", sizeof(ipport)-1, "address");
+	Sys_Printf("--------------------------------------\n");
+
+	for (idx = 1, sv = servers; sv; sv = sv->next, idx++)
+	{
+		Sys_Printf("%3d %-*s %d\n",
+			idx, sizeof(ipport)-1, NET_AdrToString(&sv->addr, ipport, sizeof(ipport)), (int)sv->ping);
+	}
+
+	Sys_Printf("--------------------------------------\n");
+	Sys_Printf("%d servers\n", idx-1);
+}
+
+//==============================================
+
+void QRY_Frame(void)
+{
+	QRY_CheckMastersModified();		// check is "masters" variable changed
+	QRY_QueryMasters();				// request time to time server list from masters
+	QRY_SV_PingServers();			// ping time to time normal qw servers
+}
+
+//==============================================
+
+void QRY_Init(void)
+{
+	Cvar_Register(&masters_query);
+	Cvar_Register(&masters_list);
+
+	Cmd_AddCommand("svlist", QRY_Cmd_SvList_f);
+
+	// clear masters
+	QRY_MastersInit();
 }

@@ -146,6 +146,23 @@ void Sys_Printf(char *fmt, ...)
 	printf(QWFWD_PREFIX "%s", string);
 }
 
+// print debug
+// this is just wrapper for Sys_Printf(), but print nothing if developer 0
+void Sys_DPrintf(char *fmt, ...)
+{
+	va_list		argptr;
+	char		string[2048];
+	
+	if (!developer.integer)
+		return;
+	
+	va_start (argptr, fmt);
+	vsnprintf (string, sizeof(string), fmt, argptr);
+	va_end (argptr);
+
+	Sys_Printf("%s", string);
+}
+
 void Sys_Exit(int code)
 {
 #ifdef APP_DLL
@@ -237,6 +254,78 @@ double bound( double a, double b, double c )
 	return ( a >= c ? a : b < a ? a : b > c ? c : b);
 }
 
+// handle keyboard input
+void Sys_ReadSTDIN(proxy_static_t *cluster, fd_set socketset)
+{
+#ifdef _WIN32
+
+	for (;;)
+	{
+		char c;
+
+		if (!_kbhit())
+			break;
+		c = _getch();
+
+		if (c == '\n' || c == '\r')
+		{
+			Sys_Printf("\n");
+			if (cluster->inputlength)
+			{
+				cluster->commandinput[cluster->inputlength] = '\0';
+				Cbuf_InsertText(cluster->commandinput);
+
+				cluster->inputlength = 0;
+				cluster->commandinput[0] = '\0';
+			}
+		}
+		else if (c == '\b')
+		{
+			if (cluster->inputlength > 0)
+			{
+				Sys_Printf("%c", c);
+				Sys_Printf(" ", c);
+				Sys_Printf("%c", c);
+
+				cluster->inputlength--;
+				cluster->commandinput[cluster->inputlength] = '\0';
+			}
+		}
+		else
+		{
+			Sys_Printf("%c", c);
+			if (cluster->inputlength < sizeof(cluster->commandinput)-1)
+			{
+				cluster->commandinput[cluster->inputlength++] = c;
+				cluster->commandinput[cluster->inputlength] = '\0';
+			}
+		}
+	}
+
+#else
+
+	if (FD_ISSET(STDIN, &socketset))
+	{
+		cluster->inputlength = read (STDIN, cluster->commandinput, sizeof(cluster->commandinput));
+		if (cluster->inputlength >= 1)
+		{
+			cluster->commandinput[cluster->inputlength-1] = 0;        // rip off the /n and terminate
+			cluster->inputlength--;
+
+			if (cluster->inputlength)
+			{
+				cluster->commandinput[cluster->inputlength] = '\0';
+				Cbuf_InsertText(cluster->commandinput);
+
+				cluster->inputlength = 0;
+				cluster->commandinput[0] = '\0';
+			}
+		}
+	}
+
+#endif
+}
+
 #ifdef _WIN32
 
 static double pfreq;
@@ -252,7 +341,7 @@ static void Sys_InitDoubleTime (void)
 		pfreq = (double)freq;
 		QueryPerformanceCounter ((LARGE_INTEGER *)&startcount);
 
-		Sys_Printf("Sys_InitDoubleTime: OK\n");
+		Sys_DPrintf("Sys_InitDoubleTime: OK\n");
 	}
 	else
 	{

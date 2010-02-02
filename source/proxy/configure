@@ -13,7 +13,7 @@ FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 	echo "${UNAME} system detected, Makefile created."
 	echo "Use make or make qwfwd-dl to build."
 	;;
-Darwin | MacOSX | Linux | SunOS | GNU)
+Darwin | MacOSX | Linux | SunOS | GNU | CYGWIN_*)
 	cat Makefile.GNU > Makefile
 	echo "${UNAME} system detected, Makefile created."
 	echo "Use make or make qwfwd-dl to build."

@@ -34,7 +34,7 @@ int NET_GetPacket(int s, sizebuf_t *msg)
 
 		if (qerrno == ECONNRESET)
 		{
-			Sys_Printf ("NET_GetPacket: Connection was forcibly closed by %s\n", inet_ntoa(net_from.sin_addr));
+			Sys_DPrintf ("NET_GetPacket: Connection was forcibly closed by %s\n", inet_ntoa(net_from.sin_addr));
 			return false;
 		}
 
@@ -173,6 +173,28 @@ qbool NET_CompareAddress(struct sockaddr_in *a, struct sockaddr_in *b)
 		    );
 }
 
+char *NET_BaseAdrToString (struct sockaddr_in *a, char *buf, size_t bufsize)
+{
+	unsigned char ip[4];
+
+	*(unsigned int*)ip = a->sin_addr.s_addr;
+
+	snprintf(buf, bufsize, "%i.%i.%i.%i", (int)ip[0], (int)ip[1], (int)ip[2], (int)ip[3]);
+
+	return buf;
+}
+
+char *NET_AdrToString (struct sockaddr_in *a, char *buf, size_t bufsize)
+{
+	unsigned char ip[4];
+
+	*(unsigned int*)ip = a->sin_addr.s_addr;
+
+	snprintf(buf, bufsize, "%i.%i.%i.%i:%i", (int)ip[0], (int)ip[1], (int)ip[2], (int)ip[3], (int)ntohs(a->sin_port));
+
+	return buf;
+}
+
 //=============================================================================
 
 #define	PACKET_HEADER 8 /* FIXME: WTF IS THAT? */
@@ -249,6 +271,6 @@ void NET_Init (const char *ip, int server_port)
 	// init the message buffer
 	SZ_InitEx(&net_message, net_message_buffer, sizeof(net_message_buffer), false);
 
-//	Sys_Printf("UDP Initialized\n");
+	Sys_DPrintf("UDP Initialized\n");
 }
 

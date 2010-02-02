@@ -91,7 +91,7 @@ static void FWD_check_timeout(void)
 		if (cur_time - p->last < 15) // few seconds timeout
 			continue;
 
-		Sys_Printf("peer %s:%d timed out\n", inet_ntoa(p->from.sin_addr), (int)ntohs(p->from.sin_port));
+		Sys_DPrintf("peer %s:%d timed out\n", inet_ntoa(p->from.sin_addr), (int)ntohs(p->from.sin_port));
 
 		p->ps = ps_drop;
 	}
@@ -108,7 +108,7 @@ static void FWD_check_drop(void)
 		if (p->ps != ps_drop)
 			continue;
 
-		Sys_Printf("peer %s:%d dropped\n", inet_ntoa(p->from.sin_addr), (int)ntohs(p->from.sin_port));
+		Sys_DPrintf("peer %s:%d dropped\n", inet_ntoa(p->from.sin_addr), (int)ntohs(p->from.sin_port));
 		FWD_peer_free(p, true); // NOTE: 'p' is not valid after this function, so we remember 'next' before this function
 	}
 }
@@ -135,10 +135,19 @@ static void FWD_network_update(void)
 			i1 = p->s + 1;
 	}
 
+	#ifndef _WIN32
+	FD_SET(STDIN, &rfds);
+	if (STDIN >= i1)
+		i1 = STDIN + 1;
+	#endif // _WIN32
+
 	/* Sleep for some time, wake up immidiately if there input packet. */
 	tv.tv_sec = 0;
 	tv.tv_usec = 100000; // 100 ms
 	retval = select(i1, &rfds, (fd_set *)0, (fd_set *)0, &tv);
+
+	// read console input
+	Sys_ReadSTDIN(&ps, rfds);
 
 	if (retval <= 0)
 		return;
@@ -258,10 +267,47 @@ static void FWD_network_update(void)
 
 //======================================================
 
+static void FWD_Cmd_ClList_f(void)
+{
+	peer_t *p;
+	char ipport1[] = "xxx.xxx.xxx.xxx:xxxxx";
+	char ipport2[] = "xxx.xxx.xxx.xxx:xxxxx";
+	int idx;
+	time_t current = time(NULL);
+
+	Sys_Printf("=== client list ===\n");
+	Sys_Printf("##id## %-*s %-*s time name\n", sizeof(ipport1)-1, "address from", sizeof(ipport2)-1, "address to");
+	Sys_Printf("-----------------------------------------------------------------------\n");
+
+	for (idx = 1, p = peers; p; p = p->next, idx++)
+	{
+		Sys_Printf("%6d %-*s %-*s %4d %s\n",
+			p->userid,
+			sizeof(ipport1)-1, NET_AdrToString(&p->from, ipport1, sizeof(ipport1)),
+			sizeof(ipport2)-1, NET_AdrToString(&p->to,   ipport2, sizeof(ipport2)),
+			(int)(current - p->connect)/60, p->name);
+	}
+
+	Sys_Printf("-----------------------------------------------------------------------\n");
+	Sys_Printf("%d clients\n", idx-1);
+}
+
+//======================================================
+
 void FWD_update_peers(void)
 {
 	FWD_network_update();
 	FWD_check_timeout();
 	FWD_check_drop();
+}
+
+//======================================================
+
+void FWD_Init(void)
+{
+	peers = NULL;
+	userid = 0;
+
+	Cmd_AddCommand("cllist", FWD_Cmd_ClList_f);
 }
 

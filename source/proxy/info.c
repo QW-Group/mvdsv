@@ -181,3 +181,58 @@ void Info_SetValueForStarKey (char *s, const char *key, const char *value, int m
 	}
 	*s = 0;
 }
+
+void Info_SetValueForKey (char *s, const char *key, const char *value, unsigned int maxsize)
+{
+	if (key[0] == '*')
+	{
+		Sys_Printf ("Can't set * keys\n");
+		return;
+	}
+
+	Info_SetValueForStarKey (s, key, value, maxsize);
+}
+
+
+void Info_Print (char *s)
+{
+	char key[512];
+	char value[512];
+	char *o;
+	int l;
+
+	if (*s == '\\')
+		s++;
+	while (*s)
+	{
+		o = key;
+		while (*s && *s != '\\')
+			*o++ = *s++;
+
+		l = o - key;
+		if (l < 20)
+		{
+			memset (o, ' ', 20-l);
+			key[20] = 0;
+		}
+		else
+			*o = 0;
+		Sys_Printf ("%s ", key);
+
+		if (!*s)
+		{
+			Sys_Printf ("MISSING VALUE\n");
+			return;
+		}
+
+		o = value;
+		s++;
+		while (*s && *s != '\\')
+			*o++ = *s++;
+		*o = 0;
+
+		if (*s)
+			s++;
+		Sys_Printf ("%s\n", value);
+	}
+}

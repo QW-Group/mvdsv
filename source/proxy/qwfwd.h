@@ -1,6 +1,10 @@
 #ifndef _QWFWD_H
 #define _QWFWD_H
 
+#ifdef __CYGWIN__
+#undef  _WIN32 // qqshka: this way it compiled on my CYGWIN
+#endif
+
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -22,8 +26,7 @@
 #ifdef _WIN32
 
 #include <winsock2.h>
-
-typedef int socklen_t;
+#include <conio.h>
 
 	#if defined(_DEBUG) && defined(_MSC_VER)
 // uncomment/comment it if you wish/unwish see leaked memory(if any) in output window under MSVC
@@ -43,6 +46,18 @@ typedef int socklen_t;
 #define EAFNOSUPPORT	WSAEAFNOSUPPORT
 
 #define qerrno			WSAGetLastError()
+
+	#ifdef _MSC_VER
+		// Okay, so warnings are here to help... they're ugly though.
+//		#pragma warning(disable: 4761)	// integral size mismatch in argument
+		#pragma warning(disable: 4244)	// conversion from float to short
+//		#pragma warning(disable: 4018)	// signed/unsigned mismatch
+//		#pragma warning(disable: 4267)	// size_t -> int conversions
+//		#pragma warning(disable: 4201)	// nonstandard extension used : nameless struct/union
+//		#pragma warning(disable: 4100)	// unreferenced formal parameter
+//		#pragma warning(disable: 4127)	// conditional expression is constant
+//		#pragma warning(disable: 4706)	// assignment within conditional expression
+	#endif
 
 #else
 
@@ -72,7 +87,17 @@ typedef int socklen_t;
 	#define SOCKET_ERROR -1
 #endif
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+typedef int socklen_t;
+#endif
+
 typedef unsigned char byte;
+
+#ifndef _WIN32
+	#ifndef STDIN
+		#define STDIN 0
+	#endif
+#endif
 
 #ifndef __cplusplus
 typedef enum {false, true} qbool;
@@ -80,6 +105,8 @@ typedef enum {false, true} qbool;
 typedef int qbool;
 extern "C" {
 #endif
+
+#define QWFWD_DIR "qwfwd"
 
 #define	MAX_INFO_STRING		1024
 #define MAX_INFO_KEY 		64
@@ -147,6 +174,57 @@ typedef struct fwd_params
 // client to server
 #define	clc_stringcmd			4		// [string] message
 
+#include "cmd.h"
+#include "cvar.h"
+
+//
+// main.c
+//
+typedef struct proxy_static_s
+{
+	qbool	initialized;				// Is proxy initialized?
+	qbool	wanttoexit;
+	char	info[MAX_INFO_STRING];		// Used by cvars which mirrored in serverinfo
+
+	char commandinput[512]; 			// Our console input buffer.
+	int inputlength; 					// How much data we have in the console buffer, after user presses enter the buffer is sent to the interpreter and this is set to 0.
+
+} proxy_static_t;
+
+extern proxy_static_t ps;
+
+extern cvar_t developer;
+
+//
+// token.c
+//
+
+#define MAX_COM_TOKEN	1024
+extern char		com_token[MAX_COM_TOKEN];
+
+char			*COM_Parse (char *data);							// Parse a token out of a string
+char			*COM_ParseToken (char *data, char *out, int outsize, const char *punctuation); // FTE token function
+
+//
+// fs.c
+//
+
+FILE			*FS_OpenFile(char *gamedir, char *filename, int *size);
+
+// Open and load file in memory.
+// may be used in two ways: 
+// 1) user provide buffer, in this case "size" provides buffer size.
+// 2) or function automatically allocate it, in this case need _FREE_ memory when it no more needed.
+//
+// in both cases after returning from function "size" will reflect actual data length.
+char			*FS_ReadFile(char *gamedir, char *filename, char *buf, int *size);
+void			FS_StripPathAndExtension(char *filepath);
+
+// Return file extension with dot, or empty string if dot not found at all.
+const char		*FS_FileExtension (const char *in);
+// Absolute paths are prohibited.
+qbool			FS_SafePath(const char *in);
+
 //
 // peer.c
 //
@@ -155,6 +233,8 @@ peer_t		*peers;
 
 peer_t		*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, const char *userinfo, int qport, qbool link);
 void		FWD_update_peers(void);
+
+void		FWD_Init(void);
 
 //
 // msg.c
@@ -218,6 +298,7 @@ size_t			strlcat (char *dst, char *src, size_t siz);
 #endif
 
 void			Sys_Printf (char *fmt, ...);
+void			Sys_DPrintf(char *fmt, ...);
 void			Sys_Exit (int code);
 void			Sys_Error (char *error, ...);
 
@@ -254,6 +335,9 @@ double			max( double a, double b );
 
 double			bound( double a, double b, double c );
 
+// handle keyboard input
+void			Sys_ReadSTDIN(proxy_static_t *cluster, fd_set socketset);
+
 double			Sys_DoubleTime (void);
 
 //
@@ -268,27 +352,16 @@ int					NET_GetPacket(int s, sizebuf_t *msg);
 void				NET_SendPacket(int s, int length, const void *data, struct sockaddr_in *to);
 int					NET_UDP_OpenSocket(const char *ip, int port, qbool do_bind);
 qbool				NET_GetSockAddrIn_ByHostAndPort(struct sockaddr_in *address, const char *host, int port);
+
+char				*NET_BaseAdrToString (struct sockaddr_in *a, char *buf, size_t bufsize);
+char				*NET_AdrToString (struct sockaddr_in *a, char *buf, size_t bufsize);
+
 qbool				NET_CompareAddress(struct sockaddr_in *a, struct sockaddr_in *b);
 
 void				Netchan_OutOfBand(int s, struct sockaddr_in *adr, int length, byte *data);
 void				Netchan_OutOfBandPrint(int s, struct sockaddr_in *adr, const char *format, ...);
 
 void				NET_Init(const char *ip, int server_port);
-
-//
-// cmd.c
-//
-
-int					Cmd_Argc(void);
-char				*Cmd_Argv(int arg);
-char				*Cmd_Args(void);
-
-void				Cmd_TokenizeString (char *text);
-
-#define				MAX_COM_TOKEN	1024
-char				com_token[MAX_COM_TOKEN];
-
-char				*COM_Parse (char *data);		// Parse a token out of a string
 
 //
 // svc.c
@@ -310,14 +383,15 @@ qbool				ValidateUserInfo (char *userinfo);
 char				*Info_ValueForKey (const char *s, const char *const key, char *const buffer, size_t buffersize);
 void				Info_RemoveKey (char *s, const char *key);
 void				Info_SetValueForStarKey (char *s, const char *key, const char *value, int maxsize);
+void				Info_SetValueForKey (char *s, const char *key, const char *value, unsigned int maxsize);
+void				Info_Print (char *s);
 
 //
 // query.c
 //
 
 void				QRY_Init(void);
-void				QRY_QueryMasters(void);
-void				QRY_SV_PingServers(void);
+void				QRY_Frame(void);
 void				QRY_SV_PingReply();
 qbool				QRY_IsMasterReply(void);
 void				SVC_QRY_ParseMasterReply(void);

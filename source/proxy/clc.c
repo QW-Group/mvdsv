@@ -61,7 +61,7 @@ qbool CL_ConnectionlessPacket (peer_t *p)
 	{
 		case S2C_CHALLENGE:
 		{
-			Sys_Printf("%s: challenge\n", inet_ntoa(net_from.sin_addr));
+			Sys_DPrintf("%s: challenge\n", inet_ntoa(net_from.sin_addr));
 			p->challenge = atoi(MSG_ReadString());
 
 			#ifdef PROTOCOL_VERSION_FTE
@@ -85,11 +85,11 @@ qbool CL_ConnectionlessPacket (peer_t *p)
 		}
 		case S2C_CONNECTION:
 		{
-			Sys_Printf("%s: connection\n", inet_ntoa(net_from.sin_addr));
+			Sys_DPrintf("%s: connection\n", inet_ntoa(net_from.sin_addr));
 
 			if (p->ps >= ps_connected) 
 			{
-				Sys_Printf("Dup connect received. Ignored.\n");
+				Sys_DPrintf("Dup connect received. Ignored.\n");
 				break;
 			}
 
@@ -100,7 +100,7 @@ qbool CL_ConnectionlessPacket (peer_t *p)
 		case A2C_CLIENT_COMMAND: 
 		{
 			// Remote command from gui front end
-			Sys_Printf("%s: client command\n", inet_ntoa(net_from.sin_addr));
+			Sys_DPrintf("%s: client command\n", inet_ntoa(net_from.sin_addr));
 
 			break;
 		}
@@ -125,12 +125,12 @@ qbool CL_ConnectionlessPacket (peer_t *p)
 		}
 		case svc_disconnect:
 		{
-			Sys_Printf("%s: svc_disconnect\n", inet_ntoa(net_from.sin_addr));
+			Sys_DPrintf("%s: svc_disconnect\n", inet_ntoa(net_from.sin_addr));
 			break;
 		}
 		default:
 		{
-			Sys_Printf("CL CL_ConnectionlessPacket %s:\n%s\n", inet_ntoa(net_from.sin_addr), MSG_ReadString());
+			Sys_DPrintf("CL CL_ConnectionlessPacket %s:\n%s\n", inet_ntoa(net_from.sin_addr), MSG_ReadString());
 			break;
 		}
 	}
