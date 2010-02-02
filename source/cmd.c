@@ -347,8 +347,8 @@ void Cmd_Exec_f (void)
 		Con_Printf ("couldn't exec %s\n",Cmd_Argv(1));
 		return;
 	}
-	if (!Cvar_Command ())
-		Con_Printf ("execing %s\n",Cmd_Argv(1));
+
+	Con_Printf ("execing %s\n",Cmd_Argv(1));
 
 	Cbuf_InsertText (f);
 	Hunk_FreeToLowMark (mark);
