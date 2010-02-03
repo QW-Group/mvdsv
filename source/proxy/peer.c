@@ -14,6 +14,9 @@ peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_i
 	struct sockaddr_in to;
 	int s;
 
+	if (FWD_peers_count() >= maxclients->integer)
+		return NULL; // we alredy full!
+
 	if (!NET_GetSockAddrIn_ByHostAndPort(&to, remote_host, remote_port))
 		return NULL; // failed to resolve host name?
 

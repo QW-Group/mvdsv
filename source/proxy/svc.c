@@ -63,6 +63,12 @@ static void SVC_DirectConnect (void)
 	if ( !CheckChallange( atoi( Cmd_Argv( 3 ) ) ) )
 		return; // wrong challange
 
+	if (FWD_peers_count() >= maxclients->integer)
+	{
+		Netchan_OutOfBandPrint (net_from_socket, &net_from, "%c\n" "proxy@%s is full.\n\n", A2C_PRINT, hostname->string);
+		return; // no more free slots
+	}
+
 	// and now validate userinfo
 	if ( !CheckUserinfo( userinfo, sizeof( userinfo ), Cmd_Argv( 4 ) ) )
 		return; // wrong userinfo

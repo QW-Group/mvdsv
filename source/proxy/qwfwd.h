@@ -112,6 +112,8 @@ typedef int qbool;
 extern "C" {
 #endif
 
+#define PROXY_VERSION "qwfwd 1.0-dev"			// version...
+
 #define QWFWD_DIR "qwfwd"
 
 #define	MAX_INFO_STRING		1024
@@ -199,7 +201,7 @@ typedef struct proxy_static_s
 
 extern proxy_static_t ps;
 
-extern cvar_t *developer;
+extern cvar_t *developer, *maxclients, *hostname;
 
 //
 // token.c

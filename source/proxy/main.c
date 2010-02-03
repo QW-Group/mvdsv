@@ -14,6 +14,7 @@
 cvar_t *developer;
 cvar_t *version;
 cvar_t *hostname;
+cvar_t *maxclients;
 
 proxy_static_t ps;
 
@@ -116,9 +117,10 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 	Cvar_Init();			// Variable system init.
 
 	// register basic cvars
-	developer	= Cvar_Get("developer", "0", 0);
-	version		= Cvar_Get("*version", "qwfwd 0", CVAR_READONLY | CVAR_SERVERINFO);
-	hostname	= Cvar_Get("hostname", "unnamed qwfwd", CVAR_SERVERINFO);
+	developer	= Cvar_Get("developer",		"0", 0);
+	version		= Cvar_Get("*version",		PROXY_VERSION, CVAR_READONLY | CVAR_SERVERINFO);
+	hostname	= Cvar_Get("hostname",		"unnamed qwfwd", CVAR_SERVERINFO);
+	maxclients	= Cvar_Get("maxclients",	"128", CVAR_SERVERINFO);
 
 	// register basic commands
 	Cmd_AddCommand("quit", Cmd_Quit_f);
