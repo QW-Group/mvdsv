@@ -411,7 +411,6 @@ void Cmd_Alias_f (void)
 	int			i, c;
 	int			key;
 	char		*s;
-	//	cvar_t		*var;
 
 	c = Cmd_Argc();
 	if (c == 1)
@@ -428,19 +427,6 @@ void Cmd_Alias_f (void)
 		Sys_Printf("Alias name is too long\n");
 		return;
 	}
-
-#if 0
-	if ( (var = Cvar_FindVar(s)) != NULL )
-	{
-		if (var->flags & CVAR_USER_CREATED)
-			Cvar_Delete (var->name);
-		else
-		{
-			//			Sys_Printf("%s is a variable\n");
-			return;
-		}
-	}
-#endif
 
 	key = Key(s);
 
@@ -475,7 +461,6 @@ void Cmd_Alias_f (void)
 
 	a->value = Sys_strdup(cmd);
 }
-
 
 qbool Cmd_DeleteAlias (char *name)
 {
@@ -597,7 +582,7 @@ Cmd_Argv
 */
 char *Cmd_Argv (int arg)
 {
-	if ( arg >= cmd_argc )
+	if ( arg >= cmd_argc || arg < 0 )
 		return cmd_null_string;
 	return cmd_argv[arg];
 }
@@ -616,6 +601,31 @@ char *Cmd_Args (void)
 	return cmd_args;
 }
 
+// Cmd_Args_Range( 0, -1 ) return all params
+char *Cmd_Args_Range(int from, int to, char *buf, size_t buf_size)
+{
+	int i, argc = Cmd_Argc();
+
+	if ( !buf || buf_size < 1 )
+		return ""; // something is broken
+
+	buf[0] = 0;
+
+	from = max(0, from);
+	to   = ( to < 0 ? argc-1: min(argc-1, to) );
+
+	if ( !argc || from >= argc || from > to )
+		return buf;
+
+	for ( buf[0] = 0, i = from; i <= to; i++ )
+	{
+		if ( i != from )
+			strlcat( buf, " ", buf_size );
+		strlcat( buf, Cmd_Argv(i), buf_size );
+	}
+
+	return buf;
+}
 
 /*
 ============
@@ -689,11 +699,13 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 		Sys_Error ("Cmd_AddCommand after qwfwd_initialized");
 
 	// fail if the command is a variable name
-	if (Cvar_FindVar(cmd_name))
+/*
+	if (Cvar_Find(cmd_name))
 	{
 		Sys_Printf("Cmd_AddCommand: %s already defined as a var\n", cmd_name);
 		return;
 	}
+*/
 
 	key = Key (cmd_name);
 
@@ -794,7 +806,7 @@ void Cmd_ExpandString (char *data, char *dest)
 				data++;
 				buf[i++] = c;
 				buf[i] = 0;
-				if ( (var = Cvar_FindVar(buf)) != NULL )
+				if ( (var = Cvar_Find(buf)) != NULL )
 					bestvar = var;
 
 				if (i >= (int)sizeof(buf)-1)

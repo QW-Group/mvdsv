@@ -106,6 +106,8 @@ qbool Cmd_Exists (char *cmd_name);
 int Cmd_Argc (void);
 char *Cmd_Argv (int arg);
 char *Cmd_Args (void);
+// Cmd_Args_Range( 0, -1 ) return all params
+char *Cmd_Args_Range(int from, int to, char *buf, size_t buf_size);
 // The functions that execute commands get their parameters with these
 // functions. Cmd_Argv () will return an empty string, not a NULL
 // if arg > argc, so string operations are always safe.

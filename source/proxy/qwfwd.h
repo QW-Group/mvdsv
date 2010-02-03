@@ -199,7 +199,7 @@ typedef struct proxy_static_s
 
 extern proxy_static_t ps;
 
-extern cvar_t developer;
+extern cvar_t *developer;
 
 //
 // token.c

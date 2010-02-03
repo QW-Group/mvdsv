@@ -11,9 +11,9 @@
 #define WINAPI
 #endif
 
-cvar_t developer		= {"developer", ""};
-cvar_t version			= {"*version", "qwfwd 0", CVAR_ROM | CVAR_SERVERINFO};
-cvar_t hostname			= {"hostname", "unnamed qwfwd", CVAR_SERVERINFO};
+cvar_t *developer;
+cvar_t *version;
+cvar_t *hostname;
 
 proxy_static_t ps;
 
@@ -71,15 +71,15 @@ static void SV_Serverinfo_f (void)
 	}
 
 	// if the key is also a serverinfo cvar, change it too
-	var = Cvar_FindVar(key);
+	var = Cvar_Find(key);
 	if (var && (var->flags & CVAR_SERVERINFO))
 	{
-		if (var->flags & CVAR_ROM)
+		if (var->flags & CVAR_READONLY)
 		{
 			Sys_Printf ("Can't change since we have similar ROM serverinfo cvar\n");
 			return;
 		}
-		Cvar_Set (var, value);
+		Cvar_Set (var->name, value);
 	}
 	else
 	{
@@ -110,24 +110,29 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 	ip = params->ip;
 	port = params->port;
 
+	// init basic systems
 	Cbuf_Init();			// Command buffer init.
 	Cmd_Init();				// Register basic commands.
 	Cvar_Init();			// Variable system init.
 
+	// register basic cvars
+	developer	= Cvar_Get("developer", "0", 0);
+	version		= Cvar_Get("*version", "qwfwd 0", CVAR_READONLY | CVAR_SERVERINFO);
+	hostname	= Cvar_Get("hostname", "unnamed qwfwd", CVAR_SERVERINFO);
+
+	// register basic commands
+	Cmd_AddCommand("quit", Cmd_Quit_f);
+	Cmd_AddCommand("serverinfo", SV_Serverinfo_f);
+
+	// now exec our cfg
+	Cbuf_InsertText ("exec qwfwd.cfg\n");
+	Cbuf_Execute();
+
+	// init rest systems
 	Sys_DoubleTime();		// init time
 	NET_Init(ip, port);		// init network
 	FWD_Init();				// init peers
 	QRY_Init();				// init query 
-
-	// register some cvars
-	Cvar_Register(&developer);
-	Cvar_Register(&version);
-	Cvar_Register(&hostname);
-	// register some commands
-	Cmd_AddCommand("quit", Cmd_Quit_f);
-	Cmd_AddCommand("serverinfo", SV_Serverinfo_f);
-
-	Cbuf_InsertText ("exec qwfwd.cfg\n");
 
 	ps.initialized = true;
 
@@ -135,7 +140,7 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 	Cmd_StuffCmds(argc, argv);
 	Cbuf_Execute();
 
-	Sys_Printf("QW FORWARD PROXY: Ready to rock at %s:%d\n", ip, port);
+	Sys_Printf("qwfwd: ready to rock at %s:%d\n", ip, port);
 
 	while(!ps.wanttoexit)
 	{

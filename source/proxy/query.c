@@ -23,9 +23,9 @@
 
 #define MAX_SERVERS 512 // we will not add more than that servers to our list, just for some sanity
 
-static cvar_t masters_query		= {"masters_query",			"1"};
-static cvar_t masters_heartbeat = {"masters_heartbeat",		"1"};
-static cvar_t masters_list		= {"masters",				QW_DEFAULT_MASTER_SERVERS};
+static cvar_t *masters_query;
+static cvar_t *masters_heartbeat;
+static cvar_t *masters_list;
 
 // master state enum
 typedef enum
@@ -166,23 +166,23 @@ static void QRY_CheckMastersModified(void)
 	if (time(NULL) - masters.init_time > QW_MASTERS_FORCE_RE_INIT)
 	{
 		Sys_DPrintf("forcing masters re-init\n");
-		masters_list.modified = true;
+		masters_list->modified = true;
 	}
 
 	// "masters" and "masters_query" was not modified, do nothing
-	if (!masters_list.modified && !masters_query.modified)
+	if (!masters_list->modified && !masters_query->modified)
 		return;
 
 	// clear masters
 	QRY_MastersInit();
 
 	// add all masters
-	for ( mlist = masters_list.string; (mlist = COM_Parse(mlist)); )
+	for ( mlist = masters_list->string; (mlist = COM_Parse(mlist)); )
 	{
 		QRY_AddMaster(com_token);
 	}
 
-	masters_list.modified = masters_query.modified = false;
+	masters_list->modified = masters_query->modified = false;
 }
 
 // query master servers
@@ -194,7 +194,7 @@ static void QRY_QueryMasters(void)
 	char		buf[] = "xxx.xxx.xxx.xxx:xxxxx";
 
 	// do we need query masters?
-	if (!masters_query.integer)
+	if (!masters_query->integer)
 		return;
 
 	for (i = 0, m = masters.master; i < MAX_MASTERS; i++, m++)
@@ -223,7 +223,7 @@ static void QRY_HeartbeatMasters(void)
 	char		buf[] = "xxx.xxx.xxx.xxx:xxxxx";
 
 	// do we need heartbeat masters?
-	if (!masters_heartbeat.integer)
+	if (!masters_heartbeat->integer)
 		return;
 
 	if (current_time < masters.last_heartbeat + QW_MASTER_HEARTBEAT_SECONDS)
@@ -234,7 +234,7 @@ static void QRY_HeartbeatMasters(void)
 	snprintf(string, sizeof(string), "%c\n%i\n%i\n", S2M_HEARTBEAT, masters.heartbeat_sequence, FWD_peers_count());
 	len = strlen(string);
 
-	if (developer.integer > 1)
+	if (developer->integer > 1)
 		Sys_DPrintf("heartbeat:\n%s\n", string);
 
 	for (i = 0, m = masters.master; i < MAX_MASTERS; i++, m++)
@@ -265,7 +265,7 @@ void SVC_QRY_ParseMasterReply(void)
 	unsigned char	*answer = net_message.data; // not the smartest way, but why copy from one place to another...
 
 	// no point to parse it, we do not query masters
-	if (!masters_query.integer)
+	if (!masters_query->integer)
 	{
 		Sys_DPrintf("master server reply ignored\n");
 		return;
@@ -304,7 +304,7 @@ void SVC_QRY_ParseMasterReply(void)
 			(int)answer[i+0], (int)answer[i+1],
 			(int)answer[i+2], (int)answer[i+3]);
 
-		if (developer.integer > 1)
+		if (developer->integer > 1)
 			Sys_DPrintf("SERVER: %4d %s:%d\n", c, ip, port);
 
 		QRY_SV_Add(ip, port);
@@ -436,7 +436,7 @@ static void QRY_SV_PingServers(void)
 	server_t		*sv;
 
 	// do not ping servers since we do not query masters
-	if (!masters_query.integer)
+	if (!masters_query->integer)
 		return;
 
 	if (!servers)
@@ -480,7 +480,7 @@ void QRY_SV_PingReply(void)
 	server_t *sv = NULL;
 
 	// ignore server ping reply since we do not query masters and can't keep server list up2date
-	if (!masters_query.integer)
+	if (!masters_query->integer)
 	{
 		Sys_DPrintf("server reply ignored\n");
 		return;
@@ -518,7 +518,7 @@ void SVC_QRY_PingStatus(void)
 	MSG_WriteChar(&buf, A2C_PRINT);
 
 	// if we does not query masters then we can't proved reliable info, so do not send servers list
-	if (masters_query.integer)
+	if (masters_query->integer)
 	{
 		for (sv = servers; sv; sv = sv->next)
 		{
@@ -573,9 +573,9 @@ void QRY_Frame(void)
 
 void QRY_Init(void)
 {
-	Cvar_Register(&masters_query);
-	Cvar_Register(&masters_heartbeat);
-	Cvar_Register(&masters_list);
+	masters_query		= Cvar_Get("masters_query",		"1", 0);
+	masters_heartbeat	= Cvar_Get("masters_heartbeat",	"1", 0);
+	masters_list		= Cvar_Get("masters",			QW_DEFAULT_MASTER_SERVERS, 0);
 
 	Cmd_AddCommand("svlist", QRY_Cmd_SvList_f);
 	Cmd_AddCommand("heartbeat", QRY_Cmd_Heartbeat_f);

@@ -285,7 +285,6 @@ static void SVC_Status (void)
 
 	if (opt == STATUS_OLDSTYLE || (opt & STATUS_SERVERINFO))
 	{
-		// FIXME: add proper version
 		snprintf(tmp, sizeof(tmp), "%s\n", ps.info);
 		SZ_Print(&buf, tmp);
 	}

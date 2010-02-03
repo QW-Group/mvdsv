@@ -32,7 +32,7 @@ as well as accessed directly in C code.
 It is sufficient to initialize a cvar_t with just the first two fields.
 
 cvar_t	r_draworder    = {"r_draworder", "1"};
-cvar_t	scr_screensize = {"screensize",  "1", CVAR_ROM};
+cvar_t	scr_screensize = {"screensize",  "1", CVAR_READONLY};
 
 Cvars must be registered before use, or they will have a 0 value instead of the float interpretation of the string.
 Generally, all cvar_t declarations should be registered in the apropriate init function before any console commands
@@ -57,7 +57,7 @@ interface from being ambiguous.
 // cvar flags
 #define CVAR_ARCHIVE		(1<<0)
 #define CVAR_SERVERINFO		(1<<1)	// mirrored to serverinfo
-#define CVAR_ROM			(1<<2)	// read only
+#define CVAR_READONLY		(1<<2)	// read only
 #define	CVAR_USER_CREATED	(1<<3)	// created by a set command
 
 typedef struct cvar_s
@@ -70,36 +70,29 @@ typedef struct cvar_s
 	qbool	modified;
 	struct	cvar_s *hash_next;
 	struct	cvar_s *next;
-
-// evil, do not use it plz!
-//	qbool	(*OnChange)(struct cvar_s *var, char *value);
-
 } cvar_t;
 
+cvar_t *Cvar_Get (const char *var_name, const char *value, int flags);
+// Creates the variable if it doesn't exist.
+// If the variable already exists, the value will not be set (unless flags are CVAR_READONLY)
+// The flags will be or'ed and default value overwritten in if the variable exists.
 
-void  Cvar_Register (cvar_t *variable);
-// registers a cvar that already has the name, string, and optionally the
-// archive elements set.
-
-void Cvar_Set (cvar_t *var, char *value);
+cvar_t *Cvar_Set (const char *var_name, const char *value);
 // equivalent to "<name> <variable>" typed at the console
 
-void Cvar_SetROM (cvar_t *var, char *value);
+cvar_t *Cvar_ForceSet (const char *var_name, const char *value);
 // force a set even if the cvar is read only
 
-void Cvar_SetByName (char *var_name, char *value);
-// equivalent to "<name> <variable>" typed at the console
+cvar_t *Cvar_FullSet (const char *var_name, const char *value, int flags);
+// create or overwrite variable, must be used for some cricial variables
 
-void Cvar_SetValue (cvar_t *var, float value);
+cvar_t *Cvar_SetValue (const char *var_name, float value);
 // expands value to a string and calls Cvar_Set
 
-void Cvar_SetValueByName (char *var_name, float value);
-// expands value to a string and calls Cvar_Set
-
-float Cvar_Value (char *var_name);
+float Cvar_Value (const char *var_name);
 // returns 0 if not defined or non numeric
 
-char *Cvar_String (char *var_name);
+char *Cvar_String (const char *var_name);
 // returns an empty string if not defined
 
 qbool Cvar_Command (void);
@@ -107,10 +100,8 @@ qbool Cvar_Command (void);
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
 
-cvar_t *Cvar_FindVar (char *var_name);
-qbool Cvar_Delete (char *name);
-
-cvar_t *Cvar_Create (char *name, char *string, int cvarflags);
+cvar_t *Cvar_Find (const char *var_name);
+qbool Cvar_Delete (const char *var_name);
 
 void Cvar_DeInit (void);
 void Cvar_Init (void);

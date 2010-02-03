@@ -153,7 +153,7 @@ void Sys_DPrintf(char *fmt, ...)
 	va_list		argptr;
 	char		string[2048];
 	
-	if (!developer.integer)
+	if (!developer || !developer->integer)
 		return;
 	
 	va_start (argptr, fmt);
