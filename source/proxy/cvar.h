@@ -57,8 +57,10 @@ interface from being ambiguous.
 // cvar flags
 #define CVAR_ARCHIVE		(1<<0)
 #define CVAR_SERVERINFO		(1<<1)	// mirrored to serverinfo
-#define CVAR_READONLY		(1<<2)	// read only
-#define	CVAR_USER_CREATED	(1<<3)	// created by a set command
+#define CVAR_NOSET			(1<<2)	// don't allow change from console at all,
+									// but can be set from the command line (or during init time)
+#define CVAR_READONLY		(1<<3)	// don't allow changing by user, ever
+#define	CVAR_USER_CREATED	(1<<4)	// created by a set command
 
 typedef struct cvar_s
 {

@@ -2,6 +2,9 @@
 
 #include "qwfwd.h"
 
+cvar_t				*net_ip;
+cvar_t				*net_port;
+
 int					net_socket;
 struct sockaddr_in	net_from;
 int					net_from_socket;
@@ -254,8 +257,23 @@ void Netchan_OutOfBandPrint(int s, struct sockaddr_in *adr, const char *format, 
 NET_Init
 ====================
 */
-void NET_Init (const char *ip, int server_port)
+void NET_Init (void)
 {
+	char *ip = (*ps.params.ip) ? ps.params.ip : "0.0.0.0";
+	char port[64] = {0};
+
+	snprintf(port, sizeof(port), "%d", 	ps.params.port ? ps.params.port : QWFWD_DEFAULT_PORT);
+
+	if (*ps.params.ip) // if cmd line - force it, so we have priority over cfg
+		net_ip	 = Cvar_FullSet("net_ip", ip, CVAR_NOSET);
+	else
+		net_ip	 = Cvar_Get("net_ip",	  ip, CVAR_NOSET);
+
+	if (ps.params.port) // if cmd line - force it, so we have priority over cfg
+		net_port = Cvar_FullSet("net_port",	port, CVAR_NOSET);
+	else
+		net_port = Cvar_Get("net_port",		port, CVAR_NOSET);
+
 #ifdef _WIN32
 	{
 		WSADATA		winsockdata;
@@ -265,7 +283,7 @@ void NET_Init (const char *ip, int server_port)
 	}
 #endif
 
-	if ((net_socket = NET_UDP_OpenSocket(ip, server_port, true)) == INVALID_SOCKET)
+	if ((net_socket = NET_UDP_OpenSocket(net_ip->string, net_port->integer, true)) == INVALID_SOCKET)
 		Sys_Error("NET_Init: failed to initialize socket");
 
 	// init the message buffer

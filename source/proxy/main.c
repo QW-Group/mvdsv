@@ -76,11 +76,6 @@ static void SV_Serverinfo_f (void)
 	var = Cvar_Find(key);
 	if (var && (var->flags & CVAR_SERVERINFO))
 	{
-		if (var->flags & CVAR_READONLY)
-		{
-			Sys_Printf ("Can't change since we have similar ROM serverinfo cvar\n");
-			return;
-		}
 		Cvar_Set (var->name, value);
 	}
 	else
@@ -100,17 +95,11 @@ static void Cmd_Quit_f(void)
 
 DWORD WINAPI FWD_proc(void *lpParameter)
 {
-	fwd_params_t *params = lpParameter;
-	int port;
-	const char *ip;
-
-	if (!params)
+	if (!lpParameter)
 		return 1;
 
 	memset(&ps, 0, sizeof(ps));
-
-	ip = params->ip;
-	port = params->port;
+	ps.params = *(fwd_params_t*)lpParameter;
 
 	// init basic systems
 	Cbuf_Init();			// Command buffer init.
@@ -119,7 +108,7 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 
 	// register basic cvars
 	developer		= Cvar_Get("developer",		"0", 0);
-	version			= Cvar_Get("*version",		PROXY_VERSION, CVAR_READONLY | CVAR_SERVERINFO);
+	version			= Cvar_Get("*version",		QWFWD_VERSION, CVAR_READONLY | CVAR_SERVERINFO);
 	hostname		= Cvar_Get("hostname",		"unnamed qwfwd", CVAR_SERVERINFO);
 	maxclients		= Cvar_Get("maxclients",	"128", CVAR_SERVERINFO);
 	sys_readstdin	= Cvar_Get("sys_readstdin",	"1", 0);
@@ -134,7 +123,7 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 
 	// init rest systems
 	Sys_DoubleTime();		// init time
-	NET_Init(ip, port);		// init network
+	NET_Init();				// init network
 	FWD_Init();				// init peers
 	QRY_Init();				// init query 
 
@@ -144,7 +133,7 @@ DWORD WINAPI FWD_proc(void *lpParameter)
 	Cmd_StuffCmds(argc, argv);
 	Cbuf_Execute();
 
-	Sys_Printf("qwfwd: ready to rock at %s:%d\n", ip, port);
+	Sys_Printf("qwfwd: ready to rock at %s:%d\n", net_ip->string, net_port->integer);
 
 	while(!ps.wanttoexit)
 	{
@@ -179,15 +168,24 @@ int main(int _argc, char *_argv[])
 
 	srand((unsigned) time (NULL));
 
-	if (argc < 2)
+	// show help ffs
+	if (argc > 1 && (	   !stricmp("-h", argv[1])
+						|| !stricmp("-?", argv[1])
+						|| !stricmp("/?", argv[1])
+						|| !stricmp("/h", argv[1])
+						|| !stricmp("/help", argv[1])
+						|| !stricmp("-help", argv[1])
+						|| !stricmp("--help", argv[1])
+					)
+		)
 	{
-		Sys_Printf("Usage: %s <port> [ip]\n", argv[0]);
+		Sys_Printf("Usage: %s [port [ip]]\n", argv[0]);
 		return 1;
 	}
 
 	memset(&params, 0, sizeof(params));
-	params.port = atoi(argv[1]);
-	strlcpy(params.ip, (argc > 2 && argv[2][0] != '-' && argv[2][0] != '+')  ? argv[2] : "0.0.0.0", sizeof(params.ip));
+	params.port = (argc > 1) ? atoi(argv[1]) : 0;
+	strlcpy(params.ip, (argc > 2 && argv[2][0] != '-' && argv[2][0] != '+')  ? argv[2] : "", sizeof(params.ip));
 
 	FWD_proc(&params);
 	return 0;

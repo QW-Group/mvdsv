@@ -112,7 +112,9 @@ typedef int qbool;
 extern "C" {
 #endif
 
-#define PROXY_VERSION "qwfwd 1.0-dev"			// version...
+#define QWFWD_VERSION "qwfwd 1.0-dev"			// version...
+
+#define QWFWD_DEFAULT_PORT 30000
 
 #define QWFWD_DIR "qwfwd"
 
@@ -194,8 +196,10 @@ typedef struct proxy_static_s
 	qbool	wanttoexit;
 	char	info[MAX_INFO_STRING];		// Used by cvars which mirrored in serverinfo
 
-	char commandinput[512]; 			// Our console input buffer.
-	int inputlength; 					// How much data we have in the console buffer, after user presses enter the buffer is sent to the interpreter and this is set to 0.
+	char	commandinput[512]; 			// Our console input buffer.
+	int		inputlength; 				// How much data we have in the console buffer, after user presses enter the buffer is sent to the interpreter and this is set to 0.
+
+	fwd_params_t params;				// this was stupid, but for backward compatibility we should keep it
 
 } proxy_static_t;
 
@@ -353,6 +357,9 @@ double			Sys_DoubleTime (void);
 //
 // net.c
 //
+
+cvar_t				*net_ip, *net_port;
+
 int					net_socket;
 struct sockaddr_in	net_from;
 int					net_from_socket;
@@ -371,7 +378,7 @@ qbool				NET_CompareAddress(struct sockaddr_in *a, struct sockaddr_in *b);
 void				Netchan_OutOfBand(int s, struct sockaddr_in *adr, int length, byte *data);
 void				Netchan_OutOfBandPrint(int s, struct sockaddr_in *adr, const char *format, ...);
 
-void				NET_Init(const char *ip, int server_port);
+void				NET_Init(void);
 
 //
 // svc.c

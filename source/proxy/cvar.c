@@ -164,8 +164,14 @@ static cvar_t *Cvar_Set2(const char *var_name, const char *value, qbool force)
 	}
 
 	// not set if read only and not forced
-	if ((var->flags & CVAR_READONLY) && !force)
-		return var;
+	if (!force)
+	{
+		if ((var->flags & CVAR_READONLY) || ((var->flags & CVAR_NOSET) && ps.initialized))
+		{
+			Sys_Printf("%s is write protected.\n", var_name);
+			return var;
+		}
+	}
 
 	tmp = Sys_strdup (value);						// allocate new value, we do it before mem free so
 													// Cvar_Set(var, var->string) works without problems
