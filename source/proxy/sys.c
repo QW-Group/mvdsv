@@ -257,6 +257,12 @@ double bound( double a, double b, double c )
 // handle keyboard input
 void Sys_ReadSTDIN(proxy_static_t *cluster, fd_set socketset)
 {
+// if not DLL - read stdin
+#ifndef APP_DLL
+
+	if (!sys_readstdin->integer)
+		return;
+
 #ifdef _WIN32
 
 	for (;;)
@@ -302,7 +308,7 @@ void Sys_ReadSTDIN(proxy_static_t *cluster, fd_set socketset)
 		}
 	}
 
-#else
+#else // _WIN32
 
 	if (FD_ISSET(STDIN, &socketset))
 	{
@@ -323,7 +329,9 @@ void Sys_ReadSTDIN(proxy_static_t *cluster, fd_set socketset)
 		}
 	}
 
-#endif
+#endif // _WIN32
+
+#endif // APP_DLL
 }
 
 #ifdef _WIN32

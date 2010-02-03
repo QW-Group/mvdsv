@@ -138,18 +138,25 @@ static void FWD_network_update(void)
 			i1 = p->s + 1;
 	}
 
+// if not DLL - read stdin
+#ifndef APP_DLL
 	#ifndef _WIN32
-	FD_SET(STDIN, &rfds);
-	if (STDIN >= i1)
-		i1 = STDIN + 1;
+	if (sys_readstdin->integer)
+	{
+		FD_SET(STDIN, &rfds);
+		if (STDIN >= i1)
+			i1 = STDIN + 1;
+	}
 	#endif // _WIN32
+#endif
 
 	/* Sleep for some time, wake up immidiately if there input packet. */
 	tv.tv_sec = 0;
 	tv.tv_usec = 100000; // 100 ms
 	retval = select(i1, &rfds, (fd_set *)0, (fd_set *)0, &tv);
 
-	// read console input
+	// read console input.
+	// NOTE: we do not do that if we are in DLL mode...
 	Sys_ReadSTDIN(&ps, rfds);
 
 	if (retval <= 0)
