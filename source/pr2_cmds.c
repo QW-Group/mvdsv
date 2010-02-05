@@ -1605,7 +1605,7 @@ void PF2_makestatic(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 	}
 
 	// throw the entity away now
-	ED_Free(ent);
+	ED2_Free(ent);
 }
 
 //=============================================================================
