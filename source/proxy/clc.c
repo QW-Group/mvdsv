@@ -140,7 +140,8 @@ static qbool CL_ConnectionlessPacket_QW (peer_t *p)
 static void CL_SendConnectPacket_Q3(peer_t *p) 
 {
 	char tmp[128];
-	char data[2048], msg_data[2048];
+	char data[2048];
+	byte msg_data[2048];
 	char biguserinfo[MAX_INFO_STRING + 100];
 	sizebuf_t msg;
 
