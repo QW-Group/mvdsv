@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define ID_INLINE
 
-#define VALUE(a)			(*(int  *)&(a))
+#define VALUE(a)			(*(intptr_t *)&(a))
 #define NODE(a)				((void*)(a))
 
 #define NODE_START			NODE(  1)
@@ -321,7 +321,7 @@ Huff_AddReference
 Insert 'ch' into the tree or increment it's frequency
 ============
 */
-static void Huff_AddReference(void **tree, int ch)
+static void Huff_AddReference(void **tree, intptr_t ch)
 {
 	void **a, **b, **c, **d;
 	int value;
