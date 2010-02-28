@@ -8,7 +8,7 @@ STRIP=strip
 
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
-OBJS = clc.o cmd.o info.o main.o msg.o net.o peer.o svc.o sys.o query.o cvar.o fs.o token.o
+OBJS = clc.o cmd.o info.o main.o msg.o net.o peer.o svc.o sys.o query.o cvar.o fs.o token.o huff.o
 
 qwfwd: $(OBJS) qwfwd.h
 	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $@.db -lm

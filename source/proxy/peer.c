@@ -7,35 +7,61 @@
 peer_t *peers = NULL;
 static int userid = 0;
 
+peer_t	*FWD_peer_by_addr(struct sockaddr_in *from)
+{
+	peer_t *p;
 
-peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, const char *userinfo, int qport, qbool link)
+	for (p = peers; p; p = p->next)
+	{
+		if (NET_CompareAddress(&p->from, from))
+			return p;
+	}
+
+	return NULL;
+}
+
+peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, const char *userinfo, int qport, protocol_t proto, qbool link)
 {
 	peer_t *p;
 	struct sockaddr_in to;
-	int s;
+	int s = INVALID_SOCKET;
+	qbool new_peer = false;
 
-	if (FWD_peers_count() >= maxclients->integer)
-		return NULL; // we alredy full!
+	// we probably alredy have such peer, reuse it then
+	p = FWD_peer_by_addr( from );
+
+	// next check for NEW peer only
+	if ( !p )
+	{
+		new_peer = true; // it will be new peer
+
+		if (FWD_peers_count() >= maxclients->integer)
+			return NULL; // we alredy full!
+
+		if ((s = NET_UDP_OpenSocket(NULL, 0, false)) == INVALID_SOCKET)
+			return NULL; // out of sockets?
+	}
 
 	if (!NET_GetSockAddrIn_ByHostAndPort(&to, remote_host, remote_port))
 		return NULL; // failed to resolve host name?
 
-	if ((s = NET_UDP_OpenSocket(NULL, 0, false)) == INVALID_SOCKET)
-		return NULL; // out of sockets?
+	if ( new_peer )
+		p = Sys_malloc(sizeof(*p)); // alloc peer if needed
 
-	p = Sys_malloc(sizeof(*p));
-	p->s		= s;
+	p->s		= ( new_peer ) ? s : p->s; // reuse socket in case of reusing
 	p->from		= *from;
 	p->to		= to;
-	p->ps		= ps_challenge;
+	p->ps		= ( !new_peer && proto == pr_q3 ) ? p->ps : ps_challenge; // do not reset state for q3 in case of peer reusing
 	p->qport	= qport;
+	p->proto	= proto;
 	strlcpy(p->userinfo, userinfo, sizeof(p->userinfo));
 	Info_ValueForKey(userinfo, "name", p->name, sizeof(p->name));
-	p->userid	= ++userid;
+	p->userid	= ( new_peer ) ? ++userid : p->userid; // do not bump userid in case of peer reusing
 
 	time(&p->last);
 
-	if (link)
+	// link only new peer, in case of reusing it alredy done...
+	if (new_peer && link)
 	{
 		p->next = peers;
 		peers = p;
@@ -201,16 +227,18 @@ static void FWD_network_update(void)
 					break;
 			}
 
+			// peer was not found
 			if (!p)
 				continue;
 
+			// forward data to the server/proxy
 			if (p->ps >= ps_connected)
 			{
 				cnt = 1; // one packet by default
 
 				// check for "drop" aka client disconnect,
 				// first 10 bytes for NON connectionless packet is netchan related shit in QW
-				if (!connectionless && net_message.cursize > 10 && net_message.data[10] == clc_stringcmd)
+				if (p->proto == pr_qw && !connectionless && net_message.cursize > 10 && net_message.data[10] == clc_stringcmd)
 				{
 					if (!strcmp((char*)net_message.data + 10 + 1, "drop"))
 					{
@@ -259,7 +287,9 @@ static void FWD_network_update(void)
 				if (p->ps >= ps_connected)
 					NET_SendPacket(net_socket, net_message.cursize, net_message.data, &p->from);
 
-				time(&p->last);
+// qqshka: commented out
+//				time(&p->last);
+
 			} // for (;;)
 		} // if(FD_ISSET(p->s, &rfds))
 
@@ -269,7 +299,7 @@ static void FWD_network_update(void)
 			if (time(NULL) - p->connect > 2)
 			{
 				p->connect = time(NULL);
-				Netchan_OutOfBandPrint(p->s, &p->to, "getchallenge\n");
+				Netchan_OutOfBandPrint(p->s, &p->to, "getchallenge%s", p->proto == pr_qw ? "\n" : "");
 			}
 		}
 	} // for (p = peers; p; p = p->next)

@@ -118,8 +118,16 @@ extern "C" {
 
 #define QWFWD_DIR "qwfwd"
 
+#define QWFWD_PRX_KEY "prx"
+
 #define	MAX_INFO_STRING		1024
 #define MAX_INFO_KEY 		64
+
+typedef enum
+{
+	pr_qw,			// qw protocol
+	pr_q3			// q3 protocol
+} protocol_t;
 
 typedef enum
 {
@@ -142,6 +150,7 @@ typedef struct peer
 	struct sockaddr_in to;			// remote addr
 	int s;							// socket, used for connection to remote host
 	peer_state_t ps;				// peer state
+	protocol_t	proto;				// which protocol we use
 	struct peer *next;				// next peer in linked list
 } peer_t;
 
@@ -158,7 +167,7 @@ typedef struct fwd_params
 //=========================================
 
 #define	QW_VERSION			"2.40"
-#define	PROTOCOL_VERSION	28
+#define	QW_PROTOCOL_VERSION	28
 
 // out of band message id bytes
 
@@ -183,6 +192,8 @@ typedef struct fwd_params
 
 // client to server
 #define	clc_stringcmd			4		// [string] message
+
+//=========================================
 
 #include "cmd.h"
 #include "cvar.h"
@@ -243,7 +254,8 @@ qbool			FS_SafePath(const char *in);
 
 peer_t		*peers;
 
-peer_t		*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, const char *userinfo, int qport, qbool link);
+peer_t		*FWD_peer_by_addr(struct sockaddr_in *from);
+peer_t		*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_in *from, const char *userinfo, int qport, protocol_t proto, qbool link);
 void		FWD_update_peers(void);
 
 int			FWD_peers_count(void);
@@ -413,6 +425,17 @@ void				QRY_SV_PingReply();
 qbool				QRY_IsMasterReply(void);
 void				SVC_QRY_ParseMasterReply(void);
 void				SVC_QRY_PingStatus(void);
+
+//
+// huff.c
+//
+
+void				Huff_EncryptPacket(sizebuf_t *msg, int offset);
+void				Huff_DecryptPacket(sizebuf_t *msg, int offset);
+void				Huff_CompressPacket(sizebuf_t *msg, int offset);
+void				Huff_DecompressPacket(sizebuf_t *msg, int offset);
+int					Huff_GetByte(byte *buffer, int *count);
+void				Huff_EmitByte(int ch, byte *buffer, int *count);
 
 #ifdef __cplusplus
 }

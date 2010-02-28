@@ -4,7 +4,7 @@
 
 #include "qwfwd.h"
 
-static void CL_SendConnectPacket(
+static void CL_SendConnectPacket_QW(
 #ifdef PROTOCOL_VERSION_FTE
 						peer_t *p, unsigned int ftepext
 #else
@@ -24,8 +24,7 @@ static void CL_SendConnectPacket(
 
 	// Let the server know what extensions we support.
 	strlcpy (biguserinfo, p->userinfo, sizeof (biguserinfo));
-
-	snprintf(data, sizeof(data), "\xff\xff\xff\xff" "connect %i %i %i \"%s\"\n", PROTOCOL_VERSION, p->qport, p->challenge, biguserinfo);
+	snprintf(data, sizeof(data), "\xff\xff\xff\xff" "connect %i %i %i \"%s\"\n", QW_PROTOCOL_VERSION, p->qport, p->challenge, biguserinfo);
 
 	#ifdef PROTOCOL_VERSION_FTE
 	if (cls.fteprotocolextensions) 
@@ -40,7 +39,7 @@ static void CL_SendConnectPacket(
 }
 
 // Responses to broadcasts, etc
-qbool CL_ConnectionlessPacket (peer_t *p) 
+static qbool CL_ConnectionlessPacket_QW (peer_t *p) 
 {
 	qbool need_forward = false;
 	int c;
@@ -76,9 +75,9 @@ qbool CL_ConnectionlessPacket (peer_t *p)
 					MSG_ReadLong();
 			}
 
-			CL_SendConnectPacket(p, pext);
+			CL_SendConnectPacket_QW(p, pext);
 			#else
-			CL_SendConnectPacket(p);
+			CL_SendConnectPacket_QW(p);
 			#endif // PROTOCOL_VERSION_FTE
 			
 			break;
@@ -130,10 +129,135 @@ qbool CL_ConnectionlessPacket (peer_t *p)
 		}
 		default:
 		{
-			Sys_DPrintf("CL CL_ConnectionlessPacket %s:\n%s\n", inet_ntoa(net_from.sin_addr), MSG_ReadString());
+			Sys_DPrintf("CL CL_ConnectionlessPacket %s:\n%c%s\n", inet_ntoa(net_from.sin_addr), c, MSG_ReadString());
 			break;
 		}
 	}
 
 	return need_forward;
+}
+
+static void CL_SendConnectPacket_Q3(peer_t *p) 
+{
+	char tmp[128];
+	char data[2048], msg_data[2048];
+	char biguserinfo[MAX_INFO_STRING + 100];
+	sizebuf_t msg;
+
+	if (p->ps != ps_challenge)
+		return;
+
+	// add challenge to the temporary userinfo
+	strlcpy (biguserinfo, p->userinfo, sizeof (biguserinfo));
+	snprintf(tmp, sizeof(tmp), "%d", p->challenge);
+	Info_SetValueForKey(biguserinfo, "challenge", tmp, sizeof(biguserinfo));
+	// make string
+	snprintf(data, sizeof(data), "\xff\xff\xff\xff" "connect \"%s\"", biguserinfo);	
+	// init msg
+	SZ_InitEx(&msg, msg_data, sizeof(msg_data), true);
+	SZ_Print(&msg, data);
+	// god damn compress it
+	Huff_EncryptPacket(&msg, 12);
+
+	// ok, send it!
+	NET_SendPacket(net_from_socket, msg.cursize, msg.data, &net_from);
+}
+
+static qbool CL_ConnectionlessPacket_Q3 (peer_t *p) 
+{
+	char	*s, buf[] = "xxx.xxx.xxx.xxx:xxxxx";
+	char	*c;
+	qbool need_forward = false;
+	
+    MSG_BeginReading();
+    MSG_ReadLong();	// Skip the -1
+
+	s = MSG_ReadStringLine();
+	Cmd_TokenizeString( s );
+	c = Cmd_Argv(0);
+
+	if ( developer->integer )
+	{
+		Sys_DPrintf ("CL packet %s: %s\n", NET_AdrToString(&net_from, buf, sizeof(buf)), s);
+	}
+
+	// challenge from the server we are connecting to
+	if ( !stricmp(c, "challengeResponse") )
+	{
+		if ( p->ps != ps_challenge )
+		{
+			Sys_DPrintf( "Unwanted challenge response received.  Ignored.\n" );
+		}
+		else
+		{
+			// start sending connect requests instead of challenge request packets
+			p->challenge = atoi(Cmd_Argv(1));
+
+			// take this address as the new server address.  This allows
+			// a server proxy to hand off connections to multiple servers
+//			clc.serverAddress = from;
+
+			Sys_DPrintf ("challengeResponse: %d\n", p->challenge);
+
+			CL_SendConnectPacket_Q3( p );
+		}
+
+		return need_forward;
+	}
+
+	// server connection
+	if ( !stricmp(c, "connectResponse") )
+	{
+		if ( p->ps >= ps_connected )
+		{
+			Sys_DPrintf ("Dup connect received.  Ignored.\n");
+			return need_forward;
+		}
+
+		if ( p->ps != ps_challenge )
+		{
+			Sys_DPrintf ("connectResponse packet while not connecting.  Ignored.\n");
+			return need_forward;
+		}
+
+		Sys_DPrintf ("connectResponse\n");
+
+		// we are connected now
+		p->ps = ps_connected;
+
+		Netchan_OutOfBandPrint(net_socket, &p->from, "print\n" "/reconnect ASAP!\n");
+
+		return need_forward;
+	}
+
+	// a disconnect message from the server, which will happen if the server
+	// dropped the connection but it is still getting packets from us
+	if ( !stricmp(c, "disconnect") )
+	{
+//		CL_DisconnectPacket( from );
+		p->ps = ps_drop; // drop this peer
+		return need_forward = true; // so client have chance to see what server trying to say
+	}
+
+	// echo request from server
+	if ( !stricmp(c, "print") )
+	{
+		Sys_DPrintf( "%s", MSG_ReadString() );
+		return need_forward = true; // so client have chance to see what server trying to say
+	}
+
+	return need_forward;
+}
+
+
+qbool CL_ConnectionlessPacket (peer_t *p) 
+{
+	if ( p->proto == pr_qw )
+	{
+		return CL_ConnectionlessPacket_QW( p );
+	}
+	else
+	{
+		return CL_ConnectionlessPacket_Q3( p );
+	}
 }
