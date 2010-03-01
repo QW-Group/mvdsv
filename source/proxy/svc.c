@@ -353,8 +353,19 @@ static void SVC_DirectConnect (void)
 	}
 	else
 	{
-		if ( p->ps == ps_connected && p->challenge == challenge )
-			Netchan_OutOfBandPrint(net_from_socket, &net_from, "connectResponse");	
+		if ( p->ps == ps_connected )
+		{
+			if ( p->challenge == challenge )
+			{
+				// ok, we are really really ready to transfer data
+				Netchan_OutOfBandPrint(net_from_socket, &net_from, "connectResponse");
+			}
+			else
+			{
+				// tell client we are ready. just type /reconnect on the console!
+				Netchan_OutOfBandPrint(net_from_socket, &net_from, "print\n" "/reconnect ASAP!\n");
+			}
+		}
 	}
 }
 

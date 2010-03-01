@@ -140,6 +140,7 @@ typedef enum
 typedef struct peer
 {
 	time_t last;					// socket timeout helper
+	double q3_disconnect_check;		// helper for q3 to guess disconnect
 	time_t connect;					// connect helper
 	int challenge;					// challenge num
 	char userinfo[MAX_INFO_STRING]; // userinfo

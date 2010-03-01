@@ -226,7 +226,8 @@ static qbool CL_ConnectionlessPacket_Q3 (peer_t *p)
 		// we are connected now
 		p->ps = ps_connected;
 
-		Netchan_OutOfBandPrint(net_socket, &p->from, "print\n" "/reconnect ASAP!\n");
+// possibile to lost this message, so moved to the other place where it sended time to time
+//		Netchan_OutOfBandPrint(net_socket, &p->from, "print\n" "/reconnect ASAP!\n");
 
 		return need_forward;
 	}

@@ -110,13 +110,32 @@ static void FWD_peer_free(peer_t *peer, qbool unlink)
 
 static void FWD_check_timeout(void)
 {
+	byte msg_data[6];
+	sizebuf_t msg;
 	time_t cur_time;
+	double d_cur_time;
 	peer_t *p;
 
+	SZ_InitEx(&msg, msg_data, sizeof(msg_data), true);
+
 	cur_time = time(NULL);
+	d_cur_time = Sys_DoubleTime();
 
 	for (p = peers; p; p = p->next)
 	{
+		// this is helper for q3 to guess disconnect asap
+		if (p->proto == pr_q3)
+		{
+			if (cur_time - p->last > 1 && d_cur_time - p->q3_disconnect_check > 0.05 && p->ps == ps_connected)
+			{
+				p->q3_disconnect_check = d_cur_time;
+				SZ_Clear(&msg);
+				MSG_WriteLong(&msg, 0);
+				MSG_WriteShort(&msg, p->qport);
+				NET_SendPacket(p->s, msg.cursize, msg.data, &p->to);
+			}
+		}
+
 		if (cur_time - p->last < 15) // few seconds timeout
 			continue;
 
