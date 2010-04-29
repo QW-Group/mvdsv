@@ -40,6 +40,9 @@ cvar_t	sv_cpserver = {"sv_cpserver", "0"};	// some cp servers couse lags on map 
 
 cvar_t	sv_mintic = {"sv_mintic","0.013"};	// bound the size of the
 cvar_t	sv_maxtic = {"sv_maxtic","0.1"};	// physics time tic
+cvar_t	sv_maxfps = {"maxfps", "77", CVAR_SERVERINFO};  // It actually should be called maxpps (max packets per second).
+														// It was serverinfo variable for quite long time, lets legolize it as cvar.
+														// Sad part is what we can't call it like sv_maxfps since clients relay on its name 'maxfps' alredy.
 
 qbool OnChange_sysselecttimeout_var (cvar_t *var, const char *string);
 cvar_t	sys_select_timeout = {"sys_select_timeout",
@@ -3265,6 +3268,7 @@ void SV_InitLocal (void)
 
 	Cvar_Register (&sv_mintic);
 	Cvar_Register (&sv_maxtic);
+	Cvar_Register (&sv_maxfps);
 	Cvar_Register (&sys_select_timeout);
 	Cvar_Register (&sys_restart_on_error);
 

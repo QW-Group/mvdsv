@@ -3298,9 +3298,8 @@ void SV_ExecuteClientMessage (client_t *cl)
 #define MAX_EXTRAPOLATE 0.02
 //#define CENTER_OF_FRAME
 
-		double target_time, max_physfps;
+		double target_time, max_physfps = sv_maxfps.value;
 
-		max_physfps = Q_atof(Info_ValueForKey (svs.info, "maxfps"));
 		if (max_physfps < 20 || max_physfps > 1000)
 			max_physfps = 77.0;
 

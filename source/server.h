@@ -644,7 +644,7 @@ typedef struct
 
 //============================================================================
 
-extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
+extern	cvar_t	sv_mintic, sv_maxtic, sv_maxfps;
 extern	cvar_t	sv_maxspeed;
 
 extern	cvar_t	sv_antilag, sv_antilag_frac, sv_antilag_no_pred, sv_antilag_projectiles;
