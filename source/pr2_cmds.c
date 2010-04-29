@@ -197,6 +197,7 @@ void PF2_setorigin(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	origin[2] = stack[3]._float;
 
 	VectorCopy(origin, e->v.origin);
+	SV_AntilagReset(e);
 	SV_LinkEdict(e, false);
 }
 

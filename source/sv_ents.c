@@ -364,6 +364,8 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 	else
 		hideent = 0;
 
+	frame->sv_time = sv.time;
+
 	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++)
 	{
 		if (cl->state != cs_spawned)
@@ -399,24 +401,6 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 
 		//====================================================
 		// OK, seems we must send info about this player below
-
-#ifdef USE_PR2
-		if (cl->isBot)
-		{
-			VectorCopy(ent->v.origin, frame->playerpositions[j]);
-		}
-		else
-#endif
-		{
-			VectorMA(ent->v.origin, (sv.time - cl->localtime), ent->v.velocity, frame->playerpositions[j]);
-		}
-
-		// antilag: spectators present anyway, players only when alive,
-		// because otherwise we can shoot around corpse and get hit with some timing luck
-		if ( cl->spectator )
-			frame->playerpresent[j] = true;
-		else
-			frame->playerpresent[j] = ent->v.health > 0;
 
 		pflags = PF_MSEC | PF_COMMAND;
 
@@ -591,8 +575,6 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 
 	// this is the frame we are creating
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
-	if (!sv.paused)
-		memset(frame->playerpresent, 0, sizeof(frame->playerpresent));
 
 	// find the client's PVS
 	if ( recorder )

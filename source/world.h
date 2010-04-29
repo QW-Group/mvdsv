@@ -81,4 +81,6 @@ trace_t SV_Trace (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, 
 
 int SV_AreaEdicts (vec3_t mins, vec3_t maxs, edict_t **edicts, int max_edicts, int area);
 
+void SV_AntilagReset (edict_t *ent);
+
 #endif /* !__WORLD_H__ */

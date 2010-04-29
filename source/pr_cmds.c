@@ -125,6 +125,7 @@ void PF_setorigin (void)
 	e = G_EDICT(OFS_PARM0);
 	org = G_VECTOR(OFS_PARM1);
 	VectorCopy (org, e->v.origin);
+	SV_AntilagReset (e);
 	SV_LinkEdict (e, false);
 }
 

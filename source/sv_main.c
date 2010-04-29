@@ -3304,6 +3304,8 @@ void SV_InitLocal (void)
 
 	Cvar_Register (&sv_antilag);
 	Cvar_Register (&sv_antilag_frac);
+	Cvar_Register (&sv_antilag_no_pred);
+	Cvar_Register (&sv_antilag_projectiles);
 
 	//Cvar_Register (&pm_bunnyspeedcap);
 	Cvar_Register (&pm_ktjump);

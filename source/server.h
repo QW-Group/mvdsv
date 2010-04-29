@@ -141,13 +141,19 @@ typedef struct
 	float			ping_time;
 
 // { sv_antilag
-	vec3_t				playerpositions[MAX_CLIENTS];
-	qbool				playerpresent[MAX_CLIENTS];
+	double				sv_time;
 // }
 
 	packet_entities_t	entities;
 } client_frame_t;
 
+typedef struct
+{
+	double			localtime;
+	vec3_t			origin;
+} antilag_position_t;
+
+#define MAX_ANTILAG_POSITIONS	128
 #define MAX_BACK_BUFFERS	128
 #define MAX_STUFFTEXT		256
 #define	CLIENT_LOGIN_LEN	16
@@ -171,6 +177,9 @@ typedef struct client_s
 	int				userid;				// identifying number
 	ctxinfo_t		_userinfo_ctx_;			// infostring
 	ctxinfo_t		_userinfoshort_ctx_;	// infostring
+
+	antilag_position_t	antilag_positions[MAX_ANTILAG_POSITIONS];
+	int			antilag_position_next;
 
 	usercmd_t		lastcmd;			// for filling in big drops and partial predictions
 	double			localtime;			// of last message
@@ -638,7 +647,7 @@ typedef struct
 extern	cvar_t	sv_mintic, sv_maxtic, sv_ticrate;
 extern	cvar_t	sv_maxspeed;
 
-extern	cvar_t	sv_antilag, sv_antilag_frac;
+extern	cvar_t	sv_antilag, sv_antilag_frac, sv_antilag_no_pred, sv_antilag_projectiles;
 
 extern	int current_skill;
 

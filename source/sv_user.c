@@ -3294,11 +3294,67 @@ void SV_ExecuteClientMessage (client_t *cl)
 	{
 //#pragma message("FIXME: make antilag optionally support non-player ents too")
 
+#define MAX_PREDICTION 0.02
+#define MAX_EXTRAPOLATE 0.02
+//#define CENTER_OF_FRAME
+
+		double target_time, max_physfps;
+
+		max_physfps = Q_atof(Info_ValueForKey (svs.info, "maxfps"));
+		if (max_physfps < 20 || max_physfps > 1000)
+			max_physfps = 77.0;
+
+		if (sv_antilag_no_pred.value) {
+			target_time = frame->sv_time;
+		} else {
+			// try to figure out what time client is currently predicting, basically this is just 6.5ms with 13ms ping and 13.5ms with higher
+			// might be off with different max_physfps values
+#ifdef CENTER_OF_FRAME
+			target_time = min(frame->sv_time + (frame->ping_time < MAX_PREDICTION ? 1/max_physfps : MAX_PREDICTION) - 1/max_physfps/2.0, sv.time);
+#else
+			target_time = min(frame->sv_time + (frame->ping_time < MAX_PREDICTION ? 1/max_physfps : MAX_PREDICTION), sv.time);
+#endif
+		}
+
 		for (i = 0; i < MAX_CLIENTS; i++)
 		{
-			cl->laggedents[i].present = frame->playerpresent[i];
-			if (cl->laggedents[i].present)
-				VectorCopy(frame->playerpositions[i], cl->laggedents[i].laggedpos);
+			client_t *target_cl = &svs.clients[i];
+			antilag_position_t *base, *interpolate = NULL;
+			double factor;
+			int j;
+
+			// don't hit dead players
+			if (target_cl->state != cs_spawned || target_cl->antilag_position_next == 0 || (target_cl->spectator == 0 && target_cl->edict->v.health <= 0)) {
+				cl->laggedents[i].present = false;
+				continue;
+			}
+
+			cl->laggedents[i].present = true;
+
+			// target player's movement commands are late, extrapolate his position based on velocity
+			if (target_time > target_cl->localtime) {
+				VectorMA(target_cl->edict->v.origin, min(target_time - target_cl->localtime, MAX_EXTRAPOLATE), target_cl->edict->v.velocity, cl->laggedents[i].laggedpos);
+				continue;
+			}
+
+			// we have only one antilagged position, use that
+			if (target_cl->antilag_position_next == 1) {
+				VectorCopy(target_cl->antilag_positions[0].origin, cl->laggedents[i].laggedpos);
+				continue;
+			}
+
+			// find the position before target time (base) and the one after that (interpolate)
+			for (j = target_cl->antilag_position_next - 2; j > target_cl->antilag_position_next - 1 - MAX_ANTILAG_POSITIONS && j >= 0; j--) {
+				if (target_cl->antilag_positions[j % MAX_ANTILAG_POSITIONS].localtime < target_time)
+					break;
+			}
+
+			base = &target_cl->antilag_positions[j % MAX_ANTILAG_POSITIONS];
+			interpolate = &target_cl->antilag_positions[(j + 1) % MAX_ANTILAG_POSITIONS];
+
+			// we have two positions, just interpolate between them
+			factor = (target_time - base->localtime) / (interpolate->localtime - base->localtime);
+			VectorInterpolate(base->origin, factor, interpolate->origin, cl->laggedents[i].laggedpos);
 		}
 
 		cl->laggedents_count = MAX_CLIENTS; // FIXME: well, FTE do it a bit different way...
@@ -3410,6 +3466,16 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 			cl->lastcmd = newcmd;
 			cl->lastcmd.buttons = 0; // avoid multiple fires on lag
+
+			if (sv_antilag.value) {
+				if (cl->antilag_position_next == 0 || cl->antilag_positions[(cl->antilag_position_next - 1) % MAX_ANTILAG_POSITIONS].localtime < cl->localtime) {
+					cl->antilag_positions[cl->antilag_position_next % MAX_ANTILAG_POSITIONS].localtime = cl->localtime;
+					VectorCopy(cl->edict->v.origin, cl->antilag_positions[cl->antilag_position_next % MAX_ANTILAG_POSITIONS].origin);
+					cl->antilag_position_next++;
+				}
+			} else {
+				cl->antilag_position_next = 0;
+			}
 			break;
 
 
