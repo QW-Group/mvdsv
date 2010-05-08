@@ -1261,7 +1261,7 @@ static void Cmd_Download_f(void)
 			for (num = 0; num < num_s_len; num++)
 				if (num_s[num] != '.')
 				{
-					Con_Printf("usage: download demonum/nun\n"
+					Con_Printf("usage: download demonum/num\n"
 					           "if num is negative then download the Nth to last recorded demo, "
 					           "also can type any quantity of dots and "
 					           "where N dots is the Nth to last recorded demo\n");
