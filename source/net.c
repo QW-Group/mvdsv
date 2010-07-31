@@ -485,7 +485,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to)
 int UDP_OpenSocket (int port)
 {
 	int	i;
-	struct sockaddr_in address;
+	struct sockaddr_in address = {0};
 	unsigned long _true = true;
 
 	if ((net_socket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
@@ -498,6 +498,10 @@ int UDP_OpenSocket (int port)
 
 	if (ioctlsocket (net_socket, FIONBIO, &_true) == SOCKET_ERROR)
 		Sys_Error ("UDP_OpenSocket: ioctl FIONBIO: (%i): %s", qerrno, strerror (qerrno));
+
+#ifdef __APPLE__
+	address.sin_len = sizeof(struct sockaddr_in);
+#endif
 
 	address.sin_family = AF_INET;
 	//ZOID -- check for interface binding option
@@ -592,7 +596,7 @@ qbool TCP_Set_KEEPALIVE(int sock)
 int TCP_OpenSocket (int port, int udp_port)
 {
 	int	i;
-	struct sockaddr_in address;
+	struct sockaddr_in address = {0};
 	unsigned long _true = true;
 
 	if ((net_telnetsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
@@ -605,6 +609,10 @@ int TCP_OpenSocket (int port, int udp_port)
 
 	if (ioctlsocket (net_telnetsocket, FIONBIO, &_true) == SOCKET_ERROR)
 		Sys_Error ("TCP_OpenSocket: ioctl FIONBIO: (%i): %s", qerrno, strerror (qerrno));
+
+#ifdef __APPLE__
+	address.sin_len = sizeof(struct sockaddr_in);
+#endif
 
 	address.sin_family = AF_INET;
 	//ZOID -- check for interface binding option

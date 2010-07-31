@@ -94,9 +94,13 @@ static int MVD_StreamStartListening (int port)
 {
 	int sock;
 
-	struct sockaddr_in	address;
+	struct sockaddr_in	address = {0};
 
 	unsigned long nonblocking = true;
+
+#ifdef __APPLE__
+	address.sin_len = sizeof(struct sockaddr_in);
+#endif
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
