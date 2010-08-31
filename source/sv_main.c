@@ -1250,8 +1250,7 @@ static void SVC_DirectConnect (void)
 
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
-	newcl->max_reliable = MAX_MSGLEN; // bound value
-	Netchan_Setup (&newcl->netchan, adr, qport);
+	Netchan_Setup (&newcl->netchan, adr, qport, Q_atoi(Info_Get(&newcl->_userinfo_ctx_, "mtu")));
 
 	newcl->state = cs_preconnected;
 
@@ -3577,12 +3576,6 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	// rate
 	val = Info_Get (&cl->_userinfo_ctx_, cl->download ? "drate" : "rate");
 	cl->netchan.rate = 1.0 / SV_BoundRate (cl->download != NULL, Q_atoi(*val ? val : "99999"));
-
-	// max_reliable
-	val = Info_Get (&cl->_userinfo_ctx_, "mr");
-	cl->max_reliable = Q_atoi(val);
-	cl->max_reliable = cl->max_reliable < 1 ? MAX_MSGLEN : cl->max_reliable; // check if user have brains.
-	cl->max_reliable = bound(1300, cl->max_reliable, MAX_MSGLEN); // bound value
 
 	// message level
 	val = Info_Get (&cl->_userinfo_ctx_, "msg");

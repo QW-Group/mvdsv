@@ -1005,7 +1005,7 @@ void SV_SendClientMessages (void)
 					memset(&c->backbuf, 0, sizeof(c->backbuf));
 					c->backbuf.data = c->backbuf_data[c->num_backbuf - 1];
 					c->backbuf.cursize = c->backbuf_size[c->num_backbuf - 1];
-					c->backbuf.maxsize = c->max_reliable;
+					c->backbuf.maxsize = c->netchan.message.maxsize;
 				}
 			}
 		}

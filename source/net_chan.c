@@ -140,15 +140,24 @@ Netchan_Setup
 called to open a channel to a remote system
 ==============
 */
-void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport)
+void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int mtu)
 {
+	if (mtu < 1)
+	{
+		mtu = (int)sizeof(chan->message_buf); // OLD way, backward compatibility.
+	}
+	else
+	{
+		mtu -= PACKET_HEADER; // new way.
+	}
+
 	memset (chan, 0, sizeof (*chan));
 
 	chan->remote_address = adr;
 	chan->last_received = realtime;
 	chan->message.data = chan->message_buf;
 	chan->message.allowoverflow = true;
-	chan->message.maxsize = sizeof (chan->message_buf);
+	chan->message.maxsize = bound(min(1300, (int)sizeof(chan->message_buf)), mtu, (int)sizeof(chan->message_buf));
 	chan->qport = qport;
 	chan->rate = 1.0/2500;
 }
@@ -234,7 +243,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 
 	// write the packet header
 	send1.data = send_buf;
-	send1.maxsize = sizeof (send_buf);
+	send1.maxsize = min(chan->message.maxsize + PACKET_HEADER, (int)sizeof(send_buf));
 	send1.cursize = 0;
 
 	w1 = chan->outgoing_sequence | (send_reliable<<31);
@@ -254,7 +263,9 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 
 	// add the unreliable part if space is available
 	if (send1.maxsize - send1.cursize >= length)
+	{
 		SZ_Write (&send1, data, length);
+	}
 
 	// send the datagram
 	i = chan->outgoing_sequence & (MAX_LATENT-1);

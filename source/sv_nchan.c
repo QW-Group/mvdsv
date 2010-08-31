@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void ClientReliableCheckBlock(client_t *cl, int maxsize)
 {
 	if (cl->num_backbuf
-		|| cl->netchan.message.cursize > cl->max_reliable - maxsize - 1)
+		|| cl->netchan.message.cursize > cl->netchan.message.maxsize - maxsize - 1)
 	{
 		// we would probably overflow the buffer, save it for next
 		if (!cl->num_backbuf || cl->backbuf.cursize > cl->backbuf.maxsize - maxsize - 1)
@@ -41,7 +41,7 @@ void ClientReliableCheckBlock(client_t *cl, int maxsize)
 			memset(&cl->backbuf, 0, sizeof(cl->backbuf));
 			cl->backbuf.allowoverflow = true;
 			cl->backbuf.data = cl->backbuf_data[cl->num_backbuf];
-			cl->backbuf.maxsize = cl->max_reliable;
+			cl->backbuf.maxsize = cl->netchan.message.maxsize;
 			cl->backbuf_size[cl->num_backbuf] = 0;
 			cl->num_backbuf++;
 		}

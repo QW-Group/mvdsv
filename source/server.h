@@ -287,7 +287,6 @@ typedef struct client_s
 #endif
  
 //===== NETWORK ============
-	int				max_reliable;		// max size of the reliable
 	int				chokecount;
 	int				delta_sequence;			// -1 = no compression
 	netchan_t		netchan;
