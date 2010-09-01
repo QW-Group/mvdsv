@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_MSGLEN				1450	// max length of a reliable message
 #define	MAX_DATAGRAM			1450	// max length of unreliable message
 #define	FILE_TRANSFER_BUF_SIZE	(MAX_MSGLEN - 100)
+#define MIN_MTU					1350	// since user can specifie MTU it is a good idea to limit it at some "sane" value.
+
 //
 // per-level limits
 //

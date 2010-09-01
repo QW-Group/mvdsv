@@ -136,7 +136,7 @@ void Con_Printf (char *fmt, ...)
 	// add to redirected message
 	if (sv_redirected)
 	{
-		if (strlen (msg) + strlen(outputbuf) > /*sizeof(outputbuf) - 1*/ MAX_MSGLEN - 10)
+		if (strlen (msg) + strlen(outputbuf) > /*sizeof(outputbuf) - 1*/ /* MAX_MSGLEN */ MIN_MTU - 10)
 			SV_FlushRedirect ();
 		strlcat (outputbuf, msg, sizeof(outputbuf));
 		return;

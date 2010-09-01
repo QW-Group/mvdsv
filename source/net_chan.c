@@ -157,7 +157,7 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, int mtu)
 	chan->last_received = realtime;
 	chan->message.data = chan->message_buf;
 	chan->message.allowoverflow = true;
-	chan->message.maxsize = bound(min(1300, (int)sizeof(chan->message_buf)), mtu, (int)sizeof(chan->message_buf));
+	chan->message.maxsize = bound(min(MIN_MTU, (int)sizeof(chan->message_buf)), mtu, (int)sizeof(chan->message_buf));
 	chan->qport = qport;
 	chan->rate = 1.0/2500;
 }
