@@ -19,7 +19,7 @@ FILE *FS_OpenFile(char *gamedir, char *filename, int *size)
 				f = fopen(name, "rb");
 		}
 
-		// if we fail, try id1 gamedir, sure if it not alredy so
+		// if we fail, try id1 gamedir, sure if it not already so
 		if (!f && strcmp(gamedir, "id1"))
 		{
 			snprintf(name, sizeof(name), "id1/%s", filename);

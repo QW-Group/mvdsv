@@ -112,7 +112,7 @@ cvar_t *Cvar_Get(const char *var_name, const char *value, int flags)
 
 	if (var)
 	{
-		// var alredy exist.
+		// var already exist.
 		// in case ot READ ONLY we set it for sanity, so it can't be set to wrong previously by user etc.
 
 		if (flags & CVAR_READONLY)
@@ -258,7 +258,7 @@ static cvar_t *Cvar_Create(const char *var_name, const char *value, int cvarflag
 	v = Cvar_Find(var_name);
 	if (v)
 	{
-		Sys_DPrintf("Cvar_Create: cvar %s alredy exist, unexpected\n", var_name);
+		Sys_DPrintf("Cvar_Create: cvar %s already exist, unexpected\n", var_name);
 		return v; // actually it should not happend
 	}
 

@@ -121,7 +121,7 @@ static qbool QRY_AddMaster(const char *master)
 
 	if (QRY_Master_ByAddr(&addr))
 	{
-		Sys_Printf("failed to add master server: %s - alredy added!\n", master);
+		Sys_Printf("failed to add master server: %s - already added!\n", master);
 		return false;
 	}
 
@@ -417,8 +417,8 @@ static server_t	*QRY_SV_Add(const char *remote_host, int remote_port)
 
 	if ((sv = QRY_SV_ByAddr(&addr)))
 	{
-//		Sys_Printf("QRY_SV_Add: alredy have %s:%d\n", remote_host, remote_port);
-		return sv; // we alredy have such server on list
+//		Sys_Printf("QRY_SV_Add: already have %s:%d\n", remote_host, remote_port);
+		return sv; // we already have such server on list
 	}
 
 	if (!(sv = QRY_SV_new(&addr, true)))

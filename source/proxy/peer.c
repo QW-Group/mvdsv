@@ -27,7 +27,7 @@ peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_i
 	int s = INVALID_SOCKET;
 	qbool new_peer = false;
 
-	// we probably alredy have such peer, reuse it then
+	// we probably already have such peer, reuse it then
 	p = FWD_peer_by_addr( from );
 
 	// next check for NEW peer only
@@ -36,7 +36,7 @@ peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_i
 		new_peer = true; // it will be new peer
 
 		if (FWD_peers_count() >= maxclients->integer)
-			return NULL; // we alredy full!
+			return NULL; // we already full!
 
 		if ((s = NET_UDP_OpenSocket(NULL, 0, false)) == INVALID_SOCKET)
 			return NULL; // out of sockets?
@@ -60,7 +60,7 @@ peer_t	*FWD_peer_new(const char *remote_host, int remote_port, struct sockaddr_i
 
 	time(&p->last);
 
-	// link only new peer, in case of reusing it alredy done...
+	// link only new peer, in case of reusing it already done...
 	if (new_peer && link)
 	{
 		p->next = peers;
@@ -241,7 +241,7 @@ static void FWD_network_update(void)
 			// search in peers
 			for (p = peers; p; p = p->next)
 			{
-				// we have this peer alredy, so forward/send packet to remote server
+				// we have this peer already, so forward/send packet to remote server
 				if (NET_CompareAddress(&p->from, &net_from))
 					break;
 			}
