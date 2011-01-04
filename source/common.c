@@ -385,6 +385,21 @@ void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move)
 	move->msec = MSG_ReadByte ();
 }
 
+void MSG_ReadData (void *data, int len)
+{
+	int	i;
+
+	for (i = 0 ; i < len ; i++)
+		((byte *)data)[i] = MSG_ReadByte ();
+}
+
+void MSG_ReadSkip(int bytes)
+{
+	for ( ; !msg_badread && bytes > 0; bytes--)
+	{
+		MSG_ReadByte ();
+	}
+}
 
 //===========================================================================
 

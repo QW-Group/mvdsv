@@ -30,6 +30,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	PORT_MASTER	27000
 #define	PORT_SERVER	27500
 
+//===============================================
+
+// fte protocol extensions.
+
+#define PROTOCOL_VERSION_FTE			(('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24))
+#define PROTOCOL_VERSION_FTE2			(('F'<<0) + ('T'<<8) + ('E'<<16) + ('2' << 24))
+
+#ifdef PROTOCOL_VERSION_FTE
+
+#define FTE_PEXT_ACCURATETIMINGS	0x00000040
+#define FTE_PEXT_256PACKETENTITIES	0x01000000	//Client can receive 256 packet entities
+#define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	//alternate file download method. Hopefully it'll give quadroupled download speed, especially on higher pings.
+
+#endif // PROTOCOL_VERSION_FTE
+
+#ifdef PROTOCOL_VERSION_FTE2
+
+#define FTE_PEXT2_VOICECHAT			0x00000002
+
+#endif // PROTOCOL_VERSION_FTE2
+
 //=========================================
 
 // out of band message id bytes
@@ -132,7 +153,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define svc_nails2		54	// for interpolation, stores edict num
 
-
+#ifdef FTE_PEXT2_VOICECHAT
+#define svc_fte_voicechat	    84 // FTE voice chat.
+#endif
 
 //==============================================
 
@@ -148,6 +171,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define clc_tmove		6	// teleport request, spectator only
 #define clc_upload		7	//
 
+#ifdef FTE_PEXT2_VOICECHAT
+#define clc_voicechat	83	// FTE voice chat.
+#endif
 
 //==============================================
 
@@ -284,20 +310,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // what our server supports
 #define SERVER_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME|Z_EXT_JOIN_OBSERVE|Z_EXT_PF_ONGROUND|Z_EXT_VWEP|Z_EXT_PF_ONGROUND)
-
-//===============================================
-
-// fte protocol extensions.
-
-#define PROTOCOL_VERSION_FTE			(('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24))
-
-#ifdef PROTOCOL_VERSION_FTE
-
-#define FTE_PEXT_ACCURATETIMINGS	0x00000040
-#define FTE_PEXT_256PACKETENTITIES	0x01000000	//Client can receive 256 packet entities
-#define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	//alternate file download method. Hopefully it'll give quadroupled download speed, especially on higher pings.
-
-#endif
 
 /*
 ==========================================================

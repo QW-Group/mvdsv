@@ -784,14 +784,31 @@ static void SVC_GetChallenge (void)
 		int lng;
 
 		lng = LittleLong(PROTOCOL_VERSION_FTE);
-		memcpy(over, &lng, sizeof(int)); // FIXME sizeof(int) or sizeof(long)???
+		memcpy(over, &lng, sizeof(int));
 		over += 4;
 
 		lng = LittleLong(svs.fteprotocolextensions);
 		memcpy(over, &lng, sizeof(int));
 		over += 4;
 	}
-#endif
+#endif // PROTOCOL_VERSION_FTE
+
+#ifdef PROTOCOL_VERSION_FTE2
+	//tell the client what fte extensions2 we support
+	if (svs.fteprotocolextensions2)
+	{
+		int lng;
+
+		lng = LittleLong(PROTOCOL_VERSION_FTE2);
+		memcpy(over, &lng, sizeof(int));
+		over += 4;
+
+		lng = LittleLong(svs.fteprotocolextensions2);
+		memcpy(over, &lng, sizeof(int));
+		over += 4;
+	}
+#endif // PROTOCOL_VERSION_FTE2
+
 	Netchan_OutOfBand(net_from, over-buf, (byte*) buf);
 }
 
@@ -1129,7 +1146,11 @@ static void SVC_DirectConnect (void)
 
 #ifdef PROTOCOL_VERSION_FTE
 	unsigned int protextsupported = 0;
-#endif
+#endif // PROTOCOL_VERSION_FTE
+
+#ifdef PROTOCOL_VERSION_FTE2
+	unsigned int protextsupported2 = 0;
+#endif // PROTOCOL_VERSION_FTE2
 
 	// check version/protocol
 	if ( !CheckProtocol( Q_atoi( Cmd_Argv( 1 ) ) ) )
@@ -1146,8 +1167,6 @@ static void SVC_DirectConnect (void)
 	if ( !CheckUserinfo( userinfo, sizeof( userinfo ), Cmd_Argv( 4 ) ) )
 		return; // wrong userinfo
 
-#ifdef PROTOCOL_VERSION_FTE
-
 //
 // WARNING: WARNING: WARNING: using Cmd_TokenizeString() so do all Cmd_Argv() above.
 //
@@ -1158,16 +1177,23 @@ static void SVC_DirectConnect (void)
 
 		switch( Q_atoi( Cmd_Argv( 0 ) ) )
 		{
+#ifdef PROTOCOL_VERSION_FTE
 		case PROTOCOL_VERSION_FTE:
 			protextsupported = Q_atoi( Cmd_Argv( 1 ) );
 			Con_DPrintf("Client supports 0x%x fte extensions\n", protextsupported);
 			break;
+#endif // PROTOCOL_VERSION_FTE
+
+#ifdef PROTOCOL_VERSION_FTE2
+		case PROTOCOL_VERSION_FTE2:
+			protextsupported2 = Q_atoi( Cmd_Argv( 1 ) );
+			Con_DPrintf("Client supports 0x%x fte extensions2\n", protextsupported2);
+			break;
+#endif // PROTOCOL_VERSION_FTE2
 		}
 	}
 
 	msg_badread = false;
-
-#endif
 
 	spass = vip = rip_vip = spectator = false;
 
@@ -1239,7 +1265,11 @@ static void SVC_DirectConnect (void)
 
 #ifdef PROTOCOL_VERSION_FTE
 	newcl->fteprotocolextensions = protextsupported;
-#endif
+#endif // PROTOCOL_VERSION_FTE
+
+#ifdef PROTOCOL_VERSION_FTE2
+	newcl->fteprotocolextensions2 = protextsupported2;
+#endif // PROTOCOL_VERSION_FTE2
 
 	newcl->_userinfo_ctx_.max      = MAX_CLIENT_INFOS;
 	newcl->_userinfoshort_ctx_.max = MAX_CLIENT_INFOS;
@@ -1316,6 +1346,10 @@ static void SVC_DirectConnect (void)
 	newcl->spec_print = (int)sv_specprint.value;
 	newcl->logincount = 0;
 	//<-
+
+#ifdef FTE_PEXT2_VOICECHAT
+	SV_VoiceInitClient(newcl);
+#endif
 
 	// call the progs to get default spawn parms for the new client
 #ifdef USE_PR2
@@ -3383,6 +3417,10 @@ void SV_InitLocal (void)
 #endif
 #ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 	svs.fteprotocolextensions |= FTE_PEXT_CHUNKEDDOWNLOADS;
+#endif
+
+#ifdef FTE_PEXT2_VOICECHAT
+	svs.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;
 #endif
 
 //	Info_SetValueForStarKey (svs.info, "*qwe_version", QWE_VERSION, MAX_SERVERINFO_STRING);

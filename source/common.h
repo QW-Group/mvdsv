@@ -73,6 +73,9 @@ float MSG_ReadAngle (void);
 float MSG_ReadAngle16 (void);
 void MSG_ReadDeltaUsercmd (const struct usercmd_s *from, struct usercmd_s *cmd);
 
+void MSG_ReadData (void *data, int len);
+void MSG_ReadSkip(int bytes);
+
 //============================================================================
 
 char *Q_normalizetext (char *name); //bliP: red to white text

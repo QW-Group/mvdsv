@@ -239,8 +239,8 @@ typedef struct client_s
 	int				download_position; // chunked download used fseek(), since this is may be pak file, we need offset in pak file
 #ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 	int				download_chunks_perframe;
-#endif
-#endif
+#endif // FTE_PEXT_CHUNKEDDOWNLOADS
+#endif // PROTOCOL_VERSION_FTE
 	int				downloadsize;			// total bytes
 	int				downloadcount;			// bytes sent
 // demo download list for internal cmd dl function
@@ -284,8 +284,29 @@ typedef struct client_s
 
 #ifdef PROTOCOL_VERSION_FTE
 	unsigned int	fteprotocolextensions;
-#endif
+#endif // PROTOCOL_VERSION_FTE
+
+#ifdef PROTOCOL_VERSION_FTE2
+	unsigned int	fteprotocolextensions2;
+#endif // PROTOCOL_VERSION_FTE2
  
+#ifdef FTE_PEXT2_VOICECHAT
+	unsigned int voice_read;	/*place in ring*/
+	unsigned char voice_mute[MAX_CLIENTS/8];
+	qbool voice_active;
+	enum
+	{
+		/*note - when recording an mvd, only 'all' will be received by non-spectating viewers. all other chat will only be heard when spectating the receiver(or sender) of said chat*/
+
+		/*should we add one to respond to the last speaker? or should that be an automagic +voip_reply instead?*/
+		VT_TEAM,
+		VT_ALL,
+		VT_NONMUTED,	/*cheap, but allows custom private channels with no external pesters*/
+		VT_PLAYERSLOT0
+		/*player0+...*/
+	} voice_target;
+#endif
+
 //===== NETWORK ============
 	int				chokecount;
 	int				delta_sequence;			// -1 = no compression
@@ -539,7 +560,11 @@ typedef struct
 
 #ifdef PROTOCOL_VERSION_FTE
 	unsigned int fteprotocolextensions;
-#endif
+#endif // PROTOCOL_VERSION_FTE
+
+#ifdef PROTOCOL_VERSION_FTE2
+	unsigned int fteprotocolextensions2;
+#endif // PROTOCOL_VERSION_FTE2
 
 	// log messages are used so that fraglog processes can get stats
 	int				logsequence;		// the message currently being filled
@@ -817,6 +842,10 @@ void SV_ExecuteClientMessage (client_t *cl);
 void SV_UserInit (void);
 void SV_TogglePause (const char *msg);
 
+#ifdef FTE_PEXT2_VOICECHAT
+void SV_VoiceInitClient(client_t *client);
+void SV_VoiceSendPacket(client_t *client, sizebuf_t *buf);
+#endif
 
 //
 // sv_ccmds.c
