@@ -112,7 +112,8 @@ typedef int qbool;
 extern "C" {
 #endif
 
-#define QWFWD_VERSION "qwfwd 1.0-dev"			// version...
+#define QWFWD_VERSION "qwfwd 1.0-dev"			// version, used in serverinfo.
+#define QWFWD_VERSION_SHORT "1.0-dev"			// version, used in userinfo.
 
 #define QWFWD_DEFAULT_PORT 30000
 

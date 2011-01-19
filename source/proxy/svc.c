@@ -125,23 +125,6 @@ static void SVC_GetChallenge ( protocol_t proto )
 
 		over = buf + strlen(buf) + 1;
 
-// FIXME: blah...
-#ifdef PROTOCOL_VERSION_FTE
-		//tell the client what fte extensions we support
-		if (svs.fteprotocolextensions)
-		{
-			int lng;
-
-			lng = LittleLong(PROTOCOL_VERSION_FTE);
-			memcpy(over, &lng, sizeof(int));
-			over += 4;
-
-			lng = LittleLong(svs.fteprotocolextensions);
-			memcpy(over, &lng, sizeof(int));
-			over += 4;
-		}
-#endif
-		
 		Netchan_OutOfBand(net_from_socket, &net_from, over-buf, (byte*) buf);
 	}
 	else
@@ -206,10 +189,6 @@ static void SVC_DirectConnect (void)
 	peer_t *p = NULL;
 	int qport, port, challenge;
 	protocol_t proto;
-
-#ifdef PROTOCOL_VERSION_FTE
-	unsigned int protextsupported = 0;
-#endif
 
 	if ( i >= MAX_CHALLENGES )
 	{
@@ -307,28 +286,8 @@ static void SVC_DirectConnect (void)
 		return; // something wrong with port
 	}
 
-#ifdef PROTOCOL_VERSION_FTE
-
-//
-// WARNING: WARNING: WARNING: using Cmd_TokenizeString() so do all Cmd_Argv() above.
-//
-
-	while( !msg_badread )
-	{
-		Cmd_TokenizeString( MSG_ReadStringLine() );
-
-		switch( Q_atoi( Cmd_Argv( 0 ) ) )
-		{
-		case PROTOCOL_VERSION_FTE:
-			protextsupported = Q_atoi( Cmd_Argv( 1 ) );
-			Con_DPrintf("Client supports 0x%x fte extensions\n", protextsupported);
-			break;
-		}
-	}
-
-	msg_badread = false;
-
-#endif
+	// put some identifier in userinfo so server/proxy can detect that client use qwfwd.
+	Info_SetValueForStarKey(userinfo, "*qwfwd", QWFWD_VERSION_SHORT, sizeof(userinfo));
 
 	// build a new connection
 
@@ -342,10 +301,6 @@ static void SVC_DirectConnect (void)
 		Sys_DPrintf("peer %s:%d was not added\n", inet_ntoa(net_from.sin_addr), (int)ntohs(net_from.sin_port));
 		return;
 	}
-
-#ifdef PROTOCOL_VERSION_FTE
-	newcl->fteprotocolextensions = protextsupported;
-#endif
 
 	if ( proto == pr_qw )
 	{
