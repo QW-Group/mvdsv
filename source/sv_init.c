@@ -486,7 +486,6 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	}
 
 	if (!entitystring) {
-		Info_SetValueForStarKey (svs.info,  "*entfile", "", MAX_SERVERINFO_STRING);
 		entitystring = CM_EntityString();
 	}
 	
