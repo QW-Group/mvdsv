@@ -245,7 +245,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 #endif
 	extern cvar_t version;
 	dfunction_t *f;
-	extern cvar_t sv_loadentfiles;
+	extern cvar_t sv_loadentfiles, sv_loadentfiles_dir;
 	char *entitystring;
 	char oldmap[MAP_NAME_LEN];
 	extern qbool	sv_allow_cheats;
@@ -478,10 +478,25 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	// ********* External Entity support (.ent file(s) in gamedir/maps) pinched from ZQuake *********
 	// load and spawn all other entities
 	entitystring = NULL;
-	if ((int)sv_loadentfiles.value) {
-		entitystring = (char *) FS_LoadHunkFile (va ("maps/%s.ent", sv.mapname), NULL);
+	if ((int)sv_loadentfiles.value)
+	{
+		char ent_path[1024] = {0};
+		// first try maps/sv_loadentfiles_dir/
+		if (sv_loadentfiles_dir.string[0])
+		{
+			snprintf(ent_path, sizeof(ent_path), "maps/%s/%s.ent", sv_loadentfiles_dir.string, sv.mapname);
+			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
+		}
+
+		// try maps/ if not loaded yet.
+		if (!entitystring)
+		{
+			snprintf(ent_path, sizeof(ent_path), "maps/%s.ent", sv.mapname);
+			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
+		}
+
 		if (entitystring) {
-			Con_DPrintf ("Using entfile maps/%s.ent\n", sv.mapname);
+			Con_DPrintf ("Using entfile %s\n", ent_path);
 		}
 	}
 
