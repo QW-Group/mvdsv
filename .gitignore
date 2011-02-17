@@ -1,0 +1,17 @@
+*.o
+*.so
+*.dll
+*.qvm
+*.suo
+*.ncb
+VM/
+Debug_*/
+Release_*/
+*.vcproj.*.user
+*.vcproj.*.user
+Makefile
+config.log
+config.status
+src/Makefile.dl
+src/Makefile.dl32
+src/Makefile.vm
