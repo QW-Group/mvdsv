@@ -36,8 +36,8 @@ endif
 LDFLAGS=-lm
 ifeq ($(UNAME),Linux)
 LDFLAGS+=-ldl
-echo STRIP=-strip
-echo STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv qwdtools
+STRIP=-strip
+STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv qwdtools
 else
 ifeq ($(UNAME),SunOS)
 LDFLAGS+= -lsocket -lnsl
