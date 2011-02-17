@@ -35,9 +35,6 @@ char full_version[SIZEOF_FULL_VERSION];
 int build_number ()
 {
 	static int b = 0;
-#ifdef SVNREV
-	b = SVNREV - 0; // so if SVNREV is defined but empty, this still able to compile
-#endif
 	return b;
 }
 

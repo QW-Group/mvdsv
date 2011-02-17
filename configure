@@ -118,9 +118,6 @@ if [ x$BITS = x32 ]; then
 	echo FORCE32BITFLAGS=-m32 >> Makefile
 fi
 
-SVNREV=`svnversion -n . 2>/dev/null | sed -e "s/M//"`
-echo SVNREV="${SVNREV}" >> Makefile
-
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 	echo "${UNAME} ${ARCH} ${BITS}bits system - using BSD Makefile."
