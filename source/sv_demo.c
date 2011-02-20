@@ -53,8 +53,6 @@ cvar_t	sv_demoRegexp		= {"sv_demoRegexp",		"\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
 mvddest_t			*singledest;
 
-static entity_state_t		demo_entities[UPDATE_BACKUP][MAX_DEMO_PACKET_ENTITIES]; // used for pseudo client aka 'demo.recorder' during demo recording
-
 // { MVD writing functions, just wrappers
 
 void MVD_MSG_WriteChar (const int c)
@@ -1067,13 +1065,8 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
     	// so demo.dest and demo.pendingdest is not overwriten
 		memset(&demo, 0, ((int)&(((demo_t *)0)->mem_set_point)));
 
-		memset(demo_entities, 0, sizeof(demo_entities));
-
 		for (i = 0; i < UPDATE_BACKUP; i++)
 		{
-			// set up recorder packet enitities in each frame
-			demo.recorder.frames[i].entities.entities = demo_entities[i];
-
 			// set up buffer for record in each frame
 			SZ_InitEx(&demo.frames[i]._buf_, demo.frames[i]._buf__data, sizeof(demo.frames[0]._buf__data), true);
 		}

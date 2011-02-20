@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 server_static_t	svs;				// persistent server info
 server_t		sv;					// local server
 demo_t			demo;				// server demo struct
-entity_state_t	cl_entities[MAX_CLIENTS][UPDATE_BACKUP][MAX_PACKET_ENTITIES]; // client entities
 
 char	localmodels[MAX_MODELS][5];	// inline model names for precache
 

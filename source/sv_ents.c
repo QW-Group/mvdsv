@@ -270,7 +270,7 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 
 		if (newnum > oldnum)
 		{	// the old entity isn't present in the new message
-			//Con_Printf ("remove %i\n", oldnum);
+			//Con_Printf ("remove %i,%i\n", oldnum, newnum);
 			MSG_WriteShort (msg, oldnum | U_REMOVE);
 			oldindex++;
 			continue;
@@ -595,7 +595,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 
 		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, org);
 		pvs = CM_FatPVS (org); // search some PVS
-		max_packet_entities = (client->fteprotocolextensions & FTE_PEXT_256PACKETENTITIES) ? 256 : MAX_PACKET_ENTITIES;
+		max_packet_entities = (client->fteprotocolextensions & FTE_PEXT_256PACKETENTITIES) ? MAX_PEXT256_PACKET_ENTITIES : MAX_PACKET_ENTITIES;
 
 		if (client->disable_updates_stop > realtime)
 		{

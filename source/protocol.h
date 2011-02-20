@@ -344,11 +344,13 @@ typedef struct
 #ifndef QWDTOOLS
 
 #define	MAX_PACKET_ENTITIES	64	// doesn't count nails
-#define MAX_DEMO_PACKET_ENTITIES 300
+#define MAX_PEXT256_PACKET_ENTITIES 256 // up to 256 ents, look FTE_PEXT_256PACKETENTITIES
+#define MAX_DEMO_PACKET_ENTITIES 300 // !!! MUST not be less than any of above values!!!
+
 typedef struct
 {
 	int		num_entities;
-	entity_state_t	*entities;
+	entity_state_t	entities[MAX_DEMO_PACKET_ENTITIES];
 } packet_entities_t;
 
 #else

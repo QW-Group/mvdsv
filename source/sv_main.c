@@ -1288,9 +1288,6 @@ static void SVC_DirectConnect (void)
 		newcl->process_pext = true;
 	}
 
-	for (i = 0; i < UPDATE_BACKUP; i++)
-		newcl->frames[i].entities.entities = cl_entities[newcl-svs.clients][i];
-
 	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
 	Netchan_Setup (&newcl->netchan, adr, qport, Q_atoi(Info_Get(&newcl->_userinfo_ctx_, "mtu")));
