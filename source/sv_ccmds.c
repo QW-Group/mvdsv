@@ -235,6 +235,12 @@ qbool SV_SetPlayer (void)
 
 	idnum = Q_atoi(Cmd_Argv(1));
 
+	// HACK: for cheat commands which comes from client rather than from server console
+	if (sv_client && sv_redirected == RD_CLIENT)
+	{
+		idnum = sv_client->userid;
+	}
+
 	for (i=0,cl=svs.clients ; i<MAX_CLIENTS ; i++,cl++)
 	{
 		if (!cl->state)
@@ -354,6 +360,31 @@ void SV_Give_f (void)
 	}
 }
 
+void SV_Fly_f (void)
+{
+	if (!sv_allow_cheats)
+	{
+		Con_Printf ("Cheats are not allowed on this server\n");
+		return;
+	}
+
+	if (!SV_SetPlayer ())
+		return;
+
+	if (sv_player->v.solid != SOLID_SLIDEBOX)
+		return;		// dead don't fly
+
+	if (sv_player->v.movetype != MOVETYPE_FLY)
+	{
+		sv_player->v.movetype = MOVETYPE_FLY;
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "flymode ON\n");
+	}
+	else
+	{
+		sv_player->v.movetype = MOVETYPE_WALK;
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "flymode OFF\n");
+	}
+}
 
 /*
 ======================
