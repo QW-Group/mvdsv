@@ -28,7 +28,7 @@ ASM=$(USE_ASM)
 endif
 endif
 endif
-CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -fno-strict-aliasing -s -ffast-math -funroll-loops
+CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -fno-strict-aliasing -ffast-math -funroll-loops
 else
 CFLAGS=$(BASE_CFLAGS) -Wsign-compare -ggdb
 endif
