@@ -88,9 +88,9 @@ typedef vec_t vec3_t[3];
 #define JOB_TODO (O_MARGE | O_CONVERT | O_ANALYSE | O_LOG | O_DEBUG)
 
 #define QWDTOOLS
-#include "../bothdefs.h"
-#include "../protocol.h"
-#include "../version.h"
+#include "../../../source/bothdefs.h"
+#include "../../../source/protocol.h"
+#include "../../../source/version.h"
 #include "tools.h"
 #include "world.h"
 

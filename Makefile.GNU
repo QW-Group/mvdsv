@@ -1,5 +1,5 @@
 #
-# QuakeWorld/MVDSV and QWDTools Makefile for Linux and SunOS
+# QuakeWorld/MVDSV Makefile for Linux and SunOS
 #
 # GNU Make required
 #
@@ -10,7 +10,6 @@
 
 MAINDIR=.
 SV_DIR=$(MAINDIR)/source
-QWDTOOLS_DIR=$(MAINDIR)/source/qwdtools
 
 # to compile mvdsv as 32bit on 64bit target platform use next:
 # for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
@@ -113,27 +112,6 @@ SV_ASM_OBJS = \
 endif
 
 #############################################################################
-# QWDTOOLS
-#############################################################################
-
-QWDTOOLS_OBJS = \
-		$(SV_DIR)/bothtools.o \
-		$(QWDTOOLS_DIR)/dem_parse.o \
-		$(QWDTOOLS_DIR)/dem_send.o \
-		$(QWDTOOLS_DIR)/ini.o \
-		$(QWDTOOLS_DIR)/init.o \
-		$(QWDTOOLS_DIR)/main.o \
-		$(QWDTOOLS_DIR)/marge.o \
-		$(QWDTOOLS_DIR)/qwz.o \
-		$(QWDTOOLS_DIR)/sync.o \
-		$(QWDTOOLS_DIR)/tools.o
-
-ifeq ($(USE_ASM),$(ASM))
-QWDTOOLS_ASM_OBJS = \
-		$(SV_DIR)/bothtoolsa.o
-endif
-
-#############################################################################
 # SETUP AND BUILD
 #############################################################################
 
@@ -143,14 +121,11 @@ endif
 .s.o :
 	$(CC) $(CFLAGS) -DELF -x assembler-with-cpp -c $< -o $@
 
-all : mvdsv qwdtools
+all : mvdsv
 	$(STRIP) $(STRIP_FLAGS)
 
 mvdsv : $(SV_OBJS) $(SV_ASM_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o mvdsv $^
 
-qwdtools : $(QWDTOOLS_OBJS) $(QWDTOOLS_ASM_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
-
 clean : 
-	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o $(QWDTOOLS_DIR)/*.o mvdsv qwdtools
+	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o mvdsv

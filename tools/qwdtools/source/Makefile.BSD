@@ -1,0 +1,85 @@
+#
+# QWDTools Makefile for FreeBSD/OpenBSD/NetBSD/DragonFly BSD/Darwin
+#
+#	- now should build on non-x86
+#	- no longer requires gmake(1)
+#	- debug targets support axed out
+#	- couple of useful knobs added
+#
+# Created on Wednesday, May 21 2003 by Alexey Dokuchaev <danfe@regency.nsu.ru>
+#
+#	$Id$
+#
+
+MAINDIR = ../../..
+SV_DIR = $(MAINDIR)/source
+QWDTOOLS_DIR = $(MAINDIR)/tools/qwdtools/source
+
+# To compile qwdtools as 32bit on 64bit target platform use next:
+# for gcc its like: make qwdtools FORCE32BITFLAGS=-m32
+# configure script add FORCE32BITFLAGS=-m32
+
+DO_CFLAGS		=	${CFLAGS} -Wall -pipe -pthread -funsigned-char -DUSE_PR2 -D${BYTE_ORDER}Q__ ${FORCE32BITFLAGS}
+
+.if !defined(NOKQUEUE) && (${UNAME} == "FreeBSD" || ${UNAME} == "DragonFly")
+DO_CFLAGS		+=	-DKQUEUE
+.endif
+
+WITH_OPTIMIZED_CFLAGS = YES
+
+USE_ASM=-Did386
+.if defined(WITH_OPTIMIZED_CFLAGS)
+DO_CFLAGS		+=	-O2 -fno-strict-aliasing -ffast-math -funroll-loops
+. if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
+ASM=${USE_ASM}
+DO_CFLAGS		+=	${ASM}
+. endif
+.endif
+
+STRIP			=	strip
+.if ${UNAME} != "Darwin" && ${UNAME} != "MacOSX"
+STRIP_FLAGS		=	--strip-unneeded
+.endif
+STRIP_FLAGS		+=	--remove-section=.comment
+
+LDFLAGS			=	-lm
+
+#############################################################################
+# QWDTOOLS
+#############################################################################
+
+QWDTOOLS_OBJS = \
+		${SV_DIR}/bothtools.o \
+		${QWDTOOLS_DIR}/dem_parse.o \
+		${QWDTOOLS_DIR}/dem_send.o \
+		${QWDTOOLS_DIR}/ini.o \
+		${QWDTOOLS_DIR}/init.o \
+		${QWDTOOLS_DIR}/main.o \
+		${QWDTOOLS_DIR}/marge.o \
+		${QWDTOOLS_DIR}/qwz.o \
+		${QWDTOOLS_DIR}/sync.o \
+		${QWDTOOLS_DIR}/tools.o
+
+.if ${USE_ASM} == ${ASM}
+QWDTOOLS_ASM_OBJS = \
+		${SV_DIR}/bothtoolsa.o
+.endif
+
+#############################################################################
+# SETUP AND BUILD
+#############################################################################
+
+.c.o:
+		${CC} ${DO_CFLAGS} -c $< -o $*.o
+
+.s.o:
+		${CC} ${DO_CFLAGS} -DELF -x assembler-with-cpp -c $< -o $*.o
+		
+all:	qwdtools
+		${STRIP} ${STRIP_FLAGS} qwdtools
+
+qwdtools:	${QWDTOOLS_OBJS} ${QWDTOOLS_ASM_OBJS}
+		${CC} ${DO_CFLAGS} ${LDFLAGS} -o qwdtools ${QWDTOOLS_OBJS} ${QWDTOOLS_ASM_OBJS}
+
+clean:
+		-rm -f ${QWDTOOLS_DIR}/*.o qwdtools
