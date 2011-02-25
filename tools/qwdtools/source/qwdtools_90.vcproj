@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug_90"
-			IntermediateDirectory="Debug_90"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -38,7 +38,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Debug_90\qwdtools.tlb"
+				TypeLibraryName="Debug\qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -83,7 +83,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\qwdtools-debug_90.exe"
+				OutputFile="qwdtools-debug.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateManifest="true"
@@ -124,8 +124,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release_90"
-			IntermediateDirectory="Release_90"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -146,7 +146,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Release_90\qwdtools.tlb"
+				TypeLibraryName="Release\qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -186,7 +186,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\qwdtools_90.exe"
+				OutputFile="qwdtools.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateManifest="true"

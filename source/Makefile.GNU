@@ -35,7 +35,7 @@ LDFLAGS=-lm
 ifeq ($(UNAME),Linux)
 LDFLAGS+=-ldl
 STRIP=-strip
-STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv qwdtools
+STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv
 else
 ifeq ($(UNAME),SunOS)
 LDFLAGS+= -lsocket -lnsl

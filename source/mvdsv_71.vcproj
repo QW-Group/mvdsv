@@ -15,8 +15,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="SRelease_71"
-			IntermediateDirectory="SRelease_71"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -37,7 +37,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SRelease_71/mvdsv.tlb"
+				TypeLibraryName="Release/mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -52,12 +52,12 @@
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="false"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="SRelease_71/mvdsv.pch"
-				AssemblerListingLocation="SRelease_71/"
-				ObjectFile="SRelease_71/"
-				ProgramDataBaseFileName="SRelease_71/"
+				PrecompiledHeaderFile="Release/mvdsv.pch"
+				AssemblerListingLocation="Release/"
+				ObjectFile="Release/"
+				ProgramDataBaseFileName="Release/"
 				BrowseInformation="1"
-				BrowseInformationFile="SRelease_71/"
+				BrowseInformationFile="Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="1"
@@ -76,10 +76,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="../mvdsv_71.exe"
+				OutputFile="mvdsv.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile="SRelease_71/mvdsv.pdb"
+				ProgramDatabaseFile="Release/mvdsv.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -114,8 +114,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="SDebug_71"
-			IntermediateDirectory="SDebug_71"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -135,7 +135,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SDebug_71/mvdsv.tlb"
+				TypeLibraryName="Debug/mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -145,11 +145,11 @@
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="SDebug_71/mvdsv.pch"
+				PrecompiledHeaderFile="Debug/mvdsv.pch"
 				AssemblerOutput="2"
-				AssemblerListingLocation="SDebug_71/"
-				ObjectFile="SDebug_71/"
-				ProgramDataBaseFileName="SDebug_71/"
+				AssemblerListingLocation="Debug/"
+				ObjectFile="Debug/"
+				ProgramDataBaseFileName="Debug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -170,13 +170,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="../mvdsv-debug_71.exe"
+				OutputFile="mvdsv-debug.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="SDebug_71/mvdsv.pdb"
+				ProgramDatabaseFile="Debug/mvdsv.pdb"
 				GenerateMapFile="true"
-				MapFileName="SDebug_71/mvdsv.map"
+				MapFileName="Debug/mvdsv.map"
 				SubSystem="2"
 				TargetMachine="1"
 			/>

@@ -8,12 +8,12 @@ CFG=qwsv - Win32 Release
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "mvdsv_60.mak".
+!MESSAGE NMAKE /f "mvdsv.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "mvdsv_60.mak" CFG="qwsv - Win32 Release"
+!MESSAGE NMAKE /f "mvdsv.mak" CFG="qwsv - Win32 Release"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -32,51 +32,51 @@ RSC=rc.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "SRelease_60"
-# PROP BASE Intermediate_Dir "SRelease_60"
+# PROP BASE Output_Dir "Release"
+# PROP BASE Intermediate_Dir "Release"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "SRelease_60"
-# PROP Intermediate_Dir "SRelease_60"
+# PROP Output_Dir "Release"
+# PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "NDEBUG" /YX /c
-# ADD CPP /nologo /G6 /W3 /O2 /Op /Ob2 /D "SERVERONLY" /D "NDEBUG" /D "USE_PR2" /D "__LITTLE_ENDIAN__Q__" /Fr /Fp"SRelease_60/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /W3 /O2 /Op /Ob2 /D "SERVERONLY" /D "NDEBUG" /D "USE_PR2" /D "__LITTLE_ENDIAN__Q__" /Fr /Fp"Release/mvdsv.pch" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o"SRelease_60/mvdsv.bsc"
+# ADD BSC32 /nologo /o"Release/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"../mvdsv_60.exe"
+# ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /machine:I386 /out:"mvdsv.exe"
 # SUBTRACT LINK32 /profile /pdb:none /incremental:yes /map /debug /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "SDebug_60"
-# PROP BASE Intermediate_Dir "SDebug_60"
+# PROP BASE Output_Dir "Debug"
+# PROP BASE Intermediate_Dir "Debug"
 # PROP BASE Target_Dir ""
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "SDebug_60"
-# PROP Intermediate_Dir "SDebug_60"
+# PROP Output_Dir "Debug"
+# PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "_DEBUG" /YX /c
-# ADD CPP /nologo /G6 /ML /W3 /GX /ZI /Od /D "SERVERONLY" /D "_DEBUG" /D "USE_PR2" /D "__LITTLE_ENDIAN__Q__" /FAcs /FR /Fp"SDebug_60/mvdsv.pch" /YX /FD /c
+# ADD CPP /nologo /G6 /ML /W3 /GX /ZI /Od /D "SERVERONLY" /D "_DEBUG" /D "USE_PR2" /D "__LITTLE_ENDIAN__Q__" /FAcs /FR /Fp"Debug/mvdsv.pch" /YX /FD /c
 # SUBTRACT CPP /u
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x809 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo /o"SDebug_60/mvdsv.bsc"
+# ADD BSC32 /nologo /o"Debug/mvdsv.bsc"
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386
-# ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /map /debug /machine:I386 /out:"../mvdsv-debug_60.exe"
+# ADD LINK32 wsock32.lib user32.lib gdi32.lib shell32.lib winmm.lib /nologo /subsystem:windows /map /debug /machine:I386 /out:"mvdsv-debug.exe"
 # SUBTRACT LINK32 /profile
 
 !ENDIF 
@@ -449,7 +449,7 @@ SOURCE=bothtoolsa.s
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build
-OutDir=.\SRelease_60
+OutDir=.\Release
 InputPath=bothtoolsa.s
 InputName=bothtoolsa
 
@@ -464,7 +464,7 @@ InputName=bothtoolsa
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\SDebug_60
+OutDir=.\Debug
 InputPath=bothtoolsa.s
 InputName=bothtoolsa
 
@@ -487,7 +487,7 @@ SOURCE=math.s
 
 # PROP Ignore_Default_Tool 1
 # Begin Custom Build
-OutDir=.\SRelease_60
+OutDir=.\Release
 InputPath=math.s
 InputName=math
 
@@ -502,7 +502,7 @@ InputName=math
 !ELSEIF  "$(CFG)" == "qwsv - Win32 Debug"
 
 # Begin Custom Build
-OutDir=.\SDebug_60
+OutDir=.\Debug
 InputPath=math.s
 InputName=math
 

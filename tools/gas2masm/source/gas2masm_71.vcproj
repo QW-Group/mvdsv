@@ -13,8 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug_71"
-			IntermediateDirectory="Debug_71"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -24,10 +24,10 @@
 				PreprocessorDefinitions="_WIN32;_DEBUG;_CONSOLE"
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile="Debug_71/gas2masm_71.pch"
-				AssemblerListingLocation="Debug_71/"
-				ObjectFile="Debug_71/"
-				ProgramDataBaseFileName="Debug_71/"
+				PrecompiledHeaderFile="Debug/gas2masm_71.pch"
+				AssemblerListingLocation="Debug/"
+				ObjectFile="Debug/"
+				ProgramDataBaseFileName="Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"/>
@@ -35,16 +35,16 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="Debug_71/gas2masm_71.exe"
+				OutputFile="Debug/gas2masm.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="Debug_71/gas2masm_71.pdb"
+				ProgramDatabaseFile="Debug/gas2masm_71.pdb"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Debug_71/gas2masm_71.tlb"
+				TypeLibraryName="Debug/gas2masm_71.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -69,8 +69,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release_71"
-			IntermediateDirectory="Release_71"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -90,10 +90,10 @@
 				DefaultCharIsUnsigned="TRUE"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderThrough=""
-				PrecompiledHeaderFile="Release_71/gas2masm_71.pch"
-				AssemblerListingLocation="Release_71/"
-				ObjectFile="Release_71/"
-				ProgramDataBaseFileName="Release_71/"
+				PrecompiledHeaderFile="Release/gas2masm_71.pch"
+				AssemblerListingLocation="Release/"
+				ObjectFile="Release/"
+				ProgramDataBaseFileName="Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="0"
@@ -102,11 +102,11 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="Release_71/gas2masm_71.exe"
+				OutputFile="Release/gas2masm.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="Release_71/gas2masm_71.pdb"
+				ProgramDatabaseFile="Release/gas2masm_71.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -114,7 +114,7 @@
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Release_71/gas2masm_71.tlb"
+				TypeLibraryName="Release/gas2masm_71.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>

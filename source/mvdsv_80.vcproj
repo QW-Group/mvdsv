@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="SRelease_80"
-			IntermediateDirectory="SRelease_80"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -39,7 +39,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SRelease_80\mvdsv.tlb"
+				TypeLibraryName="Release\mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -81,7 +81,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="..\mvdsv_80.exe"
+				OutputFile="mvdsv.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateManifest="true"
@@ -126,8 +126,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="SDebug_80"
-			IntermediateDirectory="SDebug_80"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -148,7 +148,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="SDebug_80\mvdsv.tlb"
+				TypeLibraryName="Debug\mvdsv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -191,7 +191,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="wsock32.lib winmm.lib"
-				OutputFile="..\mvdsv-debug_80.exe"
+				OutputFile="mvdsv-debug.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateManifest="true"

@@ -14,8 +14,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug_71"
-			IntermediateDirectory="Debug_71"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -35,7 +35,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Debug_71/qwdtools.tlb"
+				TypeLibraryName="Debug/qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -51,10 +51,10 @@
 				BufferSecurityCheck="true"
 				EnableFunctionLevelLinking="false"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile="Debug_71/qwdtools.pch"
-				AssemblerListingLocation="Debug_71/"
-				ObjectFile="Debug_71/"
-				ProgramDataBaseFileName="Debug_71/"
+				PrecompiledHeaderFile="Debug/qwdtools.pch"
+				AssemblerListingLocation="Debug/"
+				ObjectFile="Debug/"
+				ProgramDataBaseFileName="Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="1"
@@ -72,13 +72,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../qwdtools-debug_71.exe"
+				OutputFile="qwdtools-debug.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="Debug_71/qwdtools.pdb"
+				ProgramDatabaseFile="Debug/qwdtools.pdb"
 				GenerateMapFile="true"
-				MapFileName="Debug_71/qwdtools.map"
+				MapFileName="Debug/qwdtools.map"
 				SubSystem="1"
 				TargetMachine="1"
 			/>
@@ -109,8 +109,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release_71"
-			IntermediateDirectory="Release_71"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -130,7 +130,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName="Release_71/qwdtools.tlb"
+				TypeLibraryName="Release/qwdtools.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -146,10 +146,10 @@
 				RuntimeLibrary="0"
 				StructMemberAlignment="3"
 				EnableFunctionLevelLinking="false"
-				PrecompiledHeaderFile="Release_71/qwdtools.pch"
-				AssemblerListingLocation="Release_71/"
-				ObjectFile="Release_71/"
-				ProgramDataBaseFileName="Release_71/"
+				PrecompiledHeaderFile="Release/qwdtools.pch"
+				AssemblerListingLocation="Release/"
+				ObjectFile="Release/"
+				ProgramDataBaseFileName="Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				CompileAs="1"
@@ -167,10 +167,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../qwdtools_71.exe"
+				OutputFile="qwdtools.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile="Release_71/qwdtools.pdb"
+				ProgramDatabaseFile="Release/qwdtools.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
