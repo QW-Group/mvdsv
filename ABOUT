@@ -36,7 +36,9 @@ mvdsv							// Top level folder
  |  `+ windows		//   Windows binaries
  |   +-- x64			//    64bits
  |    `- x86			//    32bits
- +-- build				//  Make and build files, IDE project files
+ +-+ build				//  Make and build files, IDE project files
+ | +-- make				//   GNU make files
+ |  `- vs					//   Visual Studio files
  +-- config				//  Configuration files for the binaries
  +-- doc					//  Documentation
  +-- lib					//  External or third-party libraries
