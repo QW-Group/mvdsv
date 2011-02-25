@@ -20,3 +20,28 @@ Want to help?
   - fix bugs by patching sources: http://mvdsv.qw-dev.net/repository
   - join the development team: http://mvdsv.qw-dev.net/boards
 
+Source code repository/archive structure:
+
+mvdsv							// Top level folder
+ +-+ bin					//  Prebuilt binaries
+ | +-+ bsd				//   FreeBSD binaries
+ | | +-- x64			//    64bits
+ | |  `- x86			//    32bits
+ | +-+ linux			//   Linux binaries
+ | | +-- x64			//    64bits
+ | |  `- x86			//    32bits
+ | +-+ osx				//   Mac binaries
+ | | +-- x64			//    64bits
+ | |  `- x86			//    32bits
+ |  `+ windows		//   Windows binaries
+ |   +-- x64			//    64bits
+ |    `- x86			//    32bits
+ +-- build				//  Make and build files, IDE project files
+ +-- config				//  Configuration files for the binaries
+ +-- doc					//  Documentation
+ +-- lib					//  External or third-party libraries
+ +-+ src					//  Source code tree
+ |  `- include		//   Header files
+  `+ tools				//  Various related tools
+   +-+ example_x	//   Tool top level folder (follows same structure as root)
+    `- example_y	//   Tool top level folder (follows same structure as root)
