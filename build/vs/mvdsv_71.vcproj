@@ -214,7 +214,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
 			>
 			<File
-				RelativePath="bothtools.c"
+				RelativePath="..\..\src\bothtools.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -238,7 +238,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="cmd.c"
+				RelativePath="..\..\src\cmd.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -262,7 +262,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="cmodel.c"
+				RelativePath="..\..\src\cmodel.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -286,7 +286,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="common.c"
+				RelativePath="..\..\src\common.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -310,7 +310,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="crc.c"
+				RelativePath="..\..\src\crc.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -334,7 +334,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="cvar.c"
+				RelativePath="..\..\src\cvar.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -358,7 +358,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="fs.c"
+				RelativePath="..\..\src\fs.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -382,7 +382,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="mathlib.c"
+				RelativePath="..\..\src\mathlib.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -406,7 +406,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="md4.c"
+				RelativePath="..\..\src\md4.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -430,7 +430,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="net.c"
+				RelativePath="..\..\src\net.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -454,7 +454,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="net_chan.c"
+				RelativePath="..\..\src\net_chan.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -478,7 +478,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pmove.c"
+				RelativePath="..\..\src\pmove.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -502,7 +502,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pmovetst.c"
+				RelativePath="..\..\src\pmovetst.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -526,7 +526,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pr2_cmds.c"
+				RelativePath="..\..\src\pr2_cmds.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -550,7 +550,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pr2_edict.c"
+				RelativePath="..\..\src\pr2_edict.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -574,7 +574,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pr2_exec.c"
+				RelativePath="..\..\src\pr2_exec.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -598,7 +598,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pr2_vm.c"
+				RelativePath="..\..\src\pr2_vm.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -622,7 +622,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pr_cmds.c"
+				RelativePath="..\..\src\pr_cmds.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -646,7 +646,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pr_edict.c"
+				RelativePath="..\..\src\pr_edict.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -670,7 +670,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="pr_exec.c"
+				RelativePath="..\..\src\pr_exec.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -694,7 +694,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sha1.c"
+				RelativePath="..\..\src\sha1.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -718,7 +718,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_ccmds.c"
+				RelativePath="..\..\src\sv_ccmds.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -742,7 +742,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_demo.c"
+				RelativePath="..\..\src\sv_demo.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -766,7 +766,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_demo_misc.c"
+				RelativePath="..\..\src\sv_demo_misc.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -790,7 +790,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_demo_qtv.c"
+				RelativePath="..\..\src\sv_demo_qtv.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -814,7 +814,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_ents.c"
+				RelativePath="..\..\src\sv_ents.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -838,7 +838,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_init.c"
+				RelativePath="..\..\src\sv_init.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -862,7 +862,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_login.c"
+				RelativePath="..\..\src\sv_login.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -886,7 +886,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_main.c"
+				RelativePath="..\..\src\sv_main.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -910,7 +910,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_master.c"
+				RelativePath="..\..\src\sv_master.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -934,7 +934,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_mod_frags.c"
+				RelativePath="..\..\src\sv_mod_frags.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -958,7 +958,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_move.c"
+				RelativePath="..\..\src\sv_move.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -982,7 +982,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_nchan.c"
+				RelativePath="..\..\src\sv_nchan.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1006,7 +1006,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_phys.c"
+				RelativePath="..\..\src\sv_phys.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1030,7 +1030,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_send.c"
+				RelativePath="..\..\src\sv_send.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1054,7 +1054,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_sys_win.c"
+				RelativePath="..\..\src\sv_sys_win.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1078,7 +1078,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_user.c"
+				RelativePath="..\..\src\sv_user.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1102,7 +1102,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="sv_windows.c"
+				RelativePath="..\..\src\sv_windows.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1126,7 +1126,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="build.c"
+				RelativePath="..\..\src\build.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1150,11 +1150,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="winquake.rc"
+				RelativePath="..\..\src\winquake.rc"
 				>
 			</File>
 			<File
-				RelativePath="world.c"
+				RelativePath="..\..\src\world.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1178,7 +1178,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="zone.c"
+				RelativePath="..\..\src\zone.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1205,7 +1205,7 @@
 				Name="pcre.c"
 				>
 				<File
-					RelativePath="pcre\get.c"
+					RelativePath="..\..\src\pcre\get.c"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -1229,7 +1229,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="pcre\pcre.c"
+					RelativePath="..\..\src\pcre\pcre.c"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -1259,146 +1259,146 @@
 			Filter="h;hpp;hxx;hm;inl;fi;fd"
 			>
 			<File
-				RelativePath="bothdefs.h"
+				RelativePath="..\..\src\bothdefs.h"
 				>
 			</File>
 			<File
-				RelativePath="bspfile.h"
+				RelativePath="..\..\src\bspfile.h"
 				>
 			</File>
 			<File
-				RelativePath="cmd.h"
+				RelativePath="..\..\src\cmd.h"
 				>
 			</File>
 			<File
-				RelativePath="cmodel.h"
+				RelativePath="..\..\src\cmodel.h"
 				>
 			</File>
 			<File
-				RelativePath="common.h"
+				RelativePath="..\..\src\common.h"
 				>
 			</File>
 			<File
-				RelativePath="crc.h"
+				RelativePath="..\..\src\crc.h"
 				>
 			</File>
 			<File
-				RelativePath="cvar.h"
+				RelativePath="..\..\src\cvar.h"
 				>
 			</File>
 			<File
-				RelativePath="fs.h"
+				RelativePath="..\..\src\fs.h"
 				>
 			</File>
 			<File
-				RelativePath="g_public.h"
+				RelativePath="..\..\src\g_public.h"
 				>
 			</File>
 			<File
-				RelativePath="log.h"
+				RelativePath="..\..\src\log.h"
 				>
 			</File>
 			<File
-				RelativePath="mathlib.h"
+				RelativePath="..\..\src\mathlib.h"
 				>
 			</File>
 			<File
-				RelativePath="modelgen.h"
+				RelativePath="..\..\src\modelgen.h"
 				>
 			</File>
 			<File
-				RelativePath="net.h"
+				RelativePath="..\..\src\net.h"
 				>
 			</File>
 			<File
-				RelativePath="pmove.h"
+				RelativePath="..\..\src\pmove.h"
 				>
 			</File>
 			<File
-				RelativePath="pr2.h"
+				RelativePath="..\..\src\pr2.h"
 				>
 			</File>
 			<File
-				RelativePath="pr2_vm.h"
+				RelativePath="..\..\src\pr2_vm.h"
 				>
 			</File>
 			<File
-				RelativePath="pr_comp.h"
+				RelativePath="..\..\src\pr_comp.h"
 				>
 			</File>
 			<File
-				RelativePath="progdefs.h"
+				RelativePath="..\..\src\progdefs.h"
 				>
 			</File>
 			<File
-				RelativePath="progs.h"
+				RelativePath="..\..\src\progs.h"
 				>
 			</File>
 			<File
-				RelativePath="protocol.h"
+				RelativePath="..\..\src\protocol.h"
 				>
 			</File>
 			<File
-				RelativePath="quakeasm.h"
+				RelativePath="..\..\src\quakeasm.h"
 				>
 			</File>
 			<File
-				RelativePath="qwsvdef.h"
+				RelativePath="..\..\src\qwsvdef.h"
 				>
 			</File>
 			<File
-				RelativePath="resource.h"
+				RelativePath="..\..\src\resource.h"
 				>
 			</File>
 			<File
-				RelativePath="sbar.h"
+				RelativePath="..\..\src\sbar.h"
 				>
 			</File>
 			<File
-				RelativePath="server.h"
+				RelativePath="..\..\src\server.h"
 				>
 			</File>
 			<File
-				RelativePath="sha1.h"
+				RelativePath="..\..\src\sha1.h"
 				>
 			</File>
 			<File
-				RelativePath="spritegn.h"
+				RelativePath="..\..\src\spritegn.h"
 				>
 			</File>
 			<File
-				RelativePath="sv_mod_frags.h"
+				RelativePath="..\..\src\sv_mod_frags.h"
 				>
 			</File>
 			<File
-				RelativePath="sv_windows.h"
+				RelativePath="..\..\src\sv_windows.h"
 				>
 			</File>
 			<File
-				RelativePath="sys.h"
+				RelativePath="..\..\src\sys.h"
 				>
 			</File>
 			<File
-				RelativePath="version.h"
+				RelativePath="..\..\src\version.h"
 				>
 			</File>
 			<File
-				RelativePath="winquake.h"
+				RelativePath="..\..\src\winquake.h"
 				>
 			</File>
 			<File
-				RelativePath="world.h"
+				RelativePath="..\..\src\world.h"
 				>
 			</File>
 			<File
-				RelativePath="zone.h"
+				RelativePath="..\..\src\zone.h"
 				>
 			</File>
 			<Filter
 				Name="pcre.h"
 				>
 				<File
-					RelativePath="pcre\chartables.c"
+					RelativePath="..\..\src\pcre\chartables.c"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -1416,15 +1416,15 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="pcre\config.h"
+					RelativePath="..\..\src\pcre\config.h"
 					>
 				</File>
 				<File
-					RelativePath="pcre\internal.h"
+					RelativePath="..\..\src\pcre\internal.h"
 					>
 				</File>
 				<File
-					RelativePath="pcre\pcre.h"
+					RelativePath="..\..\src\pcre\pcre.h"
 					>
 				</File>
 			</Filter>
@@ -1434,7 +1434,7 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="qwcl2.ico"
+				RelativePath="..\..\src\qwcl2.ico"
 				>
 			</File>
 		</Filter>
@@ -1442,7 +1442,7 @@
 			Name="Asm Files"
 			>
 			<File
-				RelativePath="bothtoolsa.s"
+				RelativePath="..\..\src\bothtoolsa.s"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -1464,7 +1464,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="math.s"
+				RelativePath="..\..\src\math.s"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
