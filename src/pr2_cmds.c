@@ -1297,7 +1297,7 @@ void PF2_Find (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 		if (!(intptr_t*)((byte*)ed + fofs))
 			continue;
 
-		t = (char*)*((intptr_t*)((byte*)ed + fofs));
+		t = (char *) VM_POINTER(base,mask,*(intptr_t*)((byte*)ed + fofs));
 
 		if (!t)
 			continue;
