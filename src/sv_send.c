@@ -719,13 +719,25 @@ void SV_UpdateClientStats (client_t *client)
 	edict_t *ent;
 	int stats[MAX_CL_STATS], i;
 
-	ent = client->edict;
 	memset (stats, 0, sizeof(stats));
+
+	ent = client->edict;
 
 	// if we are a spectator and we are tracking a player, we get his stats
 	// so our status bar reflects his
 	if (client->spectator && client->spec_track > 0)
 		ent = svs.clients[client->spec_track - 1].edict;
+
+	// in case of trackent we have to reflect his stats like for spectator.
+	if (fofs_trackent)
+	{
+		int trackent = ((eval_t *)((byte *)&(client->edict)->v + fofs_trackent))->_int;
+		if (trackent < 1 || trackent > MAX_CLIENTS || svs.clients[trackent - 1].state != cs_spawned)
+			trackent = 0;
+
+		if (trackent)
+			ent = svs.clients[trackent - 1].edict;
+	}
 
 	stats[STAT_HEALTH] = ent->v.health;
 	stats[STAT_WEAPON] = SV_ModelIndex(

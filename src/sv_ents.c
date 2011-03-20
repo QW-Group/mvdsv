@@ -355,31 +355,57 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 {
 	int msec, pflags, pm_type = 0, pm_code = 0, i, j;
 	usercmd_t cmd;
-	client_t *cl;
-	edict_t *ent;
-	int hideent;
+	int hideent = 0;
+	int trackent = 0;
 
 	if (fofs_hideentity)
 		hideent = ((eval_t *)((byte *)&(client->edict)->v + fofs_hideentity))->_int / pr_edict_size;
-	else
-		hideent = 0;
+
+	if (fofs_trackent)
+	{
+		trackent = ((eval_t *)((byte *)&(client->edict)->v + fofs_trackent))->_int;
+		if (trackent < 1 || trackent > MAX_CLIENTS || svs.clients[trackent - 1].state != cs_spawned)
+			trackent = 0;
+	}
 
 	frame->sv_time = sv.time;
 
-	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++)
+	for (j = 0; j < MAX_CLIENTS; j++)
 	{
+		client_t *	cl = &svs.clients[j];
+		edict_t *	ent = NULL;
+		edict_t *	self_ent = NULL;
+		edict_t *	track_ent = NULL;
+
 		if (cl->state != cs_spawned)
 			continue;
 
-		ent = cl->edict;
+		// set up edicts.
+		if (trackent && cl == client)
+		{
+			cl = &svs.clients[trackent - 1]; // fakenicking.
+
+			track_ent = svs.clients[trackent - 1].edict;
+
+			self_ent = track_ent;
+			ent = track_ent;
+		}
+		else
+		{
+			self_ent = client->edict;
+			ent = cl->edict;		
+		}
 
 		// ZOID visibility tracking
-		if (ent != client->edict && !(client->spec_track && client->spec_track - 1 == j))
+		if (ent != self_ent && !(client->spec_track && client->spec_track - 1 == j))
 		{
 			if (cl->spectator)
 				continue;
 
 			if (cl - svs.clients == hideent - 1)
+				continue;
+
+			if (cl - svs.clients == trackent - 1)
 				continue;
 
 			// ignore if not touching a PV leaf
@@ -394,7 +420,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 			}
 		}
 
-		if (disable_updates && client != cl)
+		if (disable_updates && ent != self_ent)
 		{ // Vladis
 			continue;
 		}
@@ -422,7 +448,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 		{	// only sent origin and velocity to spectators
 			pflags &= PF_VELOCITY1 | PF_VELOCITY2 | PF_VELOCITY3;
 		}
-		else if (ent == client->edict)
+		else if (ent == self_ent)
 		{	// don't send a lot of data on personal entity
 			pflags &= ~(PF_MSEC|PF_COMMAND);
 			if (ent->v.weaponframe)
@@ -431,7 +457,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 
 		// Z_EXT_PM_TYPE protocol extension
 		// encode pm_type and jump_held into pm_code
-		pm_type = SV_PMTypeForClient (cl);
+		pm_type = track_ent ? PM_LOCK : SV_PMTypeForClient (cl);
 		switch (pm_type)
 		{
 			case PM_DEAD:
@@ -471,11 +497,10 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 		if (ent->v.solid == SOLID_BBOX || ent->v.solid == SOLID_SLIDEBOX)
 			pflags |= PF_SOLID;
 
-		if (pm_type == PM_LOCK && ent == client->edict)
+		if (pm_type == PM_LOCK && ent == self_ent)
 			pflags |= PF_COMMAND;	// send forced view angles
 
-		if (client->spec_track && client->spec_track - 1 == j &&
-		        ent->v.weaponframe)
+		if (client->spec_track && client->spec_track - 1 == j && ent->v.weaponframe)
 			pflags |= PF_WEAPONFRAME;
 
 		MSG_WriteByte (msg, svc_playerinfo);
@@ -509,7 +534,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 			cmd.buttons = 0;	// never send buttons
 			cmd.impulse = 0;	// never send impulses
 
-			if (ent == client->edict)
+			if (ent == self_ent)
 			{
 				// this is PM_LOCK, we only want to send view angles
 				VectorCopy(ent->v.v_angle, cmd.angles);
