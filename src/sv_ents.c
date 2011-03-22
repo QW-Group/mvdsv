@@ -612,13 +612,30 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	else
 	{// normal client
 		vec3_t org;
+		int trackent = 0;
 
 		if (fofs_hideentity)
 			hideent = ((eval_t *)((byte *)&(client->edict)->v + fofs_hideentity))->_int / pr_edict_size;
 		else
 			hideent = 0;
 
-		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, org);
+		if (fofs_trackent)
+		{
+			trackent = ((eval_t *)((byte *)&(client->edict)->v + fofs_trackent))->_int;
+			if (trackent < 1 || trackent > MAX_CLIENTS || svs.clients[trackent - 1].state != cs_spawned)
+				trackent = 0;
+		}
+
+		// we should use org of tracked player in case or trackent.
+		if (trackent)
+		{
+			VectorAdd (svs.clients[trackent - 1].edict->v.origin, svs.clients[trackent - 1].edict->v.view_ofs, org);		
+		}
+		else
+		{
+			VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, org);
+		}
+
 		pvs = CM_FatPVS (org); // search some PVS
 		max_packet_entities = (client->fteprotocolextensions & FTE_PEXT_256PACKETENTITIES) ? MAX_PEXT256_PACKET_ENTITIES : MAX_PACKET_ENTITIES;
 
