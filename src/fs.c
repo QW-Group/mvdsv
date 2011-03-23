@@ -312,17 +312,26 @@ FS_CreatePath
 Only used for CopyFile and download
 ============
 */
-void FS_CreatePath (char *path)
+void FS_CreatePath(char *path)
 {
-	char *ofs;
+	char *s, save;
 
-	for (ofs = path + 1 ; *ofs ; ofs++)
+	if (!*path)
+		return;
+
+	for (s = path + 1; *s; s++)
 	{
-		if (*ofs == '/')
-		{	// create the directory
-			*ofs = 0;
-			Sys_mkdir (path);
-			*ofs = '/';
+#ifdef _WIN32
+		if (*s == '/' || *s == '\\')
+		{
+#else
+		if (*s == '/')
+		{
+#endif
+			save = *s;
+			*s = 0;
+			Sys_mkdir(path);
+			*s = save;
 		}
 	}
 }

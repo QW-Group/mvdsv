@@ -2011,9 +2011,10 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return ;
 	}
 
-	if (name[1] == ':' ||	//dos filename absolute path specified - reject.
-	        *name == '\\' || *name == '/' ||	//absolute path was given - reject
-	        strstr(name, ".."))	//someone tried to be cleaver.
+	if (!name || !*name || // invalid name.
+		name[1] == ':' ||	// dos filename absolute path specified - reject.
+	        *name == '\\' || *name == '/' ||	// absolute path was given - reject.
+	        strstr(name, ".."))	// someone tried to be cleaver.
 	{
 		retval->_int = -1;
 		return ;
@@ -2060,6 +2061,9 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		gamedir = fs_gamedir;
 
 		snprintf( fname, sizeof( fname ), "%s/%s" , gamedir, name );
+		// create path.
+		FS_CreatePath(fname);
+		// open file.
 		pr2_fopen_files[i].handle = fopen(fname, cmodes[fmode]);
 		if ( !pr2_fopen_files[i].handle )
 		{
