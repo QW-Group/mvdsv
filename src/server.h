@@ -922,6 +922,8 @@ extern cvar_t	sv_onrecordfinish;
 extern cvar_t	sv_ondemoremove;
 extern cvar_t	sv_demoRegexp;
 
+extern cvar_t sv_silentrecord;
+
 void SV_MVDInit (void);
 char *SV_MVDNum(int num);
 

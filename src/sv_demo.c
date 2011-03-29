@@ -51,6 +51,8 @@ cvar_t	sv_onrecordfinish	= {"sv_onRecordFinish", ""};
 cvar_t	sv_ondemoremove		= {"sv_onDemoRemove",	""};
 cvar_t	sv_demoRegexp		= {"sv_demoRegexp",		"\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
+cvar_t sv_silentrecord         = {"sv_silentrecord",   "0"};
+
 mvddest_t			*singledest;
 
 // { MVD writing functions, just wrappers
@@ -777,7 +779,8 @@ static mvddest_t *SV_InitRecordFile (char *name)
 	strlcpy(dst->name, s+1, sizeof(dst->name));
 	strlcpy(dst->path, sv_demoDir.string, sizeof(dst->path));
 
-	SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
+	if ( !sv_silentrecord.value )
+		SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
 						(dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
 	Cvar_SetROM(&serverdemo, dst->name);
 
@@ -877,7 +880,8 @@ void SV_MVDStop (int reason, qbool mvdonly)
 		else if (reason == 3)
 			SV_BroadcastPrintf (PRINT_CHAT, "QTV disconnected\n");
 		else
-			SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
+			if ( !sv_silentrecord.value )
+				SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
 
 		Cvar_SetROM(&serverdemo, "");
 
@@ -909,7 +913,10 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	if (numclosed)
 	{
 		if (!reason)
-			SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
+		{
+			if ( !sv_silentrecord.value )
+				SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
+		}
 		else
 			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
 	}
@@ -1644,6 +1651,7 @@ static void MVD_Init (void)
 	Cvar_Register (&sv_demotxt);
 	Cvar_Register (&sv_demoExtraNames);
 	Cvar_Register (&sv_demoRegexp);
+	Cvar_Register (&sv_silentrecord);
 
 	p = COM_CheckParm ("-democache");
 	if (p)
