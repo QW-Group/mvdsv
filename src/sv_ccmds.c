@@ -28,6 +28,7 @@ int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
 extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
 extern	redirect_t	sv_redirected;
+extern qbool authenticated;
 
 /*
 ===============================================================================
@@ -69,6 +70,19 @@ SV_Restart_f
 void SV_Restart_f (void)
 {
 	SV_Quit(true);
+}
+
+/*
+==================
+SV_CloseTelnet_f
+==================
+*/
+
+void SV_CloseTelnet_f(void)
+{
+	Con_Printf("Closing telnet socket\n");
+	telnet_connected = authenticated = false;
+	closesocket(telnet_iosock);
 }
 
 /*
@@ -1911,6 +1925,7 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("say", SV_ConSay_f);
 	Cmd_AddCommand ("quit", SV_Quit_f);
 	Cmd_AddCommand ("restart", SV_Restart_f);
+	Cmd_AddCommand ("exit", SV_CloseTelnet_f);
 
 	Cmd_AddCommand ("god", SV_God_f);
 	Cmd_AddCommand ("give", SV_Give_f);

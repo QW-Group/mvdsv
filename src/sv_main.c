@@ -3023,6 +3023,7 @@ static void SV_GetConsoleCommands (void)
 		cmd = Sys_ConsoleInput ();
 		if (!cmd)
 			break;
+		printf("command: |%s|\n", cmd);
 		Cbuf_AddText (cmd);
 		Cbuf_AddText ("\n");
 	}
