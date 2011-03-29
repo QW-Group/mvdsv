@@ -628,10 +628,16 @@ void Sys_Printf (char *fmt, ...)
 		if (telnetport && telnet_connected && authenticated)
 		{
 			if (send (telnet_iosock, (char *) p, 1, 0) < 1)
-				closesocket (telnet_iosock);
+			{
+				closesocket (telnet_iosock); // so we close socket
+				telnet_iosock = INVALID_SOCKET; // and mark as closed
+			}
 			if (*p == '\n') // demand for M$ WIN 2K telnet support
 				if (send (telnet_iosock, "\r", 1, 0) < 1)
-					closesocket (telnet_iosock);
+				{
+					closesocket (telnet_iosock); // so we close socket
+					telnet_iosock = INVALID_SOCKET; // and mark as closed
+				}
 		}
 #ifdef _CONSOLE
 		if (!((int)sys_nostdout.value || isdaemon))

@@ -457,10 +457,16 @@ void Sys_Printf (char *fmt, ...)
 		if (telnetport && telnet_connected && authenticated)
 		{
 			if (write (telnet_iosock, p, 1) < 1)
-				closesocket(telnet_iosock);
+			{
+				closesocket (telnet_iosock); // so we close socket
+				telnet_iosock = INVALID_SOCKET; // and mark as closed
+			}
 			if (*p == '\n') // demand for M$ WIN 2K telnet support
 				if (write (telnet_iosock, "\r", 1) < 1)
-					closesocket(telnet_iosock);
+				{
+					closesocket (telnet_iosock); // so we close socket
+					telnet_iosock = INVALID_SOCKET; // and mark as closed
+				}
 		}
 		if (!(int)sys_nostdout.value)
 			putc(*p, stdout);
