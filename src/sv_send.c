@@ -419,13 +419,30 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 	// send the data to all relevent clients
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
+		int trackent = 0;
+
 		if (client->state != cs_spawned)
 			continue;
 
 		if (!mask)
 			goto inrange; // multicast to all
 
-		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, vieworg);
+		// in case of trackent we have to reflect his origin so PHS work right.
+		if (fofs_trackent)
+		{
+			trackent = ((eval_t *)((byte *)&(client->edict)->v + fofs_trackent))->_int;
+			if (trackent < 1 || trackent > MAX_CLIENTS || svs.clients[trackent - 1].state != cs_spawned)
+				trackent = 0;
+		}
+
+		if (trackent)
+		{
+			VectorAdd (svs.clients[trackent - 1].edict->v.origin, svs.clients[trackent - 1].edict->v.view_ofs, vieworg);
+		}
+		else
+		{
+			VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, vieworg);
+		}
 
 		if (to == MULTICAST_PHS_R || to == MULTICAST_PHS)
 		{
