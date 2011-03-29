@@ -1925,7 +1925,7 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("say", SV_ConSay_f);
 	Cmd_AddCommand ("quit", SV_Quit_f);
 	Cmd_AddCommand ("restart", SV_Restart_f);
-	Cmd_AddCommand ("exit", SV_CloseTelnet_f);
+	Cmd_AddCommand ("closetelnet", SV_CloseTelnet_f);
 
 	Cmd_AddCommand ("god", SV_God_f);
 	Cmd_AddCommand ("give", SV_Give_f);
