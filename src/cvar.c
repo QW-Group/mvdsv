@@ -347,6 +347,50 @@ static void Cvar_CvarList_f (void)
 }
 
 /*
+===============
+Cvar_CvarDump_f
+===============
+List all cvars and their current value
+*/
+
+static void Cvar_CvarDump_f (void)
+{
+	int i, m, count;
+	cvar_t *sorted_cvars[512];
+	cvar_t *var;
+	char *pattern;
+
+#define MAX_SORTED_CVARS (sizeof (sorted_cvars) / sizeof (sorted_cvars[0]))
+
+	for (var = cvar_vars, count = 0; var && count < MAX_SORTED_CVARS; var = var->next, count++)
+		sorted_cvars[count] = var;
+	qsort (sorted_cvars, count, sizeof (cvar_t *), Cvar_CvarCompare);
+
+	if (count == MAX_SORTED_CVARS)
+		assert (!"count == MAX_SORTED_CVARS");
+
+	pattern = (Cmd_Argc() > 1) ? Cmd_Argv (1) : NULL;
+
+	m = 0;
+	Con_Printf ("List of cvars:\n");
+	for (i = 0; i < count; i++)
+	{
+		var = sorted_cvars[i];
+		if (pattern && !Q_glob_match (pattern, var->name))
+			continue;
+
+		Con_Printf ("%c %s: %s\n",
+		           var->flags & CVAR_SERVERINFO ? 's' : ' ',
+		           var->name,
+							var->string);
+		m++;
+	}
+
+	Con_Printf ("------------\n%d/%d %svariables\n", m, count, (pattern) ? "matching " : "");
+}
+
+
+/*
 ===========
 Cvar_Create
 ===========
@@ -519,6 +563,7 @@ static void Cvar_Hash_Print_f (void)
 void Cvar_Init (void)
 {
 	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f);
+	Cmd_AddCommand ("cvardump", Cvar_CvarDump_f);
 	Cmd_AddCommand ("toggle", Cvar_Toggle_f);
 	Cmd_AddCommand ("set", Cvar_Set_f); //DP_CON_SET
 	Cmd_AddCommand ("inc", Cvar_Inc_f);
