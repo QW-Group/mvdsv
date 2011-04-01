@@ -7,7 +7,9 @@
 VM/
 Debug*/
 Release*/
-*.vcproj.*.user
+*.sdf
+*.user
+*.filters
 Makefile
 config.log
 config.status
