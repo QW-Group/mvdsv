@@ -3770,6 +3770,9 @@ void SV_Init (quakeparms_t *parms)
 					parms->memsize / (float)0x100000);
 
 	Memory_Init (parms->membase, parms->memsize);
+	
+	Con_Printf ("============= Starting MVDSV =============\n");
+	
 	Cbuf_Init ();
 
 	Cmd_Init ();
@@ -3801,9 +3804,9 @@ void SV_Init (quakeparms_t *parms)
 
 	Con_Printf ("%4.1f megabyte heap\n", parms->memsize / (float)0x100000);
 
+	Con_Printf ("QuakeWorld Initialized\n");
+	
 	Version_f();
-
-	Con_Printf ("======== QuakeWorld Initialized ========\n");
 
 	// process command line arguments
 	Cmd_StuffCmds_f ();
