@@ -249,7 +249,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	char *entitystring;
 	char oldmap[MAP_NAME_LEN];
 	extern qbool	sv_allow_cheats;
-	extern cvar_t	sv_cheats, sv_paused;
+	extern cvar_t	sv_cheats, sv_paused, sv_bigcoords;
 
 	// store old map name
 	snprintf (oldmap, MAP_NAME_LEN, "%s", sv.mapname);
@@ -289,6 +289,19 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 	CM_InvalidateMap ();
 	Hunk_FreeToLowMark (host_hunklevel);
+
+#ifdef FTE_PEXT_FLOATCOORDS
+	if (sv_bigcoords.value)
+	{
+		msg_coordsize = 4;
+		msg_anglesize = 2;
+	}
+	else
+	{
+		msg_coordsize = 2;
+		msg_anglesize = 1;
+	}
+#endif
 
 	if ((int)coop.value)
 		Cvar_Set (&deathmatch, "0");

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef PROTOCOL_VERSION_FTE
 
 #define FTE_PEXT_ACCURATETIMINGS	0x00000040
+#define FTE_PEXT_FLOATCOORDS		0x00008000	//supports floating point origins.
 #define FTE_PEXT_256PACKETENTITIES	0x01000000	//Client can receive 256 packet entities
 #define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	//alternate file download method. Hopefully it'll give quadroupled download speed, especially on higher pings.
 

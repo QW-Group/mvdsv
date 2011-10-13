@@ -42,6 +42,24 @@ void SZ_Print (sizebuf_t *buf, const char *data);
 
 //============================================================================
 
+#ifdef FTE_PEXT_FLOATCOORDS
+
+typedef union {	//note: reading from packets can be misaligned
+	int b4;
+	float f;
+	short b2;
+	char b[4];
+} coorddata;
+
+extern int msg_coordsize; // 2 or 4.
+extern int msg_anglesize; // 1 or 2.
+
+float MSG_FromCoord(coorddata c, int bytes);
+coorddata MSG_ToCoord(float f, int bytes);	//return value should be treated as (char*)&ret;
+coorddata MSG_ToAngle(float f, int bytes);	//return value is NOT byteswapped.
+
+#endif
+
 extern struct usercmd_s nullcmd;
 
 void MSG_WriteChar (sizebuf_t *sb, const int c);

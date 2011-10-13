@@ -44,16 +44,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakeasm.h"
 #include "bothdefs.h"
-#include "common.h"
-#include "sys.h"
-#include "fs.h"
-#include "mathlib.h"
 
+#include "mathlib.h"
 #include "zone.h"
 #include "cvar.h"
 #include "cmd.h"
-#include "net.h"
 #include "protocol.h"
+
+#include "common.h"
+#include "net.h"
+#include "sys.h"
+#include "fs.h"
+
 #include "cmodel.h"
 
 #include "crc.h"
