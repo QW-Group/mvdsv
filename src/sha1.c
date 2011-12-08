@@ -11,7 +11,6 @@ Test Vectors (from FIPS PUB 180-1)
 A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
  
-	$Id$
 */
 
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
