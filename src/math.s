@@ -38,7 +38,6 @@
 Ljmptab:	.long	Lcase0, Lcase1, Lcase2, Lcase3
 			.long	Lcase4, Lcase5, Lcase6, Lcase7
 
-
 	.text
 
 	.extern C(BOPS_Error)

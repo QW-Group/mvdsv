@@ -183,6 +183,8 @@ cvar_t registered = {"registered", "1", CVAR_ROM};
 
 cvar_t sv_ktpro_mode = {"sv_ktpro_mode", "auto"};
 
+cvar_t	sv_halflifebsp = {"halflifebsp", "0", CVAR_ROM};
+
 #ifdef FTE_PEXT_FLOATCOORDS
 cvar_t sv_bigcoords = {"sv_bigcoords", "", CVAR_SERVERINFO};
 #endif
@@ -3404,6 +3406,8 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_ktpro_mode);
 
 	Cvar_Register (&sv_qwfwd_port);
+
+	Cvar_Register (&sv_halflifebsp);
 
 #ifdef FTE_PEXT_FLOATCOORDS
 	Cvar_Register (&sv_bigcoords);

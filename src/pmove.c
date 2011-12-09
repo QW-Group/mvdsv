@@ -31,8 +31,8 @@ static vec3_t	pm_forward, pm_right;
 vec3_t	player_mins = {-16, -16, -24};
 vec3_t	player_maxs = {16, 16, 32};
 
-#define STEPSIZE 18
-#define MIN_STEP_NORMAL 0.7 // roughly 45 degrees
+#define STEPSIZE		18
+#define MIN_STEP_NORMAL	0.7 // roughly 45 degrees
 
 #define pm_flyfriction	4
 
@@ -47,7 +47,6 @@ vec3_t	player_maxs = {16, 16, 32};
 static void PM_AddTouchedEnt (int num)
 {
 	int i;
-
 
 	if (pmove.numtouch == sizeof(pmove.touchindex)/sizeof(pmove.touchindex[0]))
 		return;
@@ -68,7 +67,6 @@ static void PM_ClipVelocity (vec3_t in, vec3_t normal, vec3_t out, float overbou
 	float backoff, change;
 	int i;
 
-
 	backoff = DotProduct (in, normal) * overbounce;
 
 	for (i = 0; i < 3; i++)
@@ -88,7 +86,6 @@ static int PM_SlideMove (void)
 	int bumpcount, numbumps, i, j, blocked, numplanes;
 	float d, time_left;
 	trace_t trace;
-
 
 	numbumps = 4;
 	blocked = 0;
@@ -199,7 +196,6 @@ static int PM_StepSlideMove (qbool in_air)
 	trace_t trace;
 	int blocked;
 
-
 	// try sliding forward both on ground and up 16 pixels
 	// take the move that goes farthest
 	VectorCopy (pmove.origin, original);
@@ -304,7 +300,6 @@ static void PM_Friction (void)
 	vec3_t start, stop;
 	trace_t trace;
 
-
 	if (pmove.waterjumptime)
 		return;
 
@@ -359,7 +354,6 @@ static void PM_Friction (void)
 static void PM_Accelerate (vec3_t wishdir, float wishspeed, float accel)
 {
 	float addspeed, accelspeed, currentspeed;
-
 
 	if (pmove.pm_type == PM_DEAD)
 		return;
@@ -423,7 +417,6 @@ static void PM_WaterMove (void)
 	float wishspeed;
 	int i;
 
-
 	// user intentions
 	for (i = 0; i < 3; i++)
 		wishvel[i] = pm_forward[i] * pmove.cmd.forwardmove + pm_right[i] * pmove.cmd.sidemove;
@@ -455,7 +448,6 @@ static void PM_FlyMove (void)
 	float wishspeed;
 	int i;
 
-
 	for (i = 0; i < 3; i++)
 		wishvel[i] = pm_forward[i] * pmove.cmd.forwardmove + pm_right[i] * pmove.cmd.sidemove;
 
@@ -471,7 +463,6 @@ static void PM_FlyMove (void)
 	}
 
 	PM_Accelerate (wishdir, wishspeed, movevars.accelerate);
-
 	PM_StepSlideMove (false);
 }
 
@@ -480,7 +471,6 @@ static void PM_AirMove (void)
 	float fmove, smove, wishspeed;
 	vec3_t wishvel, wishdir;
 	int i;
-
 
 	fmove = pmove.cmd.forwardmove;
 	smove = pmove.cmd.sidemove;
@@ -549,10 +539,10 @@ static void PM_AirMove (void)
 	}
 }
 
-
+// FIXME: put at the top of the file?
 static plane_t groundplane;
 
-static void PM_CategorizePosition (void)
+void PM_CategorizePosition (void)
 {
 	trace_t trace;
 	vec3_t point;
@@ -659,7 +649,7 @@ static void PM_CheckJump (void)
 	if (!pmove.onground)
 		return; // in air, so no effect
 
-	if (pmove.jump_held)
+	if (pmove.jump_held && !pmove.jump_msec)
 		return; // don't pogo stick
 
 	if (!movevars.pground)
@@ -685,6 +675,7 @@ static void PM_CheckJump (void)
 	}
 
 	pmove.jump_held = true; // don't jump again until released
+	pmove.jump_msec = pmove.cmd.msec;
 }
 
 static void PM_CheckWaterJump (void)
@@ -708,11 +699,11 @@ static void PM_CheckWaterJump (void)
 
 	VectorMA (pmove.origin, 24, flatforward, spot);
 	spot[2] += 8;
-	cont = PM_PointContents (spot);
+	cont = PM_PointContents_AllBSPs (spot);
 	if (cont != CONTENTS_SOLID)
 		return;
 	spot[2] += 24;
-	cont = PM_PointContents (spot);
+	cont = PM_PointContents_AllBSPs (spot);
 	if (cont != CONTENTS_EMPTY)
 		return;
 	// jump out of water
@@ -875,6 +866,13 @@ void PM_PlayerMove (void)
 		pmove.waterjumptime -= pm_frametime;
 		if (pmove.waterjumptime < 0)
 			pmove.waterjumptime = 0;
+	}
+
+	if (pmove.jump_msec)
+	{
+		pmove.jump_msec += pmove.cmd.msec;
+		if (pmove.jump_msec > 50)
+			pmove.jump_msec = 0;
 	}
 
 	PM_CheckJump ();

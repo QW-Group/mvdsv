@@ -14,37 +14,36 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-    
 */
-// cmodel.c
+// cmodel.c - collision model.
 
 #include "qwsvdef.h"
 
 typedef struct cnode_s
 {
 	// common with leaf
-	int contents; // 0, to differentiate from leafs
-	struct cnode_s *parent;
+	int				contents; // 0, to differentiate from leafs
+	struct cnode_s	*parent;
 
 	// node specific
-	mplane_t *plane;
-	struct cnode_s *children[2];
+	mplane_t		*plane;
+	struct cnode_s	*children[2];
 } cnode_t;
 
 
 typedef struct cleaf_s
 {
 	// common with node
-	int contents; // a negative contents number
-	struct cnode_s *parent;
+	int				contents; // a negative contents number
+	struct cnode_s	*parent;
 
 	// leaf specific
-	byte ambient_sound_level[NUM_AMBIENTS];
+	byte			ambient_sound_level[NUM_AMBIENTS];
 } cleaf_t;
 
 
 
-static char			loadname[32]; // for hunk tags
+static char			loadname[32];	// for hunk tags
 
 static char			map_name[MAX_QPATH];
 static unsigned int	map_checksum, map_checksum2;
@@ -67,16 +66,16 @@ static int			visleafs;
 
 static byte			map_novis[MAX_MAP_LEAFS/8];
 
-static byte			*map_pvs;				// fully expanded and decompressed
-static byte			*map_phs;				// only valid if we are the server
-static int			map_vis_rowbytes;		// for both pvs and phs
-static int			map_vis_rowlongs;		// map_vis_rowbytes / 4
+static byte			*map_pvs;					// fully expanded and decompressed
+static byte			*map_phs;					// only valid if we are the server
+static int			map_vis_rowbytes;			// for both pvs and phs
+static int			map_vis_rowlongs;			// map_vis_rowbytes / 4
 
 static char			*map_entitystring;
 
 static qbool		map_halflife;
 
-static byte			*cmod_base;				// for CM_Load* functions
+static byte			*cmod_base;					// for CM_Load* functions
 
 
 /*
@@ -117,7 +116,6 @@ static void CM_InitBoxHull (void)
 		box_planes[i].type = i>>1;
 		box_planes[i].normal[i>>1] = 1;
 	}
-	
 }
 
 /*
@@ -147,14 +145,19 @@ int CM_HullPointContents (hull_t *hull, int num, vec3_t p)
 	while (num >= 0)
 	{
 		if (num < hull->firstclipnode || num > hull->lastclipnode)
+		{
+			if (map_halflife && num == hull->lastclipnode + 1)
+				return CONTENTS_EMPTY;
 			Sys_Error ("CM_HullPointContents: bad node number");
+		}
 
 		node = hull->clipnodes + num;
 		plane = hull->planes + node->planenum;
-		
-		d = PlaneDiff(p, plane);
+
+		d = PlaneDiff (p, plane);
 		num = (d < 0) ? node->children[1] : node->children[0];
 	}
+
 	return num;
 }
 
@@ -213,7 +216,11 @@ start:
 
 	// FIXME, check at load time
 	if (num < hull->firstclipnode || num > hull->lastclipnode)
+	{
+		if (map_halflife && num == hull->lastclipnode + 1)
+			return TR_EMPTY;
 		Sys_Error ("RecursiveHullTrace: bad node number");
+	}
 
 	node = hull->clipnodes + num;
 
@@ -230,7 +237,7 @@ start:
 		t1 = DotProduct (plane->normal, p1) - plane->dist;
 		t2 = DotProduct (plane->normal, p2) - plane->dist;
 	}
-	
+
 	// see which sides we need to consider
 	if (t1 >= 0 && t2 >= 0) {
 		num = node->children[0];	// go down the front side
@@ -278,7 +285,7 @@ start:
 		trace->plane.dist = -plane->dist;
 	}
 
-// put the final point DIST_EPSILON pixels on the near side
+	// put the final point DIST_EPSILON pixels on the near side
 	if (t1 < t2)
 		frac = (t1 + DIST_EPSILON) / (t1 - t2);
 	else
@@ -326,7 +333,7 @@ trace_t CM_HullTrace (hull_t *hull, vec3_t start, vec3_t end)
 //===========================================================================
 
 
-int CM_NumInlineModels (void)
+int	CM_NumInlineModels (void)
 {
 	return numcmodels;
 }
@@ -342,15 +349,23 @@ int CM_Leafnum (const cleaf_t *leaf)
 	return leaf - map_leafs;
 }
 
+int	CM_LeafAmbientLevel (const cleaf_t *leaf, int ambient_channel)
+{
+	assert ((unsigned)ambient_channel <= NUM_AMBIENTS);
+	assert (leaf);
+
+	return leaf->ambient_sound_level[ambient_channel];
+}
+
 // always returns a valid cleaf_t pointer
 cleaf_t *CM_PointInLeaf (const vec3_t p)
 {
 	float d;
 	cnode_t *node;
 	mplane_t *plane;
-	
+
 	if (!numnodes)
-		SV_Error ("CM_PointInLeaf: numnodes == 0");
+		Host_Error ("CM_PointInLeaf: numnodes == 0");
 
 	node = map_nodes;
 	while (1)
@@ -362,7 +377,7 @@ cleaf_t *CM_PointInLeaf (const vec3_t p)
 		d = DotProduct (p,plane->normal) - plane->dist;
 		node = (d > 0) ? node->children[0] : node->children[1];
 	}
-	
+
 	return NULL; // never reached
 }
 
@@ -397,6 +412,7 @@ crosses a waterline.
 
 =============================================================================
 */
+
 static int	fatbytes;
 static byte	fatpvs[MAX_MAP_LEAFS/8];
 static vec3_t	fatpvs_org;
@@ -420,7 +436,7 @@ static void AddToFatPVS_r (cnode_t *node)
 			}
 			return;
 		}
-	
+
 		plane = node->plane;
 		d = DotProduct (fatpvs_org, plane->normal) - plane->dist;
 		if (d > 8)
@@ -484,11 +500,11 @@ static void FindTouchedLeafs_r (const cnode_t *node)
 			leafs_list[leafs_count++] = leaf - map_leafs;
 			return;
 		}
-		
+
 		// NODE_MIXED
 		splitplane = node->plane;
 		sides = BOX_ON_PLANE_SIDE (leafs_mins, leafs_maxs, splitplane);
-		
+
 		// recurse down the contacted sides
 		if (sides == 1)
 			node = node->children[0];
@@ -539,7 +555,7 @@ static void CM_LoadEntities (lump_t *l)
 		map_entitystring = NULL;
 		return;
 	}
-	map_entitystring = (char *) Hunk_AllocName ( l->filelen, loadname);
+	map_entitystring = (char *) Hunk_AllocName (l->filelen, loadname);
 	memcpy (map_entitystring, cmod_base + l->fileofs, l->filelen);
 }
 
@@ -558,15 +574,15 @@ static void CM_LoadSubmodels (lump_t *l)
 	in = (dmodel_t *)(cmod_base + l->fileofs);
 
 	if (l->filelen % sizeof(*in))
-		SV_Error ("CM_LoadMap: funny lump size");
+		Host_Error ("CM_LoadMap: funny lump size");
 
 	count = l->filelen / sizeof(*in);
 
 	if (count < 1)
-		SV_Error ("Map with no models");
+		Host_Error ("Map with no models");
 
 	if (count > MAX_MAP_MODELS)
-		SV_Error ("Map has too many models");
+		Host_Error ("Map has too many models");
 
 	out = map_cmodels;
 	numcmodels = count;
@@ -640,7 +656,7 @@ static void CM_LoadNodes (lump_t *l)
 
 	in = (dnode_t *)(cmod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
-		SV_Error ("CM_LoadMap: funny lump size");
+		Host_Error ("CM_LoadMap: funny lump size");
 
 	count = l->filelen / sizeof(*in);
 	out = (cnode_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
@@ -659,7 +675,7 @@ static void CM_LoadNodes (lump_t *l)
 			out->children[j] = (p >= 0) ? (map_nodes + p) : ((cnode_t *)(map_leafs + (-1 - p)));
 		}
 	}
-	
+
 	CM_SetParent (map_nodes, NULL); // sets nodes and leafs
 }
 
@@ -675,7 +691,7 @@ static void CM_LoadLeafs (lump_t *l)
 	in = (dleaf_t *)(cmod_base + l->fileofs);
 
 	if (l->filelen % sizeof(*in))
-		SV_Error ("CM_LoadMap: funny lump size");
+		Host_Error ("CM_LoadMap: funny lump size");
 
 	count = l->filelen / sizeof(*in);
 	out = (cleaf_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
@@ -705,7 +721,7 @@ static void CM_LoadClipnodes (lump_t *l)
 	in = (dclipnode_t *) (cmod_base + l->fileofs);
 
 	if (l->filelen % sizeof(*in))
-		SV_Error ("CM_LoadMap: funny lump size");
+		Host_Error ("CM_LoadMap: funny lump size");
 
 	count = l->filelen / sizeof(*in);
 	out = (dclipnode_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
@@ -736,7 +752,7 @@ static void CM_MakeHull0 (void)
 
 	in = map_nodes;
 	count = numnodes;
-	out = (dclipnode_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = (dclipnode_t *) Hunk_AllocName (count*sizeof(*out), loadname);
 
 	// fix up hull 0 in all cmodels
 	for (i = 0; i < numcmodels; i++) {
@@ -770,7 +786,7 @@ static void CM_LoadPlanes (lump_t *l)
 	in = (dplane_t *)(cmod_base + l->fileofs);
 
 	if (l->filelen % sizeof(*in))
-		SV_Error ("CM_LoadMap: funny lump size");
+		Host_Error ("CM_LoadMap: funny lump size");
 
 	count = l->filelen / sizeof(*in);
 	out = (mplane_t *) Hunk_AllocName (count * sizeof(*out), loadname);
@@ -824,7 +840,7 @@ static byte *DecompressVis (byte *in)
 			*out++ = *in++;
 			continue;
 		}
-	
+
 		c = in[1];
 		in += 2;
 		while (c)
@@ -833,7 +849,7 @@ static byte *DecompressVis (byte *in)
 			c--;
 		}
 	} while (out - decompressed < row);
-	
+
 	return decompressed;
 }
 
@@ -938,6 +954,7 @@ void CM_InvalidateMap (void)
 /*
 ** CM_LoadMap
 */
+extern cvar_t sv_halflifebsp;
 cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2)
 {
 	unsigned int i;
@@ -956,17 +973,19 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	// load the file
 	buf = (unsigned int *) FS_LoadTempFile (name, NULL);
 	if (!buf)
-		SV_Error ("CM_LoadMap: %s not found", name);
+		Host_Error ("CM_LoadMap: %s not found", name);
 
-	FS_FileBase (name, loadname);
+	COM_FileBase (name, loadname);
 
 	header = (dheader_t *)buf;
 
 	i = LittleLong (header->version);
 	if (i != Q1_BSPVERSION && i != HL_BSPVERSION)
-		SV_Error ("CM_LoadMap: %s has wrong version number (%i should be %i)", name, i, Q1_BSPVERSION);
+		Host_Error ("CM_LoadMap: %s has wrong version number (%i should be %i)", name, i, Q1_BSPVERSION);
 
 	map_halflife = (i == HL_BSPVERSION);
+
+	Cvar_SetROM(&sv_halflifebsp, map_halflife ? "1" : "0");
 
 	// swap all the lumps
 	cmod_base = (byte *)header;
@@ -1014,15 +1033,14 @@ cmodel_t *CM_InlineModel (char *name)
 	int num;
 
 	if (!name || name[0] != '*')
-		SV_Error ("CM_InlineModel: bad name");
+		Host_Error ("CM_InlineModel: bad name");
 
 	num = atoi (name+1);
 	if (num < 1 || num >= numcmodels)
-		SV_Error ("CM_InlineModel: bad number");
+		Host_Error ("CM_InlineModel: bad number");
 
 	return &map_cmodels[num];
 }
-
 
 void CM_Init (void)
 {

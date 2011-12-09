@@ -22,7 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __PMOVE_H__
 #define __PMOVE_H__
 
-#define MAX_PHYSENTS 64 // 32
+#define	MAX_PHYSENTS 64 
+
 typedef struct
 {
 	vec3_t		origin;
@@ -49,7 +50,7 @@ typedef struct
 	vec3_t		angles;
 	vec3_t		velocity;
 	qbool		jump_held;
-
+	int			jump_msec; // msec since last jump
 	float		waterjumptime;
 	int			pm_type;
 
@@ -94,7 +95,10 @@ extern	playermove_t pmove;
 void PM_PlayerMove (void);
 
 int PM_PointContents (vec3_t point);
+int PM_PointContents_AllBSPs (vec3_t p);
+void PM_CategorizePosition (void);
 qbool PM_TestPlayerPosition (vec3_t point);
 trace_t PM_PlayerTrace (vec3_t start, vec3_t end);
+trace_t PM_TraceLine (vec3_t start, vec3_t end);
 
 #endif /* !__PMOVE_H__ */

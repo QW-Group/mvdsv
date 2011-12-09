@@ -120,6 +120,7 @@ extern	double	realtime; // not bounded in any way, changed at start of every fra
 
 void SV_Error (char *error, ...);
 void SV_Init (quakeparms_t *parms);
+#define Host_Error SV_Error // ezquake compatibility
 
 void Con_Printf (char *fmt, ...);
 void Con_DPrintf (char *fmt, ...);

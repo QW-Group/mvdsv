@@ -94,6 +94,7 @@ void FS_Init (void);
 void FS_Init_Commands(void);
 long FS_FileLength (FILE *f);
 void FS_FileBase (char *in, char *out);
+#define COM_FileBase FS_FileBase // ezquake compatibility
 
 void FS_WriteFile (char *filename, void *data, int len);
 int FS_FOpenFile (char *filename, FILE **file);

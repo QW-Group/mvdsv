@@ -48,7 +48,6 @@ static qbool PM_CullTraceBox(vec3_t mins, vec3_t maxs, vec3_t offset, vec3_t emi
 		);
 }
 
-
 /*
 ==================
 PM_PointContents
@@ -58,6 +57,40 @@ int PM_PointContents (vec3_t p)
 {
 	hull_t *hull = &pmove.physents[0].model->hulls[0];
 	return CM_HullPointContents (hull, hull->firstclipnode, p);
+}
+
+/*
+==================
+PM_PointContents_AllBSPs
+
+Checks world and bsp entities, but not bboxes (like traceline with nomonsters set)
+For waterjump test
+==================
+*/
+int PM_PointContents_AllBSPs (vec3_t p)
+{
+	int i;
+	physent_t	*pe;
+	hull_t		*hull;
+	vec3_t		test;
+	int	result, final;
+
+	final = CONTENTS_EMPTY;
+	for (i = 0; i < pmove.numphysent; i++)
+	{
+		pe = &pmove.physents[i];
+		if (!pe->model)
+			continue;	// ignore non-bsp
+		hull = &pmove.physents[i].model->hulls[0];
+		VectorSubtract (p, pe->origin, test);
+		result = CM_HullPointContents (hull, hull->firstclipnode, test);
+		if (result == CONTENTS_SOLID)
+			return CONTENTS_SOLID;
+		if (final == CONTENTS_EMPTY)
+			final = result;
+	}
+
+	return final;
 }
 
 /*
@@ -74,10 +107,10 @@ qbool PM_TestPlayerPosition (vec3_t pos)
 	vec3_t		mins, maxs, offset, test;
 	hull_t		*hull;
 
-	for (i=0 ; i< pmove.numphysent ; i++)
+	for (i=0 ; i< pmove.numphysent; i++)
 	{
 		pe = &pmove.physents[i];
-	// get the clipping hull
+		// get the clipping hull
 		if (pe->model)
 		{
 			hull = &pmove.physents[i].model->hulls[1];
@@ -116,7 +149,7 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 	physent_t	*pe;
 	vec3_t		mins, maxs, tracemins, tracemaxs;
 
-// fill in a default trace
+	// fill in a default trace
 	memset (&total, 0, sizeof(trace_t));
 	total.fraction = 1;
 	total.e.entnum = -1;
@@ -124,11 +157,11 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 
 	PM_TraceBounds(start, end, tracemins, tracemaxs);
 
-	for (i=0 ; i< pmove.numphysent ; i++)
+	for (i=0; i< pmove.numphysent; i++)
 	{
 		pe = &pmove.physents[i];
 
-	// get the clipping hull
+		// get the clipping hull
 		if (pe->model)
 		{
 			hull = &pmove.physents[i].model->hulls[1];
@@ -177,3 +210,55 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 	return total;
 }
 
+/*
+================
+PM_TraceLine
+================
+*/
+trace_t PM_TraceLine (vec3_t start, vec3_t end)
+{
+	int i;
+	hull_t *hull;
+	physent_t *pe;
+	vec3_t offset, start_l, end_l;
+	trace_t trace, total;
+
+	// fill in a default trace
+	memset (&total, 0, sizeof(trace_t));
+	total.fraction = 1;
+	total.e.entnum = -1;
+	VectorCopy (end, total.endpos);
+
+	for (i = 0; i < pmove.numphysent; i++)
+	{
+		pe = &pmove.physents[i];
+		// get the clipping hull
+		hull = (pe->model) ? (&pmove.physents[i].model->hulls[0]) : (CM_HullForBox (pe->mins, pe->maxs));
+
+		// PM_HullForEntity (ent, mins, maxs, offset);
+		VectorCopy (pe->origin, offset);
+
+		VectorSubtract (start, offset, start_l);
+		VectorSubtract (end, offset, end_l);
+
+		// trace a line through the apropriate clipping hull
+		trace = CM_HullTrace (hull, start_l, end_l);
+
+		// fix trace up by the offset
+		VectorAdd (trace.endpos, offset, trace.endpos);
+
+		if (trace.allsolid)
+			trace.startsolid = true;
+		if (trace.startsolid)
+			trace.fraction = 0;
+
+		// did we clip the move?
+		if (trace.fraction < total.fraction)
+		{
+			total = trace;
+			total.e.entnum = i;
+		}
+	}
+
+	return total;
+}
