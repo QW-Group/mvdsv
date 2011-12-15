@@ -113,6 +113,8 @@ extern int com_argc;
 extern char **com_argv;
 
 int COM_CheckParm (const char *parm);
+char *COM_Argv (int arg); // range and null checked
+int COM_Argc (void);
 
 void COM_InitArgv (int argc, char **argv);
 

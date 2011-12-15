@@ -238,6 +238,7 @@ float	Q_atof (const char *str);
 char	*va (const char *format, ...);
 
 void	*Q_malloc (size_t size);
+void	*Q_calloc (size_t n, size_t size);
 #define	Q_free(ptr)	if(ptr) { free(ptr); ptr = NULL; }
 
 char	*Q_strdup (const char *src);
@@ -247,5 +248,7 @@ char	*COM_FileExtension (const char *in);
 void	COM_DefaultExtension (char *path, const char *extension);
 
 float	adjustangle (const float current, const float ideal, const float fraction);
+
+int		wildcmp(char *wild, char *string);
 
 #endif /* !__BOTHDEFS_H__ */

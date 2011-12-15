@@ -262,6 +262,71 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 	return dir;
 }
 
+int Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void *), void *parm)
+{
+	HANDLE r;
+	WIN32_FIND_DATA fd; 
+	char apath[MAX_OSPATH];
+	char apath2[MAX_OSPATH];
+	char file[MAX_OSPATH];
+	char *s;
+	int go;
+	if (!gpath)
+		return 0;
+
+	snprintf(apath, sizeof(apath), "%s/%s", gpath, match);
+	for (s = apath+strlen(apath)-1; s> apath; s--)
+	{
+		if (*s == '/') 
+			break;
+	}
+	*s = '\0';
+
+	// This is what we ask windows for.
+	snprintf(file, sizeof(file), "%s/*.*", apath);
+
+	// We need to make apath contain the path in match but not gpath
+	strlcpy(apath2, match, sizeof(apath));
+	match = s+1;
+	for (s = apath2+strlen(apath2)-1; s> apath2; s--)
+	{
+		if (*s == '/')
+			break;
+	}
+	*s = '\0';
+	if (s != apath2)
+		strlcat (apath2, "/", sizeof (apath2));
+
+	r = FindFirstFile(file, &fd);
+	if (r==(HANDLE)-1)
+		return 1;
+	go = true;
+	do
+	{
+		if (*fd.cFileName == '.');  // Don't ever find files with a name starting with '.'
+		else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)    //is a directory
+		{
+			if (wildcmp(match, fd.cFileName))
+			{
+				snprintf(file, sizeof(file), "%s%s/", apath2, fd.cFileName);
+				go = func(file, fd.nFileSizeLow, parm);
+			}
+		}
+		else
+		{
+			if (wildcmp(match, fd.cFileName))
+			{
+				snprintf(file, sizeof(file), "%s%s", apath2, fd.cFileName);
+				go = func(file, fd.nFileSizeLow, parm);
+			}
+		}
+	}
+	while(FindNextFile(r, &fd) && go);
+	FindClose(r);
+
+	return go;
+}
+
 /*
 ================
 Sys_Exit

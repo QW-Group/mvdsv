@@ -543,8 +543,18 @@ void *Q_malloc (size_t size)
 	void *p = malloc(size);
 	//p = calloc(1, size); //malloc & memset or just calloc?
 	if (!p)
-		Sys_Error ("Not enough memory free");
+		Sys_Error ("Q_malloc: Not enough memory free");
 	memset(p, 0, size);
+
+	return p;
+}
+
+void *Q_calloc (size_t n, size_t size)
+{
+	void *p = calloc(n, size);
+
+	if (!p)
+		Sys_Error ("Q_calloc: Not enough memory free\n");
 
 	return p;
 }
@@ -647,3 +657,50 @@ float adjustangle (const float current, const float ideal, const float fraction)
 
 	return (current + move);
 }
+
+//=======================================================
+
+int wildcmp(char *wild, char *string)
+{
+	char *cp=NULL, *mp=NULL;
+
+	while ((*string) && (*wild != '*'))
+	{
+		if ((*wild != *string) && (*wild != '?'))
+		{
+			return 0;
+		}
+		wild++;
+		string++;
+	}
+
+	while (*string)
+	{
+		if (*wild == '*')
+		{
+			if (!*++wild)   //a * at the end of the wild string matches anything the checked string has
+			{
+				return 1;
+			}
+			mp = wild;
+			cp = string+1;
+		}
+		else if ((*wild == *string) || (*wild == '?'))
+		{
+			wild++;
+			string++;
+		}
+		else
+		{
+			wild = mp;
+			string = cp++;
+		}
+	}
+
+	while (*wild == '*')
+	{
+		wild++;
+	}
+	return !*wild;
+}
+

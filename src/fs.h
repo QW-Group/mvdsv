@@ -23,62 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /*
 =============================================================================
 
-CONSTANTS
+VARIABLES
 
 =============================================================================
 */
-
-#define MAX_FILES_IN_PACK 2048
-
-/*
-=============================================================================
-
-TYPES
-
-=============================================================================
-*/
-
-// ------ PAK files on disk ------ //
-typedef struct dpackfile_s
-{
-	char name[56];
-	int filepos, filelen;
-} dpackfile_t;
-
-typedef struct dpackheader_s
-{
-	char id[4];
-	int dirofs;
-	int dirlen;
-} dpackheader_t;
-
-
-// Packages in memory
-typedef struct packfile_s
-{
-	char name[MAX_QPATH];
-	int filepos, filelen;
-} packfile_t;
-
-typedef struct pack_s
-{
-	char filename[MAX_OSPATH];
-	FILE *handle;
-	int numfiles;
-	packfile_t *files;
-} pack_t;
-
-// Search paths for files (including packages)
-typedef struct searchpath_s
-{
-	// only one of filename / pack will be used
-	char filename[MAX_OSPATH];
-	pack_t *pack;
-	struct searchpath_s *next;
-} searchpath_t;
-
-
-// ------ Variables ------ //
 
 extern char fs_gamedir[MAX_OSPATH];
 
@@ -89,23 +37,19 @@ FUNCTION PROTOTYPES
 
 =============================================================================
 */
-// ------ Main functions ------ //
+
 void FS_Init (void);
-void FS_Init_Commands(void);
+void FS_ShutDown(void);
 long FS_FileLength (FILE *f);
 void FS_FileBase (char *in, char *out);
 #define COM_FileBase FS_FileBase // ezquake compatibility
 
 void FS_WriteFile (char *filename, void *data, int len);
-int FS_FOpenFile (char *filename, FILE **file);
 
-pack_t *FS_LoadPackFile (char *packfile);
 byte *FS_LoadTempFile (char *path, int *len);
 byte *FS_LoadHunkFile (char *path, int *len);
 void FS_CreatePath (char *path);
 char *FS_NextPath (char *prevpath);
-void FS_Gamedir (char *dir);
-
-// ------ Other functions ------ //
+void FS_SetGamedir (char *dir);
 
 #endif /* !__FS_H__ */

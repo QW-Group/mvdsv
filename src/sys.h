@@ -57,6 +57,7 @@ void	Sys_mkdir (const char *path);
 int		Sys_rmdir (const char *path);
 int		Sys_remove (const char *path);
 dir_t	Sys_listdir (const char *path, const char *ext, int sort_type);
+int		Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void *), void *parm);
 int		Sys_compare_by_date (const void *a, const void *b);
 int		Sys_compare_by_name (const void *a, const void *b);
 #define SORT_NO			0

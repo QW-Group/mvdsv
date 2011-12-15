@@ -382,6 +382,18 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\src\hash.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\vfs_os.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\vfs_pak.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\mathlib.c"
 				>
 				<FileConfiguration
@@ -1388,6 +1400,14 @@
 			</File>
 			<File
 				RelativePath="..\..\src\world.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\hash.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\vfs.h"
 				>
 			</File>
 			<File

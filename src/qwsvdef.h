@@ -48,12 +48,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "zone.h"
 #include "cvar.h"
 #include "cmd.h"
+#include "hash.h"
 #include "protocol.h"
 
 #include "common.h"
 #include "net.h"
 #include "sys.h"
 #include "fs.h"
+#include "vfs.h"
 
 #include "cmodel.h"
 

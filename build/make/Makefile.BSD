@@ -79,7 +79,10 @@ SV_OBJS = \
 		${SV_DIR}/cmodel.o \
 		${SV_DIR}/crc.o \
 		${SV_DIR}/cvar.o \
+		${SV_DIR}/hash.o \
 		${SV_DIR}/fs.o \
+		${SV_DIR}/vfs_os.o \
+		${SV_DIR}/vfs_pak.o \
 		${SV_DIR}/mathlib.o \
 		${SV_DIR}/md4.o \
 		${SV_DIR}/net_chan.o \

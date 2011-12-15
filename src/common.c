@@ -815,6 +815,18 @@ int COM_CheckParm (const char *parm)
 	return 0;
 }
 
+int COM_Argc (void)
+{
+	return com_argc;
+}
+
+char *COM_Argv (int arg)
+{
+	if (arg < 0 || arg >= com_argc)
+		return "";
+	return com_argv[arg];
+}
+
 /*
 =====================================================================
 

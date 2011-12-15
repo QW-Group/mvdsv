@@ -1655,20 +1655,16 @@ void PF2_changelevel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	static int last_spawncount;
 	char *s = (char *) VM_POINTER(base,mask,stack[0].string);
 	char expanded[MAX_QPATH];
-	FILE *f;
 
 	// check to make sure the level exists.
 	// this is work around for bellow check about two changelevels,
 	// which lock server in one map if we trying switch to map which does't exist
 	snprintf(expanded, MAX_QPATH, "maps/%s.bsp", s);
-	FS_FOpenFile (expanded, &f);
-	if (!f)
+	if (!FS_FLocateFile(expanded, FSLFRT_IFFOUND, NULL))
 	{
 		Sys_Printf ("Can't find %s\n", expanded);
 		return;
 	}
-
-	fclose (f);
 
 	// make sure we don't issue two changelevels
 	// this check is evil and cause lock on one map, if /map command fail for some reason
@@ -2249,14 +2245,15 @@ static int GetFileList_Compare (const void *p1, const void *p2)
 
 void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	extern	searchpath_t *com_searchpaths; // evil, because this must be used in fs.c only...
+//	extern	searchpath_t *com_searchpaths; // evil, because this must be used in fs.c only...
+	char	*gpath = NULL;
 
 	char 	*list[MAX_DIRFILES];
 	const 	int	list_cnt = sizeof(list) / sizeof(list[0]);
 
 	dir_t	dir;
 
-	searchpath_t *search;
+//	searchpath_t *search;
 	char	netpath[MAX_OSPATH], *fullname;
 
 	char	*path, *ext, *listbuff, *dirptr;
@@ -2294,16 +2291,13 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 		return; // do not allow relative paths
 
 	// search through the path, one element at a time
-	for (i = 0, search = com_searchpaths ; i < list_cnt && search ; search = search->next)
+	for (i = 0, gpath = NULL; i < list_cnt && ( gpath = FS_NextPath( gpath ) ); )
 	{
-		if (search->pack)
-			continue; // is the element a pak file?
-
 		// if FILELIST_GAMEDIR_ONLY set then search in gamedir only
-		if ((flags & FILELIST_GAMEDIR_ONLY) && strcmp(search->filename, fs_gamedir))
+		if ((flags & FILELIST_GAMEDIR_ONLY) && strcmp(gpath, fs_gamedir))
 			continue;
 
-		snprintf (netpath, sizeof (netpath), "%s/%s", search->filename, path);
+		snprintf (netpath, sizeof (netpath), "%s/%s", gpath, path);
 
 		// reg exp search...
 		dir = Sys_listdir(netpath, ext, SORT_NO);
@@ -2313,7 +2307,7 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 			if (flags & FILELIST_WITH_PATH)
 			{
 				// with path
-				snprintf (netpath, sizeof (netpath), "%s/%s", search->filename, dir.files[j].name);
+				snprintf (netpath, sizeof (netpath), "%s/%s", gpath, dir.files[j].name);
 				fullname = netpath;
 
 				// skip "./" prefix

@@ -224,6 +224,9 @@
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</BrowseInformation>
     </ClCompile>
     <ClCompile Include="..\..\src\fs.c" />
+    <ClCompile Include="..\..\src\hash.c" />
+    <ClCompile Include="..\..\src\vfs_os.c" />
+    <ClCompile Include="..\..\src\vfs_pak.c" />
     <ClCompile Include="..\..\src\mathlib.c">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -536,6 +539,8 @@
     <ClInclude Include="..\..\src\sys.h" />
     <ClInclude Include="..\..\src\version.h" />
     <ClInclude Include="..\..\src\world.h" />
+    <ClInclude Include="..\..\src\hash.h" />
+    <ClInclude Include="..\..\src\vfs.h" />
     <ClInclude Include="..\..\src\zone.h" />
     <ClInclude Include="..\..\src\pcre\config.h" />
     <ClInclude Include="..\..\src\pcre\internal.h" />

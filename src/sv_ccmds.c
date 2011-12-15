@@ -414,14 +414,8 @@ void SV_Map (qbool now)
 	static char	level[MAX_QPATH];
 	static char	expanded[MAX_QPATH];
 	static qbool changed = false;
-	// -> scream
-	FILE	*f;
+
 	char	*s;
-	//bliP: date check
-	/*time_t	t;
-	struct tm	*tblock;*/
-	date_t date;
-	// <-
 
 	// if now, change it
 	if (now)
@@ -431,15 +425,11 @@ void SV_Map (qbool now)
 
 		changed = false;
 
-		// uh, is it possible ?
-		FS_FOpenFile (expanded, &f);
-		if (!f)
+		if (!FS_FLocateFile(expanded, FSLFRT_IFFOUND, NULL))
 		{
 			Sys_Printf ("Can't find %s\n", expanded);
 			return;
 		}
-
-		fclose (f);
 
 		if (sv.mvdrecording)
 			SV_MVDStop_f();
@@ -451,6 +441,7 @@ void SV_Map (qbool now)
 		if ((int)frag_log_type.value)
 		{
 			//bliP: date check ->
+			date_t date;
 			SV_TimeOfDay(&date);
 			s = va("\\newmap\\%s\\\\\\\\%d-%d-%d %d:%d:%d\\\n",
 			       level,
@@ -488,14 +479,11 @@ void SV_Map (qbool now)
 	// check to make sure the level exists
 	snprintf (expanded, MAX_QPATH, "maps/%s.bsp", level);
 
-	FS_FOpenFile (expanded, &f);
-	if (!f)
+	if (!FS_FLocateFile(expanded, FSLFRT_IFFOUND, NULL))
 	{
 		Con_Printf ("Can't find %s\n", expanded);
 		return;
 	}
-
-	fclose (f);
 
 	changed = true;
 }
@@ -1742,7 +1730,7 @@ void SV_Gamedir_f (void)
 		return;
 	}
 
-	FS_Gamedir (dir);
+	FS_SetGamedir (dir);
 	Info_SetValueForStarKey (svs.info, "*gamedir", dir, MAX_SERVERINFO_STRING);
 }
 
