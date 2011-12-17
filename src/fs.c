@@ -119,6 +119,35 @@ FUNCTIONS
 */
 
 /*
+================
+FS_GetCleanPath
+
+================
+*/
+static const char *FS_GetCleanPath(const char *pattern, char *outbuf, int outlen)
+{
+	char *s;
+
+	if (strchr(pattern, '\\'))
+	{
+		strlcpy(outbuf, pattern, outlen);
+		pattern = outbuf;
+
+		Con_Printf("Warning: \\ characters in filename %s\n", pattern);
+
+		for (s = (char*)pattern; (s = strchr(s, '\\')); s++)
+			*s = '/';
+	}
+
+	if (*pattern == '/' || strstr(pattern, "..") || strstr(pattern, ":"))
+		Con_Printf("Error: absolute path in filename %s\n", pattern);
+	else
+		return pattern;
+
+	return NULL;
+}
+
+/*
 ============
 FS_FlushFSHash
 
@@ -181,7 +210,12 @@ int FS_FLocateFile(const char *filename, FSLF_ReturnType_e returntype, flocation
 	int				depth = 0;
 	int				len;
 	searchpath_t	*search;
-	void			*pf;
+	char			cleanpath[MAX_OSPATH];
+	void			*pf = NULL;
+
+	filename = FS_GetCleanPath(filename, cleanpath, sizeof(cleanpath));
+	if (!filename)
+		goto fail;
 
  	if (fs_cache.value)
 	{
@@ -190,10 +224,6 @@ int FS_FLocateFile(const char *filename, FSLF_ReturnType_e returntype, flocation
 		pf = Hash_GetInsensitive(filesystemhash, filename);
 		if (!pf)
 			goto fail;
-	}
-	else
-	{
-		pf = NULL;
 	}
 
 	//
@@ -582,37 +612,6 @@ void FS_ShutDown( void )
 
 /*
 ================
-FS_GetCleanPath
-
-================
-*/
-static const char *FS_GetCleanPath(const char *pattern, char *outbuf, int outlen)
-{
-	char *s;
-
-	if (strchr(pattern, '\\'))
-	{
-		strlcpy(outbuf, pattern, outlen);
-		pattern = outbuf;
-
-		Con_Printf("Warning: \\ characters in filename %s\n", pattern);
-
-		for (s = (char*)pattern; (s = strchr(s, '\\')); s++)
-			*s = '/';
-	}
-
-	if (strstr(pattern, ".."))
-		Con_Printf("Error: '..' characters in filename %s\n", pattern);
-	else if (strstr(pattern, ":")) //win32 drive seperator (or mac path seperator, but / works there and they're used to it) (or amiga device separator)
-		Con_Printf("Error: absolute path in filename %s\n", pattern);
-	else
-		return pattern;
-
-	return NULL;
-}
-
-/*
-================
 FS_OpenVFS
 
 This should be how all files are opened.
@@ -666,15 +665,16 @@ vfsfile_t *FS_OpenVFS(const char *filename, char *mode, relativeto_t relativeto)
 		return VFSOS_Open(fullname, mode);
 
 	case FS_ANY:
+		// That an error attempt to write with FS_ANY, since file can be in pack file.
+		vfs = FS_OpenVFS(filename, mode, FS_GAME);
+		if (vfs)
+			return vfs;
+
 		vfs = FS_OpenVFS(filename, mode, FS_NONE_OS);
 		if (vfs)
 			return vfs;
 
-		vfs = FS_OpenVFS(filename, mode, FS_GAME_OS);
-		if (vfs)
-			return vfs;
-
-		return FS_OpenVFS(filename, mode, FS_GAME);
+		return NULL;
 
 	default:
 		Sys_Error("FS_OpenVFS: Bad relative path (%i)", relativeto);
@@ -949,12 +949,6 @@ static byte *FS_LoadFile (char *path, void *allocator, int *file_length)
 	{
 		f = loc.search->funcs->OpenVFS(loc.search->handle, &loc, "rb");
 	}
-#if 0
-	else
-	{
-		f = FS_OpenVFS(path, "rb", FS_ANY);
-	} 
-#endif
 
 	if (!f)
 		return NULL;

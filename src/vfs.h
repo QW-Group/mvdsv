@@ -128,9 +128,8 @@ typedef enum
 				// fs_basedir/filename.
 
 	FS_ANY		// That slightly evil, derived from ezquake.
-				// 1) FS_NONE_OS.
-				// 2) FS_GAME_OS.
-				// 3) FS_GAME.
+				// 1) FS_GAME.
+				// 2) FS_NONE_OS.
 } relativeto_t;
 
 vfsfile_t *FS_OpenVFS(const char *filename, char *mode, relativeto_t relativeto);

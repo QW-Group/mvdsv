@@ -1340,7 +1340,7 @@ static void Cmd_Download_f(void)
 	// techlogin download uses simple path from quake folder
 	if (sv_client->special)
 	{
-		sv_client->download = FS_OpenVFS(name, "rb", FS_ANY);
+		sv_client->download = FS_OpenVFS(name, "rb", FS_GAME); // FIXME: Should we use FS_BASE ???
 		if (sv_client->download)
 		{
 			if ((int) developer.value)
@@ -1350,7 +1350,7 @@ static void Cmd_Download_f(void)
 	}
 	else
 	{
-		sv_client->download = FS_OpenVFS(name, "rb", FS_ANY);
+		sv_client->download = FS_OpenVFS(name, "rb", FS_GAME);
 		if (sv_client->download)
 			sv_client->downloadsize = VFS_GETLEN(sv_client->download);
 
