@@ -36,15 +36,18 @@ static qbool qwm_static = true;
 void free_qwmsg_t(qwmsg_t **qwmsg1)
 {
 	int i;
-	if (!qwm_static)
-		for (i = 0; qwmsg1[i]; i++)
-		{
-			Q_free(qwmsg1[i]->str);
-			Q_free(qwmsg1[i]);
-		}
+
+	if (qwm_static)
+		return;
+
+	for (i = 0; qwmsg1[i]; i++)
+	{
+		Q_free(qwmsg1[i]->str);
+		Q_free(qwmsg1[i]);
+	}
 }
 
-qbool sv_mod_msg_file_OnChange(cvar_t *cvar, const char *value)
+void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 {
 	FILE *fp = NULL;
 	char *str_tok, buf[128];
@@ -62,10 +65,9 @@ qbool sv_mod_msg_file_OnChange(cvar_t *cvar, const char *value)
 
 		for (i = 0; i < MOD_MSG_MAX && qwmsg_def[i].str; i++)
 		{
-			qwmsg[i] = (qwmsg_t *) Q_malloc (sizeof(qwmsg_t));
 			qwmsg[i] = &qwmsg_def[i];
-			//            Sys_Printf("msg_type = %d, id = %d, pl_count = %d, str = %s, reverse = %d\n",
-			//	qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
+//			Sys_Printf("msg_type = %d, id = %d, pl_count = %d, str = %s, reverse = %d\n",
+//			qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
 		}
 		qwm_static = true;
 		Sys_Printf("Initialized default mod messages.\nTotal: %d messages.\n", i);
@@ -104,7 +106,7 @@ qbool sv_mod_msg_file_OnChange(cvar_t *cvar, const char *value)
 		fclose(fp);
 	}
 	qwmsg[i] = NULL;
-	return false;
+	*cancel = false;
 }
 
 const char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
