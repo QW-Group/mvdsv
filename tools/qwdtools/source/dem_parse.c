@@ -815,9 +815,9 @@ void Dem_ParsePacketEntities (qbool delta)
 		{
 			while (oldindex < oldp->num_entities)
 			{	// copy all the rest of the entities from the old packet
-				if (newindex >= MAX_PACKET_ENTITIES)
+				if (newindex >= MAX_MVD_PACKET_ENTITIES)
 				{
-					Sys_Printf ("Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+					Sys_Printf ("Dem_ParsePacketEntities: newindex == MAX_MVD_PACKET_ENTITIES\n");
 					Dem_Stop(from);
 					return;
 				}
@@ -840,9 +840,9 @@ void Dem_ParsePacketEntities (qbool delta)
 			}
 
 			// copy one of the old entities over to the new packet unchanged
-			if (newindex >= MAX_PACKET_ENTITIES)
+			if (newindex >= MAX_MVD_PACKET_ENTITIES)
 			{
-				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_MVD_PACKET_ENTITIES\n");
 				Dem_Stop(from);
 				return;
 			}
@@ -865,9 +865,9 @@ void Dem_ParsePacketEntities (qbool delta)
 				}
 				continue;
 			}
-			if (newindex >= MAX_PACKET_ENTITIES)
+			if (newindex >= MAX_MVD_PACKET_ENTITIES)
 			{
-				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES\n");
+				Sys_Printf ("ERROR:Dem_ParsePacketEntities: newindex == MAX_MVD_PACKET_ENTITIES\n");
 				Dem_Stop(from);
 				return;
 			}

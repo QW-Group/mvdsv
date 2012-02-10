@@ -648,10 +648,7 @@ int PF2_newcheckclient(int check)
 	return i;
 }
 
-
 #define	MAX_CHECK	16
-
-
 
 void PF2_checkclient(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
@@ -1978,7 +1975,7 @@ void PF2_acos(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 typedef struct
 {
 	char name[256];
-	FILE*handle;
+	vfsfile_t  *handle;
 	fsMode_t accessmode;
 }
 pr2_fopen_files_t;
@@ -1990,16 +1987,13 @@ char* cmodes[]={"rb","r","wb","w","ab","a"};
 /*
 int	trap_FS_OpenFile(char*name, fileHandle_t* handle, fsMode_t fmode );
 */
-//FIX ME read from paks
+//FIXME: read from paks
 void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
 	char *name=(char*)VM_POINTER(base,mask,stack[0].string);
 	fileHandle_t* handle=(fileHandle_t*)VM_POINTER(base,mask,stack[1]._int);
 	fsMode_t fmode = (fsMode_t) stack[2]._int;
 	int i;
-	char    fname[MAX_OSPATH];
-	char   *gpath = NULL;
-	char		*gamedir;
 
 	if(pr2_num_open_files >= MAX_PR2_FILES)
 	{
@@ -2032,26 +2026,18 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	case FS_READ_BIN:
 	case FS_READ_TXT:
 
-		while ( ( gpath = FS_NextPath( gpath ) ) )
-		{
-			snprintf( fname, sizeof( fname ), "%s/%s" , gpath, name );
-			pr2_fopen_files[i].handle = fopen(fname, cmodes[fmode]);
-			if ( pr2_fopen_files[i].handle )
-			{
-
-				Con_DPrintf( "PF2_FS_OpenFile %s\n", fname );
-				break;
-			}
-		}
+		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME);
 
 		if(!pr2_fopen_files[i].handle)
 		{
 			retval->_int = -1;
 			return ;
 		}
-		fseek(pr2_fopen_files[i].handle,0,SEEK_END);
-		retval->_int = ftell(pr2_fopen_files[i].handle);
-		fseek(pr2_fopen_files[i].handle,0,0);
+
+		Con_DPrintf( "PF2_FS_OpenFile %s\n", name );
+
+		retval->_int = VFS_GETLEN(pr2_fopen_files[i].handle);
+
 
 		break;
 	case FS_WRITE_BIN:
@@ -2059,25 +2045,18 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	case FS_APPEND_BIN:
 	case FS_APPEND_TXT:
 
-/*
-		gamedir = Info_ValueForKey (svs.info, "*gamedir");
-		if (!gamedir[0])
-			gamedir = "qw";
-*/
-		gamedir = fs_gamedir;
-
-		snprintf( fname, sizeof( fname ), "%s/%s" , gamedir, name );
-		// create path.
-		FS_CreatePath(fname);
-		// open file.
-		pr2_fopen_files[i].handle = fopen(fname, cmodes[fmode]);
+// well, perhapswe we should create path...
+//		snprintf( fname, sizeof( fname ), "%s/%s" , fs_gamedir, name );
+//		FS_CreatePath(fname);
+//		FS_CreatePathRelative(name, FS_GAME_OS);
+		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME_OS);
 		if ( !pr2_fopen_files[i].handle )
 		{
 			retval->_int = -1;
 			return ;
 		}
-		Con_DPrintf( "PF2_FS_OpenFile %s\n", fname );
-		retval->_int = ftell(pr2_fopen_files[i].handle);
+		Con_DPrintf( "PF2_FS_OpenFile %s\n", name );
+		retval->_int = VFS_TELL(pr2_fopen_files[i].handle);
 
 		break;
 	default:
@@ -2102,7 +2081,9 @@ void PF2_FS_CloseFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retv
 		return;
 	if(!(pr2_fopen_files[fnum].handle))
 		return;
-	fclose(pr2_fopen_files[fnum].handle);
+
+	VFS_CLOSE(pr2_fopen_files[fnum].handle);
+
 	pr2_fopen_files[fnum].handle = NULL;
 	pr2_num_open_files--;
 }
@@ -2130,7 +2111,8 @@ void PF2_FS_SeekFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return;
 	if(type <0 || type > 2)
 		return;
-	retval->_int = fseek(pr2_fopen_files[fnum].handle,offset,seek_origin[type]);
+
+	retval->_int = VFS_SEEK(pr2_fopen_files[fnum].handle, offset, seek_origin[type]);
 }
 
 /*
@@ -2150,7 +2132,8 @@ void PF2_FS_TellFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	if(!(pr2_fopen_files[fnum].handle))
 		return;
-	retval->_int = ftell(pr2_fopen_files[fnum].handle);
+
+	retval->_int = VFS_TELL(pr2_fopen_files[fnum].handle);
 }
 
 /*
@@ -2178,8 +2161,7 @@ void PF2_FS_WriteFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retv
 		return;
 
 	dest = (char*)VM_POINTER(base,mask,memoffset);
-	retval->_int = fwrite(dest,quantity,1,pr2_fopen_files[fnum].handle);
-
+	retval->_int = VFS_WRITE(pr2_fopen_files[fnum].handle, dest, quantity);
 }
 /*
 int	trap_FS_ReadFile( char*dest, int quantity, fileHandle_t handle );
@@ -2206,19 +2188,20 @@ void PF2_FS_ReadFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return;
 
 	dest = (char*)VM_POINTER(base,mask,memoffset);
-	retval->_int = fread(dest,quantity,1,pr2_fopen_files[fnum].handle);
+	retval->_int = VFS_READ(pr2_fopen_files[fnum].handle, dest, quantity, NULL);
 }
 
 void PR2_FS_Restart()
 {
 	int i;
+
 	if(pr2_num_open_files)
 	{
 		for (i = 0; i < MAX_PR2_FILES; i++)
 		{
 			if(pr2_fopen_files[i].handle)
 			{
-				fclose(pr2_fopen_files[i].handle);
+				VFS_CLOSE(pr2_fopen_files[i].handle);
 				pr2_num_open_files--;
 				pr2_fopen_files[i].handle = NULL;
 			}
@@ -2261,8 +2244,8 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 	intptr_t pathoffset 		= stack[0]._int;
 	intptr_t extoffset  		= stack[1]._int;
 	intptr_t listbuffoffset 	= stack[2]._int;
-	intptr_t buffsize		= stack[3]._int;
-	intptr_t flags			= stack[4]._int;
+	intptr_t buffsize			= stack[3]._int;
+	intptr_t flags				= stack[4]._int;
 
 	int numfiles = 0;
 	int i, j;
@@ -2744,11 +2727,12 @@ void PF2_makevectors(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 // a la the ZQ_PAUSE QC extension
 void PF2_setpause(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	qbool pause;
+	int pause;
 
-	pause = stack[0]._int ? true : false;
-	if (pause != sv.paused)
-		SV_TogglePause (NULL);
+	pause = stack[0]._int ? 1 : 0;
+
+	if (pause != (sv.paused & 1))
+		SV_TogglePause (NULL, 1);
 }
 
 #define SETUSERINFO_STAR          (1<<0) // allow set star keys
@@ -2964,7 +2948,7 @@ intptr_t sv_syscall(intptr_t arg, ...) //must passed ints
 	args[19]=va_arg(argptr, intptr_t);
 	va_end(argptr);
 
-	pr2_API[arg] ( 0,~0, (pr2val_t*)args, &ret);
+	pr2_API[arg] ( 0, (uintptr_t)~0, (pr2val_t*)args, &ret);
 
 	return ret._int;
 }

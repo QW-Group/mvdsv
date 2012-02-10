@@ -60,7 +60,7 @@ void SV_FlushRedirect (void)
 		send1[4] = A2C_PRINT;
 		memcpy (send1 + 5, outputbuf, strlen(outputbuf) + 1);
 
-		NET_SendPacket (strlen(send1) + 1, send1, net_from);
+		NET_SendPacket (NS_SERVER, strlen(send1) + 1, send1, net_from);
 	}
 	else if (sv_redirected == RD_CLIENT && sv_redirectbufcount < MAX_REDIRECTMESSAGES)
 	{
@@ -115,7 +115,21 @@ void SV_EndRedirect (void)
 	sv_redirected = RD_NONE;
 }
 
+qbool SV_AddToRedirect(char *msg)
+{
+	if (!sv_redirected)
+		return false;
 
+	// FIXME: probably we should check client's MTU instead of fixed MIN_MTU.
+	if (strlen(msg) + strlen(outputbuf) > /* MAX_MSGLEN */ MIN_MTU - 10)
+		SV_FlushRedirect ();
+
+	strlcat(outputbuf, msg, sizeof(outputbuf));
+
+	return true;
+}
+
+#ifdef SERVERONLY
 
 /*
 ================
@@ -133,14 +147,10 @@ void Con_Printf (char *fmt, ...)
 	va_start (argptr,fmt);
 	vsnprintf (msg, MAXPRINTMSG, fmt, argptr);
 	va_end (argptr);
+
 	// add to redirected message
-	if (sv_redirected)
-	{
-		if (strlen (msg) + strlen(outputbuf) > /*sizeof(outputbuf) - 1*/ /* MAX_MSGLEN */ MIN_MTU - 10)
-			SV_FlushRedirect ();
-		strlcat (outputbuf, msg, sizeof(outputbuf));
-		return;
-	}
+	if (SV_AddToRedirect(msg))
+		return; // added.
 
 	Sys_Printf ("%s", msg);	// also echo to debugging console
 	SV_Write_Log(CONSOLE_LOG, 0, msg);
@@ -172,6 +182,8 @@ void Con_DPrintf (char *fmt, ...)
 	Con_Printf ("%s", msg);
 }
 
+#endif // SERVERONLY
+
 /*
 =============================================================================
  
@@ -182,6 +194,12 @@ EVENT MESSAGES
 
 static void SV_PrintToClient(client_t *cl, int level, char *string)
 {
+	if (cl->state < cs_preconnected)
+	{
+		Sys_Printf("SV_PrintToClient: client not ready.");
+		return;
+	}
+
 	ClientReliableWrite_Begin (cl, svc_print, strlen(string)+3);
 	ClientReliableWrite_Byte (cl, level);
 	ClientReliableWrite_String (cl, string);
@@ -344,7 +362,6 @@ void SV_BroadcastPrintfEx (int level, int flags, char *fmt, ...)
 	SV_DoBroadcastPrintf (level, flags, string);
 }
 
-
 /*
 =================
 SV_BroadcastCommand
@@ -467,7 +484,6 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 inrange:
 		if (reliable || (cl_reliable_key && *cl_reliable_key && strcmp("0", Info_Get(&client->_userinfo_ctx_, cl_reliable_key))))
 		{
-//			Con_Printf ("reliable multicast\n");
 			ClientReliableCheckBlock(client, sv.multicast.cursize);
 			ClientReliableWrite_SZ(client, sv.multicast.data, sv.multicast.cursize);
 		}
@@ -496,6 +512,53 @@ void SV_Multicast (vec3_t origin, int to)
 {
 	SV_MulticastEx(origin, to, NULL);
 }
+
+void SV_StartParticle (vec3_t org, vec3_t dir, int color, int count,
+					   int replacement_te, int replacement_count)
+{
+	int		i, v;
+	qbool	send_count;
+
+	//if (AllClientsWantSVCParticle())
+	if (0)
+	{
+		MSG_WriteByte (&sv.multicast, nq_svc_particle);
+		MSG_WriteCoord (&sv.multicast, org[0]);
+		MSG_WriteCoord (&sv.multicast, org[1]);
+		MSG_WriteCoord (&sv.multicast, org[2]);
+		for (i=0 ; i<3 ; i++)
+		{
+			v = dir[i]*16;
+			if (v > 127)
+				v = 127;
+			else if (v < -128)
+				v = -128;
+			MSG_WriteChar (&sv.multicast, v);
+		}
+		MSG_WriteByte (&sv.multicast, count);
+		MSG_WriteByte (&sv.multicast, color);
+	}
+	else
+	{
+		if (replacement_te == TE_EXPLOSION || replacement_te == TE_LIGHTNINGBLOOD)
+			send_count = false;
+		else if (replacement_te == TE_BLOOD || replacement_te == TE_GUNSHOT)
+			send_count = true;
+		else
+			return;		// don't send anything
+
+		MSG_WriteByte (&sv.multicast, svc_temp_entity);
+		MSG_WriteByte (&sv.multicast, replacement_te);
+		if (send_count)
+			MSG_WriteByte (&sv.multicast, replacement_count);
+		MSG_WriteCoord (&sv.multicast, org[0]);
+		MSG_WriteCoord (&sv.multicast, org[1]);
+		MSG_WriteCoord (&sv.multicast, org[2]);
+	}
+
+	SV_Multicast (org, MULTICAST_PVS);
+}
+
 
 /*
 ==================
@@ -773,7 +836,7 @@ void SV_UpdateClientStats (client_t *client)
 	if (!client->spectator || client->spec_track > 0)
 		stats[STAT_ACTIVEWEAPON] = ent->v.weapon;
 	// stuff the sigil bits into the high bits of items for sbar
-	stats[STAT_ITEMS] = (int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
+	stats[STAT_ITEMS] = (int) ent->v.items | ((int) PR_GLOBAL(serverflags) << 28);
 	if (fofs_items2)	// ZQ_ITEMS2 extension
 		stats[STAT_ITEMS] |= (int)EdictFieldFloat(ent, fofs_items2) << 23;
 
@@ -993,6 +1056,9 @@ void SV_SendClientMessages (void)
 	int			i, j;
 	client_t	*c;
 
+	if (sv.state != ss_active)
+		return;
+
 	// update frags, names, etc
 	SV_UpdateToReliableMessages ();
 
@@ -1145,7 +1211,7 @@ void MVD_WriteStats(void)
 			stats[STAT_VIEWHEIGHT] = ent->v.view_ofs[2];
 
 		// stuff the sigil bits into the high bits of items for sbar
-		stats[STAT_ITEMS] = (int) ent->v.items | ((int) pr_global_struct->serverflags << 28);
+		stats[STAT_ITEMS] = (int) ent->v.items | ((int) PR_GLOBAL(serverflags) << 28);
 
 		for (j = 0 ; j < MAX_CL_STATS; j++)
 		{
@@ -1189,6 +1255,9 @@ void SV_SendDemoMessage(void)
 	float		min_fps;
 	extern		cvar_t sv_demofps, sv_demoIdlefps;
 	extern		cvar_t sv_demoPings;
+
+	if (sv.state != ss_active)
+		return;
 
 	SV_MVD_RunPendingConnections();
 

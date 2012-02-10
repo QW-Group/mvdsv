@@ -734,7 +734,7 @@ void AddEntities(packet_entities_t *to, frame_t *prev, frame_t *next)
 				for (k=0; k<3; k++)
 				{
 					newp.entities[i].origin[k] = prevp->entities[j].origin[k] + f*(prevp->entities[j].origin[k] - nextp->entities[i].origin[k]);
-					newp.entities[i].angles[k] = adjustangle(nextp->entities[i].angles[k], prevp->entities[j].angles[k],1.0+f);
+					newp.entities[i].angles[k] = AdjustAngle(nextp->entities[i].angles[k], prevp->entities[j].angles[k],1.0+f);
 				}
 			}
 			else

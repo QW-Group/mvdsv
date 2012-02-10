@@ -29,6 +29,31 @@ static char	*cvar_null_string = "";
 
 /*
 ============
+Cvar_Next
+
+Use this to walk through all vars.
+============
+*/
+cvar_t *Cvar_Next (cvar_t *var)
+{
+	if (var)
+		return var->next;
+	else
+		return cvar_vars;
+}
+
+/*
+============
+Cvar_GetFlags
+============
+*/
+int Cvar_GetFlags (cvar_t *var)
+{
+	return var->flags;
+}
+
+/*
+============
 Cvar_Find
 ============
 */
@@ -85,40 +110,45 @@ void SV_SendServerInfoChange(char *key, char *value);
 Cvar_Set
 ============
 */
-void Cvar_Set (cvar_t *var, const char *value)
+void Cvar_Set (cvar_t *var, char *value)
 {
 	static qbool changing = false;
+	char *tmp;
 
 	if (!var)
 		return;
+
+	// force serverinfo "0" vars to be "".
+	if ((var->flags & CVAR_SERVERINFO) && !strcmp(value, "0"))
+		value = "";
 
 	if (var->flags & CVAR_ROM)
 		return;
 
 	if (var->OnChange && !changing)
 	{
+		qbool cancel = false;
+
 		changing = true;
-		if (var->OnChange (var, value))
-		{
-			changing = false;
-			return;
-		}
+		var->OnChange(var, value, &cancel);
 		changing = false;
+
+		if (cancel)
+			return; // change rejected.
 	}
 
-	Q_free (var->string); // free the old value string
-
-	var->string = (char *) Q_malloc (strlen (value) + 1);
-	strlcpy (var->string, value, strlen (value) + 1);
+	// dup string first (before free) since 'value' and 'var->string' can point at the same memory area.
+	tmp = Q_strdup(value);
+	// free the old value string
+	Q_free (var->string);
+	// assign new value.
+	var->string = tmp;
 	var->value = Q_atof (var->string);
 
 	if (var->flags & CVAR_SERVERINFO)
 	{
-		if (strcmp(var->string, (const char *) Info_ValueForKey (svs.info, var->name)))
-		{
-			Info_SetValueForKey (svs.info, var->name, var->string, MAX_SERVERINFO_STRING);
-			SV_SendServerInfoChange (var->name, var->string);
-		}
+		extern void SV_ServerinfoChanged (char *key, char *string);
+		SV_ServerinfoChanged (var->name, var->string);
 	}
 }
 
@@ -127,7 +157,7 @@ void Cvar_Set (cvar_t *var, const char *value)
 Cvar_SetROM
 ============
 */
-void Cvar_SetROM (cvar_t *var, const char *value)
+void Cvar_SetROM (cvar_t *var, char *value)
 {
 	int saved_flags;
 
@@ -145,7 +175,7 @@ void Cvar_SetROM (cvar_t *var, const char *value)
 Cvar_SetByName
 ============
 */
-void Cvar_SetByName (const char *var_name, const char *value)
+void Cvar_SetByName (const char *var_name, char *value)
 {
 	cvar_t	*var;
 
@@ -192,7 +222,6 @@ void Cvar_SetValueByName (const char *var_name, const float value)
 	Cvar_SetByName (var_name, val);
 }
 
-
 /*
 ============
 Cvar_Register
@@ -202,7 +231,7 @@ Adds a freestanding variable to the variable list.
 */
 void Cvar_Register (cvar_t *variable)
 {
-	char	value[512];
+	char	*value;
 	int		key;
 
 	// first check to see if it has already been defined
@@ -226,14 +255,11 @@ void Cvar_Register (cvar_t *variable)
 	variable->next = cvar_vars;
 	cvar_vars = variable;
 
-	// copy the value off, because future sets will Q_free it
-	strlcpy (value, variable->string, sizeof(value));
-	variable->string = (char *) Q_malloc (1);
-
 	// set it through the function to be consistent
+	value = variable->string;
+	variable->string = Q_strdup("");
 	Cvar_SetROM (variable, value);
 }
-
 
 /*
 ============

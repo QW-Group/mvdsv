@@ -194,7 +194,7 @@ static void FS_RebuildFSHash(void)
 
 	filesystemchanged = false;
 
-	Con_Printf("FS_RebuildFSHash: %i unique files, %i duplicates\n", fs_hash_files, fs_hash_dups);
+	Con_DPrintf("FS_RebuildFSHash: %i unique files, %i duplicates\n", fs_hash_files, fs_hash_dups);
 }
 
 /*
@@ -261,12 +261,12 @@ out:
  *	if (len>=0)
 	{
 		if (loc)
-			Com_Printf("Found %s:%i\n", loc->rawname, loc->len);
+			Con_Printf("Found %s:%i\n", loc->rawname, loc->len);
 		else
-			Com_Printf("Found %s\n", filename);
+			Con_Printf("Found %s\n", filename);
 	}
 	else
-		Com_Printf("Failed\n");
+		Con_Printf("Failed\n");
 */
 
 	if (returntype == FSLFRT_IFFOUND)
@@ -452,7 +452,7 @@ Sets the gamedir and path to a different directory.
 That is basically handy wrapper around FS_AddGameDirectory() for "gamedir" command.
 ============
 */
-void FS_SetGamedir (char *dir)
+void FS_SetGamedir (char *dir, qbool force)
 {
 	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":")) 
 	{
@@ -460,8 +460,8 @@ void FS_SetGamedir (char *dir)
 		return;
 	}
 
-	if (!strcmp(fs_gamedirfile, dir))
-		return;		// Still the same.
+	if (!force && !strcmp(fs_gamedirfile, dir))
+		return;		// Still the same, unless we forced.
 	
 	// FIXME: do we need it? since it will be set in FS_AddGameDirectory().
 	strlcpy (fs_gamedirfile, dir, sizeof(fs_gamedirfile));
@@ -556,7 +556,7 @@ void FS_InitEx(void)
 		i = COM_CheckParm ("+gamedir");
 	if (i && i < COM_Argc() - 1)
 	{
-		FS_SetGamedir (COM_Argv(i + 1));
+		FS_SetGamedir (COM_Argv(i + 1), true);
 		// FIXME: move in FS_SetGamedir() instead!!!
 		Info_SetValueForStarKey (svs.info, "*gamedir", COM_Argv(i + 1), MAX_SERVERINFO_STRING);
 	}
@@ -970,7 +970,7 @@ static byte *FS_LoadFile (char *path, void *allocator, int *file_length)
 		buf = (byte *) Hunk_TempAlloc (len + 1);
 	}
 #if 0
-	else if (Hunk_TempAlloc == Q_malloc)
+	else if (allocator == Q_malloc)
 	{
 		buf = Q_malloc (len + 1);
 	}

@@ -43,7 +43,6 @@
 #define VM_POINTER(base,mask,x)			((void*)((char *)base+((x)&mask)))
 #define POINTER_TO_VM(base,mask,x)		((x)?(intptr_t)((char *)(x) - (char*)base)&mask:0)
 
-
 typedef union pr2val_s
 {
 	string_t	string;
@@ -247,5 +246,6 @@ vm_t* VM_Load(vm_t *vm, vm_type_t type, char *name,sys_call_t syscall,sys_callex
 extern intptr_t VM_Call(vm_t *vm, int /*command*/, int /*arg0*/, int , int , int , int , int , 
 				int , int , int , int , int , int /*arg11*/);
 void  QVM_StackTrace( qvm_t * qvm );
+void VM_PrintInfo( vm_t * vm);
 
 #endif /* !__PR2_VM_H__ */

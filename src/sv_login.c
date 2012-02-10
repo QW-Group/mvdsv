@@ -132,15 +132,25 @@ void SV_LoadAccounts(void)
 	{
 		memset(acc, 0, sizeof(account_t));
 		// Is realy safe to use 'fscanf(f, "%s", s)'? FIXME!
-		fscanf(f, "%s", acc->login);
+		if (fscanf(f, "%s", acc->login) != 1) {
+			Con_Printf("Error reading account data\n");
+			break;
+		}
 		if (StringToFilter(acc->login, &acc->adress))
 		{
 			strlcpy(acc->pass, acc->login, MAX_LOGINNAME);
 			acc->use = use_ip;
-			fscanf(f, "%s %d\n", acc->pass, (int *)&acc->state);
+			if (fscanf(f, "%s %d\n", acc->pass, (int *)&acc->state) != 2) {
+				Con_Printf("Error reading account data\n");
+				break;
+			}
 		}
-		else
-			fscanf(f, "%s %d %d\n", acc->pass,  (int *)&acc->state, &acc->failures);
+		else {
+			if (fscanf(f, "%s %d %d\n", acc->pass,  (int *)&acc->state, &acc->failures) != 3) {
+				Con_Printf("Error reading account data\n");
+				break;
+			}
+		}
 
 		if (acc->state != a_free) // lol?
 			acc++;
@@ -161,7 +171,7 @@ void SV_LoadAccounts(void)
 
 		for (i = 0, acc = accounts; i < num_accounts; i++, acc++)
 			if ( (acc->use == use_log && !strncmp(acc->login, cl->login, CLIENT_LOGIN_LEN))
-			        || (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip.ip[0], cl->realip.ip.ip[1], cl->realip.ip.ip[2], cl->realip.ip.ip[3]))) )
+			        || (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]))) )
 				break;
 
 		if (i < num_accounts && acc->state == a_ok)
@@ -527,7 +537,7 @@ qbool SV_Login(client_t *cl)
 	}
 
 	// check for account for ip
-	ip = va("%d.%d.%d.%d", cl->realip.ip.ip[0], cl->realip.ip.ip[1], cl->realip.ip.ip[2], cl->realip.ip.ip[3]);
+	ip = va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]);
 	if ((cl->logged = checklogin(ip, ip, cl - svs.clients + 1, use_ip)) > 0)
 	{
 		strlcpy(cl->login, accounts[cl->logged-1].pass, CLIENT_LOGIN_LEN);

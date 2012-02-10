@@ -61,7 +61,7 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 	if (fp == NULL)
 	{
 		if (value[0])
-			Sys_Printf("WARNING: sv_mod_msg_file_OnChange: can't open file %s.\n", value);
+			Con_Printf("WARNING: sv_mod_msg_file_OnChange: can't open file %s.\n", value);
 
 		for (i = 0; i < MOD_MSG_MAX && qwmsg_def[i].str; i++)
 		{
@@ -70,7 +70,7 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 //			qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
 		}
 		qwm_static = true;
-		Sys_Printf("Initialized default mod messages.\nTotal: %d messages.\n", i);
+		Con_DPrintf("Initialized default mod messages.\nTotal: %d messages.\n", i);
 	}
 	else
 	{
@@ -102,7 +102,7 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 			//	qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
 		}
 		qwm_static = false;
-		Sys_Printf("Initialized mod messages from file %s.\nTotal: %d messages.\n", value, i);
+		Con_DPrintf("Initialized mod messages from file %s.\nTotal: %d messages.\n", value, i);
 		fclose(fp);
 	}
 	qwmsg[i] = NULL;

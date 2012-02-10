@@ -188,4 +188,36 @@ qbool Q_glob_match (const char *pattern, const char *text);
 
 int Com_HashKey (const char *name);
 
+//============================================================================
+
+int Com_TranslateMapChecksum (const char *mapname, int checksum);
+
+//============================================================================
+//
+// QTV shared defs between client and server.
+//
+
+typedef enum
+{
+
+	QUL_NONE = 0,	//
+	QUL_ADD,		// user joined
+	QUL_CHANGE,		// user changed something like name or something
+	QUL_DEL			// user dropped
+
+} qtvuserlist_t;
+
+typedef struct qtvuser_s
+{
+
+	int					id;								// unique user id
+	char				name[MAX_KEY_STRING];			// client name, well must be unique too
+
+	struct qtvuser_s	*next;							// next qtvuser_s struct in our list
+
+} qtvuser_t;
+
+//============================================================================
+
+
 #endif /* !__COMMON_H__ */

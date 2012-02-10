@@ -33,7 +33,28 @@ float			*pr_globals;			// same as pr_global_struct
 int				pr_edict_size;	// in bytes
 int				pr_teamfield = 0;	// field for team storage
 
-int		type_size[8] = {1,sizeof(void *)/4,1,3,1,1,sizeof(void *)/4,sizeof(void *)/4};
+#define NQ_PROGHEADER_CRC 5927
+
+#ifdef WITH_NQPROGS
+qbool pr_nqprogs;
+int pr_fieldoffsetpatch[106];
+int pr_globaloffsetpatch[62];
+static int pr_globaloffsetpatch_nq[62] = {0,0,0,0,0,666,-4,-4,8,8,
+8,8,8,8,8,8,8,8,8,8, 8,8,8,8,8,8,8,8,8,8, 8,8,8,8,8,8,8,8,8,8, 
+8,8,8,8,8,8,8,8,8,8, 8,8,8,8,8,8,8,8,8,8, 8,8};
+#endif
+
+int		type_size[8] =
+{
+	1,					// void
+	sizeof(void *)/4,	// string_t
+	1,					// float
+	3,					// vector
+	1,					// entity
+	1,					// field
+	sizeof(void *)/4, 	// func_t
+	sizeof(void *)/4 	// pointer (its an int index)
+};
 
 ddef_t *ED_FieldAtOfs (int ofs);
 qbool ED_ParseEpair (void *base, ddef_t *key, char *s);
@@ -58,6 +79,10 @@ func_t UserInfo_Changed, localinfoChanged;
 func_t ChatMessage;
 
 cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
+#ifdef WITH_NQPROGS
+cvar_t  sv_forcenqprogs = {"sv_forcenqprogs", "0"};
+#endif
+
 /*
 =================
 ED_ClearEdict
@@ -68,6 +93,7 @@ Sets everything to NULL
 void ED_ClearEdict (edict_t *e)
 {
 	memset (&e->v, 0, progs->entityfields * 4);
+	e->e->lastruntime = 0;
 	e->e->free = false;
 }
 
@@ -582,7 +608,19 @@ void ED_PrintEdict_f (void)
 {
 	int		i;
 
+	if (Cmd_Argc () != 2)
+	{
+		Con_Printf ("\nUsage:\nedict [num]\n");
+		return;
+	}
+
 	i = Q_atoi (Cmd_Argv(1));
+	if(i < 0 || i >= sv.num_edicts)
+	{
+		Con_Printf ("\nNo such edict: %i\n", i);
+		return;
+	}
+	
 	Con_Printf ("\n EDICT %i:\n",i);
 	ED_PrintNum (i);
 }
@@ -1092,11 +1130,38 @@ static void CheckKTPro (void)
 		is_ktpro = sv_ktpro_mode.value ? true : false;
 }
 
+#ifdef WITH_NQPROGS
+void PR_InitPatchTables (void)
+{
+	int i;
+
+	if (pr_nqprogs)
+	{
+		memcpy (pr_globaloffsetpatch, pr_globaloffsetpatch_nq, sizeof(pr_globaloffsetpatch));
+		for (i = 0; i < 106; i++)
+		{
+			pr_fieldoffsetpatch[i] = (i < 8) ? i : (i < 25) ? i + 1 :
+				(i < 28) ? i + (102 - 25) : (i < 73) ? i - 2 :
+				(i < 74) ? i + (105 - 73) : (i < 105) ? i - 3 : /* (i == 105) */ 8;
+		}
+
+		for (i=0 ; i<progs->numfielddefs ; i++)
+			pr_fielddefs[i].ofs = PR_FIELDOFS(pr_fielddefs[i].ofs);
+	}
+	else
+	{
+		memset (pr_globaloffsetpatch, 0, sizeof(pr_globaloffsetpatch));
+
+		for (i = 0; i < 106; i++)
+			pr_fieldoffsetpatch[i] = i;
+	}
+}
+#endif
+
 void PR_LoadProgs (void)
 {
 	int	i;
 	char num[32];
-	char name[MAX_OSPATH];
 	int filesize;
 
 	// flush the non-C variable lookup cache
@@ -1106,15 +1171,39 @@ void PR_LoadProgs (void)
 	// clear pr_newstrtbl
 	PF_clear_strtbl();
 
-	snprintf(name, sizeof(name), "%s.dat", sv_progsname.string);
-	progs = (dprograms_t *)FS_LoadHunkFile (name, &filesize);
+	progs = NULL;
+#ifdef WITH_NQPROGS
+	pr_nqprogs = false;
+
+	// forced load of NQ progs.
+	if (!progs && Cvar_Value("sv_forcenqprogs") && (progs = (dprograms_t *)FS_LoadHunkFile ("progs.dat", &filesize)))
+		pr_nqprogs = true;
+#endif
+
+	if (!progs)
+	{
+		char name[MAX_OSPATH];
+		snprintf(name, sizeof(name), "%s.dat", sv_progsname.string);
+		progs = (dprograms_t *)FS_LoadHunkFile (name, &filesize);
+	}
 	if (!progs)
 		progs = (dprograms_t *)FS_LoadHunkFile ("qwprogs.dat", &filesize);
 	if (!progs)
-		progs = (dprograms_t *)FS_LoadHunkFile ("progs.dat", &filesize);
+		progs = (dprograms_t *)FS_LoadHunkFile ("spprogs.dat", &filesize);
+#ifdef WITH_NQPROGS
+	// low priority load of NQ progs.
+	if (!progs && (progs = (dprograms_t *)FS_LoadHunkFile ("progs.dat", &filesize)))
+		pr_nqprogs = true;
+#endif
+
 	if (!progs)
 		SV_Error ("PR_LoadProgs: couldn't load progs.dat");
 	Con_DPrintf ("Programs occupy %iK.\n", filesize/1024);
+
+#ifdef WITH_NQPROGS
+	if (pr_nqprogs)
+		Con_DPrintf ("NQ progs.\n");
+#endif
 
 	// add prog crc to the serverinfo
 	snprintf (num, sizeof(num), "%i", CRC_Block ((byte *)progs, filesize));
@@ -1130,7 +1219,7 @@ void PR_LoadProgs (void)
 
 	if (progs->version != PROG_VERSION)
 		SV_Error ("qwprogs.dat has wrong version number (%i should be %i)", progs->version, PROG_VERSION);
-	if (progs->crc != PROGHEADER_CRC)
+	if (progs->crc != (pr_nqprogs ? NQ_PROGHEADER_CRC : PROGHEADER_CRC))
 		SV_Error ("You must have the qwprogs.dat from QuakeWorld installed");
 
 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
@@ -1184,9 +1273,11 @@ void PR_LoadProgs (void)
 	for (i = 0; i < progs->numglobals; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
 
-	// Zoid, find the spectator functions
-	localinfoChanged = mod_UserCmd = mod_ConsoleCmd = UserInfo_Changed = ChatMessage = SpectatorConnect = SpectatorThink = SpectatorDisconnect = 0;
+#ifdef WITH_NQPROGS
+	PR_InitPatchTables();
+#endif
 
+	// find optional QC-exported functions
 	SpectatorConnect = ED_FindFunctionOffset ("SpectatorConnect");
 	SpectatorThink = ED_FindFunctionOffset ("SpectatorThink");
 	SpectatorDisconnect = ED_FindFunctionOffset ("SpectatorDisconnect");
@@ -1208,10 +1299,12 @@ void PR_LoadProgs (void)
 PR_Init
 ===============
 */
-//void PR_CleanLogText_Init();
 void PR_Init (void)
 {
 	Cvar_Register(&sv_progsname);
+#ifdef WITH_NQPROGS
+	Cvar_Register(&sv_forcenqprogs);
+#endif
 
 	Cmd_AddCommand ("edict", ED_PrintEdict_f);
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
@@ -1219,7 +1312,6 @@ void PR_Init (void)
 	Cmd_AddCommand ("profile", PR_Profile_f);
 
 	memset(pr_newstrtbl, 0, sizeof(pr_newstrtbl));
-	//	PR_CleanLogText_Init();
 }
 
 edict_t *EDICT_NUM(int n)

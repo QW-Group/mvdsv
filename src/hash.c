@@ -16,14 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if 0
+#ifdef SERVERONLY
+
+#include "qwsvdef.h"
+
+#else
+
 #include <stdio.h> // <-- only needed for Hash_BucketStats
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#endif
 
-#include "qwsvdef.h"
+#include "quakedef.h"
+#include "q_shared.h"
+#include "hash.h"
+
+#endif
 
 hashtable_t *Hash_InitTable(int numbucks)
 {

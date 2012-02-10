@@ -109,7 +109,7 @@ void Interpolate(int num, frame_t *frame, demoinfo_t *demoinfo)
 
 		for (j=0;j<3;j++)
 		{
-			demoinfo->angles[j] = adjustangle(prevstate->command.angles[j], nextstate->command.angles[j],1.0+f);
+			demoinfo->angles[j] = AdjustAngle(prevstate->command.angles[j], nextstate->command.angles[j],1.0+f);
 			demoinfo->origin[j] = nextstate->origin[j] + f*(nextstate->origin[j]-prevstate->origin[j]);
 		}
 	}

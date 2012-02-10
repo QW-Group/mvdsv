@@ -131,17 +131,22 @@ char *SV_CleanName (unsigned char *name)
 }
 
 // only one .. is allowed (security)
-qbool sv_demoDir_OnChange (cvar_t *cvar, const char *value)
+void sv_demoDir_OnChange (cvar_t *cvar, char *value, qbool *cancel)
 {
 	if (!value[0])
-		return true;
+	{
+		*cancel = true;
+		return;
+	}
 
 	if (value[0] == '.' && value[1] == '.')
 		value += 2;
-	if (strstr(value,"/.."))
-		return true;
 
-	return false;
+	if (strstr(value,"/.."))
+	{
+		*cancel = true;
+		return;
+	}
 }
 
 /*
@@ -240,13 +245,12 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 
 char *SV_PrintTeams (void)
 {
-	char			*teams[MAX_CLIENTS], *p;
+	char			*teams[MAX_CLIENTS];
 	int				i, j, numcl = 0, numt = 0, scores;
 	client_t		*clients[MAX_CLIENTS];
 	char			buf[2048];
 	static char		lastscores[2048];
 	extern cvar_t	teamplay;
-	extern char		chartbl2[];
 	date_t			date;
 	SV_TimeOfDay(&date);
 
@@ -325,8 +329,8 @@ char *SV_PrintTeams (void)
 			sizeof(lastscores) - strlen(lastscores), "@ %s\n", sv.mapname);
 	}
 
-	for (p = buf; *p; p++) *p = chartbl2[(byte)*p];
-	for (p = lastscores; *p; p++) *p = chartbl2[(byte)*p];
+	Q_normalizetext(buf);
+	Q_normalizetext(lastscores);
 	strlcat(lastscores, buf, sizeof(lastscores));
 	return lastscores;
 }
@@ -749,7 +753,7 @@ void SV_MVDInfoAdd_f (void)
 		else
 		{
 			char buf[1024*200] = {0}; // 200 kb
-			int sz = fread((void*) buf, 1, sizeof(buf), src); // read from src
+			size_t sz = fread((void*) buf, 1, sizeof(buf), src); // read from src
 
 			if (sz <= 0)
 				Con_Printf("failed to read or empty input file\n");

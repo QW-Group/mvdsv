@@ -120,6 +120,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	IT_SIGIL4				(1<<31)
 
 //
+// entity effects
+//
+#define	EF_BRIGHTFIELD		1
+#define	EF_MUZZLEFLASH 		2
+#define EF_GREEN			2		// D-Kure: EF_GREEN will replace 
+#define	EF_BRIGHTLIGHT 		4		// EF_MUZZLEFLASH and provide RGB colours
+#define	EF_DIMLIGHT 		8       // Both are needed as NQ uses EF_MUZZLE..
+#define	EF_FLAG1	 		16
+#define	EF_FLAG2	 		32
+#define EF_BLUE				64
+#define EF_RED				128
+
+//
 // print flags
 //
 #define	PRINT_LOW				0		// pickup messages
@@ -247,7 +260,7 @@ void	COM_StripExtension (const char *in, char *out);
 char	*COM_FileExtension (const char *in);
 void	COM_DefaultExtension (char *path, const char *extension);
 
-float	adjustangle (const float current, const float ideal, const float fraction);
+float	AdjustAngle(float current, float ideal, float fraction);
 
 int		wildcmp(char *wild, char *string);
 

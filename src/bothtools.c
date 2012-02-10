@@ -554,7 +554,7 @@ void *Q_calloc (size_t n, size_t size)
 	void *p = calloc(n, size);
 
 	if (!p)
-		Sys_Error ("Q_calloc: Not enough memory free\n");
+		Sys_Error ("Q_calloc: Not enough memory free");
 
 	return p;
 }
@@ -569,7 +569,7 @@ char *Q_strdup (const char *src)
 	char *p = strdup(src);
 
 	if (!p)
-		Sys_Error ("Q_strdup: Not enough memory free\n");
+		Sys_Error ("Q_strdup: Not enough memory free");
 	return p;
 }
 
@@ -636,26 +636,16 @@ void COM_DefaultExtension (char *path, const char *extension)
 
 //=====================================================
 
-float adjustangle (const float current, const float ideal, const float fraction)
+float AdjustAngle(float current, float ideal, float fraction)
 {
-	float move;
+	float move = ideal - current;
 
-	move = ideal - current;
-	if (ideal > current)
-	{
+	if (move >= 180)
+		move -= 360;
+	else if (move <= -180)
+		move += 360;
 
-		if (move >= 180)
-			move = move - 360;
-	}
-	else
-	{
-		if (move <= -180)
-			move = move + 360;
-	}
-
-	move *= fraction;
-
-	return (current + move);
+	return current + fraction * move;
 }
 
 //=======================================================

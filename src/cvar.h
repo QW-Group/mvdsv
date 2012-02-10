@@ -58,33 +58,36 @@ interface from being ambiguous.
 */
 
 // cvar flags
-#define CVAR_SERVERINFO		1	// mirrored to serverinfo
-#define CVAR_ROM			2	// read only
-#define	CVAR_USER_CREATED	4	// created by a set command
+#define CVAR_NONE			(0)
+#define CVAR_SERVERINFO		(1<<0)	// mirrored to serverinfo
+#define CVAR_ROM			(1<<1)	// read only
+#define	CVAR_USER_CREATED	(1<<2)	// created by a set command
 
 typedef struct cvar_s
 {
 	char			*name;
 	char			*string;
 	int				flags;
-	qbool			(*OnChange) (struct cvar_s *var, const char *value);
+	void			(*OnChange) (struct cvar_s *var, char *value, qbool *cancel);
 	float			value;
 	struct cvar_s	*hash_next;
 	struct cvar_s	*next;
 } cvar_t;
 
+#define Cvar_SetCurrentGroup(...)		// ezquake compatibility
+#define Cvar_ResetCurrentGroup(...)		// ezquake compatibility
 
 void  Cvar_Register (cvar_t *variable);
 // registers a cvar that already has the name, string, and optionally the
 // archive elements set.
 
-void Cvar_Set (cvar_t *var, const char *value);
+void Cvar_Set (cvar_t *var, char *value);
 // equivalent to "<name> <variable>" typed at the console
 
-void Cvar_SetROM (cvar_t *var, const char *value);
+void Cvar_SetROM (cvar_t *var, char *value);
 // force a set even if the cvar is read only
 
-void Cvar_SetByName (const char *var_name, const char *value);
+void Cvar_SetByName (const char *var_name, char *value);
 // equivalent to "<name> <variable>" typed at the console
 
 void Cvar_SetValue (cvar_t *var, const float value);
@@ -103,6 +106,11 @@ qbool Cvar_Command (void);
 // called by Cmd_ExecuteString when Cmd_Argv(0) doesn't match a known
 // command.  Returns true if the command was a variable reference that
 // was handled. (print or change)
+
+// Use this to walk through all vars
+cvar_t *Cvar_Next (cvar_t *var);
+
+int Cvar_GetFlags (cvar_t *var);
 
 cvar_t *Cvar_Find (const char *var_name);
 qbool Cvar_Delete (const char *name);

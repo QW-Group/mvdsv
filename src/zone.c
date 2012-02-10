@@ -20,7 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // zone.c - memory management
 
+#ifdef SERVERONLY
 #include "qwsvdef.h"
+#else
+#include "common.h"
+#endif
 
 void Cache_FreeLow (int new_low_hunk);
 void Cache_FreeHigh (int new_high_hunk);
@@ -31,18 +35,18 @@ void Cache_FreeHigh (int new_high_hunk);
 
 typedef struct
 {
-	int	sentinel;
-	int	size; // including sizeof(hunk_t), -1 = not allocated
+	int		sentinel;
+	int		size; // including sizeof(hunk_t), -1 = not allocated
 	char	name[8];
 } hunk_t;
 
-byte		*hunk_base;
+byte	*hunk_base;
 int		hunk_size;
 
 int		hunk_low_used;
 int		hunk_high_used;
 
-qbool		hunk_tempactive;
+qbool	hunk_tempactive;
 int		hunk_tempmark;
 
 /*
@@ -131,16 +135,15 @@ void Hunk_Print (qbool all)
 		//
 		memcpy (name, h->name, 8);
 		if (all)
-			Con_Printf ("%8p :%8i %8s\n",h, h->size, name);
+			Con_Printf ("%8p :%8i %8s\n", h, h->size, name);
 
 		//
 		// print the total
 		//
-		if (next == endlow || next == endhigh ||
-		strncmp (h->name, next->name, 8) )
+		if (next == endlow || next == endhigh || strncmp (h->name, next->name, 8) )
 		{
 			if (!all)
-				Con_Printf ("          :%8i %8s (TOTAL)\n",sum, name);
+				Con_Printf ("          :%8i %8s (TOTAL)\n", sum, name);
 			count = 0;
 			sum = 0;
 		}
@@ -150,7 +153,13 @@ void Hunk_Print (qbool all)
 
 	Con_Printf ("-------------------------\n");
 	Con_Printf ("%8i total blocks\n", totalblocks);
+}
 
+void Hunk_Print_f (void)
+{
+	qbool all = Cmd_Argc() != 1;
+
+	Hunk_Print(all);
 }
 
 /*
@@ -167,12 +176,12 @@ void *Hunk_AllocName (int size, char *name)
 #endif
 
 	if (size < 0)
-		Sys_Error ("Hunk_Alloc: bad size: %i", size);
+		Sys_Error ("Hunk_AllocName: bad size: %i", size);
 
-	size = sizeof(hunk_t) + ((size+15)&~15);
+	size = sizeof(hunk_t) + ((size + 15) & ~15);
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
-		Sys_Error ("Not enough RAM allocated. Try starting using \"-mem 64 (or more)\" on the command line");
+		Sys_Error ("Hunk_AllocName: Not enough RAM allocated. Try starting using \"-mem 64 (or more)\" on the command line.");
 
 	h = (hunk_t *)(hunk_base + hunk_low_used);
 	hunk_low_used += size;
@@ -183,9 +192,9 @@ void *Hunk_AllocName (int size, char *name)
 
 	h->size = size;
 	h->sentinel = HUNK_SENTINEL;
-	strlcpy (h->name, name, 8);
+	strlcpy (h->name, name, sizeof (h->name));
 
-	return (void *)(h+1);
+	return (void *) (h + 1);
 }
 
 /*
@@ -261,10 +270,7 @@ void *Hunk_HighAllocName (int size, char *name)
 	size = sizeof(hunk_t) + ((size+15)&~15);
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
-	{
-		Con_Printf ("Hunk_HighAlloc: failed on %i bytes\n",size);
-		return NULL;
-	}
+		Sys_Error ("Hunk_HighAllocName: Not enough RAM allocated. Try starting using \"-mem 64 (or more)\" on the command line.");
 
 	hunk_high_used += size;
 	Cache_FreeHigh (hunk_high_used);
@@ -274,9 +280,9 @@ void *Hunk_HighAllocName (int size, char *name)
 	memset (h, 0, size);
 	h->size = size;
 	h->sentinel = HUNK_SENTINEL;
-	strlcpy (h->name, name, 8);
+	strlcpy (h->name, name, sizeof (h->name));
 
-	return (void *)(h+1);
+	return (void *) (h + 1);
 }
 
 
@@ -291,7 +297,7 @@ void *Hunk_TempAlloc (int size)
 {
 	void	*buf;
 
-	size = (size+15)&~15;
+	size = (size+15) & ~15;
 
 	if (hunk_tempactive)
 	{
@@ -310,19 +316,19 @@ void *Hunk_TempAlloc (int size)
 
 /*
 ===============================================================================
- 
+
 CACHE MEMORY
- 
+
 ===============================================================================
 */
 
 typedef struct cache_system_s
 {
-	int			size;			// including this header
-	cache_user_t		*user;
-	char			name[16];
+	int						size; // including this header
+	cache_user_t			*user;
+	char					name[16];
 	struct cache_system_s	*prev, *next;
-	struct cache_system_s	*lru_prev, *lru_next;	// for LRU flushing
+	struct cache_system_s	*lru_prev, *lru_next; // for LRU flushing
 } cache_system_t;
 
 cache_system_t *Cache_TryAlloc (int size, qbool nobottom);
@@ -342,8 +348,6 @@ void Cache_Move ( cache_system_t *c)
 	nuw = Cache_TryAlloc (c->size, true);
 	if (nuw)
 	{
-		//		Con_Printf ("cache_move ok\n");
-
 		memcpy ( nuw+1, c+1, c->size - sizeof(cache_system_t) );
 		nuw->user = c->user;
 		memcpy (nuw->name, c->name, sizeof(nuw->name));
@@ -352,8 +356,7 @@ void Cache_Move ( cache_system_t *c)
 	}
 	else
 	{
-		//		Con_Printf ("cache_move failed\n");
-
+		// cache move failed
 		Cache_Free (c->user);		// tough luck...
 	}
 }
@@ -462,7 +465,6 @@ cache_system_t *Cache_TryAlloc (int size, qbool nobottom)
 	}
 
 	// search from the bottom up for space
-
 	nuw = (cache_system_t *) (hunk_base + hunk_low_used);
 	cs = cache_head.next;
 
@@ -524,7 +526,6 @@ void Cache_Flush (void)
 		Cache_Free ( cache_head.next->user );	// reclaim the space
 }
 
-
 /*
 ============
 Cache_Print
@@ -549,18 +550,9 @@ Cache_Report
 */
 void Cache_Report (void)
 {
-	Con_Printf ("%4.1f megabyte data cache\n", 
-				(hunk_size - hunk_high_used - hunk_low_used) / (float)0x100000 );
-}
-
-/*
-============
-Cache_Compact
- 
-============
-*/
-void Cache_Compact (void)
-{
+	Con_Printf ("%4.1f of %4.1f megabyte data cache free\n",
+		(float)(hunk_size - hunk_high_used - hunk_low_used) / (1024*1024),
+		(float)hunk_size / (1024*1024));
 }
 
 /*
@@ -574,11 +566,28 @@ void Cache_Init (void)
 	cache_head.next = cache_head.prev = &cache_head;
 	cache_head.lru_next = cache_head.lru_prev = &cache_head;
 
+#ifndef WITH_DP_MEM
+	// If DP mem is used then we can't add commands untill Cmd_Init() executed.
+	Cache_Init_Commands();
+#endif
+}
+
+/*
+============
+Cache_Init
+ 
+============
+*/
+void Cache_Init_Commands (void)
+{
 	Cmd_AddCommand ("flush", Cache_Flush);
 	Cmd_AddCommand ("cache_print", Cache_Print);
 	Cmd_AddCommand ("cache_report", Cache_Report);
+
+	Cmd_AddCommand ("hunk_print", Hunk_Print_f);
 }
 
+#ifndef WITH_DP_MEM
 /*
 ==============
 Cache_Free
@@ -604,8 +613,6 @@ void Cache_Free (cache_user_t *c)
 	Cache_UnlinkLRU (cs);
 }
 
-
-
 /*
 ==============
 Cache_Check
@@ -626,7 +633,6 @@ void *Cache_Check (cache_user_t *c)
 
 	return c->data;
 }
-
 
 /*
 ==============
@@ -666,9 +672,8 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name)
 
 	return Cache_Check (c);
 }
-
+#endif
 //============================================================================
-
 
 /*
 ========================

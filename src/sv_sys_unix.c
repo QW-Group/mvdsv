@@ -513,7 +513,6 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
-	extern char	chartbl2[];
 	va_list		argptr;
 	unsigned char	text[4096];
 	unsigned char	*p;
@@ -524,12 +523,15 @@ void Sys_Printf (char *fmt, ...)
 	//        	Sys_Error("memory overwrite in Sys_Printf.\n");
 	va_end (argptr);
 
+
 	if (!(telnetport && telnet_connected && authenticated) && (int)sys_nostdout.value)
 		return;
 
+	// normalize text before add to console.
+	Q_normalizetext(text);
+
 	for (p = text; *p; p++)
 	{
-		*p = chartbl2[*p];
 		if (telnetport && telnet_connected && authenticated)
 		{
 			if (write (telnet_iosock, p, 1) < 1)
@@ -795,7 +797,6 @@ inline void Sys_Telnet (void)
 main
 =============
 */
-void PR_CleanLogText_Init(void);
 int main (int argc, char *argv[])
 {
 	double time1, oldtime, newtime;
@@ -815,8 +816,6 @@ int main (int argc, char *argv[])
 	argv0 = argv[0];
 
 	memset (&parms, 0, sizeof(parms));
-
-	PR_CleanLogText_Init();
 
 	COM_InitArgv (argc, argv);
 	parms.argc = com_argc;
@@ -982,6 +981,7 @@ int main (int argc, char *argv[])
 		time1 = newtime - oldtime;
 		oldtime = newtime;
 
+		curtime = newtime;
 		SV_Frame (time1);
 
 		// extrasleep is just a way to generate a fucked up connection on purpose

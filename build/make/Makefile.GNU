@@ -82,6 +82,7 @@ SV_OBJS = \
 		$(SV_DIR)/sv_send.o \
 		$(SV_DIR)/sv_sys_unix.o \
 		$(SV_DIR)/sv_user.o \
+		$(SV_DIR)/sv_save.o \
 \
 		$(SV_DIR)/bothtools.o \
 		$(SV_DIR)/cmd.o \

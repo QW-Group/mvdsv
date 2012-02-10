@@ -28,7 +28,6 @@ int fp_messages=4, fp_persecond=4, fp_secondsdead=10;
 char fp_msg[255] = { 0 };
 extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
 extern	redirect_t	sv_redirected;
-extern qbool authenticated;
 
 /*
 ===============================================================================
@@ -46,10 +45,12 @@ SV_Quit
 */
 void SV_Quit (qbool restart)
 {
-	SV_FinalMessage ("server shutdown\n");
-	Con_Printf ("Shutting down.\n");
-	SV_Shutdown ();
+	SV_Shutdown ("Server shutdown.\n");
+#ifdef SERVERONLY
 	Sys_Quit (restart);
+#else
+	Host_Quit(); // will also call SV_Shutdown(), but it is not an issue.
+#endif
 }
 
 /*
@@ -73,26 +74,13 @@ void SV_Restart_f (void)
 }
 
 /*
-==================
-SV_CloseTelnet_f
-==================
-*/
-
-void SV_CloseTelnet_f(void)
-{
-	Con_Printf("Closing telnet socket\n");
-	telnet_connected = authenticated = false;
-	closesocket(telnet_iosock);
-}
-
-/*
 ============
 SV_Logfile
 ============
 */
 void SV_Logfile (int sv_log, qbool newlog)
 {
-	extern int	sv_port;
+	int		sv_port = NET_UDPSVPort();
 	char	name[MAX_OSPATH];
 	int		i;
 
@@ -120,10 +108,12 @@ void SV_Logfile (int sv_log, qbool newlog)
 
 	for (i = 0; i < 1000; i++)
 	{
+		FILE *f;
 		snprintf (name, sizeof(name), "%s/%s%d_%04d.log", sv_logdir.string, logs[sv_log].file_name, sv_port, i);
 
-		if (Sys_FileTime(name) == -1)
+		if (!(f = fopen(name, "r")))
 			break; // file doesn't exist
+		fclose(f);
 	}
 
 	if (!newlog) //use last log if possible
@@ -282,7 +272,7 @@ void SV_God_f (void)
 {
 	if (!sv_allow_cheats)
 	{
-		Con_Printf ("You must run the server with -cheats to enable this command.\n");
+		Con_Printf ("Cheats are not allowed on this server\n");
 		return;
 	}
 
@@ -301,7 +291,7 @@ void SV_Noclip_f (void)
 {
 	if (!sv_allow_cheats)
 	{
-		Con_Printf ("You must run the server with -cheats to enable this command.\n");
+		Con_Printf ("Cheats are not allowed on this server\n");
 		return;
 	}
 
@@ -329,19 +319,22 @@ SV_Give_f
 void SV_Give_f (void)
 {
 	char	*t;
-	int		v;
+	int		v, cnt;
 
 	if (!sv_allow_cheats)
 	{
-		Con_Printf ("You must run the server with -cheats to enable this command.\n");
+		Con_Printf ("Cheats are not allowed on this server\n");
 		return;
 	}
 
 	if (!SV_SetPlayer ())
 		return;
 
-	t = Cmd_Argv(2);
-	v = Q_atoi (Cmd_Argv(3));
+	// HACK: for cheat commands which comes from client rather than from server console
+	cnt = (sv_redirected == RD_CLIENT ? 1 : 2);
+
+	t = Cmd_Argv(cnt++);
+	v = Q_atoi (Cmd_Argv(cnt++));
 
 	switch (t[0])
 	{
@@ -434,6 +427,9 @@ void SV_Map (qbool now)
 		if (sv.mvdrecording)
 			SV_MVDStop_f();
 
+#ifndef SERVERONLY
+		CL_BeginLocalConnection ();
+#endif
 		SV_BroadcastCommand ("changing\n");
 		SV_SendMessagesToAll ();
 
@@ -470,7 +466,7 @@ void SV_Map (qbool now)
 
 	if (Cmd_Argc() != 2)
 	{
-		Con_Printf ("map <levelname> : continue game on a new level (Current map: %s)\n", level);
+		Con_Printf ("map <levelname> : continue game on a new level\n");
 		return;
 	}
 
@@ -490,7 +486,6 @@ void SV_Map (qbool now)
 
 void SV_Map_f (void)
 {
-
 	SV_Map(false);
 }
 
@@ -531,8 +526,8 @@ void SV_ListFiles_f (void)
 	        ||	( (i = strlen(dirname)) < 3 ? 0 : !strncmp(dirname + i - 3, "/..", 4) )
 	        ||	!strncmp(dirname, "..", 3)
 #ifdef _WIN32
-	        ||	( dirname[1] == ':' && (*dirname >= 'a' && *dirname <= 'z' ||
-	                                   *dirname >= 'A' && *dirname <= 'Z')
+	        ||	( dirname[1] == ':' && ((*dirname >= 'a' && *dirname <= 'z') ||
+	                                   (*dirname >= 'A' && *dirname <= 'Z'))
 	           )
 #endif //_WIN32
 	   )
@@ -596,8 +591,8 @@ void SV_RemoveDirectory_f (void)
 
 	if (	!strncmp(dirname, "../", 3) || strstr(dirname, "/../") || *dirname == '/'
 #ifdef _WIN32
-	        ||	( dirname[1] == ':' && (*dirname >= 'a' && *dirname <= 'z' ||
-	                                   *dirname >= 'A' && *dirname <= 'Z')
+	        ||	( dirname[1] == ':' && ((*dirname >= 'a' && *dirname <= 'z') ||
+	                                   (*dirname >= 'A' && *dirname <= 'Z'))
 	           )
 #endif //_WIN32
 	   )
@@ -637,8 +632,8 @@ void SV_RemoveFile_f (void)
 	        ||	*dirname == '/'             || strchr(filename, '/')
 	        ||	( (i = strlen(filename)) < 3 ? 0 : !strncmp(filename + i - 3, "/..", 4) )
 #ifdef _WIN32
-	        ||	( dirname[1] == ':' && (*dirname >= 'a' && *dirname <= 'z' ||
-	                                   *dirname >= 'A' && *dirname <= 'Z')
+	        ||	( dirname[1] == ':' && ((*dirname >= 'a' && *dirname <= 'z') ||
+	                                   (*dirname >= 'A' && *dirname <= 'Z'))
 	           )
 #endif //_WIN32
 	   )
@@ -793,6 +788,14 @@ void SV_Kick_f (void)
 	c = Cmd_Argc ();
 	if (c < 2)
 	{
+#ifndef SERVERONLY
+		// some mods use a "kick" alias for their own needs, sigh
+		if (CL_ClientState() && Cmd_FindAlias("kick"))
+		{
+			Cmd_ExecuteString (Cmd_AliasString("kick"));
+			return;
+		}
+#endif
 		Con_Printf ("kick <userid> [reason]\n");
 		return;
 	}
@@ -1167,7 +1170,7 @@ void SV_Status_f (void)
 				"cpu utilization (recording) : %3i%%\n"
 				"avg response time           : %i ms\n"
 				"packets/frame               : %5.2f (%d)\n",
-				NET_AdrToString (net_local_adr),
+				NET_AdrToString (net_local_sv_ipadr),
 				(int)cpu,
 				(int)demo1,
 				(int)avg,
@@ -1202,7 +1205,7 @@ void SV_Status_f (void)
 								(int)(1000 * cl->netchan.frame_rate),
 								(int)SV_CalcPing (cl),
 								100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence,
-								cl->realip.ip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
+								cl->realip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
 								cl->spectator ? "(s)" : "");
 				}
 				break;
@@ -1217,7 +1220,7 @@ void SV_Status_f (void)
 				s = NET_BaseAdrToString(cl->netchan.remote_address);
 				Con_Printf ("%-16s %4i %5i %6i %-22s ", cl->name, (int)SV_CalcPing(cl),
 						(int)cl->edict->v.frags, cl->userid, (int)sv_use_dns.value ? SV_Resolve(s) : s);
-				if (cl->realip.ip.ip[0])
+				if (cl->realip.ip[0])
 					Con_Printf ("%-15s", NET_BaseAdrToString (cl->realip));
 				Con_Printf (cl->spectator ? (char *) "(s)" : (char *) "");
 
@@ -1254,7 +1257,7 @@ void SV_Status_f (void)
 							(int)cl->edict->v.frags, Q_yelltext((unsigned char*)va("%d", cl->userid)),
 							cl->spectator ? " (s)" : "", (int)sv_use_dns.value ? SV_Resolve(s) : s);
 
-				if (cl->realip.ip.ip[0])
+				if (cl->realip.ip[0])
 					Con_Printf ("%-36s\n", NET_BaseAdrToString (cl->realip));
 
 				switch (cl->state)
@@ -1444,6 +1447,20 @@ void SV_SendServerInfoChange(char *key, char *value)
 	MSG_WriteString (&sv.reliable_datagram, value);
 }
 
+//Cvar system calls this when a CVAR_SERVERINFO cvar changes
+void SV_ServerinfoChanged (char *key, char *string)
+{
+	// force serverinfo "0" vars to be "".
+	if (!strcmp(string, "0"))
+		string = "";
+
+	if (strcmp(string, Info_ValueForKey (svs.info, key)))
+	{
+		Info_SetValueForKey (svs.info, key, string, MAX_SERVERINFO_STRING);
+		SV_SendServerInfoChange (key, string);
+	}
+}
+
 /*
 ===========
 SV_Serverinfo_f
@@ -1492,21 +1509,20 @@ void SV_Serverinfo_f (void)
 		return;
 	}
 
-	Info_SetValueForKey (svs.info, key, value, MAX_SERVERINFO_STRING);
+	// force serverinfo "0" vars to be "".
+	if (!strcmp(value, "0"))
+		value = "";
 
 	// if the key is also a serverinfo cvar, change it too
 	var = Cvar_Find(key);
 	if (var && (var->flags & CVAR_SERVERINFO))
 	{
-		// a hack - strip the serverinfo flag so that the Cvar_Set
-		// doesn't trigger SV_SendServerInfoChange
-		var->flags &= ~CVAR_SERVERINFO;
-		Cvar_Set (var, value);
-		var->flags |= CVAR_SERVERINFO; // put it back
+		Cvar_Set (var, value); // this call SV_ServerinfoChanged() as well.
 	}
-
-	// FIXME, don't send if the key hasn't changed
-	SV_SendServerInfoChange(key, value);
+	else
+	{
+		SV_ServerinfoChanged(key, value);
+	}
 }
 
 
@@ -1730,7 +1746,15 @@ void SV_Gamedir_f (void)
 		return;
 	}
 
-	FS_SetGamedir (dir);
+#ifndef SERVERONLY
+	if (CL_ClientState())
+	{
+		Con_Printf ("you must disconnect before changing gamedir\n");
+		return;
+	}
+#endif
+
+	FS_SetGamedir (dir, false);
 	Info_SetValueForStarKey (svs.info, "*gamedir", dir, MAX_SERVERINFO_STRING);
 }
 
@@ -1837,25 +1861,12 @@ SV_MasterPassword
 */
 void SV_MasterPassword_f (void)
 {
-	if (!server_cfg_done)
+	if (!host_everything_loaded)
 		strlcpy(master_rcon_password, Cmd_Argv(1), sizeof(master_rcon_password));
 	else
-		Con_Printf("master_rcon_password can be set only in server.cfg\n");
+		Con_DPrintf("master_rcon_password can be set only in server.cfg\n");
 }
 // <-- QW262
-
-/*
-==================
-SV_ShowTime_f
-For development purposes only
-//VVD
-==================
-*/
-/*void SV_ShowTime_f (void)
-{
-	Con_Printf("realtime = %f,\nsv.time = %f,\nsv.old_time = %f\n",
-			realtime, sv.time, sv.old_time);
-}*/
 
 /*
 ==================
@@ -1900,8 +1911,7 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("chmod", SV_ChmodFile_f);
 #endif //_WIN32
 	//<-
-	i = COM_CheckParm ("-enablelocalcommand");
-	if (i && i < com_argc)
+	if (COM_CheckParm ("-enablelocalcommand"))
 		Cmd_AddCommand ("localcommand", SV_LocalCommand_f);
 
 	Cmd_AddCommand ("map", SV_Map_f);
@@ -1909,29 +1919,36 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
 
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
+	Cmd_AddCommand ("save", SV_SaveGame_f); 
+	Cmd_AddCommand ("load", SV_LoadGame_f); 
 
+#ifdef SERVERONLY
 	Cmd_AddCommand ("say", SV_ConSay_f);
 	Cmd_AddCommand ("quit", SV_Quit_f);
 	Cmd_AddCommand ("restart", SV_Restart_f);
-	Cmd_AddCommand ("closetelnet", SV_CloseTelnet_f);
+#endif
 
+#ifdef SERVERONLY
 	Cmd_AddCommand ("god", SV_God_f);
 	Cmd_AddCommand ("give", SV_Give_f);
 	Cmd_AddCommand ("noclip", SV_Noclip_f);
+#endif
+
 	Cmd_AddCommand ("localinfo", SV_Localinfo_f);
 
+#ifdef SERVERONLY
 	Cmd_AddCommand ("serverinfo", SV_Serverinfo_f);
-	Cmd_AddCommand ("user", SV_User_f);
+	Cmd_AddCommand ("user", SV_User_f); // FIXME: probably should be done like CL_Serverinfo_f().
+#endif
 
 	Cmd_AddCommand ("gamedir", SV_Gamedir_f);
 	Cmd_AddCommand ("sv_gamedir", SV_Gamedir);
+
+// I wonder why it registered in host.c in ezquake...
+#ifdef SERVERONLY
 	Cmd_AddCommand ("floodprot", SV_Floodprot_f);
 	Cmd_AddCommand ("floodprotmsg", SV_Floodprotmsg_f);
+#endif
 
 	Cmd_AddCommand ("master_rcon_password", SV_MasterPassword_f);
-/*
-	Cmd_AddCommand ("showtime", SV_ShowTime_f);
-For development purposes only
-//VVD
-*/
 }

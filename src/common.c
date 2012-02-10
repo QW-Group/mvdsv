@@ -1704,3 +1704,143 @@ int Com_HashKey (const char *name)
 
 	return v % 32;
 }
+
+//============================================================================
+
+static char q_normalize_chartbl[256];
+static qbool q_normalize_chartbl_init;
+
+static void Q_normalizetext_Init (void)
+{
+	int i;
+
+	for (i = 0; i < 32; i++)
+		q_normalize_chartbl[i] = q_normalize_chartbl[i + 128] = '#';
+	for (i = 32; i < 128; i++)
+		q_normalize_chartbl[i] = q_normalize_chartbl[i + 128] = i;
+
+	// special cases
+	q_normalize_chartbl[10] = 10;
+	q_normalize_chartbl[13] = 13;
+
+	// dot
+	q_normalize_chartbl[5      ] = q_normalize_chartbl[14      ] = q_normalize_chartbl[15      ] = q_normalize_chartbl[28      ] = q_normalize_chartbl[46      ] = '.';
+	q_normalize_chartbl[5 + 128] = q_normalize_chartbl[14 + 128] = q_normalize_chartbl[15 + 128] = q_normalize_chartbl[28 + 128] = q_normalize_chartbl[46 + 128] = '.';
+
+	// numbers
+	for (i = 18; i < 28; i++)
+		q_normalize_chartbl[i] = q_normalize_chartbl[i + 128] = i + 30;
+
+	// brackets
+	q_normalize_chartbl[16] = q_normalize_chartbl[16 + 128]= '[';
+	q_normalize_chartbl[17] = q_normalize_chartbl[17 + 128] = ']';
+	q_normalize_chartbl[29] = q_normalize_chartbl[29 + 128] = q_normalize_chartbl[128] = '(';
+	q_normalize_chartbl[31] = q_normalize_chartbl[31 + 128] = q_normalize_chartbl[130] = ')';
+
+	// left arrow
+	q_normalize_chartbl[127] = '>';
+	// right arrow
+	q_normalize_chartbl[141] = '<';
+
+	// '='
+	q_normalize_chartbl[30] = q_normalize_chartbl[129] = q_normalize_chartbl[30 + 128] = '=';
+
+	q_normalize_chartbl_init = true;
+}
+
+/*
+==================
+Q_normalizetext
+returns readable extended quake names
+==================
+*/
+char *Q_normalizetext (char *str)
+{
+	unsigned char	*i;
+
+	if (!q_normalize_chartbl_init)
+		Q_normalizetext_Init();
+
+	for (i = (unsigned char*)str; *i; i++)
+		*i = q_normalize_chartbl[*i];
+	return str;
+}
+
+/*
+==================
+Q_redtext
+returns extended quake names
+==================
+*/
+unsigned char *Q_redtext (unsigned char *str)
+{
+	unsigned char *i;
+	for (i = str; *i; i++)
+		if (*i > 32 && *i < 128)
+			*i |= 128;
+	return str;
+}
+//<-
+
+/*
+==================
+Q_yelltext
+returns extended quake names (yellow numbers)
+==================
+*/
+unsigned char *Q_yelltext (unsigned char *str)
+{
+	unsigned char *i;
+	for (i = str; *i; i++)
+	{
+		if (*i >= '0' && *i <= '9')
+			*i += 18 - '0';
+		else if (*i > 32 && *i < 128)
+			*i |= 128;
+		else if (*i == 13)
+			*i = ' ';
+	}
+	return str;
+}
+
+//=====================================================================
+
+// "GPL map" support.  If we encounter a map with a known "GPL" CRC,
+// we fake the CRC so that, on the client side, the CRC of the original
+// map is transferred to the server, and on the server side, comparison
+// of clients' CRC is done against the orignal one
+typedef struct {
+	const char *mapname;
+	int original;
+	int gpl;
+} csentry_t;
+
+static csentry_t table[] = {
+	// CRCs for AquaShark's "simpletextures" maps
+	{ "dm1", 0xc5c7dab3, 0x7d37618e },
+	{ "dm2", 0x65f63634, 0x7b337440 },
+	{ "dm3", 0x15e20df8, 0x912781ae },
+	{ "dm4", 0x9c6fe4bf, 0xc374df89 },
+	{ "dm5", 0xb02d48fd, 0x77ca7ce5 },
+	{ "dm6", 0x5208da2b, 0x200c8b5d },
+	{ "end", 0xbbd4b4a5, 0xf89b12ae }, // this is the version with the extra room
+	{ NULL, 0, 0 },
+};
+
+int Com_TranslateMapChecksum (const char *mapname, int checksum)
+{
+	csentry_t *p;
+
+//	Con_Printf ("Map checksum (%s): 0x%x\n", mapname, checksum);
+
+	for (p = table; p->mapname; p++)
+		if (!strcmp(p->mapname, mapname)) {
+			if (checksum == p->gpl)
+				return p->original;
+			else
+				return checksum;
+		}
+
+	return checksum;
+}
+

@@ -88,10 +88,10 @@ void *Hunk_AllocName (int size, char *name);
 
 void *Hunk_HighAllocName (int size, char *name);
 
-int Hunk_LowMark (void);
+int	Hunk_LowMark (void);
 void Hunk_FreeToLowMark (int mark);
 
-int Hunk_HighMark (void);
+int	Hunk_HighMark (void);
 void Hunk_FreeToHighMark (int mark);
 
 void *Hunk_TempAlloc (int size);
@@ -116,5 +116,7 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name);
 // wasn't enough room.
 
 void Cache_Report (void);
+
+void Cache_Init_Commands (void);
 
 #endif /* !__ZONE_H__ */

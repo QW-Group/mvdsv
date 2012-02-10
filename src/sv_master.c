@@ -56,7 +56,7 @@ void SV_SetMaster_f (void)
 
 		data[0] = A2A_PING;
 		data[1] = 0;
-		NET_SendPacket (2, data, master_adr[i-1]);
+		NET_SendPacket (NS_SERVER, 2, data, master_adr[i-1]);
 	}
 
 	svs.last_heartbeat = -99999;
@@ -69,7 +69,7 @@ SV_Heartbeat_f
 */
 void SV_Heartbeat_f (void)
 {
-	svs.last_heartbeat = -9999;
+	svs.last_heartbeat = -99999;
 }
 
 /*
@@ -85,6 +85,9 @@ void Master_Heartbeat (void)
 	char string[2048];
 	int active;
 	int i;
+
+	if (sv.state != ss_active)
+		return;
 
 	if (realtime - svs.last_heartbeat < HEARTBEAT_SECONDS)
 		return; // not time to send yet
@@ -110,7 +113,7 @@ void Master_Heartbeat (void)
 		if (master_adr[i].port)
 		{
 			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (strlen(string), string, master_adr[i]);
+			NET_SendPacket (NS_SERVER, strlen(string), string, master_adr[i]);
 		}
 }
 
@@ -133,7 +136,7 @@ void Master_Shutdown (void)
 		if (master_adr[i].port)
 		{
 			Con_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (strlen(string), string, master_adr[i]);
+			NET_SendPacket (NS_SERVER, strlen(string), string, master_adr[i]);
 		}
 }
 

@@ -36,22 +36,24 @@ void ED2_PrintEdicts (void);
 void PR2_Profile_f (void);
 void ED2_PrintEdict_f (void);
 void ED_Count (void);
-void PR_CleanLogText_Init();
 void PR2_Init(void)
 {
 	int p;
 	int usedll;
 	Cvar_Register(&sv_progtype);
 	Cvar_Register(&sv_progsname);
+#ifdef WITH_NQPROGS
+	Cvar_Register(&sv_forcenqprogs);
+#endif
 #ifdef QVM_PROFILE
 	Cvar_Register(&sv_enableprofile);
 #endif
 
 	p = COM_CheckParm ("-progtype");
 
-	if (p && p < com_argc)
+	if (p && p < COM_Argc())
 	{
-		usedll = Q_atoi(com_argv[p + 1]);
+		usedll = Q_atoi(COM_Argv(p + 1));
 
 		if (usedll > 2)
 			usedll = VM_NONE;
@@ -64,9 +66,6 @@ void PR2_Init(void)
 	Cmd_AddCommand ("edictcount", ED_Count);
 	Cmd_AddCommand ("profile", PR2_Profile_f);
 	Cmd_AddCommand ("mod", PR2_GameConsoleCommand);
-
-	PR_CleanLogText_Init();
-
 }
 
 //===========================================================================

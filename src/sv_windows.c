@@ -49,7 +49,6 @@ also works much faster
 void ConsoleAddText(char *text)
 {
 	int l, size;
-	extern char chartbl2[]; // quake char translation map
 	DrawConsole = true;
 
 	SendMessage(HEdit1, WM_SETREDRAW, 0, 0);
@@ -69,7 +68,7 @@ void ConsoleAddText(char *text)
 	SendMessage(HEdit1, EM_SETSEL, l, l);
 
 	while (*text)
-		SendMessage(HEdit1, WM_CHAR, chartbl2[(byte)(*text++)], 1);
+		SendMessage(HEdit1, WM_CHAR, *text++, 1);
 	SendMessage(HEdit1, EM_SETREADONLY, 1, 0);
 	SendMessage(HEdit1, WM_SETREDRAW, 1, 0);
 }
@@ -178,7 +177,7 @@ void ShowNotifyIcon(void)
 	tnid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
 	tnid.uCallbackMessage = WM_TRAY;
 	tnid.hIcon = icon;
-	strlcpy(tnid.szTip, va(SERVER_NAME ":%d", sv_port), sizeof(tnid.szTip));
+	strlcpy(tnid.szTip, va(SERVER_NAME ":%d", NET_UDPSVPort()), sizeof(tnid.szTip));
 
 	Shell_NotifyIcon(NIM_ADD, &tnid);
 
@@ -348,7 +347,8 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 
 				SendMessage(HEdit2, WM_SETTEXT, 0, (LPARAM)0);
 
-				ConsoleAddText(va("] %s\n", str));
+				// normalize text before add to console.
+				ConsoleAddText(Q_normalizetext(va("] %s\n", str)));
 
 				Cbuf_AddText (str);
 				Cbuf_AddText ("\n");
@@ -368,26 +368,6 @@ BOOL CALLBACK DialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		break;
-		/*case WM_LBUTTONDOWN:{
-			RECT metrix;
-
-			GetWindowRect(HEdit1, &metrix);
-			ConsoleAddText(va("%ld %ld %ld %ld, %d %d\n", metrix.left,
-				metrix.right,
-				metrix.top,
-				metrix.bottom,
-				(int) LOWORD(lParam),
-				(int) HIWORD(lParam)));
-			if  (metrix.left > LOWORD(lParam) ||
-				metrix.right < LOWORD(lParam) ||
-				metrix.top > HIWORD(lParam) ||
-				metrix.bottom < HIWORD(lParam))
-				break;
-
-			return TRUE;
-			break;
-							}
-		*/
 	case WM_ACTIVATE:
 		break;
 

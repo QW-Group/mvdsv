@@ -175,7 +175,7 @@ static void SV_SaveSpawnparms (void)
 		return;		// no progs loaded yet
 
 	// serverflags is the only game related thing maintained
-	svs.serverflags = pr_global_struct->serverflags;
+	svs.serverflags = PR_GLOBAL(serverflags);
 
 	for (i=0, sv_client = svs.clients ; i<MAX_CLIENTS ; i++, sv_client++)
 	{
@@ -192,10 +192,9 @@ static void SV_SaveSpawnparms (void)
 			PR2_GameSetChangeParms();
 		else
 #endif
-			PR_ExecuteProgram (pr_global_struct->SetChangeParms);
+			PR_ExecuteProgram (PR_GLOBAL(SetChangeParms));
 		for (j=0 ; j<NUM_SPAWN_PARMS ; j++)
-			sv_client->spawn_parms[j] = (&pr_global_struct->parm1)[j];
-
+			sv_client->spawn_parms[j] = (&PR_GLOBAL(parm1))[j];
 	}
 }
 
@@ -243,18 +242,25 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 #ifdef USE_PR2
 	char savenames[MAX_CLIENTS][CLIENT_NAME_LEN];
 #endif
-	extern cvar_t version;
+
 	dfunction_t *f;
 	extern cvar_t sv_loadentfiles, sv_loadentfiles_dir;
 	char *entitystring;
 	char oldmap[MAP_NAME_LEN];
 	extern qbool	sv_allow_cheats;
 	extern cvar_t	sv_cheats, sv_paused, sv_bigcoords;
+#ifndef SERVERONLY
+	extern void CL_ClearState (void);
+#endif
 
 	// store old map name
 	snprintf (oldmap, MAP_NAME_LEN, "%s", sv.mapname);
 
 	Con_DPrintf ("SpawnServer: %s\n",mapname);
+
+//#ifndef SERVERONLY
+	NET_InitServer();
+//#endif
 
 	SV_SaveSpawnparms ();
 	SV_LoadAccounts();
@@ -283,12 +289,14 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 	svs.spawncount++; // any partially connected client will be restarted
 
+#ifndef SERVERONLY
+	com_serveractive = false;
+#endif
 	sv.state = ss_dead;
 	sv.paused = false;
 	Cvar_SetROM(&sv_paused, "0");
 
-	CM_InvalidateMap ();
-	Hunk_FreeToLowMark (host_hunklevel);
+	Host_ClearMemory();
 
 #ifdef FTE_PEXT_FLOATCOORDS
 	if (sv_bigcoords.value)
@@ -341,12 +349,13 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	sv.signon.data = sv.signon_buffers[0];
 	sv.num_signon_buffers = 1;
 
+	sv.time = 1.0;
+
 	// load progs to get entity field count
 	// which determines how big each edict is
 	// and allocate edicts
 
 #ifdef USE_PR2
-	sv.time = 1.0;
 	sv_vm = (vm_t *) VM_Load(sv_vm, (vm_type_t) (int) sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
 	if ( sv_vm )
 		PR2_InitProg();
@@ -407,6 +416,10 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	// fill sv.mapname and sv.modelname with new map name
 	strlcpy (sv.mapname, mapname, sizeof(sv.mapname));
 	snprintf (sv.modelname, sizeof(sv.modelname), "maps/%s.bsp", sv.mapname);
+#ifndef SERVERONLY
+	// set cvar
+	Cvar_ForceSet (&host_mapname, mapname);
+#endif
 
 	if (!(sv.worldmodel = CM_LoadMap (sv.modelname, false, &sv.map_checksum, &sv.map_checksum2))) // true if bad map
 	{
@@ -424,6 +437,8 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 		if (!sv.worldmodel)
 			SV_Error ("CM_LoadMap: bad map");
 	}
+	
+	sv.map_checksum2 = Com_TranslateMapChecksum (sv.mapname, sv.map_checksum2);
 
 	SV_ClearWorld (); // clear physics interaction links
 
@@ -459,6 +474,9 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	// precache and static commands can be issued during
 	// map initialization
 	sv.state = ss_loading;
+#ifndef SERVERONLY
+	com_serveractive = true;
+#endif
 
 	ent = EDICT_NUM(0);
 	ent->e->free = false;
@@ -473,9 +491,10 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	ent->v.movetype = MOVETYPE_PUSH;
 
 	// information about the server
-	ent->v.netname = PR_SetString(version.string);
+	// VM-FIXME: Should it be PR2_SetString() ???
+	ent->v.netname = PR_SetString(VersionStringFull());
 	ent->v.targetname = PR_SetString(SERVER_NAME);
-	ent->v.impulse = QWE_VERNUM;
+	ent->v.impulse = VERSION_NUM;
 	ent->v.items = pr_numbuiltins - 1;
 
 #ifdef USE_PR2
@@ -483,12 +502,29 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 		strlcpy((char*)PR2_GetString(pr_global_struct->mapname) , sv.mapname, 64);
 	else
 #endif
-	pr_global_struct->mapname = PR_SetString(sv.mapname);
+	PR_GLOBAL(mapname) = PR_SetString(sv.mapname);
 	// serverflags are for cross level information (sigils)
-	pr_global_struct->serverflags = svs.serverflags;
+	PR_GLOBAL(serverflags) = svs.serverflags;
+	if (pr_nqprogs)
+	{
+		pr_globals[35] = deathmatch.value;
+		pr_globals[36] = coop.value;
+		pr_globals[37] = teamplay.value;
+		NQP_Reset ();
+	}
+
+	if (pr_nqprogs)
+	{
+		// register the cvars that NetQuake provides for mod use
+		const char **var, *nqcvars[] = {"gamecfg", "scratch1", "scratch2", "scratch3", "scratch4",
+			"saved1", "saved2", "saved3", "saved4", "savedgamecfg", "temp1", NULL};
+		for (var = nqcvars; *var; var++)
+			Cvar_Create((char *)/*stupid const warning*/ *var, "0", 0);
+	}
 
 	// run the frame start qc function to let progs check cvars
-	SV_ProgStartFrame ();
+	if (!pr_nqprogs)
+		SV_ProgStartFrame ();
 
 	// ********* External Entity support (.ent file(s) in gamedir/maps) pinched from ZQuake *********
 	// load and spawn all other entities
@@ -577,5 +613,9 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 	// we change map - clear whole demo struct and sent initial state to all dest if any (for QTV only I thought)
 	SV_MVD_Record(NULL, true);
+
+#ifndef SERVERONLY
+	CL_ClearState ();
+#endif
 }
 

@@ -62,21 +62,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #define	QW_VERSION			"2.40"
-#define QWE_VERSION			"0.31-dev"
-#define QWE_DEV				""
-#define QWE_VERNUM			0.31
+#define VERSION_NUMBER		"0.31-dev"
+#define VERSION_NUM			0.31
 #define SERVER_NAME			"MVDSV"
-#define QWDTOOLS_NAME		"QWDtools"
+
 #define PROJECT_NAME		SERVER_NAME
 #define PROJECT_URL			"http://mvdsv.qw-dev.net"
-#define FULL_VERSION		SERVER_NAME " " QWE_VERSION ", build %d " QW_PLATFORM_SHORT
 #define BUILD_DATE			"Build date: " __DATE__ ", " __TIME__
-#define SIZEOF_FULL_VERSION	(sizeof(FULL_VERSION) + sizeof(BUILD_DATE) + sizeof(int) * 3)
 
+#define QWDTOOLS_NAME		"QWDtools"
 
-extern char full_version[];
-
-int build_number (void);
+char *VersionString (void);
+char *VersionStringFull (void);
 void Version_f (void);
 
 #endif /* !__VERSION_H__ */

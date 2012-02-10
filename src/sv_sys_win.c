@@ -23,22 +23,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <io.h>
 
 extern cvar_t sys_restart_on_error;
-extern cvar_t not_auth_timeout;
-extern cvar_t auth_timeout;
+
+cvar_t	sys_nostdout	= {"sys_nostdout", "0"};
+cvar_t	sys_sleep		= {"sys_sleep", "8"};
 
 struct timeval select_timeout;
 
-cvar_t	sys_nostdout = {"sys_nostdout", "0"};
-cvar_t	sys_sleep = {"sys_sleep", "8"};
-
 static char title[16];
 
-static qbool	iosock_ready = false;
-qbool	authenticated;
-static double	cur_time_auth;
 static qbool	isdaemon = false;
-
-void	PR_CleanLogText_Init(void);
 
 //==============================================================================
 // WINDOWS CMD LINE CRAP
@@ -424,9 +417,9 @@ void Sys_Error (const char *error, ...)
 //		fclose (logs[ERROR_LOG].sv_logfile);
 	}
 
-// FIXME: hack - checking SV_Shutdown with net_socket set in -1 NET_Shutdown
-	if (net_socket != -1)
-		SV_Shutdown ();
+// FIXME: hack - checking SV_Shutdown with svs.socketip set in -1 NET_Shutdown
+	if (svs.socketip != -1)
+		SV_Shutdown (va("ERROR: %s\n", text));
 
 	if ((int)sys_restart_on_error.value)
 		Sys_Quit (true);
@@ -494,22 +487,7 @@ double Sys_DoubleTime (void)
 
 	return (now - starttime) / 1000.0;
 }
-#if 0
-double Sys_DoubleTime (void)
-{
-	double t;
-	struct _timeb tstruct;
-	static int	starttime;
 
-	_ftime( &tstruct );
- 
-	if (!starttime)
-		starttime = tstruct.time;
-	t = (tstruct.time-starttime) + tstruct.millitm*0.001;
-	
-	return t;
-}
-#endif
 /*
 ================
 Sys_ConsoleInput
@@ -517,9 +495,11 @@ Sys_ConsoleInput
 */
 char *Sys_ConsoleInput (void)
 {
+#ifdef _CONSOLE
+
 	static char	text[256], *t;
 	static int	len = 0;
-#ifdef _CONSOLE
+
 	int		c;
 
 	// read a line out
@@ -570,91 +550,8 @@ char *Sys_ConsoleInput (void)
 		}
 #endif
 
-	if (telnetport)
-	{
-		if (!iosock_ready || !telnet_connected)
-			return NULL;		// the select didn't say it was ready
-		iosock_ready = false;
-		do
-		{
-			switch (recv (telnet_iosock, text + len, 1, 0))
-			{
-			case 0:
-				len = telnet_connected = authenticated = false;
-				closesocket (telnet_iosock);
-				SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
-				return NULL;
-			case 1:
-				if (text[len] == 8)
-				{
-					if(len > 0) --len;
-				}
-				else
-					++len;
-				break;
-			default:
-				if (errno != EAGAIN && errno != ENOENT && errno != EBADF && qerrno != EWOULDBLOCK) // demand for M$ WIN 2K telnet support
-				{
-					len = telnet_connected = authenticated = false;
-					closesocket (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: (%i): %s; (%i): %s.\n", qerrno, strerror(qerrno), errno, strerror(errno)));
-				}
-				return NULL;
-			}// switch
-		}// do
-		while (len < sizeof(text) - 1 && text[len - 1] != '\n' && text[len - 1] != '\r' && text[len - 1] != 0);
+	// If you searching where input added under non console application, then you should check DialogFunc WM_COMMAND.
 
-		if (len == 0)
-			return NULL;
-
-		text[len] = 0;
-
-		if (text[len - 1] == '\r' || text[len - 1] == '\n')
-			text[len - 1] = 0;
-
-		if (text[0] == 0)
-		{
-			len = 0;
-			return NULL;
-		}
-
-		if (!authenticated)
-		{
-			len = strlen(t = Cvar_String ("telnet_password"));
-			if (len && (authenticated = (!strncmp(text, t, min(sizeof(text), len + 1)))))
-			{
-				cur_time_auth = realtime;
-				SV_Write_Log(TELNET_LOG, 1, "Authenticated: yes\n");
-				len = 0;
-				return "status";
-			}
-			else
-			{
-				if (strlen(text) == 1 && text[0] == 4)
-				{
-					len = telnet_connected = authenticated = false;
-					closesocket (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
-				}
-				else
-					SV_Write_Log(TELNET_LOG, 1, "Authenticated: no\n");
-				len = 0;
-				return NULL;
-			}
-		}
-
-		if (strlen(text) == 1 && text[0] == 4)
-		{
-			len = telnet_connected = authenticated = false;
-			closesocket (telnet_iosock);
-			SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
-			len = 0;
-			return NULL;
-		}
-		len = 0;
-		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
-		return text;
-	}
 	return NULL;
 }
 
@@ -665,7 +562,6 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
-	extern char	chartbl2[];
 	va_list argptr;
 	unsigned char text[MAXCMDBUF];
 	unsigned char *p;
@@ -674,44 +570,31 @@ void Sys_Printf (char *fmt, ...)
 #ifdef _CONSOLE
 	            (int)sys_nostdout.value ||
 #endif //_CONSOLE
-	            isdaemon) && !(telnetport && telnet_connected && authenticated))
+	            isdaemon)
+	)
 		return;
 
 	va_start (argptr, fmt);
 	vsnprintf ((char *)text, MAXCMDBUF, fmt, argptr);
 	va_end (argptr);
 
+	// normalize text before add to console.
+	Q_normalizetext(text);
+
 #ifndef _CONSOLE
 	if (!isdaemon)
 		ConsoleAddText((char *)text);
 #endif //_CONSOLE
 
+
 	for (p = text; *p; p++)
 	{
-		*p = chartbl2[*p];
-		if (telnetport && telnet_connected && authenticated)
-		{
-			if (send (telnet_iosock, (char *) p, 1, 0) < 1)
-			{
-				closesocket (telnet_iosock); // so we close socket
-				telnet_iosock = INVALID_SOCKET; // and mark as closed
-			}
-			if (*p == '\n') // demand for M$ WIN 2K telnet support
-				if (send (telnet_iosock, "\r", 1, 0) < 1)
-				{
-					closesocket (telnet_iosock); // so we close socket
-					telnet_iosock = INVALID_SOCKET; // and mark as closed
-				}
-		}
 #ifdef _CONSOLE
 		if (!((int)sys_nostdout.value || isdaemon))
 			putc(*p, stdout);
 #endif //_CONSOLE
-
 	}
 
-	if (telnetport && telnet_connected && authenticated)
-		SV_Write_Log(TELNET_LOG, 3, (char *) text);
 #ifdef _CONSOLE
 	if (!((int)sys_nostdout.value || isdaemon))
 		fflush(stdout);
@@ -765,47 +648,6 @@ void Sys_Init (void)
 	}
 
 	Sys_InitDoubleTime ();
-}
-
-__inline void Sys_Telnet (void);
-qbool NET_Sleep ()
-{
-	struct timeval timeout_cur;
-	fd_set	fdset;
-	int j = net_socket;
-
-	FD_ZERO (&fdset);
-	FD_SET(j, &fdset); // network socket
-
-	// Added by VVD {
-	if (telnetport)
-	{
-		Sys_Telnet();
-		FD_SET(net_telnetsocket, &fdset);
-		j = max(j, net_telnetsocket);
-		if (telnet_connected)
-		{
-			FD_SET(telnet_iosock, &fdset);
-			j = max(j, telnet_iosock);
-		}
-	}
-	// Added by VVD }
-	timeout_cur.tv_sec  = select_timeout.tv_sec;
-	timeout_cur.tv_usec = select_timeout.tv_usec;
-
-	switch (select (++j, &fdset, NULL, NULL, &timeout_cur))
-	{
-		case -1: return true;
-		case 0: break;
-		default:
-			if (telnetport && telnet_connected)
-				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
-#ifdef _CONSOLE
-//			if (do_stdin)
-//				stdin_ready = FD_ISSET(0, &fdset);
-#endif //_CONSOLE
-	}
-	return false;
 }
 
 void Sys_Sleep (unsigned long ms)
@@ -868,55 +710,6 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
     return 1;
 }
 
-__inline void Sys_Telnet (void)
-{
-	static int			tempsock;
-	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
-	static socklen_t	sockaddr_len = sizeof(struct sockaddr_in);
-	static double		cur_time_not_auth;
-	if (telnet_connected)
-	{
-		if ((tempsock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
-		{
-			//			if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-			send (tempsock, "Console busy by another user.\n", 31, 0);
-			closesocket (tempsock);
-			SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
-										   inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
-		}
-		if (	(!authenticated && (int)not_auth_timeout.value &&
-				realtime - cur_time_not_auth > not_auth_timeout.value) ||
-				(authenticated && (int)auth_timeout.value &&
-				 realtime - cur_time_auth > auth_timeout.value))
-		{
-			telnet_connected = false;
-			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
-			closesocket (telnet_iosock);
-			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			cur_time_auth = cur_time_not_auth = realtime;
-		}
-	}
-	else
-	{
-		if ((telnet_iosock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, (int *) &sockaddr_len)) > 0)
-		{
-			//			if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-			//			{
-			telnet_connected = true;
-			cur_time_not_auth = realtime;
-			SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			send (telnet_iosock, "# ", 2, 0);
-			/*			}
-			else
-			{
-			closesocket (telnet_iosock);
-			SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			}
-			*/
-		}
-	}
-}
-
 #ifdef _CONSOLE
 /*
 ==================
@@ -927,36 +720,17 @@ main
 
 int main(int ac, char *av[])
 {
-	quakeparms_t	parms;
 	double			newtime, time, oldtime;
 	int				j;
 	int				sleep_msec;
 
 	ParseCommandLine (ac, av);
 
-	memset (&parms, 0, sizeof(parms));
-
-	PR_CleanLogText_Init();
-
 	COM_InitArgv (argc, argv);
-	parms.argc = com_argc;
-	parms.argv = com_argv;
-
-	parms.memsize = DEFAULT_MEM_SIZE;
-
-	j = COM_CheckParm ("-heapsize");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
-
-	j = COM_CheckParm ("-mem");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
-
-	parms.membase = Q_malloc (parms.memsize);
 
 	GetConsoleTitle(title, sizeof(title));
 
-	SV_Init (&parms);
+	Host_Init(argc, argv, DEFAULT_MEM_SIZE);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
@@ -988,6 +762,7 @@ int main(int ac, char *av[])
 		time = newtime - oldtime;
 		oldtime = newtime;
 
+		curtime = newtime;
 		SV_Frame (time);
 	}
 
@@ -1001,40 +776,19 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 						LPSTR       lpCmdLine,
 						int         nCmdShow)
 {
-
 	static MSG			msg;
-	static quakeparms_t	parms;
 	static double		newtime, time, oldtime;
 	register int		sleep_msec;
-	int					j;
 
-	static struct		timeval	timeout;
-	static fd_set		fdset;
 	static qbool		disable_gpf = false;
 
 	ParseCommandLine(lpCmdLine);
 
-	memset (&parms, 0, sizeof(parms));
-
-	PR_CleanLogText_Init();
-
 	COM_InitArgv (argc, argv);
-	parms.argc = com_argc;
-	parms.argv = com_argv;
 
 	// create main window
 	if (!CreateMainWindow(hInstance, nCmdShow))
 		return 1;
-
-	parms.memsize = DEFAULT_MEM_SIZE;
-
-	j = COM_CheckParm ("-heapsize");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
-
-	j = COM_CheckParm ("-mem");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
 
 	if (COM_CheckParm("-noerrormsgbox"))
 		disable_gpf = true;
@@ -1050,14 +804,12 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
 		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
 	}
-
-	parms.membase = Q_malloc (parms.memsize);
 	
-	SV_Init (&parms);
+	Host_Init(argc, argv, DEFAULT_MEM_SIZE);
 
 	// if stared miminize update notify icon message (with correct port)
 	if (minimized)
-		UpdateNotifyIconMessage(va(SERVER_NAME ":%d", sv_port));
+		UpdateNotifyIconMessage(va(SERVER_NAME ":%d", NET_UDPSVPort()));
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
@@ -1106,6 +858,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		time = newtime - oldtime;
 		oldtime = newtime;
 
+		curtime = newtime;
 		SV_Frame (time);
 	}
 

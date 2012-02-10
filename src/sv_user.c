@@ -72,12 +72,12 @@ extern cvar_t	sv_speedcheck; //bliP: 24/9
 
 static qbool IsLocalIP(netadr_t a)
 {
-	return a.ip.ip[0] == 10 || (a.ip.ip[0] == 172 && (a.ip.ip[1] & 0xF0) == 16)
-	       || (a.ip.ip[0] == 192 && a.ip.ip[1] == 168) || a.ip.ip[0] >= 224;
+	return a.ip[0] == 10 || (a.ip[0] == 172 && (a.ip[1] & 0xF0) == 16)
+	       || (a.ip[0] == 192 && a.ip[1] == 168) || a.ip[0] >= 224;
 }
 static qbool IsInetIP(netadr_t a)
 {
-	return a.ip.ip[0] != 127 && !IsLocalIP(a);
+	return a.ip[0] != 127 && !IsLocalIP(a);
 }
 /*
 ============================================================
@@ -122,13 +122,13 @@ static void Cmd_New_f (void)
 	}
 
 	// do not proceed if realip is unknown
-    if (sv_client->state == cs_preconnected && !sv_client->realip.ip.ip[0] && (int)sv_getrealip.value)
+    if (sv_client->state == cs_preconnected && !sv_client->realip.ip[0] && (int)sv_getrealip.value)
 	{
-		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_adr);
+		char *server_ip = sv_serverip.string[0] ? sv_serverip.string : NET_AdrToString(net_local_sv_ipadr);
 
-		if (!((IsLocalIP(net_local_adr) && IsLocalIP(sv_client->netchan.remote_address))  ||
-		        (IsInetIP (net_local_adr) && IsInetIP (sv_client->netchan.remote_address))) &&
-		        sv_client->netchan.remote_address.ip.ip[0] != 127 && !sv_serverip.string[0])
+		if (!((IsLocalIP(net_local_sv_ipadr) && IsLocalIP(sv_client->netchan.remote_address))  ||
+		        (IsInetIP (net_local_sv_ipadr) && IsInetIP (sv_client->netchan.remote_address))) &&
+		        sv_client->netchan.remote_address.ip[0] != 127 && !sv_serverip.string[0])
 		{
 			Sys_Printf ("WARNING: Incorrect server ip address: %s\n"
 			            "Set hostname in your operation system or set correctly sv_serverip cvar.\n",
@@ -150,7 +150,7 @@ static void Cmd_New_f (void)
 			{
 				if ((int)sv_getrealip.value == 2)
 				{
-					Netchan_OutOfBandPrint (net_from,
+					Netchan_OutOfBandPrint (NS_SERVER, net_from,
 						"%c\nFailed to validate client's IP.\n\n", A2C_PRINT);
 					sv_client->rip_vip = 2;
 				}
@@ -168,7 +168,7 @@ static void Cmd_New_f (void)
 		if ((sv_client->vip = SV_VIPbyIP(sv_client->realip)) == 0)
 		{
 			Sys_Printf ("%s:full connect\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_from,
+			Netchan_OutOfBandPrint (NS_SERVER, net_from,
 			                        "%c\nserver is full\n\n", A2C_PRINT);
 		}
 		else
@@ -616,34 +616,44 @@ static void Cmd_Spawn_f (void)
 	// set up the edict
 	ent = sv_client->edict;
 
-#ifdef USE_PR2
-	if ( sv_vm )
+	if (sv.loadgame)
 	{
-		savenetname = ent->v.netname;
-		memset(&ent->v, 0, pr_edict_size - sizeof(edict_t) + sizeof(entvars_t));
-		ent->v.netname = savenetname;
+		// loaded games are already fully initialized 
+		// if this is the last client to be connected, unpause
 
-		// so spec will have right goalentity - if speccing someone
-		// qqshka {
-		if(sv_client->spectator && sv_client->spec_track > 0)
-			ent->v.goalentity = EDICT_TO_PROG(svs.clients[sv_client->spec_track-1].edict);
-
-		// }
-
-		//sv_client->name = PR2_GetString(ent->v.netname);
-		//strlcpy(PR2_GetString(ent->v.netname), sv_client->name, 32);
+		if (sv.paused & 1)
+			SV_TogglePause (NULL, 1);
 	}
 	else
-#endif
-
 	{
-		memset (&ent->v, 0, progs->entityfields * 4);
-		ent->v.netname = PR_SetString(sv_client->name);
+#ifdef USE_PR2
+		if ( sv_vm )
+		{
+			savenetname = ent->v.netname;
+			memset(&ent->v, 0, pr_edict_size - sizeof(edict_t) + sizeof(entvars_t));
+			ent->v.netname = savenetname;
+
+			// so spec will have right goalentity - if speccing someone
+			// qqshka {
+			if(sv_client->spectator && sv_client->spec_track > 0)
+				ent->v.goalentity = EDICT_TO_PROG(svs.clients[sv_client->spec_track-1].edict);
+
+			// }
+
+			//sv_client->name = PR2_GetString(ent->v.netname);
+			//strlcpy(PR2_GetString(ent->v.netname), sv_client->name, 32);
+		}
+		else
+#endif
+		{
+			memset (&ent->v, 0, progs->entityfields * 4);
+			ent->v.netname = PR_SetString(sv_client->name);
+		}
+		ent->v.colormap = NUM_FOR_EDICT(ent);
+		ent->v.team = 0;	// FIXME
+		if (pr_teamfield)
+			E_INT(ent, pr_teamfield) = PR_SetString(sv_client->team);
 	}
-	ent->v.colormap = NUM_FOR_EDICT(ent);
-	ent->v.team = 0;	// FIXME
-	if (pr_teamfield)
-		E_INT(ent, pr_teamfield) = PR_SetString(sv_client->team);
 
 	sv_client->entgravity = 1.0;
 	val =
@@ -671,19 +681,19 @@ static void Cmd_Spawn_f (void)
 
 	ClientReliableWrite_Begin (sv_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (sv_client, STAT_TOTALSECRETS);
-	ClientReliableWrite_Long (sv_client, pr_global_struct->total_secrets);
+	ClientReliableWrite_Long (sv_client, PR_GLOBAL(total_secrets));
 
 	ClientReliableWrite_Begin (sv_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (sv_client, STAT_TOTALMONSTERS);
-	ClientReliableWrite_Long (sv_client, pr_global_struct->total_monsters);
+	ClientReliableWrite_Long (sv_client, PR_GLOBAL(total_monsters));
 
 	ClientReliableWrite_Begin (sv_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (sv_client, STAT_SECRETS);
-	ClientReliableWrite_Long (sv_client, pr_global_struct->found_secrets);
+	ClientReliableWrite_Long (sv_client, PR_GLOBAL(found_secrets));
 
 	ClientReliableWrite_Begin (sv_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (sv_client, STAT_MONSTERS);
-	ClientReliableWrite_Long (sv_client, pr_global_struct->killed_monsters);
+	ClientReliableWrite_Long (sv_client, PR_GLOBAL(killed_monsters));
 
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
@@ -752,19 +762,50 @@ static void Cmd_Begin_f (void)
 
 	sv_client->state = cs_spawned;
 
-	if (sv_client->spectator)
+	if (!sv.loadgame)
 	{
-		SV_SpawnSpectator ();
+		if (sv_client->spectator)
+		{
+			SV_SpawnSpectator ();
 
-		if (SpectatorConnect
+			if (SpectatorConnect
 #ifdef USE_PR2
-		        || sv_vm
+					|| sv_vm
 #endif
-		   )
+			   )
+			{
+				// copy spawn parms out of the client_t
+				for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
+					(&PR_GLOBAL(parm1))[i] = sv_client->spawn_parms[i];
+
+				// call the spawn function
+				pr_global_struct->time = sv.time;
+				pr_global_struct->self = EDICT_TO_PROG(sv_player);
+				G_FLOAT(OFS_PARM0) = (float) sv_client->vip;
+#ifdef USE_PR2
+				if ( sv_vm )
+					PR2_GameClientConnect(1);
+				else
+#endif
+					PR_ExecuteProgram (SpectatorConnect);
+
+#ifdef USE_PR2
+				// qqshka:	seems spectator is sort of hack in QW
+				//			I let qvm mods serve spectator like we do for normal player
+				if ( sv_vm )
+				{
+					pr_global_struct->time = sv.time;
+					pr_global_struct->self = EDICT_TO_PROG(sv_player);
+					PR2_GamePutClientInServer(1); // let mod know we put spec not player
+				}
+#endif
+			}
+		}
+		else
 		{
 			// copy spawn parms out of the client_t
 			for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
-				(&pr_global_struct->parm1)[i] = sv_client->spawn_parms[i];
+				(&PR_GLOBAL(parm1))[i] = sv_client->spawn_parms[i];
 
 			// call the spawn function
 			pr_global_struct->time = sv.time;
@@ -772,49 +813,21 @@ static void Cmd_Begin_f (void)
 			G_FLOAT(OFS_PARM0) = (float) sv_client->vip;
 #ifdef USE_PR2
 			if ( sv_vm )
-				PR2_GameClientConnect(1);
+				PR2_GameClientConnect(0);
 			else
 #endif
-				PR_ExecuteProgram (SpectatorConnect);
+				PR_ExecuteProgram (PR_GLOBAL(ClientConnect));
 
+			// actually spawn the player
+			pr_global_struct->time = sv.time;
+			pr_global_struct->self = EDICT_TO_PROG(sv_player);
 #ifdef USE_PR2
-			// qqshka:	seems spectator is sort of hack in QW
-			//			I let qvm mods serve spectator like we do for normal player
 			if ( sv_vm )
-			{
-				pr_global_struct->time = sv.time;
-				pr_global_struct->self = EDICT_TO_PROG(sv_player);
-				PR2_GamePutClientInServer(1); // let mod know we put spec not player
-			}
+				PR2_GamePutClientInServer(0);
+			else
 #endif
+				PR_ExecuteProgram (PR_GLOBAL(PutClientInServer));
 		}
-	}
-	else
-	{
-		// copy spawn parms out of the client_t
-		for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
-			(&pr_global_struct->parm1)[i] = sv_client->spawn_parms[i];
-
-		// call the spawn function
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = EDICT_TO_PROG(sv_player);
-		G_FLOAT(OFS_PARM0) = (float) sv_client->vip;
-#ifdef USE_PR2
-		if ( sv_vm )
-			PR2_GameClientConnect(0);
-		else
-#endif
-			PR_ExecuteProgram (pr_global_struct->ClientConnect);
-
-		// actually spawn the player
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = EDICT_TO_PROG(sv_player);
-#ifdef USE_PR2
-		if ( sv_vm )
-			PR2_GamePutClientInServer(0);
-		else
-#endif
-			PR_ExecuteProgram (pr_global_struct->PutClientInServer);
 	}
 
 	// clear the net statistics, because connecting gives a bogus picture
@@ -845,6 +858,22 @@ static void Cmd_Begin_f (void)
 		ClientReliableWrite_Begin (sv_client, svc_setpause, 2);
 		ClientReliableWrite_Byte (sv_client, sv.paused);
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Server is paused.\n");
+	}
+
+	if (sv.loadgame)
+	{
+		// send a fixangle over the reliable channel to make sure it gets there
+		// Never send a roll angle, because savegames can catch the server
+		// in a state where it is expecting the client to correct the angle
+		// and it won't happen if the game was just loaded, so you wind up
+		// with a permanent head tilt
+		edict_t *ent;
+
+		ent = EDICT_NUM( 1 + (sv_client - svs.clients) );
+		MSG_WriteByte (&sv_client->netchan.message, svc_setangle);
+		for (i = 0; i < 2; i++)
+			MSG_WriteAngle (&sv_client->netchan.message, ent->v.v_angle[i]);
+		MSG_WriteAngle (&sv_client->netchan.message, 0);
 	}
 
 	sv_client->lastservertimeupdate = -99; // update immediately
@@ -1007,7 +1036,7 @@ void SV_NextChunkedDownload(int chunknum, int percent, int chunked_download_numb
 		SZ_Write(msg, buffer, CHUNKSIZE);
 
 		if (sv_client->download_chunks_perframe)
-			Netchan_OutOfBand (sv_client->netchan.remote_address, msg->cursize, msg->data);
+			Netchan_OutOfBand (NS_SERVER, sv_client->netchan.remote_address, msg->cursize, msg->data);
 	}
 	else {
 		; // FIXME: EOF/READ ERROR
@@ -1024,7 +1053,7 @@ static void Cmd_NextDownload_f (void)
 	int		r, tmp;
 	int		percent;
 	int		size;
-	double	clear, frametime;
+	double	frametime;
 
 	if (!sv_client->download)
 		return;
@@ -1039,13 +1068,10 @@ static void Cmd_NextDownload_f (void)
 
 	tmp = sv_client->downloadsize - sv_client->downloadcount;
 
-	if ((clear = sv_client->netchan.cleartime) < realtime)
-		clear = realtime;
-
 	frametime = max(0.05, min(0, sv_client->netchan.frame_rate));
 	//Sys_Printf("rate:%f\n", sv_client->netchan.frame_rate);
 
-	r = (int)((realtime + frametime - sv_client->netchan.cleartime)/sv_client->netchan.rate);
+	r = (int)((curtime + frametime - sv_client->netchan.cleartime)/sv_client->netchan.rate);
 	if (r <= 10)
 		r = 10;
 	if (r > FILE_TRANSFER_BUF_SIZE)
@@ -1094,7 +1120,7 @@ static void OutofBandPrintf(netadr_t where, char *fmt, ...)
 	vsnprintf (send1 + 5, sizeof(send1) - 5, fmt, argptr);
 	va_end (argptr);
 
-	NET_SendPacket (strlen(send1) + 1, send1, where);
+	NET_SendPacket (NS_SERVER, strlen(send1) + 1, send1, where);
 }
 
 /*
@@ -1251,7 +1277,7 @@ static void Cmd_Download_f(void)
 		|| ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 5)) // no logs
 #ifdef _WIN32
 		// no leading X:
-	   	|| ( name[0] && name[1] == ':' && (*name >= 'a' && *name <= 'z' ||	*name >= 'A' && *name <= 'Z') )
+	   	|| ( name[0] && name[1] == ':' && ((*name >= 'a' && *name <= 'z') || (*name >= 'A' && *name <= 'Z')))
 #endif //_WIN32
 	   )
 		goto deny_download;		
@@ -1355,7 +1381,7 @@ static void Cmd_Download_f(void)
 			sv_client->downloadsize = VFS_GETLEN(sv_client->download);
 
 		// special check for maps that came from a pak file
-		if (sv_client->download && !strncmp(name, "maps/", 5) &&  VFS_COPYPROTECTED(sv_client->download) && !(int)allow_download_pakmaps.value)
+		if (sv_client->download && !strncmp(name, "maps/", 5) && VFS_COPYPROTECTED(sv_client->download) && !(int)allow_download_pakmaps.value)
 		{
 			VFS_CLOSE(sv_client->download);
 			sv_client->download = NULL;
@@ -1708,10 +1734,9 @@ static void SV_Say (qbool team)
 
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
-		//bliP: everyone sees all ->
-		//if (client->state != cs_spawned)
-		//	continue;
-		//<-
+		if (client->state < cs_preconnected)
+			continue;
+
 		if (sv_client->spectator && !(int)sv_spectalk.value)
 			if (!client->spectator)
 				continue;
@@ -1850,7 +1875,7 @@ static void Cmd_Kill_f (void)
 		PR2_ClientCmd();
 	else
 #endif
-		PR_ExecuteProgram (pr_global_struct->ClientKill);
+		PR_ExecuteProgram (PR_GLOBAL(ClientKill));
 }
 
 /*
@@ -1858,16 +1883,18 @@ static void Cmd_Kill_f (void)
 SV_TogglePause
 ==================
 */
-void SV_TogglePause (const char *msg)
+void SV_TogglePause (const char *msg, int bit)
 {
 	int i;
 	client_t *cl;
 	extern cvar_t sv_paused;
 
-	sv.paused = !sv.paused;
+	sv.paused ^= bit;
+	
+	Cvar_SetROM (&sv_paused, va("%i", sv.paused));
+
 	if (sv.paused)
 		sv.pausedsince = Sys_DoubleTime();
-	Cvar_SetROM (&sv_paused, sv.paused ? "1" : "0");
 
 	if (msg)
 		SV_BroadcastPrintf (PRINT_HIGH, "%s", msg);
@@ -1895,7 +1922,7 @@ static void Cmd_Pause_f (void)
 	char st[CLIENT_NAME_LEN + 32];
 	qbool newstate;
 
-	newstate = !sv.paused;
+	newstate = sv.paused ^ 1;
 
 	if (!(int)pausable.value)
 	{
@@ -1918,12 +1945,12 @@ static void Cmd_Pause_f (void)
 			return;		// progs said ignore the request
 	}
 
-	if (newstate)
+	if (newstate & 1)
 		snprintf (st, sizeof(st), "%s paused the game\n", sv_client->name);
 	else
 		snprintf (st, sizeof(st), "%s unpaused the game\n", sv_client->name);
 
-	SV_TogglePause(st);
+	SV_TogglePause(st, 1);
 }
 
 
@@ -2025,8 +2052,12 @@ static void Cmd_TechLogin_f (void)
 
 	if (Cmd_Argc() < 2)
 	{
-		sv_client->special = false;
-		sv_client->logincount = 0;
+		if (sv_client->special)
+		{
+			sv_client->special = false;
+			sv_client->logincount = 0;
+			SV_ClientPrintf (sv_client, PRINT_HIGH, "Logged out.\n");
+		}
 		return;
 	}
 
@@ -2047,6 +2078,7 @@ Cmd_Upload_f
 */
 static void Cmd_Upload_f (void)
 {
+	FILE *f;
 	char str[MAX_OSPATH];
 
 	if (sv_client->state != cs_spawned)
@@ -2072,9 +2104,10 @@ static void Cmd_Upload_f (void)
 		return;
 	}
 
-	if (Sys_FileTime(sv_client->uploadfn) != -1)
+	if ((f = fopen(sv_client->uploadfn, "rb")))
 	{
 		Con_Printf ("File already exists.\n");
+		fclose(f);
 		return;
 	}
 
@@ -2552,11 +2585,11 @@ static void Cmd_Join_f (void)
 		PR2_GameSetNewParms();
 	else
 #endif
-		PR_ExecuteProgram (pr_global_struct->SetNewParms);
+		PR_ExecuteProgram (PR_GLOBAL(SetNewParms));
 
 	// copy spawn parms out of the client_t
 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
-		sv_client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+		sv_client->spawn_parms[i] = (&PR_GLOBAL(parm1))[i];
 
 	// call the spawn function
 	pr_global_struct->time = sv.time;
@@ -2567,7 +2600,7 @@ static void Cmd_Join_f (void)
 		PR2_GameClientConnect(0);
 	else
 #endif
-		PR_ExecuteProgram (pr_global_struct->ClientConnect);
+		PR_ExecuteProgram (PR_GLOBAL(ClientConnect));
 	
 	// actually spawn the player
 	pr_global_struct->time = sv.time;
@@ -2578,7 +2611,7 @@ static void Cmd_Join_f (void)
 		PR2_GamePutClientInServer(0);
 	else
 #endif
-		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
+		PR_ExecuteProgram (PR_GLOBAL(PutClientInServer));
 
 	// look in SVC_DirectConnect() for for extended comment whats this for
 	MVD_PlayerReset(NUM_FOR_EDICT(sv_player) - 1);
@@ -2638,7 +2671,7 @@ static void Cmd_Observe_f (void)
 		PR2_GameClientDisconnect(0);
 	else
 #endif
-		PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
+		PR_ExecuteProgram (PR_GLOBAL(ClientDisconnect));
 
 	// this is like SVC_DirectConnect.
 	// turn the player into a spectator
@@ -2658,7 +2691,7 @@ static void Cmd_Observe_f (void)
 		PR2_GameSetNewParms();
 	else
 #endif
-		PR_ExecuteProgram (pr_global_struct->SetNewParms);
+		PR_ExecuteProgram (PR_GLOBAL(SetNewParms));
 
 	SV_SpawnSpectator ();
 	
@@ -2671,7 +2704,7 @@ static void Cmd_Observe_f (void)
 	{
 		// copy spawn parms out of the client_t
 		for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
-			sv_client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+			sv_client->spawn_parms[i] = (&PR_GLOBAL(parm1))[i];
 
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -3193,7 +3226,7 @@ qbool SV_ExecutePRCommand (void)
 				Cbuf_AddText(va("say \"ATTENTION: Attempt to use ktpro bug: id '%d', name '%s', address '%s', realip '%s'!\"\n",
 							sv_client->userid, sv_client->name,
 							NET_BaseAdrToString(sv_client->netchan.remote_address),
-							sv_client->realip.ip.ip[0] ?
+							sv_client->realip.ip[0] ?
 								NET_BaseAdrToString(sv_client->realip) : "not detected"));
 				return true /* suppress bad command warning */;
 			}
@@ -3428,10 +3461,16 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 
 	if (!sv_client->spectator)
 	{
+		vec3_t	oldvelocity;
+		float	old_teleport_time;
+
 		VectorCopy (sv_player->v.velocity, originalvel);
 		onground = (int) sv_player->v.flags & FL_ONGROUND;
-		
-		pr_global_struct->frametime = sv_frametime;
+
+		VectorCopy (sv_player->v.velocity, oldvelocity);
+		old_teleport_time = sv_player->v.teleport_time;
+
+		PR_GLOBAL(frametime) = sv_frametime;
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 #ifdef USE_PR2
@@ -3439,7 +3478,13 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 			PR2_GameClientPreThink(0);
 		else
 #endif
-			PR_ExecuteProgram (pr_global_struct->PlayerPreThink);
+			PR_ExecuteProgram (PR_GLOBAL(PlayerPreThink));
+
+		if (pr_nqprogs)
+		{
+			sv_player->v.teleport_time = old_teleport_time;
+			VectorCopy (oldvelocity, sv_player->v.velocity);
+		}
 
 		if ( onground && originalvel[2] < 0 && sv_player->v.velocity[2] == 0 &&
 		originalvel[0] == sv_player->v.velocity[0] &&
@@ -3497,6 +3542,8 @@ FIXME
 	// get player state back out of pmove
 	sv_client->jump_held = pmove.jump_held;
 	sv_player->v.teleport_time = pmove.waterjumptime;
+	if (pr_nqprogs)
+		sv_player->v.flags = ((int)sv_player->v.flags & ~FL_WATERJUMP) | (pmove.waterjumptime ? FL_WATERJUMP : 0);
 	sv_player->v.waterlevel = pmove.waterlevel;
 	sv_player->v.watertype = pmove.watertype;
 	if (pmove.onground)
@@ -3560,7 +3607,7 @@ void SV_PostRunCmd(void)
 			PR2_GameClientPostThink(0);
 		else
 #endif
-			PR_ExecuteProgram (pr_global_struct->PlayerPostThink);
+			PR_ExecuteProgram (PR_GLOBAL(PlayerPostThink));
 
 		if ( onground && originalvel[2] < 0 && sv_player->v.velocity[2] == 0
 		&& originalvel[0] == sv_player->v.velocity[0]
@@ -3569,7 +3616,13 @@ void SV_PostRunCmd(void)
 			sv_player->v.velocity[2] = originalvel[2];
 		}
 
-		SV_RunNewmis ();
+		if (pr_nqprogs)
+			VectorCopy (originalvel, sv_player->v.velocity);
+
+		if (pr_nqprogs)
+			SV_RunNQNewmis ();
+		else
+			SV_RunNewmis ();
 	}
 	else if (SpectatorThink
 #ifdef USE_PR2
@@ -3674,7 +3727,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 	if (sv_antilag.value)
 	{
-//#pragma message("FIXME: make antilag optionally support non-player ents too")
+//#pragma msg("FIXME: make antilag optionally support non-player ents too")
 
 #define MAX_PREDICTION 0.02
 #define MAX_EXTRAPOLATE 0.02

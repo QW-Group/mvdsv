@@ -22,11 +22,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __QWSVDEF_H__
 #define __QWSVDEF_H__
 
+//for msvc #pragma message lines
+#define MY_STRINGIFY2(s) #s
+#define MY_STRINGIFY(s) MY_STRINGIFY2(s)
+
+#if defined(_MSC_VER)
+#define MSVC_LINE   __FILE__"("MY_STRINGIFY(__LINE__)") : warning : "
+#define msg(s) message(MSVC_LINE s)
+#elif __GNUC__ >=4
+#define msg(s) message(s)
+#else
+#define msg(...)
+#endif
+
 //define PARANOID // speed sapping error checking
 
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_DEPRECATE	// don't bitch about strncat etc
-#pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018 4996)
+#pragma warning( disable : 4244 4267 4127 4201 4214 4514 4305 4115 4018 4996)
 #endif
 
 #include <time.h>
@@ -62,17 +75,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "crc.h"
 #include "sha1.h"
 
-
-#include "progs.h"
-#ifdef USE_PR2
-// Angel -->
-#include "pr2_vm.h"
-#include "pr2.h"
-#include "g_public.h"
-// <-- Angel
-#endif
-
 #include "server.h"
+
 #include "world.h"
 #include "pmove.h"
 #include "log.h"
@@ -83,46 +87,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //=============================================================================
 
-// the host system specifies the base of the directory tree, the
-// command line parms passed to the program, and the amount of memory
-// available for the program to use
-
-typedef struct
-{
-	int	argc;
-	char	**argv;
-	void	*membase;
-	int	memsize;
-} quakeparms_t;
-
-
-//=============================================================================
-
-typedef struct
-{
-	int sec;
-	int min;
-	int hour;
-	int day;
-	int mon;
-	int year;
-	char str[128];
-} date_t;
-void SV_TimeOfDay(date_t *date);
-
-extern	quakeparms_t host_parms;
-
 extern	cvar_t	sys_nostdout;
 extern	cvar_t	developer;
 
-extern	cvar_t	extralogname;
-
-extern	qbool host_initialized; // true if into command execution
-extern	double	realtime; // not bounded in any way, changed at start of every frame, never reset
+extern	qbool	host_initialized;
+extern	qbool	host_everything_loaded;
+extern	double	curtime; // not bounded or scaled, shared by local client and server
 
 void SV_Error (char *error, ...);
-void SV_Init (quakeparms_t *parms);
+void SV_Init (void);
+void SV_Shutdown (char *finalmsg);
 #define Host_Error SV_Error // ezquake compatibility
+void Host_Init (int argc, char **argv, int default_memsize);
+void Host_ClearMemory (void);
 
 void Con_Printf (char *fmt, ...);
 void Con_DPrintf (char *fmt, ...);

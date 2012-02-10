@@ -341,7 +341,7 @@ void SV_LinkToLeafs (edict_t *ent)
 	ent->e->num_leafs = CM_FindTouchedLeafs (ent->v.absmin, ent->v.absmax, leafnums,
 					      MAX_ENT_LEAFS, 0, NULL);
 	for (i = 0; i < ent->e->num_leafs; i++) {
-		// ent->leafnums are real leafnum minus one (for pvs checks)
+		// ent->e->leafnums are real leafnum minus one (for pvs checks)
 		ent->e->leafnums[i] = leafnums[i] - 1;
 	}
 }

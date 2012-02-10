@@ -50,6 +50,6 @@ byte *FS_LoadTempFile (char *path, int *len);
 byte *FS_LoadHunkFile (char *path, int *len);
 void FS_CreatePath (char *path);
 char *FS_NextPath (char *prevpath);
-void FS_SetGamedir (char *dir);
+void FS_SetGamedir (char *dir, qbool force);
 
 #endif /* !__FS_H__ */

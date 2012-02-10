@@ -178,6 +178,7 @@ qbool VM_LoadNative( vm_t * vm )
 			break;
 		}
 	}
+
 	if ( !vm->hInst )
 		return false;
 
