@@ -820,13 +820,7 @@ void SV_UpdateClientStats (client_t *client)
 	}
 
 	stats[STAT_HEALTH] = ent->v.health;
-	stats[STAT_WEAPON] = SV_ModelIndex(
-#ifdef USE_PR2
-	                         PR2_GetString(ent->v.weaponmodel)
-#else
-							 PR_GetString(ent->v.weaponmodel)
-#endif
-	                     );
+	stats[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
 	stats[STAT_AMMO] = ent->v.currentammo;
 	stats[STAT_ARMOR] = ent->v.armorvalue;
 	stats[STAT_SHELLS] = ent->v.ammo_shells;
@@ -1192,13 +1186,7 @@ void MVD_WriteStats(void)
 		memset (stats, 0, sizeof(stats));
 
 		stats[STAT_HEALTH] = ent->v.health;
-		stats[STAT_WEAPON] = SV_ModelIndex(
-#ifdef USE_PR2
-		                         PR2_GetString(ent->v.weaponmodel)
-#else
-								 PR_GetString(ent->v.weaponmodel)
-#endif
-		                     );
+		stats[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
 		stats[STAT_AMMO] = ent->v.currentammo;
 		stats[STAT_ARMOR] = ent->v.armorvalue;
 		stats[STAT_SHELLS] = ent->v.ammo_shells;
@@ -1281,10 +1269,8 @@ void SV_SendDemoMessage(void)
 	else
 		min_fps = bound(4.0, (int)sv_demoIdlefps.value, 30);
 
-	if (!demo.forceFrame && (sv.time - demo.time < 1.0/min_fps))
+	if (sv.time - demo.time < 1.0/min_fps)
 		return;
-
-	demo.forceFrame = 0;
 
 	if ((int)sv_demoPings.value)
 	{

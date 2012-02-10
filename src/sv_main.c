@@ -181,10 +181,8 @@ cvar_t	hostname = {"hostname", "unnamed", CVAR_SERVERINFO};
 cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
 cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login"
 
+// We need this cvar, because some mods didn't allow us to go at some placeses of, for example, start map.
 cvar_t registered = {"registered", "1", CVAR_ROM};
-// We need this cvar, because ktpro didn't allow to go at some placeses of, for example, start map.
-
-cvar_t sv_ktpro_mode = {"sv_ktpro_mode", "auto"};
 
 cvar_t	sv_halflifebsp = {"halflifebsp", "0", CVAR_ROM};
 
@@ -241,14 +239,9 @@ void SV_Shutdown (char *finalmsg)
 	NET_Shutdown ();
 #endif
 
-#ifdef USE_PR2
-	if ( sv_vm )
-	{
-		PR2_GameShutDown();
-		VM_Unload( sv_vm );
-		sv_vm = NULL;
-	}
-#endif
+	// Shutdown game.
+	PR_GameShutDown();
+	PR_UnLoadProgs();
 
 	memset (&sv, 0, sizeof(sv));
 	sv.state = ss_dead;
@@ -344,9 +337,6 @@ or unwillingly.  This is NOT called if the entire server is quiting
 or crashing.
 =====================
 */
-#ifdef USE_PR2
-void RemoveBot(client_t *cl);
-#endif
 void SV_DropClient (client_t *drop)
 {
 	//bliP: cuff, mute ->
@@ -363,6 +353,7 @@ void SV_DropClient (client_t *drop)
 #ifdef USE_PR2
 	if( drop->isBot )
 	{
+		extern void RemoveBot(client_t *cl);
 		RemoveBot(drop);
 		return;
 	}
@@ -371,34 +362,10 @@ void SV_DropClient (client_t *drop)
 
 	if (drop->state == cs_spawned)
 	{
-		if (!drop->spectator)
-		{
-			// call the prog function for removing a client
-			// this will set the body to a dead frame, among other things
-			pr_global_struct->self = EDICT_TO_PROG(drop->edict);
-#ifdef USE_PR2
-			if ( sv_vm )
-				PR2_GameClientDisconnect(0);
-			else
-#endif
-				PR_ExecuteProgram (PR_GLOBAL(ClientDisconnect));
-		}
-		else if (SpectatorDisconnect
-#ifdef USE_PR2
-			|| ( sv_vm )
-#endif
-			)
-		{
-			// call the prog function for removing a client
-			// this will set the body to a dead frame, among other things
-			pr_global_struct->self = EDICT_TO_PROG(drop->edict);
-#ifdef USE_PR2
-			if ( sv_vm )
-				PR2_GameClientDisconnect(1);
-			else
-#endif
-				PR_ExecuteProgram (SpectatorDisconnect);
-		}
+		// call the prog function for removing a client
+		// this will set the body to a dead frame, among other things
+		pr_global_struct->self = EDICT_TO_PROG(drop->edict);
+		PR_GameClientDisconnect(drop->spectator);
 	}
 
 	if (drop->spectator)
@@ -1156,9 +1123,6 @@ A connection request that did not come from the master
 */
 extern void MVD_PlayerReset(int player);
 
-#ifdef USE_PR2
-extern char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN];
-#endif
 extern char *shortinfotbl[];
 
 static void SVC_DirectConnect (void)
@@ -1342,16 +1306,8 @@ static void SVC_DirectConnect (void)
 	ent = EDICT_NUM(edictnum);
 	ent->e->free = false;
 	newcl->edict = ent;
-#ifdef USE_PR2
-	//restore pointer to client name
-	//for -progtype 0 (VM_NONE) names stored in clientnames array
-	//for -progtype 1 (VM_NATIVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
-	if(sv_vm)
-		newcl->name = PR2_GetString(ent->v.netname);
-	else
-		newcl->name = clientnames[edictnum - 1];
-	memset(newcl->name, 0, CLIENT_NAME_LEN);
-#endif
+	// restore client name.
+	ent->v.netname = PR_SetString(newcl->name);
 
 	s = ( vip ? va("%d", vip) : "" );
 
@@ -1393,12 +1349,7 @@ static void SVC_DirectConnect (void)
 #endif
 
 	// call the progs to get default spawn parms for the new client
-#ifdef USE_PR2
-	if ( sv_vm )
-		PR2_GameSetNewParms();
-	else
-#endif
-		PR_ExecuteProgram (PR_GLOBAL(SetNewParms));
+	PR_GameSetNewParms();
 
 	for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
 		newcl->spawn_parms[i] = (&PR_GLOBAL(parm1))[i];
@@ -2302,7 +2253,7 @@ qbool SV_FilterPacket (void)
 
 // { server internal BAN support
 
-#define AF_REAL_ADMIN  (1<<1) // pass/vip granted admin (real admin in terms of ktpro)
+#define AF_REAL_ADMIN  (1<<1) // pass/vip granted admin.
 
 void Do_BanList(ipfiltertype_t ipft)
 {
@@ -2426,12 +2377,7 @@ void SV_Cmd_Ban_f(void)
 // get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
 // ============
 
-	val =
-#ifdef USE_PR2
-	    PR2_GetEdictFieldValue(ent, "mod_admin");
-#else
-	    GetEdictFieldValue(ent, "mod_admin");
-#endif
+	val = PR_GetEdictFieldValue(ent, "mod_admin");
 	if (!val || !(val->_int & AF_REAL_ADMIN) ) {
 		Con_Printf("You are not an admin\n");
 		return;
@@ -2527,12 +2473,7 @@ void SV_Cmd_Banip_f(void)
 // get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
 // ============
 
-	val =
-#ifdef USE_PR2
-	    PR2_GetEdictFieldValue(ent, "mod_admin");
-#else
-	    GetEdictFieldValue(ent, "mod_admin");
-#endif
+	val = PR_GetEdictFieldValue(ent, "mod_admin");
 	if (!val || !(val->_int & AF_REAL_ADMIN) ) {
 		Con_Printf("You are not an admin\n");
 		return;
@@ -2597,12 +2538,7 @@ void SV_Cmd_Banremove_f(void)
 // get ADMIN rights from MOD via "mod_admin" field, mod MUST export such field if wanna server ban support
 // ============
 
-	val =
-#ifdef USE_PR2
-	    PR2_GetEdictFieldValue(ent, "mod_admin");
-#else
-	    GetEdictFieldValue(ent, "mod_admin");
-#endif
+	val = PR_GetEdictFieldValue(ent, "mod_admin");
 	if (!val || !(val->_int & AF_REAL_ADMIN) ) {
 		Con_Printf("You are not an admin\n");
 		return;
@@ -3167,29 +3103,7 @@ static void PausedTic (void)
 	if (sv.state != ss_active)
 		return;
 
-#ifdef USE_PR2
-	if ( sv_vm )
-		PR2_PausedTic(Sys_DoubleTime() - sv.pausedsince);
-	else
-#endif
-	if (GE_PausedTic) {
-		G_FLOAT(OFS_PARM0) = Sys_DoubleTime() - sv.pausedsince;
-		PR_ExecuteProgram (GE_PausedTic);
-	}
-}
-
-static void KtproAirstepFix(void)
-{
-// ktpro is old school, do not allow pm_airstep
-	extern cvar_t	pm_airstep;
-
-	if (sv.state != ss_active)
-		return;
-
-	if (is_ktpro && pm_airstep.value) {
-		Con_Printf("Forcing pm_airstep to 0 in ktpro\n");
-		Cvar_SetValue (&pm_airstep, 0);
-	}
+	PR_PausedTic(Sys_DoubleTime() - sv.pausedsince);
 }
 
 /*
@@ -3210,9 +3124,6 @@ void SV_Frame (double time1)
 
 	// keep the random time dependent
 	rand ();
-
-	// do not allow pm_airstep it ktpro
-	KtproAirstepFix();
 
 	// decide the simulation time
 	if (!sv.paused)
@@ -3441,7 +3352,6 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_forcenick);
 	Cvar_Register (&sv_registrationinfo);
 	Cvar_Register (&registered);
-	Cvar_Register (&sv_ktpro_mode);
 
 	Cvar_Register (&sv_halflifebsp);
 
@@ -3521,40 +3431,11 @@ Pull specific info from a newly changed userinfo string
 into a more C freindly form.
 =================
 */
-// Added by VVD {
-// ktpro crash if absolute value of userinfo keys "ls" or/and "lw" is to large
-static void SV_SetUserInfoKeyLimit (char *key, int limit, client_t *cl, qbool warning_msg)
-{
-	if (warning_msg)
-		SV_ClientPrintf (cl, PRINT_HIGH, "WARNING: You can't set setinfo %s %s %i.\n",
-		                 key, limit > 0 ? ">" : "<", limit);
-
-	Info_Set (&cl->_userinfo_ctx_, key, va("%i", limit));
-
-	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
-	MSG_WriteString (&cl->netchan.message, va("setinfo \"%s\" \"%i\"\n", key, limit));
-}
-
-static void SV_CheckUserInfoKeyLimit (char *key, int limit, client_t *cl)
-{
-	char *value_c = Info_Get (&cl->_userinfo_ctx_, key);
-	int value = Q_atoi(value_c);
-
-	if (value > limit)
-		SV_SetUserInfoKeyLimit (key, limit, cl, true);
-	else if (value < -limit)
-		SV_SetUserInfoKeyLimit (key, -limit, cl, true);
-	else if (strcmp(value_c, va("%i", value)) && *value_c)
-		SV_SetUserInfoKeyLimit (key, value, cl, false);
-}
-// } Added by VVD
-
-extern func_t UserInfo_Changed;
 
 void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 {
 	char	*val, *p;
-	int		i, limit;
+	int		i;
 	client_t	*client;
 	int		dupc = 1;
 	char	newname[CLIENT_NAME_LEN];
@@ -3680,17 +3561,10 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 	if (val[0])
 		cl->messagelevel = Q_atoi(val);
 
-	//bliP: spectator print ->
+	//spectator print
 	val = Info_Get(&cl->_userinfo_ctx_, "sp");
 	if (val[0])
 		cl->spec_print = Q_atoi(val);
-	//<-
-	// Added by VVD {
-// ktpro version before 1.67 crash if absolute value of userinfo keys "ls" or/and "lw" is to large
-	limit = 63;
-	SV_CheckUserInfoKeyLimit("lw", limit, cl);
-	SV_CheckUserInfoKeyLimit("ls", limit, cl);
-	// } Added by VVD
 }
 
 
@@ -3907,11 +3781,7 @@ void SV_Init (void)
 	memset(&_localinfo_, 0, sizeof(_localinfo_));
 	_localinfo_.max = MAX_LOCALINFOS;
 
-#ifdef USE_PR2
-	PR2_Init();
-#else
 	PR_Init ();
-#endif
 
 	// send immediately
 	svs.last_heartbeat = -99999;

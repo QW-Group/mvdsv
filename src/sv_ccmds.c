@@ -29,6 +29,8 @@ char fp_msg[255] = { 0 };
 extern	cvar_t		sv_logdir; //bliP: 24/7 logdir
 extern	redirect_t	sv_redirected;
 
+void SV_Localinfo_Set (const char *name, const char *value);
+
 /*
 ===============================================================================
 
@@ -430,8 +432,6 @@ void SV_Map (qbool now)
 #ifndef SERVERONLY
 		CL_BeginLocalConnection ();
 #endif
-		SV_BroadcastCommand ("changing\n");
-		SV_SendMessagesToAll ();
 
 		// -> scream
 		if ((int)frag_log_type.value)
@@ -457,7 +457,9 @@ void SV_Map (qbool now)
 
 		SV_SpawnServer (level, !strcasecmp(Cmd_Argv(0), "devmap"));
 
-		SV_BroadcastCommand ("reconnect\n");
+		SV_BroadcastCommand ("changing\n"
+							 "reconnect\n");
+		SV_SendMessagesToAll ();
 
 		return;
 	}
@@ -1178,38 +1180,6 @@ void SV_Status_f (void)
 
 	switch (sv_redirected)
 	{
-		case RD_MOD:
-			if (is_ktpro)
-			{
-				Con_Printf ("frags id  address         name            rate ping drop  real ip\n"
-							"----- --- --------------- --------------- ---- ---- ----- ---------------\n");
-				for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-				{
-					if (!cl->state)
-						continue;
-					s = NET_BaseAdrToString(cl->netchan.remote_address);
-					Con_Printf ("%5i %3i %-15s %-15s ", (int)cl->edict->v.frags, cl->userid,
-								(int)sv_use_dns.value ? SV_Resolve(s) : s, cl->name);
-					switch (cl->state)
-					{
-						case cs_connected:
-						case cs_preconnected:
-							Con_Printf ("CONNECTING\n");
-							continue;
-						case cs_zombie:
-							Con_Printf ("ZOMBIE\n");
-							continue;
-						default:;
-					}
-					Con_Printf ("%4i %4i %5.1f %s %s\n",
-								(int)(1000 * cl->netchan.frame_rate),
-								(int)SV_CalcPing (cl),
-								100.0 * cl->netchan.drop_count / cl->netchan.incoming_sequence,
-								cl->realip.ip[0] ? NET_BaseAdrToString (cl->realip) : "",
-								cl->spectator ? "(s)" : "");
-				}
-				break;
-			} // if
 		case RD_NONE:
 			Con_Printf ("name             ping frags   id   address                real ip\n"
 						"---------------- ---- ----- ------ ---------------------- ---------------\n");
@@ -1238,6 +1208,7 @@ void SV_Status_f (void)
 				}
 			}
 			break;
+		//case RD_MOD:
 		//case RD_CLIENT:
 		//case RD_PACKET:
 		default:
@@ -1276,117 +1247,49 @@ void SV_Status_f (void)
 	Con_Printf ("\n");
 }
 
-void SV_Check_localinfo_maps_support(void)
-{
-	float	k_version;
-	char	*k_version_s;
-	int		k_build;
-	char	*k_build_s;
-
-	char	*x_version;
-	char	*x_build;
-
-	k_version = Q_atof(k_version_s = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_VERSION));
-	k_build   = Q_atoi(k_build_s   = Info_ValueForKey(svs.info, SERVERINFO_KTPRO_BUILD));
-
-	x_version = Info_ValueForKey(svs.info, SERVERINFO_KTX_VERSION);
-	x_build   = Info_ValueForKey(svs.info, SERVERINFO_KTX_BUILD);
-
-	if ((k_version < LOCALINFO_MAPS_KTPRO_VERSION || k_build < LOCALINFO_MAPS_KTPRO_BUILD) &&
-		!(*x_version && *x_build))
-	{
-		Con_DPrintf("WARNING: Storing maps list in LOCALINFO supported only by ktpro version "
-		           LOCALINFO_MAPS_KTPRO_VERSION_S " build %i and newer and by ktx.\n",
-		           LOCALINFO_MAPS_KTPRO_BUILD);
-		if (k_version && k_build)
-			Con_DPrintf("Current running ktpro version %s build %s.\n",
-			           k_version_s, k_build_s);
-		else
-			Con_DPrintf("Current running mod is not ktpro and is not ktx.\n");
-	}
-}
 /*
 ==================
 SV_Check_maps_f
 ==================
 */
-extern func_t localinfoChanged;
 void SV_Check_maps_f(void)
 {
 	dir_t d;
 	file_t *list;
 	int i, j, maps_id1;
-	char *s=NULL, *key;
-
-	SV_Check_localinfo_maps_support();
 
 	d = Sys_listdir("id1/maps", ".bsp$", SORT_BY_NAME);
 	list = d.files;
-	for (i = LOCALINFO_MAPS_LIST_START; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++)
+	for (i = LOCALINFO_MAPS_LIST_START; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++, i++)
 	{
 		list->name[strlen(list->name) - 4] = 0;
-		if (!list->name[0]) continue;
+		if (!list->name[0])
+			continue;
 
-		key = va("%d", i);
-		s = Info_Get(&_localinfo_, key);
-		Info_Set (&_localinfo_, key, list->name);
-
-		if (localinfoChanged)
-		{
-			pr_global_struct->time = sv.time;
-			pr_global_struct->self = 0;
-			G_INT(OFS_PARM0) = PR_SetTmpString(key);
-			G_INT(OFS_PARM1) = PR_SetTmpString(s);
-			G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, key));
-			PR_ExecuteProgram (localinfoChanged);
-		}
-		i++;
+		SV_Localinfo_Set(va("%d", i), list->name);
 	}
 	maps_id1 = i - 1;
 
 	d = Sys_listdir("qw/maps", ".bsp$", SORT_BY_NAME);
 	list = d.files;
-	for (; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++)
+	for (; list->name[0] && i <= LOCALINFO_MAPS_LIST_END; list++, i++)
 	{
 		list->name[strlen(list->name) - 4] = 0;
-		if (!list->name[0]) continue;
+		if (!list->name[0])
+			continue;
 
 		for (j = LOCALINFO_MAPS_LIST_START; j <= maps_id1; j++)
 			if (!strncmp(Info_Get(&_localinfo_, va("%d", j)), list->name, MAX_KEY_STRING))
 				break;
-		if (j <= maps_id1) continue;
+		if (j <= maps_id1)
+			continue;
 
-		key = va("%d", i);
-		s = Info_Get(&_localinfo_, key);
-		Info_Set (&_localinfo_, key, list->name);
-
-		if (localinfoChanged)
-		{
-			pr_global_struct->time = sv.time;
-			pr_global_struct->self = 0;
-			G_INT(OFS_PARM0) = PR_SetTmpString(key);
-			G_INT(OFS_PARM1) = PR_SetTmpString(s);
-			G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, key));
-			PR_ExecuteProgram (localinfoChanged);
-		}
-		i++;
+		SV_Localinfo_Set(va("%d", i), list->name);
 	}
 
 	for (; i <= LOCALINFO_MAPS_LIST_END; i++)
 	{
-		key = va("%d", i);
-		s = Info_Get(&_localinfo_, key);
-		Info_Set(&_localinfo_, key, "");
-
-		if (localinfoChanged)
-		{
-			pr_global_struct->time = sv.time;
-			pr_global_struct->self = 0;
-			G_INT(OFS_PARM0) = PR_SetTmpString(key);
-			G_INT(OFS_PARM1) = PR_SetTmpString(s);
-			G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, key));
-			PR_ExecuteProgram (localinfoChanged);
-		}
+		SV_Localinfo_Set(va("%d", i), "");
 	}
 }
 
@@ -1525,6 +1428,29 @@ void SV_Serverinfo_f (void)
 	}
 }
 
+void SV_Localinfo_Set (const char *name, const char *value)
+{
+	char *old_value;
+
+	if (!name || !*name)
+		return;
+
+	if (!value)
+		value = "";
+
+	old_value = Info_Get(&_localinfo_, name); // remember old value.
+	Info_Set (&_localinfo_, name, value); // set new value.
+
+	if (mod_localinfoChanged)
+	{
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = 0;
+		G_INT(OFS_PARM0) = PR_SetTmpString(name);
+		G_INT(OFS_PARM1) = PR_SetTmpString(old_value);
+		G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, name));
+		PR_ExecuteProgram (mod_localinfoChanged);
+	}
+}
 
 /*
 ===========
@@ -1535,8 +1461,6 @@ SV_Localinfo_f
 */
 void SV_Localinfo_f (void)
 {
-	char *s;
-
 	if (Cmd_Argc() == 1)
 	{
 		char info[MAX_LOCALINFO_STRING];
@@ -1551,7 +1475,8 @@ void SV_Localinfo_f (void)
 	//bliP: sane localinfo usage (mercury) ->
 	if (Cmd_Argc() == 2)
 	{
-		s = Info_Get(&_localinfo_, Cmd_Argv(1));
+		char *s = Info_Get(&_localinfo_, Cmd_Argv(1));
+
 		if (*s)
 			Con_Printf ("Localinfo %s: \"%s\"\n", Cmd_Argv(1), s);
 		else
@@ -1572,18 +1497,7 @@ void SV_Localinfo_f (void)
 		return;
 	}
 
-	s = Info_Get(&_localinfo_, Cmd_Argv(1));
-	Info_Set (&_localinfo_, Cmd_Argv(1), Cmd_Argv(2));
-
-	if (localinfoChanged)
-	{
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = 0;
-		G_INT(OFS_PARM0) = PR_SetTmpString(Cmd_Argv(1));
-		G_INT(OFS_PARM1) = PR_SetTmpString(s);
-		G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, Cmd_Argv(1)));
-		PR_ExecuteProgram (localinfoChanged);
-	}
+	SV_Localinfo_Set(Cmd_Argv(1), Cmd_Argv(2));
 }
 
 

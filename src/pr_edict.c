@@ -31,7 +31,6 @@ dstatement_t	*pr_statements;
 globalvars_t	*pr_global_struct;
 float			*pr_globals;			// same as pr_global_struct
 int				pr_edict_size;	// in bytes
-int				pr_teamfield = 0;	// field for team storage
 
 #define NQ_PROGHEADER_CRC 5927
 
@@ -71,12 +70,12 @@ gefv_cache;
 
 static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 
-func_t SpectatorConnect, SpectatorThink, SpectatorDisconnect;
+func_t mod_SpectatorConnect, mod_SpectatorThink, mod_SpectatorDisconnect;
 func_t GE_ClientCommand, GE_PausedTic, GE_ShouldPause;
 
 func_t mod_ConsoleCmd, mod_UserCmd;
-func_t UserInfo_Changed, localinfoChanged;
-func_t ChatMessage;
+func_t mod_UserInfo_Changed, mod_localinfoChanged;
+func_t mod_ChatMessage;
 
 cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
 #ifdef WITH_NQPROGS
@@ -222,7 +221,7 @@ ddef_t *ED_FindField (char *name)
 	for (i=0 ; i<progs->numfielddefs ; i++)
 	{
 		def = &pr_fielddefs[i];
-		if (!strcmp(PR_GetString(def->s_name),name) )
+		if (!strcmp(PR1_GetString(def->s_name),name) )
 			return def;
 	}
 	return NULL;
@@ -242,7 +241,7 @@ ddef_t *ED_FindGlobal (char *name)
 	for (i=0 ; i<progs->numglobaldefs ; i++)
 	{
 		def = &pr_globaldefs[i];
-		if (!strcmp(PR_GetString(def->s_name),name) )
+		if (!strcmp(PR1_GetString(def->s_name),name) )
 			return def;
 	}
 	return NULL;
@@ -250,10 +249,10 @@ ddef_t *ED_FindGlobal (char *name)
 
 /*
 ============
-ED_FindFieldOffset
+ED1_FindFieldOffset
 ============
 */
-int ED_FindFieldOffset (char *field)
+int ED1_FindFieldOffset (char *field)
 {
 	ddef_t *d;
 	d = ED_FindField(field);
@@ -272,10 +271,13 @@ dfunction_t *ED_FindFunction (char *name)
 	register dfunction_t		*func;
 	register int				i;
 
+	if (!progs)
+		return NULL;
+
 	for (i=0 ; i<progs->numfunctions ; i++)
 	{
 		func = &pr_functions[i];
-		if (!strcmp(PR_GetString(func->s_name), name))
+		if (!strcmp(PR1_GetString(func->s_name), name))
 			return func;
 	}
 	return NULL;
@@ -289,7 +291,7 @@ func_t ED_FindFunctionOffset (char *name)
 	return func ? (func_t)(func - pr_functions) : 0;
 }
 
-eval_t *GetEdictFieldValue(edict_t *ed, char *field)
+eval_t *PR1_GetEdictFieldValue(edict_t *ed, char *field)
 {
 	ddef_t			*def = NULL;
 	int				i;
@@ -338,18 +340,18 @@ char *PR_ValueString (etype_t type, eval_t *val)
 	switch (type)
 	{
 	case ev_string:
-		snprintf (line, sizeof(line), "%s", PR_GetString(val->string));
+		snprintf (line, sizeof(line), "%s", PR1_GetString(val->string));
 		break;
 	case ev_entity:
 		snprintf (line, sizeof(line), "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
 		break;
 	case ev_function:
 		f = pr_functions + val->function;
-		snprintf (line, sizeof(line), "%s()", PR_GetString(f->s_name));
+		snprintf (line, sizeof(line), "%s()", PR1_GetString(f->s_name));
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
-		snprintf (line, sizeof(line), ".%s", PR_GetString(def->s_name));
+		snprintf (line, sizeof(line), ".%s", PR1_GetString(def->s_name));
 		break;
 	case ev_void:
 		snprintf (line, sizeof(line), "void");
@@ -390,18 +392,18 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 	switch (type)
 	{
 	case ev_string:
-		snprintf (line, sizeof(line), "%s", PR_GetString(val->string));
+		snprintf (line, sizeof(line), "%s", PR1_GetString(val->string));
 		break;
 	case ev_entity:
 		snprintf (line, sizeof(line), "%i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)));
 		break;
 	case ev_function:
 		f = pr_functions + val->function;
-		snprintf (line, sizeof(line), "%s", PR_GetString(f->s_name));
+		snprintf (line, sizeof(line), "%s", PR1_GetString(f->s_name));
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
-		snprintf (line, sizeof(line), "%s", PR_GetString(def->s_name));
+		snprintf (line, sizeof(line), "%s", PR1_GetString(def->s_name));
 		break;
 	case ev_void:
 		snprintf (line, sizeof(line), "void");
@@ -445,7 +447,7 @@ char *PR_GlobalString (int ofs)
 	else
 	{
 		s = PR_ValueString ((etype_t)def->type, (eval_t *) val);
-		snprintf (line, sizeof(line), "%i(%s)%s", ofs, PR_GetString(def->s_name), s);
+		snprintf (line, sizeof(line), "%i(%s)%s", ofs, PR1_GetString(def->s_name), s);
 	}
 
 	i = strlen(line);
@@ -466,7 +468,7 @@ char *PR_GlobalStringNoContents (int ofs)
 	if (!def)
 		snprintf (line, sizeof(line), "%i(?""?""?)", ofs); // separate the ?'s to shut up gcc
 	else
-		snprintf (line, sizeof(line), "%i(%s)", ofs, PR_GetString(def->s_name));
+		snprintf (line, sizeof(line), "%i(%s)", ofs, PR1_GetString(def->s_name));
 
 	i = strlen(line);
 	for ( ; i<20 ; i++)
@@ -502,7 +504,7 @@ void ED_Print (edict_t *ed)
 	for (i=1 ; i<progs->numfielddefs ; i++)
 	{
 		d = &pr_fielddefs[i];
-		name = PR_GetString(d->s_name);
+		name = PR1_GetString(d->s_name);
 		if (name[strlen(name)-2] == '_')
 			continue;	// skip _x, _y, _z vars
 
@@ -552,7 +554,7 @@ void ED_Write (FILE *f, edict_t *ed)
 	for (i=1 ; i<progs->numfielddefs ; i++)
 	{
 		d = &pr_fielddefs[i];
-		name = PR_GetString(d->s_name);
+		name = PR1_GetString(d->s_name);
 		if (name[strlen(name)-2] == '_')
 			continue;	// skip _x, _y, _z vars
 
@@ -696,7 +698,7 @@ void ED_WriteGlobals (FILE *f)
 		        && type != ev_entity)
 			continue;
 
-		name = PR_GetString(def->s_name);
+		name = PR1_GetString(def->s_name);
 		fprintf (f,"\"%s\" ", name);
 		fprintf (f,"\"%s\"\n", PR_UglyValueString((etype_t)type, (eval_t *)&pr_globals[def->ofs]));
 	}
@@ -801,7 +803,7 @@ qbool ED_ParseEpair (void *base, ddef_t *key, char *s)
 	switch (key->type & ~DEF_SAVEGLOBAL)
 	{
 	case ev_string:
-		*(string_t *)d = PR_SetString(ED_NewString (s));
+		*(string_t *)d = PR1_SetString(ED_NewString (s));
 		break;
 
 	case ev_float:
@@ -1012,7 +1014,7 @@ void ED_LoadFromFile (char *data)
 		}
 
 		// look for the spawn function
-		func = ED_FindFunction ( PR_GetString(ent->v.classname) );
+		func = ED_FindFunction ( PR1_GetString(ent->v.classname) );
 
 		if (!func)
 		{
@@ -1046,31 +1048,16 @@ qbool PR_ConsoleCmd(void)
 	return false;
 }
 
-qbool PR_UserCmd(void)
+qbool PR1_ClientCmd(void)
 {
-	/*if (!strcmp(Cmd_Argv(0), "admin") || !strcmp(Cmd_Argv(0), "judge"))
-	{
-		Con_Printf ("user command %s is banned\n", Cmd_Argv(0));
-		return true;
-	}
-	*/
-	/*int i;
-	if (!strcmp(Cmd_Argv(0), "mmode") || !strcmp(Cmd_Argv(0), "cmd"))
-	{
-		for (i = 0; i < Cmd_Argc(); i++)
-			Con_Printf ("PR_UserCmd: [%d] %s | %d\n", i, Cmd_Argv(i), mod_UserCmd);
-		//return true;
-	}*/
-
 	// ZQ_CLIENTCOMMAND extension
-	if (!is_ktpro && GE_ClientCommand) {
+	if (GE_ClientCommand)
+	{
 		static char cmd_copy[128], args_copy[1024] /* Ouch! */;
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 		strlcpy (cmd_copy, Cmd_Argv(0), sizeof(cmd_copy));
 		strlcpy (args_copy, Cmd_Args(), sizeof(args_copy));
-		((int *)pr_globals)[OFS_PARM0] = PR_SetString (cmd_copy);
-		((int *)pr_globals)[OFS_PARM1] = PR_SetString (args_copy);
+		((int *)pr_globals)[OFS_PARM0] = PR1_SetString (cmd_copy);
+		((int *)pr_globals)[OFS_PARM1] = PR1_SetString (args_copy);
 		PR_ExecuteProgram (GE_ClientCommand);
 		return G_FLOAT(OFS_RETURN) ? true : false;
 	}
@@ -1078,10 +1065,8 @@ qbool PR_UserCmd(void)
 	if (mod_UserCmd)
 	{
 		static char cmd_copy[128];
-		pr_global_struct->time = sv.time;
-		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 		strlcpy (cmd_copy, Cmd_Argv(0), sizeof(cmd_copy));
-		((int *)pr_globals)[OFS_PARM0] = PR_SetString (cmd_copy);
+		((int *)pr_globals)[OFS_PARM0] = PR1_SetString (cmd_copy);
 
 		PR_ExecuteProgram (mod_UserCmd);
 		return G_FLOAT(OFS_RETURN) ? true : false;
@@ -1093,42 +1078,10 @@ qbool PR_UserCmd(void)
 
 /*
 ===============
-PR_LoadProgs
+PR1_LoadProgs
 ===============
 */
 void PF_clear_strtbl(void);
-
-qbool is_ktpro;
-static void CheckKTPro (void)
-{
-	extern cvar_t sv_ktpro_mode;
-	int i, len;
-	char *s;
-
-	if (!strcasecmp(sv_ktpro_mode.string, "auto"))
-	{
-		// attempt automatic detection
-		is_ktpro = false;
-		for (i = 0; i < progs->numstrings; i++)
-		{
-			if ((s = PR_GetString(i)))
-				if (*s)
-				{
-					if ((len = strlen(s)) >= 23)
-						if (strstr(s, "http://ktpro.does.it/ for") ||
-							strstr(s, "http://qwex.n3.net/ for"))
-						{
-							is_ktpro = true;
-							Con_DPrintf ("Treat mod as ktpro.\n");
-							break;
-						}
-					i += len;
-				}
-		}
-	}
-	else
-		is_ktpro = sv_ktpro_mode.value ? true : false;
-}
 
 #ifdef WITH_NQPROGS
 void PR_InitPatchTables (void)
@@ -1158,7 +1111,7 @@ void PR_InitPatchTables (void)
 }
 #endif
 
-void PR_LoadProgs (void)
+void PR1_LoadProgs (void)
 {
 	int	i;
 	char num[32];
@@ -1197,7 +1150,7 @@ void PR_LoadProgs (void)
 #endif
 
 	if (!progs)
-		SV_Error ("PR_LoadProgs: couldn't load progs.dat");
+		SV_Error ("PR1_LoadProgs: couldn't load progs.dat");
 	Con_DPrintf ("Programs occupy %iK.\n", filesize/1024);
 
 #ifdef WITH_NQPROGS
@@ -1207,10 +1160,6 @@ void PR_LoadProgs (void)
 
 	// add prog crc to the serverinfo
 	snprintf (num, sizeof(num), "%i", CRC_Block ((byte *)progs, filesize));
-#ifdef USE_PR2
-	Info_SetStar( &_localinfo_, "*qvm", "DAT" );
-	//	Info_SetValueForStarKey (svs.info, "*qvm", "DAT", MAX_SERVERINFO_STRING);
-#endif
 	Info_SetValueForStarKey (svs.info, "*progs", num, MAX_SERVERINFO_STRING);
 
 	// byte swap the header
@@ -1265,7 +1214,7 @@ void PR_LoadProgs (void)
 	{
 		pr_fielddefs[i].type = LittleShort (pr_fielddefs[i].type);
 		if (pr_fielddefs[i].type & DEF_SAVEGLOBAL)
-			SV_Error ("PR_LoadProgs: pr_fielddefs[i].type & DEF_SAVEGLOBAL");
+			SV_Error ("PR1_LoadProgs: pr_fielddefs[i].type & DEF_SAVEGLOBAL");
 		pr_fielddefs[i].ofs = LittleShort (pr_fielddefs[i].ofs);
 		pr_fielddefs[i].s_name = LittleLong (pr_fielddefs[i].s_name);
 	}
@@ -1273,33 +1222,20 @@ void PR_LoadProgs (void)
 	for (i = 0; i < progs->numglobals; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
 
-#ifdef WITH_NQPROGS
-	PR_InitPatchTables();
-#endif
-
-	// find optional QC-exported functions
-	SpectatorConnect = ED_FindFunctionOffset ("SpectatorConnect");
-	SpectatorThink = ED_FindFunctionOffset ("SpectatorThink");
-	SpectatorDisconnect = ED_FindFunctionOffset ("SpectatorDisconnect");
-	ChatMessage = ED_FindFunctionOffset ("ChatMessage");
-	UserInfo_Changed = ED_FindFunctionOffset ("UserInfo_Changed");
-	mod_ConsoleCmd = ED_FindFunctionOffset ("ConsoleCmd");
-	mod_UserCmd = ED_FindFunctionOffset ("UserCmd");
-	localinfoChanged = ED_FindFunctionOffset ("localinfoChanged");
-	GE_ClientCommand = ED_FindFunctionOffset ("GE_ClientCommand");
-	GE_PausedTic = ED_FindFunctionOffset ("GE_PausedTic");
-	GE_ShouldPause = ED_FindFunctionOffset ("GE_ShouldPause");
-
-	CheckKTPro ();
+	PR_InitBuiltins();
 }
 
+void PR1_InitProg()
+{
+	sv.edicts = (edict_t*) Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
+}
 
 /*
 ===============
-PR_Init
+PR1_Init
 ===============
 */
-void PR_Init (void)
+void PR1_Init (void)
 {
 	Cvar_Register(&sv_progsname);
 #ifdef WITH_NQPROGS

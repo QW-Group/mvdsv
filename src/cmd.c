@@ -232,8 +232,8 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		}
 
 		// security bugfix in ktpro
-		if (is_ktpro && semicolon > 1)
-			Sys_Printf("ATTENTION: possibly tried to use ktpro's security hole, "
+		if (semicolon > 1)
+			Sys_Printf("ATTENTION: possibly tried to use security hole, "
 						"server don't run command after ';'!\nCommand: %s\n", line);
 		else
 			// execute the command line

@@ -30,11 +30,6 @@ char	localmodels[MAX_MODELS][5];	// inline model names for precache
 //char localinfo[MAX_LOCALINFO_STRING+1]; // local game info
 ctxinfo_t _localinfo_;
 
-#ifdef USE_PR2
-//storage for client names for -progtype 0 (VM_NONE)
-char clientnames[MAX_CLIENTS][CLIENT_NAME_LEN]; //clientnames for -progtype 0
-#endif
-
 int fofs_items2;
 int fofs_maxspeed, fofs_gravity;
 int fofs_movement;
@@ -124,13 +119,7 @@ static void SV_CreateBaseline (void)
 		else
 		{
 			svent->e->baseline.colormap = 0;
-			svent->e->baseline.modelindex = SV_ModelIndex(
-#ifdef USE_PR2
-				PR2_GetString(svent->v.model)
-#else
-				PR_GetString(svent->v.model)
-#endif
-			                             );
+			svent->e->baseline.modelindex = SV_ModelIndex(PR_GetString(svent->v.model));
 		}
 
 		//
@@ -187,12 +176,7 @@ static void SV_SaveSpawnparms (void)
 
 		// call the progs to get default spawn parms for the new client
 		pr_global_struct->self = EDICT_TO_PROG(sv_client->edict);
-#ifdef USE_PR2
-		if (sv_vm)
-			PR2_GameSetChangeParms();
-		else
-#endif
-			PR_ExecuteProgram (PR_GLOBAL(SetChangeParms));
+		PR_GameSetChangeParms();
 		for (j=0 ; j<NUM_SPAWN_PARMS ; j++)
 			sv_client->spawn_parms[j] = (&PR_GLOBAL(parm1))[j];
 	}
@@ -233,17 +217,13 @@ clients along with it.
 This is only called from the SV_Map_f() function.
 ================
 */
-dfunction_t *ED_FindFunction (char *name);
-
 void SV_SpawnServer (char *mapname, qbool devmap)
 {
+	extern func_t ED_FindFunctionOffset (char *name);
+
 	edict_t *ent;
 	int i;
-#ifdef USE_PR2
-	char savenames[MAX_CLIENTS][CLIENT_NAME_LEN];
-#endif
 
-	dfunction_t *f;
 	extern cvar_t sv_loadentfiles, sv_loadentfiles_dir;
 	char *entitystring;
 	char oldmap[MAP_NAME_LEN];
@@ -264,12 +244,12 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 	SV_SaveSpawnparms ();
 	SV_LoadAccounts();
+
 #ifdef USE_PR2
-	//save client names from mod memory before unload mod and clearing VM memory by Hunk_FreeToLowMark
-	memset(savenames, 0, sizeof(savenames));
+	// remove bot clients
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
-		if( sv_vm && svs.clients[i].isBot ) // remove bot clients
+		if( sv_vm && svs.clients[i].isBot )
 		{
 			svs.clients[i].old_frags = 0;
 			svs.clients[i].edict->v.frags = 0.0;
@@ -280,12 +260,13 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 			SV_FullClientUpdate(&svs.clients[i], &sv.reliable_datagram);
 			svs.clients[i].isBot = 0;
 		}
-		if (svs.clients[i].name)
-			strlcpy(savenames[i], svs.clients[i].name, CLIENT_NAME_LEN);
 	}
-	if ( sv_vm )
-		PR2_GameShutDown();
+
 #endif
+
+	// Shutdown game.
+	PR_GameShutDown();
+	PR_UnLoadProgs();
 
 	svs.spawncount++; // any partially connected client will be restarted
 
@@ -355,17 +336,11 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	// which determines how big each edict is
 	// and allocate edicts
 
-#ifdef USE_PR2
-	sv_vm = (vm_t *) VM_Load(sv_vm, (vm_type_t) (int) sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
-	if ( sv_vm )
-		PR2_InitProg();
-	else
+	PR_LoadProgs ();
+#ifdef WITH_NQPROGS
+	PR_InitPatchTables();
 #endif
-	{
-		PR_LoadProgs ();
-		PR_InitBuiltins ();
-		sv.edicts = (edict_t*) Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
-	}
+	PR_InitProg();
 
 	for (i = 0; i < MAX_EDICTS; i++)
 	{
@@ -375,39 +350,36 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 		ent->e->area.ed = ent; // yeah, pretty funny, but this help to find which edict_t own this area (link_t)
 	}
 
-#ifdef USE_PR2
-	fofs_items2 = ED2_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
-	fofs_maxspeed = ED2_FindFieldOffset ("maxspeed");
-	fofs_gravity = ED2_FindFieldOffset ("gravity");
-	fofs_movement = ED2_FindFieldOffset ("movement");
-	fofs_vw_index = ED2_FindFieldOffset ("vw_index");
-	fofs_hideentity = ED2_FindFieldOffset ("hideentity");
-	fofs_trackent = ED2_FindFieldOffset ("trackent");
-#else
 	fofs_items2 = ED_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
 	fofs_maxspeed = ED_FindFieldOffset ("maxspeed");
 	fofs_gravity = ED_FindFieldOffset ("gravity");
-	fofs_movement = 0;
+	fofs_movement = ED_FindFieldOffset ("movement");
 	fofs_vw_index = ED_FindFieldOffset ("vw_index");
 	fofs_hideentity = ED_FindFieldOffset ("hideentity");
 	fofs_trackent = ED_FindFieldOffset ("trackent");
-#endif
+
+	// find optional QC-exported functions.
+	// we have it here, so we set it to NULL in case of PR2 progs.
+	mod_SpectatorConnect = ED_FindFunctionOffset ("SpectatorConnect");
+	mod_SpectatorThink = ED_FindFunctionOffset ("SpectatorThink");
+	mod_SpectatorDisconnect = ED_FindFunctionOffset ("SpectatorDisconnect");
+	mod_ChatMessage = ED_FindFunctionOffset ("ChatMessage");
+	mod_UserInfo_Changed = ED_FindFunctionOffset ("UserInfo_Changed");
+	mod_ConsoleCmd = ED_FindFunctionOffset ("ConsoleCmd");
+	mod_UserCmd = ED_FindFunctionOffset ("UserCmd");
+	mod_localinfoChanged = ED_FindFunctionOffset ("localinfoChanged");
+	GE_ClientCommand = ED_FindFunctionOffset ("GE_ClientCommand");
+	GE_PausedTic = ED_FindFunctionOffset ("GE_PausedTic");
+	GE_ShouldPause = ED_FindFunctionOffset ("GE_ShouldPause");
 
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS+1;
 	for (i=0 ; i<MAX_CLIENTS ; i++)
 	{
 		ent = EDICT_NUM(i+1);
-#ifdef USE_PR2
-		//restore client names
-		//for -progtype 0 (VM_NONE) names stored in clientnames array
-		//for -progtype 1 (VM_NATIVE) and -progtype 2 (VM_BYTECODE)  stored in mod memory
-		if(sv_vm)
-			svs.clients[i].name = PR2_GetString(ent->v.netname);
-		else
-			svs.clients[i].name = clientnames[i];
-		strlcpy(svs.clients[i].name, savenames[i], CLIENT_NAME_LEN);
-#endif
+		// restore client name.
+		ent->v.netname = PR_SetString(svs.clients[i].name);
+		// reserve edict.
 		svs.clients[i].edict = ent;
 		//ZOID - make sure we update frags right
 		svs.clients[i].old_frags = 0;
@@ -480,28 +452,17 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 	ent = EDICT_NUM(0);
 	ent->e->free = false;
-#ifdef USE_PR2
-	if ( sv_vm )
-		strlcpy(PR2_GetString(ent->v.model), sv.modelname, 64);
-	else
-#endif
-		ent->v.model = PR_SetString(sv.modelname);
+	ent->v.model = PR_SetString(sv.modelname);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
 	// information about the server
-	// VM-FIXME: Should it be PR2_SetString() ???
 	ent->v.netname = PR_SetString(VersionStringFull());
 	ent->v.targetname = PR_SetString(SERVER_NAME);
 	ent->v.impulse = VERSION_NUM;
 	ent->v.items = pr_numbuiltins - 1;
 
-#ifdef USE_PR2
-	if(sv_vm)
-		strlcpy((char*)PR2_GetString(pr_global_struct->mapname) , sv.mapname, 64);
-	else
-#endif
 	PR_GLOBAL(mapname) = PR_SetString(sv.mapname);
 	// serverflags are for cross level information (sigils)
 	PR_GLOBAL(serverflags) = svs.serverflags;
@@ -555,12 +516,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 		entitystring = CM_EntityString();
 	}
 	
-#ifdef USE_PR2
-	if ( sv_vm )
-		PR2_LoadEnts(entitystring);
-	else
-#endif
-		ED_LoadFromFile (entitystring);
+	PR_LoadEnts(entitystring);
 	// ********* End of External Entity support code *********
 
 	// look up some model indexes for specialized message compression
@@ -586,28 +542,14 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 
 	Info_SetValueForKey (svs.info, "map", sv.mapname, MAX_SERVERINFO_STRING);
 
-#ifdef USE_PR2
-	if ( !sv_vm )
-#endif
-		if ((f = ED_FindFunction ("timeofday")) != NULL)
-		{
-			date_t date;
+	// calltimeofday.
+	{
+		extern void PF_calltimeofday (void);
+		pr_global_struct->time = sv.time;
+		pr_global_struct->self = 0;
 
-			SV_TimeOfDay(&date);
-
-			G_FLOAT(OFS_PARM0) = (float)date.sec;
-			G_FLOAT(OFS_PARM1) = (float)date.min;
-			G_FLOAT(OFS_PARM2) = (float)date.hour;
-			G_FLOAT(OFS_PARM3) = (float)date.day;
-			G_FLOAT(OFS_PARM4) = (float)date.mon;
-			G_FLOAT(OFS_PARM5) = (float)date.year;
-			G_INT(OFS_PARM6) = PR_SetTmpString(date.str);
-
-			pr_global_struct->time = sv.time;
-			pr_global_struct->self = 0;
-
-			PR_ExecuteProgram((func_t)(f - pr_functions));
-		}
+		PF_calltimeofday();
+	}
 
 	Con_DPrintf ("Server spawned.\n");
 
