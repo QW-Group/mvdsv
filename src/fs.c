@@ -155,7 +155,7 @@ Flush FS hash and mark FS as changed,
 so FS_FLocateFile() will be forced to call FS_RebuildFSHash().
 ============
 */
-static void FS_FlushFSHash(void)
+void FS_FlushFSHash(void)
 {
 	if (filesystemhash)
 	{

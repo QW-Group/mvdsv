@@ -132,6 +132,8 @@ typedef enum
 				// 2) FS_NONE_OS.
 } relativeto_t;
 
+void FS_FlushFSHash(void);
+
 vfsfile_t *FS_OpenVFS(const char *filename, char *mode, relativeto_t relativeto);
 int FS_FLocateFile(const char *filename, FSLF_ReturnType_e returntype, flocation_t *loc);
 
