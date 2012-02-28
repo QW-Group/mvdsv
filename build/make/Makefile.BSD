@@ -17,11 +17,7 @@ SV_DIR = ../../src
 # for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
 # configure script add FORCE32BITFLAGS=-m32
 
-DO_CFLAGS		=	${CFLAGS} -Wall -pipe -pthread -funsigned-char -DUSE_PR2 -D${BYTE_ORDER}Q__ ${FORCE32BITFLAGS}
-
-.if !defined(NOKQUEUE) && (${UNAME} == "FreeBSD" || ${UNAME} == "DragonFly")
-DO_CFLAGS		+=	-DKQUEUE
-.endif
+DO_CFLAGS		=	${CFLAGS} -Wall -pipe -pthread -funsigned-char -DSERVERONLY -DUSE_PR2 -D${BYTE_ORDER}Q__ ${FORCE32BITFLAGS}
 
 WITH_OPTIMIZED_CFLAGS = YES
 

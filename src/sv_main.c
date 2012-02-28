@@ -3582,11 +3582,7 @@ void OnChange_sysselecttimeout_var (cvar_t *var, char *value, qbool *cancel)
 	if (t <= 1000000 && t >= 10)
 	{
 		select_timeout.tv_sec  =  t / 1000000;
-#if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
-		select_timeout.tv_nsec = (t - select_timeout.tv_sec) * 1000;
-#else
 		select_timeout.tv_usec =  t - select_timeout.tv_sec;
-#endif
 		return;
 	}
 
@@ -3676,7 +3672,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	extern int		hunk_size;
 	cvar_t			*v;
 
-	char cfg[MAX_PATH] = {0};
+//	char cfg[MAX_PATH] = {0};
 
 	srand((unsigned)time(NULL));
 

@@ -14,7 +14,7 @@ SV_DIR = ../../src
 # for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
 # configure script add FORCE32BITFLAGS=-m32
 
-BASE_CFLAGS=-Wall -pipe -pthread -funsigned-char -DUSE_PR2 -D$(BYTE_ORDER)Q__ $(FORCE32BITFLAGS)
+BASE_CFLAGS=-Wall -pipe -pthread -funsigned-char -DSERVERONLY -DUSE_PR2 -D$(BYTE_ORDER)Q__ $(FORCE32BITFLAGS)
 WITH_OPTIMIZED_CFLAGS=YES
 
 USE_ASM=-Did386

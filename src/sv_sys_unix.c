@@ -21,18 +21,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 extern cvar_t sys_restart_on_error;
-extern cvar_t not_auth_timeout;
-extern cvar_t auth_timeout;
 
 cvar_t sys_nostdout = {"sys_nostdout", "0"};
 cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
 
-static qbool	stdin_ready = false;
-static qbool	iosock_ready = false;
-qbool	authenticated;
-static double	cur_time_auth;
+struct timeval select_timeout;
+
+qbool	stdin_ready = false;
 //static qbool	isdaemon = false;
-static qbool	do_stdin = true;
+qbool	do_stdin = true;
 
 /*
 ===============================================================================
@@ -296,7 +293,6 @@ void Sys_Exit (int code)
 Sys_Quit
 ================
 */
-char	*argv0;
 void Sys_Quit (qbool restart)
 {
 	if (restart)
@@ -307,7 +303,7 @@ void Sys_Quit (qbool restart)
 		for (; maxfd > 2; maxfd--)
 			close(maxfd);
 
-		if (execv(argv0, com_argv) == -1)
+		if (execv(com_argv[0], com_argv) == -1)
 		{
 			Sys_Printf("Restart failed: %s\n", strerror(qerrno));
 			Sys_Exit(1);
@@ -325,7 +321,7 @@ void Sys_Error (const char *error, ...)
 {
 	static qbool inerror = false;
 	va_list argptr;
-	char string[1024];
+	char text[1024];
 
 	sv_error = true;
 
@@ -335,21 +331,21 @@ void Sys_Error (const char *error, ...)
 	inerror = true;
 
 	va_start (argptr,error);
-	vsnprintf (string, sizeof(string), error, argptr);
+	vsnprintf (text, sizeof(text), error, argptr);
 	va_end (argptr);
 
 	if (!(int)sys_nostdout.value)
-		Sys_Printf ("ERROR: %s\n", string);
+		Sys_Printf ("ERROR: %s\n", text);
 
 	if (logs[ERROR_LOG].sv_logfile)
 	{
-		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", string));
+		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", text));
 //		fclose (logs[ERROR_LOG].sv_logfile);
 	}
 
 // FIXME: hack - checking SV_Shutdown with net_socket set in -1 NET_Shutdown
-	if (net_socket != -1)
-		SV_Shutdown ();
+	if (svs.socketip != -1)
+		SV_Shutdown (va("ERROR: %s\n", text));
 
 	if ((int)sys_restart_on_error.value)
 		Sys_Quit (true);
@@ -379,20 +375,6 @@ double Sys_DoubleTime (void)
 	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
 }
 
-#if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
-static const struct timespec zerotime = { 0, 0 };
-static int kq;
-static struct kevent kevs[4];
-void closesocket_k (int socket)
-{
-	EV_SET(&kevs[3], (intptr_t) socket, EVFILT_READ, EV_DELETE, 0, 0, 0);
-	kevent(kq, &kevs[3], 1, NULL, 0, &zerotime);
-	closesocket(socket);
-}
-#else
-#define closesocket_k(socket)	closesocket(socket)
-#endif
-
 /*
 ================
 Sys_ConsoleInput
@@ -403,106 +385,27 @@ it to the host command processor
 */
 char *Sys_ConsoleInput (void)
 {
-	static char text[256], *t;
-	static unsigned int len = 0;
+	static char text[256];
+	ssize_t len = 0;
 
+	if (!do_stdin || !stdin_ready)
+		return NULL; // the select didn't say it was ready
 
-	if (!(telnetport && iosock_ready && telnet_connected) && !(do_stdin && stdin_ready))
-		return NULL;		// the select didn't say it was ready
+	stdin_ready = false;
 
-	if (telnetport && iosock_ready && telnet_connected)
-	{
-		iosock_ready = false;
-		do
-		{
-			switch (read (telnet_iosock, text + len, 1))
-			{
-			case 0:
-				len = telnet_connected = authenticated = false;
-				closesocket_k (telnet_iosock);
-				SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
-				return NULL;
-			case 1:
-				if (text[len] == 8)
-				{
-					if(len > 0) --len;
-				}
-				else
-					++len;
-				break;
-			default:
-				if (qerrno != EAGAIN) // demand for M$ WIN 2K telnet support
-				{
-					len = telnet_connected = authenticated = false;
-					closesocket_k (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, va("Connection closed with error: (%i): %s.\n", qerrno, strerror(qerrno)));
-				}
-				return NULL;
-			}// switch
-		}// do
-		while (len < sizeof(text) - 1 && text[len - 1] != '\n' && text[len - 1] != '\r' && text[len - 1] != 0);
+	len = read (STDIN_FILENO, text, sizeof(text));
 
-		if (len == 0)
-			return NULL;
+	if (len < 0)
+		return NULL; // error.
 
-		text[len] = 0;
-
-		if (text[len - 1] == '\r' || text[len - 1] == '\n')
-			text[len - 1] = 0;
-
-		if (text[0] == 0)
-		{
-			len = 0;
-			return NULL;
-		}
-
-		if (!authenticated)
-		{
-			len = strlen(t = Cvar_String ("telnet_password"));
-			if (len && (authenticated = (!strncmp(text, t, min(sizeof(text), len + 1)))))
-			{
-				cur_time_auth = Sys_DoubleTime ();
-				SV_Write_Log(TELNET_LOG, 1, "Authenticated: yes\n");
-				len = 0;
-				return "status";
-			}
-			else
-				if (strlen(text) == 1 && text[0] == 4)
-				{
-					len = telnet_connected = authenticated = false;
-					closesocket_k (telnet_iosock);
-					SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
-				}
-				else
-					SV_Write_Log(TELNET_LOG, 1, "Authenticated: no\n");
-			len = 0;
-			return NULL;
-		}
-
-		if (strlen(text) == 1 && text[0] == 4)
-		{
-			len = telnet_connected = authenticated = false;
-			closesocket_k (telnet_iosock);
-			SV_Write_Log(TELNET_LOG, 1, "Connection closed by user.\n");
-			len = 0;
-			return NULL;
-		}
-		len = 0;
-		SV_Write_Log(TELNET_LOG, 2, va("%s\n", text));
+	if (len == 0)
+	{	// end of file
+		do_stdin = false;
+		return NULL;
 	}
-	if (do_stdin && stdin_ready)
-	{
-		stdin_ready = false;
-		len = read (STDIN_FILENO, text, sizeof(text));
-		if (len == 0)
-		{	// end of file
-			do_stdin = false;
-			return NULL;
-		}
-		if (len < 1)
-			return NULL;
-		text[len - 1] = 0;	// rip off the /n and terminate
-	}
+
+	text[len - 1] = 0;	// rip off the /n and terminate
+
 	return text;
 }
 
@@ -514,46 +417,20 @@ Sys_Printf
 void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
-	unsigned char	text[4096];
-	unsigned char	*p;
+	char		text[4096];
 
 	va_start (argptr,fmt);
-	vsnprintf((char*)text, sizeof(text), fmt, argptr);
-	//	if (vsnprintf(text, sizeof(text), fmt, argptr) >= sizeof(text))
-	//        	Sys_Error("memory overwrite in Sys_Printf.\n");
+	vsnprintf(text, sizeof(text), fmt, argptr);
 	va_end (argptr);
 
-
-	if (!(telnetport && telnet_connected && authenticated) && (int)sys_nostdout.value)
+	if (sys_nostdout.value)
 		return;
 
 	// normalize text before add to console.
 	Q_normalizetext(text);
 
-	for (p = text; *p; p++)
-	{
-		if (telnetport && telnet_connected && authenticated)
-		{
-			if (write (telnet_iosock, p, 1) < 1)
-			{
-				closesocket (telnet_iosock); // so we close socket
-				telnet_iosock = INVALID_SOCKET; // and mark as closed
-			}
-			if (*p == '\n') // demand for M$ WIN 2K telnet support
-				if (write (telnet_iosock, "\r", 1) < 1)
-				{
-					closesocket (telnet_iosock); // so we close socket
-					telnet_iosock = INVALID_SOCKET; // and mark as closed
-				}
-		}
-		if (!(int)sys_nostdout.value)
-			putc(*p, stdout);
-	}
-
-	if (telnetport && telnet_connected && authenticated)
-		SV_Write_Log(TELNET_LOG, 3, (char*)text);
-	if (!(int)sys_nostdout.value)
-		fflush(stdout);
+	fprintf(stdout, "%s", text);
+	fflush(stdout);
 }
 
 /*
@@ -569,109 +446,6 @@ void Sys_Init (void)
 	Cvar_Register (&sys_nostdout);
 	Cvar_Register (&sys_extrasleep);
 }
-
-inline void Sys_Telnet (void);
-#if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
-struct timespec select_timeout;
-void Sys_NET_Init()
-{
-	int i = 0;
-
-	if ((kq = kqueue()) == -1)
-		SV_Error("IO_Engine_Init: kqueue() failed");
-	EV_SET(&kevs[i++], (intptr_t) net_socket, EVFILT_READ, EV_ADD, 0, 0, 0);
-
-	if (telnetport)
-		EV_SET(&kevs[i++], (intptr_t) net_telnetsocket, EVFILT_READ, EV_ADD, 0, 0, 0);
-
-	if (do_stdin)
-		EV_SET(&kevs[i++], (intptr_t) STDIN_FILENO, EVFILT_READ, EV_ADD, 0, 0, 0);
-
-	if (kevent(kq, kevs, i, NULL, 0, &zerotime) == -1)
-		SV_Error("IO_Engine_Init: kevent() failed");
-}
-qbool NET_Sleep ()
-{
-	struct timespec timeout_cur;
-	int num, i, fd;
-
-	if (telnetport)
-		Sys_Telnet();
-
-	timeout_cur = select_timeout;
-
-	do
-	{
-		switch ((num = kevent(kq, NULL, 0, kevs, 4, &timeout_cur)))
-		{
-			case -1:
-				if (errno != EINTR)
-				{
-					/*SV_Write_Log(SV_ERRORLOG, "IO_Engine_Query: "
-						"kevent() failed -- %d, %s\n", errno, strerror(errno));*/
-					return true;
-				}
-				break;
-			case 0:
-				break;
-			default:
-				for (i = 0; i < num; i++)
-				{
-					fd = (int)kevs[i].ident;
-					if (do_stdin && fd == STDIN_FILENO)
-						stdin_ready = true;
-					else if (telnetport && telnet_connected && fd == telnet_iosock)
-						iosock_ready = true;
-				}
-		}
-	} while (num == -1);
-
-	return false;
-}
-#else
-struct timeval select_timeout;
-#define Sys_NET_Init()
-qbool NET_Sleep ()
-{
-	struct timeval timeout_cur;
-	fd_set	fdset;
-	int j = net_socket;
-
-	FD_ZERO (&fdset);
-	FD_SET(j, &fdset); // network socket
-
-	// Added by VVD {
-	if (telnetport)
-	{
-		Sys_Telnet();
-		FD_SET(net_telnetsocket, &fdset);
-		j = max(j, net_telnetsocket);
-		if (telnet_connected)
-		{
-			FD_SET(telnet_iosock, &fdset);
-			j = max(j, telnet_iosock);
-		}
-	}
-	// Added by VVD }
-
-	if (do_stdin)
-		FD_SET(STDIN_FILENO, &fdset);
-
-	timeout_cur = select_timeout;
-
-	switch (select (++j, &fdset, NULL, NULL, &timeout_cur))
-	{
-		case -1: return true;
-		case 0: break;
-		default:
-			if (telnetport && telnet_connected)
-				iosock_ready = FD_ISSET(telnet_iosock, &fdset);
-			if (do_stdin)
-				stdin_ready = FD_ISSET(STDIN_FILENO, &fdset);
-	}
-	return false;
-}
-#endif
 
 void Sys_Sleep(unsigned long ms)
 {
@@ -711,7 +485,7 @@ void *Sys_DLProc(DL_t dl, const char *name)
 	return dlsym(dl, name);
 }
 
-int  Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
+int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
 {
     pthread_t thread;
     pthread_attr_t attr;
@@ -738,70 +512,11 @@ static int only_digits(const char *s)
 	return (1);
 }
 
-inline void Sys_Telnet (void)
+// Init unix related stuff.
+// Daemon, chroot, setgid and setuid code (-d, -t, -g, -u)
+// was copied from bind (DNS server) sources.
+static void SV_System_Init(void)
 {
-	static int			tempsock;
-	static struct		sockaddr_in remoteaddr, remoteaddr_temp;
-	static socklen_t	sockaddr_len = sizeof(struct sockaddr_in);
-	static double		cur_time_not_auth;
-	if (telnet_connected)
-	{
-		if ((tempsock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr_temp, &sockaddr_len)) > 0)
-		{
-			//if (remoteaddr_temp.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-			send (tempsock, "Console busy by another user.\n", 31, 0);
-			closesocket (tempsock);
-			SV_Write_Log(TELNET_LOG, 1, va("Console busy by: %s. Refuse connection from: %s\n",
-			                               inet_ntoa(remoteaddr.sin_addr), inet_ntoa(remoteaddr_temp.sin_addr)));
-		}
-		if ((!authenticated && (int)not_auth_timeout.value &&
-			 realtime - cur_time_not_auth > not_auth_timeout.value) ||
-			(authenticated && (int)auth_timeout.value &&
-			 realtime - cur_time_auth > auth_timeout.value))
-		{
-			telnet_connected = false;
-			send (telnet_iosock, "Time for authentication finished.\n", 34, 0);
-			closesocket_k (telnet_iosock);
-			SV_Write_Log(TELNET_LOG, 1, va("Time for authentication finished. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			cur_time_auth = cur_time_not_auth = realtime;
-		}
-	}
-	else
-	{
-		if ((telnet_iosock = accept (net_telnetsocket, (struct sockaddr*)&remoteaddr, &sockaddr_len)) > 0)
-		{
-			//if (remoteaddr.sin_addr.s_addr == inet_addr ("127.0.0.1"))
-			//{
-			telnet_connected = true;
-			cur_time_not_auth = realtime;
-			SV_Write_Log(TELNET_LOG, 1, va("Accept connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			send (telnet_iosock, "# ", 2, 0);
-#if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)) && defined(KQUEUE)
-			EV_SET(&kevs[3], (intptr_t) telnet_iosock, EVFILT_READ, EV_ADD, 0, 0, 0);
-			if (kevent(kq, &kevs[3], 1, NULL, 0, &zerotime) == -1)
-				SV_Error("IO_Engine_Init: kevent() failed");
-#endif
-			/*}
-			else
-			{
-				closesocket (telnet_iosock);
-				SV_Write_Log(TELNET_LOG, 1, va("IP not match. Refuse connection from: %s\n", inet_ntoa(remoteaddr.sin_addr)));
-			}
-			*/
-		}
-	}
-}
-
-/*
-=============
-main
-=============
-*/
-int main (int argc, char *argv[])
-{
-	double time1, oldtime, newtime;
-	quakeparms_t parms;
-
 	int j;
 	qbool ind;
 	uid_t user_id = 0;
@@ -810,44 +525,17 @@ int main (int argc, char *argv[])
 	struct group *gr;
 	char *user_name = NULL, *group_name = NULL, *chroot_dir;
 
-// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
-	signal(SIGPIPE, SIG_IGN);
-
-	argv0 = argv[0];
-
-	memset (&parms, 0, sizeof(parms));
-
-	COM_InitArgv (argc, argv);
-	parms.argc = com_argc;
-	parms.argv = com_argv;
-
-	parms.memsize = DEFAULT_MEM_SIZE;
-
-	j = COM_CheckParm ("-heapsize");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024;
-
-	j = COM_CheckParm("-mem");
-	if (j && j + 1 < com_argc)
-		parms.memsize = Q_atoi (com_argv[j + 1]) * 1024 * 1024;
-
-	parms.membase = Q_malloc (parms.memsize);
-
-	SV_Init (&parms);
-
-// Daemon, chroot, setgid and setuid code (-d, -t, -g, -u)
-// was copied from bind (DNS server) sources.
 	// daemon
 	if (COM_CheckParm ("-d"))
 	{
 		switch (fork())
 		{
 		case -1:
-			return (-1);
+			exit(-1); // Error, do normal exit().
 		case 0:
-			break;
+			break; // Child, continue process.
 		default:
-			_exit(0);
+			_exit(0); // Parent, for some reason we prefer here "limited" clean up with _exit().
 		}
 
 		if (setsid() == -1)
@@ -888,7 +576,6 @@ int main (int argc, char *argv[])
 				Sys_Printf("WARNING: Can't setgid to group \"%s\": %s\n",
 							group_name, strerror(qerrno));
 	}
-
 
 	// setuid - only resolve name
 	ind = false;
@@ -958,14 +645,29 @@ int main (int argc, char *argv[])
 			Sys_Printf("WARNING: Can't setuid to user \"%s\": %s\n",
 						user_name, strerror(qerrno));
 	}
+}
+
+/*
+=============
+main
+=============
+*/
+int main (int argc, char *argv[])
+{
+	double time1, oldtime, newtime;
+
+// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
+	signal(SIGPIPE, SIG_IGN);
+
+	COM_InitArgv (argc, argv);
+	SV_System_Init(); // daemonize and so...
+	Host_Init(argc, argv, DEFAULT_MEM_SIZE);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);
 
 	// main loop
 	oldtime = Sys_DoubleTime () - 0.1;
-
-	Sys_NET_Init();
 
 	while (1)
 	{
