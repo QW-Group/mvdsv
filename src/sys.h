@@ -64,8 +64,6 @@ int		Sys_compare_by_name (const void *a, const void *b);
 #define SORT_BY_DATE	1
 #define SORT_BY_NAME	2
 
-extern struct timeval  select_timeout;
-
 //
 // system IO
 //
