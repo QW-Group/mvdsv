@@ -638,7 +638,7 @@ typedef struct
 extern	cvar_t	sv_paused; // 1 - normal, 2 - auto (single player), 3 - both
 extern	cvar_t	sv_maxspeed;
 extern	cvar_t	sv_mintic, sv_maxtic, sv_maxfps;
-extern	cvar_t	sv_antilag, sv_antilag_frac, sv_antilag_no_pred, sv_antilag_projectiles;
+extern	cvar_t	sv_antilag, sv_antilag_no_pred, sv_antilag_projectiles;
 
 extern	int current_skill;
 

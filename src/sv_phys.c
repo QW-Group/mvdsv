@@ -50,7 +50,6 @@ cvar_t	sv_accelerate		= { "sv_accelerate", "10"};
 cvar_t	sv_airaccelerate	= { "sv_airaccelerate", "10"};
 
 cvar_t	sv_antilag		= { "sv_antilag", "", CVAR_SERVERINFO};
-cvar_t	sv_antilag_frac	= { "sv_antilag_frac", "1", CVAR_SERVERINFO};
 cvar_t	sv_antilag_no_pred	= { "sv_antilag_no_pred", "", CVAR_SERVERINFO}; // "negative" cvar so it doesn't show on serverinfo for no reason
 cvar_t	sv_antilag_projectiles	= { "sv_antilag_projectiles", "", CVAR_SERVERINFO};
 

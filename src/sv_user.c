@@ -3451,7 +3451,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 	}
 
 	cl->laggedents_count = 0; // init at least this
-	cl->laggedents_frac = sv_antilag_frac.value;
+	cl->laggedents_frac = 1; // sv_antilag_frac.value;
 
 	if (sv_antilag.value)
 	{
@@ -3459,7 +3459,6 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 #define MAX_PREDICTION 0.02
 #define MAX_EXTRAPOLATE 0.02
-//#define CENTER_OF_FRAME
 
 		double target_time, max_physfps = sv_maxfps.value;
 
@@ -3471,11 +3470,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 		} else {
 			// try to figure out what time client is currently predicting, basically this is just 6.5ms with 13ms ping and 13.5ms with higher
 			// might be off with different max_physfps values
-#ifdef CENTER_OF_FRAME
-			target_time = min(frame->sv_time + (frame->ping_time < MAX_PREDICTION ? 1/max_physfps : MAX_PREDICTION) - 1/max_physfps/2.0, sv.time);
-#else
 			target_time = min(frame->sv_time + (frame->ping_time < MAX_PREDICTION ? 1/max_physfps : MAX_PREDICTION), sv.time);
-#endif
 		}
 
 		for (i = 0; i < MAX_CLIENTS; i++)

@@ -3299,7 +3299,6 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_waterfriction);
 
 	Cvar_Register (&sv_antilag);
-	Cvar_Register (&sv_antilag_frac);
 	Cvar_Register (&sv_antilag_no_pred);
 	Cvar_Register (&sv_antilag_projectiles);
 
