@@ -3212,6 +3212,9 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_waterfriction;
 	extern	cvar_t	sv_nailhack;
 
+	extern cvar_t	sv_maxpitch;
+	extern cvar_t	sv_minpitch;
+
 	extern	cvar_t	pm_airstep;
 	extern	cvar_t	pm_pground;
 	//extern	cvar_t	pm_slidefix;
@@ -3267,6 +3270,9 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_maxfps);
 	Cvar_Register (&sys_select_timeout);
 	Cvar_Register (&sys_restart_on_error);
+
+	Cvar_Register (&sv_maxpitch);
+	Cvar_Register (&sv_minpitch);
 
 	Cvar_Register (&skill);
 	Cvar_Register (&coop);

@@ -68,6 +68,11 @@ extern cvar_t	sv_kicktop;
 extern cvar_t	sv_speedcheck; //bliP: 24/9
 //<-
 
+static void OnChange_sv_maxpitch (cvar_t *var, char *str, qbool *cancel);
+static void OnChange_sv_minpitch (cvar_t *var, char *str, qbool *cancel);
+cvar_t	sv_maxpitch = {"sv_maxpitch", "80", 0, OnChange_sv_maxpitch};
+cvar_t	sv_minpitch = {"sv_minpitch", "-70", 0, OnChange_sv_minpitch};
+
 static void SetUpClientEdict (client_t *cl, edict_t *ent);
 
 static qbool IsLocalIP(netadr_t a)
@@ -79,6 +84,46 @@ static qbool IsInetIP(netadr_t a)
 {
 	return a.ip[0] != 127 && !IsLocalIP(a);
 }
+
+//
+// pitch clamping
+//
+// All this OnChange code is because we want the cvar names to have sv_ prefixes,
+// but don't want them in serverinfo (save a couple of bytes of space)
+// Value sanity checks are also done here
+//
+static void OnChange_sv_maxpitch (cvar_t *var, char *str, qbool *cancel)
+{
+	float	newval;
+	char	*newstr;
+
+	*cancel = true;
+
+	newval = bound (0, Q_atof(str), 90.0f);
+	if (newval == var->value)
+		return;
+
+	Cvar_SetValue (var, newval);
+	newstr = (newval == 80.0f) ? (char *)"" : var->string;	// don't show default values in serverinfo
+	SV_ServerinfoChanged("maxpitch", newstr);
+}
+
+static void OnChange_sv_minpitch (cvar_t *var, char *str, qbool *cancel)
+{
+	float	newval;
+	char	*newstr;
+
+	*cancel = true;
+
+	newval = bound (-90.0f, Q_atof(str), 0.0f);
+	if (newval == var->value)
+		return;
+
+	Cvar_SetValue (var, newval);
+	newstr = (newval == -70.0f) ? (char *)"" : var->string;	// don't show default values in serverinfo
+	SV_ServerinfoChanged("minpitch", newstr);
+}
+
 /*
 ============================================================
 
@@ -3192,10 +3237,7 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 	//<-
 
 	// clamp view angles
-	if (ucmd->angles[PITCH] > 80.0)
-		ucmd->angles[PITCH] = 80.0;
-	if (ucmd->angles[PITCH] < -70.0)
-		ucmd->angles[PITCH] = -70.0;
+	ucmd->angles[PITCH] = bound(sv_minpitch.value, ucmd->angles[PITCH], sv_maxpitch.value);
 	if (!sv_player->v.fixangle)
 		VectorCopy (ucmd->angles, sv_player->v.v_angle);
 	

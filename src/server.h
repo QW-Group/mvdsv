@@ -831,6 +831,7 @@ void SV_VoiceSendPacket(client_t *client, sizebuf_t *buf);
 // sv_ccmds.c
 //
 void SV_Status_f (void);
+void SV_ServerinfoChanged (char *key, char *string);
 void SV_SendServerInfoChange (char *key, char *value);
 
 //

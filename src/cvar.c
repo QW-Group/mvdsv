@@ -147,7 +147,6 @@ void Cvar_Set (cvar_t *var, char *value)
 
 	if (var->flags & CVAR_SERVERINFO)
 	{
-		extern void SV_ServerinfoChanged (char *key, char *string);
 		SV_ServerinfoChanged (var->name, var->string);
 	}
 }
