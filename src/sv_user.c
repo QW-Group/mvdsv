@@ -99,7 +99,7 @@ static void OnChange_sv_maxpitch (cvar_t *var, char *str, qbool *cancel)
 
 	*cancel = true;
 
-	newval = bound (0, Q_atof(str), 90.0f);
+	newval = bound (0, Q_atof(str), 89.9f);
 	if (newval == var->value)
 		return;
 
@@ -115,7 +115,7 @@ static void OnChange_sv_minpitch (cvar_t *var, char *str, qbool *cancel)
 
 	*cancel = true;
 
-	newval = bound (-90.0f, Q_atof(str), 0.0f);
+	newval = bound (-89.9f, Q_atof(str), 0.0f);
 	if (newval == var->value)
 		return;
 
