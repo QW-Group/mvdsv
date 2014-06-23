@@ -1,11 +1,8 @@
-MVDsv: a QuakeWorld server
+MVDSV: a QuakeWorld server
 --------------------------
 
 Official website:
-  http://mvdsv.qw-dev.net
-
-Latest builds:
-  http://builds.qw-dev.net
+  https://github.com/deurk/mvdsv
 
 Development team:
   see CREDITS file
@@ -15,10 +12,9 @@ License:
 
 Want to help?
   - spread the word: link to our website, mention MVDsv, run your server
-  - document usage and features: http://mvdsv.qw-dev.net/wiki
-  - report bugs or ask for new features: http://mvdsv.qw-dev.net/isssues
-  - fix bugs by patching sources: http://mvdsv.qw-dev.net/repository
-  - join the development team: http://mvdsv.qw-dev.net/boards
+  - document usage and features: https://github.com/deurk/mvdsv
+  - report bugs, ask for new features: https://github.com/deurk/mvdsv/issues
+  - fix bugs by patching sources: https://github.com/deurk/mvdsv/pulls
 
 Source code repository/archive structure:
 
