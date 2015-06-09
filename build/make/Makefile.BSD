@@ -21,12 +21,11 @@ DO_CFLAGS		=	${CFLAGS} -Wall -pipe -pthread -funsigned-char -DSERVERONLY -DUSE_P
 
 WITH_OPTIMIZED_CFLAGS = YES
 
-USE_ASM=-Did386
 .if defined(WITH_OPTIMIZED_CFLAGS)
 DO_CFLAGS		+=	-O2 -fno-strict-aliasing -ffast-math -funroll-loops
 . if ${MACHINE_ARCH} == "i386" && !defined(WITHOUT_X86_ASM)
-ASM=${USE_ASM}
-DO_CFLAGS		+=	${ASM}
+USE_ASM=-Did386
+DO_CFLAGS		+=	${USE_ASM}
 . endif
 .endif
 
@@ -94,7 +93,7 @@ SV_OBJS = \
 		${SV_DIR}/pcre/get.o \
 		${SV_DIR}/pcre/pcre.o
 
-.if ${USE_ASM} == ${ASM}
+.ifdef USE_ASM
 SV_ASM_OBJS = \
 		${SV_DIR}/bothtoolsa.o \
 		${SV_DIR}/math.o
