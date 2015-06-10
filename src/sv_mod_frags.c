@@ -51,6 +51,7 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 {
 	FILE *fp = NULL;
 	char *str_tok, buf[128];
+	size_t len;
 	int i;
 
 	free_qwmsg_t(qwmsg);
@@ -93,8 +94,9 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 				qwmsg[i]->reverse = Q_atoi(str_tok) ? true : false;
 				// fill str
 				str_tok = (char *)strtok(NULL, "#");
-				qwmsg[i]->str =  (char *) Q_malloc (strlen(str_tok) + 1);
-				strlcpy(qwmsg[i]->str, str_tok, strlen(str_tok) + 1);
+				len = strlen(str_tok+1);
+				qwmsg[i]->str =  (char *) Q_malloc (len);
+				strlcpy(qwmsg[i]->str, str_tok, len);
 			}
 			else
 				break;

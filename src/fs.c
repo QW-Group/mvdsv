@@ -845,29 +845,6 @@ void FS_FileBase (char *in, char *out)
 }
 
 /*
-================
-FS_FileOpenRead
-
-Unused in MVDSV.
-================
-*/
-static int FS_FileOpenRead (char *path, FILE **hndl)
-{
-	FILE *f;
-
-	f = fopen (path, "rb");
-	if (!f)
-	{
-		*hndl = NULL;
-		return -1;
-	}
-
-	*hndl = f;
-
-	return FS_FileLength (f);
-}
-
-/*
 ============
 FS_WriteFile
 

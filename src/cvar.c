@@ -437,10 +437,8 @@ cvar_t *Cvar_Create (const char *name, char *string, int cvarflags)
 	v->hash_next = cvar_hash[key];
 	cvar_hash[key] = v;
 
-	v->name = (char *) Q_malloc (strlen(name)+1);
-	strlcpy (v->name, name, strlen(name) + 1);
-	v->string = (char *) Q_malloc (strlen(string)+1);
-	strlcpy (v->string, string, strlen(string) + 1);
+	v->name = (char *) Q_strdup (name);
+	v->string = (char *) Q_strdup (string);
 	v->flags = cvarflags;
 	v->value = Q_atof (v->string);
 	v->OnChange = NULL;

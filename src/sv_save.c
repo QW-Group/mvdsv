@@ -145,6 +145,7 @@ void SV_LoadGame_f (void) {
 	edict_t *ent;
 	int entnum, version, r;
 	unsigned int i;
+	size_t len;
 
 	if (Cmd_Argc() != 2) {
 		Con_Printf ("Usage: %s <savename> : load a game\n", Cmd_Argv(0));
@@ -235,8 +236,9 @@ void SV_LoadGame_f (void) {
 			fclose (f);
 			return;
 		}
-		sv.lightstyles[i] = (char *) Hunk_Alloc (strlen(str) + 1);
-		strlcpy (sv.lightstyles[i], str, strlen(str) + 1);
+		len = strlen(str)+1;
+		sv.lightstyles[i] = (char *) Hunk_Alloc (len);
+		strlcpy (sv.lightstyles[i], str, len);
 	}
 
 	// pause until all clients connect

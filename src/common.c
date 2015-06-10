@@ -974,7 +974,7 @@ void Info_RemoveKey (char *s, const char *key)
 
 		if (!strncmp (key, pkey, sizeof(pkey)) )
 		{
-			strlcpy (start, s, strlen(s) + 1);	// remove this part
+			strcpy (start, s);	// remove this part
 			return;
 		}
 

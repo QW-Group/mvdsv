@@ -256,7 +256,7 @@ void	*Q_calloc (size_t n, size_t size);
 
 char	*Q_strdup (const char *src);
 
-void	COM_StripExtension (const char *in, char *out);
+void	COM_StripExtension (const char *str);
 char	*COM_FileExtension (const char *in);
 void	COM_DefaultExtension (char *path, const char *extension);
 
