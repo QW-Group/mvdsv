@@ -453,14 +453,59 @@ void Sys_Sleep(unsigned long ms)
 
 int Sys_Script (const char *path, const char *args)
 {
-	char str[1024];
+	char exec_path[1024];
+	char *exec_args[1024];
+	char *tmp_args, *p;
+	int i;
 
-	snprintf(str, sizeof(str), "cd %s\n./%s.qws %s &\ncd ..", fs_gamedir, path, args);
-
-	if (system(str) == -1)
+	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
 		return 0;
 
-	return 1;
+	switch(fork()) {
+		case -1:
+			/* oops, we cannot fork */
+			return 0;
+		case 0:
+			break;
+		default:
+			return 1;
+	}
+
+	strlcpy(exec_path, "./", sizeof(exec_path));
+	strlcat(exec_path, path, sizeof(exec_path));
+	strlcat(exec_path, ".qws", sizeof(exec_path));
+
+	tmp_args = strdup(args);
+	if (tmp_args == NULL)
+		goto err_exit;
+
+	memset(exec_args, 0, sizeof(exec_args));
+
+	/* translate args into array of arguments for execv(2) call */
+	i = 0;
+	exec_args[i++] = exec_path;
+	for (p = tmp_args; *p;)
+	{
+		while(*p == ' ') {
+			*(p++) = '\0';
+		}
+
+		if (*p)
+			exec_args[i++] = p;
+
+		/* go to another space or end of string */
+		while(*p && *p != ' ')
+			p++;
+	}
+
+	if (chdir(fs_gamedir) == -1)
+		goto err_exit;
+	if (execv(exec_path, exec_args) == -1)
+		goto err_exit;
+
+err_exit:
+	/* indicate error */
+	exit(1);
 }
 
 DL_t Sys_DLOpen(const char *path)

@@ -2304,7 +2304,7 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 
 			// skip file extension
 			if (!(flags & FILELIST_WITH_EXT))
-				COM_StripExtension (fullname, fullname);
+				COM_StripExtension (fullname);
 
 			list[i] = Q_strdup(fullname); // a bit below we will free it
 		}

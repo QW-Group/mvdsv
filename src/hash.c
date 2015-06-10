@@ -209,8 +209,7 @@ void *Hash_Add(hashtable_t *table, char *name, void *data)
 	int bucknum = Hash_Key(name, table->numbuckets);
 
 	bucket_t *buck = (bucket_t *) Q_malloc(sizeof(bucket_t));
-	char *keystring = (char *) Q_malloc(sizeof(char)*(strlen(name)+1)); // Allow room for \0
-	strlcpy(keystring, name, strlen(name) + 1);
+	char *keystring = Q_strdup(name);
 
 	buck->data = data;
 	buck->keystring = keystring;
@@ -224,8 +223,7 @@ void *Hash_AddInsensitive(hashtable_t *table, char *name, void *data)
 	int bucknum = Hash_KeyInsensitive(name, table->numbuckets);
 
 	bucket_t *buck = (bucket_t *) Q_malloc(sizeof(bucket_t));
-	char *keystring = (char *) Q_malloc(sizeof(char)*(strlen(name)+1)); // Allow room for \0
-	strlcpy(keystring, name, strlen(name) + 1);
+	char *keystring = Q_strdup(name);
 
 	buck->data = data;
 	buck->keystring = keystring;

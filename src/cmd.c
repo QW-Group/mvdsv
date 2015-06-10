@@ -390,15 +390,6 @@ Creates a new command that executes a command string (possibly ; seperated)
 ===============
 */
 
-static char *CopyString (const char *in)
-{
-	char *out;
-
-	out = (char *) Q_malloc (strlen(in)+1);
-	strlcpy (out, in, strlen(in) + 1);
-	return out;
-}
-
 void Cmd_Alias_f (void)
 {
 	cmd_alias_t	*a;
@@ -468,7 +459,7 @@ void Cmd_Alias_f (void)
 		strlcat (cmd, Cmd_Argv(i), sizeof(cmd));
 	}
 
-	a->value = CopyString (cmd);
+	a->value = Q_strdup (cmd);
 }
 
 

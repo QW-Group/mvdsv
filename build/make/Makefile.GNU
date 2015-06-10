@@ -128,7 +128,7 @@ all : mvdsv
 	$(STRIP) $(STRIP_FLAGS)
 
 mvdsv : $(SV_OBJS) $(SV_ASM_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o mvdsv $^
+	$(CC) $(CFLAGS) -o mvdsv $^ $(LDFLAGS)
 
 clean : 
 	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o mvdsv
