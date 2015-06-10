@@ -456,13 +456,12 @@ int Sys_Script (const char *path, const char *args)
 	char exec_path[1024];
 	char *exec_args[1024];
 	char *tmp_args, *p;
-	int i, status;
-	pid_t cpid;
+	int i;
 
 	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
 		return 0;
 
-	switch(cpid = fork()) {
+	switch(fork()) {
 		case -1:
 			/* oops, we cannot fork */
 			return 0;
