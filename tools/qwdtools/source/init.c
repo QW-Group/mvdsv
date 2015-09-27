@@ -599,7 +599,7 @@ void Load_ini (void)
 	else
 		strlcpy(name, com_argv[0], sizeof(name));
 
-	COM_StripExtension(name, name);
+	COM_StripExtension(name);
 	ForceExtension(name, ".ini");
 
 	//Sys_Printf("name:%s\nargv:%s\n", name, com_argv[0]);

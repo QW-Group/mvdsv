@@ -795,7 +795,8 @@ char *TemplateName (char *from1, char *to, char *ch)
 	if ( !(p = strstr(to, ch)) )
 		return to;
 
-	COM_StripExtension(from1, tmp);
+    strlcpy(tmp, from1, sizeof(tmp));
+	COM_StripExtension(tmp);
 	strlcpy(name, to, p - to);
 	strlcat(name, va("%s%s", tmp, p + 1), sizeof(name));
 
