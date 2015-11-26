@@ -45,7 +45,7 @@
 
 typedef union pr2val_s
 {
-	intptr_t	string;
+	string_t	string;
 	float		_float;
 	intptr_t	_int;
 } pr2val_t;	

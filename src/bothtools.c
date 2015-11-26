@@ -579,13 +579,15 @@ char *Q_strdup (const char *src)
 COM_StripExtension
 ============
 */
-void COM_StripExtension (const char *str)
+char *COM_StripExtension (char *str)
 {
 	char *p = strrchr(str, '.');
 
     /* truncate extension */
     if (p)
         *p = '\0';
+
+    return str;
 }
 
 /*
