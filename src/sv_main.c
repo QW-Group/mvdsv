@@ -135,6 +135,7 @@ cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "2"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 
+cvar_t  sv_entityfile = {"sv_entityfile", "", CVAR_SERVERINFO};	// If specified, use that .ent filename - otherwise default to mapname.ent.  Will be reset back to "" if name doesn't start with mapname
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 cvar_t  sv_loadentfiles_dir = {"sv_loadentfiles_dir", ""}; // check for .ent file in maps/sv_loadentfiles_dir first then just maps/
 cvar_t	sv_default_name = {"sv_default_name", "unnamed"};
@@ -3345,6 +3346,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_maxrate);
 	Cvar_Register (&sv_loadentfiles);
 	Cvar_Register (&sv_loadentfiles_dir);
+	Cvar_Register (&sv_entityfile);
 	Cvar_Register (&sv_default_name);
 	Cvar_Register (&sv_mod_msg_file);
 	Cvar_Register (&sv_forcenick);

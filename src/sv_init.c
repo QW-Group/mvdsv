@@ -224,7 +224,7 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	edict_t *ent;
 	int i;
 
-	extern cvar_t sv_loadentfiles, sv_loadentfiles_dir;
+	extern cvar_t sv_loadentfiles, sv_loadentfiles_dir, sv_entityfile;
 	char *entitystring;
 	char oldmap[MAP_NAME_LEN];
 	extern qbool	sv_allow_cheats;
@@ -495,17 +495,24 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	if ((int)sv_loadentfiles.value)
 	{
 		char ent_path[1024] = {0};
+		char* ent_filename = sv.mapname;
+
+		if (strstr(sv_entityfile.string, sv.mapname) == sv_entityfile.string)
+			ent_filename = sv_entityfile.string;
+		else
+			Cvar_Set(&sv_entityfile, "");
+
 		// first try maps/sv_loadentfiles_dir/
 		if (sv_loadentfiles_dir.string[0])
 		{
-			snprintf(ent_path, sizeof(ent_path), "maps/%s/%s.ent", sv_loadentfiles_dir.string, sv.mapname);
+			snprintf(ent_path, sizeof(ent_path), "maps/%s/%s.ent", sv_loadentfiles_dir.string, ent_filename);
 			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
 		}
 
 		// try maps/ if not loaded yet.
 		if (!entitystring)
 		{
-			snprintf(ent_path, sizeof(ent_path), "maps/%s.ent", sv.mapname);
+			snprintf(ent_path, sizeof(ent_path), "maps/%s.ent", ent_filename);
 			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
 		}
 
