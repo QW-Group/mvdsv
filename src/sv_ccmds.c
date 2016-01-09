@@ -406,9 +406,10 @@ command from the console or progs.
 */
 void SV_Map (qbool now)
 {
-	static char	level[MAX_QPATH];
-	static char	expanded[MAX_QPATH];
-	static qbool changed = false;
+	static char     level[MAX_QPATH];
+	static char     expanded[MAX_QPATH];
+	static char     entityfile[MAX_QPATH];
+	static qbool    changed = false;
 
 	char	*s;
 
@@ -455,7 +456,7 @@ void SV_Map (qbool now)
 		}
 		// <-
 
-		SV_SpawnServer (level, !strcasecmp(Cmd_Argv(0), "devmap"));
+		SV_SpawnServer (level, !strcasecmp(Cmd_Argv(0), "devmap"), entityfile);
 
 		SV_BroadcastCommand ("changing\n"
 							 "reconnect\n");
@@ -466,13 +467,17 @@ void SV_Map (qbool now)
 
 	// get the map name, but don't change now, could be executed from progs.dat
 
-	if (Cmd_Argc() != 2)
+	if (Cmd_Argc() < 2 || Cmd_Argc() > 3)
 	{
-		Con_Printf ("map <levelname> : continue game on a new level\n");
+		Con_Printf ("map <levelname> [<entityfile>] : continue game on a new level\n");
 		return;
 	}
 
 	strlcpy (level, Cmd_Argv(1), MAX_QPATH);
+
+	memset(entityfile, 0, sizeof(entityfile));
+	if (Cmd_Argc() >= 3)
+		strlcpy (entityfile, Cmd_Argv(2), MAX_QPATH);
 
 	// check to make sure the level exists
 	snprintf (expanded, MAX_QPATH, "maps/%s.bsp", level);

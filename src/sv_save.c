@@ -221,7 +221,7 @@ void SV_LoadGame_f (void) {
 	CL_BeginLocalConnection ();
 #endif
 
-	SV_SpawnServer (mapname, false);
+	SV_SpawnServer (mapname, false, NULL);
 
 	if (sv.state != ss_active) {
 		Con_Printf ("Couldn't load map\n");
