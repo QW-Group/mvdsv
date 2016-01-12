@@ -769,7 +769,7 @@ int SV_GenerateUserID (void);
 //
 int SV_ModelIndex (char *name);
 void SV_FlushSignon (void);
-void SV_SpawnServer (char *server, qbool devmap);
+void SV_SpawnServer (char *server, qbool devmap, char* entityfile);
 
 
 //

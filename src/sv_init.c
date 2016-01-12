@@ -217,7 +217,7 @@ clients along with it.
 This is only called from the SV_Map_f() function.
 ================
 */
-void SV_SpawnServer (char *mapname, qbool devmap)
+void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 {
 	extern func_t ED_FindFunctionOffset (char *name);
 
@@ -495,17 +495,21 @@ void SV_SpawnServer (char *mapname, qbool devmap)
 	if ((int)sv_loadentfiles.value)
 	{
 		char ent_path[1024] = {0};
+
+		if (!entityfile || !entityfile[0])
+			entityfile = sv.mapname;
+
 		// first try maps/sv_loadentfiles_dir/
 		if (sv_loadentfiles_dir.string[0])
 		{
-			snprintf(ent_path, sizeof(ent_path), "maps/%s/%s.ent", sv_loadentfiles_dir.string, sv.mapname);
+			snprintf(ent_path, sizeof(ent_path), "maps/%s/%s.ent", sv_loadentfiles_dir.string, entityfile);
 			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
 		}
 
 		// try maps/ if not loaded yet.
 		if (!entitystring)
 		{
-			snprintf(ent_path, sizeof(ent_path), "maps/%s.ent", sv.mapname);
+			snprintf(ent_path, sizeof(ent_path), "maps/%s.ent", entityfile);
 			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
 		}
 

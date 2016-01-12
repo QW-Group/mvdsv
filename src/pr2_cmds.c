@@ -1650,6 +1650,7 @@ void PF2_changelevel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 {
 	static int last_spawncount;
 	char *s = (char *) VM_POINTER(base,mask,stack[0].string);
+	char *entfile = (char *) VM_POINTER(base,mask,stack[1].string);
 	char expanded[MAX_QPATH];
 
 	// check to make sure the level exists.
@@ -1668,7 +1669,10 @@ void PF2_changelevel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return;
 	last_spawncount = svs.spawncount;
 
-	Cbuf_AddText(va("map %s\n", s));
+	if (entfile && *entfile)
+		Cbuf_AddText(va("map %s %s\n", s, entfile));
+	else
+		Cbuf_AddText(va("map %s\n", s));
 }
 
 /*
