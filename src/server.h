@@ -843,6 +843,7 @@ void SV_SendServerInfoChange (char *key, char *value);
 // sv_ents.c
 //
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder);
+void SV_SetVisibleEntitiesForBot (client_t* client);
 
 //
 // sv_nchan.c

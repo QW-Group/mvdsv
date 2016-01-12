@@ -1056,6 +1056,12 @@ void SV_SendClientMessages (void)
 	// update frags, names, etc
 	SV_UpdateToReliableMessages ();
 
+	if (fofs_visibility) {
+		for (i = 0; i < MAX_CLIENTS; ++i) {
+			((eval_t *)((byte *)&(svs.clients[i].edict)->v + fofs_visibility))->_int = 0;
+		}
+	}
+
 	// build individual updates
 	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
 	{
@@ -1109,6 +1115,9 @@ void SV_SendClientMessages (void)
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
 			c->num_backbuf = 0;
+			
+			// Need to tell mod what the bot would have seen
+			SV_SetVisibleEntitiesForBot (c);
 			continue;
 		}
 #endif

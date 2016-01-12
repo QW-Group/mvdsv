@@ -186,6 +186,7 @@ extern int fofs_movement;
 extern int fofs_gravity, fofs_maxspeed;
 extern int fofs_hideentity;
 extern int fofs_trackent;
+extern int fofs_visibility;
 
 #define EdictFieldFloat(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->_float
 #define EdictFieldVector(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->vector
