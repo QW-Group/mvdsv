@@ -308,7 +308,7 @@ void SV_FinalMessage (const char *message)
 	MSG_WriteByte (&net_message, svc_disconnect);
 
 	for (i=0, cl = svs.clients ; i<MAX_CLIENTS ; i++, cl++)
-		if (cl->state >= cs_spawned)
+		if (cl->state >= cs_spawned && ! cl->isBot)
 			Netchan_Transmit (&cl->netchan, net_message.cursize
 			                  , net_message.data);
 }

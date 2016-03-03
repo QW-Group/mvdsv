@@ -92,7 +92,7 @@ typedef struct {
 extern	movevars_t movevars;
 extern	playermove_t pmove;
 
-void PM_PlayerMove (void);
+int PM_PlayerMove (void);
 
 int PM_PointContents (vec3_t point);
 int PM_PointContents_AllBSPs (vec3_t p);

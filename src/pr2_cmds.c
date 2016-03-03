@@ -24,6 +24,8 @@
 
 #include "qwsvdef.h"
 
+#define SETUSERINFO_STAR          (1<<0) // allow set star keys
+
 char	*pr2_ent_data_ptr;
 vm_t	*sv_vm = NULL;
 
@@ -490,7 +492,7 @@ void PF2_traceline(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	trace_t	trace;
 	edict_t	*ent;
 	vec3_t v1, v2;
-	int nomonsters;//, entnum;
+	int nomonsters, entnum;
 
 	v1[0] = stack[0]._float;
 	v1[1] = stack[1]._float;
@@ -501,11 +503,15 @@ void PF2_traceline(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	v2[2] = stack[5]._float;
 
 	nomonsters = stack[6]._int;
+	entnum = stack[7]._int;
 
-	ent = EDICT_NUM(stack[7]._int);
+	ent = EDICT_NUM(entnum);
 
 	if (sv_antilag.value == 2)
-		nomonsters |= MOVE_LAGGED;
+	{
+		if (! (entnum >= 1 && entnum <= MAX_CLIENTS && svs.clients[entnum - 1].isBot))
+			nomonsters |= MOVE_LAGGED;
+	}
 
 	trace = SV_Trace(v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
@@ -2465,6 +2471,7 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 		return;
 	}
 
+	memset (newcl, 0, sizeof (*newcl));
 	edictnum = ( newcl - svs.clients ) + 1;
 	ent = EDICT_NUM( edictnum );
 	ED_ClearEdict(ent);
@@ -2476,6 +2483,8 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	          "\\name\\%s\\topcolor\\%d\\bottomcolor\\%d\\emodel\\6967\\pmodel\\13845\\skin\\%s\\*bot\\1",
 	          name, topcolor, bottomcolor, skin );
 
+	newcl->_userinfo_ctx_.max      = MAX_CLIENT_INFOS;
+	newcl->_userinfoshort_ctx_.max = MAX_CLIENT_INFOS;
 	Info_Convert(&newcl->_userinfo_ctx_, info);
 
 	newcl->state = cs_spawned;
@@ -2485,6 +2494,8 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	newcl->datagram.maxsize = sizeof( newcl->datagram_buf );
 	newcl->spectator = 0;
 	newcl->isBot = 1;
+	newcl->connection_started = realtime;
+	strlcpy(newcl->name, name, sizeof(newcl->name));
 
 	newcl->entgravity = 1.0;
 	val = PR2_GetEdictFieldValue( ent, "gravity" );
@@ -2506,13 +2517,13 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	ent->v.netname = PR_SetString(newcl->name);
 
 	memset( newcl->stats, 0, sizeof( newcl->stats ) );
+	SZ_InitEx (&newcl->netchan.message, newcl->netchan.message_buf, (int)sizeof(newcl->netchan.message_buf), true);
 	SZ_Clear( &newcl->netchan.message );
 	newcl->netchan.drop_count = 0;
 	newcl->netchan.incoming_sequence = 1;
 
 	// copy the most important userinfo into userinfoshort
 	// {
-
 	SV_ExtractFromUserinfo( newcl, true );
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
@@ -2598,6 +2609,7 @@ void PF2_SetBotUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t
 	int     entnum = stack[0]._int;
 	char   *key = (char *) VM_POINTER( base, mask, stack[1].string );
 	char   *value = (char *) VM_POINTER( base, mask, stack[2].string );
+	int    flags = stack[3]._int;
 	int     i;
 	extern char *shortinfotbl[];
 
@@ -2615,7 +2627,11 @@ void PF2_SetBotUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t
 		Con_Printf( "tried to change userinfo a non-botclient %d \n", entnum );
 		return;
 	}
-	Info_Set( &cl->_userinfo_ctx_, key, value );
+
+	if ( flags & SETUSERINFO_STAR )
+		Info_SetStar( &cl->_userinfo_ctx_, key, value );
+	else
+		Info_Set( &cl->_userinfo_ctx_, key, value );
 	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
@@ -2733,8 +2749,6 @@ void PF2_setpause(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	if (pause != (sv.paused & 1))
 		SV_TogglePause (NULL, 1);
 }
-
-#define SETUSERINFO_STAR          (1<<0) // allow set star keys
 
 void PF2_SetUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retval )
 {

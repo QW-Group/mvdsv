@@ -411,7 +411,7 @@ static void PM_AirAccelerate (vec3_t wishdir, float wishspeed, float accel)
 	}
 }
 
-static void PM_WaterMove (void)
+static int PM_WaterMove (void)
 {
 	vec3_t wishvel, wishdir;
 	float wishspeed;
@@ -439,10 +439,10 @@ static void PM_WaterMove (void)
 	// water acceleration
 	PM_Accelerate (wishdir, wishspeed, movevars.wateraccelerate);
 
-	PM_StepSlideMove (false);
+	return PM_StepSlideMove (false);
 }
 
-static void PM_FlyMove (void)
+static int PM_FlyMove (void)
 {
 	vec3_t wishvel, wishdir;
 	float wishspeed;
@@ -463,10 +463,10 @@ static void PM_FlyMove (void)
 	}
 
 	PM_Accelerate (wishdir, wishspeed, movevars.accelerate);
-	PM_StepSlideMove (false);
+	return PM_StepSlideMove (false);
 }
 
-static void PM_AirMove (void)
+static int PM_AirMove (void)
 {
 	float fmove, smove, wishspeed;
 	vec3_t wishvel, wishdir;
@@ -512,10 +512,10 @@ static void PM_AirMove (void)
 		if (!pmove.velocity[0] && !pmove.velocity[1])
 		{
 			pmove.velocity[2] = 0;
-			return;
+			return 0;
 		}
 
-		PM_StepSlideMove(false);
+		return PM_StepSlideMove(false);
 	}
 	else
 	{
@@ -536,6 +536,8 @@ static void PM_AirMove (void)
 			if (blocked & BLOCKED_FLOOR)
 				pmove.onground = true;
 		}
+
+		return blocked;
 	}
 }
 
@@ -828,15 +830,17 @@ static void PM_SpectatorMove (void)
 
 //Returns with origin, angles, and velocity modified in place.
 //Numtouch and touchindex[] will be set if any of the physents were contacted during the move.
-void PM_PlayerMove (void)
+int PM_PlayerMove (void)
 {
+	int blocked = 0;
+
 	pm_frametime = pmove.cmd.msec * 0.001;
 	pmove.numtouch = 0;
 
 	if (pmove.pm_type == PM_NONE || pmove.pm_type == PM_LOCK)
 	{
 		PM_CategorizePosition ();
-		return;
+		return 0;
 	}
 
 	// take angles directly from command
@@ -847,7 +851,7 @@ void PM_PlayerMove (void)
 	{
 		PM_SpectatorMove ();
 		pmove.onground = false;
-		return;
+		return 0;
 	}
 
 	PM_NudgePosition ();
@@ -880,11 +884,11 @@ void PM_PlayerMove (void)
 	PM_Friction ();
 
 	if (pmove.waterlevel >= 2)
-		PM_WaterMove ();
+		blocked = PM_WaterMove ();
 	else if (pmove.pm_type == PM_FLY)
-		PM_FlyMove ();
+		blocked = PM_FlyMove ();
 	else
-		PM_AirMove ();
+		blocked = PM_AirMove ();
 
 	// set onground, watertype, and waterlevel for final spot
 	PM_CategorizePosition ();
@@ -897,4 +901,6 @@ void PM_PlayerMove (void)
 		        && DotProduct(pmove.velocity, groundplane.normal) < -0.1)
 			PM_ClipVelocity (pmove.velocity, groundplane.normal, pmove.velocity, 1);
 	}
+
+	return blocked;
 }

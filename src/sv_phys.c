@@ -1022,7 +1022,7 @@ void SV_Physics (void)
 	for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
 	{
 		extern void SV_PreRunCmd(void);
-		extern void SV_RunCmd (usercmd_t *ucmd, qbool inside);
+		extern void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool simulate);
 		extern void SV_PostRunCmd(void);
 
 		if ( cl->state == cs_free )
@@ -1034,7 +1034,7 @@ void SV_Physics (void)
 		sv_player = cl->edict;
 
 		SV_PreRunCmd();
-		SV_RunCmd (&cl->botcmd, false);
+		SV_RunCmd (&cl->botcmd, false, false);
 		SV_PostRunCmd();
 
 		cl->lastcmd = cl->botcmd;

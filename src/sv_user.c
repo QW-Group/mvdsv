@@ -2057,7 +2057,6 @@ char *shortinfotbl[] =
 static void Cmd_SetInfo_f (void)
 {
 	extern cvar_t sv_forcenick, sv_login;
-	int i;
 	sv_client_state_t saved_state;
 	char oldval[MAX_EXT_INFO_STRING];
 	char info[MAX_EXT_INFO_STRING];
@@ -3176,15 +3175,16 @@ void SV_PreRunCmd(void)
 SV_RunCmd
 ===========
 */
-void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
+void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/9
 {
 	int i, n;
 	vec3_t originalvel, offset;
 	qbool onground;
 	//bliP: 24/9 anti speed ->
 	int tmp_time;
+	int blocked;
 
-	if (!inside && (int)sv_speedcheck.value)
+	if (!inside && (int)sv_speedcheck.value && !sv_client->isBot)
 	{
 		/* AM101 method */
 		tmp_time = Q_rint((realtime - sv_client->last_check) * 1000); // ie. Old 'timepassed'
@@ -3227,10 +3227,10 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 		int oldmsec;
 		oldmsec = ucmd->msec;
 		cmd.msec = oldmsec/2;
-		SV_RunCmd (&cmd, true);
+		SV_RunCmd (&cmd, true, second_attempt);
 		cmd.msec = oldmsec/2;
 		cmd.impulse = 0;
-		SV_RunCmd (&cmd, true);
+		SV_RunCmd (&cmd, true, second_attempt);
 		return;
 	}
 
@@ -3252,7 +3252,7 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 
 	// clamp view angles
 	ucmd->angles[PITCH] = bound(sv_minpitch.value, ucmd->angles[PITCH], sv_maxpitch.value);
-	if (!sv_player->v.fixangle)
+	if (!sv_player->v.fixangle && ! second_attempt)
 		VectorCopy (ucmd->angles, sv_player->v.v_angle);
 	
 	// model angles
@@ -3271,7 +3271,8 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 	if (sv_frametime > 0.1)
 		sv_frametime = 0.1;
 
-	if (!sv_client->spectator)
+	// Don't run think function twice...
+	if (!sv_client->spectator && !second_attempt)
 	{
 		vec3_t	oldvelocity;
 		float	old_teleport_time;
@@ -3294,11 +3295,12 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside) //bliP: 24/9
 		}
 
 		if ( onground && originalvel[2] < 0 && sv_player->v.velocity[2] == 0 &&
-		originalvel[0] == sv_player->v.velocity[0] &&
-		originalvel[1] == sv_player->v.velocity[1] ) {
+		     originalvel[0] == sv_player->v.velocity[0] &&
+		     originalvel[1] == sv_player->v.velocity[1] )
+		{
 			// don't let KTeams mess with physics
 			sv_player->v.velocity[2] = originalvel[2];
-		   }
+		}
 
 		SV_RunThink (sv_player);
 	}
@@ -3340,7 +3342,32 @@ FIXME
 	movevars.pground = ((int)pm_pground.value != 0);
 	
 	// do the move
-	PM_PlayerMove ();
+	blocked = PM_PlayerMove ();
+
+	// This is a temporary hack for Frogbots, who adjust after bumping into things
+	// Better would be to provide a way to simulate a move command, but at least this doesn't require API change
+	if (blocked && !second_attempt && sv_client->isBot && sv_player->v.blocked)
+	{
+		pr_global_struct->self = EDICT_TO_PROG(sv_player);
+
+		// Don't store in the bot's entity as we will run this again
+		VectorSubtract (pmove.origin, offset, pr_global_struct->trace_endpos);
+		VectorCopy (pmove.velocity, pr_global_struct->trace_plane_normal);
+		if (pmove.onground)
+		{
+			pr_global_struct->trace_allsolid = (int) sv_player->v.flags | FL_ONGROUND;
+			pr_global_struct->trace_ent = EDICT_TO_PROG(EDICT_NUM(pmove.physents[pmove.groundent].info));
+		} else {
+			pr_global_struct->trace_allsolid = (int) sv_player->v.flags & ~FL_ONGROUND;
+		}
+
+		// Give the mod a chance to replace the command
+		PR_EdictBlocked (sv_player->v.blocked);
+
+		// Run the command again
+		SV_RunCmd (ucmd, false, true);
+		return;
+	}
 
 	// get player state back out of pmove
 	sv_client->jump_held = pmove.jump_held;
@@ -3359,6 +3386,7 @@ FIXME
 
 	VectorSubtract (pmove.origin, offset, sv_player->v.origin);
 	VectorCopy (pmove.velocity, sv_player->v.velocity);
+
 	VectorCopy (pmove.angles, sv_player->v.v_angle);
 
 	if (sv_player->v.solid != SOLID_NOT)
@@ -3447,15 +3475,15 @@ static void SV_ExecuteClientMove (client_t *cl, usercmd_t oldest, usercmd_t oldc
 	{
 		while (net_drop > 2)
 		{
-			SV_RunCmd (&cl->lastcmd, false);
+			SV_RunCmd (&cl->lastcmd, false, false);
 			net_drop--;
 		}
 	}
 	if (net_drop > 1)
-		SV_RunCmd (&oldest, false);
+		SV_RunCmd (&oldest, false, false);
 	if (net_drop > 0)
-		SV_RunCmd (&oldcmd, false);
-	SV_RunCmd (&newcmd, false);
+		SV_RunCmd (&oldcmd, false, false);
+	SV_RunCmd (&newcmd, false, false);
 	
 	SV_PostRunCmd();
 }
