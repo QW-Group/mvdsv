@@ -76,6 +76,7 @@ typedef struct
 
 	//check player/eyes models for hacks
 	unsigned	model_player_checksum;
+	unsigned	model_newplayer_checksum;
 	unsigned	eyes_player_checksum;
 	
 	char		mapname[MAP_NAME_LEN];		// map name

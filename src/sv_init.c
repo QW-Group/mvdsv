@@ -195,6 +195,8 @@ static unsigned SV_CheckModel(char *mdl)
 	{
 		if (!strcmp (mdl, "progs/player.mdl"))
 			return 33168;
+		else if (!strcmp (mdl, "progs/newplayer.mdl"))
+			return 62211;
 		else if (!strcmp (mdl, "progs/eyes.mdl"))
 			return 6967;
 		else
@@ -439,6 +441,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 
 	//check player/eyes models for hacks
 	sv.model_player_checksum = SV_CheckModel("progs/player.mdl");
+	sv.model_newplayer_checksum = SV_CheckModel("progs/newplayer.mdl");
 	sv.eyes_player_checksum = SV_CheckModel("progs/eyes.mdl");
 
 	//

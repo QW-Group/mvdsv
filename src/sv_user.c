@@ -783,7 +783,7 @@ static void Cmd_Begin_f (void)
 			pmodel = Q_atoi(Info_Get (&sv_client->_userinfo_ctx_, "pmodel"));
 			emodel = Q_atoi(Info_Get (&sv_client->_userinfo_ctx_, "emodel"));
 
-			if (pmodel != sv.model_player_checksum || emodel != sv.eyes_player_checksum)
+			if (!(pmodel == sv.model_newplayer_checksum || pmodel == sv.model_player_checksum) || emodel != sv.eyes_player_checksum)
 				SV_BroadcastPrintf (PRINT_HIGH, "%s WARNING: non standard player/eyes model detected\n", sv_client->name);
 		}
 	}
