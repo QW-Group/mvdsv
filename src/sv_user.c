@@ -2047,6 +2047,7 @@ char *shortinfotbl[] =
 #ifdef CHAT_ICON_EXPERIMENTAL
 	"chat",
 #endif
+	"gender",
 	//"*client",
 	//"*spectator",
 	//"*VIP",
