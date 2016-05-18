@@ -49,7 +49,7 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 		}
 	}
 
-	if (count >= (int)qtv_maxstreams.value)
+	if ((int)qtv_maxstreams.value > 0 && count >= (int)qtv_maxstreams.value)
 		return NULL; //sorry
 
 	dst = (mvddest_t *) Q_malloc (sizeof(mvddest_t));
