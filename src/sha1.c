@@ -19,12 +19,12 @@ A million repetitions of "a"
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-static void SHA1Transform (unsigned long state[5], unsigned char buffer[64])
+static void SHA1Transform (unsigned int state[5], unsigned char buffer[64])
 {
-	unsigned long a, b, c, d, e;
+	unsigned int a, b, c, d, e;
 	typedef union {
 		unsigned char c[64];
-		unsigned long l[16];
+		unsigned int l[16];
 	} CHAR64LONG16;
 	CHAR64LONG16* block;
 #ifdef SHA1HANDSOFF
@@ -114,7 +114,7 @@ static void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int len)
 
 static void SHA1Final(unsigned char digest[DIGEST_SIZE], SHA1_CTX* context)
 {
-	unsigned long i, j;
+	unsigned int i, j;
 	unsigned char finalcount[8];
 
 	for (i = 0; i < 8; i++)
@@ -135,10 +135,10 @@ static void SHA1Final(unsigned char digest[DIGEST_SIZE], SHA1_CTX* context)
 	}
 	/* Wipe variables */
 	i = j = 0;
-	memset(context->buffer, 0, 64);
-	memset(context->state, 0, 20);
-	memset(context->count, 0, 8);
-	memset(&finalcount, 0, 8);
+	memset(context->buffer, 0, sizeof(context->buffer));
+	memset(context->state, 0, sizeof(context->state));
+	memset(context->count, 0, sizeof(context->count));
+	memset(&finalcount, 0, sizeof(finalcount));
 #ifdef SHA1HANDSOFF  /* make SHA1Transform overwrite it's own static vars */
 	SHA1Transform(context->state, context->buffer);
 #endif
