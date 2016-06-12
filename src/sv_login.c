@@ -652,12 +652,16 @@ void SV_ParseLogin(client_t *cl)
 		//VVD: forcenick ->
 		if ((int)sv_forcenick.value && cl->login)
 		{
+			char oldval[MAX_EXT_INFO_STRING];
+			strlcpy (oldval, cl->name, MAX_EXT_INFO_STRING);
+
 			Info_Set (&cl->_userinfo_ctx_, "name", cl->login);
-			strlcpy (cl->name, cl->login, CLIENT_NAME_LEN);
+
+			ProcessUserInfoChange (cl, "name", oldval);
+
+			// Change name cvar in client
 			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 			MSG_WriteString (&cl->netchan.message, va("name %s\n", cl->login));
-			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
-			MSG_WriteString (&cl->netchan.message, va("setinfo name %s\n", cl->login));
 		}
 		//<-
 

@@ -2195,31 +2195,38 @@ static void Cmd_SetInfo_f (void)
 	}
 	//<-
 
+	ProcessUserInfoChange (sv_client, Cmd_Argv (1), oldval);
+}
+
+void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* old_value)
+{
+	int i;
+
 	// process any changed values
-	SV_ExtractFromUserinfo (sv_client, !strcmp(Cmd_Argv(1), "name"));
+	SV_ExtractFromUserinfo (sv_client, !strcmp(key, "name"));
 
 	if (mod_UserInfo_Changed)
 	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_client->edict);
-		G_INT(OFS_PARM0) = PR_SetTmpString(Cmd_Argv(1));
-		G_INT(OFS_PARM1) = PR_SetTmpString(oldval);
-		G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&sv_client->_userinfo_ctx_, Cmd_Argv(1)));
+		G_INT(OFS_PARM0) = PR_SetTmpString(key);
+		G_INT(OFS_PARM1) = PR_SetTmpString(old_value);
+		G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&sv_client->_userinfo_ctx_, key));
 		PR_ExecuteProgram (mod_UserInfo_Changed);
 	}
 
 	for (i = 0; shortinfotbl[i] != NULL; i++)
 	{
-		if (!strcmp(Cmd_Argv(1), shortinfotbl[i]))
+		if (!strcmp(key, shortinfotbl[i]))
 		{
-			char *nuw = Info_Get(&sv_client->_userinfo_ctx_, Cmd_Argv(1));
+			char *nuw = Info_Get(&sv_client->_userinfo_ctx_, key);
 
-			Info_Set (&sv_client->_userinfoshort_ctx_, Cmd_Argv(1), nuw);
+			Info_Set (&sv_client->_userinfoshort_ctx_, key, nuw);
 
 			i = sv_client - svs.clients;
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
 			MSG_WriteByte (&sv.reliable_datagram, i);
-			MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));
+			MSG_WriteString (&sv.reliable_datagram, key);
 			MSG_WriteString (&sv.reliable_datagram, nuw);
 			break;
 		}
