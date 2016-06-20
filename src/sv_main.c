@@ -528,6 +528,18 @@ CONNECTIONLESS COMMANDS
 */
 
 /*
+SVC_QTVStreams
+
+Responds with info on connected QTV users
+*/
+static void SVC_QTVUsers (void)
+{
+	SV_BeginRedirect (RD_PACKET);
+	QTV_Streams_UserList ();
+	SV_EndRedirect ();
+}
+
+/*
 ================
 SVC_Status
 
@@ -535,12 +547,13 @@ Responds with all the info that qplug or qspy can see
 This message can be up to around 5k with worst case string lengths.
 ================
 */
-#define STATUS_OLDSTYLE					0
-#define	STATUS_SERVERINFO				1
-#define	STATUS_PLAYERS					2
-#define	STATUS_SPECTATORS				4
-#define	STATUS_SPECTATORS_AS_PLAYERS	8 //for ASE - change only frags: show as "S"
-#define STATUS_SHOWTEAMS				16
+#define STATUS_OLDSTYLE                 0
+#define STATUS_SERVERINFO               1
+#define STATUS_PLAYERS                  2
+#define STATUS_SPECTATORS               4
+#define STATUS_SPECTATORS_AS_PLAYERS    8 //for ASE - change only frags: show as "S"
+#define STATUS_SHOWTEAMS                16
+#define STATUS_SHOWQTV                  32
 
 static void SVC_Status (void)
 {
@@ -560,8 +573,8 @@ static void SVC_Status (void)
 		{
 			cl = &svs.clients[i];
 			if ( (cl->state >= cs_preconnected/* || cl->state == cs_spawned */) &&
-			        ( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
-			          ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
+				( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
+				  ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
 			{
 				top    = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "topcolor"));
 				bottom = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "bottomcolor"));
@@ -584,8 +597,8 @@ static void SVC_Status (void)
 					frags = va("%i", cl->old_frags);
 
 				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i", cl->userid, frags,
-				            (int)(realtime - cl->connection_started)/60, ping, name,
-				            Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
+					    (int)(realtime - cl->connection_started)/60, ping, name,
+					    Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
 
 				if (opt & STATUS_SHOWTEAMS)
 					Con_Printf (" \"%s\"\n", cl->team);
@@ -593,6 +606,9 @@ static void SVC_Status (void)
 					Con_Printf ("\n");
 			}
 		}
+
+	if (opt & STATUS_SHOWQTV)
+		QTV_Streams_List ();
 	SV_EndRedirect ();
 }
 
@@ -1812,6 +1828,8 @@ static void SV_ConnectionlessPacket (void)
 		SVC_DemoListRegex ();
 	else if (!strcmp(c,"demolistregex"))
 		SVC_DemoListRegex ();
+	else if (!strcmp(c,"qtvusers"))
+		SVC_QTVUsers ();
 	else
 		Con_Printf ("bad connectionless packet from %s:\n%s\n"
 		            , NET_AdrToString (net_from), s);

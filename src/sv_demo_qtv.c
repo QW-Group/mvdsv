@@ -33,9 +33,13 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 	int count;
 	mvddest_t *dst;
 	char name[sizeof(dst->qtvname)];
+	char address[sizeof(dst->qtvaddress)];
+	int streamid = 0;
 
 	// extract name
 	strlcpy(name, Info_ValueForKey(userinfo, "name"), sizeof(name));
+	strlcpy(address, Info_ValueForKey(userinfo, "address"), sizeof(address));
+	streamid = atoi(Info_ValueForKey(userinfo, "streamid"));
 
 	count = 0;
 	for (dst = demo.dest; dst; dst = dst->nextdest)
@@ -63,6 +67,8 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 	dst->na = na;
 
 	strlcpy(dst->qtvname, name, sizeof(dst->qtvname));
+	strlcpy(dst->qtvaddress, address, sizeof(dst->qtvaddress));
+	dst->qtvstreamid = streamid;
 
 	if (dst->qtvname[0])
 		Con_Printf ("Connected to QTV(%s)\n", dst->qtvname);
@@ -1314,6 +1320,38 @@ void Qtv_List_f(void)
 
 	if (!cnt)
 		Con_Printf ("QTV list: empty\n");
+}
+
+// Very similar to Qtv_list_f, but for disconnected clients.
+void QTV_Streams_List (void)
+{
+	mvddest_t *dst;
+	for (dst = demo.dest; dst; dst = dst->nextdest) {
+		if (dst->desttype == DEST_STREAM) {
+			int qtv_users = QTVsv_UsersCount (dst);
+
+			if (dst->qtvaddress[0])
+				Con_Printf ("qtv %d \"%s\" \"%d@%s\" %d\n", dst->id, dst->qtvname, dst->qtvstreamid, dst->qtvaddress, qtv_users);
+			else
+				Con_Printf ("qtv %d \"%s\" \"\" %d\n", dst->id, dst->qtvname, qtv_users);
+		}
+	}
+}
+
+// Expose user list to disconnected clients.
+void QTV_Streams_UserList (void)
+{
+	mvddest_t *dst;
+	for (dst = demo.dest; dst; dst = dst->nextdest) {
+		if (dst->desttype == DEST_STREAM) {
+			qtvuser_t *current;
+
+			Con_Printf ("qtvusers %d", dst->id);
+			for (current = dst->qtvuserlist; current; current = current->next)
+				Con_Printf (" \"%s\"", current->name);
+			Con_Printf ("\n");
+		}
+	}
 }
 
 void Qtv_Close_f(void)

@@ -428,6 +428,9 @@ typedef struct mvddest_s
 	char			qtvname[64];
 
 	qtvuser_t		*qtvuserlist;
+
+	char            qtvaddress[128];
+	int             qtvstreamid;
 // }
 
 	struct mvddest_s *nextdest;
@@ -956,6 +959,8 @@ void SV_QTV_Init(void);
 
 void DemoWriteQTV (sizebuf_t *msg);
 void QTVsv_FreeUserList(mvddest_t *d);
+void QTV_Streams_List (void);
+void QTV_Streams_UserList (void);
 
 //
 // sv_login.c
