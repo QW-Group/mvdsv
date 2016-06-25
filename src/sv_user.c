@@ -2404,6 +2404,7 @@ Set client to player mode without reconnecting
 */
 static void Cmd_Join_f (void)
 {
+	extern cvar_t sv_login;
 	int i;
 	int clients;
 
@@ -2420,6 +2421,12 @@ static void Cmd_Join_f (void)
 
 	if (password.string[0] && strcmp (password.string, "none")) {
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "This server requires a %s password. Please disconnect, set the password and reconnect as %s.\n", "player", "player");
+		return;
+	}
+
+	// Might have been 'not necessary' for spectator but needed for player
+	if (sv_client->logged <= 0 && (int)sv_login.value) {
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "This server requires users to login.  Please disconnect and reconnect as a player.\n");
 		return;
 	}
 
