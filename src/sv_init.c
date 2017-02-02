@@ -37,6 +37,7 @@ int fofs_vw_index;
 int fofs_hideentity;
 int fofs_trackent;
 int fofs_visibility;
+int fofs_hide_players;
 
 /*
 ================
@@ -363,6 +364,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	fofs_hideentity = ED_FindFieldOffset ("hideentity");
 	fofs_trackent = ED_FindFieldOffset ("trackent");
 	fofs_visibility = ED_FindFieldOffset ("visclients");
+	fofs_hide_players = ED_FindFieldOffset ("hideplayers");
 
 	// find optional QC-exported functions.
 	// we have it here, so we set it to NULL in case of PR2 progs.
