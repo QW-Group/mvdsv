@@ -21,11 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
-cvar_t	qtv_streamport		= {"qtv_streamport",		"0"};
-cvar_t	qtv_maxstreams		= {"qtv_maxstreams",		"1"};
-cvar_t	qtv_password		= {"qtv_password",			""};
-cvar_t	qtv_pendingtimeout	= {"qtv_pendingtimeout",	"5"};  // 5  seconds must be enough
-cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"45"}; // 45 seconds
+static cvar_t qtv_streamport     = {"qtv_streamport",      "0"};
+static cvar_t qtv_maxstreams     = {"qtv_maxstreams",      "1"};
+static cvar_t qtv_password       = {"qtv_password",         ""};
+static cvar_t qtv_pendingtimeout = {"qtv_pendingtimeout",  "5"}; // 5  seconds must be enough
+static cvar_t qtv_sayenabled     = {"qtv_sayenabled",      "0"}; // allow mod to override GameStarted() logic
+cvar_t qtv_streamtimeout         = {"qtv_streamtimeout",  "45"}; // 45 seconds
 
 static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 {
@@ -697,7 +698,7 @@ void QTVcmd_Say_f(mvddest_t *d)
 	if (Cmd_Argc () < 2)
 		return;
 
-	if (!strcasecmp(Info_ValueForKey(svs.info, "status"), "Countdown"))
+	if (qtv_sayenabled.value || !strcasecmp(Info_ValueForKey(svs.info, "status"), "Countdown"))
 		gameStarted	= false; // if status is "Countdown" then game is not started yet
 	else
 		gameStarted = GameStarted();
@@ -743,14 +744,16 @@ void QTVcmd_Say_f(mvddest_t *d)
 		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
 	}
 
-	if (sv.mvdrecording)
-	{
-		if (MVDWrite_Begin (dem_all, 0, strlen(text)+3))
-		{
-			MVD_MSG_WriteByte (svc_print);
-			MVD_MSG_WriteByte (PRINT_CHAT);
-			MVD_MSG_WriteString (text);
-		}
+	if (sv.mvdrecording) {
+		sizebuf_t		msg;
+		byte			msg_buf[1024];
+
+		SZ_InitEx(&msg, msg_buf, sizeof(msg_buf), true);
+		MSG_WriteByte (&msg, svc_print);
+		MSG_WriteByte (&msg, PRINT_CHAT);
+		MSG_WriteString (&msg, text);
+
+		DemoWriteQTV(&msg);
 	}
 
 	Sys_Printf("%s", text2);
@@ -1426,6 +1429,7 @@ void SV_QTV_Init(void)
 	Cvar_Register (&qtv_password);
 	Cvar_Register (&qtv_pendingtimeout);
 	Cvar_Register (&qtv_streamtimeout);
+	Cvar_Register (&qtv_sayenabled);
 
 	Cmd_AddCommand ("qtv_list", Qtv_List_f);
 	Cmd_AddCommand ("qtv_close", Qtv_Close_f);

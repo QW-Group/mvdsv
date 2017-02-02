@@ -947,10 +947,6 @@ void	SV_LastScores_f (void);
 // sv_demo_qtv.c
 //
 
-extern cvar_t	qtv_streamport;
-extern cvar_t	qtv_maxstreams;
-extern cvar_t	qtv_password;
-extern cvar_t	qtv_pendingtimeout;
 extern cvar_t	qtv_streamtimeout;
 
 
