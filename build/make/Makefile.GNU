@@ -43,6 +43,11 @@ CFLAGS+= -DBSD_COMP
 endif
 endif
 
+CURL_CFLAGS ?= $(shell pkg-config libcurl --cflags)
+CURL_LIBS ?= $(shell pkg-config libcurl --libs)
+CFLAGS += $(CURL_CFLAGS)
+LDFLAGS += $(CURL_LIBS)
+
 ifeq ($(CC_BASEVERSION),4) # if gcc4 then build universal binary
 ifeq ($(UNAME),Darwin)
 CFLAGS+= -arch ppc -arch i386
@@ -106,7 +111,9 @@ SV_OBJS = \
 		$(SV_DIR)/zone.o \
 \
 		$(SV_DIR)/pcre/get.o \
-		$(SV_DIR)/pcre/pcre.o
+		$(SV_DIR)/pcre/pcre.o \
+\
+		$(SV_DIR)/central.o
 
 ifeq ($(USE_ASM),$(ASM))
 SV_ASM_OBJS = \

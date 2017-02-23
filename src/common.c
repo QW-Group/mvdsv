@@ -1354,7 +1354,7 @@ qbool Info_Set (ctxinfo_t *ctx, const char *name, const char *value)
 
 	if (name[0] == '*')
 	{
-		Con_Printf ("Can't set * keys\n");
+		Con_Printf ("Can't set * keys [%s]\n", name);
 		return false;
 	}
 

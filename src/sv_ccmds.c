@@ -531,6 +531,7 @@ void SV_ListFiles_f (void)
 	dirname = Cmd_Argv(1);
 	SV_ReplaceChar(dirname, '\\', '/');
 
+	// Double-check then move to FS_UnsafeFilename() ?
 	if (	!strncmp(dirname, "../", 3) || strstr(dirname, "/../") || *dirname == '/'
 	        ||	( (i = strlen(dirname)) < 3 ? 0 : !strncmp(dirname + i - 3, "/..", 4) )
 	        ||	!strncmp(dirname, "..", 3)

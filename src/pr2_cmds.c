@@ -509,7 +509,7 @@ void PF2_traceline(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 
 	if (sv_antilag.value == 2)
 	{
-		if (! (entnum >= 1 && entnum <= MAX_CLIENTS && svs.clients[entnum - 1].isBot))
+		//if (! (entnum >= 1 && entnum <= MAX_CLIENTS && svs.clients[entnum - 1].isBot))
 			nomonsters |= MOVE_LAGGED;
 	}
 
@@ -1599,29 +1599,23 @@ PF2_makestatic
 */
 void PF2_makestatic(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	entity_state_t* s;
 	edict_t	*ent;
+	int		i;
 
 	ent = EDICT_NUM(stack[0]._int);
-	if (sv.static_entity_count >= sizeof(sv.static_entities) / sizeof(sv.static_entities[0])) {
-		ED_Free (ent);
-		return;
-	}
 
-	s = &sv.static_entities[sv.static_entity_count];
-	memset(s, 0, sizeof(sv.static_entities[0]));
-	s->number = sv.static_entity_count + 1;
-	s->modelindex = SV_ModelIndex((char *) VM_POINTER(base,mask,ent->v.model));
-	if (!s->modelindex) {
-		ED_Free (ent);
-		return;
+	MSG_WriteByte(&sv.signon, svc_spawnstatic);
+#pragma msg("Why it is not just PR_GetString(ent->v.model) instead of VM_POINTER(base,mask,ent->v.model) ???")
+	MSG_WriteByte(&sv.signon, SV_ModelIndex((char *) VM_POINTER(base,mask,ent->v.model)));
+
+	MSG_WriteByte(&sv.signon, ent->v.frame);
+	MSG_WriteByte(&sv.signon, ent->v.colormap);
+	MSG_WriteByte(&sv.signon, ent->v.skin);
+	for (i = 0; i < 3; i++)
+	{
+		MSG_WriteCoord(&sv.signon, ent->v.origin[i]);
+		MSG_WriteAngle(&sv.signon, ent->v.angles[i]);
 	}
-	s->frame = ent->v.frame;
-	s->colormap = ent->v.colormap;
-	s->skinnum = ent->v.skin;
-	VectorCopy(ent->v.origin, s->origin);
-	VectorCopy(ent->v.angles, s->angles);
-	++sv.static_entity_count;
 
 	// throw the entity away now
 	ED_Free(ent);
@@ -2026,10 +2020,7 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return ;
 	}
 
-	if (!name || !*name ||                  //invalid name.
-	    name[1] == ':' ||                   //dos filename absolute path specified - reject.
-	    *name == '\\' || *name == '/' ||    //absolute path was given - reject
-	    strstr(name, ".."))                 //someone tried to be clever.
+	if (FS_UnsafeFilename(name))	// someone tried to be clever.
 	{
 		retval->_int = -1;
 		return ;
@@ -2040,11 +2031,8 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	{
 	case FS_READ_BIN:
 	case FS_READ_TXT:
-#ifndef SERVERONLY
-		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_ANY);
-#else
+
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME);
-#endif
 
 		if(!pr2_fopen_files[i].handle)
 		{
@@ -2056,6 +2044,7 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 		retval->_int = VFS_GETLEN(pr2_fopen_files[i].handle);
 
+
 		break;
 	case FS_WRITE_BIN:
 	case FS_WRITE_TXT:
@@ -2063,6 +2052,8 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	case FS_APPEND_TXT:
 
 // well, perhapswe we should create path...
+//		snprintf( fname, sizeof( fname ), "%s/%s" , fs_gamedir, name );
+//		FS_CreatePath(fname);
 //		FS_CreatePathRelative(name, FS_GAME_OS);
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME_OS);
 		if ( !pr2_fopen_files[i].handle )
@@ -2124,7 +2115,7 @@ void PF2_FS_SeekFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	if(!(pr2_fopen_files[fnum].handle))
 		return;
-	if(type < 0 || type >= sizeof(seek_origin) / sizeof(seek_origin[0]))
+	if(type <0 || type > 2)
 		return;
 
 	retval->_int = VFS_SEEK(pr2_fopen_files[fnum].handle, offset, seek_origin[type]);
@@ -2206,7 +2197,7 @@ void PF2_FS_ReadFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	retval->_int = VFS_READ(pr2_fopen_files[fnum].handle, dest, quantity, NULL);
 }
 
-void PR2_FS_Restart(void)
+void PR2_FS_Restart()
 {
 	int i;
 
@@ -2256,11 +2247,11 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 
 	char	*path, *ext, *listbuff, *dirptr;
 
-	intptr_t pathoffset         = stack[0]._int;
-	intptr_t extoffset          = stack[1]._int;
-	intptr_t listbuffoffset     = stack[2]._int;
-	intptr_t buffsize           = stack[3]._int;
-	intptr_t flags              = stack[4]._int;
+	intptr_t pathoffset 		= stack[0]._int;
+	intptr_t extoffset  		= stack[1]._int;
+	intptr_t listbuffoffset 	= stack[2]._int;
+	intptr_t buffsize			= stack[3]._int;
+	intptr_t flags				= stack[4]._int;
 
 	int numfiles = 0;
 	int i, j;
@@ -2319,13 +2310,8 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 			}
 
 			// skip file extension
-			if (!(flags & FILELIST_WITH_EXT)) {
-#ifndef SERVERONLY
-				COM_StripExtension(fullname, fullname, sizeof(fullname));
-#else
-				COM_StripExtension(fullname);
-#endif
-			}
+			if (!(flags & FILELIST_WITH_EXT))
+				COM_StripExtension (fullname);
 
 			list[i] = Q_strdup(fullname); // a bit below we will free it
 		}
@@ -2995,8 +2981,6 @@ extern field_t *fields;
 
 void PR2_InitProg()
 {
-	extern cvar_t sv_extlimits, sv_bspversion;
-
 	if ( !sv_vm )
 	{
 		PR1_InitProg();
@@ -3027,13 +3011,5 @@ void PR2_InitProg()
 	pr_globals = (float *) pr_global_struct;
 	fields = (field_t*)PR2_GetString((intptr_t)gamedata->fields);
 	pr_edict_size = gamedata->sizeofent;
-
-	sv.max_edicts = MAX_EDICTS;
-	if (gamedata->APIversion == 14) {
-		sv.max_edicts = min(sv.max_edicts, gamedata->maxentities);
-	}
-	else {
-		sv.max_edicts = min(sv.max_edicts, 512);
-	}
 }
 #endif /* USE_PR2 */

@@ -236,6 +236,8 @@ void SV_Shutdown (char *finalmsg)
 	NET_CloseServer ();
 #endif
 
+	Central_Shutdown();
+
 	// Shutdown game.
 	PR_GameShutDown();
 	PR_UnLoadProgs();
@@ -3231,6 +3233,8 @@ void SV_Frame (double time1)
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
 
+	Central_ProcessResponses();
+
 	demo_start = Sys_DoubleTime ();
 	SV_SendDemoMessage();
 	demo_end = Sys_DoubleTime ();
@@ -3848,6 +3852,8 @@ void SV_Init (void)
 #ifndef SERVERONLY
 	server_cfg_done = true;
 #endif
+
+	Central_Init ();
 }
 
 /*

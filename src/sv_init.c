@@ -297,7 +297,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	// wipe the entire per-level structure
 	// NOTE: this also set sv.mvdrecording to false, so calling SV_MVD_Record() at end of function
 	memset (&sv, 0, sizeof(sv));
-
+	sv.max_edicts = MAX_EDICTS_SAFE;
 
 	sv.datagram.maxsize = sizeof(sv.datagram_buf);
 	sv.datagram.data = sv.datagram_buf;

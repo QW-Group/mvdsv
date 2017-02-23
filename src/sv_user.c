@@ -2175,6 +2175,7 @@ char *shortinfotbl[] =
 	"chat",
 #endif
 	"gender",
+	"*auth",
 	//"*client",
 	//"*spectator",
 	//"*VIP",
@@ -2347,7 +2348,7 @@ void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* ol
 		{
 			char *nuw = Info_Get(&sv_client->_userinfo_ctx_, key);
 
-			Info_Set (&sv_client->_userinfoshort_ctx_, key, nuw);
+			Info_SetStar (&sv_client->_userinfoshort_ctx_, key, nuw);
 
 			i = sv_client - svs.clients;
 			MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
@@ -3036,6 +3037,61 @@ void Cmd_PEXT_f(void)
 	MSG_WriteString (&sv_client->netchan.message, "cmd new\n");
 }
 
+// { Central login
+void Cmd_Login_f(void)
+{
+	extern void Central_GenerateChallenge(client_t* client, const char* username);
+
+	if (Cmd_Argc() != 2) {
+		MSG_WriteByte (&sv_client->netchan.message, svc_print);
+		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
+		MSG_WriteString (&sv_client->netchan.message, "Usage: login <username>\n");
+		return;
+	}
+
+	if (sv.time - sv_client->login_request_time < LOGIN_MIN_RETRY_TIME) {
+		MSG_WriteByte (&sv_client->netchan.message, svc_print);
+		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
+		MSG_WriteString (&sv_client->netchan.message, "Please wait and try again\n");
+		return;
+	}
+
+	Central_GenerateChallenge(sv_client, Cmd_Argv(1));
+}
+
+void Cmd_ChallengeResponse_f(void)
+{
+	extern void Central_VerifyChallengeResponse(client_t* client, const char* challenge, const char* response);
+
+	if (Cmd_Argc() != 2) {
+		MSG_WriteByte (&sv_client->netchan.message, svc_print);
+		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
+		MSG_WriteString (&sv_client->netchan.message, "Usage: challenge-response <response>\n");
+		return;
+	}
+
+	if (sv.time - sv_client->login_request_time < LOGIN_MIN_RETRY_TIME || !sv_client->challenge[0]) {
+		MSG_WriteByte (&sv_client->netchan.message, svc_print);
+		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
+		MSG_WriteString (&sv_client->netchan.message, "Please wait and try again\n");
+		return;
+	}
+
+	Central_VerifyChallengeResponse(sv_client, sv_client->challenge, Cmd_Argv(1));
+}
+
+void Cmd_Logout_f(void)
+{
+	if (sv_client->login[0]) {
+		SV_BroadcastPrintf(PRINT_HIGH, "%s logged out\n", sv_client->name);
+	}
+
+	sv_client->login[0] = '\0';
+	sv_client->logged = 0;
+}
+// } Central login
+
+
 void SV_DemoList_f(void);
 void SV_DemoListRegex_f(void);
 void SV_MVDInfo_f(void);
@@ -3056,6 +3112,12 @@ void SV_God_f (void);
 void SV_Give_f (void);
 void SV_Noclip_f (void);
 void SV_Fly_f (void);
+// }
+
+// { central login
+void Cmd_Login_f(void);
+void Cmd_Logout_f(void);
+void Cmd_ChallengeResponse_f(void);
 // }
 
 typedef struct
@@ -3140,8 +3202,11 @@ static ucmd_t ucmds[] =
 
 	{"pext", Cmd_PEXT_f, false}, // user reply with supported protocol extensions.
 
-	{NULL, NULL}
+	{"login", Cmd_Login_f, false},
+	{"login-response", Cmd_ChallengeResponse_f, false},
+	{"logout", Cmd_Logout_f, false},
 
+	{NULL, NULL}
 };
 
 static qbool SV_ExecutePRCommand (void)

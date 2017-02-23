@@ -703,7 +703,6 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
         CREATE_SUSPENDED,   // creation flags
         &threadid);         // pointer to receive thread ID
 
-    SetThreadPriority(thread, THREAD_PRIORITY_HIGHEST);
     ResumeThread(thread);
 
     return 1;

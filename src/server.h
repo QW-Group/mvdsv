@@ -169,11 +169,14 @@ typedef struct
 	vec3_t			origin;
 } antilag_position_t;
 
-#define MAX_ANTILAG_POSITIONS	128
-#define MAX_BACK_BUFFERS	128
-#define MAX_STUFFTEXT		256
-#define	CLIENT_LOGIN_LEN	16
-#define	CLIENT_NAME_LEN		32
+#define MAX_ANTILAG_POSITIONS      128
+#define MAX_BACK_BUFFERS           128
+#define MAX_STUFFTEXT              256
+#define	CLIENT_LOGIN_LEN            16
+#define	CLIENT_NAME_LEN             32
+#define LOGIN_CHALLENGE_LENGTH     128
+#define LOGIN_MIN_RETRY_TIME         5    // 1 login attempt per x seconds
+
 typedef struct client_s
 {
 	sv_client_state_t	state;
@@ -275,7 +278,9 @@ typedef struct client_s
 	qbool			remote_snap;
 
 	char			login[CLIENT_LOGIN_LEN];
+	char            challenge[LOGIN_CHALLENGE_LENGTH];
 	int				logged;
+	double          login_request_time;
 
 	int				spawncount;			// for tracking map changes during downloading
 
@@ -961,6 +966,7 @@ void	SV_MVDInfoAdd_f (void);
 void	SV_MVDInfoRemove_f (void);
 void	SV_MVDInfo_f (void);
 void	SV_LastScores_f (void);
+char*   SV_MVDName2Txt (char *name);
 
 //
 // sv_demo_qtv.c
@@ -1005,5 +1011,8 @@ void SV_LoadGame_f (void);
 //
 void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force);
 qbool SV_SkipCommsBotMessage(client_t* client);
+
+// 
+#include "central.h"
 
 #endif /* !__SERVER_H__ */

@@ -514,7 +514,7 @@ char *SV_MVDNum (int num)
 }
 
 #define OVECCOUNT 3
-static char *SV_MVDName2Txt (char *name)
+char *SV_MVDName2Txt (char *name)
 {
 	char	s[MAX_OSPATH];
 	int		len;

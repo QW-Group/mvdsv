@@ -1011,3 +1011,20 @@ char *FS_NextPath (char *prevpath)
 	return NULL;
 }
 
+/*
+===========
+FS_UnsafeFilename
+
+Returns true if user-specified path is unsafe
+===========
+*/
+qbool FS_UnsafeFilename(const char* fileName)
+{
+	return !fileName ||
+		!*fileName || // invalid name.
+		fileName[1] == ':' ||	// dos filename absolute path specified - reject.
+		*fileName == '\\' ||
+		*fileName == '/' ||	// absolute path was given - reject.
+		strstr(fileName, "..");
+}
+
