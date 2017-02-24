@@ -198,6 +198,13 @@ void MSG_WriteCoord (sizebuf_t *sb, const float f)
 #endif
 }
 
+void MSG_WriteLongCoord(sizebuf_t* sb, float f)
+{
+	f = LittleFloat(f);
+
+	SZ_Write (sb, (void*)&f, sizeof(f));
+}
+
 void MSG_WriteAngle (sizebuf_t *sb, const float f)
 {
 #ifdef FTE_PEXT_FLOATCOORDS

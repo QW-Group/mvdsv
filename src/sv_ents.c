@@ -115,7 +115,7 @@ Writes part of a packetentities message.
 Can delta from either a baseline or a previous packet_entity
 ==================
 */
-static void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force)
+static void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force)
 {
 	int bits, i;
 
@@ -123,32 +123,32 @@ static void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *
 	// send an update
 	bits = 0;
 
-	for (i=0 ; i<3 ; i++)
-		if ( to->origin[i] != from->origin[i] )
-			bits |= U_ORIGIN1<<i;
+	for (i = 0; i < 3; i++)
+		if (to->origin[i] != from->origin[i])
+			bits |= U_ORIGIN1 << i;
 
-	if ( to->angles[0] != from->angles[0] )
+	if (to->angles[0] != from->angles[0])
 		bits |= U_ANGLE1;
 
-	if ( to->angles[1] != from->angles[1] )
+	if (to->angles[1] != from->angles[1])
 		bits |= U_ANGLE2;
 
-	if ( to->angles[2] != from->angles[2] )
+	if (to->angles[2] != from->angles[2])
 		bits |= U_ANGLE3;
 
-	if ( to->colormap != from->colormap )
+	if (to->colormap != from->colormap)
 		bits |= U_COLORMAP;
 
-	if ( to->skinnum != from->skinnum )
+	if (to->skinnum != from->skinnum)
 		bits |= U_SKIN;
 
-	if ( to->frame != from->frame )
+	if (to->frame != from->frame)
 		bits |= U_FRAME;
 
-	if ( to->effects != from->effects )
+	if (to->effects != from->effects)
 		bits |= U_EFFECTS;
 
-	if ( to->modelindex != from->modelindex )
+	if (to->modelindex != from->modelindex)
 		bits |= U_MODEL;
 
 	if (bits & U_CHECKMOREBITS)
@@ -161,11 +161,10 @@ static void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *
 	// write the message
 	//
 	if (!to->number)
-		SV_Error ("Unset entity number");
-	if (to->number >= MAX_EDICTS)
-	{
+		SV_Error("Unset entity number");
+	if (to->number >= MAX_EDICTS) {
 		/*SV_Error*/
-		Con_Printf ("Entity number >= MAX_EDICTS (%d), set to MAX_EDICTS - 1\n", MAX_EDICTS);
+		Con_Printf("Entity number >= MAX_EDICTS (%d), set to MAX_EDICTS - 1\n", MAX_EDICTS);
 		to->number = MAX_EDICTS - 1;
 	}
 
@@ -173,31 +172,49 @@ static void SV_WriteDelta (entity_state_t *from, entity_state_t *to, sizebuf_t *
 		return;		// nothing to send!
 	i = to->number | (bits&~U_CHECKMOREBITS);
 	if (i & U_REMOVE)
-		Sys_Error ("U_REMOVE");
-	MSG_WriteShort (msg, i);
+		Sys_Error("U_REMOVE");
+	MSG_WriteShort(msg, i);
 
 	if (bits & U_MOREBITS)
-		MSG_WriteByte (msg, bits&255);
+		MSG_WriteByte(msg, bits & 255);
 	if (bits & U_MODEL)
-		MSG_WriteByte (msg, to->modelindex);
+		MSG_WriteByte(msg, to->modelindex);
 	if (bits & U_FRAME)
-		MSG_WriteByte (msg, to->frame);
+		MSG_WriteByte(msg, to->frame);
 	if (bits & U_COLORMAP)
-		MSG_WriteByte (msg, to->colormap);
+		MSG_WriteByte(msg, to->colormap);
 	if (bits & U_SKIN)
-		MSG_WriteByte (msg, to->skinnum);
+		MSG_WriteByte(msg, to->skinnum);
 	if (bits & U_EFFECTS)
-		MSG_WriteByte (msg, to->effects);
-	if (bits & U_ORIGIN1)
-		MSG_WriteCoord (msg, to->origin[0]);
+		MSG_WriteByte(msg, to->effects);
+	if (bits & U_ORIGIN1) {
+		if (client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) {
+			MSG_WriteLongCoord(msg, to->origin[0]);
+		}
+		else {
+			MSG_WriteCoord(msg, to->origin[0]);
+		}
+	}
 	if (bits & U_ANGLE1)
 		MSG_WriteAngle(msg, to->angles[0]);
-	if (bits & U_ORIGIN2)
-		MSG_WriteCoord (msg, to->origin[1]);
+	if (bits & U_ORIGIN2) {
+		if (client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) {
+			MSG_WriteLongCoord(msg, to->origin[1]);
+		}
+		else {
+			MSG_WriteCoord(msg, to->origin[1]);
+		}
+	}
 	if (bits & U_ANGLE2)
 		MSG_WriteAngle(msg, to->angles[1]);
-	if (bits & U_ORIGIN3)
-		MSG_WriteCoord (msg, to->origin[2]);
+	if (bits & U_ORIGIN3) {
+		if (client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) {
+			MSG_WriteLongCoord(msg, to->origin[2]);
+		}
+		else {
+			MSG_WriteCoord(msg, to->origin[2]);
+		}
+	}
 	if (bits & U_ANGLE3)
 		MSG_WriteAngle(msg, to->angles[2]);
 }
@@ -248,7 +265,7 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 		if (newnum == oldnum)
 		{	// delta update from old position
 			//Con_Printf ("delta %i\n", newnum);
-			SV_WriteDelta (&from1->entities[oldindex], &to->entities[newindex], msg, false);
+			SV_WriteDelta (client, &from1->entities[oldindex], &to->entities[newindex], msg, false);
 			oldindex++;
 			newindex++;
 			continue;
@@ -267,7 +284,7 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 			}
 			ent = EDICT_NUM(newnum);
 			//Con_Printf ("baseline %i\n", newnum);
-			SV_WriteDelta (&ent->e->baseline, &to->entities[newindex], msg, true);
+			SV_WriteDelta (client, &ent->e->baseline, &to->entities[newindex], msg, true);
 			newindex++;
 			continue;
 		}
@@ -556,8 +573,16 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 		MSG_WriteByte (msg, j);
 		MSG_WriteShort (msg, pflags);
 
-		for (i=0 ; i<3 ; i++)
-			MSG_WriteCoord (msg, ent->v.origin[i]);
+		if (client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) {
+			MSG_WriteLongCoord(msg, ent->v.origin[0]);
+			MSG_WriteLongCoord(msg, ent->v.origin[1]);
+			MSG_WriteLongCoord(msg, ent->v.origin[2]);
+		}
+		else {
+			MSG_WriteCoord(msg, ent->v.origin[0]);
+			MSG_WriteCoord(msg, ent->v.origin[1]);
+			MSG_WriteCoord(msg, ent->v.origin[2]);
+		}
 
 		MSG_WriteByte (msg, ent->v.frame);
 

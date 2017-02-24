@@ -304,6 +304,12 @@ static void Cmd_New_f (void)
 		MSG_WriteLong (&sv_client->netchan.message, sv_client->fteprotocolextensions2);
 	}
 #endif // PROTOCOL_VERSION_FTE2
+#ifdef PROTOCOL_VERSION_MVD1
+	if (sv_client->mvdprotocolextensions1) {
+		MSG_WriteLong (&sv_client->netchan.message, PROTOCOL_VERSION_MVD1);
+		MSG_WriteLong (&sv_client->netchan.message, sv_client->mvdprotocolextensions1);
+	}
+#endif
 	MSG_WriteLong  (&sv_client->netchan.message, PROTOCOL_VERSION);
 	MSG_WriteLong  (&sv_client->netchan.message, svs.spawncount);
 	MSG_WriteString(&sv_client->netchan.message, gamedir);
@@ -2890,6 +2896,17 @@ void Cmd_PEXT_f(void)
 			}
 			break;
 #endif // PROTOCOL_VERSION_FTE2
+
+#ifdef PROTOCOL_VERSION_MVD1
+		case PROTOCOL_VERSION_MVD1:
+			if (!sv_client->mvdprotocolextensions1)
+			{
+				sv_client->mvdprotocolextensions1 = proto_value & svs.mvdprotocolextension1;
+				if (sv_client->mvdprotocolextensions1)
+					Con_DPrintf("PEXT: Client supports 0x%x mvdsv extensions\n", sv_client->mvdprotocolextensions1);
+			}
+			break;
+#endif
 		}
 	}
 

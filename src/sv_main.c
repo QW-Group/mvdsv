@@ -809,6 +809,21 @@ static void SVC_GetChallenge (void)
 	}
 #endif // PROTOCOL_VERSION_FTE2
 
+#ifdef PROTOCOL_VERSION_MVD1
+	// tell the client what mvdsv extensions we support
+	if (svs.mvdprotocolextension1) {
+		int lng;
+
+		lng = LittleLong(PROTOCOL_VERSION_MVD1);
+		memcpy(over, &lng, sizeof(int));
+		over += 4;
+
+		lng = LittleLong(svs.mvdprotocolextension1);
+		memcpy(over, &lng, sizeof(int));
+		over += 4;
+	}
+#endif
+
 	Netchan_OutOfBand(NS_SERVER, net_from, over-buf, (byte*) buf);
 }
 
@@ -1151,6 +1166,10 @@ static void SVC_DirectConnect (void)
 	unsigned int protextsupported2 = 0;
 #endif // PROTOCOL_VERSION_FTE2
 
+#ifdef PROTOCOL_VERSION_MVD1
+	unsigned int mvdext_supported1 = 0;
+#endif
+
 	// check version/protocol
 	if ( !CheckProtocol( Q_atoi( Cmd_Argv( 1 ) ) ) )
 		return; // wrong protocol number
@@ -1189,6 +1208,13 @@ static void SVC_DirectConnect (void)
 			Con_DPrintf("Client supports 0x%x fte extensions2\n", protextsupported2);
 			break;
 #endif // PROTOCOL_VERSION_FTE2
+
+#ifdef PROTOCOL_VERSION_MVD1
+		case PROTOCOL_VERSION_MVD1:
+			mvdext_supported1 = Q_atoi( Cmd_Argv( 1 ) );
+			Con_DPrintf("Client supports 0x%x mvdsv extensions\n", mvdext_supported1);
+			break;
+#endif
 		}
 	}
 
@@ -1269,6 +1295,10 @@ static void SVC_DirectConnect (void)
 #ifdef PROTOCOL_VERSION_FTE2
 	newcl->fteprotocolextensions2 = protextsupported2;
 #endif // PROTOCOL_VERSION_FTE2
+
+#ifdef PROTOCOL_VERSION_MVD1
+	newcl->mvdprotocolextensions1 = mvdext_supported1;
+#endif
 
 	newcl->_userinfo_ctx_.max      = MAX_CLIENT_INFOS;
 	newcl->_userinfoshort_ctx_.max = MAX_CLIENT_INFOS;
@@ -3409,6 +3439,10 @@ void SV_InitLocal (void)
 
 #ifdef FTE_PEXT2_VOICECHAT
 	svs.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;
+#endif
+
+#ifdef MVD_PEXT1_FLOATCOORDS
+	svs.mvdprotocolextension1 |= MVD_PEXT1_FLOATCOORDS;
 #endif
 
 	Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " VERSION_NUMBER, MAX_SERVERINFO_STRING);
