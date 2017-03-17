@@ -2070,10 +2070,10 @@ static void Cmd_SetInfo_f (void)
 	if (sv_kickuserinfospamtime.value > 0 && (int)sv_kickuserinfospamcount.value > 0)
 	{
 		if (!sv_client->lastuserinfotime ||
-			realtime - sv_client->lastuserinfotime > sv_kickuserinfospamtime.value)
+			curtime - sv_client->lastuserinfotime > sv_kickuserinfospamtime.value)
 		{
 			sv_client->lastuserinfocount = 0;
-			sv_client->lastuserinfotime = realtime;
+			sv_client->lastuserinfotime = curtime;
 		}
 		else if (++(sv_client->lastuserinfocount) > (int)sv_kickuserinfospamcount.value)
 		{
