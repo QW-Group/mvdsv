@@ -124,9 +124,9 @@ edict_t *ED_Alloc (void)
 		}
 	}
 
-	if (i == MAX_EDICTS)
+	if (i == sv.max_edicts)
 	{
-		Con_Printf ("WARNING: ED_Alloc: no free edicts\n");
+		Con_Printf ("WARNING: ED_Alloc: no free edicts [%d]\n", sv.max_edicts);
 		i--;	// step on whatever is the last edict
 		e = EDICT_NUM(i);
 		SV_UnlinkEdict(e);
@@ -1227,6 +1227,7 @@ void PR1_LoadProgs (void)
 void PR1_InitProg()
 {
 	sv.edicts = (edict_t*) Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
+	sv.max_edicts = MAX_EDICTS;
 }
 
 /*
@@ -1251,7 +1252,7 @@ void PR1_Init (void)
 
 edict_t *EDICT_NUM(int n)
 {
-	if (n < 0 || n >= MAX_EDICTS)
+	if (n < 0 || n >= sv.max_edicts)
 		SV_Error ("EDICT_NUM: bad number %i", n);
 	return (edict_t *)((byte *)sv.edicts+ (n)*pr_edict_size);
 }

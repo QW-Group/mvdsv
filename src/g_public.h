@@ -30,7 +30,7 @@
 //
 // g_public.h -- game module information visible to server
 
-#define	GAME_API_VERSION	13
+#define	GAME_API_VERSION	14
 
 
 //===============================================================
@@ -216,11 +216,12 @@ typedef struct
 
 typedef struct
 {
-	edict_t		*ents;
-	int		sizeofent;
-	globalvars_t	*global;
-	field_t		*fields;
-	int 		APIversion;
+	edict_t         *ents;
+	int             sizeofent;
+	globalvars_t    *global;
+	field_t         *fields;
+	int             APIversion;
+	int             maxentities;
 } gameData_t;
 
 typedef int		fileHandle_t;

@@ -172,10 +172,13 @@ cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "
 cvar_t registered = {"registered", "1", CVAR_ROM};
 
 cvar_t	sv_halflifebsp = {"halflifebsp", "0", CVAR_ROM};
+cvar_t  sv_bspversion = {"sv_bspversion", "1", CVAR_ROM};
 
 #ifdef FTE_PEXT_FLOATCOORDS
 cvar_t sv_bigcoords = {"sv_bigcoords", "", CVAR_SERVERINFO};
 #endif
+
+cvar_t sv_extlimits = { "sv_extlimits", "2" };
 
 qbool sv_error = false;
 
@@ -3400,10 +3403,13 @@ void SV_InitLocal (void)
 	Cvar_Register (&registered);
 
 	Cvar_Register (&sv_halflifebsp);
+	Cvar_Register (&sv_bspversion);
 
 #ifdef FTE_PEXT_FLOATCOORDS
 	Cvar_Register (&sv_bigcoords);
 #endif
+
+	Cvar_Register (&sv_extlimits);
 
 	Cvar_Register (&sv_reliable_sound);
 
@@ -3435,6 +3441,18 @@ void SV_InitLocal (void)
 #endif
 #ifdef FTE_PEXT_FLOATCOORDS
 	svs.fteprotocolextensions |= FTE_PEXT_FLOATCOORDS;
+#endif
+#ifdef FTE_PEXT_MODELDBL
+	svs.fteprotocolextensions |= FTE_PEXT_MODELDBL;
+#endif
+#ifdef FTE_PEXT_ENTITYDBL
+	svs.fteprotocolextensions |= FTE_PEXT_ENTITYDBL;
+#endif
+#ifdef FTE_PEXT_ENTITYDBL2
+	svs.fteprotocolextensions |= FTE_PEXT_ENTITYDBL2;
+#endif
+#ifdef FTE_PEXT_SPAWNSTATIC2
+	svs.fteprotocolextensions |= FTE_PEXT_SPAWNSTATIC2;
 #endif
 
 #ifdef FTE_PEXT2_VOICECHAT

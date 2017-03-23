@@ -1136,7 +1136,7 @@ void PF_calltimeofday (void)
 /*
 =================
 PF_cvar
- 
+
 float cvar (string)
 =================
 */
@@ -1215,8 +1215,8 @@ static void PF_findradius (void)
 		maxs[i] = org[i] + rad + 1;
 	}
 
-	numtouch = SV_AreaEdicts (mins, maxs, touchlist, MAX_EDICTS, AREA_SOLID);
-	numtouch += SV_AreaEdicts (mins, maxs, &touchlist[numtouch], MAX_EDICTS - numtouch, AREA_TRIGGERS);
+	numtouch = SV_AreaEdicts (mins, maxs, touchlist, sv.max_edicts, AREA_SOLID);
+	numtouch += SV_AreaEdicts (mins, maxs, &touchlist[numtouch], sv.max_edicts - numtouch, AREA_TRIGGERS);
 
 	chain = (edict_t *)sv.edicts;
 
@@ -2202,27 +2202,29 @@ int SV_ModelIndex (char *name);
 
 void PF_makestatic (void)
 {
+	entity_state_t* s;
 	edict_t	*ent;
-	int		i;
 
 	ent = G_EDICT(OFS_PARM0);
-	//bliP: for maps with null models which crash clients (nmtrees.bsp) ->
-	if (!SV_ModelIndex(PR1_GetString(ent->v.model)))
+	if (sv.static_entity_count >= sizeof(sv.static_entities) / sizeof(sv.static_entities[0])) {
+		ED_Free (ent);
 		return;
-	//<-
-
-	MSG_WriteByte (&sv.signon,svc_spawnstatic);
-
-	MSG_WriteByte (&sv.signon, SV_ModelIndex(PR1_GetString(ent->v.model)));
-
-	MSG_WriteByte (&sv.signon, ent->v.frame);
-	MSG_WriteByte (&sv.signon, ent->v.colormap);
-	MSG_WriteByte (&sv.signon, ent->v.skin);
-	for (i=0 ; i<3 ; i++)
-	{
-		MSG_WriteCoord(&sv.signon, ent->v.origin[i]);
-		MSG_WriteAngle(&sv.signon, ent->v.angles[i]);
 	}
+
+	s = &sv.static_entities[sv.static_entity_count];
+	memset(s, 0, sizeof(sv.static_entities[0]));
+	s->number = sv.static_entity_count + 1;
+	s->modelindex = SV_ModelIndex(PR_GetString(ent->v.model));
+	if (!s->modelindex) {
+		ED_Free (ent);
+		return;
+	}
+	s->frame = ent->v.frame;
+	s->colormap = ent->v.colormap;
+	s->skinnum = ent->v.skin;
+	VectorCopy(ent->v.origin, s->origin);
+	VectorCopy(ent->v.angles, s->angles);
+	++sv.static_entity_count;
 
 	// throw the entity away now
 	ED_Free (ent);

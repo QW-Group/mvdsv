@@ -92,7 +92,6 @@ baseline will be transmitted
 */
 static void SV_CreateBaseline (void)
 {
-	int			i;
 	edict_t			*svent;
 	int				entnum;
 
@@ -109,6 +108,7 @@ static void SV_CreateBaseline (void)
 		//
 		// create entity baseline
 		//
+		svent->e->baseline.number = entnum;
 		VectorCopy (svent->v.origin, svent->e->baseline.origin);
 		VectorCopy (svent->v.angles, svent->e->baseline.angles);
 		svent->e->baseline.frame = svent->v.frame;
@@ -121,31 +121,10 @@ static void SV_CreateBaseline (void)
 		else
 		{
 			svent->e->baseline.colormap = 0;
-			svent->e->baseline.modelindex = SV_ModelIndex(PR_GetString(svent->v.model));
-		}
-
-		//
-		// flush the signon message out to a separate buffer if
-		// nearly full
-		//
-		SV_FlushSignon ();
-
-		//
-		// add to the message
-		//
-		MSG_WriteByte (&sv.signon,svc_spawnbaseline);
-		MSG_WriteShort (&sv.signon,entnum);
-
-		MSG_WriteByte (&sv.signon, svent->e->baseline.modelindex);
-		MSG_WriteByte (&sv.signon, svent->e->baseline.frame);
-		MSG_WriteByte (&sv.signon, svent->e->baseline.colormap);
-		MSG_WriteByte (&sv.signon, svent->e->baseline.skinnum);
-		for (i=0 ; i<3 ; i++)
-		{
-			MSG_WriteCoord(&sv.signon, svent->e->baseline.origin[i]);
-			MSG_WriteAngle(&sv.signon, svent->e->baseline.angles[i]);
+			svent->e->baseline.modelindex = svent->v.modelindex;
 		}
 	}
+	sv.num_baseline_edicts = sv.num_edicts;
 }
 
 
@@ -348,7 +327,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 #endif
 	PR_InitProg();
 
-	for (i = 0; i < MAX_EDICTS; i++)
+	for (i = 0; i < sv.max_edicts; i++)
 	{
 		ent = EDICT_NUM(i);
 		ent->e = &sv.sv_edicts[i]; // assigning ->e field in each edict_t
@@ -417,8 +396,17 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 		if (!sv.worldmodel)
 			SV_Error ("CM_LoadMap: bad map");
 	}
-	
+
+	{
+		extern cvar_t sv_extlimits, sv_bspversion;
+
+		if (sv_extlimits.value == 0 || (sv_extlimits.value == 2 && sv_bspversion.value < 2)) {
+			sv.max_edicts = min(sv.max_edicts, MAX_EDICTS_SAFE);
+		}
+	}
+
 	sv.map_checksum2 = Com_TranslateMapChecksum (sv.mapname, sv.map_checksum2);
+	sv.static_entity_count = 0;
 
 	SV_ClearWorld (); // clear physics interaction links
 

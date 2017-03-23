@@ -35,6 +35,8 @@ extern	int sv_nailmodel, sv_supernailmodel, sv_playermodel;
 
 cvar_t	sv_nailhack	= {"sv_nailhack", "1"};
 
+// Maximum packet we will send - currently 256 if extension supported
+#define MAX_PACKETENTITIES_POSSIBLE 256
 
 static qbool SV_AddNailUpdate (edict_t *ent)
 {
@@ -115,10 +117,14 @@ Writes part of a packetentities message.
 Can delta from either a baseline or a previous packet_entity
 ==================
 */
-static void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force)
+void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force)
 {
 	int bits, i;
-
+#ifdef PROTOCOL_VERSION_FTE
+	int evenmorebits = 0;
+	unsigned int required_extensions = 0;
+	unsigned int fte_extensions = client->fteprotocolextensions;
+#endif
 
 	// send an update
 	bits = 0;
@@ -148,8 +154,15 @@ static void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t
 	if (to->effects != from->effects)
 		bits |= U_EFFECTS;
 
-	if (to->modelindex != from->modelindex)
+	if (to->modelindex != from->modelindex) {
 		bits |= U_MODEL;
+#ifdef FTE_PEXT_ENTITYDBL
+		if (to->modelindex > 255) {
+			evenmorebits |= U_FTE_MODELDBL;
+			required_extensions |= FTE_PEXT_MODELDBL;
+		}
+#endif
+	}
 
 	if (bits & U_CHECKMOREBITS)
 		bits |= U_MOREBITS;
@@ -157,17 +170,59 @@ static void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t
 	if (to->flags & U_SOLID)
 		bits |= U_SOLID;
 
+	// Taken from FTE
+	if (msg->cursize + 40 > msg->maxsize)
+	{	//not enough space in the buffer, don't send the entity this frame. (not sending means nothing changes, and it takes no bytes!!)
+		*to = *from;
+		return;
+	}
+
 	//
 	// write the message
 	//
 	if (!to->number)
 		SV_Error("Unset entity number");
-	if (to->number >= MAX_EDICTS) {
-		/*SV_Error*/
-		Con_Printf("Entity number >= MAX_EDICTS (%d), set to MAX_EDICTS - 1\n", MAX_EDICTS);
-		to->number = MAX_EDICTS - 1;
+
+#ifdef PROTOCOL_VERSION_FTE
+	if (to->number >= 512)
+	{
+		if (to->number >= 1024)
+		{
+			if (to->number >= 1024 + 512) {
+				evenmorebits |= U_FTE_ENTITYDBL;
+				required_extensions |= FTE_PEXT_ENTITYDBL;
+			}
+
+			evenmorebits |= U_FTE_ENTITYDBL2;
+			required_extensions |= FTE_PEXT_ENTITYDBL2;
+			if (to->number >= 2048)
+				SV_Error ("Entity number >= 2048");
+		}
+		else {
+			evenmorebits |= U_FTE_ENTITYDBL;
+			required_extensions |= FTE_PEXT_ENTITYDBL;
+		}
 	}
 
+	if (evenmorebits&0xff00)
+		evenmorebits |= U_FTE_YETMORE;
+	if (evenmorebits&0x00ff)
+		bits |= U_FTE_EVENMORE;
+	if (bits & 511)
+		bits |= U_MOREBITS;
+#endif
+
+	if (to->number >= sv.max_edicts) {
+		/*SV_Error*/
+		Con_Printf("Entity number >= MAX_EDICTS (%d), set to MAX_EDICTS - 1\n", sv.max_edicts);
+		to->number = sv.max_edicts - 1;
+	}
+
+#ifdef PROTOCOL_VERSION_FTE
+	if (evenmorebits && (fte_extensions & required_extensions) != required_extensions) {
+		return;
+	}
+#endif
 	if (!bits && !force)
 		return;		// nothing to send!
 	i = to->number | (bits&~U_CHECKMOREBITS);
@@ -177,8 +232,15 @@ static void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t
 
 	if (bits & U_MOREBITS)
 		MSG_WriteByte(msg, bits & 255);
+#ifdef PROTOCOL_VERSION_FTE
+	if (bits & U_FTE_EVENMORE)
+		MSG_WriteByte (msg, evenmorebits&255);
+	if (evenmorebits & U_FTE_YETMORE)
+		MSG_WriteByte (msg, (evenmorebits>>8)&255);
+#endif
+
 	if (bits & U_MODEL)
-		MSG_WriteByte(msg, to->modelindex);
+		MSG_WriteByte(msg, to->modelindex & 255);
 	if (bits & U_FRAME)
 		MSG_WriteByte(msg, to->frame);
 	if (bits & U_COLORMAP)
@@ -290,9 +352,28 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 		}
 
 		if (newnum > oldnum)
-		{	// the old entity isn't present in the new message
-			//Con_Printf ("remove %i,%i\n", oldnum, newnum);
-			MSG_WriteShort (msg, oldnum | U_REMOVE);
+		{
+			// the old entity isn't present in the new message
+			if (oldnum >= 512) {
+				//yup, this is expensive.
+				MSG_WriteShort (msg, oldnum | U_REMOVE | U_MOREBITS);
+				MSG_WriteByte (msg, U_FTE_EVENMORE);
+				if (oldnum >= 1024) {
+					if (oldnum >= 1024 + 512) {
+						MSG_WriteByte(msg, U_FTE_ENTITYDBL | U_FTE_ENTITYDBL2);
+					}
+					else {
+						MSG_WriteByte(msg, U_FTE_ENTITYDBL2);
+					}
+				}
+				else {
+					MSG_WriteByte(msg, U_FTE_ENTITYDBL);
+				}
+			}
+			else {
+				MSG_WriteShort(msg, oldnum | U_REMOVE);
+			}
+
 			oldindex++;
 			continue;
 		}
@@ -396,15 +477,16 @@ qbool SV_PlayerVisibleToClient (client_t* client, int j, byte* pvs, edict_t* sel
 		if (cl->spectator)
 			return false;
 
-		// ignore if not touching a PV leaf
-		if ( pvs )
-		{
-			for (i=0 ; i < ent->e->num_leafs ; i++)
-				if (pvs[ent->e->leafnums[i] >> 3] & (1 << (ent->e->leafnums[i]&7) ))
+		if (pvs && ent->e->num_leafs >= 0) {
+			// ignore if not touching a PV leaf
+			for (i = 0; i < ent->e->num_leafs; i++) {
+				if (pvs[ent->e->leafnums[i] >> 3] & (1 << (ent->e->leafnums[i] & 7))) {
 					break;
-
-			if (i == ent->e->num_leafs)
+				}
+			}
+			if (i == ent->e->num_leafs) {
 				return false; // not visible
+			}
 		}
 	}
 
@@ -503,7 +585,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 				pflags |= PF_VELOCITY1<<i;
 		if (ent->v.effects)
 			pflags |= PF_EFFECTS;
-		if (ent->v.skin)
+		if (ent->v.skin || ent->v.modelindex >= 256)
 			pflags |= PF_SKINNUM;
 		if (ent->v.health <= 0)
 			pflags |= PF_DEAD;
@@ -633,7 +715,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 			MSG_WriteByte (msg, ent->v.modelindex);
 
 		if (pflags & PF_SKINNUM)
-			MSG_WriteByte (msg, ent->v.skin);
+			MSG_WriteByte (msg, (int)ent->v.skin | (((pflags & PF_MODEL)&&(ent->v.modelindex >= 256))<<7));
 
 		if (pflags & PF_EFFECTS)
 			MSG_WriteByte (msg, TranslateEffects(ent));
@@ -663,7 +745,7 @@ qbool SV_EntityVisibleToClient (client_t* client, int e, byte* pvs)
 	if (!ent->v.modelindex || !*PR_GetString(ent->v.model))
 		return false;
 
-	if ( pvs )
+	if ( pvs && ent->e->num_leafs >= 0 )
 	{
 		int i;
 
@@ -701,6 +783,12 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	byte *pvs;
 	int hideent;
 	unsigned int client_flag = (1 << (client - svs.clients));
+	edict_t	*clent = client->edict;
+
+	float distances[MAX_PACKETENTITIES_POSSIBLE] = { 0 };
+	float distance;
+	int position;
+	vec3_t org;
 
 	if ( recorder )
 	{
@@ -781,7 +869,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	{// Vladis, server flash
 
 		// QW protocol can only handle 512 entities. Any entity with number >= 512 will be invisible
-		// From ZQuake.
+		// from ZQuake unless using protocol extensions.
 		// max_edicts = min(sv.num_edicts, MAX_EDICTS);
 
 		for (e = pr_nqprogs ? 1 : MAX_CLIENTS + 1, ent = EDICT_NUM(e); e < sv.num_edicts; e++, ent = NEXT_EDICT(ent))
@@ -805,12 +893,50 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			if (SV_AddNailUpdate (ent))
 				continue; // added to the special update list
 
-			// add to the packetentities
-			if (pack->num_entities == max_packet_entities)
-				continue;	// all full
+			if (clent) {
+				VectorAdd(ent->v.absmin, ent->v.absmax, org);
+				VectorMA(clent->v.origin, -0.5, org, org);
+				distance = DotProduct(org, org);	//Length
 
-			state = &pack->entities[pack->num_entities];
-			pack->num_entities++;
+				// add to the packetentities
+				if (pack->num_entities == max_packet_entities) {
+					// replace the furthest entity
+					float furthestdist = -1;
+					int best = -1;
+					for (i = 0; i < max_packet_entities; i++) {
+						if (furthestdist < distances[i]) {
+							furthestdist = distances[i];
+							best = i;
+						}
+					}
+
+					if (furthestdist <= distance || best == -1) {
+						continue;
+					}
+
+					// shuffle other entities down, add to end
+					if (best < pack->num_entities - 1) {
+						memmove(&pack->entities[best], &pack->entities[best + 1], sizeof(pack->entities[0]) * (pack->num_entities - 1 - best));
+						memmove(&distances[best], &distances[best + 1], sizeof(distances[0]) * (pack->num_entities - 1 - best));
+					}
+					position = pack->num_entities - 1;
+				}
+				else {
+					position = pack->num_entities++;
+				}
+
+				distances[position] = distance;
+			}
+			else {
+				if (pack->num_entities == max_packet_entities) {
+					continue;
+				}
+
+				position = pack->num_entities++;
+			}
+
+			state = &pack->entities[position];
+			memset(state, 0, sizeof(*state));
 
 			state->number = e;
 			state->flags = 0;
@@ -841,10 +967,12 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			if (!ent->v.modelindex || !*PR_GetString(ent->v.model))
 				continue;
 
-			// ignore if not touching a PV leaf
-			for (i=0 ; i < ent->e->num_leafs ; i++)
-				if (pvs[ent->e->leafnums[i] >> 3] & (1 << (ent->e->leafnums[i]&7) ))
-					break;
+			// ignore if not touching a PV leaf (meag: this does nothing... complete or remove?)
+			if (pvs && ent->e->num_leafs >= 0) {
+				for (i = 0; i < ent->e->num_leafs; i++)
+					if (pvs[ent->e->leafnums[i] >> 3] & (1 << (ent->e->leafnums[i] & 7)))
+						break;
+			}
 
 			if ((int)ent->v.effects & EF_MUZZLEFLASH) {
 				ent->v.effects = (int)ent->v.effects & ~EF_MUZZLEFLASH;

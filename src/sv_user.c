@@ -264,10 +264,32 @@ static void Cmd_New_f (void)
 #ifdef FTE_PEXT_FLOATCOORDS
 	if (msg_coordsize > 2 && !(sv_client->fteprotocolextensions & FTE_PEXT_FLOATCOORDS))
 	{
-		SV_ClientPrintf(sv_client, 2, "\n\n\n\nSorry, but your client does not appear to support FTE's bigcoords\n"
-									 "FTE users will need to set cl_nopext to 0 and then reconnect, or to upgrade\n");
-		Sys_Printf("%s does not support bigcoords\n", sv_client->name);
+		SV_ClientPrintf(sv_client, 2, "\n\n\n\n"
+			"Your client lacks the necessary extensions\n"
+			"  to connect to this server.\n"
+			"Set /cl_pext_floatcoords 1, or upgrade.\n"
+			"Please upgrade to one of the following:\n"
+			"> ezQuake 2.2 (https://ezquake.github.io)\n"
+			"> fodquake 0.4 (http://fodquake.net)\n"
+			"> FTEQW (http://fte.triptohell.info/)\n");
+		if (!sv_client->spectator) {
+			SV_DropClient (sv_client);
+			return;
+		}
 		return;
+	}
+#endif
+
+#ifdef FTE_PEXT_ENTITYDBL
+	if (sv.max_edicts > 512 && !(sv_client->fteprotocolextensions & FTE_PEXT_ENTITYDBL)) {
+		SV_ClientPrintf(sv_client, 2, "\n\nWARNING:\n"
+			"Your client lacks support for extended\n"
+			"  entity limits, some enemies/projectiles\n"
+			"  may be invisible to you.\n"
+			"Please upgrade to one of the following:\n"
+			"> ezQuake 2.2 (https://ezquake.github.io)\n"
+			"> fodquake 0.4 (http://fodquake.net)\n"
+			"> FTEQW (http://fte.triptohell.info/)\n");
 	}
 #endif
 
@@ -445,6 +467,8 @@ static void Cmd_Modellist_f (void)
 {
 	char		**s;
 	unsigned	n;
+	int         i;
+	unsigned    maxclientsupportedmodels;
 
 	if (sv_client->state != cs_connected)
 	{
@@ -500,19 +524,38 @@ static void Cmd_Modellist_f (void)
 		SZ_Clear(&sv_client->netchan.message);
 	}
 
-	MSG_WriteByte (&sv_client->netchan.message, svc_modellist);
-	MSG_WriteByte (&sv_client->netchan.message, n);
-	for (s = sv.model_precache+1+n ;
-	        *s && sv_client->netchan.message.cursize < (MAX_MSGLEN/2);
-	        s++, n++)
-		MSG_WriteString (&sv_client->netchan.message, *s);
-	MSG_WriteByte (&sv_client->netchan.message, 0);
-
-	// next msg
-	if (*s)
-		MSG_WriteByte (&sv_client->netchan.message, n);
+#ifdef FTE_PEXT_MODELDBL
+	if (n > 255) {
+		MSG_WriteByte(&sv_client->netchan.message, svc_fte_modellistshort);
+		MSG_WriteShort(&sv_client->netchan.message, n);
+	}
 	else
-		MSG_WriteByte (&sv_client->netchan.message, 0);
+#endif
+	{
+		MSG_WriteByte(&sv_client->netchan.message, svc_modellist);
+		MSG_WriteByte(&sv_client->netchan.message, n);
+	}
+
+	maxclientsupportedmodels = 256;
+#ifdef FTE_PEXT_MODELDBL
+	if (sv_client->fteprotocolextensions & FTE_PEXT_MODELDBL) {
+		maxclientsupportedmodels *= 2;
+	}
+#endif
+
+	s = sv.model_precache + 1 + n;
+	for (i = 1 + n; i < maxclientsupportedmodels && *s && (((i-1)&255) == 0 || sv_client->netchan.message.cursize < (MAX_MSGLEN/2)); i++, s++) {
+		MSG_WriteString (&sv_client->netchan.message, *s);
+	}
+	n = i - 1;
+
+	if (!s[0] || n == maxclientsupportedmodels - 1) {
+		n = 0;
+	}
+
+	// next msg (nul terminator then next request indicator)
+	MSG_WriteByte (&sv_client->netchan.message, 0);
+	MSG_WriteByte (&sv_client->netchan.message, n);
 }
 
 /*
@@ -524,6 +567,7 @@ static void Cmd_PreSpawn_f (void)
 {
 	unsigned int buf;
 	unsigned int check;
+	int i, j;
 
 	if (sv_client->state != cs_connected)
 	{
@@ -541,7 +585,7 @@ static void Cmd_PreSpawn_f (void)
 	}
 
 	buf = Q_atoi(Cmd_Argv(2));
-	if (buf >= sv.num_signon_buffers)
+	if (buf >= sv.num_signon_buffers + sv.static_entity_count + sv.num_baseline_edicts)
 		buf = 0;
 
 	if (!buf)
@@ -573,21 +617,89 @@ static void Cmd_PreSpawn_f (void)
 		SZ_Clear(&sv_client->netchan.message);
 	}
 
-	SZ_Write (&sv_client->netchan.message,
-	          sv.signon_buffers[buf],
-	          sv.signon_buffer_size[buf]);
+	if (buf < sv.static_entity_count) {
+		entity_state_t from = { 0 };
 
-	buf++;
-	if (buf == sv.num_signon_buffers)
-	{	// all done prespawning
-		MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&sv_client->netchan.message, va("cmd spawn %i 0\n",svs.spawncount) );
+		while (buf < sv.static_entity_count) {
+			entity_state_t* s = &sv.static_entities[buf];
+
+			if (sv_client->netchan.message.cursize >= (sv_client->netchan.message.maxsize / 2)) {
+				break;
+			}
+
+			if (sv_client->fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+				MSG_WriteByte(&sv_client->netchan.message, svc_fte_spawnstatic2);
+				SV_WriteDelta(sv_client, &from, s, &sv_client->netchan.message, true);
+			}
+			else if (s->modelindex < 256) {
+				MSG_WriteByte(&sv_client->netchan.message, svc_spawnstatic);
+				MSG_WriteByte(&sv_client->netchan.message, s->modelindex);
+				MSG_WriteByte(&sv_client->netchan.message, s->frame);
+				MSG_WriteByte(&sv_client->netchan.message, s->colormap);
+				MSG_WriteByte(&sv_client->netchan.message, s->skinnum);
+				for (i = 0; i < 3; ++i) {
+					MSG_WriteCoord(&sv_client->netchan.message, s->origin[i]);
+					MSG_WriteAngle(&sv_client->netchan.message, s->angles[i]);
+				}
+			}
+
+			++buf;
+		}
 	}
-	else
-	{	// need to prespawn more
+	else if (buf < sv.static_entity_count + sv.num_baseline_edicts) {
+		static entity_state_t empty_baseline = { 0 };
+
+		for (i = buf - sv.static_entity_count; i < sv.num_baseline_edicts; ++i) {
+			edict_t* svent = EDICT_NUM(i);
+			entity_state_t* s = &svent->e->baseline;
+
+			if (sv_client->netchan.message.cursize >= (sv_client->netchan.message.maxsize / 2)) {
+				break;
+			}
+
+			if (!s->number || !s->modelindex || !memcmp(s, &empty_baseline, sizeof(empty_baseline))) {
+				++buf;
+				continue;
+			}
+
+			if (sv_client->fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+				MSG_WriteByte(&sv_client->netchan.message, svc_fte_spawnbaseline2);
+				SV_WriteDelta(sv_client, &empty_baseline, s, &sv_client->netchan.message, true);
+			}
+			else if (s->modelindex < 256) {
+				MSG_WriteByte(&sv_client->netchan.message, svc_spawnbaseline);
+				MSG_WriteShort(&sv_client->netchan.message, i);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.modelindex);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.frame);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.colormap);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.skinnum);
+				for (j = 0; j < 3; j++) {
+					MSG_WriteCoord(&sv_client->netchan.message, svent->e->baseline.origin[j]);
+					MSG_WriteAngle(&sv_client->netchan.message, svent->e->baseline.angles[j]);
+				}
+			}
+			++buf;
+		}
+	}
+	else {
+		SZ_Write(
+			&sv_client->netchan.message,
+			sv.signon_buffers[buf - sv.static_entity_count - sv.num_baseline_edicts],
+			sv.signon_buffer_size[buf - sv.static_entity_count - sv.num_baseline_edicts]
+		);
+		++buf;
+	}
+
+	if (buf == sv.num_signon_buffers + sv.static_entity_count + sv.num_baseline_edicts) {
+		// all done prespawning
+		MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
+		MSG_WriteString (&sv_client->netchan.message, va("cmd spawn %i 0\n", svs.spawncount) );
+	}
+	else {
+		// need to prespawn more
 		MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
 		MSG_WriteString (&sv_client->netchan.message,
-		                 va("cmd prespawn %i %i\n", svs.spawncount, buf) );
+			va("cmd prespawn %i %i\n", svs.spawncount, buf) );
 	}
 }
 

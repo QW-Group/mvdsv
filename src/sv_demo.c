@@ -1274,8 +1274,75 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		SZ_Clear (&buf);
 	}
 
-	// prespawn
+	// static entities
+	{
+		int i, j;
+		entity_state_t from = { 0 };
 
+		for (i = 0; i < sv.static_entity_count; ++i) {
+			entity_state_t* s = &sv.static_entities[i];
+
+			if (buf.cursize >= MAX_MSGLEN/2) {
+				SV_WriteRecordMVDMessage (&buf);
+				SZ_Clear (&buf);
+			}
+
+			if (demo.recorder.fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+				MSG_WriteByte(&buf, svc_fte_spawnstatic2);
+				SV_WriteDelta(&demo.recorder, &from, s, &buf, true);
+			}
+			else if (s->modelindex < 256) {
+				MSG_WriteByte(&buf, svc_spawnstatic);
+				MSG_WriteByte(&buf, s->modelindex);
+				MSG_WriteByte(&buf, s->frame);
+				MSG_WriteByte(&buf, s->colormap);
+				MSG_WriteByte(&buf, s->skinnum);
+				for (j = 0; j < 3; ++j) {
+					MSG_WriteCoord(&buf, s->origin[j]);
+					MSG_WriteAngle(&buf, s->angles[j]);
+				}
+			}
+		}
+	}
+
+	// entity baselines
+	{
+		static entity_state_t empty_baseline = { 0 };
+		int i, j;
+
+		for (i = 0; i < sv.num_baseline_edicts; ++i) {
+			edict_t* svent = EDICT_NUM(i);
+			entity_state_t* s = &svent->e->baseline;
+
+			if (buf.cursize >= MAX_MSGLEN/2) {
+				SV_WriteRecordMVDMessage (&buf);
+				SZ_Clear (&buf);
+			}
+
+			if (!s->number || !s->modelindex || !memcmp(s, &empty_baseline, sizeof(empty_baseline))) {
+				continue;
+			}
+
+			if (demo.recorder.fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+				MSG_WriteByte(&buf, svc_fte_spawnbaseline2);
+				SV_WriteDelta(&demo.recorder, &empty_baseline, s, &buf, true);
+			}
+			else if (s->modelindex < 256) {
+				MSG_WriteByte(&buf, svc_spawnbaseline);
+				MSG_WriteShort(&buf, i);
+				MSG_WriteByte(&buf, s->modelindex);
+				MSG_WriteByte(&buf, s->frame);
+				MSG_WriteByte(&buf, s->colormap);
+				MSG_WriteByte(&buf, s->skinnum);
+				for (j = 0; j < 3; j++) {
+					MSG_WriteCoord(&buf, s->origin[j]);
+					MSG_WriteAngle(&buf, s->angles[j]);
+				}
+			}
+		}
+	}
+
+	// prespawn
 	for (n = 0; n < sv.num_signon_buffers; n++)
 	{
 		if (buf.cursize+sv.signon_buffer_size[n] > MAX_MSGLEN/2)
