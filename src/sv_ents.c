@@ -223,9 +223,10 @@ void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, s
 		return;
 	}
 #endif
-	if (!bits && !force)
+	if (!bits && !force) {
 		return;		// nothing to send!
-	i = to->number | (bits&~U_CHECKMOREBITS);
+	}
+	i = (to->number & U_CHECKMOREBITS) | (bits&~U_CHECKMOREBITS);
 	if (i & U_REMOVE)
 		Sys_Error("U_REMOVE");
 	MSG_WriteShort(msg, i);
@@ -257,8 +258,9 @@ void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, s
 			MSG_WriteCoord(msg, to->origin[0]);
 		}
 	}
-	if (bits & U_ANGLE1)
+	if (bits & U_ANGLE1) {
 		MSG_WriteAngle(msg, to->angles[0]);
+	}
 	if (bits & U_ORIGIN2) {
 		if (client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) {
 			MSG_WriteLongCoord(msg, to->origin[1]);
@@ -267,8 +269,9 @@ void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, s
 			MSG_WriteCoord(msg, to->origin[1]);
 		}
 	}
-	if (bits & U_ANGLE2)
+	if (bits & U_ANGLE2) {
 		MSG_WriteAngle(msg, to->angles[1]);
+	}
 	if (bits & U_ORIGIN3) {
 		if (client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) {
 			MSG_WriteLongCoord(msg, to->origin[2]);
@@ -277,8 +280,9 @@ void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, s
 			MSG_WriteCoord(msg, to->origin[2]);
 		}
 	}
-	if (bits & U_ANGLE3)
+	if (bits & U_ANGLE3) {
 		MSG_WriteAngle(msg, to->angles[2]);
+	}
 }
 
 /*
@@ -295,7 +299,6 @@ static void SV_EmitPacketEntities (client_t *client, packet_entities_t *to, size
 	client_frame_t	*fromframe;
 	packet_entities_t *from1;
 	edict_t	*ent;
-
 
 	// this is the frame that we are going to delta update from
 	if (client->delta_sequence != -1)
@@ -450,7 +453,7 @@ static void SV_MVD_WritePlayersToClient ( void )
 		demo.fixangle[j] = 0;
 
 		dcl->sec         = sv.time - cl->localtime;
-		
+
 		if (ent->v.health <= 0)
 			dcl->flags |= DF_DEAD;
 		if (ent->v.mins[2] != -24)
@@ -699,8 +702,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 				cmd.upmove = 0;
 			}
 
-			if ((client->extensions & Z_EXT_VWEP) && sv.vw_model_name[0]
-					&& fofs_vw_index) {
+			if ((client->extensions & Z_EXT_VWEP) && sv.vw_model_name[0] && fofs_vw_index) {
 				cmd.impulse = EdictFieldFloat (ent, fofs_vw_index);
 			}
 

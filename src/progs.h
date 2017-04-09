@@ -52,7 +52,7 @@ typedef struct sv_edict_s
 	qbool		free;
 	link_t		area;			// linked to a division node or leaf
 
-	int			entnum;
+	int         entnum;
 
 	int			num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
@@ -84,10 +84,10 @@ extern	dstatement_t	*pr_statements;
 extern	globalvars_t	*pr_global_struct;
 extern	float		*pr_globals;	// same as pr_global_struct
 
-extern	int			pr_edict_size;	// in bytes
-extern	cvar_t		sv_progsname; 
+extern	int         pr_edict_size;	// in bytes
+extern	cvar_t      sv_progsname; 
 #ifdef WITH_NQPROGS
-extern	cvar_t		sv_forcenqprogs;
+extern	cvar_t      sv_forcenqprogs;
 #endif
 
 //============================================================================
@@ -116,7 +116,7 @@ void NQP_Reset (void);
 
 //============================================================================
 
-void PR1_Init (void);
+void PR_Init (void);
 
 void PR_ExecuteProgram (func_t fnum);
 void PR_InitPatchTables (void);	// NQ progs support
@@ -216,6 +216,7 @@ int PR_SetTmpString(const char *s);
 
 void PR1_LoadProgs (void);
 void PR1_InitProg();
+void PR1_Init(void);
 
 #define PR1_GameShutDown()	// PR1 does not really have it.
 void PR1_UnLoadProgs();
@@ -234,7 +235,7 @@ qbool PR1_ClientCmd(void);
 #define PR1_GameStartFrame() PR_ExecuteProgram (PR_GLOBAL(StartFrame))
 #define PR1_ClientKill() PR_ExecuteProgram (PR_GLOBAL(ClientKill))
 #define PR1_UserInfoChanged() (0) // PR1 does not really have it,
-								  // we have mod_UserInfo_Changed but it is slightly different.
+                                  // we have mod_UserInfo_Changed but it is slightly different.
 #define PR1_LoadEnts ED_LoadFromFile
 #define PR1_EdictThink PR_ExecuteProgram
 #define PR1_EdictTouch PR_ExecuteProgram

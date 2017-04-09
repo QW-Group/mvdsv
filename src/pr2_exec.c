@@ -162,7 +162,7 @@ void PR2_LoadEnts(char *data)
 //===========================================================================
 // GameStartFrame
 //===========================================================================
-void PR2_GameStartFrame()
+void PR2_GameStartFrame(void)
 {
 	if (sv_vm)
 		VM_Call(sv_vm, GAME_START_FRAME, (int) (sv.time * 1000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -228,7 +228,7 @@ void PR2_GameClientPostThink(int spec)
 //===========================================================================
 // ClientCmd return false on unknown command
 //===========================================================================
-qbool PR2_ClientCmd()
+qbool PR2_ClientCmd(void)
 {
 	if (sv_vm)
 		return VM_Call(sv_vm, GAME_CLIENT_COMMAND, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -239,7 +239,7 @@ qbool PR2_ClientCmd()
 //===========================================================================
 // ClientKill
 //===========================================================================
-void PR2_ClientKill()
+void PR2_ClientKill(void)
 {
 	if (sv_vm)
 		PR2_ClientCmd(); // PR2 have some universal way for command execution unlike QC based mods.
@@ -266,7 +266,7 @@ qbool PR2_ClientSay(int isTeamSay, char *message)
 //===========================================================================
 // GameSetNewParms
 //===========================================================================
-void PR2_GameSetNewParms()
+void PR2_GameSetNewParms(void)
 {
 	if (sv_vm)
 		VM_Call(sv_vm, GAME_SETNEWPARMS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -277,7 +277,7 @@ void PR2_GameSetNewParms()
 //===========================================================================
 // GameSetNewParms
 //===========================================================================
-void PR2_GameSetChangeParms()
+void PR2_GameSetChangeParms(void)
 {
 	if (sv_vm)
 		VM_Call(sv_vm, GAME_SETCHANGEPARMS, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -323,7 +323,7 @@ void PR2_EdictBlocked(func_t f)
 //===========================================================================
 // UserInfoChanged
 //===========================================================================
-qbool PR2_UserInfoChanged()
+qbool PR2_UserInfoChanged(void)
 {
 	if (sv_vm)
 		return VM_Call(sv_vm, GAME_CLIENT_USERINFO_CHANGED, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -334,7 +334,7 @@ qbool PR2_UserInfoChanged()
 //===========================================================================
 // GameShutDown
 //===========================================================================
-void PR2_GameShutDown()
+void PR2_GameShutDown(void)
 {
 	if (sv_vm)
 		VM_Call(sv_vm, GAME_SHUTDOWN, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -345,7 +345,7 @@ void PR2_GameShutDown()
 //===========================================================================
 // UnLoadProgs
 //===========================================================================
-void PR2_UnLoadProgs()
+void PR2_UnLoadProgs(void)
 {
 	if (sv_vm)
 	{
@@ -361,7 +361,7 @@ void PR2_UnLoadProgs()
 //===========================================================================
 // LoadProgs
 //===========================================================================
-void PR2_LoadProgs()
+void PR2_LoadProgs(void)
 {
 	sv_vm = (vm_t *) VM_Load(sv_vm, (vm_type_t) (int) sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
 

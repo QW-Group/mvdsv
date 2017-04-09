@@ -70,7 +70,7 @@ Writes account list to disk
 =================
 */
 
-static void WriteAccounts()
+static void WriteAccounts(void)
 {
 	int c;
 	FILE *f;
@@ -650,7 +650,7 @@ void SV_ParseLogin(client_t *cl)
 		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log1));
 
 		//VVD: forcenick ->
-		if ((int)sv_forcenick.value && cl->login)
+		if ((int)sv_forcenick.value && cl->login[0])
 		{
 			char oldval[MAX_EXT_INFO_STRING];
 			strlcpy (oldval, cl->name, MAX_EXT_INFO_STRING);

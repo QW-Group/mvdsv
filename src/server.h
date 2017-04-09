@@ -211,7 +211,7 @@ typedef struct client_s
 	char			name[CLIENT_NAME_LEN];		// for printing to other people
 
 	char			team[CLIENT_NAME_LEN];
-							// extracted from userinfo
+	// extracted from userinfo
 	int				messagelevel;			// for filtering printed messages
 
 	// the datagram is written to after every frame, but only cleared
@@ -249,9 +249,11 @@ typedef struct client_s
 	client_frame_t	frames[UPDATE_BACKUP];		// updates can be deltad from here
 
 	vfsfile_t		*download;			// file being downloaded
+#ifdef PROTOCOL_VERSION_FTE
 #ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 	int				download_chunks_perframe;
-#endif // FTE_PEXT_CHUNKEDDOWNLOADS
+#endif
+#endif
 	int				downloadsize;			// total bytes
 	int				downloadcount;			// bytes sent
 // demo download list for internal cmd dl function
@@ -514,16 +516,16 @@ typedef struct
 // TCPCONNECT -->
 typedef struct svtcpstream_s
 {
-	int				socketnum; // socket
-	qbool			waitingforprotocolconfirmation; // wait for "qizmo\n", first 6 bytes before confirming that is tcpconnection
-	int				inlen; // how much bytes we have in inbuffer
-	char			inbuffer[1500]; // recv buffer
-	int				outlen; // how much bytes we have in outbuffer
-	char			outbuffer[1500 * 5]; // send buffer
-	qbool			drop; // do we need drop that connection ASAP
-	float			timeouttime; // I/O timeout
-	netadr_t		remoteaddr; // peer remoter addr
-	struct svtcpstream_s *next; // next tcpconnection in list
+	int                     socketnum;                         // socket
+	qbool                   waitingforprotocolconfirmation;    // wait for "qizmo\n", first 6 bytes before confirming that is tcpconnection
+	int                     inlen;                             // how much bytes we have in inbuffer
+	char                    inbuffer[1500];                    // recv buffer
+	int                     outlen;                            // how much bytes we have in outbuffer
+	char                    outbuffer[1500 * 5];               // send buffer
+	qbool                   drop;                              // do we need drop that connection ASAP
+	float                   timeouttime;                       // I/O timeout
+	netadr_t                remoteaddr;                        // peer remoter addr
+	struct svtcpstream_s    *next;                             // next tcpconnection in list
 } svtcpstream_t;
 // <-- TCPCONNECT
 

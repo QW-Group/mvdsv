@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
-// minimal chache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
+// minimal cache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
 #define DEMO_CACHE_MIN_SIZE 0x1000000
 
 // flush demo cache if we have less than this free bytes
@@ -789,7 +789,7 @@ static mvddest_t *SV_InitRecordFile (char *name)
 
 	if ( !sv_silentrecord.value )
 		SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
-						(dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
+		                    (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
 	Cvar_SetROM(&serverdemo, dst->name);
 
 	strlcpy(path, name, MAX_OSPATH);
@@ -1792,6 +1792,7 @@ void SV_MVDInit (void)
 	Cmd_AddCommand ("sv_lastscores",	SV_LastScores_f);
 	Cmd_AddCommand ("sv_demolist",		SV_DemoList_f);
 	Cmd_AddCommand ("sv_demolistr",		SV_DemoListRegex_f);
+	Cmd_AddCommand ("sv_demolistregex",	SV_DemoListRegex_f);
 	Cmd_AddCommand ("sv_demoremove",	SV_MVDRemove_f);
 	Cmd_AddCommand ("sv_demonumremove",	SV_MVDRemoveNum_f);
 	Cmd_AddCommand ("sv_demoinfoadd",	SV_MVDInfoAdd_f);

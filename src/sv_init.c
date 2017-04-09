@@ -92,8 +92,8 @@ baseline will be transmitted
 */
 static void SV_CreateBaseline (void)
 {
-	edict_t			*svent;
-	int				entnum;
+	edict_t  *svent;
+	int      entnum;
 
 	for (entnum = 0; entnum < sv.num_edicts ; entnum++)
 	{
@@ -126,7 +126,6 @@ static void SV_CreateBaseline (void)
 	}
 	sv.num_baseline_edicts = sv.num_edicts;
 }
-
 
 /*
 ================
@@ -246,7 +245,6 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 			svs.clients[i].isBot = 0;
 		}
 	}
-
 #endif
 
 	// Shutdown game.
@@ -320,7 +318,6 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	// load progs to get entity field count
 	// which determines how big each edict is
 	// and allocate edicts
-
 	PR_LoadProgs ();
 #ifdef WITH_NQPROGS
 	PR_InitPatchTables();
@@ -418,14 +415,13 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	}
 	else
 #endif
-
 	{
 		sv.sound_precache[0] = pr_strings;
 		sv.model_precache[0] = pr_strings;
 	}
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (i=1 ; i< CM_NumInlineModels() ; i++)
+	for (i = 1; i < CM_NumInlineModels(); i++)
 	{
 		sv.model_precache[1+i] = localmodels[i];
 		sv.models[i+1] =  CM_InlineModel (localmodels[i]);
@@ -516,7 +512,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	if (!entitystring) {
 		entitystring = CM_EntityString();
 	}
-	
+
 	PR_LoadEnts(entitystring);
 	// ********* End of External Entity support code *********
 

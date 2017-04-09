@@ -28,6 +28,9 @@ static cvar_t qtv_pendingtimeout = {"qtv_pendingtimeout",  "5"}; // 5  seconds m
 static cvar_t qtv_sayenabled     = {"qtv_sayenabled",      "0"}; // allow mod to override GameStarted() logic
 cvar_t qtv_streamtimeout         = {"qtv_streamtimeout",  "45"}; // 45 seconds
 
+static unsigned short int	listenport		= 0;
+static double				warned_time		= 0;
+
 static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 {
 	static int lastdest = 0;
@@ -111,9 +114,6 @@ void SV_MVDCloseStreams(void)
 			p->error = true; // mark pending dest to close later
 }
 
-static unsigned short int	listenport		= 0;
-static double				warned_time		= 0;
-
 static void SV_CheckQTVPort(void)
 {
 	qbool changed;
@@ -122,9 +122,9 @@ static void SV_CheckQTVPort(void)
 
 	// if we have non zero stream port, but fail to open listen socket, repeat open listen socket after some time
 	changed = ( streamport != listenport // port changed.
-				|| (streamport  && NET_GetSocket(NS_SERVER, true) == INVALID_SOCKET && warned_time + 10 < Sys_DoubleTime()) // stream port non zero but socket still not open, lets open socket then.
-				|| (!streamport && NET_GetSocket(NS_SERVER, true) != INVALID_SOCKET) // stream port is zero but socket still open, lets close socket then.
-		);
+	    || (streamport  && NET_GetSocket(NS_SERVER, true) == INVALID_SOCKET && warned_time + 10 < Sys_DoubleTime()) // stream port non zero but socket still not open, lets open socket then.
+	    || (!streamport && NET_GetSocket(NS_SERVER, true) != INVALID_SOCKET) // stream port is zero but socket still open, lets close socket then.
+	);
 
 	// port not changed
 	if (!changed)

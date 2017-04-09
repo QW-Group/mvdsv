@@ -220,5 +220,6 @@ typedef struct qtvuser_s
 
 //============================================================================
 
+qbool COM_FileExists(char *path);
 
 #endif /* !__COMMON_H__ */

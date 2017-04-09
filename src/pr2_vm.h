@@ -45,9 +45,9 @@
 
 typedef union pr2val_s
 {
-	string_t	string;
-	float		_float;
-	intptr_t	_int;
+	string_t    string;
+	float       _float;
+	intptr_t    _int;
 } pr2val_t;	
 
 typedef intptr_t (EXPORT_FN *sys_call_t) (intptr_t arg, ...);

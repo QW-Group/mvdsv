@@ -23,13 +23,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef SERVERONLY
 
-qbool		host_initialized;
-qbool		host_everything_loaded;	// true if OnChange() applied to every var, end of Host_Init()
+qbool       host_initialized;
+qbool       host_everything_loaded;	// true if OnChange() applied to every var, end of Host_Init()
 
-double		curtime;			// not bounded or scaled, shared by local client and server.
-double		realtime;			// affected by pause, you should not use it unless it something like physics and such.
+double      curtime;			// not bounded or scaled, shared by local client and server.
+double      realtime;			// affected by pause, you should not use it unless it something like physics and such.
 
-static int	host_hunklevel;
+static int  host_hunklevel;
+
+#else
+
+qbool       server_cfg_done = false;
+double      realtime;			// affected by pause, you should not use it unless it something like physics and such.
 
 #endif
 
@@ -69,7 +74,6 @@ extern cvar_t password;
 #endif
 
 cvar_t	sv_hashpasswords = {"sv_hashpasswords", "1"}; // 0 - plain passwords; 1 - hashed passwords
-cvar_t	telnet_password = {"telnet_password", ""}; // password for login via telnet
 cvar_t	sv_crypt_rcon = {"sv_crypt_rcon", "1"}; // use SHA1 for encryption of rcon_password and using timestamps
 // Time in seconds during which in rcon command this encryption is valid (change only with master_rcon_password).
 cvar_t	sv_timestamplen = {"sv_timestamplen", "60"};
@@ -225,8 +229,8 @@ void SV_Shutdown (char *finalmsg)
 	if (sv.mvdrecording)
 		SV_MVDStop_f();
 
-#ifdef SERVERONLY
-	NET_Shutdown ();
+#ifndef SERVER_ONLY
+	NET_CloseServer ();
 #endif
 
 	// Shutdown game.
@@ -311,9 +315,14 @@ void SV_FinalMessage (const char *message)
 	MSG_WriteByte (&net_message, svc_disconnect);
 
 	for (i=0, cl = svs.clients ; i<MAX_CLIENTS ; i++, cl++)
-		if (cl->state >= cs_spawned && ! cl->isBot)
-			Netchan_Transmit (&cl->netchan, net_message.cursize
-			                  , net_message.data);
+		if (cl->state >= cs_spawned
+#ifdef USE_PR2
+			&& !cl->isBot
+#endif
+			) {
+			Netchan_Transmit(&cl->netchan, net_message.cursize
+				, net_message.data);
+		}
 }
 
 
@@ -1056,7 +1065,6 @@ qbool CheckReConnect( netadr_t adr, int qport )
 
 			cl->state = cs_free;
 			Con_Printf ("%s:reconnect\n", NET_AdrToString (adr));
-
 			break;
 		}
 	}
@@ -1242,10 +1250,9 @@ static void SVC_DirectConnect (void)
 
 	// if at server limits, refuse connection
 
-	if (	(spectator && !SpectatorCanConnect(vip, spass, spectators, vips))
-	     || (!spectator && !PlayerCanConnect(clients))
-         || !newcl
-       )
+	if ((spectator && !SpectatorCanConnect(vip, spass, spectators, vips)) || 
+	    (!spectator && !PlayerCanConnect(clients)) || 
+	    !newcl)
 	{
 		Sys_Printf ("%s:full connect\n", NET_AdrToString (adr));
 
@@ -1508,9 +1515,6 @@ int Rcon_Validate (char *client_string, char *password1)
 			SHA1_Update(Cmd_Argv(i));
 			SHA1_Update(" ");
 		}
-//		sha1 = SHA1_Final();
-//		Con_Printf("client_string = %s\nserver_string = %s\nsha1 = %s\n", client_string, server_string, sha1);
-//		Con_Printf("server_string_len = %d, strlen(server_string) = %d\n", server_string_len, strlen(server_string));
 		if (strncmp (Cmd_Argv(1), SHA1_Final(), DIGEST_SIZE * 2))
 			return 0;
 	}
@@ -2297,7 +2301,7 @@ qbool SV_FilterPacket (void)
 
 // { server internal BAN support
 
-#define AF_REAL_ADMIN  (1<<1) // pass/vip granted admin.
+#define AF_REAL_ADMIN    (1<<1)    // pass/vip granted admin.
 
 void Do_BanList(ipfiltertype_t ipft)
 {
@@ -2716,8 +2720,11 @@ static char *DecodeArgs(char *args)
 			}
 			*p++ = '\"';
 		}
-		else while (*args > 32)
+		else {
+			while (*args > 32) {
 				*p++ = *args++;
+			}
+		}
 	}
 
 	*p = 0;
@@ -3162,7 +3169,6 @@ void SV_Frame (double time1)
 	static double start, end;
 	double demo_start, demo_end;
 
-
 	start = Sys_DoubleTime ();
 	svs.stats.idle += start - end;
 
@@ -3292,7 +3298,6 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_timestamplen);
 	Cvar_Register (&sv_rconlim);
 
-	Cvar_Register (&telnet_password);
 	Cvar_Register (&telnet_log_level);
 
 	Cvar_Register (&frag_log_type);
@@ -3305,7 +3310,6 @@ void SV_InitLocal (void)
 			strlcat(cmd_line, " ", sizeof(cmd_line));
 		strlcat(cmd_line, COM_Argv(i), sizeof(cmd_line));
 	}
-
 	Cvar_Register (&sys_command_line);
 	Cvar_SetROM(&sys_command_line, cmd_line);
 
@@ -3499,7 +3503,6 @@ Pull specific info from a newly changed userinfo string
 into a more C freindly form.
 =================
 */
-
 void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 {
 	char	*val, *p;
@@ -3733,12 +3736,9 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	extern int		hunk_size;
 	cvar_t			*v;
 
-//	char cfg[MAX_PATH] = {0};
-
 	srand((unsigned)time(NULL));
 
 	COM_InitArgv (argc, argv);
-//	COM_StoreOriginalCmdline(argc, argv);
 
 	Host_InitMemory (default_memsize);
 
@@ -3752,26 +3752,12 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	FS_Init ();
 	NET_Init ();
 
-// ??????????????
-//	snprintf(cfg, sizeof(cfg), "%s", cfg_name);
-//	COM_ForceExtensionEx (cfg, ".cfg", sizeof (cfg));
-//	Cbuf_AddText(va("cfg_load %s\n", cfg));
-//	Cbuf_Execute();
-//
-//	Cbuf_AddEarlyCommands ();
-//	Cbuf_Execute ();
-// ????????????
-
 	Netchan_Init ();
 
 	Sys_Init ();
 	CM_Init ();
 
 	SV_Init ();
-
-// ???????????
-//	Cvar_CleanUpTempVars ();
-// ???????????
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
@@ -3783,9 +3769,6 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	// same for serverinfo and may be this fix something also.
 	for ( v = NULL; (v = Cvar_Next ( v )); )
 	{
-//		if ( !v->modified )
-//			continue; // not modified even that strange at this moment
-
 		if ( Cvar_GetFlags( v ) & (CVAR_ROM) )
 			continue;
 
@@ -3853,6 +3836,9 @@ void SV_Init (void)
 
 	SV_MVDInit ();
 	Login_Init ();
+#ifndef SERVERONLY
+	server_cfg_done = true;
+#endif
 }
 
 /*

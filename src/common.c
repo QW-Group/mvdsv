@@ -1851,3 +1851,20 @@ int Com_TranslateMapChecksum (const char *mapname, int checksum)
 	return checksum;
 }
 
+qbool COM_FileExists (char *path)
+{
+	FILE *fexists = NULL;
+
+	// Try opening the file to see if it exists.
+	fexists = fopen(path, "rb");
+
+	// The file exists.
+	if (fexists)
+	{
+		// Make sure the file is closed.
+		fclose (fexists);
+		return true;
+	}
+
+	return false;
+}

@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_demo_misc.c - misc demo related stuff, helpers
 
 #include "qwsvdef.h"
+#ifndef SERVERONLY
+#include "pcre.h"
+#endif
 
 static char chartbl[256];
 
@@ -30,7 +33,7 @@ CleanName_Init
 sets chararcter table for quake text->filename translation
 ====================
 */
-void CleanName_Init ()
+void CleanName_Init (void)
 {
 	int i;
 
@@ -232,8 +235,12 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 			*p = 0; // strip parameters
 	
 		strlcpy(path, dest_name, sizeof(path));
+#ifdef SERVERONLY
 		COM_StripExtension(path);
-	
+#else
+		COM_StripExtension(path, path, sizeof(path));
+#endif
+
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
 		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, path, p != NULL ? p+1 : ""));
 
@@ -963,7 +970,7 @@ void SV_LastScores_f (void)
 
 // easyrecord helpers
 
-int Dem_CountPlayers ()
+int Dem_CountPlayers (void)
 {
 	int	i, count;
 

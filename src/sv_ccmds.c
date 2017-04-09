@@ -110,12 +110,10 @@ void SV_Logfile (int sv_log, qbool newlog)
 
 	for (i = 0; i < 1000; i++)
 	{
-		FILE *f;
 		snprintf (name, sizeof(name), "%s/%s%d_%04d.log", sv_logdir.string, logs[sv_log].file_name, sv_port, i);
 
-		if (!(f = fopen(name, "r")))
+		if (!COM_FileExists(name))
 			break; // file doesn't exist
-		fclose(f);
 	}
 
 	if (!newlog) //use last log if possible
@@ -458,9 +456,13 @@ void SV_Map (qbool now)
 
 		SV_SpawnServer (level, !strcasecmp(Cmd_Argv(0), "devmap"), entityfile);
 
+#ifdef SERVERONLY
 		SV_BroadcastCommand ("changing\n"
-							 "reconnect\n");
+		                     "reconnect\n");
 		SV_SendMessagesToAll ();
+#else
+		SV_BroadcastCommand ("reconnect\n");
+#endif
 
 		return;
 	}
@@ -1420,7 +1422,7 @@ void SV_Serverinfo_f (void)
 		return;
 	}
 
-	// force serverinfo "0" vars to be "".
+	// force serverinfo "0" vars to be ""
 	if (!strcmp(value, "0"))
 		value = "";
 
@@ -1783,7 +1785,11 @@ SV_MasterPassword
 */
 void SV_MasterPassword_f (void)
 {
+#ifdef SERVERONLY
 	if (!host_everything_loaded)
+#else
+	if (!server_cfg_done)
+#endif
 		strlcpy(master_rcon_password, Cmd_Argv(1), sizeof(master_rcon_password));
 	else
 		Con_DPrintf("master_rcon_password can be set only in server.cfg\n");

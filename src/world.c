@@ -484,24 +484,24 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t *eorg, vec3_t start, vec3_t mi
 	vec3_t		start_l, end_l;
 	hull_t		*hull;
 
-// get the clipping hull
+	// get the clipping hull
 	hull = SV_HullForEntity (ent, mins, maxs, offset);
 
-// { well, its hack for sv_antilag
+	// { well, its hack for sv_antilag
 	if (eorg)
 		VectorCopy((*eorg), offset);
-// }
+	// }
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
 
-// trace a line through the apropriate clipping hull
+	// trace a line through the apropriate clipping hull
 	trace = CM_HullTrace (hull, start_l, end_l);
 
-// fix trace up by the offset
+	// fix trace up by the offset
 	VectorAdd (trace.endpos, offset, trace.endpos);
 
-// did we clip the move?
+	// did we clip the move?
 	if (trace.fraction < 1 || trace.startsolid)
 		trace.e.ent = ent;
 
@@ -525,7 +525,7 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 
 	numtouch = SV_AreaEdicts (clip->boxmins, clip->boxmaxs, touchlist, sv.max_edicts, AREA_SOLID);
 
-// touch linked edicts
+	// touch linked edicts
 	for (i = 0; i < numtouch; i++)
 	{
 		// might intersect, so do an exact clip
@@ -719,7 +719,6 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 	}
 }
 
-
 /*
 ==================
 SV_Trace
@@ -772,4 +771,3 @@ trace_t SV_Trace (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, 
 
 	return clip.trace;
 }
-

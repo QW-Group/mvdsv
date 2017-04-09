@@ -25,8 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 #else
 #include "quakedef.h"
+#include "vfs.h"
 #include "server.h"
-#include "world.h"
+#include "sv_world.h"
 #endif
 
 extern cvar_t maxclients;
@@ -34,18 +35,35 @@ extern cvar_t maxclients;
 #define	SAVEGAME_COMMENT_LENGTH	39
 #define	SAVEGAME_VERSION	6
 
+static void SV_SaveGameFileName(char* buffer, int buffer_size, char* name)
+{
+#ifdef SERVERONLY
+	snprintf (buffer, buffer_size, "%s/save/%s", fs_gamedir, name);
+#else
+	snprintf (buffer, buffer_size, "%s/save/%s", com_gamedir, name);
+#endif
+}
+
 //Writes a SAVEGAME_COMMENT_LENGTH character comment
 void SV_SavegameComment (char *buffer) {
 	int i;
 	char kills[20];
+#ifdef SERVERONLY
 	char *mapname = sv.mapname;
+	int killed_monsters = (int)PR_GLOBAL(killed_monsters);
+	int total_monsters = (int)PR_GLOBAL(total_monsters);
+#else
+	char *mapname = cl.levelname;
+	int killed_monsters = cl.stats[STAT_MONSTERS];
+	int total_monsters = cl.stats[STAT_TOTALMONSTERS];
+#endif
 	if (!mapname || !*mapname)
 		mapname = "Unnamed_Level";
 
 	for (i = 0; i < SAVEGAME_COMMENT_LENGTH; i++)
 		buffer[i] = ' ';
 	memcpy (buffer, mapname, min(strlen(mapname), 21));
-	snprintf (kills, sizeof (kills), "kills:%3i/%-3i", (int)PR_GLOBAL(killed_monsters), (int)PR_GLOBAL(total_monsters));
+	snprintf (kills, sizeof (kills), "kills:%3i/%-3i", killed_monsters, total_monsters);
 	memcpy (buffer + 22, kills, strlen(kills));
 
 	// convert space to _ to make stdio happy
@@ -96,7 +114,7 @@ void SV_SaveGame_f (void) {
 		return;
 	}
 
-	snprintf (fname, sizeof(fname), "%s/save/%s", fs_gamedir, Cmd_Argv(1));
+	SV_SaveGameFileName (fname, sizeof(fname), Cmd_Argv(1));
 	COM_DefaultExtension (fname, ".sav");
 	
 	Con_Printf ("Saving game to %s...\n", fname);
@@ -145,14 +163,13 @@ void SV_LoadGame_f (void) {
 	edict_t *ent;
 	int entnum, version, r;
 	unsigned int i;
-	size_t len;
 
 	if (Cmd_Argc() != 2) {
 		Con_Printf ("Usage: %s <savename> : load a game\n", Cmd_Argv(0));
 		return;
 	}
 
-	snprintf (name, sizeof (name), "%s/save/%s", fs_gamedir, Cmd_Argv(1));
+	SV_SaveGameFileName (name, sizeof(name), Cmd_Argv(1));
 	COM_DefaultExtension (name, ".sav");
 
 	Con_Printf ("Loading game from %s...\n", name);
@@ -231,14 +248,15 @@ void SV_LoadGame_f (void) {
 
 	// load the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+		size_t length;
 		if (fscanf (f, "%s\n", str) != 1) {
 			Con_Printf("Couldn't read lightstyles\n");
 			fclose (f);
 			return;
 		}
-		len = strlen(str)+1;
-		sv.lightstyles[i] = (char *) Hunk_Alloc (len);
-		strlcpy (sv.lightstyles[i], str, len);
+		length = strlen(str) + 1;
+		sv.lightstyles[i] = (char *) Hunk_Alloc (length);
+		strlcpy (sv.lightstyles[i], str, length);
 	}
 
 	// pause until all clients connect
@@ -279,7 +297,7 @@ void SV_LoadGame_f (void) {
 			ent = EDICT_NUM(entnum);
 			ED_ClearEdict (ent); // FIXME: we also clear world edict here, is it OK?
 			ED_ParseEdict (start, ent);
-	
+
 			// link it into the bsp tree
 			if (!ent->e->free)
 				SV_LinkEdict (ent, false);

@@ -1597,7 +1597,7 @@ PF2_makestatic
  
 ==================
 */
-void PF2_makestatic(byte* base, unsigned int mask, pr2val_t* stack, pr2val_t*retval)
+void PF2_makestatic(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
 	entity_state_t* s;
 	edict_t	*ent;
@@ -2026,10 +2026,10 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return ;
 	}
 
-	if (!name || !*name || // invalid name.
-		name[1] == ':' ||	// dos filename absolute path specified - reject.
-	        *name == '\\' || *name == '/' ||	// absolute path was given - reject.
-	        strstr(name, ".."))	// someone tried to be cleaver.
+	if (!name || !*name ||                  //invalid name.
+	    name[1] == ':' ||                   //dos filename absolute path specified - reject.
+	    *name == '\\' || *name == '/' ||    //absolute path was given - reject
+	    strstr(name, ".."))                 //someone tried to be clever.
 	{
 		retval->_int = -1;
 		return ;
@@ -2040,8 +2040,11 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	{
 	case FS_READ_BIN:
 	case FS_READ_TXT:
-
+#ifndef SERVERONLY
+		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_ANY);
+#else
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME);
+#endif
 
 		if(!pr2_fopen_files[i].handle)
 		{
@@ -2053,7 +2056,6 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 		retval->_int = VFS_GETLEN(pr2_fopen_files[i].handle);
 
-
 		break;
 	case FS_WRITE_BIN:
 	case FS_WRITE_TXT:
@@ -2061,8 +2063,6 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	case FS_APPEND_TXT:
 
 // well, perhapswe we should create path...
-//		snprintf( fname, sizeof( fname ), "%s/%s" , fs_gamedir, name );
-//		FS_CreatePath(fname);
 //		FS_CreatePathRelative(name, FS_GAME_OS);
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME_OS);
 		if ( !pr2_fopen_files[i].handle )
@@ -2124,7 +2124,7 @@ void PF2_FS_SeekFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	if(!(pr2_fopen_files[fnum].handle))
 		return;
-	if(type <0 || type > 2)
+	if(type < 0 || type >= sizeof(seek_origin) / sizeof(seek_origin[0]))
 		return;
 
 	retval->_int = VFS_SEEK(pr2_fopen_files[fnum].handle, offset, seek_origin[type]);
@@ -2206,7 +2206,7 @@ void PF2_FS_ReadFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	retval->_int = VFS_READ(pr2_fopen_files[fnum].handle, dest, quantity, NULL);
 }
 
-void PR2_FS_Restart()
+void PR2_FS_Restart(void)
 {
 	int i;
 
@@ -2256,11 +2256,11 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 
 	char	*path, *ext, *listbuff, *dirptr;
 
-	intptr_t pathoffset 		= stack[0]._int;
-	intptr_t extoffset  		= stack[1]._int;
-	intptr_t listbuffoffset 	= stack[2]._int;
-	intptr_t buffsize			= stack[3]._int;
-	intptr_t flags				= stack[4]._int;
+	intptr_t pathoffset         = stack[0]._int;
+	intptr_t extoffset          = stack[1]._int;
+	intptr_t listbuffoffset     = stack[2]._int;
+	intptr_t buffsize           = stack[3]._int;
+	intptr_t flags              = stack[4]._int;
 
 	int numfiles = 0;
 	int i, j;
@@ -2319,8 +2319,13 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 			}
 
 			// skip file extension
-			if (!(flags & FILELIST_WITH_EXT))
-				COM_StripExtension (fullname);
+			if (!(flags & FILELIST_WITH_EXT)) {
+#ifndef SERVERONLY
+				COM_StripExtension(fullname, fullname, sizeof(fullname));
+#else
+				COM_StripExtension(fullname);
+#endif
+			}
 
 			list[i] = Q_strdup(fullname); // a bit below we will free it
 		}

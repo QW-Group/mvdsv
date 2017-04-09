@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
+#ifndef SERVERONLY
+#include "pcre.h"
+#endif
 #include "sv_mod_frags.h"
 
 qwmsg_t *qwmsg[MOD_MSG_MAX + 1];
@@ -37,13 +40,11 @@ void free_qwmsg_t(qwmsg_t **qwmsg1)
 {
 	int i;
 
-	if (qwm_static)
-		return;
-
-	for (i = 0; qwmsg1[i]; i++)
-	{
-		Q_free(qwmsg1[i]->str);
-		Q_free(qwmsg1[i]);
+	if (!qwm_static) {
+		for (i = 0; qwmsg1[i]; i++) {
+			Q_free(qwmsg1[i]->str);
+			Q_free(qwmsg1[i]);
+		}
 	}
 }
 
@@ -64,11 +65,8 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 		if (value[0])
 			Con_Printf("WARNING: sv_mod_msg_file_OnChange: can't open file %s.\n", value);
 
-		for (i = 0; i < MOD_MSG_MAX && qwmsg_def[i].str; i++)
-		{
+		for (i = 0; i < MOD_MSG_MAX && qwmsg_def[i].str; i++) {
 			qwmsg[i] = &qwmsg_def[i];
-//			Sys_Printf("msg_type = %d, id = %d, pl_count = %d, str = %s, reverse = %d\n",
-//			qwmsg[i]->msg_type, qwmsg[i]->id, qwmsg[i]->pl_count, qwmsg[i]->str, qwmsg[i]->reverse);
 		}
 		qwm_static = true;
 		Con_DPrintf("Initialized default mod messages.\nTotal: %d messages.\n", i);
@@ -94,7 +92,8 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 				qwmsg[i]->reverse = Q_atoi(str_tok) ? true : false;
 				// fill str
 				str_tok = (char *)strtok(NULL, "#");
-				len = strlen(str_tok+1);
+
+				len = strlen (str_tok) + 1;
 				qwmsg[i]->str =  (char *) Q_malloc (len);
 				strlcpy(qwmsg[i]->str, str_tok, len);
 			}

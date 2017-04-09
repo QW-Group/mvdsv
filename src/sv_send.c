@@ -163,7 +163,7 @@ void Con_Printf (char *fmt, ...)
 /*
 ================
 Con_DPrintf
- 
+
 A Con_Printf that only shows up if the "developer" cvar is set
 ================
 */
@@ -575,16 +575,15 @@ Larger attenuations will drop off.  (max 4 attenuation)
  
 ==================
 */
-void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
-                    float attenuation)
+void SV_StartSound (edict_t *entity, int channel, char *sample, int volume, float attenuation)
 {
-	int	sound_num;
-	int	field_mask;
-	int	i;
-	int	ent;
-	vec3_t	origin;
-	qbool	use_phs;
-	qbool	reliable = false;
+	int     sound_num;
+	int     field_mask;
+	int     i;
+	int     ent;
+	vec3_t  origin;
+	qbool   use_phs;
+	qbool   reliable = false;
 
 	if (volume < 0 || volume > 255)
 		SV_Error ("SV_StartSound: volume = %i", volume);
@@ -1115,7 +1114,7 @@ void SV_SendClientMessages (void)
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
 			c->num_backbuf = 0;
-			
+
 			// Need to tell mod what the bot would have seen
 			SV_SetVisibleEntitiesForBot (c);
 			continue;

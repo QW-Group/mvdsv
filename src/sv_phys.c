@@ -1011,7 +1011,7 @@ void SV_Physics (void)
 		sv_client = cl;
 		sv_player = cl->edict;
 
-		if( sv_client->spectator && sv_client->spec_track > 0 )
+		if (sv_client->spectator && sv_client->spec_track > 0)
 			sv_player->v.goalentity = EDICT_TO_PROG(svs.clients[sv_client->spec_track-1].edict);
 	}
 
@@ -1067,14 +1067,14 @@ void SV_Physics (void)
 
 void SV_SetMoveVars(void)
 {
-	movevars.gravity		= sv_gravity.value;
-	movevars.stopspeed		= sv_stopspeed.value;
-	movevars.maxspeed		= sv_maxspeed.value;
-	movevars.spectatormaxspeed	= sv_spectatormaxspeed.value;
-	movevars.accelerate		= sv_accelerate.value;
-	movevars.airaccelerate		= sv_airaccelerate.value;
-	movevars.wateraccelerate	= sv_wateraccelerate.value;
-	movevars.friction		= sv_friction.value;
-	movevars.waterfriction		= sv_waterfriction.value;
-	movevars.entgravity		= 1.0;
+	movevars.gravity            = sv_gravity.value;
+	movevars.stopspeed          = sv_stopspeed.value;
+	movevars.maxspeed           = sv_maxspeed.value;
+	movevars.spectatormaxspeed  = sv_spectatormaxspeed.value;
+	movevars.accelerate         = sv_accelerate.value;
+	movevars.airaccelerate      = sv_airaccelerate.value;
+	movevars.wateraccelerate    = sv_wateraccelerate.value;
+	movevars.friction           = sv_friction.value;
+	movevars.waterfriction      = sv_waterfriction.value;
+	movevars.entgravity         = 1.0;
 }
