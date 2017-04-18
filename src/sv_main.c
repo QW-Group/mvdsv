@@ -178,6 +178,9 @@ cvar_t registered = {"registered", "1", CVAR_ROM};
 cvar_t	sv_halflifebsp = {"halflifebsp", "0", CVAR_ROM};
 cvar_t  sv_bspversion = {"sv_bspversion", "1", CVAR_ROM};
 
+// If set, don't send broadcast messages, entities or player info to ServeMe bot
+cvar_t sv_serveme_fix = { "sv_serveme_fix", "1", CVAR_ROM };
+
 #ifdef FTE_PEXT_FLOATCOORDS
 cvar_t sv_bigcoords = {"sv_bigcoords", "", CVAR_SERVERINFO};
 #endif
@@ -3408,6 +3411,7 @@ void SV_InitLocal (void)
 
 	Cvar_Register (&sv_halflifebsp);
 	Cvar_Register (&sv_bspversion);
+	Cvar_Register (&sv_serveme_fix);
 
 #ifdef FTE_PEXT_FLOATCOORDS
 	Cvar_Register (&sv_bigcoords);

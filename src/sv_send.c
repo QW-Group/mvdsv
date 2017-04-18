@@ -40,6 +40,7 @@ char	outputbuf[OUTPUTBUF_SIZE];
 redirect_t	sv_redirected;
 static int	sv_redirectbufcount;
 
+qbool SV_SkipCommsBotMessage(client_t* client);
 extern cvar_t sv_phs, sv_reliable_sound;
 
 /*
@@ -439,6 +440,8 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 		int trackent = 0;
 
 		if (client->state != cs_spawned)
+			continue;
+		if (SV_SkipCommsBotMessage(client))
 			continue;
 
 		if (!mask)
@@ -884,17 +887,19 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	}
 	*/
 
-	// add the client specific data to the datagram
-	SV_WriteClientdataToMessage (client, &msg);
+	if (!SV_SkipCommsBotMessage(client)) {
+		// add the client specific data to the datagram
+		SV_WriteClientdataToMessage(client, &msg);
 
-	// send over all the objects that are in the PVS
-	// this will include clients, a packetentities, and
-	// possibly a nails update
-	SV_WriteEntitiesToClient (client, &msg, false);
+		// send over all the objects that are in the PVS
+		// this will include clients, a packetentities, and
+		// possibly a nails update
+		SV_WriteEntitiesToClient(client, &msg, false);
 
 #ifdef FTE_PEXT2_VOICECHAT
-	SV_VoiceSendPacket(client, &msg);
+		SV_VoiceSendPacket(client, &msg);
 #endif
+	}
 
 	// copy the accumulated multicast datagram
 	// for this client out to the message

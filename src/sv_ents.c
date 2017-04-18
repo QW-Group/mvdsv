@@ -1028,3 +1028,10 @@ void SV_SetVisibleEntitiesForBot (client_t* client)
 		}
 	}
 }
+
+qbool SV_SkipCommsBotMessage(client_t* client)
+{
+	extern cvar_t sv_serveme_fix;
+
+	return sv_serveme_fix.value && client->spectator && !strcmp(client->name, "[ServeMe]");
+}

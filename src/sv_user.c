@@ -276,7 +276,9 @@ static void Cmd_New_f (void)
 			SV_DropClient (sv_client);
 			return;
 		}
-		return;
+		if (!SV_SkipCommsBotMessage(sv_client)) {
+			return;
+		}
 	}
 #endif
 
@@ -602,6 +604,13 @@ static void Cmd_PreSpawn_f (void)
 			return;
 		}
 		sv_client->checksum = check;
+	}
+
+	if (SV_SkipCommsBotMessage(sv_client)) {
+		// skip pre-spawning
+		MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
+		MSG_WriteString (&sv_client->netchan.message, va("cmd spawn %i 0\n", svs.spawncount) );
+		return;
 	}
 
 	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user

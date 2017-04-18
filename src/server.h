@@ -1000,5 +1000,6 @@ void SV_LoadGame_f (void);
 
 //
 void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force);
+qbool SV_SkipCommsBotMessage(client_t* client);
 
 #endif /* !__SERVER_H__ */
