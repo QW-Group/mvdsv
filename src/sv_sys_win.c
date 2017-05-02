@@ -720,7 +720,6 @@ main
 int main(int ac, char *av[])
 {
 	double			newtime, time, oldtime;
-	int				j;
 	int				sleep_msec;
 
 	ParseCommandLine (ac, av);

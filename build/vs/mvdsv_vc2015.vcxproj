@@ -127,13 +127,13 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;_CRT_DISABLE_PERFCRIT_LOCKS;id386;USE_PR2;SERVERONLY;WITH_NQPROGS;__LITTLE_ENDIAN__Q__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;_DEBUG;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;_CRT_DISABLE_PERFCRIT_LOCKS;id386;USE_PR2;SERVERONLY;WITH_NQPROGS;__LITTLE_ENDIAN__Q__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>
       </ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <SmallerTypeCheck>false</SmallerTypeCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <AdditionalOptions> /J</AdditionalOptions>
       <PrecompiledHeader>
@@ -166,7 +166,7 @@
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
       <MapExports>false</MapExports>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
