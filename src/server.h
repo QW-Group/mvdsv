@@ -63,6 +63,7 @@ typedef struct
 
 	double		time;
 	double		old_time;			// bumped by SV_Physics
+	double      old_bot_time;       // bumped by SV_RunBots
 
 	double		physicstime;		// last time physics was run
 
@@ -116,12 +117,12 @@ typedef struct
 	// includes the entity baselines, the static entities, etc
 	// large levels will have >MAX_DATAGRAM sized signons, so 
 	// multiple signon messages are kept
-	sizebuf_t	signon;
-	unsigned int	num_signon_buffers;
-	int		signon_buffer_size[MAX_SIGNON_BUFFERS];
-	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
+	sizebuf_t      signon;
+	unsigned int   num_signon_buffers;
+	int            signon_buffer_size[MAX_SIGNON_BUFFERS];
+	byte           signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
-	qbool		mvdrecording;
+	qbool		   mvdrecording;
 
 	entity_state_t static_entities[512];
 	int            static_entity_count;
@@ -794,7 +795,7 @@ void SV_SpawnServer (char *server, qbool devmap, char* entityfile);
 //
 // sv_phys.c
 //
-void SV_ProgStartFrame (void);
+void SV_ProgStartFrame (qbool isBotFrame);
 void SV_Physics (void);
 void SV_CheckVelocity (edict_t *ent);
 void SV_AddGravity (edict_t *ent, float scale);
@@ -804,6 +805,9 @@ void SV_RunNewmis (void);
 void SV_RunNQNewmis (void);
 void SV_Impact (edict_t *e1, edict_t *e2);
 void SV_SetMoveVars(void);
+#ifdef USE_PR2
+void SV_RunBots(void);
+#endif
 
 //
 // sv_send.c

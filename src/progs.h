@@ -232,7 +232,7 @@ qbool PR1_ClientCmd(void);
 
 #define PR1_GameSetChangeParms() PR_ExecuteProgram(PR_GLOBAL(SetChangeParms))
 #define PR1_GameSetNewParms() PR_ExecuteProgram(PR_GLOBAL(SetNewParms))
-#define PR1_GameStartFrame() PR_ExecuteProgram (PR_GLOBAL(StartFrame))
+#define PR1_GameStartFrame(isBotFrame) PR_ExecuteProgram (PR_GLOBAL(StartFrame))
 #define PR1_ClientKill() PR_ExecuteProgram (PR_GLOBAL(ClientKill))
 #define PR1_UserInfoChanged() (0) // PR1 does not really have it,
                                   // we have mod_UserInfo_Changed but it is slightly different.

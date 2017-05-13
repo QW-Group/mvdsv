@@ -162,12 +162,12 @@ void PR2_LoadEnts(char *data)
 //===========================================================================
 // GameStartFrame
 //===========================================================================
-void PR2_GameStartFrame(void)
+void PR2_GameStartFrame(qbool isBotFrame)
 {
 	if (sv_vm)
-		VM_Call(sv_vm, GAME_START_FRAME, (int) (sv.time * 1000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		VM_Call(sv_vm, GAME_START_FRAME, (int) (sv.time * 1000), isBotFrame, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	else
-		PR1_GameStartFrame();
+		PR1_GameStartFrame(isBotFrame);
 }
 
 //===========================================================================

@@ -478,7 +478,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 
 	// run the frame start qc function to let progs check cvars
 	if (!pr_nqprogs)
-		SV_ProgStartFrame ();
+		SV_ProgStartFrame (false);
 
 	// ********* External Entity support (.ent file(s) in gamedir/maps) pinched from ZQuake *********
 	// load and spawn all other entities

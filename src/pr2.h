@@ -38,7 +38,7 @@ void		PR2_UnLoadProgs();
 #define PR_UnLoadProgs PR2_UnLoadProgs
 void		PR2_LoadProgs();
 #define PR_LoadProgs PR2_LoadProgs
-void		PR2_GameStartFrame();
+void		PR2_GameStartFrame(qbool isBotFrame);
 #define PR_GameStartFrame PR2_GameStartFrame
 void		PR2_LoadEnts(char *data);
 #define PR_LoadEnts PR2_LoadEnts

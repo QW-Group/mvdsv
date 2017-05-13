@@ -432,8 +432,9 @@ int SV_CalcPing (client_t *cl)
 	ping = 0;
 	count = 0;
 #ifdef USE_PR2
-	if( cl->isBot )
-		return ((int) (sv_mintic.value * 1000));
+	if (cl->isBot) {
+		return 10;
+	}
 #endif
 	for (frame = cl->frames, i=0 ; i<UPDATE_BACKUP ; i++, frame++)
 	{
@@ -3218,8 +3219,12 @@ void SV_Frame (double time1)
 	SV_ReadPackets ();
 
 	// move autonomous things around if enough time has passed
-	if (!sv.paused)
-		SV_Physics ();
+	if (!sv.paused) {
+		SV_Physics();
+#ifdef USE_PR2
+		SV_RunBots();
+#endif
+	}
 	else
 		PausedTic ();
 
