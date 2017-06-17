@@ -671,7 +671,7 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 		if (touch == clip->passedict)
 			continue;
 		if (touch->v.solid == SOLID_TRIGGER)
-			SV_Error ("Trigger (%s) in clipping list", PR_GetString(touch->v.classname));
+			SV_Error ("Trigger (%s) in clipping list", PR_GetEntityString(touch->v.classname));
 
 		if ((clip->type & MOVE_NOMONSTERS) && touch->v.solid != SOLID_BSP)
 			continue;

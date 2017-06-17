@@ -1356,7 +1356,7 @@ static void SVC_DirectConnect (void)
 	ent->e->free = false;
 	newcl->edict = ent;
 	// restore client name.
-	ent->v.netname = PR_SetString(newcl->name);
+	PR_SetEntityString(ent, ent->v.netname, newcl->name);
 
 	s = ( vip ? va("%d", vip) : "" );
 

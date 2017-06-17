@@ -462,7 +462,7 @@ void FS_SetGamedir (char *dir, qbool force)
 
 	if (!force && !strcmp(fs_gamedirfile, dir))
 		return;		// Still the same, unless we forced.
-	
+
 	// FIXME: do we need it? since it will be set in FS_AddGameDirectory().
 	strlcpy (fs_gamedirfile, dir, sizeof(fs_gamedirfile));
 

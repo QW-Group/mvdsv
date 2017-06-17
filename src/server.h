@@ -966,7 +966,7 @@ void	SV_MVDInfoAdd_f (void);
 void	SV_MVDInfoRemove_f (void);
 void	SV_MVDInfo_f (void);
 void	SV_LastScores_f (void);
-char*   SV_MVDName2Txt (char *name);
+char*   SV_MVDName2Txt (const char *name);
 
 //
 // sv_demo_qtv.c
@@ -983,6 +983,7 @@ void DemoWriteQTV (sizebuf_t *msg);
 void QTVsv_FreeUserList(mvddest_t *d);
 void QTV_Streams_List (void);
 void QTV_Streams_UserList (void);
+const char* SV_MVDDemoName(void);
 
 //
 // sv_login.c

@@ -76,10 +76,14 @@ void 		PR2_GameConsoleCommand(void);
 void		PR2_PausedTic(float duration);
 #define PR_PausedTic PR2_PausedTic
 
-char*		PR2_GetString(intptr_t);
-#define		PR_GetString PR2_GetString
-intptr_t	PR2_SetString(char*s);
-#define PR_SetString PR2_SetString
+char*		PR2_GetString(intptr_t reference);
+//#define		PR_GetString PR2_GetString
+char*       PR2_GetEntityString(string_t reference);
+#define     PR_GetEntityString PR2_GetEntityString
+void        PR2_SetEntityString(edict_t* ed, string_t* target, char* value);
+void        PR2_SetGlobalString(string_t* target, char* value);
+#define     PR_SetEntityString(entity, address, value) PR2_SetEntityString(entity, &address, value)
+#define     PR_SetGlobalString(address, value) PR2_SetGlobalString(&address, value)
 void		PR2_RunError(char *error, ...);
 eval_t*		PR2_GetEdictFieldValue(edict_t *ed, char *field);
 #define PR_GetEdictFieldValue PR2_GetEdictFieldValue
@@ -87,5 +91,7 @@ int			ED2_FindFieldOffset(char *field);
 #define ED_FindFieldOffset ED2_FindFieldOffset
 void 		PR2_InitProg();
 #define PR_InitProg PR2_InitProg
+void        PR2_ClearEdict(edict_t* e);
+#define PR_ClearEdict PR2_ClearEdict
 
 #endif /* !__PR2_H__ */

@@ -211,8 +211,8 @@ extern char *pr_newstrtbl[MAX_PRSTR];
 extern int num_prstr;
 
 char *PR1_GetString(int num);
-int PR1_SetString(char *s);
-int PR_SetTmpString(const char *s);
+void PR1_SetString(string_t* address, char* s);
+void PR_SetTmpString(string_t* address, const char *s);
 
 void PR1_LoadProgs (void);
 void PR1_InitProg();
@@ -248,8 +248,10 @@ qbool PR1_ClientCmd(void);
 	#define PR_UnLoadProgs PR1_UnLoadProgs
 
 	#define PR_Init PR1_Init
-	#define PR_GetString PR1_GetString
-	#define PR_SetString PR1_SetString
+	//#define PR_GetString PR1_GetString
+	//#define PR_SetString PR1_SetString
+	#define PR_SetEntityString(ent, target, value) PR1_SetString(&target, value)
+	#define PR_SetGlobalString(target, value) PR1_SetString(&target, value)
 	#define ED_FindFieldOffset ED1_FindFieldOffset
 	#define PR_GetEdictFieldValue PR1_GetEdictFieldValue
 
@@ -271,6 +273,8 @@ qbool PR1_ClientCmd(void);
 	#define PR_EdictThink PR1_EdictThink
 	#define PR_EdictTouch PR1_EdictTouch
 	#define PR_EdictBlocked PR1_EdictBlocked
+
+	#define PR_ClearEdict(ent)
 #endif
 
 // pr_cmds.c

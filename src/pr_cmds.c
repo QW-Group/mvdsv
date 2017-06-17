@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
-#define	RETURN_STRING(s) (((int *)pr_globals)[OFS_RETURN] = PR1_SetString(s))
+#define	RETURN_STRING(s) (PR1_SetString(&((int *)pr_globals)[OFS_RETURN], s))
 
 /*
 ===============================================================================
@@ -983,7 +983,7 @@ void PF_substr (void)
 
 	if (start >= l || !len || !*s)
 	{
-		G_INT(OFS_RETURN) = PR_SetTmpString("");
+		PR_SetTmpString(&G_INT(OFS_RETURN), "");
 		return;
 	}
 
@@ -995,7 +995,7 @@ void PF_substr (void)
 
 	strlcpy(pr_string_temp, s, len + 1);
 
-	G_INT(OFS_RETURN) = PR1_SetString(pr_string_temp);
+	PR1_SetString(&G_INT(OFS_RETURN), pr_string_temp);
 
 	PF_SetTempString();
 }
@@ -1011,7 +1011,7 @@ string strcat(string str1, string str2)
 void PF_strcat (void)
 {
 	strlcpy(pr_string_temp, PF_VarString(0), MAX_PR_STRING_SIZE);
-	G_INT(OFS_RETURN) = PR1_SetString(pr_string_temp);
+	PR1_SetString(&G_INT(OFS_RETURN), pr_string_temp);
 
 	PF_SetTempString();
 }
@@ -1127,7 +1127,7 @@ void PF_calltimeofday (void)
 		G_FLOAT(OFS_PARM3) = (float)date.day;
 		G_FLOAT(OFS_PARM4) = (float)date.mon;
 		G_FLOAT(OFS_PARM5) = (float)date.year;
-		G_INT(OFS_PARM6) = PR_SetTmpString(date.str);
+		PR_SetTmpString(&G_INT(OFS_PARM6), date.str);
 
 		PR_ExecuteProgram(f);
 	}
@@ -1259,7 +1259,7 @@ void PF_ftos (void)
 		snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%d",(int)v);
 	else
 		snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%5.1f",v);
-	G_INT(OFS_RETURN) = PR1_SetString(pr_string_temp);
+	PR1_SetString(&G_INT(OFS_RETURN), pr_string_temp);
 	PF_SetTempString();
 }
 
@@ -1273,7 +1273,7 @@ void PF_fabs (void)
 void PF_vtos (void)
 {
 	snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "'%5.1f %5.1f %5.1f'", G_VECTOR(OFS_PARM0)[0], G_VECTOR(OFS_PARM0)[1], G_VECTOR(OFS_PARM0)[2]);
-	G_INT(OFS_RETURN) = PR1_SetString(pr_string_temp);
+	PR1_SetString(&G_INT(OFS_RETURN), pr_string_temp);
 
 	PF_SetTempString();
 }
@@ -2214,7 +2214,7 @@ void PF_makestatic (void)
 	s = &sv.static_entities[sv.static_entity_count];
 	memset(s, 0, sizeof(sv.static_entities[0]));
 	s->number = sv.static_entity_count + 1;
-	s->modelindex = SV_ModelIndex(PR_GetString(ent->v.model));
+	s->modelindex = SV_ModelIndex(PR_GetEntityString(ent->v.model));
 	if (!s->modelindex) {
 		ED_Free (ent);
 		return;

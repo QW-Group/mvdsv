@@ -330,6 +330,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 		ent->e = &sv.sv_edicts[i]; // assigning ->e field in each edict_t
 		ent->e->entnum = i;
 		ent->e->area.ed = ent; // yeah, pretty funny, but this help to find which edict_t own this area (link_t)
+		PR_ClearEdict(ent);
 	}
 
 	fofs_items2 = ED_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
@@ -362,7 +363,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	{
 		ent = EDICT_NUM(i+1);
 		// restore client name.
-		ent->v.netname = PR_SetString(svs.clients[i].name);
+		PR_SetEntityString(ent, ent->v.netname, svs.clients[i].name);
 		// reserve edict.
 		svs.clients[i].edict = ent;
 		//ZOID - make sure we update frags right
@@ -445,18 +446,18 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 
 	ent = EDICT_NUM(0);
 	ent->e->free = false;
-	ent->v.model = PR_SetString(sv.modelname);
+	PR_SetEntityString(ent, ent->v.model, sv.modelname);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
 	// information about the server
-	ent->v.netname = PR_SetString(VersionStringFull());
-	ent->v.targetname = PR_SetString(SERVER_NAME);
+	PR_SetEntityString(ent, ent->v.netname, VersionStringFull());
+	PR_SetEntityString(ent, ent->v.targetname, SERVER_NAME);
 	ent->v.impulse = VERSION_NUM;
 	ent->v.items = pr_numbuiltins - 1;
 
-	PR_GLOBAL(mapname) = PR_SetString(sv.mapname);
+	PR_SetGlobalString(PR_GLOBAL(mapname), sv.mapname);
 	// serverflags are for cross level information (sigils)
 	PR_GLOBAL(serverflags) = svs.serverflags;
 	if (pr_nqprogs)

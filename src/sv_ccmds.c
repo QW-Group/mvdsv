@@ -1456,9 +1456,9 @@ void SV_Localinfo_Set (const char *name, const char *value)
 	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = 0;
-		G_INT(OFS_PARM0) = PR_SetTmpString(name);
-		G_INT(OFS_PARM1) = PR_SetTmpString(old_value);
-		G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&_localinfo_, name));
+		PR_SetTmpString(&G_INT(OFS_PARM0), name);
+		PR_SetTmpString(&G_INT(OFS_PARM1), old_value);
+		PR_SetTmpString(&G_INT(OFS_PARM2), Info_Get(&_localinfo_, name));
 		PR_ExecuteProgram (mod_localinfoChanged);
 	}
 }

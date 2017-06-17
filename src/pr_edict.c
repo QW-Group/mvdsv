@@ -94,6 +94,7 @@ void ED_ClearEdict (edict_t *e)
 	memset(&e->v, 0, pr_edict_size - sizeof(edict_t) + sizeof(entvars_t));
 	e->e->lastruntime = 0;
 	e->e->free = false;
+	PR_ClearEdict(e);
 }
 
 /*
@@ -806,7 +807,7 @@ qbool ED_ParseEpair (void *base, ddef_t *key, char *s)
 	switch (key->type & ~DEF_SAVEGLOBAL)
 	{
 	case ev_string:
-		*(string_t *)d = PR1_SetString(ED_NewString (s));
+		PR1_SetString((string_t *)d, ED_NewString (s));
 		break;
 
 	case ev_float:
@@ -1055,8 +1056,8 @@ qbool PR1_ClientCmd(void)
 		static char cmd_copy[128], args_copy[1024] /* Ouch! */;
 		strlcpy (cmd_copy, Cmd_Argv(0), sizeof(cmd_copy));
 		strlcpy (args_copy, Cmd_Args(), sizeof(args_copy));
-		((int *)pr_globals)[OFS_PARM0] = PR1_SetString (cmd_copy);
-		((int *)pr_globals)[OFS_PARM1] = PR1_SetString (args_copy);
+		PR1_SetString (&((int *)pr_globals)[OFS_PARM0], cmd_copy);
+		PR1_SetString (&((int *)pr_globals)[OFS_PARM1], args_copy);
 		PR_ExecuteProgram (GE_ClientCommand);
 		return G_FLOAT(OFS_RETURN) ? true : false;
 	}
@@ -1065,7 +1066,7 @@ qbool PR1_ClientCmd(void)
 	{
 		static char cmd_copy[128];
 		strlcpy (cmd_copy, Cmd_Argv(0), sizeof(cmd_copy));
-		((int *)pr_globals)[OFS_PARM0] = PR1_SetString (cmd_copy);
+		PR1_SetString (&((int *)pr_globals)[OFS_PARM0], cmd_copy);
 
 		PR_ExecuteProgram (mod_UserCmd);
 		return G_FLOAT(OFS_RETURN) ? true : false;

@@ -347,7 +347,7 @@ static void Cmd_New_f (void)
 	if (sv_client->rip_vip)
 		MSG_WriteString (&sv_client->netchan.message, "");
 	else
-		MSG_WriteString (&sv_client->netchan.message, PR_GetString(sv.edicts->v.message));
+		MSG_WriteString (&sv_client->netchan.message, PR_GetEntityString(sv.edicts->v.message));
 
 	// send the movevars
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.gravity);
@@ -835,7 +835,7 @@ static void SV_SpawnSpectator (void)
 	for (i=MAX_CLIENTS-1 ; i<sv.num_edicts ; i++)
 	{
 		e = EDICT_NUM(i);
-		if (!strcmp(PR_GetString(e->v.classname), "info_player_start"))
+		if (!strcmp(PR_GetEntityString(e->v.classname), "info_player_start"))
 		{
 			VectorCopy (e->v.origin, sv_player->v.origin);
 			VectorCopy (e->v.angles, sv_player->v.angles);
@@ -2336,9 +2336,9 @@ void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* ol
 	{
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_client->edict);
-		G_INT(OFS_PARM0) = PR_SetTmpString(key);
-		G_INT(OFS_PARM1) = PR_SetTmpString(old_value);
-		G_INT(OFS_PARM2) = PR_SetTmpString(Info_Get(&sv_client->_userinfo_ctx_, key));
+		PR_SetTmpString(&G_INT(OFS_PARM0), key);
+		PR_SetTmpString(&G_INT(OFS_PARM1), old_value);
+		PR_SetTmpString(&G_INT(OFS_PARM2), Info_Get(&sv_client->_userinfo_ctx_, key));
 		PR_ExecuteProgram (mod_UserInfo_Changed);
 	}
 
@@ -2498,7 +2498,7 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 {
 	ED_ClearEdict(ent);
 	// restore client name.
-	ent->v.netname = PR_SetString(cl->name);
+	PR_SetEntityString(ent, ent->v.netname, cl->name);
 	// so spec will have right goalentity - if speccing someone
 	if(cl->spectator && cl->spec_track > 0)
 		ent->v.goalentity = EDICT_TO_PROG(svs.clients[cl->spec_track-1].edict);

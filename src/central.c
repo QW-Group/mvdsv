@@ -496,13 +496,14 @@ static void Web_PostFileRequest_f(void)
 	}
 
 	if (specified[0] == '*' && specified[1] == '\0') {
-		if (!sv.mvdrecording || !demo.dest) {
+		const char* demoname = SV_MVDDemoName();
+
+		if (!sv.mvdrecording || !demoname) {
 			Con_Printf("Not recording demo!\n");
 			return;
 		}
 
-		// FIXME: dunno is this right, just using first dest, also may be we must use demo.dest->path instead of sv_demoDir
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demo.dest->name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demoname));
 	}
 	else {
 		if (strstr(specified, ".cfg") || !strchr(specified, '/')) {

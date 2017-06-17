@@ -292,7 +292,8 @@ void SV_LoadGame_f (void) {
 		if (entnum == -1) {	
 			// parse the global vars
 			ED_ParseGlobals (start);
-		} else {	
+		}
+		else {	
 			// parse an edict
 			ent = EDICT_NUM(entnum);
 			ED_ClearEdict (ent); // FIXME: we also clear world edict here, is it OK?
