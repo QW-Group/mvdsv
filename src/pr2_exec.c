@@ -247,13 +247,13 @@ void PR2_SetGlobalString(string_t* target, char* s)
 		return;
 
 	case VM_NATIVE:
-	{
-		char** location = (char**)PR2_GlobalStringLocation(*target);
-		if (location) {
-			*location = s;
+		{
+			char** location = (char**)PR2_GlobalStringLocation(*target);
+			if (location) {
+				*location = s;
+			}
 		}
-	}
-	return;
+		return;
 
 	case VM_BYTECODE:
 		qvm = (qvm_t*)(sv_vm->hInst);
@@ -300,10 +300,14 @@ void PR2_LoadEnts(char *data)
 //===========================================================================
 void PR2_GameStartFrame(qbool isBotFrame)
 {
+	if (isBotFrame && (!sv_vm || sv_vm->type == VM_NONE || !gamedata || gamedata->APIversion < 15)) {
+		return;
+	}
+
 	if (sv_vm)
 		VM_Call(sv_vm, GAME_START_FRAME, (int) (sv.time * 1000), isBotFrame, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	else
-		PR1_GameStartFrame(isBotFrame);
+		PR1_GameStartFrame();
 }
 
 //===========================================================================

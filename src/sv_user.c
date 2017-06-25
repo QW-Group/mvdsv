@@ -3037,6 +3037,7 @@ void Cmd_PEXT_f(void)
 	MSG_WriteString (&sv_client->netchan.message, "cmd new\n");
 }
 
+#ifdef SERVERONLY
 // { Central login
 void Cmd_Login_f(void)
 {
@@ -3090,7 +3091,7 @@ void Cmd_Logout_f(void)
 	sv_client->logged = 0;
 }
 // } Central login
-
+#endif
 
 void SV_DemoList_f(void);
 void SV_DemoListRegex_f(void);
@@ -3114,11 +3115,13 @@ void SV_Noclip_f (void);
 void SV_Fly_f (void);
 // }
 
+#ifdef SERVERONLY
 // { central login
 void Cmd_Login_f(void);
 void Cmd_Logout_f(void);
 void Cmd_ChallengeResponse_f(void);
 // }
+#endif
 
 typedef struct
 {
@@ -3202,9 +3205,11 @@ static ucmd_t ucmds[] =
 
 	{"pext", Cmd_PEXT_f, false}, // user reply with supported protocol extensions.
 
+#ifdef SERVERONLY
 	{"login", Cmd_Login_f, false},
 	{"login-response", Cmd_ChallengeResponse_f, false},
 	{"logout", Cmd_Logout_f, false},
+#endif
 
 	{NULL, NULL}
 };

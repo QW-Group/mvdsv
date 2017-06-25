@@ -694,6 +694,7 @@ void QTVcmd_Say_f(mvddest_t *d)
 	int		j;
 	char	*p;
 	char	text[1024], text2[1024], *cmd;
+	int     sent_to = 0;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -742,6 +743,9 @@ void QTVcmd_Say_f(mvddest_t *d)
 			continue; // game started, don't send QTV chat to players, specs still get QTV chat
 
 		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
+		if (!client->spectator) {
+			sent_to |= (1 << j);
+		}
 	}
 
 	if (sv.mvdrecording) {

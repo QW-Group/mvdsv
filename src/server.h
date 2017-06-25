@@ -1014,6 +1014,8 @@ void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, s
 qbool SV_SkipCommsBotMessage(client_t* client);
 
 // 
+#ifdef SERVERONLY
 #include "central.h"
+#endif
 
 #endif /* !__SERVER_H__ */

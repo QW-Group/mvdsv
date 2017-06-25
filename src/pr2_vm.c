@@ -82,8 +82,8 @@ void* VM_POINTER(byte* base, uintptr_t mask, intptr_t offset)
 	intptr_t address = (intptr_t) base + offset;
 	qvm_t* qvm = (qvm_t*) sv_vm->hInst;
 
-	if (PR2_IsValidWriteAddress(qvm, (intptr_t)base + offset)) {
-		return (void*)((intptr_t)base + offset);
+	if (PR2_IsValidWriteAddress(qvm, address)) {
+		return (void*)address;
 	}
 
 	return OLD_VM_POINTER(base, mask, offset);

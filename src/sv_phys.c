@@ -1034,6 +1034,7 @@ void SV_RunBots(void)
 	if (sv.state != ss_active || !sv.physicstime)
 		return;
 
+#ifdef SERVERONLY
 	if (sv.old_bot_time)
 	{
 		// don't bother running a frame if 1/fps seconds haven't passed
@@ -1045,6 +1046,9 @@ void SV_RunBots(void)
 		sv_frametime = 1.0f / max_physfps; // initialization frame
 	}
 	sv.old_bot_time = sv.time;
+#else
+	// On internal server, we'll be matching the user's framerate
+#endif
 
 	savesvpl = sv_player;
 	savehc = sv_client;

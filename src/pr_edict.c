@@ -1225,7 +1225,7 @@ void PR1_LoadProgs (void)
 	PR_InitBuiltins();
 }
 
-void PR1_InitProg()
+void PR1_InitProg(void)
 {
 	sv.edicts = (edict_t*) Hunk_AllocName (MAX_EDICTS * pr_edict_size, "edicts");
 	sv.max_edicts = MAX_EDICTS;

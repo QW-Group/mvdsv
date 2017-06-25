@@ -236,7 +236,9 @@ void SV_Shutdown (char *finalmsg)
 	NET_CloseServer ();
 #endif
 
+#ifdef SERVERONLY
 	Central_Shutdown();
+#endif
 
 	// Shutdown game.
 	PR_GameShutDown();
@@ -324,7 +326,7 @@ void SV_FinalMessage (const char *message)
 #ifdef USE_PR2
 			&& !cl->isBot
 #endif
-			) {
+		) {
 			Netchan_Transmit(&cl->netchan, net_message.cursize
 				, net_message.data);
 		}
@@ -1478,6 +1480,7 @@ static qbool rcon_bandlim (void)
 
 	return false;
 }
+
 //bliP: master rcon/logging ->
 int Rcon_Validate (char *client_string, char *password1)
 {
@@ -1485,48 +1488,44 @@ int Rcon_Validate (char *client_string, char *password1)
 	double difftime_server_client;
 	unsigned int i;
 
-
-	if (rcon_bandlim())
+	if (rcon_bandlim()) {
 		return 0;
+	}
 
-	if (!strlen (password1))
+	if (!strlen(password1)) {
 		return 0;
+	}
 
-	if ((int)sv_crypt_rcon.value)
-	{
+	if ((int)sv_crypt_rcon.value) {
 		time(&server_time);
-		for (i = 0; i < sizeof(client_time) * 2; i += 2)
-		{
-			//			Sys_Printf("1) %c%c, %d\n", (Cmd_Argv(1) + DIGEST_SIZE * 2)[i], (Cmd_Argv(1) + DIGEST_SIZE * 2)[i + 1], client_time);
-
-			client_time +=  (char2int((unsigned char)(Cmd_Argv(1) + DIGEST_SIZE * 2)[i]) << (4 + i * 4)) +
-			                (char2int((unsigned char)(Cmd_Argv(1) + DIGEST_SIZE * 2)[i + 1]) << (i * 4));
-			//			Sys_Printf("2) %d, %d, %d\n", c1 << (4 + i * 4), c2 << (i * 4), client_time);
+		for (i = 0; i < sizeof(client_time) * 2; i += 2) {
+			client_time += (char2int((unsigned char)(Cmd_Argv(1) + DIGEST_SIZE * 2)[i]) << (4 + i * 4)) +
+			               (char2int((unsigned char)(Cmd_Argv(1) + DIGEST_SIZE * 2)[i + 1]) << (i * 4));
 		}
 		difftime_server_client = difftime(server_time, client_time);
-		//		Sys_Printf("3) %f, %d, %d\n", difftime_server_client, client_time, server_time);
 
-		if (!(int)sv_timestamplen.value)
-			if (difftime_server_client > (double) sv_timestamplen.value ||
-			        difftime_server_client < - (double) sv_timestamplen.value)
+		if (!(int)sv_timestamplen.value) {
+			if (difftime_server_client > (double)sv_timestamplen.value || difftime_server_client < -(double)sv_timestamplen.value) {
 				return 0;
-		SHA1_Init();
-		SHA1_Update(Cmd_Argv(0));
-		SHA1_Update(" ");
-		SHA1_Update(password1);
-		SHA1_Update(Cmd_Argv(1) + DIGEST_SIZE * 2);
-		SHA1_Update(" ");
-		for (i = 2; (int) i < Cmd_Argc(); i++)
-		{
-			SHA1_Update(Cmd_Argv(i));
-			SHA1_Update(" ");
+			}
 		}
-		if (strncmp (Cmd_Argv(1), SHA1_Final(), DIGEST_SIZE * 2))
+		SHA1_Init();
+		SHA1_Update((unsigned char*)Cmd_Argv(0));
+		SHA1_Update((unsigned char*)" ");
+		SHA1_Update((unsigned char*)password1);
+		SHA1_Update((unsigned char*)Cmd_Argv(1) + DIGEST_SIZE * 2);
+		SHA1_Update((unsigned char*)" ");
+		for (i = 2; (int) i < Cmd_Argc(); i++) {
+			SHA1_Update((unsigned char*)Cmd_Argv(i));
+			SHA1_Update((unsigned char*)" ");
+		}
+		if (strncmp(Cmd_Argv(1), SHA1_Final(), DIGEST_SIZE * 2)) {
 			return 0;
+		}
 	}
-	else
-		if (strcmp (Cmd_Argv(1), password1))
-			return 0;
+	else if (strcmp(Cmd_Argv(1), password1)) {
+		return 0;
+	}
 	return 1;
 }
 
@@ -1535,18 +1534,16 @@ int Master_Rcon_Validate (void)
 	int i, client_string_len = Cmd_Argc() + 1;
 	char *client_string;
 
-
-	for (i = 0; i < Cmd_Argc(); ++i)
+	for (i = 0; i < Cmd_Argc(); ++i) {
 		client_string_len += strlen(Cmd_Argv(i));
+	}
 	client_string = (char *) Q_malloc (client_string_len);
+
 	*client_string = 0;
-	for (i = 0; i < Cmd_Argc(); ++i)
-	{
+	for (i = 0; i < Cmd_Argc(); ++i) {
 		strlcat(client_string, Cmd_Argv(i), client_string_len);
 		strlcat(client_string, " ", client_string_len);
 	}
-	//	Sys_Printf("client_string = %s\nclient_string_len = %d, strlen(client_string) = %d\n",
-	//		client_string, client_string_len, strlen(client_string));
 	i = Rcon_Validate (client_string, master_rcon_password);
 	Q_free(client_string);
 	return i;
@@ -3233,7 +3230,9 @@ void SV_Frame (double time1)
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
 
+#ifdef SERVERONLY
 	Central_ProcessResponses();
+#endif
 
 	demo_start = Sys_DoubleTime ();
 	SV_SendDemoMessage();
@@ -3853,7 +3852,9 @@ void SV_Init (void)
 	server_cfg_done = true;
 #endif
 
+#ifdef SERVERONLY
 	Central_Init ();
+#endif
 }
 
 /*

@@ -262,6 +262,13 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 
 	Host_ClearMemory();
 
+#ifndef SERVERONLY
+	if (!oldmap[0]) {
+		Cbuf_InsertTextEx(&cbuf_server, "exec server.cfg\n");
+		Cbuf_ExecuteEx(&cbuf_server);
+	}
+#endif
+
 #ifdef FTE_PEXT_FLOATCOORDS
 	if (sv_bigcoords.value)
 	{

@@ -26,6 +26,11 @@
 
 #define SETUSERINFO_STAR          (1<<0) // allow set star keys
 
+#ifdef SERVERONLY
+#define Cbuf_AddTextEx(x, y) Cbuf_AddText(y)
+#define Cbuf_ExecuteEx(x) Cbuf_Execute()
+#endif
+
 char	*pr2_ent_data_ptr;
 vm_t	*sv_vm = NULL;
 
@@ -803,7 +808,7 @@ localcmd (string)
 */
 void PF2_localcmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Cbuf_AddText((char *)VM_POINTER(base,mask,stack[0].string));
+	Cbuf_AddTextEx(&cbuf_server, (char *)VM_POINTER(base,mask,stack[0].string));
 }
 
 void PF2_executecmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
@@ -813,7 +818,7 @@ void PF2_executecmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 	old_self = pr_global_struct->self;
 	old_other = pr_global_struct->other;
 
-	Cbuf_Execute();
+	Cbuf_ExecuteEx(&cbuf_server);
 
 	pr_global_struct->self = old_self;
 	pr_global_struct->other = old_other;
@@ -840,8 +845,8 @@ void PF2_readcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	buf = (char *) VM_POINTER(base,mask,stack[1].string);
 	sizebuff = stack[2]._int;
 
-	Cbuf_Execute();
-	Cbuf_AddText (str);
+	Cbuf_ExecuteEx(&cbuf_server);
+	Cbuf_AddTextEx(&cbuf_server, str);
 
 	old = sv_redirected;
 
@@ -849,7 +854,7 @@ void PF2_readcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 		SV_EndRedirect();
 
 	SV_BeginRedirect(RD_MOD);
-	Cbuf_Execute();
+	Cbuf_ExecuteEx(&cbuf_server);
 
 	strlcpy(buf, outputbuf, sizebuff);
 
@@ -868,7 +873,7 @@ void redirectcmd (entity to, string str)
 =================
 */
 
-void PF2_redirectcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
+void PF2_redirectcmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
 	char		*str;
 	int 		entnum;
@@ -876,25 +881,23 @@ void PF2_redirectcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retv
 
 	extern redirect_t sv_redirected;
 
-	str = (char *) VM_POINTER(base,mask,stack[1].string);
-	if ( sv_redirected )
-	{
-		Cbuf_AddText (str);
-		Cbuf_Execute();
+	str = (char *)VM_POINTER(base, mask, stack[1].string);
+	if (sv_redirected) {
+		Cbuf_AddTextEx(&cbuf_server, str);
+		Cbuf_ExecuteEx(&cbuf_server);
 		return;
 	}
 
-	entnum = NUM_FOR_EDICT((edict_t *)VM_POINTER(base,mask,stack[0]._int));
+	entnum = NUM_FOR_EDICT((edict_t *)VM_POINTER(base, mask, stack[0]._int));
 
-	if (entnum < 1 || entnum > MAX_CLIENTS)
-		PR2_RunError ("Parm 0 not a client");
+	if (entnum < 1 || entnum > MAX_CLIENTS) {
+		PR2_RunError("Parm 0 not a client");
+	}
 
-
-	SV_BeginRedirect( (redirect_t) (RD_MOD + entnum ));
-	Cbuf_AddText (str);
-	Cbuf_Execute();
+	SV_BeginRedirect((redirect_t)(RD_MOD + entnum));
+	Cbuf_AddTextEx(&cbuf_server, str);
+	Cbuf_ExecuteEx(&cbuf_server);
 	SV_EndRedirect();
-
 }
 
 /*
@@ -906,7 +909,6 @@ float   trap_cvar( const char *var );
 */
 void PF2_cvar(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-
 	retval->_float =  Cvar_Value((char *)VM_POINTER(base,mask,stack[0].string));
 }
 
@@ -1598,22 +1600,29 @@ PF2_makestatic
 */
 void PF2_makestatic(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
+	entity_state_t* s;
 	edict_t	*ent;
-	int		i;
 
 	ent = EDICT_NUM(stack[0]._int);
-
-	MSG_WriteByte(&sv.signon, svc_spawnstatic);
-	MSG_WriteByte(&sv.signon, SV_ModelIndex(PR_GetEntityString(ent->v.model)));
-
-	MSG_WriteByte(&sv.signon, ent->v.frame);
-	MSG_WriteByte(&sv.signon, ent->v.colormap);
-	MSG_WriteByte(&sv.signon, ent->v.skin);
-	for (i = 0; i < 3; i++)
-	{
-		MSG_WriteCoord(&sv.signon, ent->v.origin[i]);
-		MSG_WriteAngle(&sv.signon, ent->v.angles[i]);
+	if (sv.static_entity_count >= sizeof(sv.static_entities) / sizeof(sv.static_entities[0])) {
+		ED_Free (ent);
+		return;
 	}
+
+	s = &sv.static_entities[sv.static_entity_count];
+	memset(s, 0, sizeof(sv.static_entities[0]));
+	s->number = sv.static_entity_count + 1;
+	s->modelindex = SV_ModelIndex(PR_GetEntityString(ent->v.model));
+	if (!s->modelindex) {
+		ED_Free (ent);
+		return;
+	}
+	s->frame = ent->v.frame;
+	s->colormap = ent->v.colormap;
+	s->skinnum = ent->v.skin;
+	VectorCopy(ent->v.origin, s->origin);
+	VectorCopy(ent->v.angles, s->angles);
+	++sv.static_entity_count;
 
 	// throw the entity away now
 	ED_Free(ent);
@@ -1673,10 +1682,12 @@ void PF2_changelevel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return;
 	last_spawncount = svs.spawncount;
 
-	if (entfile && *entfile)
-		Cbuf_AddText(va("map %s %s\n", s, entfile));
-	else
-		Cbuf_AddText(va("map %s\n", s));
+	if (entfile && *entfile) {
+		Cbuf_AddTextEx(&cbuf_server, va("map %s %s\n", s, entfile));
+	}
+	else {
+		Cbuf_AddTextEx(&cbuf_server, va("map %s\n", s));
+	}
 }
 
 /*
@@ -2020,8 +2031,8 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return ;
 	}
 
-	if (FS_UnsafeFilename(name))	// someone tried to be clever.
-	{
+	if (FS_UnsafeFilename(name)) {
+		// someone tried to be clever.
 		retval->_int = -1;
 		return ;
 	}
@@ -2031,8 +2042,11 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	{
 	case FS_READ_BIN:
 	case FS_READ_TXT:
-
+#ifndef SERVERONLY
+		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_ANY);
+#else
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME);
+#endif
 
 		if(!pr2_fopen_files[i].handle)
 		{
@@ -2044,17 +2058,13 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 		retval->_int = VFS_GETLEN(pr2_fopen_files[i].handle);
 
-
 		break;
 	case FS_WRITE_BIN:
 	case FS_WRITE_TXT:
 	case FS_APPEND_BIN:
 	case FS_APPEND_TXT:
-
-// well, perhapswe we should create path...
-//		snprintf( fname, sizeof( fname ), "%s/%s" , fs_gamedir, name );
-//		FS_CreatePath(fname);
-//		FS_CreatePathRelative(name, FS_GAME_OS);
+		// well, perhaps we we should create path...
+		//		FS_CreatePathRelative(name, FS_GAME_OS);
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME_OS);
 		if ( !pr2_fopen_files[i].handle )
 		{
@@ -2115,7 +2125,7 @@ void PF2_FS_SeekFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	if(!(pr2_fopen_files[fnum].handle))
 		return;
-	if(type <0 || type > 2)
+	if(type < 0 || type >= sizeof(seek_origin) / sizeof(seek_origin[0]))
 		return;
 
 	retval->_int = VFS_SEEK(pr2_fopen_files[fnum].handle, offset, seek_origin[type]);
@@ -2197,7 +2207,7 @@ void PF2_FS_ReadFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	retval->_int = VFS_READ(pr2_fopen_files[fnum].handle, dest, quantity, NULL);
 }
 
-void PR2_FS_Restart()
+void PR2_FS_Restart(void)
 {
 	int i;
 
@@ -2247,11 +2257,11 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 
 	char	*path, *ext, *listbuff, *dirptr;
 
-	intptr_t pathoffset 		= stack[0]._int;
-	intptr_t extoffset  		= stack[1]._int;
-	intptr_t listbuffoffset 	= stack[2]._int;
-	intptr_t buffsize			= stack[3]._int;
-	intptr_t flags				= stack[4]._int;
+	intptr_t pathoffset         = stack[0]._int;
+	intptr_t extoffset          = stack[1]._int;
+	intptr_t listbuffoffset     = stack[2]._int;
+	intptr_t buffsize           = stack[3]._int;
+	intptr_t flags              = stack[4]._int;
 
 	int numfiles = 0;
 	int i, j;
@@ -2310,8 +2320,13 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 			}
 
 			// skip file extension
-			if (!(flags & FILELIST_WITH_EXT))
-				COM_StripExtension (fullname);
+			if (!(flags & FILELIST_WITH_EXT)) {
+#ifndef SERVERONLY
+				COM_StripExtension(fullname, fullname, sizeof(fullname));
+#else
+				COM_StripExtension(fullname);
+#endif
+			}
 
 			list[i] = Q_strdup(fullname); // a bit below we will free it
 		}
@@ -2978,7 +2993,7 @@ extern field_t *fields;
 
 #define GAME_API_VERSION_MIN 8
 
-void PR2_InitProg()
+void PR2_InitProg(void)
 {
 	extern cvar_t sv_pr2references;
 
@@ -3014,5 +3029,13 @@ void PR2_InitProg()
 	pr_globals = (float *) pr_global_struct;
 	fields = (field_t*)PR2_GetString((intptr_t)gamedata->fields);
 	pr_edict_size = gamedata->sizeofent;
+
+	sv.max_edicts = MAX_EDICTS;
+	if (gamedata->APIversion >= 14) {
+		sv.max_edicts = min(sv.max_edicts, gamedata->maxentities);
+	}
+	else {
+		sv.max_edicts = min(sv.max_edicts, 512);
+	}
 }
 #endif /* USE_PR2 */

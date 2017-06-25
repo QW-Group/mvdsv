@@ -211,7 +211,6 @@ typedef struct
 	stringptr_t   name;
 	int           ofs;
 	fieldtype_t   type;
-//	int			flags;
 } field_t;
 
 typedef struct

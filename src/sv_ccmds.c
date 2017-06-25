@@ -491,6 +491,9 @@ void SV_Map (qbool now)
 	}
 
 	changed = true;
+#ifndef SERVERONLY
+	com_serveractive = true;
+#endif
 }
 
 void SV_Map_f (void)

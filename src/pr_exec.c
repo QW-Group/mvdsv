@@ -855,7 +855,7 @@ void PR1_PausedTic(float duration)
 
 //=============================================================================
 
-void PR1_UnLoadProgs()
+void PR1_UnLoadProgs(void)
 {
 	if (progs)
 	{

@@ -32,11 +32,11 @@ extern cvar_t sv_progtype;
 extern vm_t* sv_vm;
 
 
-void		PR2_Init();
+void		PR2_Init(void);
 #define PR_Init PR2_Init
-void		PR2_UnLoadProgs();
+void		PR2_UnLoadProgs(void);
 #define PR_UnLoadProgs PR2_UnLoadProgs
-void		PR2_LoadProgs();
+void		PR2_LoadProgs(void);
 #define PR_LoadProgs PR2_LoadProgs
 void		PR2_GameStartFrame(qbool isBotFrame);
 #define PR_GameStartFrame PR2_GameStartFrame
@@ -52,15 +52,15 @@ void		PR2_GameClientPreThink(int spec);
 #define PR_GameClientPreThink PR2_GameClientPreThink
 void		PR2_GameClientPostThink(int spec);
 #define PR_GameClientPostThink PR2_GameClientPostThink
-qbool		PR2_ClientCmd();
+qbool		PR2_ClientCmd(void);
 #define PR_ClientCmd PR2_ClientCmd
-void		PR2_ClientKill();
+void		PR2_ClientKill(void);
 #define PR_ClientKill PR2_ClientKill
 qbool		PR2_ClientSay(int isTeamSay, char *message);
 #define PR_ClientSay PR2_ClientSay
-void		PR2_GameSetNewParms();
+void		PR2_GameSetNewParms(void);
 #define PR_GameSetNewParms PR2_GameSetNewParms
-void		PR2_GameSetChangeParms();
+void		PR2_GameSetChangeParms(void);
 #define PR_GameSetChangeParms PR2_GameSetChangeParms
 void		PR2_EdictTouch(func_t f);
 #define PR_EdictTouch PR2_EdictTouch
@@ -68,9 +68,9 @@ void		PR2_EdictThink(func_t f);
 #define PR_EdictThink PR2_EdictThink
 void		PR2_EdictBlocked(func_t f);
 #define PR_EdictBlocked PR2_EdictBlocked
-qbool 		PR2_UserInfoChanged();
+qbool 		PR2_UserInfoChanged(void);
 #define PR_UserInfoChanged PR2_UserInfoChanged
-void 		PR2_GameShutDown();
+void 		PR2_GameShutDown(void);
 #define PR_GameShutDown PR2_GameShutDown
 void 		PR2_GameConsoleCommand(void);
 void		PR2_PausedTic(float duration);
@@ -89,7 +89,7 @@ eval_t*		PR2_GetEdictFieldValue(edict_t *ed, char *field);
 #define PR_GetEdictFieldValue PR2_GetEdictFieldValue
 int			ED2_FindFieldOffset(char *field);
 #define ED_FindFieldOffset ED2_FindFieldOffset
-void 		PR2_InitProg();
+void 		PR2_InitProg(void);
 #define PR_InitProg PR2_InitProg
 void        PR2_ClearEdict(edict_t* e);
 #define PR_ClearEdict PR2_ClearEdict

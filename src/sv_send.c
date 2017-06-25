@@ -581,7 +581,6 @@ Larger attenuations will drop off.  (max 4 attenuation)
 void SV_StartSound (edict_t *entity, int channel, char *sample, int volume, float attenuation)
 {
 	int     sound_num;
-	int     field_mask;
 	int     i;
 	int     ent;
 	vec3_t  origin;
@@ -626,7 +625,6 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume, floa
 
 	channel = (ent<<3) | channel;
 
-	field_mask = 0;
 	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
 		channel |= SND_VOLUME;
 	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)

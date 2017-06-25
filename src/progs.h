@@ -215,11 +215,11 @@ void PR1_SetString(string_t* address, char* s);
 void PR_SetTmpString(string_t* address, const char *s);
 
 void PR1_LoadProgs (void);
-void PR1_InitProg();
+void PR1_InitProg(void);
 void PR1_Init(void);
 
 #define PR1_GameShutDown()	// PR1 does not really have it.
-void PR1_UnLoadProgs();
+void PR1_UnLoadProgs(void);
 
 void PR1_GameClientDisconnect(int spec);
 void PR1_GameClientConnect(int spec);
@@ -232,7 +232,7 @@ qbool PR1_ClientCmd(void);
 
 #define PR1_GameSetChangeParms() PR_ExecuteProgram(PR_GLOBAL(SetChangeParms))
 #define PR1_GameSetNewParms() PR_ExecuteProgram(PR_GLOBAL(SetNewParms))
-#define PR1_GameStartFrame(isBotFrame) PR_ExecuteProgram (PR_GLOBAL(StartFrame))
+#define PR1_GameStartFrame() PR_ExecuteProgram (PR_GLOBAL(StartFrame))
 #define PR1_ClientKill() PR_ExecuteProgram (PR_GLOBAL(ClientKill))
 #define PR1_UserInfoChanged() (0) // PR1 does not really have it,
                                   // we have mod_UserInfo_Changed but it is slightly different.
@@ -266,7 +266,7 @@ qbool PR1_ClientCmd(void);
 
 	#define PR_GameSetChangeParms PR1_GameSetChangeParms
 	#define PR_GameSetNewParms PR1_GameSetNewParms
-	#define PR_GameStartFrame PR1_GameStartFrame
+	#define PR_GameStartFrame(isBotFrame) { if (!isBotFrame) { PR1_GameStartFrame(); } }
 	#define PR_ClientKill PR1_ClientKill
 	#define PR_UserInfoChanged PR1_UserInfoChanged
 	#define PR_LoadEnts PR1_LoadEnts
