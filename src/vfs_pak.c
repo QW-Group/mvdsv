@@ -222,7 +222,7 @@ static void FSPAK_BuildHash(void *handle)
 static qbool FSPAK_FLocate(void *handle, flocation_t *loc, const char *filename, void *hashedresult)
 {
 	packfile_t *pf = hashedresult;
-	int i, len;
+	int i;
 	pack_t		*pak = handle;
 
 // look through all the pak file elements
@@ -246,7 +246,6 @@ static qbool FSPAK_FLocate(void *handle, flocation_t *loc, const char *filename,
 
 	if (pf)
 	{
-		len = pf->filelen;
 		if (loc)
 		{
 			loc->index = pf - pak->files;

@@ -236,7 +236,7 @@ void SV_Shutdown (char *finalmsg)
 	NET_CloseServer ();
 #endif
 
-#ifdef SERVERONLY
+#if defined(SERVERONLY) && defined(WWW_INTEGRATION)
 	Central_Shutdown();
 #endif
 
@@ -3230,7 +3230,7 @@ void SV_Frame (double time1)
 	// send messages back to the clients that had packets read this frame
 	SV_SendClientMessages ();
 
-#ifdef SERVERONLY
+#if defined(SERVERONLY) && defined(WWW_INTEGRATION)
 	Central_ProcessResponses();
 #endif
 
@@ -3852,7 +3852,7 @@ void SV_Init (void)
 	server_cfg_done = true;
 #endif
 
-#ifdef SERVERONLY
+#if defined(SERVERONLY) && defined(WWW_INTEGRATION)
 	Central_Init ();
 #endif
 }

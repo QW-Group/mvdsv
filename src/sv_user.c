@@ -3037,7 +3037,7 @@ void Cmd_PEXT_f(void)
 	MSG_WriteString (&sv_client->netchan.message, "cmd new\n");
 }
 
-#ifdef SERVERONLY
+#if defined(SERVERONLY) && defined(WWW_INTEGRATION)
 // { Central login
 void Cmd_Login_f(void)
 {
@@ -3115,7 +3115,7 @@ void SV_Noclip_f (void);
 void SV_Fly_f (void);
 // }
 
-#ifdef SERVERONLY
+#if defined(SERVERONLY) && defined(WWW_INTEGRATION)
 // { central login
 void Cmd_Login_f(void);
 void Cmd_Logout_f(void);
@@ -3205,7 +3205,7 @@ static ucmd_t ucmds[] =
 
 	{"pext", Cmd_PEXT_f, false}, // user reply with supported protocol extensions.
 
-#ifdef SERVERONLY
+#if defined(SERVERONLY) && defined(WWW_INTEGRATION)
 	{"login", Cmd_Login_f, false},
 	{"login-response", Cmd_ChallengeResponse_f, false},
 	{"logout", Cmd_Logout_f, false},

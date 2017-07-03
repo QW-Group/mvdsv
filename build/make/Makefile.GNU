@@ -14,39 +14,58 @@ SV_DIR = ../../src
 # for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
 # configure script add FORCE32BITFLAGS=-m32
 
-BASE_CFLAGS=-Wall -pipe -pthread -funsigned-char -DSERVERONLY -DUSE_PR2 -D$(BYTE_ORDER)Q__ $(FORCE32BITFLAGS)
+BASE_CFLAGS=-Wall -pipe -funsigned-char -DSERVERONLY -DUSE_PR2 -D$(BYTE_ORDER)Q__ $(FORCE32BITFLAGS)
 WITH_OPTIMIZED_CFLAGS=YES
+
+# libcurl support
+ifeq ($(shell pkg-config --exists libcurl && echo 1),1)
+	CURL_CFLAGS = `pkg-config libcurl --cflags`
+	CURL_LIBS = `pkg-config libcurl --libs`
+endif
 
 USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
-ifeq ($(ARCH),x86)
-ifneq ($(UNAME),Darwin)
-ifneq ($(UNAME),MacOSX)
-ASM=$(USE_ASM)
-endif
-endif
-endif
-CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -fno-strict-aliasing -ffast-math -funroll-loops
+	ifeq ($(ARCH),x86)
+		ifneq ($(UNAME),Darwin)
+			ifneq ($(UNAME),MacOSX)
+				ASM=$(USE_ASM)
+			endif
+		endif
+	endif
+	CFLAGS=$(ASM) $(BASE_CFLAGS) -O2 -fno-strict-aliasing -ffast-math -funroll-loops
 else
-CFLAGS=$(BASE_CFLAGS) -Wsign-compare -ggdb
+	CFLAGS=$(BASE_CFLAGS) -Wsign-compare -ggdb
 endif
 
 LDFLAGS=-lm
+ASMFLAGS=-DELF -x assembler-with-cpp
 ifeq ($(UNAME),Linux)
-LDFLAGS+=-ldl
-STRIP=-strip
-STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv
+	LDFLAGS+=-ldl
+	CFLAGS+= -pthread
+	STRIP=-strip
+	STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv
 else
-ifeq ($(UNAME),SunOS)
-LDFLAGS+= -lsocket -lnsl
-CFLAGS+= -DBSD_COMP
-endif
+	ifeq ($(UNAME),SunOS)
+		LDFLAGS+= -lsocket -lnsl
+		CFLAGS+= -pthread -DBSD_COMP
+	else
+		ifeq ($(UNAME),CYGWIN_NT-10.0)
+			LDFLAGS += -Lmingw32-libs/lib -static -lws2_32 -lwinmm
+			CFLAGS += -D_WIN32_WINNT=0x0501 -D_USE_32BIT_TIME_T -D__USE_MINGW_ANSI_STDIO -D_CONSOLE
+			STRIP=-strip
+			STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv
+			ASMFLAGS = -x assembler-with-cpp
+		else
+			CFLAGS+= -pthread 
+		endif
+	endif
 endif
 
-CURL_CFLAGS ?= $(shell pkg-config libcurl --cflags)
-CURL_LIBS ?= $(shell pkg-config libcurl --libs)
-CFLAGS += $(CURL_CFLAGS)
-LDFLAGS += $(CURL_LIBS)
+ifdef CURL_CFLAGS
+	CFLAGS += $(CURL_CFLAGS)
+	CFLAGS += -DWWW_INTEGRATION
+	LDFLAGS += $(CURL_LIBS)
+endif
 
 ifeq ($(CC_BASEVERSION),4) # if gcc4 then build universal binary
 ifeq ($(UNAME),Darwin)
@@ -61,7 +80,7 @@ endif
 # SERVER
 #############################################################################
 
-SV_OBJS = \
+SV_OBJS += \
 		$(SV_DIR)/pr_cmds.o \
 		$(SV_DIR)/pr_edict.o \
 		$(SV_DIR)/pr_exec.o \
@@ -85,7 +104,6 @@ SV_OBJS = \
 		$(SV_DIR)/sv_nchan.o \
 		$(SV_DIR)/sv_phys.o \
 		$(SV_DIR)/sv_send.o \
-		$(SV_DIR)/sv_sys_unix.o \
 		$(SV_DIR)/sv_user.o \
 		$(SV_DIR)/sv_save.o \
 \
@@ -112,8 +130,10 @@ SV_OBJS = \
 \
 		$(SV_DIR)/pcre/get.o \
 		$(SV_DIR)/pcre/pcre.o \
-\
-		$(SV_DIR)/central.o
+
+ifdef CURL_CFLAGS
+		SV_WEB_INTEGRATION = $(SV_DIR)/central.o
+endif
 
 ifeq ($(USE_ASM),$(ASM))
 SV_ASM_OBJS = \
@@ -125,17 +145,31 @@ endif
 # SETUP AND BUILD
 #############################################################################
 
+# Define V=1 to show command line.
+ifdef V
+    Q :=
+    E := @true
+else
+    Q := @
+    E := @echo
+endif
+
 .c.o :
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(E) [CC] $@
+	$(Q)$(CC) $(CFLAGS) -c $< -o $@
 
 .s.o :
-	$(CC) $(CFLAGS) -DELF -x assembler-with-cpp -c $< -o $@
+	$(E) [ASM] $@
+	$(Q)$(CC) $(CFLAGS) $(ASMFLAGS) -c $< -o $@
 
 all : mvdsv
-	$(STRIP) $(STRIP_FLAGS)
+	$(E) [STRIP]
+	$(Q)$(STRIP) $(STRIP_FLAGS)
 
-mvdsv : $(SV_OBJS) $(SV_ASM_OBJS)
-	$(CC) $(CFLAGS) -o mvdsv $^ $(LDFLAGS)
+mvdsv : $(SV_WEB_INTEGRATION) $(SV_OBJS) $(SV_ASM_OBJS)
+	$(E) [LINK]
+	$(Q)$(CC) $(CFLAGS) -o mvdsv $^ $(LDFLAGS)
 
 clean : 
-	-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o mvdsv
+	$(E) [CLEAN]
+	$(Q)-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o mvdsv
