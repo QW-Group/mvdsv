@@ -198,6 +198,13 @@ void MSG_WriteCoord (sizebuf_t *sb, const float f)
 #endif
 }
 
+void MSG_WriteLongCoord(sizebuf_t* sb, float f)
+{
+	f = LittleFloat(f);
+
+	SZ_Write (sb, (void*)&f, sizeof(f));
+}
+
 void MSG_WriteAngle (sizebuf_t *sb, const float f)
 {
 #ifdef FTE_PEXT_FLOATCOORDS
@@ -1347,7 +1354,7 @@ qbool Info_Set (ctxinfo_t *ctx, const char *name, const char *value)
 
 	if (name[0] == '*')
 	{
-		Con_Printf ("Can't set * keys\n");
+		Con_Printf ("Can't set * keys [%s]\n", name);
 		return false;
 	}
 
@@ -1844,3 +1851,20 @@ int Com_TranslateMapChecksum (const char *mapname, int checksum)
 	return checksum;
 }
 
+qbool COM_FileExists (char *path)
+{
+	FILE *fexists = NULL;
+
+	// Try opening the file to see if it exists.
+	fexists = fopen(path, "rb");
+
+	// The file exists.
+	if (fexists)
+	{
+		// Make sure the file is closed.
+		fclose (fexists);
+		return true;
+	}
+
+	return false;
+}

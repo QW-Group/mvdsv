@@ -30,7 +30,7 @@
 //
 // g_public.h -- game module information visible to server
 
-#define	GAME_API_VERSION	13
+#define	GAME_API_VERSION	15
 
 
 //===============================================================
@@ -188,7 +188,7 @@ typedef enum
 	// and parameters.  Return qfalse if the game doesn't recognize it as a command.
 	GAME_CLIENT_SAY,			// ( int isTeamSay );
 	GAME_PAUSED_TIC,			// ( int duration_msec );	// duration is in msecs
-
+	GAME_CLEAR_EDICT,           // (self)
 } gameExport_t;
 
 
@@ -208,19 +208,19 @@ typedef enum
 
 typedef struct
 {
-	string_t	name;
-	int			ofs;
-	fieldtype_t	type;
-//	int			flags;
+	stringptr_t   name;
+	int           ofs;
+	fieldtype_t   type;
 } field_t;
 
 typedef struct
 {
-	edict_t		*ents;
-	int		sizeofent;
-	globalvars_t	*global;
-	field_t		*fields;
-	int 		APIversion;
+	edict_t         *ents;
+	int             sizeofent;
+	globalvars_t    *global;
+	field_t         *fields;
+	int             APIversion;
+	int             maxentities;
 } gameData_t;
 
 typedef int		fileHandle_t;

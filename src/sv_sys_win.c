@@ -351,6 +351,7 @@ void Sys_Quit (qbool restart)
 {
 	if (restart)
 	{
+#ifndef __MINGW32__
 		int maxfd = 131072; // well, should be enough for everyone...
 
 		_set_invalid_parameter_handler(myInvalidParameterHandler); // so close() does not crash our program on invalid handle...
@@ -363,6 +364,7 @@ void Sys_Quit (qbool restart)
 		}
 
 		if (execv(argv[0], com_argv) == -1)
+#endif
 		{
 #ifdef _CONSOLE
 			if (!((int)sys_nostdout.value || isdaemon))
@@ -703,7 +705,6 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
         CREATE_SUSPENDED,   // creation flags
         &threadid);         // pointer to receive thread ID
 
-    SetThreadPriority(thread, THREAD_PRIORITY_HIGHEST);
     ResumeThread(thread);
 
     return 1;
@@ -720,7 +721,6 @@ main
 int main(int ac, char *av[])
 {
 	double			newtime, time, oldtime;
-	int				j;
 	int				sleep_msec;
 
 	ParseCommandLine (ac, av);

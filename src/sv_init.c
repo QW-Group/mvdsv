@@ -36,6 +36,8 @@ int fofs_movement;
 int fofs_vw_index;
 int fofs_hideentity;
 int fofs_trackent;
+int fofs_visibility;
+int fofs_hide_players;
 
 /*
 ================
@@ -90,9 +92,8 @@ baseline will be transmitted
 */
 static void SV_CreateBaseline (void)
 {
-	int			i;
-	edict_t			*svent;
-	int				entnum;
+	edict_t  *svent;
+	int      entnum;
 
 	for (entnum = 0; entnum < sv.num_edicts ; entnum++)
 	{
@@ -107,6 +108,7 @@ static void SV_CreateBaseline (void)
 		//
 		// create entity baseline
 		//
+		svent->e->baseline.number = entnum;
 		VectorCopy (svent->v.origin, svent->e->baseline.origin);
 		VectorCopy (svent->v.angles, svent->e->baseline.angles);
 		svent->e->baseline.frame = svent->v.frame;
@@ -119,33 +121,11 @@ static void SV_CreateBaseline (void)
 		else
 		{
 			svent->e->baseline.colormap = 0;
-			svent->e->baseline.modelindex = SV_ModelIndex(PR_GetString(svent->v.model));
-		}
-
-		//
-		// flush the signon message out to a separate buffer if
-		// nearly full
-		//
-		SV_FlushSignon ();
-
-		//
-		// add to the message
-		//
-		MSG_WriteByte (&sv.signon,svc_spawnbaseline);
-		MSG_WriteShort (&sv.signon,entnum);
-
-		MSG_WriteByte (&sv.signon, svent->e->baseline.modelindex);
-		MSG_WriteByte (&sv.signon, svent->e->baseline.frame);
-		MSG_WriteByte (&sv.signon, svent->e->baseline.colormap);
-		MSG_WriteByte (&sv.signon, svent->e->baseline.skinnum);
-		for (i=0 ; i<3 ; i++)
-		{
-			MSG_WriteCoord(&sv.signon, svent->e->baseline.origin[i]);
-			MSG_WriteAngle(&sv.signon, svent->e->baseline.angles[i]);
+			svent->e->baseline.modelindex = svent->v.modelindex;
 		}
 	}
+	sv.num_baseline_edicts = sv.num_edicts;
 }
-
 
 /*
 ================
@@ -265,7 +245,6 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 			svs.clients[i].isBot = 0;
 		}
 	}
-
 #endif
 
 	// Shutdown game.
@@ -282,6 +261,13 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	Cvar_SetROM(&sv_paused, "0");
 
 	Host_ClearMemory();
+
+#ifndef SERVERONLY
+	if (!oldmap[0]) {
+		Cbuf_InsertTextEx(&cbuf_server, "exec server.cfg\n");
+		Cbuf_ExecuteEx(&cbuf_server);
+	}
+#endif
 
 #ifdef FTE_PEXT_FLOATCOORDS
 	if (sv_bigcoords.value)
@@ -318,7 +304,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	// wipe the entire per-level structure
 	// NOTE: this also set sv.mvdrecording to false, so calling SV_MVD_Record() at end of function
 	memset (&sv, 0, sizeof(sv));
-
+	sv.max_edicts = MAX_EDICTS_SAFE;
 
 	sv.datagram.maxsize = sizeof(sv.datagram_buf);
 	sv.datagram.data = sv.datagram_buf;
@@ -339,19 +325,19 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	// load progs to get entity field count
 	// which determines how big each edict is
 	// and allocate edicts
-
 	PR_LoadProgs ();
 #ifdef WITH_NQPROGS
 	PR_InitPatchTables();
 #endif
 	PR_InitProg();
 
-	for (i = 0; i < MAX_EDICTS; i++)
+	for (i = 0; i < sv.max_edicts; i++)
 	{
 		ent = EDICT_NUM(i);
 		ent->e = &sv.sv_edicts[i]; // assigning ->e field in each edict_t
 		ent->e->entnum = i;
 		ent->e->area.ed = ent; // yeah, pretty funny, but this help to find which edict_t own this area (link_t)
+		PR_ClearEdict(ent);
 	}
 
 	fofs_items2 = ED_FindFieldOffset ("items2"); // ZQ_ITEMS2 extension
@@ -361,6 +347,8 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	fofs_vw_index = ED_FindFieldOffset ("vw_index");
 	fofs_hideentity = ED_FindFieldOffset ("hideentity");
 	fofs_trackent = ED_FindFieldOffset ("trackent");
+	fofs_visibility = ED_FindFieldOffset ("visclients");
+	fofs_hide_players = ED_FindFieldOffset ("hideplayers");
 
 	// find optional QC-exported functions.
 	// we have it here, so we set it to NULL in case of PR2 progs.
@@ -382,7 +370,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	{
 		ent = EDICT_NUM(i+1);
 		// restore client name.
-		ent->v.netname = PR_SetString(svs.clients[i].name);
+		PR_SetEntityString(ent, ent->v.netname, svs.clients[i].name);
 		// reserve edict.
 		svs.clients[i].edict = ent;
 		//ZOID - make sure we update frags right
@@ -413,8 +401,17 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 		if (!sv.worldmodel)
 			SV_Error ("CM_LoadMap: bad map");
 	}
-	
+
+	{
+		extern cvar_t sv_extlimits, sv_bspversion;
+
+		if (sv_extlimits.value == 0 || (sv_extlimits.value == 2 && sv_bspversion.value < 2)) {
+			sv.max_edicts = min(sv.max_edicts, MAX_EDICTS_SAFE);
+		}
+	}
+
 	sv.map_checksum2 = Com_TranslateMapChecksum (sv.mapname, sv.map_checksum2);
+	sv.static_entity_count = 0;
 
 	SV_ClearWorld (); // clear physics interaction links
 
@@ -426,14 +423,13 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	}
 	else
 #endif
-
 	{
 		sv.sound_precache[0] = pr_strings;
 		sv.model_precache[0] = pr_strings;
 	}
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (i=1 ; i< CM_NumInlineModels() ; i++)
+	for (i = 1; i < CM_NumInlineModels(); i++)
 	{
 		sv.model_precache[1+i] = localmodels[i];
 		sv.models[i+1] =  CM_InlineModel (localmodels[i]);
@@ -457,18 +453,18 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 
 	ent = EDICT_NUM(0);
 	ent->e->free = false;
-	ent->v.model = PR_SetString(sv.modelname);
+	PR_SetEntityString(ent, ent->v.model, sv.modelname);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
 	// information about the server
-	ent->v.netname = PR_SetString(VersionStringFull());
-	ent->v.targetname = PR_SetString(SERVER_NAME);
+	PR_SetEntityString(ent, ent->v.netname, VersionStringFull());
+	PR_SetEntityString(ent, ent->v.targetname, SERVER_NAME);
 	ent->v.impulse = VERSION_NUM;
 	ent->v.items = pr_numbuiltins - 1;
 
-	PR_GLOBAL(mapname) = PR_SetString(sv.mapname);
+	PR_SetGlobalString(PR_GLOBAL(mapname), sv.mapname);
 	// serverflags are for cross level information (sigils)
 	PR_GLOBAL(serverflags) = svs.serverflags;
 	if (pr_nqprogs)
@@ -490,7 +486,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 
 	// run the frame start qc function to let progs check cvars
 	if (!pr_nqprogs)
-		SV_ProgStartFrame ();
+		SV_ProgStartFrame (false);
 
 	// ********* External Entity support (.ent file(s) in gamedir/maps) pinched from ZQuake *********
 	// load and spawn all other entities
@@ -524,7 +520,7 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	if (!entitystring) {
 		entitystring = CM_EntityString();
 	}
-	
+
 	PR_LoadEnts(entitystring);
 	// ********* End of External Entity support code *********
 

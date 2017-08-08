@@ -21,11 +21,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
-cvar_t	qtv_streamport		= {"qtv_streamport",		"0"};
-cvar_t	qtv_maxstreams		= {"qtv_maxstreams",		"1"};
-cvar_t	qtv_password		= {"qtv_password",			""};
-cvar_t	qtv_pendingtimeout	= {"qtv_pendingtimeout",	"5"};  // 5  seconds must be enough
-cvar_t	qtv_streamtimeout	= {"qtv_streamtimeout",		"45"}; // 45 seconds
+static cvar_t qtv_streamport     = {"qtv_streamport",      "0"};
+static cvar_t qtv_maxstreams     = {"qtv_maxstreams",      "1"};
+static cvar_t qtv_password       = {"qtv_password",         ""};
+static cvar_t qtv_pendingtimeout = {"qtv_pendingtimeout",  "5"}; // 5  seconds must be enough
+static cvar_t qtv_sayenabled     = {"qtv_sayenabled",      "0"}; // allow mod to override GameStarted() logic
+cvar_t qtv_streamtimeout         = {"qtv_streamtimeout",  "45"}; // 45 seconds
+
+static unsigned short int	listenport		= 0;
+static double				warned_time		= 0;
 
 static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 {
@@ -33,9 +37,13 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 	int count;
 	mvddest_t *dst;
 	char name[sizeof(dst->qtvname)];
+	char address[sizeof(dst->qtvaddress)];
+	int streamid = 0;
 
 	// extract name
 	strlcpy(name, Info_ValueForKey(userinfo, "name"), sizeof(name));
+	strlcpy(address, Info_ValueForKey(userinfo, "address"), sizeof(address));
+	streamid = atoi(Info_ValueForKey(userinfo, "streamid"));
 
 	count = 0;
 	for (dst = demo.dest; dst; dst = dst->nextdest)
@@ -63,6 +71,8 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 	dst->na = na;
 
 	strlcpy(dst->qtvname, name, sizeof(dst->qtvname));
+	strlcpy(dst->qtvaddress, address, sizeof(dst->qtvaddress));
+	dst->qtvstreamid = streamid;
 
 	if (dst->qtvname[0])
 		Con_Printf ("Connected to QTV(%s)\n", dst->qtvname);
@@ -104,9 +114,6 @@ void SV_MVDCloseStreams(void)
 			p->error = true; // mark pending dest to close later
 }
 
-static unsigned short int	listenport		= 0;
-static double				warned_time		= 0;
-
 static void SV_CheckQTVPort(void)
 {
 	qbool changed;
@@ -115,9 +122,9 @@ static void SV_CheckQTVPort(void)
 
 	// if we have non zero stream port, but fail to open listen socket, repeat open listen socket after some time
 	changed = ( streamport != listenport // port changed.
-				|| (streamport  && NET_GetSocket(NS_SERVER, true) == INVALID_SOCKET && warned_time + 10 < Sys_DoubleTime()) // stream port non zero but socket still not open, lets open socket then.
-				|| (!streamport && NET_GetSocket(NS_SERVER, true) != INVALID_SOCKET) // stream port is zero but socket still open, lets close socket then.
-		);
+	    || (streamport  && NET_GetSocket(NS_SERVER, true) == INVALID_SOCKET && warned_time + 10 < Sys_DoubleTime()) // stream port non zero but socket still not open, lets open socket then.
+	    || (!streamport && NET_GetSocket(NS_SERVER, true) != INVALID_SOCKET) // stream port is zero but socket still open, lets close socket then.
+	);
 
 	// port not changed
 	if (!changed)
@@ -687,11 +694,12 @@ void QTVcmd_Say_f(mvddest_t *d)
 	int		j;
 	char	*p;
 	char	text[1024], text2[1024], *cmd;
+	int     sent_to = 0;
 
 	if (Cmd_Argc () < 2)
 		return;
 
-	if (!strcasecmp(Info_ValueForKey(svs.info, "status"), "Countdown"))
+	if (qtv_sayenabled.value || !strcasecmp(Info_ValueForKey(svs.info, "status"), "Countdown"))
 		gameStarted	= false; // if status is "Countdown" then game is not started yet
 	else
 		gameStarted = GameStarted();
@@ -735,16 +743,21 @@ void QTVcmd_Say_f(mvddest_t *d)
 			continue; // game started, don't send QTV chat to players, specs still get QTV chat
 
 		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
+		if (!client->spectator) {
+			sent_to |= (1 << j);
+		}
 	}
 
-	if (sv.mvdrecording)
-	{
-		if (MVDWrite_Begin (dem_all, 0, strlen(text)+3))
-		{
-			MVD_MSG_WriteByte (svc_print);
-			MVD_MSG_WriteByte (PRINT_CHAT);
-			MVD_MSG_WriteString (text);
-		}
+	if (sv.mvdrecording) {
+		sizebuf_t		msg;
+		byte			msg_buf[1024];
+
+		SZ_InitEx(&msg, msg_buf, sizeof(msg_buf), true);
+		MSG_WriteByte (&msg, svc_print);
+		MSG_WriteByte (&msg, PRINT_CHAT);
+		MSG_WriteString (&msg, text);
+
+		DemoWriteQTV(&msg);
 	}
 
 	Sys_Printf("%s", text2);
@@ -1316,6 +1329,38 @@ void Qtv_List_f(void)
 		Con_Printf ("QTV list: empty\n");
 }
 
+// Very similar to Qtv_list_f, but for disconnected clients.
+void QTV_Streams_List (void)
+{
+	mvddest_t *dst;
+	for (dst = demo.dest; dst; dst = dst->nextdest) {
+		if (dst->desttype == DEST_STREAM) {
+			int qtv_users = QTVsv_UsersCount (dst);
+
+			if (dst->qtvaddress[0])
+				Con_Printf ("qtv %d \"%s\" \"%d@%s\" %d\n", dst->id, dst->qtvname, dst->qtvstreamid, dst->qtvaddress, qtv_users);
+			else
+				Con_Printf ("qtv %d \"%s\" \"\" %d\n", dst->id, dst->qtvname, qtv_users);
+		}
+	}
+}
+
+// Expose user list to disconnected clients.
+void QTV_Streams_UserList (void)
+{
+	mvddest_t *dst;
+	for (dst = demo.dest; dst; dst = dst->nextdest) {
+		if (dst->desttype == DEST_STREAM) {
+			qtvuser_t *current;
+
+			Con_Printf ("qtvusers %d", dst->id);
+			for (current = dst->qtvuserlist; current; current = current->next)
+				Con_Printf (" \"%s\"", current->name);
+			Con_Printf ("\n");
+		}
+	}
+}
+
 void Qtv_Close_f(void)
 {
 	mvddest_t *d;
@@ -1388,6 +1433,7 @@ void SV_QTV_Init(void)
 	Cvar_Register (&qtv_password);
 	Cvar_Register (&qtv_pendingtimeout);
 	Cvar_Register (&qtv_streamtimeout);
+	Cvar_Register (&qtv_sayenabled);
 
 	Cmd_AddCommand ("qtv_list", Qtv_List_f);
 	Cmd_AddCommand ("qtv_close", Qtv_Close_f);

@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_demo_misc.c - misc demo related stuff, helpers
 
 #include "qwsvdef.h"
+#ifndef SERVERONLY
+#include "pcre.h"
+#endif
 
 static char chartbl[256];
 
@@ -30,7 +33,7 @@ CleanName_Init
 sets chararcter table for quake text->filename translation
 ====================
 */
-void CleanName_Init ()
+void CleanName_Init (void)
 {
 	int i;
 
@@ -232,8 +235,12 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 			*p = 0; // strip parameters
 	
 		strlcpy(path, dest_name, sizeof(path));
+#ifdef SERVERONLY
 		COM_StripExtension(path);
-	
+#else
+		COM_StripExtension(path, path, sizeof(path));
+#endif
+
 		sv_redirected = RD_NONE; // onrecord script is called always from the console
 		Cmd_TokenizeString(va("script %s \"%s\" \"%s\" %s", sv_onrecordfinish.string, dest_path, path, p != NULL ? p+1 : ""));
 
@@ -507,7 +514,7 @@ char *SV_MVDNum (int num)
 }
 
 #define OVECCOUNT 3
-static char *SV_MVDName2Txt (char *name)
+char *SV_MVDName2Txt (const char *name)
 {
 	char	s[MAX_OSPATH];
 	int		len;
@@ -724,24 +731,20 @@ void SV_MVDInfoAdd_f (void)
 		return;
 	}
 
-	if (!strcmp(Cmd_Argv(1), "*") || !strcmp(Cmd_Argv(1), "**"))
-	{
-		if (!sv.mvdrecording || !demo.dest)
-		{
+	if (!strcmp(Cmd_Argv(1), "*") || !strcmp(Cmd_Argv(1), "**")) {
+		const char* demoname = SV_MVDDemoName();
+
+		if (!sv.mvdrecording || !demoname) {
 			Con_Printf("Not recording demo!\n");
 			return;
 		}
 
-//		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, demo.path, SV_MVDName2Txt(demo.name));
-// FIXME: dunno is this right, just using first dest, also may be we must use demo.dest->path instead of sv_demoDir
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demo.dest->name));
+		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demoname));
 	}
-	else
-	{
+	else {
 		name = SV_MVDTxTNum(Q_atoi(Cmd_Argv(1)));
 
-		if (!name)
-		{
+		if (!name) {
 			Con_Printf("invalid demo num\n");
 			return;
 		}
@@ -963,7 +966,7 @@ void SV_LastScores_f (void)
 
 // easyrecord helpers
 
-int Dem_CountPlayers ()
+int Dem_CountPlayers (void)
 {
 	int	i, count;
 

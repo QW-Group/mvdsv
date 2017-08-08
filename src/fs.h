@@ -52,4 +52,6 @@ void FS_CreatePath (char *path);
 char *FS_NextPath (char *prevpath);
 void FS_SetGamedir (char *dir, qbool force);
 
+qbool FS_UnsafeFilename(const char* name);
+
 #endif /* !__FS_H__ */

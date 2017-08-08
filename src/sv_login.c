@@ -35,17 +35,17 @@ typedef enum {use_log, use_ip} quse_t;
 
 typedef struct
 {
-	char		login[MAX_LOGINNAME];
-	char		pass[MAX_LOGINNAME];
-	int		failures;
-	int		inuse;
-	ipfilter_t	adress;
-	acc_state_t	state;
-	quse_t		use;
+	char        login[MAX_LOGINNAME];
+	char        pass[MAX_LOGINNAME];
+	int         failures;
+	int         inuse;
+	ipfilter_t  adress;
+	acc_state_t state;
+	quse_t      use;
 } account_t;
 
-static account_t	accounts[MAX_ACCOUNTS];
-static int		num_accounts = 0;
+static account_t accounts[MAX_ACCOUNTS];
+static int       num_accounts = 0;
 
 static qbool validAcc(char *acc)
 {
@@ -70,7 +70,7 @@ Writes account list to disk
 =================
 */
 
-static void WriteAccounts()
+static void WriteAccounts(void)
 {
 	int c;
 	FILE *f;
@@ -650,7 +650,7 @@ void SV_ParseLogin(client_t *cl)
 		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log1));
 
 		//VVD: forcenick ->
-		if ((int)sv_forcenick.value && cl->login)
+		if ((int)sv_forcenick.value && cl->login[0])
 		{
 			char oldval[MAX_EXT_INFO_STRING];
 			strlcpy (oldval, cl->name, MAX_EXT_INFO_STRING);

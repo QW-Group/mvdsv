@@ -34,8 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // fte protocol extensions.
 
-#define PROTOCOL_VERSION_FTE			(('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24))
-#define PROTOCOL_VERSION_FTE2			(('F'<<0) + ('T'<<8) + ('E'<<16) + ('2' << 24))
+#define PROTOCOL_VERSION_FTE            (('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24))
+#define PROTOCOL_VERSION_FTE2           (('F'<<0) + ('T'<<8) + ('E'<<16) + ('2' << 24))
+#define PROTOCOL_VERSION_MVD1           (('M'<<0) + ('V'<<8) + ('D'<<16) + ('1' << 24))
 
 //
 // Not all of that really supported.
@@ -62,6 +63,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define FTE_PEXT2_VOICECHAT			0x00000002
 
 #endif // PROTOCOL_VERSION_FTE2
+
+#ifdef PROTOCOL_VERSION_MVD1
+
+#define MVD_PEXT1_FLOATCOORDS       0x00000001 // FTE_PEXT_FLOATCOORDS but for entity/player coords only
+
+#endif // PROTOCOL_VERSION_MVD1
 
 //==============================================
 

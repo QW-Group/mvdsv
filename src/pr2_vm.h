@@ -36,19 +36,23 @@
 #define OPSTACKSIZE		0x100
 #define MAX_PROC_CALL	100
 #define MAX_vmMain_Call	100
-#define MAX_CYCLES		100000
+#define MAX_CYCLES		3000000
 
 // this gives gcc warnings unfortunatelly
 //#define VM_POINTER(base,mask,x)		((x)?(void*)((char *)base+((x)&mask)):NULL)
-#define VM_POINTER(base,mask,x)			((void*)((char *)base+((x)&mask)))
+
+// #define VM_POINTER(base,mask,x)			((void*)((char *)base+((x)&mask)))
+void* VM_POINTER(byte* base, uintptr_t mask, intptr_t offset);
+
+// meag: can leave this right now only because it is only used to return pointers to edicts
 #define POINTER_TO_VM(base,mask,x)		((x)?(intptr_t)((char *)(x) - (char*)base)&mask:0)
 
 typedef union pr2val_s
 {
-	string_t	string;
-	float		_float;
-	intptr_t	_int;
-} pr2val_t;	
+	stringptr_t  string;
+	float        _float;
+	intptr_t     _int;
+} pr2val_t;
 
 typedef intptr_t (EXPORT_FN *sys_call_t) (intptr_t arg, ...);
 typedef int (*sys_callex_t) (byte *data, unsigned int mask, int fn,  pr2val_t* arg);
@@ -73,6 +77,9 @@ typedef struct vm_s {
 	intptr_t (*vmMain) (int command, int arg0, int arg1, int arg2, int arg3,
 		int arg4, int arg5, int arg6, int arg7, int arg8, int arg9,
 		int arg10, int arg11);
+
+	// whether or not pr2 references should be enabled (set on GAME_INIT)
+	qbool pr2_references;
 } vm_t ;
 
 typedef enum

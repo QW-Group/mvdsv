@@ -91,7 +91,9 @@ SV_OBJS = \
 		${SV_DIR}/zone.o \
 \
 		${SV_DIR}/pcre/get.o \
-		${SV_DIR}/pcre/pcre.o
+		${SV_DIR}/pcre/pcre.o \
+\
+		${SV_DIR}/central.o
 
 .ifdef USE_ASM
 SV_ASM_OBJS = \

@@ -63,6 +63,7 @@ typedef struct
 
 	double		time;
 	double		old_time;			// bumped by SV_Physics
+	double      old_bot_time;       // bumped by SV_RunBots
 
 	double		physicstime;		// last time physics was run
 
@@ -90,11 +91,13 @@ typedef struct
 	char		*lightstyles[MAX_LIGHTSTYLES];
 	cmodel_t	*models[MAX_MODELS];
 
-	int		num_edicts;			// increases towards MAX_EDICTS
-	edict_t		*edicts;			// can NOT be array indexed, because
-							// edict_t is variable sized, but can
-							// be used to reference the world ent
-	sv_edict_t	sv_edicts[MAX_EDICTS]; // part of the edict_t
+	int         num_edicts;         // increases towards MAX_EDICTS
+	int         num_baseline_edicts;// number of entities that have baselines
+	edict_t     *edicts;            // can NOT be array indexed, because
+	                                // edict_t is variable sized, but can
+	                                // be used to reference the world ent
+	sv_edict_t  sv_edicts[MAX_EDICTS]; // part of the edict_t
+	int         max_edicts;         // might not MAX_EDICTS if mod allocates memory
 
 	byte		*pvs, *phs;			// fully expanded and decompressed
 
@@ -114,12 +117,15 @@ typedef struct
 	// includes the entity baselines, the static entities, etc
 	// large levels will have >MAX_DATAGRAM sized signons, so 
 	// multiple signon messages are kept
-	sizebuf_t	signon;
-	unsigned int	num_signon_buffers;
-	int		signon_buffer_size[MAX_SIGNON_BUFFERS];
-	byte		signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
+	sizebuf_t      signon;
+	unsigned int   num_signon_buffers;
+	int            signon_buffer_size[MAX_SIGNON_BUFFERS];
+	byte           signon_buffers[MAX_SIGNON_BUFFERS][MAX_DATAGRAM];
 
-	qbool		mvdrecording;
+	qbool		   mvdrecording;
+
+	entity_state_t static_entities[512];
+	int            static_entity_count;
 } server_t;
 
 #define	NUM_SPAWN_PARMS 16
@@ -163,11 +169,14 @@ typedef struct
 	vec3_t			origin;
 } antilag_position_t;
 
-#define MAX_ANTILAG_POSITIONS	128
-#define MAX_BACK_BUFFERS	128
-#define MAX_STUFFTEXT		256
-#define	CLIENT_LOGIN_LEN	16
-#define	CLIENT_NAME_LEN		32
+#define MAX_ANTILAG_POSITIONS      128
+#define MAX_BACK_BUFFERS           128
+#define MAX_STUFFTEXT              256
+#define	CLIENT_LOGIN_LEN            16
+#define	CLIENT_NAME_LEN             32
+#define LOGIN_CHALLENGE_LENGTH     128
+#define LOGIN_MIN_RETRY_TIME         5    // 1 login attempt per x seconds
+
 typedef struct client_s
 {
 	sv_client_state_t	state;
@@ -206,7 +215,7 @@ typedef struct client_s
 	char			name[CLIENT_NAME_LEN];		// for printing to other people
 
 	char			team[CLIENT_NAME_LEN];
-							// extracted from userinfo
+	// extracted from userinfo
 	int				messagelevel;			// for filtering printed messages
 
 	// the datagram is written to after every frame, but only cleared
@@ -244,9 +253,11 @@ typedef struct client_s
 	client_frame_t	frames[UPDATE_BACKUP];		// updates can be deltad from here
 
 	vfsfile_t		*download;			// file being downloaded
+#ifdef PROTOCOL_VERSION_FTE
 #ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 	int				download_chunks_perframe;
-#endif // FTE_PEXT_CHUNKEDDOWNLOADS
+#endif
+#endif
 	int				downloadsize;			// total bytes
 	int				downloadcount;			// bytes sent
 // demo download list for internal cmd dl function
@@ -267,7 +278,9 @@ typedef struct client_s
 	qbool			remote_snap;
 
 	char			login[CLIENT_LOGIN_LEN];
+	char            challenge[LOGIN_CHALLENGE_LENGTH];
 	int				logged;
+	double          login_request_time;
 
 	int				spawncount;			// for tracking map changes during downloading
 
@@ -294,6 +307,10 @@ typedef struct client_s
 #ifdef PROTOCOL_VERSION_FTE2
 	unsigned int	fteprotocolextensions2;
 #endif // PROTOCOL_VERSION_FTE2
+
+#ifdef PROTOCOL_VERSION_MVD1
+	unsigned int    mvdprotocolextensions1;
+#endif
  
 #ifdef FTE_PEXT2_VOICECHAT
 	unsigned int voice_read;	/*place in ring*/
@@ -428,6 +445,9 @@ typedef struct mvddest_s
 	char			qtvname[64];
 
 	qtvuser_t		*qtvuserlist;
+
+	char            qtvaddress[128];
+	int             qtvstreamid;
 // }
 
 	struct mvddest_s *nextdest;
@@ -502,16 +522,16 @@ typedef struct
 // TCPCONNECT -->
 typedef struct svtcpstream_s
 {
-	int				socketnum; // socket
-	qbool			waitingforprotocolconfirmation; // wait for "qizmo\n", first 6 bytes before confirming that is tcpconnection
-	int				inlen; // how much bytes we have in inbuffer
-	char			inbuffer[1500]; // recv buffer
-	int				outlen; // how much bytes we have in outbuffer
-	char			outbuffer[1500 * 5]; // send buffer
-	qbool			drop; // do we need drop that connection ASAP
-	float			timeouttime; // I/O timeout
-	netadr_t		remoteaddr; // peer remoter addr
-	struct svtcpstream_s *next; // next tcpconnection in list
+	int                     socketnum;                         // socket
+	qbool                   waitingforprotocolconfirmation;    // wait for "qizmo\n", first 6 bytes before confirming that is tcpconnection
+	int                     inlen;                             // how much bytes we have in inbuffer
+	char                    inbuffer[1500];                    // recv buffer
+	int                     outlen;                            // how much bytes we have in outbuffer
+	char                    outbuffer[1500 * 5];               // send buffer
+	qbool                   drop;                              // do we need drop that connection ASAP
+	float                   timeouttime;                       // I/O timeout
+	netadr_t                remoteaddr;                        // peer remoter addr
+	struct svtcpstream_s    *next;                             // next tcpconnection in list
 } svtcpstream_t;
 // <-- TCPCONNECT
 
@@ -544,6 +564,10 @@ typedef struct
 #ifdef PROTOCOL_VERSION_FTE2
 	unsigned int fteprotocolextensions2;
 #endif // PROTOCOL_VERSION_FTE2
+
+#ifdef PROTOCOL_VERSION_MVD1
+	unsigned int mvdprotocolextension1;
+#endif
 
 	// log messages are used so that fraglog processes can get stats
 	int				logsequence;		// the message currently being filled
@@ -776,7 +800,7 @@ void SV_SpawnServer (char *server, qbool devmap, char* entityfile);
 //
 // sv_phys.c
 //
-void SV_ProgStartFrame (void);
+void SV_ProgStartFrame (qbool isBotFrame);
 void SV_Physics (void);
 void SV_CheckVelocity (edict_t *ent);
 void SV_AddGravity (edict_t *ent, float scale);
@@ -786,6 +810,9 @@ void SV_RunNewmis (void);
 void SV_RunNQNewmis (void);
 void SV_Impact (edict_t *e1, edict_t *e2);
 void SV_SetMoveVars(void);
+#ifdef USE_PR2
+void SV_RunBots(void);
+#endif
 
 //
 // sv_send.c
@@ -840,6 +867,7 @@ void SV_SendServerInfoChange (char *key, char *value);
 // sv_ents.c
 //
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder);
+void SV_SetVisibleEntitiesForBot (client_t* client);
 
 //
 // sv_nchan.c
@@ -938,15 +966,12 @@ void	SV_MVDInfoAdd_f (void);
 void	SV_MVDInfoRemove_f (void);
 void	SV_MVDInfo_f (void);
 void	SV_LastScores_f (void);
+char*   SV_MVDName2Txt (const char *name);
 
 //
 // sv_demo_qtv.c
 //
 
-extern cvar_t	qtv_streamport;
-extern cvar_t	qtv_maxstreams;
-extern cvar_t	qtv_password;
-extern cvar_t	qtv_pendingtimeout;
 extern cvar_t	qtv_streamtimeout;
 
 
@@ -956,6 +981,9 @@ void SV_QTV_Init(void);
 
 void DemoWriteQTV (sizebuf_t *msg);
 void QTVsv_FreeUserList(mvddest_t *d);
+void QTV_Streams_List (void);
+void QTV_Streams_UserList (void);
+const char* SV_MVDDemoName(void);
 
 //
 // sv_login.c
@@ -981,5 +1009,13 @@ void Master_Heartbeat (void);
 void SV_SaveGame_f (void); 
 void SV_LoadGame_f (void); 
 
+//
+void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force);
+qbool SV_SkipCommsBotMessage(client_t* client);
+
+// 
+#ifdef SERVERONLY
+#include "central.h"
+#endif
 
 #endif /* !__SERVER_H__ */

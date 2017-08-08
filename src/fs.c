@@ -462,7 +462,7 @@ void FS_SetGamedir (char *dir, qbool force)
 
 	if (!force && !strcmp(fs_gamedirfile, dir))
 		return;		// Still the same, unless we forced.
-	
+
 	// FIXME: do we need it? since it will be set in FS_AddGameDirectory().
 	strlcpy (fs_gamedirfile, dir, sizeof(fs_gamedirfile));
 
@@ -1009,5 +1009,22 @@ char *FS_NextPath (char *prevpath)
 	}
 
 	return NULL;
+}
+
+/*
+===========
+FS_UnsafeFilename
+
+Returns true if user-specified path is unsafe
+===========
+*/
+qbool FS_UnsafeFilename(const char* fileName)
+{
+	return !fileName ||
+		!*fileName || // invalid name.
+		fileName[1] == ':' ||	// dos filename absolute path specified - reject.
+		*fileName == '\\' ||
+		*fileName == '/' ||	// absolute path was given - reject.
+		strstr(fileName, "..");
 }
 

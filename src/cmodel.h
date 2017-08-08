@@ -33,8 +33,7 @@ enum {
 
 // plane_t structure
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct mplane_s
-{
+typedef struct mplane_s {
 	vec3_t	normal;
 	float	dist;
 	byte	type;			// for texture axis selection and fast side tests
@@ -43,9 +42,8 @@ typedef struct mplane_s
 } mplane_t;
 
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
-typedef struct
-{
-	dclipnode_t	*clipnodes;
+typedef struct {
+	mclipnode_t	*clipnodes;
 	mplane_t	*planes;
 	int			firstclipnode;
 	int			lastclipnode;
@@ -53,14 +51,12 @@ typedef struct
 	vec3_t		clip_maxs;
 } hull_t;
 
-typedef struct
-{
+typedef struct {
 	vec3_t	normal;
 	float	dist;
 } plane_t;
 
-typedef struct
-{
+typedef struct {
 	qbool	allsolid;			// if true, plane is not valid
 	qbool	startsolid;			// if true, the initial point was in a solid area
 	qbool	inopen, inwater;

@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
-// minimal chache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
+// minimal cache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
 #define DEMO_CACHE_MIN_SIZE 0x1000000
 
 // flush demo cache if we have less than this free bytes
@@ -789,7 +789,7 @@ static mvddest_t *SV_InitRecordFile (char *name)
 
 	if ( !sv_silentrecord.value )
 		SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
-						(dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
+		                    (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
 	Cvar_SetROM(&serverdemo, dst->name);
 
 	strlcpy(path, name, MAX_OSPATH);
@@ -1188,7 +1188,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	MSG_WriteFloat (&buf, sv.time);
 
 	// send full levelname
-	MSG_WriteString (&buf, PR_GetString(sv.edicts->v.message));
+	MSG_WriteString (&buf, PR_GetEntityString(sv.edicts->v.message));
 
 	// send the movevars
 	MSG_WriteFloat(&buf, movevars.gravity);
@@ -1274,8 +1274,75 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		SZ_Clear (&buf);
 	}
 
-	// prespawn
+	// static entities
+	{
+		int i, j;
+		entity_state_t from = { 0 };
 
+		for (i = 0; i < sv.static_entity_count; ++i) {
+			entity_state_t* s = &sv.static_entities[i];
+
+			if (buf.cursize >= MAX_MSGLEN/2) {
+				SV_WriteRecordMVDMessage (&buf);
+				SZ_Clear (&buf);
+			}
+
+			if (demo.recorder.fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+				MSG_WriteByte(&buf, svc_fte_spawnstatic2);
+				SV_WriteDelta(&demo.recorder, &from, s, &buf, true);
+			}
+			else if (s->modelindex < 256) {
+				MSG_WriteByte(&buf, svc_spawnstatic);
+				MSG_WriteByte(&buf, s->modelindex);
+				MSG_WriteByte(&buf, s->frame);
+				MSG_WriteByte(&buf, s->colormap);
+				MSG_WriteByte(&buf, s->skinnum);
+				for (j = 0; j < 3; ++j) {
+					MSG_WriteCoord(&buf, s->origin[j]);
+					MSG_WriteAngle(&buf, s->angles[j]);
+				}
+			}
+		}
+	}
+
+	// entity baselines
+	{
+		static entity_state_t empty_baseline = { 0 };
+		int i, j;
+
+		for (i = 0; i < sv.num_baseline_edicts; ++i) {
+			edict_t* svent = EDICT_NUM(i);
+			entity_state_t* s = &svent->e->baseline;
+
+			if (buf.cursize >= MAX_MSGLEN/2) {
+				SV_WriteRecordMVDMessage (&buf);
+				SZ_Clear (&buf);
+			}
+
+			if (!s->number || !s->modelindex || !memcmp(s, &empty_baseline, sizeof(empty_baseline))) {
+				continue;
+			}
+
+			if (demo.recorder.fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+				MSG_WriteByte(&buf, svc_fte_spawnbaseline2);
+				SV_WriteDelta(&demo.recorder, &empty_baseline, s, &buf, true);
+			}
+			else if (s->modelindex < 256) {
+				MSG_WriteByte(&buf, svc_spawnbaseline);
+				MSG_WriteShort(&buf, i);
+				MSG_WriteByte(&buf, s->modelindex);
+				MSG_WriteByte(&buf, s->frame);
+				MSG_WriteByte(&buf, s->colormap);
+				MSG_WriteByte(&buf, s->skinnum);
+				for (j = 0; j < 3; j++) {
+					MSG_WriteCoord(&buf, s->origin[j]);
+					MSG_WriteAngle(&buf, s->angles[j]);
+				}
+			}
+		}
+	}
+
+	// prespawn
 	for (n = 0; n < sv.num_signon_buffers; n++)
 	{
 		if (buf.cursize+sv.signon_buffer_size[n] > MAX_MSGLEN/2)
@@ -1444,7 +1511,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 		memset(stats, 0, sizeof(stats));
 
 		stats[STAT_HEALTH]       = ent->v.health;
-		stats[STAT_WEAPON]       = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
+		stats[STAT_WEAPON]       = SV_ModelIndex(PR_GetEntityString(ent->v.weaponmodel));
 		stats[STAT_AMMO]         = ent->v.currentammo;
 		stats[STAT_ARMOR]        = ent->v.armorvalue;
 		stats[STAT_SHELLS]       = ent->v.ammo_shells;
@@ -1725,6 +1792,7 @@ void SV_MVDInit (void)
 	Cmd_AddCommand ("sv_lastscores",	SV_LastScores_f);
 	Cmd_AddCommand ("sv_demolist",		SV_DemoList_f);
 	Cmd_AddCommand ("sv_demolistr",		SV_DemoListRegex_f);
+	Cmd_AddCommand ("sv_demolistregex",	SV_DemoListRegex_f);
 	Cmd_AddCommand ("sv_demoremove",	SV_MVDRemove_f);
 	Cmd_AddCommand ("sv_demonumremove",	SV_MVDRemoveNum_f);
 	Cmd_AddCommand ("sv_demoinfoadd",	SV_MVDInfoAdd_f);
@@ -1734,4 +1802,20 @@ void SV_MVDInit (void)
 	Cmd_AddCommand ("script",			SV_Script_f);
 
 	SV_QTV_Init();
+}
+
+const char* SV_MVDDemoName(void)
+{
+	mvddest_t* d;
+
+	for (d = demo.dest; d; d = d->nextdest) {
+		if (d->desttype == DEST_STREAM) {
+			continue; // streams are not saved on to HDD, so ignore it...
+		}
+		if (d->name && d->name[0]) {
+			return d->name;
+		}
+	}
+
+	return NULL;
 }

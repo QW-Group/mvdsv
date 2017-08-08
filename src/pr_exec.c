@@ -692,24 +692,33 @@ char *PR1_GetString(int num)
 	return pr_strings + num;
 }
 
-int PR1_SetString(char *s)
+void PR1_SetString(string_t* address, char* s)
 {
 	int i;
 
-	if (s - pr_strings < 0)
-	{
-		for (i = 0; i < num_prstr; i++)
-			if (pr_strtbl[i] == s)
-				return -i;
+	if (!address) {
+		return;
+	}
 
-		if (num_prstr + 1 >= MAX_PRSTR)
+	if (s - pr_strings < 0) {
+		for (i = 0; i < num_prstr; i++) {
+			if (pr_strtbl[i] == s) {
+				*address = -i;
+				return;
+			}
+		}
+
+		if (num_prstr + 1 >= MAX_PRSTR) {
 			Sys_Error("MAX_PRSTR");
+		}
 
 		pr_strtbl[++num_prstr] = s;
 		//Con_DPrintf("SET:%d == %s\n", -num_prstr, s);
-		return -num_prstr;
+		*address = -num_prstr;
 	}
-	return (int)(s - pr_strings);
+	else {
+		*address = (int)(s - pr_strings);
+	}
 }
 
 /*
@@ -721,7 +730,7 @@ many calls to function could cause strtbl overflow
 ==============
 */
 
-int PR_SetTmpString(const char *s)
+void PR_SetTmpString(string_t* target, const char *s)
 {
 	static int index1;
 	static char tmp[8][2048];
@@ -729,7 +738,7 @@ int PR_SetTmpString(const char *s)
 	index1 = (index1 + 1) & 7;
 
 	strlcpy(tmp[index1], s, sizeof(tmp[index1]));
-	return PR1_SetString(tmp[index1]);
+	PR1_SetString(target, tmp[index1]);
 }
 
 //=============================================================================
@@ -822,7 +831,7 @@ qbool PR1_ClientSay(int isTeamSay, char *message)
 			message[max(0,(int)strlen(message)-1)] = 0;   // truncate closing ".
 		}
 
-		G_INT(OFS_PARM0) = PR_SetTmpString(message);
+		PR_SetTmpString(&G_INT(OFS_PARM0), message);
 		G_FLOAT(OFS_PARM1) = (float)isTeamSay;
 
 		PR_ExecuteProgram(mod_ChatMessage);
@@ -846,7 +855,7 @@ void PR1_PausedTic(float duration)
 
 //=============================================================================
 
-void PR1_UnLoadProgs()
+void PR1_UnLoadProgs(void)
 {
 	if (progs)
 	{

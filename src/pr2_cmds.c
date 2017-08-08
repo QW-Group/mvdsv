@@ -24,6 +24,13 @@
 
 #include "qwsvdef.h"
 
+#define SETUSERINFO_STAR          (1<<0) // allow set star keys
+
+#ifdef SERVERONLY
+#define Cbuf_AddTextEx(x, y) Cbuf_AddText(y)
+#define Cbuf_ExecuteEx(x) Cbuf_Execute()
+#endif
+
 char	*pr2_ent_data_ptr;
 vm_t	*sv_vm = NULL;
 
@@ -65,7 +72,6 @@ void PF2_GetApiVersion(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*ret
 
 void PF2_GetEntityToken(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-
 	pr2_ent_data_ptr = COM_Parse(pr2_ent_data_ptr);
 	strlcpy((char*)VM_POINTER(base,mask,stack[0].string), com_token,  stack[1]._int);
 
@@ -257,7 +263,7 @@ void PF2_setmodel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	if (!*check)
 		PR2_RunError("no precache: %s\n", m);
 
-	e->v.model = PR2_SetString(m);
+	PR2_SetEntityString(e, &e->v.model, m);
 	e->v.modelindex = i;
 
 	// if it is an inline model, get the size information for it
@@ -490,7 +496,7 @@ void PF2_traceline(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	trace_t	trace;
 	edict_t	*ent;
 	vec3_t v1, v2;
-	int nomonsters;//, entnum;
+	int nomonsters, entnum;
 
 	v1[0] = stack[0]._float;
 	v1[1] = stack[1]._float;
@@ -501,11 +507,15 @@ void PF2_traceline(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	v2[2] = stack[5]._float;
 
 	nomonsters = stack[6]._int;
+	entnum = stack[7]._int;
 
-	ent = EDICT_NUM(stack[7]._int);
+	ent = EDICT_NUM(entnum);
 
 	if (sv_antilag.value == 2)
-		nomonsters |= MOVE_LAGGED;
+	{
+		//if (! (entnum >= 1 && entnum <= MAX_CLIENTS && svs.clients[entnum - 1].isBot))
+			nomonsters |= MOVE_LAGGED;
+	}
 
 	trace = SV_Trace(v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
@@ -798,7 +808,7 @@ localcmd (string)
 */
 void PF2_localcmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	Cbuf_AddText((char *)VM_POINTER(base,mask,stack[0].string));
+	Cbuf_AddTextEx(&cbuf_server, (char *)VM_POINTER(base,mask,stack[0].string));
 }
 
 void PF2_executecmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
@@ -808,7 +818,7 @@ void PF2_executecmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 	old_self = pr_global_struct->self;
 	old_other = pr_global_struct->other;
 
-	Cbuf_Execute();
+	Cbuf_ExecuteEx(&cbuf_server);
 
 	pr_global_struct->self = old_self;
 	pr_global_struct->other = old_other;
@@ -835,8 +845,8 @@ void PF2_readcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	buf = (char *) VM_POINTER(base,mask,stack[1].string);
 	sizebuff = stack[2]._int;
 
-	Cbuf_Execute();
-	Cbuf_AddText (str);
+	Cbuf_ExecuteEx(&cbuf_server);
+	Cbuf_AddTextEx(&cbuf_server, str);
 
 	old = sv_redirected;
 
@@ -844,7 +854,7 @@ void PF2_readcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 		SV_EndRedirect();
 
 	SV_BeginRedirect(RD_MOD);
-	Cbuf_Execute();
+	Cbuf_ExecuteEx(&cbuf_server);
 
 	strlcpy(buf, outputbuf, sizebuff);
 
@@ -863,7 +873,7 @@ void redirectcmd (entity to, string str)
 =================
 */
 
-void PF2_redirectcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
+void PF2_redirectcmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
 	char		*str;
 	int 		entnum;
@@ -871,25 +881,23 @@ void PF2_redirectcmd (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retv
 
 	extern redirect_t sv_redirected;
 
-	str = (char *) VM_POINTER(base,mask,stack[1].string);
-	if ( sv_redirected )
-	{
-		Cbuf_AddText (str);
-		Cbuf_Execute();
+	str = (char *)VM_POINTER(base, mask, stack[1].string);
+	if (sv_redirected) {
+		Cbuf_AddTextEx(&cbuf_server, str);
+		Cbuf_ExecuteEx(&cbuf_server);
 		return;
 	}
 
-	entnum = NUM_FOR_EDICT((edict_t *)VM_POINTER(base,mask,stack[0]._int));
+	entnum = NUM_FOR_EDICT((edict_t *)VM_POINTER(base, mask, stack[0]._int));
 
-	if (entnum < 1 || entnum > MAX_CLIENTS)
-		PR2_RunError ("Parm 0 not a client");
+	if (entnum < 1 || entnum > MAX_CLIENTS) {
+		PR2_RunError("Parm 0 not a client");
+	}
 
-
-	SV_BeginRedirect( (redirect_t) (RD_MOD + entnum ));
-	Cbuf_AddText (str);
-	Cbuf_Execute();
+	SV_BeginRedirect((redirect_t)(RD_MOD + entnum));
+	Cbuf_AddTextEx(&cbuf_server, str);
+	Cbuf_ExecuteEx(&cbuf_server);
 	SV_EndRedirect();
-
 }
 
 /*
@@ -901,7 +909,6 @@ float   trap_cvar( const char *var );
 */
 void PF2_cvar(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-
 	retval->_float =  Cvar_Value((char *)VM_POINTER(base,mask,stack[0].string));
 }
 
@@ -1593,23 +1600,29 @@ PF2_makestatic
 */
 void PF2_makestatic(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
+	entity_state_t* s;
 	edict_t	*ent;
-	int		i;
 
 	ent = EDICT_NUM(stack[0]._int);
-
-	MSG_WriteByte(&sv.signon, svc_spawnstatic);
-#pragma msg("Why it is not just PR_GetString(ent->v.model) instead of VM_POINTER(base,mask,ent->v.model) ???")
-	MSG_WriteByte(&sv.signon, SV_ModelIndex((char *) VM_POINTER(base,mask,ent->v.model)));
-
-	MSG_WriteByte(&sv.signon, ent->v.frame);
-	MSG_WriteByte(&sv.signon, ent->v.colormap);
-	MSG_WriteByte(&sv.signon, ent->v.skin);
-	for (i = 0; i < 3; i++)
-	{
-		MSG_WriteCoord(&sv.signon, ent->v.origin[i]);
-		MSG_WriteAngle(&sv.signon, ent->v.angles[i]);
+	if (sv.static_entity_count >= sizeof(sv.static_entities) / sizeof(sv.static_entities[0])) {
+		ED_Free (ent);
+		return;
 	}
+
+	s = &sv.static_entities[sv.static_entity_count];
+	memset(s, 0, sizeof(sv.static_entities[0]));
+	s->number = sv.static_entity_count + 1;
+	s->modelindex = SV_ModelIndex(PR_GetEntityString(ent->v.model));
+	if (!s->modelindex) {
+		ED_Free (ent);
+		return;
+	}
+	s->frame = ent->v.frame;
+	s->colormap = ent->v.colormap;
+	s->skinnum = ent->v.skin;
+	VectorCopy(ent->v.origin, s->origin);
+	VectorCopy(ent->v.angles, s->angles);
+	++sv.static_entity_count;
 
 	// throw the entity away now
 	ED_Free(ent);
@@ -1669,10 +1682,12 @@ void PF2_changelevel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return;
 	last_spawncount = svs.spawncount;
 
-	if (entfile && *entfile)
-		Cbuf_AddText(va("map %s %s\n", s, entfile));
-	else
-		Cbuf_AddText(va("map %s\n", s));
+	if (entfile && *entfile) {
+		Cbuf_AddTextEx(&cbuf_server, va("map %s %s\n", s, entfile));
+	}
+	else {
+		Cbuf_AddTextEx(&cbuf_server, va("map %s\n", s));
+	}
 }
 
 /*
@@ -1922,20 +1937,22 @@ void PF2_fixme(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 
 void PF2_memset(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int= PR2_SetString((char *) memset(VM_POINTER(base,mask,stack[0].string),stack[1]._int,stack[2]._int));
+	memset(VM_POINTER(base, mask, stack[0].string), stack[1]._int, stack[2]._int);
+
+	retval->_int = stack[0].string;
 }
 
 void PF2_memcpy(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int= PR2_SetString( (char *) memcpy( VM_POINTER(base,mask,stack[0].string),
-	                                     VM_POINTER(base,mask,stack[1].string),
-	                                     stack[2]._int));
+	memcpy(VM_POINTER(base, mask, stack[0].string), VM_POINTER(base, mask, stack[1].string), stack[2]._int);
+
+	retval->_int = stack[0].string;
 }
 void PF2_strncpy(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	retval->_int= PR2_SetString( strncpy( (char *) VM_POINTER(base,mask,stack[0].string),
-	                                      (char *) VM_POINTER(base,mask,stack[1].string),
-	                                      stack[2]._int));
+	strncpy((char *)VM_POINTER(base, mask, stack[0].string), (char *)VM_POINTER(base, mask, stack[1].string), stack[2]._int);
+
+	retval->_int = stack[0].string;
 }
 
 void PF2_sin(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
@@ -2014,11 +2031,8 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return ;
 	}
 
-	if (!name || !*name || // invalid name.
-		name[1] == ':' ||	// dos filename absolute path specified - reject.
-	        *name == '\\' || *name == '/' ||	// absolute path was given - reject.
-	        strstr(name, ".."))	// someone tried to be cleaver.
-	{
+	if (FS_UnsafeFilename(name)) {
+		// someone tried to be clever.
 		retval->_int = -1;
 		return ;
 	}
@@ -2028,8 +2042,11 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	{
 	case FS_READ_BIN:
 	case FS_READ_TXT:
-
+#ifndef SERVERONLY
+		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_ANY);
+#else
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME);
+#endif
 
 		if(!pr2_fopen_files[i].handle)
 		{
@@ -2041,17 +2058,13 @@ void PF2_FS_OpenFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 		retval->_int = VFS_GETLEN(pr2_fopen_files[i].handle);
 
-
 		break;
 	case FS_WRITE_BIN:
 	case FS_WRITE_TXT:
 	case FS_APPEND_BIN:
 	case FS_APPEND_TXT:
-
-// well, perhapswe we should create path...
-//		snprintf( fname, sizeof( fname ), "%s/%s" , fs_gamedir, name );
-//		FS_CreatePath(fname);
-//		FS_CreatePathRelative(name, FS_GAME_OS);
+		// well, perhaps we we should create path...
+		//		FS_CreatePathRelative(name, FS_GAME_OS);
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME_OS);
 		if ( !pr2_fopen_files[i].handle )
 		{
@@ -2112,7 +2125,7 @@ void PF2_FS_SeekFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	if(!(pr2_fopen_files[fnum].handle))
 		return;
-	if(type <0 || type > 2)
+	if(type < 0 || type >= sizeof(seek_origin) / sizeof(seek_origin[0]))
 		return;
 
 	retval->_int = VFS_SEEK(pr2_fopen_files[fnum].handle, offset, seek_origin[type]);
@@ -2194,7 +2207,7 @@ void PF2_FS_ReadFile(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	retval->_int = VFS_READ(pr2_fopen_files[fnum].handle, dest, quantity, NULL);
 }
 
-void PR2_FS_Restart()
+void PR2_FS_Restart(void)
 {
 	int i;
 
@@ -2244,11 +2257,11 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 
 	char	*path, *ext, *listbuff, *dirptr;
 
-	intptr_t pathoffset 		= stack[0]._int;
-	intptr_t extoffset  		= stack[1]._int;
-	intptr_t listbuffoffset 	= stack[2]._int;
-	intptr_t buffsize			= stack[3]._int;
-	intptr_t flags				= stack[4]._int;
+	intptr_t pathoffset         = stack[0]._int;
+	intptr_t extoffset          = stack[1]._int;
+	intptr_t listbuffoffset     = stack[2]._int;
+	intptr_t buffsize           = stack[3]._int;
+	intptr_t flags              = stack[4]._int;
 
 	int numfiles = 0;
 	int i, j;
@@ -2307,8 +2320,13 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 			}
 
 			// skip file extension
-			if (!(flags & FILELIST_WITH_EXT))
-				COM_StripExtension (fullname);
+			if (!(flags & FILELIST_WITH_EXT)) {
+#ifndef SERVERONLY
+				COM_StripExtension(fullname, fullname, sizeof(fullname));
+#else
+				COM_StripExtension(fullname);
+#endif
+			}
 
 			list[i] = Q_strdup(fullname); // a bit below we will free it
 		}
@@ -2465,8 +2483,9 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 		return;
 	}
 
-	edictnum = ( newcl - svs.clients ) + 1;
-	ent = EDICT_NUM( edictnum );
+	memset(newcl, 0, sizeof(*newcl));
+	edictnum = (newcl - svs.clients) + 1;
+	ent = EDICT_NUM(edictnum);
 	ED_ClearEdict(ent);
 
 	memset(&newcl->_userinfo_ctx_, 0, sizeof(newcl->_userinfo_ctx_));
@@ -2476,6 +2495,8 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	          "\\name\\%s\\topcolor\\%d\\bottomcolor\\%d\\emodel\\6967\\pmodel\\13845\\skin\\%s\\*bot\\1",
 	          name, topcolor, bottomcolor, skin );
 
+	newcl->_userinfo_ctx_.max      = MAX_CLIENT_INFOS;
+	newcl->_userinfoshort_ctx_.max = MAX_CLIENT_INFOS;
 	Info_Convert(&newcl->_userinfo_ctx_, info);
 
 	newcl->state = cs_spawned;
@@ -2485,6 +2506,8 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	newcl->datagram.maxsize = sizeof( newcl->datagram_buf );
 	newcl->spectator = 0;
 	newcl->isBot = 1;
+	newcl->connection_started = realtime;
+	strlcpy(newcl->name, name, sizeof(newcl->name));
 
 	newcl->entgravity = 1.0;
 	val = PR2_GetEdictFieldValue( ent, "gravity" );
@@ -2495,7 +2518,6 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	if ( val )
 		val->_float = sv_maxspeed.value;
 
-
 	newcl->edict = ent;
 	ent->v.colormap = edictnum;
 	val = PR2_GetEdictFieldValue( ent, "isBot" );
@@ -2503,16 +2525,16 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 		val->_int = 1;
 
 	// restore client name.
-	ent->v.netname = PR_SetString(newcl->name);
+	PR_SetEntityString(ent, ent->v.netname, newcl->name);
 
 	memset( newcl->stats, 0, sizeof( newcl->stats ) );
+	SZ_InitEx (&newcl->netchan.message, newcl->netchan.message_buf, (int)sizeof(newcl->netchan.message_buf), true);
 	SZ_Clear( &newcl->netchan.message );
 	newcl->netchan.drop_count = 0;
 	newcl->netchan.incoming_sequence = 1;
 
 	// copy the most important userinfo into userinfoshort
 	// {
-
 	SV_ExtractFromUserinfo( newcl, true );
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
@@ -2598,6 +2620,7 @@ void PF2_SetBotUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t
 	int     entnum = stack[0]._int;
 	char   *key = (char *) VM_POINTER( base, mask, stack[1].string );
 	char   *value = (char *) VM_POINTER( base, mask, stack[2].string );
+	int    flags = stack[3]._int;
 	int     i;
 	extern char *shortinfotbl[];
 
@@ -2615,7 +2638,11 @@ void PF2_SetBotUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t
 		Con_Printf( "tried to change userinfo a non-botclient %d \n", entnum );
 		return;
 	}
-	Info_Set( &cl->_userinfo_ctx_, key, value );
+
+	if ( flags & SETUSERINFO_STAR )
+		Info_SetStar( &cl->_userinfo_ctx_, key, value );
+	else
+		Info_Set( &cl->_userinfo_ctx_, key, value );
 	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
@@ -2733,8 +2760,6 @@ void PF2_setpause(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	if (pause != (sv.paused & 1))
 		SV_TogglePause (NULL, 1);
 }
-
-#define SETUSERINFO_STAR          (1<<0) // allow set star keys
 
 void PF2_SetUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retval )
 {
@@ -2968,10 +2993,13 @@ extern field_t *fields;
 
 #define GAME_API_VERSION_MIN 8
 
-void PR2_InitProg()
+void PR2_InitProg(void)
 {
-	if ( !sv_vm )
-	{
+	extern cvar_t sv_pr2references;
+
+	Cvar_SetValue(&sv_pr2references, 0.0f);
+
+	if ( !sv_vm ) {
 		PR1_InitProg();
 		return;
 	}
@@ -2980,25 +3008,34 @@ void PR2_InitProg()
 
 	gamedata = (gameData_t *) VM_Call(sv_vm, GAME_INIT, (int) (sv.time * 1000),
 	                                  (int) (Sys_DoubleTime() * 100000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
-	if ( !gamedata )
+	if (!gamedata) {
 		SV_Error("PR2_InitProg gamedata == NULL");
+	}
 
 	gamedata = (gameData_t *)PR2_GetString((intptr_t)gamedata);
-	if (gamedata->APIversion < GAME_API_VERSION_MIN || gamedata->APIversion > GAME_API_VERSION)
-	{
-		if (GAME_API_VERSION_MIN == GAME_API_VERSION)
-			SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)",
-				gamedata->APIversion, GAME_API_VERSION);
-		else
-			SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)",
-				gamedata->APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
+	if (gamedata->APIversion < GAME_API_VERSION_MIN || gamedata->APIversion > GAME_API_VERSION) {
+		if (GAME_API_VERSION_MIN == GAME_API_VERSION) {
+			SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)", gamedata->APIversion, GAME_API_VERSION);
+		}
+		else {
+			SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)", gamedata->APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
+		}
 	}
+
+	sv_vm->pr2_references = gamedata->APIversion >= 15 && (int)sv_pr2references.value;
 
 	sv.edicts = (edict_t *)PR2_GetString((intptr_t)gamedata->ents);
 	pr_global_struct = (globalvars_t*)PR2_GetString((intptr_t)gamedata->global);
 	pr_globals = (float *) pr_global_struct;
 	fields = (field_t*)PR2_GetString((intptr_t)gamedata->fields);
 	pr_edict_size = gamedata->sizeofent;
+
+	sv.max_edicts = MAX_EDICTS;
+	if (gamedata->APIversion >= 14) {
+		sv.max_edicts = min(sv.max_edicts, gamedata->maxentities);
+	}
+	else {
+		sv.max_edicts = min(sv.max_edicts, 512);
+	}
 }
 #endif /* USE_PR2 */

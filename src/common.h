@@ -71,6 +71,7 @@ void MSG_WriteString (sizebuf_t *sb, const char *s);
 void MSG_WriteCoord (sizebuf_t *sb, const float f);
 void MSG_WriteAngle (sizebuf_t *sb, const float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, const float f);
+void MSG_WriteLongCoord (sizebuf_t* sb, float f);
 void MSG_WriteDeltaUsercmd (sizebuf_t *sb, const struct usercmd_s *from, const struct usercmd_s *cmd);
 
 extern int msg_readcount;
@@ -219,5 +220,6 @@ typedef struct qtvuser_s
 
 //============================================================================
 
+qbool COM_FileExists(char *path);
 
 #endif /* !__COMMON_H__ */

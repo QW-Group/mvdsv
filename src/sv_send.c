@@ -40,6 +40,7 @@ char	outputbuf[OUTPUTBUF_SIZE];
 redirect_t	sv_redirected;
 static int	sv_redirectbufcount;
 
+qbool SV_SkipCommsBotMessage(client_t* client);
 extern cvar_t sv_phs, sv_reliable_sound;
 
 /*
@@ -163,7 +164,7 @@ void Con_Printf (char *fmt, ...)
 /*
 ================
 Con_DPrintf
- 
+
 A Con_Printf that only shows up if the "developer" cvar is set
 ================
 */
@@ -440,6 +441,8 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 
 		if (client->state != cs_spawned)
 			continue;
+		if (SV_SkipCommsBotMessage(client))
+			continue;
 
 		if (!mask)
 			goto inrange; // multicast to all
@@ -575,16 +578,14 @@ Larger attenuations will drop off.  (max 4 attenuation)
  
 ==================
 */
-void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
-                    float attenuation)
+void SV_StartSound (edict_t *entity, int channel, char *sample, int volume, float attenuation)
 {
-	int	sound_num;
-	int	field_mask;
-	int	i;
-	int	ent;
-	vec3_t	origin;
-	qbool	use_phs;
-	qbool	reliable = false;
+	int     sound_num;
+	int     i;
+	int     ent;
+	vec3_t  origin;
+	qbool   use_phs;
+	qbool   reliable = false;
 
 	if (volume < 0 || volume > 255)
 		SV_Error ("SV_StartSound: volume = %i", volume);
@@ -624,7 +625,6 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
 
 	channel = (ent<<3) | channel;
 
-	field_mask = 0;
 	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
 		channel |= SND_VOLUME;
 	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
@@ -820,7 +820,7 @@ void SV_UpdateClientStats (client_t *client)
 	}
 
 	stats[STAT_HEALTH] = ent->v.health;
-	stats[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
+	stats[STAT_WEAPON] = SV_ModelIndex(PR_GetEntityString(ent->v.weaponmodel));
 	stats[STAT_AMMO] = ent->v.currentammo;
 	stats[STAT_ARMOR] = ent->v.armorvalue;
 	stats[STAT_SHELLS] = ent->v.ammo_shells;
@@ -885,17 +885,19 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	}
 	*/
 
-	// add the client specific data to the datagram
-	SV_WriteClientdataToMessage (client, &msg);
+	if (!SV_SkipCommsBotMessage(client)) {
+		// add the client specific data to the datagram
+		SV_WriteClientdataToMessage(client, &msg);
 
-	// send over all the objects that are in the PVS
-	// this will include clients, a packetentities, and
-	// possibly a nails update
-	SV_WriteEntitiesToClient (client, &msg, false);
+		// send over all the objects that are in the PVS
+		// this will include clients, a packetentities, and
+		// possibly a nails update
+		SV_WriteEntitiesToClient(client, &msg, false);
 
 #ifdef FTE_PEXT2_VOICECHAT
-	SV_VoiceSendPacket(client, &msg);
+		SV_VoiceSendPacket(client, &msg);
 #endif
+	}
 
 	// copy the accumulated multicast datagram
 	// for this client out to the message
@@ -1056,6 +1058,12 @@ void SV_SendClientMessages (void)
 	// update frags, names, etc
 	SV_UpdateToReliableMessages ();
 
+	if (fofs_visibility) {
+		for (i = 0; i < MAX_CLIENTS; ++i) {
+			((eval_t *)((byte *)&(svs.clients[i].edict)->v + fofs_visibility))->_int = 0;
+		}
+	}
+
 	// build individual updates
 	for (i=0, c = svs.clients ; i<MAX_CLIENTS ; i++, c++)
 	{
@@ -1109,6 +1117,9 @@ void SV_SendClientMessages (void)
 			SZ_Clear (&c->netchan.message);
 			SZ_Clear (&c->datagram);
 			c->num_backbuf = 0;
+
+			// Need to tell mod what the bot would have seen
+			SV_SetVisibleEntitiesForBot (c);
 			continue;
 		}
 #endif
@@ -1186,7 +1197,7 @@ void MVD_WriteStats(void)
 		memset (stats, 0, sizeof(stats));
 
 		stats[STAT_HEALTH] = ent->v.health;
-		stats[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
+		stats[STAT_WEAPON] = SV_ModelIndex(PR_GetEntityString(ent->v.weaponmodel));
 		stats[STAT_AMMO] = ent->v.currentammo;
 		stats[STAT_ARMOR] = ent->v.armorvalue;
 		stats[STAT_SHELLS] = ent->v.ammo_shells;

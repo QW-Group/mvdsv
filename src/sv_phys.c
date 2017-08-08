@@ -95,12 +95,12 @@ void SV_CheckVelocity (edict_t *ent)
 	{
 		if (IS_NAN(ent->v.velocity[i]))
 		{
-			Con_DPrintf ("Got a NaN velocity on %s\n", PR_GetString(ent->v.classname));
+			Con_DPrintf ("Got a NaN velocity on %s\n", PR_GetEntityString(ent->v.classname));
 			ent->v.velocity[i] = 0;
 		}
 		if (IS_NAN(ent->v.origin[i]))
 		{
-			Con_DPrintf ("Got a NaN origin on %s\n", PR_GetString(ent->v.classname));
+			Con_DPrintf ("Got a NaN origin on %s\n", PR_GetEntityString(ent->v.classname));
 			ent->v.origin[i] = 0;
 		}
 /*		if (ent->v.velocity[i] > sv_maxvelocity.value)
@@ -832,13 +832,13 @@ void SV_Physics_Step (edict_t *ent)
 
 //============================================================================
 
-void SV_ProgStartFrame (void)
+void SV_ProgStartFrame (qbool isBotFrame)
 {
 	// let the progs know that a new frame has started
 	pr_global_struct->self = EDICT_TO_PROG(sv.edicts);
 	pr_global_struct->other = EDICT_TO_PROG(sv.edicts);
 	pr_global_struct->time = sv.time;
-	PR_GameStartFrame();
+	PR_GameStartFrame(isBotFrame);
 }
 
 /*
@@ -974,7 +974,7 @@ void SV_Physics (void)
 
 	PR_GLOBAL(frametime) = sv_frametime;
 
-	SV_ProgStartFrame ();
+	SV_ProgStartFrame(false);
 
 	//
 	// treat each object in turn
@@ -1011,18 +1011,58 @@ void SV_Physics (void)
 		sv_client = cl;
 		sv_player = cl->edict;
 
-		if( sv_client->spectator && sv_client->spec_track > 0 )
+		if (sv_client->spectator && sv_client->spec_track > 0)
 			sv_player->v.goalentity = EDICT_TO_PROG(svs.clients[sv_client->spec_track-1].edict);
 	}
 
+	sv_player = savesvpl;
+	sv_client = savehc;
+}
+
 #ifdef USE_PR2
+void SV_RunBots(void)
+{
+	int i;
+	client_t *cl,*savehc;
+	edict_t *savesvpl;
+	double max_physfps = sv_maxfps.value;
+
+	if (max_physfps < 20 || max_physfps > 1000) {
+		max_physfps = 77.0;
+	}
+
+	if (sv.state != ss_active || !sv.physicstime)
+		return;
+
+#ifdef SERVERONLY
+	if (sv.old_bot_time)
+	{
+		// don't bother running a frame if 1/fps seconds haven't passed
+		sv_frametime = sv.time - sv.old_bot_time;
+		if (sv_frametime < (double) 1.0f / max_physfps)
+			return;
+	}
+	else {
+		sv_frametime = 1.0f / max_physfps; // initialization frame
+	}
+	sv.old_bot_time = sv.time;
+#else
+	// On internal server, we'll be matching the user's framerate
+#endif
+
+	savesvpl = sv_player;
+	savehc = sv_client;
+
+	PR_GLOBAL(frametime) = sv_frametime;
+	SV_ProgStartFrame (true);
+
 	//
 	// Run bots physics.
 	//
 	for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
 	{
 		extern void SV_PreRunCmd(void);
-		extern void SV_RunCmd (usercmd_t *ucmd, qbool inside);
+		extern void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool simulate);
 		extern void SV_PostRunCmd(void);
 
 		if ( cl->state == cs_free )
@@ -1034,7 +1074,7 @@ void SV_Physics (void)
 		sv_player = cl->edict;
 
 		SV_PreRunCmd();
-		SV_RunCmd (&cl->botcmd, false);
+		SV_RunCmd (&cl->botcmd, false, false);
 		SV_PostRunCmd();
 
 		cl->lastcmd = cl->botcmd;
@@ -1045,36 +1085,33 @@ void SV_Physics (void)
 		cl->localtime = sv.time;
 		cl->delta_sequence = -1;	// no delta unless requested
 
-		if (sv_antilag.value)
-		{
-			if (cl->antilag_position_next == 0 || cl->antilag_positions[(cl->antilag_position_next - 1) % MAX_ANTILAG_POSITIONS].localtime < cl->localtime)
-			{
+		if (sv_antilag.value) {
+			if (cl->antilag_position_next == 0 || cl->antilag_positions[(cl->antilag_position_next - 1) % MAX_ANTILAG_POSITIONS].localtime < cl->localtime) {
 				cl->antilag_positions[cl->antilag_position_next % MAX_ANTILAG_POSITIONS].localtime = cl->localtime;
 				VectorCopy(cl->edict->v.origin, cl->antilag_positions[cl->antilag_position_next % MAX_ANTILAG_POSITIONS].origin);
 				cl->antilag_position_next++;
 			}
 		}
-		else
-		{
+		else {
 			cl->antilag_position_next = 0;
 		}
 	}
-#endif
 
 	sv_player = savesvpl;
 	sv_client = savehc;
 }
+#endif
 
 void SV_SetMoveVars(void)
 {
-	movevars.gravity		= sv_gravity.value;
-	movevars.stopspeed		= sv_stopspeed.value;
-	movevars.maxspeed		= sv_maxspeed.value;
-	movevars.spectatormaxspeed	= sv_spectatormaxspeed.value;
-	movevars.accelerate		= sv_accelerate.value;
-	movevars.airaccelerate		= sv_airaccelerate.value;
-	movevars.wateraccelerate	= sv_wateraccelerate.value;
-	movevars.friction		= sv_friction.value;
-	movevars.waterfriction		= sv_waterfriction.value;
-	movevars.entgravity		= 1.0;
+	movevars.gravity            = sv_gravity.value;
+	movevars.stopspeed          = sv_stopspeed.value;
+	movevars.maxspeed           = sv_maxspeed.value;
+	movevars.spectatormaxspeed  = sv_spectatormaxspeed.value;
+	movevars.accelerate         = sv_accelerate.value;
+	movevars.airaccelerate      = sv_airaccelerate.value;
+	movevars.wateraccelerate    = sv_wateraccelerate.value;
+	movevars.friction           = sv_friction.value;
+	movevars.waterfriction      = sv_waterfriction.value;
+	movevars.entgravity         = 1.0;
 }

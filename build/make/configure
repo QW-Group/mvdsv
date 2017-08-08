@@ -82,16 +82,22 @@ else
 	return 1
 fi
 
-
 # OS determination
 
 if [ x$1 != x ]; then
-UNAME=$1
+	UNAME=$1
 else
-UNAME=`uname`
+	UNAME=`uname`
 fi
 
 ARCH=`uname -m | sed -e 's/i.86/x86/g' -e 's/Power Macintosh/ppc/g' -e 's/amd64/x86_64/g'`
+
+# on windows, always be 32bit
+if [ ${UNAME} = CYGWIN_NT-10.0 ]; then
+	BITS=32
+	ARCH=x86
+fi
+
 echo UNAME="${UNAME}" >> Makefile
 echo ARCH="${ARCH}" >> Makefile
 
@@ -124,11 +130,19 @@ fi
 case ${UNAME} in
 FreeBSD | OpenBSD | NetBSD | DragonFly | BSD)
 	echo "${UNAME} ${ARCH} ${BITS}bits system - using BSD Makefile."
+	echo "SV_OBJS = \$(SV_DIR)/sv_sys_unix.o" >> Makefile
 	cat Makefile.BSD >> Makefile
+	echo "Configuration completed."
+	;;
+CYGWIN_NT-10.0)
+	echo "${UNAME} ${ARCH} ${BITS}bits system - using GNU Makefile."
+	echo "SV_OBJS = \$(SV_DIR)/sv_sys_win.o" >> Makefile
+	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
 	;;
 Darwin | MacOSX | Linux | SunOS | GNU)
 	echo "${UNAME} ${ARCH} ${BITS}bits system - using GNU Makefile."
+	echo "SV_OBJS = \$(SV_DIR)/sv_sys_unix.o" >> Makefile
 	cat Makefile.GNU >> Makefile
 	echo "Configuration completed."
 	;;

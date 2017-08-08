@@ -357,23 +357,43 @@ void Sys_Error (const char *error, ...)
 Sys_DoubleTime
 ================
 */
-double Sys_DoubleTime (void)
+#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+#include <time.h>
+double Sys_DoubleTime(void)
+{
+	static unsigned int secbase;
+	struct timespec ts;
+
+#ifdef __linux__
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+#else
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+#endif
+
+	if (!secbase) {
+		secbase = ts.tv_sec;
+		return ts.tv_nsec / 1000000000.0;
+	}
+
+	return (ts.tv_sec - secbase) + ts.tv_nsec / 1000000000.0;
+}
+#else
+double Sys_DoubleTime(void)
 {
 	struct timeval tp;
 	struct timezone tzp;
-	static int		secbase;
+	static int secbase;
 
 	gettimeofday(&tp, &tzp);
 
-	if (!secbase)
-	{
-		secbase = tp.tv_sec;
-		return tp.tv_usec/1000000.0;
+	if (!secbase) {
+	    secbase = tp.tv_sec;
+	    return tp.tv_usec/1000000.0;
 	}
 
-	return (tp.tv_sec - secbase) + tp.tv_usec/1000000.0;
+	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
-
+#endif
 /*
 ================
 Sys_ConsoleInput

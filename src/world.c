@@ -300,7 +300,7 @@ static void SV_TouchLinks ( edict_t *ent, areanode_t *node )
 	edict_t		*touchlist[MAX_EDICTS], *touch;
 	int			old_self, old_other;
 
-	numtouch = SV_AreaEdicts (ent->v.absmin, ent->v.absmax, touchlist, MAX_EDICTS, AREA_TRIGGERS);
+	numtouch = SV_AreaEdicts (ent->v.absmin, ent->v.absmax, touchlist, sv.max_edicts, AREA_TRIGGERS);
 
 // touch linked edicts
 	for (i = 0; i < numtouch; i++)
@@ -484,24 +484,24 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t *eorg, vec3_t start, vec3_t mi
 	vec3_t		start_l, end_l;
 	hull_t		*hull;
 
-// get the clipping hull
+	// get the clipping hull
 	hull = SV_HullForEntity (ent, mins, maxs, offset);
 
-// { well, its hack for sv_antilag
+	// { well, its hack for sv_antilag
 	if (eorg)
 		VectorCopy((*eorg), offset);
-// }
+	// }
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
 
-// trace a line through the apropriate clipping hull
+	// trace a line through the apropriate clipping hull
 	trace = CM_HullTrace (hull, start_l, end_l);
 
-// fix trace up by the offset
+	// fix trace up by the offset
 	VectorAdd (trace.endpos, offset, trace.endpos);
 
-// did we clip the move?
+	// did we clip the move?
 	if (trace.fraction < 1 || trace.startsolid)
 		trace.e.ent = ent;
 
@@ -523,9 +523,9 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 	edict_t		*touchlist[MAX_EDICTS], *touch;
 	trace_t		trace;
 
-	numtouch = SV_AreaEdicts (clip->boxmins, clip->boxmaxs, touchlist, MAX_EDICTS, AREA_SOLID);
+	numtouch = SV_AreaEdicts (clip->boxmins, clip->boxmaxs, touchlist, sv.max_edicts, AREA_SOLID);
 
-// touch linked edicts
+	// touch linked edicts
 	for (i = 0; i < numtouch; i++)
 	{
 		// might intersect, so do an exact clip
@@ -671,7 +671,7 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 		if (touch == clip->passedict)
 			continue;
 		if (touch->v.solid == SOLID_TRIGGER)
-			SV_Error ("Trigger (%s) in clipping list", PR_GetString(touch->v.classname));
+			SV_Error ("Trigger (%s) in clipping list", PR_GetEntityString(touch->v.classname));
 
 		if ((clip->type & MOVE_NOMONSTERS) && touch->v.solid != SOLID_BSP)
 			continue;
@@ -718,7 +718,6 @@ void SV_AntilagClipCheck ( areanode_t *node, moveclip_t *clip )
 		}
 	}
 }
-
 
 /*
 ==================
@@ -772,4 +771,3 @@ trace_t SV_Trace (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, 
 
 	return clip.trace;
 }
-

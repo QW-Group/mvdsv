@@ -52,7 +52,7 @@ typedef struct sv_edict_s
 	qbool		free;
 	link_t		area;			// linked to a division node or leaf
 
-	int			entnum;
+	int         entnum;
 
 	int			num_leafs;
 	short		leafnums[MAX_ENT_LEAFS];
@@ -84,10 +84,10 @@ extern	dstatement_t	*pr_statements;
 extern	globalvars_t	*pr_global_struct;
 extern	float		*pr_globals;	// same as pr_global_struct
 
-extern	int			pr_edict_size;	// in bytes
-extern	cvar_t		sv_progsname; 
+extern	int         pr_edict_size;	// in bytes
+extern	cvar_t      sv_progsname; 
 #ifdef WITH_NQPROGS
-extern	cvar_t		sv_forcenqprogs;
+extern	cvar_t      sv_forcenqprogs;
 #endif
 
 //============================================================================
@@ -116,7 +116,7 @@ void NQP_Reset (void);
 
 //============================================================================
 
-void PR1_Init (void);
+void PR_Init (void);
 
 void PR_ExecuteProgram (func_t fnum);
 void PR_InitPatchTables (void);	// NQ progs support
@@ -186,6 +186,8 @@ extern int fofs_movement;
 extern int fofs_gravity, fofs_maxspeed;
 extern int fofs_hideentity;
 extern int fofs_trackent;
+extern int fofs_visibility;
+extern int fofs_hide_players;
 
 #define EdictFieldFloat(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->_float
 #define EdictFieldVector(ed, fieldoffset) ((eval_t *)((byte *)&(ed)->v + (fieldoffset)))->vector
@@ -209,14 +211,15 @@ extern char *pr_newstrtbl[MAX_PRSTR];
 extern int num_prstr;
 
 char *PR1_GetString(int num);
-int PR1_SetString(char *s);
-int PR_SetTmpString(const char *s);
+void PR1_SetString(string_t* address, char* s);
+void PR_SetTmpString(string_t* address, const char *s);
 
 void PR1_LoadProgs (void);
-void PR1_InitProg();
+void PR1_InitProg(void);
+void PR1_Init(void);
 
 #define PR1_GameShutDown()	// PR1 does not really have it.
-void PR1_UnLoadProgs();
+void PR1_UnLoadProgs(void);
 
 void PR1_GameClientDisconnect(int spec);
 void PR1_GameClientConnect(int spec);
@@ -232,7 +235,7 @@ qbool PR1_ClientCmd(void);
 #define PR1_GameStartFrame() PR_ExecuteProgram (PR_GLOBAL(StartFrame))
 #define PR1_ClientKill() PR_ExecuteProgram (PR_GLOBAL(ClientKill))
 #define PR1_UserInfoChanged() (0) // PR1 does not really have it,
-								  // we have mod_UserInfo_Changed but it is slightly different.
+                                  // we have mod_UserInfo_Changed but it is slightly different.
 #define PR1_LoadEnts ED_LoadFromFile
 #define PR1_EdictThink PR_ExecuteProgram
 #define PR1_EdictTouch PR_ExecuteProgram
@@ -245,8 +248,10 @@ qbool PR1_ClientCmd(void);
 	#define PR_UnLoadProgs PR1_UnLoadProgs
 
 	#define PR_Init PR1_Init
-	#define PR_GetString PR1_GetString
-	#define PR_SetString PR1_SetString
+	//#define PR_GetString PR1_GetString
+	//#define PR_SetString PR1_SetString
+	#define PR_SetEntityString(ent, target, value) PR1_SetString(&target, value)
+	#define PR_SetGlobalString(target, value) PR1_SetString(&target, value)
 	#define ED_FindFieldOffset ED1_FindFieldOffset
 	#define PR_GetEdictFieldValue PR1_GetEdictFieldValue
 
@@ -261,13 +266,15 @@ qbool PR1_ClientCmd(void);
 
 	#define PR_GameSetChangeParms PR1_GameSetChangeParms
 	#define PR_GameSetNewParms PR1_GameSetNewParms
-	#define PR_GameStartFrame PR1_GameStartFrame
+	#define PR_GameStartFrame(isBotFrame) { if (!isBotFrame) { PR1_GameStartFrame(); } }
 	#define PR_ClientKill PR1_ClientKill
 	#define PR_UserInfoChanged PR1_UserInfoChanged
 	#define PR_LoadEnts PR1_LoadEnts
 	#define PR_EdictThink PR1_EdictThink
 	#define PR_EdictTouch PR1_EdictTouch
 	#define PR_EdictBlocked PR1_EdictBlocked
+
+	#define PR_ClearEdict(ent)
 #endif
 
 // pr_cmds.c
