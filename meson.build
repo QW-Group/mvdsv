@@ -46,6 +46,9 @@ mvdsv_sources = [
 	'src/zone.c',
 ]
 
+c_args = ['-DSERVERONLY', '-DUSE_PR2']
+link_args = []
+
 deps = [
 	dependency('threads')
 ]
@@ -60,7 +63,12 @@ else
 	]
 endif
 
-link_args = []
+curl = dependency('libcurl', required : false)
+if curl.found()
+	deps += curl
+	mvdsv_sources += 'src/central.c'
+	c_args += '-DWWW_INTEGRATION'
+endif
 
 if target_machine.system() == 'windows'
 	mvdsv_sources += [
@@ -82,8 +90,6 @@ else
 		meson.get_compiler('c').find_library('dl'),
 	]
 endif
-
-c_args = ['-DSERVERONLY', '-DUSE_PR2']
 
 if target_machine.endian() == 'little'
 	c_args += '-D__LITTLE_ENDIAN__Q__'
