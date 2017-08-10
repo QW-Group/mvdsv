@@ -56,7 +56,7 @@ else
 			STRIP_FLAGS=--strip-unneeded --remove-section=.comment mvdsv
 			ASMFLAGS = -x assembler-with-cpp
 		else
-			CFLAGS+= -pthread 
+			CFLAGS+= -pthread
 		endif
 	endif
 endif
@@ -135,11 +135,6 @@ ifdef CURL_CFLAGS
 		SV_WEB_INTEGRATION = $(SV_DIR)/central.o
 endif
 
-ifeq ($(USE_ASM),$(ASM))
-SV_ASM_OBJS = \
-		$(SV_DIR)/bothtoolsa.o \
-		$(SV_DIR)/math.o
-endif
 
 #############################################################################
 # SETUP AND BUILD
@@ -170,6 +165,6 @@ mvdsv : $(SV_WEB_INTEGRATION) $(SV_OBJS) $(SV_ASM_OBJS)
 	$(E) [LINK]
 	$(Q)$(CC) $(CFLAGS) -o mvdsv $^ $(LDFLAGS)
 
-clean : 
+clean :
 	$(E) [CLEAN]
 	$(Q)-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o mvdsv

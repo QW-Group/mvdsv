@@ -535,7 +535,6 @@
     <ClInclude Include="..\..\src\progdefs.h" />
     <ClInclude Include="..\..\src\progs.h" />
     <ClInclude Include="..\..\src\protocol.h" />
-    <ClInclude Include="..\..\src\quakeasm.h" />
     <ClInclude Include="..\..\src\qwsvdef.h" />
     <ClInclude Include="..\..\src\resource.h" />
     <ClInclude Include="..\..\src\sbar.h" />
@@ -556,34 +555,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\qwcl2.ico" />
-    <CustomBuild Include="..\..\src\bothtoolsa.s">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cl /nologo /EP &gt; "$(OutDir)%(Filename).spp" "%(FullPath)"
-gas2masm &lt; "$(OutDir)%(Filename).spp" &gt;"$(OutDir)%(Filename).asm"
-ml /nologo /c /Cp /coff /Fo"$(OutDir)%(Filename).obj" /Zm /Zi "$(OutDir)%(Filename).asm"
-del "$(OutDir)%(Filename).spp"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cl /nologo /EP &gt; "$(OutDir)%(Filename).spp" "%(FullPath)"
-gas2masm &lt; "$(OutDir)%(Filename).spp" &gt;"$(OutDir)%(Filename).asm"
-ml /nologo /c /Cp /coff /Fo"$(OutDir)%(Filename).obj" /Zm /Zi "$(OutDir)%(Filename).asm"
-del "$(OutDir)%(Filename).spp"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\src\math.s">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cl /nologo /EP &gt; "$(OutDir)%(Filename).spp" "%(FullPath)"
-gas2masm &lt; "$(OutDir)%(Filename).spp" &gt;"$(OutDir)%(Filename).asm"
-ml /nologo /c /Cp /coff /Fo"$(OutDir)%(Filename).obj" /Zm /Zi "$(OutDir)%(Filename).asm"
-del "$(OutDir)%(Filename).spp"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cl /nologo /EP &gt; "$(OutDir)%(Filename).spp" "%(FullPath)"
-gas2masm &lt; "$(OutDir)%(Filename).spp" &gt;"$(OutDir)%(Filename).asm"
-ml /nologo /c /Cp /coff /Fo"$(OutDir)%(Filename).obj" /Zm /Zi "$(OutDir)%(Filename).asm"
-del "$(OutDir)%(Filename).spp"
-</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).obj;%(Outputs)</Outputs>
-    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

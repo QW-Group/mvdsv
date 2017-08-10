@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	
+
 */
 
 // cmodel.h
@@ -32,7 +32,6 @@ enum {
 
 
 // plane_t structure
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct mplane_s {
 	vec3_t	normal;
 	float	dist;
@@ -41,7 +40,6 @@ typedef struct mplane_s {
 	byte	pad[2];
 } mplane_t;
 
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct {
 	mclipnode_t	*clipnodes;
 	mplane_t	*planes;
