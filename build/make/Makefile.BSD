@@ -95,11 +95,6 @@ SV_OBJS = \
 \
 		${SV_DIR}/central.o
 
-.ifdef USE_ASM
-SV_ASM_OBJS = \
-		${SV_DIR}/bothtoolsa.o \
-		${SV_DIR}/math.o
-.endif
 
 #############################################################################
 # SETUP AND BUILD
@@ -110,7 +105,7 @@ SV_ASM_OBJS = \
 
 .s.o:
 		${CC} ${DO_CFLAGS} -DELF -x assembler-with-cpp -c $< -o $*.o
-		
+
 all:	mvdsv
 		${STRIP} ${STRIP_FLAGS} mvdsv
 

@@ -245,7 +245,7 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 #endif
 
 #if defined(__linux__) || defined(_WIN32)
-/* 
+/*
  * Functions strlcpy, strlcat, strnstr and strcasestr
  * was copied from FreeBSD 4.10 libc: src/lib/libc/string/
  *
@@ -421,7 +421,6 @@ float FloatSwap (float f)
 	return dat2.f;
 }*/
 
-#ifndef id386
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -469,7 +468,6 @@ float FloatSwap (float f)
 }
 #ifdef __cplusplus
 }  /* extern "C" */
-#endif
 #endif
 
 #ifdef __PDP_ENDIAN__Q__
@@ -695,4 +693,3 @@ int wildcmp(char *wild, char *string)
 	}
 	return !*wild;
 }
-

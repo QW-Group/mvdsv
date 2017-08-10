@@ -1375,10 +1375,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\quakeasm.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\qwsvdef.h"
 				>
 			</File>
@@ -1480,54 +1476,6 @@
 			<File
 				RelativePath="..\..\src\qwcl2.ico"
 				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Asm Files"
-			>
-			<File
-				RelativePath="..\..\src\bothtoolsa.s"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
-						Outputs="$(OUTDIR)\$(InputName).obj"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
-						Outputs="$(OUTDIR)\$(InputName).obj"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\src\math.s"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
-						Outputs="$(OUTDIR)\$(InputName).obj"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						CommandLine="cl /nologo /EP &gt; &quot;$(OUTDIR)\$(InputName).spp&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;gas2masm &lt; &quot;$(OUTDIR)\$(InputName).spp&quot; &gt;&quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;ml /nologo /c /Cp /coff /Fo&quot;$(OUTDIR)\$(InputName).obj&quot; /Zm /Zi &quot;$(OUTDIR)\$(InputName).asm&quot;&#x0D;&#x0A;del &quot;$(OUTDIR)\$(InputName).spp&quot;&#x0D;&#x0A;"
-						Outputs="$(OUTDIR)\$(InputName).obj"
-					/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

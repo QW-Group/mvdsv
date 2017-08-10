@@ -7,19 +7,19 @@
 CFG=qwdtools - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "qwdtools_60.mak".
-!MESSAGE 
+!MESSAGE
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "qwdtools_60.mak" CFG="qwdtools - Win32 Debug"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for configuration are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "qwdtools - Win32 Release" (based on "Win32 (x86) Console Application")
 !MESSAGE "qwdtools - Win32 Debug" (based on "Win32 (x86) Console Application")
-!MESSAGE 
+!MESSAGE
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -77,7 +77,7 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /map /debug /machine:I386 /out:"qwdtools-debug.exe" /pdbtype:sept
 
-!ENDIF 
+!ENDIF
 
 # Begin Target
 
@@ -155,46 +155,6 @@ SOURCE=..\version.h
 SOURCE=world.h
 # End Source File
 # End Group
-# Begin Group "Asm Files"
 
-# PROP Default_Filter "s"
-# Begin Source File
-
-SOURCE=..\bothtoolsa.s
-
-!IF  "$(CFG)" == "qwdtools - Win32 Release"
-
-# Begin Custom Build
-OutDir=Release
-InputPath=..\bothtoolsa.s
-InputName=bothtoolsa
-
-"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
-	del $(OUTDIR)\$(InputName).spp 
-	
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "qwdtools - Win32 Debug"
-
-# Begin Custom Build
-OutDir=Debug
-InputPath=..\bothtoolsa.s
-InputName=bothtoolsa
-
-"$(OUTDIR)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	cl /nologo /EP > $(OUTDIR)\$(InputName).spp $(InputPath) 
-	gas2masm < $(OUTDIR)\$(InputName).spp >$(OUTDIR)\$(InputName).asm 
-	ml /nologo /c /Cp /coff /Fo$(OUTDIR)\$(InputName).obj /Zm /Zi $(OUTDIR)\$(InputName).asm 
-	del $(OUTDIR)\$(InputName).spp 
-	
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# End Group
 # End Target
 # End Project

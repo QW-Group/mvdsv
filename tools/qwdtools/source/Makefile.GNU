@@ -70,10 +70,6 @@ QWDTOOLS_OBJS = \
 		$(QWDTOOLS_DIR)/sync.o \
 		$(QWDTOOLS_DIR)/tools.o
 
-ifeq ($(USE_ASM),$(ASM))
-QWDTOOLS_ASM_OBJS = \
-		$(SV_DIR)/bothtoolsa.o
-endif
 
 #############################################################################
 # SETUP AND BUILD
@@ -91,5 +87,5 @@ all : qwdtools
 qwdtools : $(QWDTOOLS_OBJS) $(QWDTOOLS_ASM_OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o qwdtools $^
 
-clean : 
+clean :
 	-rm -f $(QWDTOOLS_DIR)/*.o qwdtools
