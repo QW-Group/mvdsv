@@ -99,6 +99,20 @@ else
 	c_args += '-D__PDP_ENDIAN__Q__'
 endif
 
+if target_machine.cpu_family() == 'x86' and target_machine.system() != 'darwin'
+	asm_c_args = ['-x', 'assembler-with-cpp', '-Did386']
+	if target_machine.system() != 'windows'
+		asm_c_args += '-DELF'
+	endif
+	deps += declare_dependency(
+		link_with : static_library('asm',
+			'src/bothtoolsa.s',
+			'src/math.s',
+			c_args : asm_c_args
+		)
+	)
+endif
+
 executable('mvdsv', mvdsv_sources,
 	dependencies : deps,
 	c_args : c_args,
