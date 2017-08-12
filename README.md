@@ -21,7 +21,7 @@ In general:
 - set up virtualenv and install python packages (required for meson and ninja builders)
 - run meson build for given directory (optionally with cross compilation settings)
 - run ninja to generate .so file
-- you should have ``qwprogs.so`` file in ``build_*`` directory, put it in your quake server/ktx/ directory.
+- you should have ``mvdsv`` file in ``build_*`` directory, put it in your quake server/ directory.
 
 Detailed commands to install packages, tools and compilation can be found in ``.travis.yml`` file.
 You should be able to compile binaries for most popular platforms, such as:
@@ -30,7 +30,33 @@ You should be able to compile binaries for most popular platforms, such as:
 - Windows 32-bit and 64-bit (WoW64)
 - Arm 7 - for RaspBerry Pi 3 with Raspbian
 
-Example for Linux amd64
+Example for Linux amd64 under Ubuntu 14.04 (should be similar under 16.04)
+
+Install required packages:
+
+```bash
+$ sudo apt-get update
+$ sudo apt-get -y upgrade
+$ sudo apt-get -y install build-essential python-virtualenv python3-dev python3-pip ninja-build cmake gcc-multilib
+```
+
+Check out the code to the current directory:
+
+```bash
+git clone https://github.com/deurk/mvdsv.git .
+```
+
+Create virtualenv + install python packages:
+
+```bash
+$ virtualenv .venv --python=python3
+$ . .venv/bin/activate
+$ pip3 install --upgrade pip
+$ pip3 install -r requirements.txt
+```
+
+For more detailed TARGET see ``.travis.yml`` - ``matrix`` section.
+Export env var to define what to compile, run the build commands.
 
 ```bash
 $ export TARGET=linux-amd64
@@ -88,10 +114,19 @@ ninja: Entering directory `build_linux-amd64'
                ^
 [46/46] Linking target mvdsv.
 
+```
+
+Check the output binary file:
+
+```bash
 $ file build_${TARGET}/mvdsv
 build_linux-amd64/mvdsv: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=dedd6661cff55d457b15d2641c02baaf7be9a8b1, not stripped
 
-
 ```
 
-In ``build_*/`` there will be mvdsv binary, change permissions to executable and use it to start server.
+In ``build_*/`` there will be ``mvdsv`` binary, change permissions to executable and copy it to quake directory to start quake server.
+
+Known issues:
+
+- When using cross compiling between 32bit and 64bit architecture make sure to reinstall *dev packages or run in chroot. See ``.travis.yml`` lines, there is ``apt-get remove`` command for this, because curl and pcre are in dependency but not required.
+- When changing architecture builds, for example for arm, apt-get will install/remove conflicting packages. Don't be surprised that you compile ``linux-amd64``, then ``linux-armv7hl`` and then back ``linux-amd64`` and it does not work because files are missing :)
