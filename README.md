@@ -36,7 +36,7 @@ Example for Linux amd64
 $ export TARGET=linux-amd64
 $ rm -rf build_${TARGET}
 
-16:09:59 $ meson build_${TARGET} --cross-file cross-compilation_${TARGET}.txt
+$ meson build_${TARGET} --cross-file cross-compilation_${TARGET}.txt
 The Meson build system
 Version: 0.41.2
 Source dir: /home/kaszpir/src/deurk/mvdsv
@@ -57,7 +57,6 @@ Cross dependency libcurl found: YES 7.47.0
 Library m found: YES
 Library dl found: YES
 Build targets in project: 1
-
 
 $ ninja -C build_${TARGET}
 
@@ -94,3 +93,5 @@ build_linux-amd64/mvdsv: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dy
 
 
 ```
+
+In ``build_*/`` there will be mvdsv binary, change permissions to executable and use it to start server.
