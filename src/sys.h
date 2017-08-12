@@ -133,7 +133,7 @@ typedef HMODULE DL_t;
 typedef void *DL_t;
 #ifdef __APPLE__
 #define DLEXT "dylib"
-#elif
+#else
 #define DLEXT "so"
 #endif
 
