@@ -14,6 +14,9 @@ License:
 Build from source with meson
 ----------------------------
 
+Detailed commands to install packages, tools and compilation can be found in ``.travis.yml`` file.
+There are extra conditionals to install desired packages based on the TARGET.
+
 In general:
 
 - use Ubuntu 14.04 (but should work under 16.04 as well) as virtual machine, check out source code there
@@ -23,7 +26,6 @@ In general:
 - run ninja to generate .so file
 - you should have ``mvdsv`` file in ``build_*`` directory, put it in your quake server/ directory.
 
-Detailed commands to install packages, tools and compilation can be found in ``.travis.yml`` file.
 You should be able to compile binaries for most popular platforms, such as:
 
 - Linux 32-bit and 64-bit
@@ -56,7 +58,7 @@ $ pip3 install -r requirements.txt
 ```
 
 For more detailed TARGET see ``.travis.yml`` - ``matrix`` section.
-Export env var to define what to compile, run the build commands.
+Export env var to define what target to compile, run the build commands.
 
 ```bash
 $ export TARGET=linux-amd64
