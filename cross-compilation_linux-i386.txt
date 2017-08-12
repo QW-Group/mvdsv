@@ -1,0 +1,16 @@
+[binaries]
+c = 'x86_64-linux-gnu-gcc'
+cpp = 'x86_64-linux-gnu-g++'
+ar = 'x86_64-linux-gnu-ar'
+strip = 'x86_64-linux-gnu-strip'
+pkgconfig = 'x86_64-linux-gnu-pkg-config'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
+
+[properties]
+c_args = ['-m32']
+c_link_args = ['-m32']

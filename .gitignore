@@ -19,3 +19,5 @@ src/Makefile.vm
 mvdsv
 !qwdtools/
 qwdtools
+.venv/
+build_*/*
