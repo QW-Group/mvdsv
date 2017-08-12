@@ -46,6 +46,7 @@ before_install:
   - sudo apt-get -y install build-essential python-virtualenv python3-dev python3-pip ninja-build cmake gcc-multilib
   # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail
   - sudo apt-get -y remove libcurl.*-dev
+  - sudo apt-get -y remove libpcre*-dev
   # install cross complier if we gonna do binaries for windows
   - if [ -z "${TARGET##*win*}" ]; then sudo apt-get -y install mingw-w64 ; fi
   # install cross compiler tools if we gonna do binares for arm/raspberry
