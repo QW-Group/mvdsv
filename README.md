@@ -132,3 +132,18 @@ Known issues:
 
 - When using cross compiling between 32bit and 64bit architecture make sure to reinstall *dev packages or run in chroot. See ``.travis.yml`` lines, there is ``apt-get remove`` command for this, because curl and pcre are in dependency but not required.
 - When changing architecture builds, for example for arm, apt-get will install/remove conflicting packages. Don't be surprised that you compile ``linux-amd64``, then ``linux-armv7hl`` and then back ``linux-amd64`` and it does not work because files are missing :)
+
+=======
+### Compiling on Ubuntu
+
+```
+sudo apt-get install gcc libc6-dev make
+git clone https://github.com/deurk/mvdsv.git
+cd mvdsv/build/make
+./configure
+make
+```
+
+This will create an executable binary at `mvdsv/build/make/mvdsv`.
+
+Copy it to your server.
