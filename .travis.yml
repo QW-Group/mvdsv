@@ -20,19 +20,19 @@ matrix:
   include:
     - os: linux
       dist: trusty
-      env: TARGET=linux-i386
-    - os: linux
-      dist: trusty
       env: TARGET=linux-amd64
     - os: linux
       dist: trusty
-      env: TARGET=linux-armv7hl
+      env: TARGET=linux-armhf
     - os: linux
       dist: trusty
-      env: TARGET=win-x86
+      env: TARGET=linux-i686
     - os: linux
       dist: trusty
-      env: TARGET=win-x64
+      env: TARGET=windows-x86
+    - os: linux
+      dist: trusty
+      env: TARGET=windows-x64
 
 before_install:
   # show some extra info
@@ -61,8 +61,9 @@ before_install:
 
 # each script section is executed in matrix build
 script:
+  - echo TARGET=${TARGET}
   - mkdir build_${TARGET} || true
-  - meson build_${TARGET} --cross-file cross-compilation_${TARGET}.txt
+  - meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
   - ninja -v -C build_${TARGET}
   # print basic info about complied files
   - find build_${TARGET}/ -type f -name "mvdsv*" -exec file {} \;
