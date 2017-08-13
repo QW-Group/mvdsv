@@ -1,4 +1,5 @@
 # MVDSV: a QuakeWorld server
+[![Build Status](https://travis-ci.org/deurk/mvdsv.svg?branch=master)](https://travis-ci.org/deurk/mvdsv)
 
 **[MVDSV][mvdsv]** (MultiView Demo SerVer) has been the most popular **QuakeWorld** server in the world for the more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy **QuakeWorld** with.
 
