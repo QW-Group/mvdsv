@@ -2,7 +2,8 @@
 
 MVDSV (MultiView Demo SerVer) has been the most popular QuakeWorld server in the world for the more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy QuakeWorld with.
 
-_(This README.md file is stil a work in progress. bear with us while we polish it!)_
+_(This README.md file is still a work in progress. bear with us while we polish it!)_
+
 ## Getting Started
 
 The following instructions will help you get a MVDSV server up and running on your local machine from prebuilt binaries. Details on how to compile your own MVDSV binary will also be included to match specific architectures or for development purposes.
@@ -23,7 +24,7 @@ TBD
 
 ## Installing
 
-TBD
+For more detailed information we suggest [nquake/server-linux](https://github.com/nQuake/server-linux), which uses [mvdsv](https://github.com/deurk/mvdsv) ad QuakeWorld server.
 
 ## Building binaries
 
@@ -73,7 +74,7 @@ Export env var to define what target to compile, run the build commands.
 $ export TARGET=linux-amd64
 $ rm -rf build_${TARGET}
 
-$ meson build_${TARGET} --cross-file cross-compilation_${TARGET}.txt
+$ meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
 The Meson build system
 Version: 0.41.2
 Source dir: /home/kaszpir/src/deurk/mvdsv
@@ -120,7 +121,7 @@ Known issues:
 
 ### Compiling on Ubuntu
 
-```
+```bash
 sudo apt-get install gcc libc6-dev make
 git clone https://github.com/deurk/mvdsv.git
 cd mvdsv/build/make
@@ -134,7 +135,7 @@ Copy it to your server.
 
 #### Linux on Intel/AMD 32-bit
 
-```
+```bash
 # ~/build_linux-i686# ../../meson/meson.py --buildtype=release --cross-file=../tools/cross-compilation/linux-i686.txt
 The Meson build system
 Version: 0.42.0.dev1
@@ -159,9 +160,10 @@ Build targets in project: 1
 # ~/build_linux-i686# file qwprogs.so
 qwprogs.so: ELF 32-bit LSB shared object, Intel 80386, version 1 (SYSV), dynamically linked, BuildID[sha1]=428a10ae550e769df1388c129937d48176a23b51, not stripped
 ```
+
 #### Linux on Intel/AMD 64-bit
 
-```
+```bash
 # ~/build_linux-amd64# ../../meson/meson.py --buildtype=release --cross-file=../tools/cross-compilation/linux-amd64.txt
 The Meson build system
 Version: 0.42.0.dev1
@@ -186,9 +188,10 @@ Build targets in project: 1
 # ~/build_linux-amd64# file qwprogs.so
 qwprogs.so: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=5bd27876114dbf4b0dcf6a190c90f5e800ef480c, not stripped
 ```
+
 #### Windows on Intel/AMD 32-bit
 
-```
+```bash
 # ~/build_windows-x86# ../../meson/meson.py --buildtype=release --cross-file=../tools/cross-compilation/windows-x86.txt
 The Meson build system
 Version: 0.42.0.dev1
@@ -216,7 +219,7 @@ qwprogs.dll: PE32 executable (DLL) (console) Intel 80386, for MS Windows
 
 #### Windows on Intel/AMD 64-bit
 
-```
+```bash
 # ~/build_windows-x64# ../../meson/meson.py --buildtype=release --cross-file=../tools/cross-compilation/windows-x64.txt
 The Meson build system
 Version: 0.42.0.dev1
@@ -241,10 +244,12 @@ Build targets in project: 1
 # ~/build_windows-x64# file qwprogs.dll
 qwprogs.dll: PE32+ executable (DLL) (console) x86-64, for MS Windows
 ```
+
 #### Linux on Rapsberry 3
 
 For Jessie
-```
+
+```bash
 echo 'deb http://emdebian.org/tools/debian/ jessie main' >> /etc/apt/sources.list.d/crosstools.list
 curl http://emdebian.org/tools/debian/emdebian-toolchain-archive.key | sudo apt-key add -
 dpkg --add-architecture armhf
@@ -252,7 +257,7 @@ apt-get update
 apt-get install
 ```
 
-```
+```bash
 # ~/build_linux-armhf# ../../meson/meson.py --buildtype=release --cross-file=../tools/cross-compilation/linux-armhf.txt
 The Meson build system
 Version: 0.42.0.dev1
@@ -299,6 +304,7 @@ We use a pretty crappy system for versioning for now. For the versions available
 * **Vladimir Vladimirovich** - *VVD*
 
 Names of those contributors have been lost but they have also helped with this project:
+
 * *bliP*
 * *danfe*
 * *hdworak*
