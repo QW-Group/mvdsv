@@ -1,16 +1,16 @@
 # MVDSV: a QuakeWorld server
 
-MVDSV (MultiView Demo SerVer) has been the most popular QuakeWorld server in the world for the more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy QuakeWorld with.
+**[MVDSV][mvdsv]** (MultiView Demo SerVer) has been the most popular QuakeWorld server in the world for the more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy QuakeWorld with.
 
 _(This README.md file is still a work in progress. bear with us while we polish it!)_
 
 ## Getting Started
 
-The following instructions will help you get a MVDSV server up and running on your local machine from prebuilt binaries. Details on how to compile your own MVDSV binary will also be included to match specific architectures or for development purposes.
+The following instructions will help you get a **[MVDSV][mvdsv]** server up and running on your local machine from prebuilt binaries. Details on how to compile your own **[MVDSV][mvdsv]** binary will also be included to match specific architectures or for development purposes.
 
 ## Supported architectures
 
-The following architectures are fully supported by MVDSV and are available as prebuilt binaries:
+The following architectures are fully supported by **[MVDSV][mvdsv]** and are available as prebuilt binaries:
 * Linux i686 (Intel and AMD 32-bit processors)
 * Linux amd64 (Intel and AMD 64-bits processors)
 * Windows x86 (Intel and AMD 32-bit processors)
@@ -24,7 +24,7 @@ TBD
 
 ## Installing
 
-For more detailed information we suggest [nquake/server-linux](https://github.com/nQuake/server-linux), which uses [mvdsv](https://github.com/deurk/mvdsv) ad QuakeWorld server.
+For more detailed information we suggest looking at the [nQuake server][nquake], which uses **[MVDSV][mvdsv]** and **[KTX][ktx]** as **QuakeWorld** server.
 
 ## Building binaries
 
@@ -139,7 +139,7 @@ TBD
 
 ## Versioning
 
-We use a pretty crappy system for versioning for now. For the versions available, see the [tags on this repository](https://github.com/deurk/ktx/tags).
+We use a pretty crappy system for versioning for now. For the versions available, see the [tags on this repository][mvdsv-tags].
 
 ## Authors
 
@@ -153,15 +153,7 @@ We use a pretty crappy system for versioning for now. For the versions available
 * **Tero Parkkonen** - *Renzo*
 * **Vladimir Vladimirovich** - *VVD*
 
-Names of those contributors have been lost but they have also helped with this project:
-
-* *bliP*
-* *danfe*
-* *hdworak*
-* *HighlandeR*
-* *jhodge*
-* *kreon*
-* *SD-Angel*
+Names of those contributors have been lost but they have also helped with this project: *bliP*, *danfe*, *hdworak*, *HighlandeR*, *jhodge*, *kreon*, *SD-Angel*.
 
 ## Contributing
 
@@ -180,3 +172,8 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 * Hat tip to anyone who's code was used
 * Inspiration
 * etc
+
+[ktx]: https://github.com/deurk/ktx
+[mvdsv]: https://github.com/deurk/mvdsv
+[mvdsv-tags]: https://github.com/deurk/mvdsv/tags
+
