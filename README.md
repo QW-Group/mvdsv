@@ -77,8 +77,8 @@ $ rm -rf build_${TARGET}
 $ meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
 The Meson build system
 Version: 0.41.2
-Source dir: /home/kaszpir/src/deurk/mvdsv
-Build dir: /home/kaszpir/src/deurk/mvdsv/build_linux-linux-amd64
+Source dir: /mvdsv/src
+Build dir: /mvdsv/src/build_linux-linux-amd64
 Build type: cross build
 Project name: mvdsv
 Native c compiler: cc (gcc 5.4.0)
