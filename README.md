@@ -284,7 +284,7 @@ TBD
 
 ## Versioning
 
-We use a pretty crappy system for versioning for now. For the versions available, see the [tags on this repository](https://github.com/deurk/ktx/tags). 
+We use a pretty crappy system for versioning for now. For the versions available, see the [tags on this repository](https://github.com/deurk/ktx/tags).
 
 ## Authors
 
@@ -293,13 +293,19 @@ We use a pretty crappy system for versioning for now. For the versions available
 * **Ivan Bolshunov** - *qqshka*
 * **Dominic Evans** - *oldman*
 * **Anton Gavrilov** - *tonik*
-* **Andrew Grondalski** - *ult*
 * **Dmitry Musatov** - *disconnect*
 * **Alexandre Nizoux** - *deurk*
 * **Tero Parkkonen** - *Renzo*
 * **Vladimir Vladimirovich** - *VVD*
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+Names of those contributors have been lost but they have also helped with this project:
+* *bliP*
+* *danfe*
+* *hdworak*
+* *HighlandeR*
+* *jhodge*
+* *kreon*
+* *SD-Angel*
 
 ## Contributing
 
