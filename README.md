@@ -25,7 +25,7 @@ TBD
 
 ## Installing
 
-For more detailed information we suggest looking at the [nQuake server][nquake], which uses **[MVDSV][mvdsv]** and **[KTX][ktx]** as **QuakeWorld** server.
+For more detailed information we suggest looking at the [nQuake server][nquake-linux], which uses **[MVDSV][mvdsv]** and **[KTX][ktx]** as **QuakeWorld** server.
 
 ## Building binaries
 
@@ -178,4 +178,4 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 [ktx]: https://github.com/deurk/ktx
 [mvdsv]: https://github.com/deurk/mvdsv
 [mvdsv-tags]: https://github.com/deurk/mvdsv/tags
-[nquake]: https://github.com/nQuake/server-linux
+[nquake-linux]: https://github.com/nQuake/server-linux
