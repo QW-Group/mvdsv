@@ -76,13 +76,13 @@ script:
   # print basic info about compiled files
   - file build_${TARGET}/mvdsv${EXTENSION}
   - mkdir -p uploads_to_gcs
-  - mv build_${TARGET}/mvdsv${EXTENSION} uploads_to_gcs/${DATETIME}_${TRAVIS_COMMIT}_mvdsv${EXTENSION}
+  - mv build_${TARGET}/mvdsv${EXTENSION} uploads_to_gcs/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION}
 
 deploy:
   provider: gcs
   access_key_id: GOOGIDU6SZSRYABCDMPF
   secret_access_key:
-    secure: DFjxLFhhG7WIaMpC33Yif/AfMhuoplpBExbsm5B0IkEVDcC1ZzL7nnS+zToTMAlAorCU0uQhoz+c+CkC0O29ajNm+eBh0R6Lf3q2fduk9w/p1HAchqj0HyCDB7YdHOWjwqAW4mAh8fU7B3VrMQHeEnoDF6y7DBLMDsIxXLoMe28=
+    secure: "Mz9ekafJMVUEjWeKA7hK+4UhDRyp74cZgAcWXozO54jb/NyyfzZWthr3Lu/41LwXrcSVWGruQTrcAvBt3jzm+v9X2lCAnBOENisbBu/HegCAdMt2XTRud9lisaL5IMiPIaA4sAPjlfkkHo9yxQqzXhF2/IqOiNYiDcUAKeXcvLY="
   bucket: mvdsv
   on:
     repo: deurk/mvdsv
