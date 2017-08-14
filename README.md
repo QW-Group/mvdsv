@@ -150,6 +150,7 @@ We use a pretty crappy system for versioning for now. For the versions available
 * **Dominic Evans** - *oldman*
 * **Anton Gavrilov** - *tonik*
 * **Dmitry Musatov** - *disconnect*
+* **Peter Nicol** - *meag*
 * **Alexandre Nizoux** - *deurk*
 * **Tero Parkkonen** - *Renzo*
 * **Vladimir Vladimirovich** - *VVD*
@@ -177,4 +178,4 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 [ktx]: https://github.com/deurk/ktx
 [mvdsv]: https://github.com/deurk/mvdsv
 [mvdsv-tags]: https://github.com/deurk/mvdsv/tags
-
+[nquake]: https://github.com/nQuake/server-linux
