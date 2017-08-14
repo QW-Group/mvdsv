@@ -16,23 +16,37 @@ compiler:
 language:
   - c
 
+env:
+  global:
+    DATETIME=$(date +%Y%m%d-%H%M%S)
+
 matrix:
   include:
     - os: linux
       dist: trusty
-      env: TARGET=linux-amd64
+      env: 
+        TARGET=linux-amd64
+        EXTENSION=
     - os: linux
       dist: trusty
-      env: TARGET=linux-armhf
+      env:
+        TARGET=linux-armhf
+        EXTENSION=
     - os: linux
       dist: trusty
-      env: TARGET=linux-i686
+      env:
+        TARGET=linux-i686
+        EXTENSION=
     - os: linux
       dist: trusty
-      env: TARGET=windows-x86
+      env:
+        TARGET=windows-x86
+        EXTENSION=.exe
     - os: linux
       dist: trusty
-      env: TARGET=windows-x64
+      env:
+        TARGET=windows-x64
+        EXTENSION=.exe
 
 before_install:
   # show some extra info
@@ -66,6 +80,20 @@ script:
   - meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
   - ninja -v -C build_${TARGET}
   # print basic info about complied files
-  - find build_${TARGET}/ -type f -name "mvdsv*" -exec file {} \;
+  - file build_${TARGET}/mvdsv${EXTENSION}
+  - mkdir -p uploads_to_gcs
+  - mv build_${TARGET}/mvdsv${EXTENSION} uploads_to_gcs/${DATETIME}_${TRAVIS_COMMIT}_mvdsv${EXTENSION}
 
+deploy:
+  provider: gcs
+  access_key_id: GOOGIDU6SZSRYABCDMPF
+  secret_access_key:
+    secure: HTWAQcITewH6CE6vCmzFvprekbVTwOmI9UrrZCvY60oM5IiCywMzpABGpQb/hw9kn2x7fLkDmEx8/X6Oy7xzbQ4VBBM8/G1ZE3jcpDz7oH0iHoxKvsNIi1HfFm79VYrlZtQI6J3u6UMrBYlF5xgy2W4P1weQKNEmn+rSF5CqsAo=
+  bucket: mvdsv
+  on:
+    repo: deurk/mvdsv
+  skip_cleanup: true
+  upload-dir: commits/${TARGET}
+  local-dir: uploads_to_gcs
+  acl: public-read
 
