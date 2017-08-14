@@ -1,10 +1,6 @@
 dist: trusty
 sudo: required
 
-# branches:
-#   only:
-#   - master
-
 os:
   - linux
 
@@ -54,8 +50,6 @@ before_install:
   - env | sort
   # update base distro
   - sudo apt-get update
-  # - sudo apt-get -y upgrade
-  # - sudo apt-get -y dist-upgrade
   # install base packages
   - sudo apt-get -y install build-essential python-virtualenv python3-dev python3-pip ninja-build cmake gcc-multilib
   # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail
@@ -79,7 +73,7 @@ script:
   - mkdir build_${TARGET} || true
   - meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
   - ninja -v -C build_${TARGET}
-  # print basic info about complied files
+  # print basic info about compiled files
   - file build_${TARGET}/mvdsv${EXTENSION}
   - mkdir -p uploads_to_gcs
   - mv build_${TARGET}/mvdsv${EXTENSION} uploads_to_gcs/${DATETIME}_${TRAVIS_COMMIT}_mvdsv${EXTENSION}
@@ -88,7 +82,7 @@ deploy:
   provider: gcs
   access_key_id: GOOGIDU6SZSRYABCDMPF
   secret_access_key:
-    secure: SfgP5m7ZyUkdKc/s2hGhNBBtIa5rCLY4KB/PpMto7Ww1sqQJlA6idaBfwMkkWxTfknm0lpBuWNckQnXRf4FhhhZpfDG7fMiS9jfncN3XRBgmqMGLOM6bdLl2tE4KdUt1+Qbzca9oxRBYQUZCw4h4ZOW/od53WtPmk8/ac944CAw=
+    secure: DFjxLFhhG7WIaMpC33Yif/AfMhuoplpBExbsm5B0IkEVDcC1ZzL7nnS+zToTMAlAorCU0uQhoz+c+CkC0O29ajNm+eBh0R6Lf3q2fduk9w/p1HAchqj0HyCDB7YdHOWjwqAW4mAh8fU7B3VrMQHeEnoDF6y7DBLMDsIxXLoMe28=
   bucket: mvdsv
   on:
     repo: deurk/mvdsv
