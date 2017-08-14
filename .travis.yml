@@ -88,7 +88,7 @@ deploy:
   provider: gcs
   access_key_id: GOOGIDU6SZSRYABCDMPF
   secret_access_key:
-    secure: HTWAQcITewH6CE6vCmzFvprekbVTwOmI9UrrZCvY60oM5IiCywMzpABGpQb/hw9kn2x7fLkDmEx8/X6Oy7xzbQ4VBBM8/G1ZE3jcpDz7oH0iHoxKvsNIi1HfFm79VYrlZtQI6J3u6UMrBYlF5xgy2W4P1weQKNEmn+rSF5CqsAo=
+    secure: SfgP5m7ZyUkdKc/s2hGhNBBtIa5rCLY4KB/PpMto7Ww1sqQJlA6idaBfwMkkWxTfknm0lpBuWNckQnXRf4FhhhZpfDG7fMiS9jfncN3XRBgmqMGLOM6bdLl2tE4KdUt1+Qbzca9oxRBYQUZCw4h4ZOW/od53WtPmk8/ac944CAw=
   bucket: mvdsv
   on:
     repo: deurk/mvdsv
