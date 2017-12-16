@@ -1557,19 +1557,19 @@ static void Cmd_DemoDownload_f(void)
 	if (Cmd_Argc() < 2)
 	{
 		Con_Printf("\n%s\n"
-			   "Usage:\n"
-			   "  %s %s [%s [%s]]\n"
+		           "Usage:\n"
+		           "  %s %s [%s [%s]]\n"
 		           "    \"#\" is one or several numbers from the demo list\n"
-			   "  %s %s [%s%s [%s%s%s]]\n"
+		           "  %s %s [%s%s [%s%s%s]]\n"
 		           "    Each number of dots represents the Nth last recorded demo\n"
-			   "    (Note that you can mix numbers and groups of dots)\n"
-			   "  %s [%s|%s|%s]\n"
-			   "     \"\\\", \"stop\" or \"cancel\" clear the download queue\n\n",
-			   Q_redtext(cmdhelp_dldesc),
-			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound),
-			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
-			   Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
-			   Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_bs), Q_redtext(cmdhelp_stop), Q_redtext(cmdhelp_cancel)
+		           "    (Note that you can mix numbers and groups of dots)\n"
+		           "  %s [%s|%s|%s]\n"
+		           "     \"\\\", \"stop\" or \"cancel\" clear the download queue\n\n",
+		           Q_redtext(cmdhelp_dldesc),
+		           Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound), Q_redtext(cmdhelp_pound),
+		           Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
+		           Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot), Q_redtext(cmdhelp_dot),
+		           Q_redtext(cmdhelp_dl), Q_redtext(cmdhelp_bs), Q_redtext(cmdhelp_stop), Q_redtext(cmdhelp_cancel)
 		);
 		return;
 	}
@@ -1754,7 +1754,7 @@ static void SV_Say (qbool team)
 		if (tmp < 0)
 			tmp = 10+tmp;
 		if (!sv.paused &&
-		        sv_client->whensaid[tmp] && (realtime-sv_client->whensaid[tmp] < fp_persecond))
+			sv_client->whensaid[tmp] && (realtime-sv_client->whensaid[tmp] < fp_persecond))
 		{
 			sv_client->lockedtill = realtime + fp_secondsdead;
 			if (fp_msg[0])
@@ -3678,7 +3678,7 @@ packets were dropped)
 static void SV_ExecuteClientMove (client_t *cl, usercmd_t oldest, usercmd_t oldcmd, usercmd_t newcmd)
 {
 	int net_drop;
-	
+
 	if (sv.paused)
 		return;
 

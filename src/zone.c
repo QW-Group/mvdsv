@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 #else
 #include "common.h"
+#include "gl_model.h"
 #endif
 
 void Cache_FreeLow(int new_low_hunk);
@@ -30,7 +31,7 @@ void Cache_FreeHigh(int new_high_hunk);
 
 //============================================================================
 
-#define	HUNK_SENTINEL 0x1df001ed
+#define HUNK_SENTINEL 0x1df001ed
 
 typedef struct {
 	int		sentinel;
@@ -370,7 +371,7 @@ void Cache_FreeLow(int new_low_hunk)
 	while (1) {
 		c = cache_head.next;
 		if (c == &cache_head) {
-			return;	// nothing in cache at all
+			return; // nothing in cache at all
 		}
 		if ((byte *)c >= hunk_base + new_low_hunk) {
 			return; // there is space to grow the hunk
@@ -397,7 +398,7 @@ void Cache_FreeHigh(int new_high_hunk)
 			return; // nothing in cache at all
 		}
 		if ((byte *)c + c->size <= hunk_base + hunk_size - new_high_hunk) {
-			return;	// there is space to grow the hunk
+			return; // there is space to grow the hunk
 		}
 		if (c == prev) {
 			Cache_Free(c->user); // didn't move out of the way
@@ -519,6 +520,9 @@ void Cache_Flush(void)
 	while (cache_head.next != &cache_head) {
 		Cache_Free(cache_head.next->user); // reclaim the space
 	}
+#ifndef SERVERONLY
+	Mod_ClearSimpleTextures();
+#endif
 }
 
 /*

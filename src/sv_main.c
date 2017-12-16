@@ -146,7 +146,7 @@ cvar_t	sv_default_name = {"sv_default_name", "unnamed"};
 void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel);
 cvar_t	sv_mod_msg_file = {"sv_mod_msg_file", "", CVAR_NONE, sv_mod_msg_file_OnChange};
 
-cvar_t	sv_reliable_sound = {"sv_reliable_sound", "0"};
+cvar_t  sv_reliable_sound = {"sv_reliable_sound", "0"};
 
 //
 // game rules mirrored in svs.info
@@ -593,8 +593,8 @@ static void SVC_Status (void)
 		{
 			cl = &svs.clients[i];
 			if ( (cl->state >= cs_preconnected/* || cl->state == cs_spawned */) &&
-				( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
-				  ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
+			        ( (!cl->spectator && ((opt & STATUS_PLAYERS) || opt == STATUS_OLDSTYLE)) ||
+			          ( cl->spectator && ( opt & STATUS_SPECTATORS)) ) )
 			{
 				top    = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "topcolor"));
 				bottom = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "bottomcolor"));
@@ -617,8 +617,8 @@ static void SVC_Status (void)
 					frags = va("%i", cl->old_frags);
 
 				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i", cl->userid, frags,
-					    (int)(realtime - cl->connection_started)/60, ping, name,
-					    Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
+				            (int)(realtime - cl->connection_started)/60, ping, name,
+				            Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
 
 				if (opt & STATUS_SHOWTEAMS)
 					Con_Printf (" \"%s\"\n", cl->team);
