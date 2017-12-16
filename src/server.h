@@ -341,6 +341,12 @@ typedef struct client_s
 	double			delay;
 	double			disable_updates_stop;		//Vladis
 	packet_t		*packets, *last_packet;
+
+	// lagged-teleport extension
+	qbool           lastteleport_teleport;    // true if teleport, otherwise it was spawn
+	int             lastteleport_outgoingseq; // outgoing sequence# when the player teleported
+	int             lastteleport_incomingseq; // incoming sequence# when the player teleported
+	float           lastteleport_teleportyaw; // new yaw angle, post-teleport
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -850,6 +856,7 @@ void SV_ExecuteClientMessage (client_t *cl);
 void SV_UserInit (void);
 void SV_TogglePause (const char *msg, int bit);
 void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* old_value);
+void SV_RotateCmd(client_t* cl, usercmd_t* cmd);
 
 #ifdef FTE_PEXT2_VOICECHAT
 void SV_VoiceInitClient(client_t *client);

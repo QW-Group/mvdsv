@@ -38,6 +38,7 @@ int fofs_hideentity;
 int fofs_trackent;
 int fofs_visibility;
 int fofs_hide_players;
+int fofs_teleported;
 
 /*
 ================
@@ -349,6 +350,16 @@ void SV_SpawnServer (char *mapname, qbool devmap, char* entityfile)
 	fofs_trackent = ED_FindFieldOffset ("trackent");
 	fofs_visibility = ED_FindFieldOffset ("visclients");
 	fofs_hide_players = ED_FindFieldOffset ("hideplayers");
+	fofs_teleported = ED_FindFieldOffset ("teleported");
+
+#ifdef MVD_PEXT1_HIGHLAGTELEPORT
+	if (fofs_teleported) {
+		svs.mvdprotocolextension1 |= MVD_PEXT1_HIGHLAGTELEPORT;
+	}
+	else {
+		svs.mvdprotocolextension1 &= ~MVD_PEXT1_HIGHLAGTELEPORT;
+	}
+#endif
 
 	// find optional QC-exported functions.
 	// we have it here, so we set it to NULL in case of PR2 progs.

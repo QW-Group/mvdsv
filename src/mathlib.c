@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 vec3_t vec3_origin = {0,0,0};
+float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
+int _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
 
 /*-----------------------------------------------------------------*/
 
@@ -40,6 +42,69 @@ float anglemod(float a)
 #endif
 	a = (360.0/65536) * ((int)(a*(65536/360.0)) & 65535);
 	return a;
+}
+
+#define VectorNormalizeFast(_v)		\
+do {								\
+	_mathlib_temp_float1 = DotProduct((_v), (_v));						\
+	if (_mathlib_temp_float1) {											\
+		_mathlib_temp_float2 = 0.5f * _mathlib_temp_float1;				\
+		_mathlib_temp_int1 = *((int *) &_mathlib_temp_float1);			\
+		_mathlib_temp_int1 = 0x5f375a86 - (_mathlib_temp_int1 >> 1);	\
+		_mathlib_temp_float1 = *((float *) &_mathlib_temp_int1);		\
+		_mathlib_temp_float1 = _mathlib_temp_float1 * (1.5f - _mathlib_temp_float2 * _mathlib_temp_float1 * _mathlib_temp_float1);	\
+		VectorScale((_v), _mathlib_temp_float1, (_v))					\
+	}																	\
+} while (0);
+
+void PerpendicularVector(vec3_t dst, const vec3_t src) {
+	if (!src[0]) {
+		VectorSet(dst, 1, 0, 0);
+	}
+	else if (!src[1]) {
+		VectorSet(dst, 0, 1, 0);
+	}
+	else if (!src[2]) {
+		VectorSet(dst, 0, 0, 1);
+	}
+	else {
+		VectorSet(dst, -src[1], src[0], 0);
+		VectorNormalizeFast(dst);
+	}
+}
+
+void VectorVectors(vec3_t forward, vec3_t right, vec3_t up) {
+	PerpendicularVector(right, forward);
+	CrossProduct(right, forward, up);
+}
+
+void RotatePointAroundVector(vec3_t dst, const vec3_t dir, const vec3_t point, float degrees) {
+	float t0, t1, angle, c, s;
+	vec3_t vr, vu, vf;
+
+	angle = DEG2RAD(degrees);
+	c = cos(angle);
+	s = sin(angle);
+	VectorCopy(dir, vf);
+	VectorVectors(vf, vr, vu);
+
+	t0 = vr[0] *  c + vu[0] * -s;
+	t1 = vr[0] *  s + vu[0] *  c;
+	dst[0] = (t0 * vr[0] + t1 * vu[0] + vf[0] * vf[0]) * point[0]
+		+ (t0 * vr[1] + t1 * vu[1] + vf[0] * vf[1]) * point[1]
+		+ (t0 * vr[2] + t1 * vu[2] + vf[0] * vf[2]) * point[2];
+
+	t0 = vr[1] *  c + vu[1] * -s;
+	t1 = vr[1] *  s + vu[1] *  c;
+	dst[1] = (t0 * vr[0] + t1 * vu[0] + vf[1] * vf[0]) * point[0]
+		+ (t0 * vr[1] + t1 * vu[1] + vf[1] * vf[1]) * point[1]
+		+ (t0 * vr[2] + t1 * vu[2] + vf[1] * vf[2]) * point[2];
+
+	t0 = vr[2] *  c + vu[2] * -s;
+	t1 = vr[2] *  s + vu[2] *  c;
+	dst[2] = (t0 * vr[0] + t1 * vu[0] + vf[2] * vf[0]) * point[0]
+		+ (t0 * vr[1] + t1 * vu[1] + vf[2] * vf[1]) * point[1]
+		+ (t0 * vr[2] + t1 * vu[2] + vf[2] * vf[2]) * point[2];
 }
 
 /*
@@ -251,11 +316,4 @@ float VectorNormalize (vec3_t v)
 	}
 		
 	return length;
-}
-
-void VectorScale (vec3_t in, vec_t scale, vec3_t out)
-{
-	out[0] = in[0]*scale;
-	out[1] = in[1]*scale;
-	out[2] = in[2]*scale;
 }

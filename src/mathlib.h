@@ -41,6 +41,8 @@ typedef	int	fixed16_t;
 struct mplane_s;
 
 extern vec3_t vec3_origin;
+extern float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
+extern int _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
 
 #define DEG2RAD(a) (((a) * M_PI) / 180.0F)
 
@@ -68,7 +70,12 @@ void VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc);
 vec_t VectorLength (vec3_t v);
 void CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross);
 float VectorNormalize (vec3_t v);		// returns vector length
-void VectorScale (vec3_t in, vec_t scale, vec3_t out);
+#define VectorScale(in, _scale, out)		\
+do {										\
+	float scale = (_scale);					\
+	(out)[0] = (in)[0] * (scale); (out)[1] = (in)[1] * (scale); (out)[2] = (in)[2] * (scale);	\
+} while (0);
+
 
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 #ifdef __cplusplus
@@ -103,5 +110,8 @@ float anglemod(float a);
 #define PlaneDiff(point, plane) (																			\
 	(((plane)->type < 3) ? (point)[(plane)->type] - (plane)->dist: DotProduct((point), (plane)->normal) - (plane)->dist) 	\
 )
+
+void RotatePointAroundVector(vec3_t dst, const vec3_t dir, const vec3_t point, float degrees);
+void VectorVectors(vec3_t forward, vec3_t right, vec3_t up);
 
 #endif /* !__MATHLIB_H__ */

@@ -3667,6 +3667,25 @@ void SV_PostRunCmd(void)
 	}
 }
 
+// SV_RotateCmd
+// Rotates client command so a high-ping player can better control direction as they exit teleporters on high-ping
+void SV_RotateCmd(client_t* cl, usercmd_t* cmd)
+{
+	if (cl->lastteleport_teleport) {
+		static vec3_t up = { 0, 0, 1 };
+		vec3_t direction = { cmd->sidemove, cmd->forwardmove, 0 };
+		vec3_t result;
+
+		RotatePointAroundVector(result, up, direction, cl->lastteleport_teleportyaw);
+
+		cmd->sidemove = result[0];
+		cmd->forwardmove = result[1];
+	}
+	else {
+		cmd->angles[YAW] = (cl->edict)->v.angles[YAW];
+	}
+}
+
 /*
 ===================
 SV_ExecuteClientMove
@@ -3921,6 +3940,21 @@ void SV_ExecuteClientMessage (client_t *cl)
 				Con_DPrintf ("Failed command checksum for %s(%d) (%d != %d)\n",
 					cl->name, cl->netchan.incoming_sequence, checksum, calculatedChecksum);
 				return;
+			}
+
+			if (cl->mvdprotocolextensions1 & MVD_PEXT1_HIGHLAGTELEPORT) {
+				if (cl->lastteleport_outgoingseq && cl->netchan.incoming_acknowledged < cl->lastteleport_outgoingseq) {
+					if (cl->netchan.incoming_sequence - 2 > cl->lastteleport_incomingseq) {
+						SV_RotateCmd(cl, &oldest);
+					}
+					if (cl->netchan.incoming_sequence - 1 > cl->lastteleport_incomingseq) {
+						SV_RotateCmd(cl, &oldcmd);
+					}
+					SV_RotateCmd(cl, &newcmd);
+				}
+				else {
+					cl->lastteleport_outgoingseq = 0;
+				}
 			}
 
 			SV_ExecuteClientMove (cl, oldest, oldcmd, newcmd);
