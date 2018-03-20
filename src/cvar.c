@@ -336,84 +336,51 @@ static int Cvar_CvarCompare (const void *p1, const void *p2)
 	return strcmp ((*((cvar_t **) p1))->name, (*((cvar_t **) p2))->name);
 }
 
-static void Cvar_CvarList_f (void)
+static void Cvar_CvarList_f(void)
 {
-	int i, m, count;
-	cvar_t *sorted_cvars[512];
+	cvar_t **sorted_cvars = NULL;
 	cvar_t *var;
-	char *pattern;
+	const char *pattern;
+	int i = 0;
+	int num_cvars;
+	int pattern_matched = 0;
 
-#define MAX_SORTED_CVARS (sizeof (sorted_cvars) / sizeof (sorted_cvars[0]))
+	pattern = (Cmd_Argc() > 1) ? Cmd_Argv(1) : NULL;
 
-	for (var = cvar_vars, count = 0; var && count < MAX_SORTED_CVARS; var = var->next, count++)
-		sorted_cvars[count] = var;
-	qsort (sorted_cvars, count, sizeof (cvar_t *), Cvar_CvarCompare);
-
-	if (count == MAX_SORTED_CVARS)
-		assert (!"count == MAX_SORTED_CVARS");
-
-	pattern = (Cmd_Argc() > 1) ? Cmd_Argv (1) : NULL;
-
-	m = 0;
-	Con_Printf ("List of cvars:\n");
-	for (i = 0; i < count; i++)
-	{
-		var = sorted_cvars[i];
-		if (pattern && !Q_glob_match (pattern, var->name))
-			continue;
-
-		Con_Printf ("%c %s\n",
-		           var->flags & CVAR_SERVERINFO ? 's' : ' ',
-		           var->name);
-		m++;
+	for (var = cvar_vars; var; var = var->next) {
+		num_cvars++;
 	}
 
-	Con_Printf ("------------\n%d/%d %svariables\n", m, count, (pattern) ? "matching " : "");
-}
-
-/*
-===============
-Cvar_CvarDump_f
-===============
-List all cvars and their current value
-*/
-
-static void Cvar_CvarDump_f (void)
-{
-	int i, m, count;
-	cvar_t *sorted_cvars[512];
-	cvar_t *var;
-	char *pattern;
-
-#define MAX_SORTED_CVARS (sizeof (sorted_cvars) / sizeof (sorted_cvars[0]))
-
-	for (var = cvar_vars, count = 0; var && count < MAX_SORTED_CVARS; var = var->next, count++)
-		sorted_cvars[count] = var;
-	qsort (sorted_cvars, count, sizeof (cvar_t *), Cvar_CvarCompare);
-
-	if (count == MAX_SORTED_CVARS)
-		assert (!"count == MAX_SORTED_CVARS");
-
-	pattern = (Cmd_Argc() > 1) ? Cmd_Argv (1) : NULL;
-
-	m = 0;
-	Con_Printf ("List of cvars:\n");
-	for (i = 0; i < count; i++)
-	{
-		var = sorted_cvars[i];
-		if (pattern && !Q_glob_match (pattern, var->name))
-			continue;
-
-		Con_Printf ("%c %s: %s\n",
-		           var->flags & CVAR_SERVERINFO ? 's' : ' ',
-		           var->name,
-							var->string);
-		m++;
+	if (num_cvars > 0) {
+		sorted_cvars = malloc(num_cvars * sizeof(cvar_t*));
+		if (!sorted_cvars) {
+			Sys_Error("Failed to allocate memory");
+		}
+	}
+	else {
+		Con_Printf("No cvars found\n");
+		return;
 	}
 
-	Con_Printf ("------------\n%d/%d %svariables\n", m, count, (pattern) ? "matching " : "");
-}
+	for (var = cvar_vars; var; var = var->next) {
+		sorted_cvars[i++] = var;
+	}
+	qsort(sorted_cvars, num_cvars, sizeof(cvar_t *), Cvar_CvarCompare);
 
+	Con_Printf("List of cvars:\n");
+	for (i = 0; i < num_cvars; i++) {
+		var = sorted_cvars[i];
+		if (pattern && !Q_glob_match(pattern, var->name)) {
+			continue;
+		}
+
+		Con_Printf("%c %s %s\n", var->flags & CVAR_SERVERINFO ? 's' : ' ', var->name, var->string);
+		pattern_matched++;
+	}
+
+	Con_Printf("------------\n%d/%d %svariables\n", pattern_matched, num_cvars, (pattern) ? "matching " : "");
+	free(sorted_cvars);
+}
 
 /*
 ===========
@@ -586,7 +553,7 @@ static void Cvar_Hash_Print_f (void)
 void Cvar_Init (void)
 {
 	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f);
-	Cmd_AddCommand ("cvardump", Cvar_CvarDump_f);
+	Cmd_AddCommand ("cvardump", Cvar_CvarList_f);
 	Cmd_AddCommand ("toggle", Cvar_Toggle_f);
 	Cmd_AddCommand ("set", Cvar_Set_f); //DP_CON_SET
 	Cmd_AddCommand ("inc", Cvar_Inc_f);
