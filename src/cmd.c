@@ -730,39 +730,52 @@ static int Cmd_CommandCompare (const void *p1, const void *p2)
 	return strcmp ((*((cmd_function_t **) p1))->name, (*((cmd_function_t **) p2))->name);
 }
 
-static void Cmd_CmdList_f (void)
+static void Cmd_CmdList_f(void)
 {
-	int	i, m, count;
-	cmd_function_t *sorted_cmds[128];
+	cmd_function_t **sorted_cmds = NULL;
 	cmd_function_t *cmd;
-	char *pattern;
+	const char *pattern;
+	int i = 0;
+	int num_cmds;
+	int pattern_matched = 0;
 
-#define MAX_SORTED_CMDS (sizeof (sorted_cmds) / sizeof (sorted_cmds[0]))
+	pattern = (Cmd_Argc() > 1) ? Cmd_Argv(1) : NULL;
 
-	for (cmd = cmd_functions, count = 0; cmd && count < MAX_SORTED_CMDS; cmd = cmd->next, count++)
-		sorted_cmds[count] = cmd;
-	qsort (sorted_cmds, count, sizeof (cmd_function_t *), Cmd_CommandCompare);
-
-	if (count == MAX_SORTED_CMDS)
-		assert (!"count == MAX_SORTED_CMDS");
-
-	pattern = (Cmd_Argc() > 1) ? Cmd_Argv (1) : NULL;
-
-	m = 0;
-	Con_Printf ("List of commands:\n");
-	for (i = 0; i < count; i++)
-	{
-		cmd = sorted_cmds[i];
-		if (pattern && !Q_glob_match (pattern, cmd->name))
-			continue;
-
-		Con_Printf ("%s\n", cmd->name);
-		m++;
+	for (cmd = cmd_functions; cmd; cmd = cmd->next) {
+		num_cmds++;
 	}
 
-	Con_Printf ("------------\n%d/%d %scommands\n", m, count, (pattern) ? "matching " : "");
-}
+	if (num_cmds > 0) {
+		sorted_cmds = malloc(num_cmds * sizeof(cmd_function_t*));
+		if (!sorted_cmds) {
+			Sys_Error("Failed to allocate memory");
+		}
+	}
+	else {
+		Con_Printf("No commands found\n");
+		return;
+	}
 
+	for (cmd = cmd_functions; cmd; cmd= cmd->next) {
+		sorted_cmds[i++] = cmd;
+	}
+	qsort(sorted_cmds, num_cmds, sizeof(cmd_function_t *), Cmd_CommandCompare);
+
+	Con_Printf ("List of commands:\n");
+	for (i = 0; i < num_cmds; i++) {
+		cmd = sorted_cmds[i];
+		if (pattern && !Q_glob_match(pattern, cmd->name)) {
+			continue;
+		}
+
+		Con_Printf ("%s\n", cmd->name);
+		pattern_matched++;
+	}
+
+	Con_Printf ("------------\n%d/%d %scommands\n", pattern_matched, num_cmds, (pattern) ? "matching " : "");
+
+	free(sorted_cmds);
+}
 
 /*
 ================
