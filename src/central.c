@@ -286,6 +286,9 @@ void Web_PostResponse(web_request_data_t* req, qbool valid)
 						struct curl_httppost *last_form_ptr = NULL;
 
 						snprintf(demoName, sizeof(demoName), "%s/%s/%s", fs_gamedir, sv_demoDir.string, upload + 6);
+						if (!CheckFileExists(demoName) && sv_demoDirAlt.string[0]) {
+							snprintf(demoName, sizeof(demoName), "%s/%s/%s", fs_gamedir, sv_demoDirAlt.string, upload + 6);
+						}
 
 						if (CheckFileExists(demoName)) {
 							Web_ConstructURL(url, uploadPath, sizeof(url));

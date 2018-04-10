@@ -133,25 +133,6 @@ char *SV_CleanName (unsigned char *name)
 	return text;
 }
 
-// only one .. is allowed (security)
-void sv_demoDir_OnChange (cvar_t *cvar, char *value, qbool *cancel)
-{
-	if (!value[0])
-	{
-		*cancel = true;
-		return;
-	}
-
-	if (value[0] == '.' && value[1] == '.')
-		value += 2;
-
-	if (strstr(value,"/.."))
-	{
-		*cancel = true;
-		return;
-	}
-}
-
 /*
 ====================
 SV_DirSizeCheck
