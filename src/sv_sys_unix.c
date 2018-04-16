@@ -739,7 +739,9 @@ int main (int argc, char *argv[])
 		// the only reason we have a timeout at all is so that if the last
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
-		stdin_ready = NET_Sleep ((int)sys_select_timeout.value / 1000, do_stdin);
+		if (!sys_simulation.value) {
+			stdin_ready = NET_Sleep((int)sys_select_timeout.value / 1000, do_stdin);
+		}
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();
