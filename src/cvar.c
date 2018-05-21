@@ -342,7 +342,7 @@ static void Cvar_CvarList_f(void)
 	cvar_t *var;
 	const char *pattern;
 	int i = 0;
-	int num_cvars;
+	int num_cvars = 0;
 	int pattern_matched = 0;
 
 	pattern = (Cmd_Argc() > 1) ? Cmd_Argv(1) : NULL;

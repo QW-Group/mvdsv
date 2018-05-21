@@ -736,7 +736,7 @@ static void Cmd_CmdList_f(void)
 	cmd_function_t *cmd;
 	const char *pattern;
 	int i = 0;
-	int num_cmds;
+	int num_cmds = 0;
 	int pattern_matched = 0;
 
 	pattern = (Cmd_Argc() > 1) ? Cmd_Argv(1) : NULL;
