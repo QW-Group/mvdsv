@@ -15,9 +15,9 @@
 #pragma comment(lib, "wldap32.lib")
 #endif
 
-static cvar_t central_server_address = { "cs_address", "" };
-static cvar_t central_server_authkey = { "cs_authkey", "" };
-static cvar_t central_server_checkin_period = { "cs_checkin_period", "60" };
+static cvar_t sv_www_address = { "sv_www_address", "" };
+static cvar_t sv_www_authkey = { "sv_www_authkey", "" };
+static cvar_t sv_www_checkin_period = { "sv_www_checkin_period", "60" };
 
 static CURLM* curl_handle = NULL;
 
@@ -334,7 +334,7 @@ static void Web_SubmitRequestForm(const char* url, struct curl_httppost *first_f
 	web_request_data_t* data = Q_malloc(sizeof(web_request_data_t));
 	CURLFORMcode code = curl_formadd(&first_form_ptr, &last_form_ptr,
 		CURLFORM_PTRNAME, "authKey",
-		CURLFORM_COPYCONTENTS, central_server_authkey.string,
+		CURLFORM_COPYCONTENTS, sv_www_authkey.string,
 		CURLFORM_END
 	);
 
@@ -404,7 +404,7 @@ void Central_GenerateChallenge(client_t* client, const char* username)
 
 static void Web_ConstructURL(char* url, const char* path, int sizeof_url)
 {
-	strlcpy(url, central_server_address.string, sizeof_url);
+	strlcpy(url, sv_www_address.string, sizeof_url);
 	if (url[strlen(url) - 1] != '/') {
 		strlcat(url, "/", sizeof_url);
 	}
@@ -422,7 +422,7 @@ static void Web_SendRequest(qbool post)
 	char* requestId = NULL;
 	int i;
 
-	if (!central_server_address.string[0]) {
+	if (!sv_www_address.string[0]) {
 		Con_Printf("Address not set - functionality disabled\n");
 		return;
 	}
@@ -493,7 +493,7 @@ static void Web_PostFileRequest_f(void)
 	CURLFORMcode code = 0;
 	const char* specified = Cmd_Argv(3);
 
-	if (!central_server_address.string[0]) {
+	if (!sv_www_address.string[0]) {
 		Con_Printf("Address not set - functionality disabled\n");
 		return;
 	}
@@ -618,7 +618,7 @@ void Central_ProcessResponses(void)
 		}
 	}
 
-	if (central_server_address.string[0] && !server_busy && curtime - last_checkin_time > max(MIN_CHECKIN_PERIOD, central_server_checkin_period.value)) {
+	if (sv_www_address.string[0] && !server_busy && curtime - last_checkin_time > max(MIN_CHECKIN_PERIOD, sv_www_checkin_period.value)) {
 		char url[512];
 
 		Web_ConstructURL(url, CHECKIN_PATH, sizeof(url));
@@ -646,9 +646,9 @@ void Central_Init(void)
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 
-	Cvar_Register(&central_server_address);
-	Cvar_Register(&central_server_authkey);
-	Cvar_Register(&central_server_checkin_period);
+	Cvar_Register(&sv_www_address);
+	Cvar_Register(&sv_www_authkey);
+	Cvar_Register(&sv_www_checkin_period);
 
 	curl_handle = curl_multi_init();
 
