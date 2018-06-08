@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 extern cvar_t sys_restart_on_error;
-extern cvar_t sys_select_timeout;
+extern cvar_t sys_select_timeout, sys_simulation;
 
 cvar_t sys_nostdout = {"sys_nostdout", "0"};
 cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
