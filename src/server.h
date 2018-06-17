@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	
 */
 
 // server.h
@@ -26,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pr2_vm.h"
 #include "pr2.h"
 #include "g_public.h"
+#endif
+#ifndef SERVERONLY
+#include "qtv.h"
 #endif
 
 #define CHAT_ICON_EXPERIMENTAL 1
@@ -79,7 +81,7 @@ typedef struct
 	unsigned	model_player_checksum;
 	unsigned	model_newplayer_checksum;
 	unsigned	eyes_player_checksum;
-	
+
 	char		mapname[MAP_NAME_LEN];		// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	unsigned	map_checksum;
@@ -240,12 +242,12 @@ typedef struct client_s
 	float			laggedents_frac;
 // }
 
-// spawn parms are carried from level to level
+	// spawn parms are carried from level to level
 	float			spawn_parms[NUM_SPAWN_PARMS];
 
-// client known data for deltas	
+	// client known data for deltas
 	int				old_frags;
-	
+
 	int				stats[MAX_CL_STATS];
 
 	double			lastservertimeupdate;		// last realtime we sent STAT_TIME to the client
@@ -260,17 +262,18 @@ typedef struct client_s
 #endif
 	int				downloadsize;			// total bytes
 	int				downloadcount;			// bytes sent
-// demo download list for internal cmd dl function
-//Added by VVD {
+
+	// demo download list for internal cmd dl function
+	// Added by VVD {
 	int				demonum[MAX_ARGS];
 	qbool			demolist;
-// } Added by VVD
+	// } Added by VVD
 
-	int				spec_track;			// entnum of player tracking
+	int             spec_track;             // entnum of player tracking
 
-	double			whensaid[10];			// JACK: For floodprots
- 	int				whensaidhead;			// Head value for floodprots
- 	double			lockedtill;
+	double          whensaid[10];           // JACK: For floodprots
+	int             whensaidhead;           // Head value for floodprots
+	double          lockedtill;
 
 	FILE			*upload;
 	char			uploadfn[MAX_QPATH];
@@ -311,7 +314,7 @@ typedef struct client_s
 #ifdef PROTOCOL_VERSION_MVD1
 	unsigned int    mvdprotocolextensions1;
 #endif
- 
+
 #ifdef FTE_PEXT2_VOICECHAT
 	unsigned int voice_read;	/*place in ring*/
 	unsigned char voice_mute[MAX_CLIENTS/8];
@@ -329,18 +332,18 @@ typedef struct client_s
 	} voice_target;
 #endif
 
-//===== NETWORK ============
-	qbool			process_pext;		// true if we wait for reply from client on "cmd pext" command.
-	int				chokecount;
-	int				delta_sequence;			// -1 = no compression
-	netchan_t		netchan;
-	netadr_t		realip;				// client's ip, not latest proxy's
-	int				realip_num;			// random value
-	int				realip_count;
-	int				rip_vip;
-	double			delay;
-	double			disable_updates_stop;		//Vladis
-	packet_t		*packets, *last_packet;
+	//===== NETWORK ============
+	qbool           process_pext;             // true if we wait for reply from client on "cmd pext" command.
+	int             chokecount;
+	int             delta_sequence;           // -1 = no compression
+	netchan_t       netchan;
+	netadr_t        realip;                   // client's ip, not latest proxy's
+	int             realip_num;               // random value
+	int             realip_count;
+	int             rip_vip;
+	double          delay;
+	double          disable_updates_stop;     // Vladis
+	packet_t        *packets, *last_packet;
 
 	// lagged-teleport extension
 	qbool           lastteleport_teleport;    // true if teleport, otherwise it was spawn
@@ -554,14 +557,14 @@ typedef struct
 	svtcpstream_t *	tcpstreams;
 // <-- TCPCONNECT
 
-	client_t		clients[MAX_CLIENTS];
-	int				serverflags;		// episode completion information
-	
-	double			last_heartbeat;
-	int				heartbeat_sequence;
-	svstats_t		stats;
+	client_t        clients[MAX_CLIENTS];
+	int             serverflags;    // episode completion information
 
-	char			info[MAX_SERVERINFO_STRING];
+	double          last_heartbeat;
+	int             heartbeat_sequence;
+	svstats_t       stats;
+
+	char            info[MAX_SERVERINFO_STRING];
 
 #ifdef PROTOCOL_VERSION_FTE
 	unsigned int fteprotocolextensions;
@@ -828,15 +831,13 @@ void SV_BeginRedirect (redirect_t rd);
 void SV_EndRedirect (void);
 qbool SV_AddToRedirect(char *msg);
 
-void SV_Multicast (vec3_t origin, int to);
-void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key);
-void SV_StartParticle (vec3_t org, vec3_t dir, int color, int count,
-					   int replacement_te, int replacement_count);
-void SV_StartSound (edict_t *entity, int channel, char *sample, int volume,
-    float attenuation);
-void SV_ClientPrintf (client_t *cl, int level, char *fmt, ...);
-void SV_ClientPrintf2 (client_t *cl, int level, char *fmt, ...);
-void SV_BroadcastPrintf (int level, char *fmt, ...);
+void SV_Multicast(vec3_t origin, int to);
+void SV_MulticastEx(vec3_t origin, int to, const char *cl_reliable_key);
+void SV_StartParticle(vec3_t org, vec3_t dir, int color, int count, int replacement_te, int replacement_count);
+void SV_StartSound(edict_t *entity, int channel, char *sample, int volume, float attenuation);
+void SV_ClientPrintf(client_t *cl, int level, char *fmt, ...);
+void SV_ClientPrintf2(client_t *cl, int level, char *fmt, ...);
+void SV_BroadcastPrintf(int level, char *fmt, ...);
 #define BPRINT_IGNOREINDEMO  (1<<0) // broad cast print will be not put in demo
 #define BPRINT_IGNORECLIENTS (1<<1) // broad cast print will not be seen by clients, but may be seen in demo
 #define BPRINT_QTVONLY       (1<<2) // if broad cast print goes to demo, then it will be only qtv sream, but not file
@@ -958,13 +959,13 @@ char	*SV_PrintTeams (void);
 void	Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *dest_path, qbool destroyfiles);
 qbool	SV_DirSizeCheck (void);
 char	*SV_CleanName (unsigned char *name);
-int		Dem_CountPlayers ();
+int     Dem_CountPlayers (void);
 char	*Dem_Team (int num);
 char	*Dem_PlayerName (int num);
 char	*Dem_PlayerNameTeam (char *t);
 int		Dem_CountTeamPlayers (char *t);
 char	*quote (char *str);
-void	CleanName_Init ();
+void	CleanName_Init (void);
 void	SV_LastScores_f (void);
 void	SV_DemoList_f (void);
 void	SV_DemoListRegex_f (void);
@@ -1024,6 +1025,8 @@ qbool SV_SkipCommsBotMessage(client_t* client);
 // 
 #ifdef SERVERONLY
 #include "central.h"
+#else
+extern qbool server_cfg_done;
 #endif
 
 #endif /* !__SERVER_H__ */
