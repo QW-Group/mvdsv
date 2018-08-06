@@ -48,6 +48,9 @@ matrix:
     - os: osx
       env:
         TARGET=darwin-amd64
+        EXTENSION=
+  exclude:
+    compiler: gcc
 
 addons:
     apt:
