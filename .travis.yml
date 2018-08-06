@@ -81,7 +81,6 @@ before_install:
 # each script section is executed in matrix build
 script:
   - echo TARGET=${TARGET}
-  - mkdir build_${TARGET} || true
   - meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
   - ninja -v -C build_${TARGET}
   # print basic info about compiled files
