@@ -13,35 +13,28 @@ env:
   global:
     DATETIME=$(date +%Y%m%d-%H%M%S)
 
+sudo: required
+dist: trusty
+
 matrix:
   include:
     - os: linux
-      dist: trusty
-      sudo: required
       env: 
         TARGET=linux-amd64
         EXTENSION=
     - os: linux
-      dist: trusty
-      sudo: required
       env:
         TARGET=linux-armhf
         EXTENSION=
     - os: linux
-      dist: trusty
-      sudo: required
       env:
         TARGET=linux-i686
         EXTENSION=
     - os: linux
-      dist: trusty
-      sudo: required
       env:
         TARGET=windows-x86
         EXTENSION=.exe
     - os: linux
-      dist: trusty
-      sudo: required
       env:
         TARGET=windows-x64
         EXTENSION=.exe
