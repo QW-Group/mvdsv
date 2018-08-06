@@ -70,7 +70,7 @@ before_install:
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libcurl.*-dev; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libpcre*-dev; fi
   # install cross complier if we gonna do binaries for windows
-  - if [ -z "${TARGET##*win*}" ]; then sudo apt-get -y install mingw-w64 ; fi
+  - if [ -z "${TARGET##*windows*}" ]; then sudo apt-get -y install mingw-w64 ; fi
   # install cross compiler tools if we gonna do binares for arm/raspberry
   # notice it will remove gcc-multilib
   - if [ -z "${TARGET##*arm*}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf ;fi
