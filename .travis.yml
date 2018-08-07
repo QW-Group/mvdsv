@@ -26,18 +26,34 @@ matrix:
       env:
         TARGET=linux-armhf
         EXTENSION=
+      # install cross compiler tools if we gonna do binares for arm/raspberry
+      # notice it will remove gcc-multilib
+      addons:
+        apt:
+          packages:
+            - gcc-arm-linux-gnueabihf
+            - pkg-config-arm-linux-gnueabihf
     - os: linux
       env:
         TARGET=linux-i686
         EXTENSION=
+
     - os: linux
       env:
         TARGET=windows-x86
         EXTENSION=.exe
+      addons:
+        apt:
+          packages:
+            - mingw-w64
     - os: linux
       env:
         TARGET=windows-x64
         EXTENSION=.exe
+      addons:
+        apt:
+          packages:
+            - mingw-w64
     - os: osx
       env:
         TARGET=darwin-amd64
@@ -66,11 +82,6 @@ before_install:
   # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libcurl.*-dev; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libpcre*-dev; fi
-  # install cross complier if we gonna do binaries for windows
-  - if [ -z "${TARGET##*windows*}" ]; then sudo apt-get -y install mingw-w64 ; fi
-  # install cross compiler tools if we gonna do binares for arm/raspberry
-  # notice it will remove gcc-multilib
-  - if [ -z "${TARGET##*arm*}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf ;fi
   # activate virtualenv with python3, meson requires python3
   - if [ $TRAVIS_OS_NAME = linux ]; then virtualenv .venv --python=python3; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then . .venv/bin/activate; fi
