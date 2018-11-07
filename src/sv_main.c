@@ -395,7 +395,7 @@ void SV_DropClient (client_t *drop)
 	SV_Logout(drop);
 
 	drop->state = cs_zombie;		// become free in a few seconds
-	drop->connection_started = realtime;	// for zombie timeout
+	drop->connection_started = curtime;	// for zombie timeout
 
 // MD -->
 	if (drop == WatcherId)
@@ -486,7 +486,7 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 
 	MSG_WriteByte (buf, svc_updateentertime);
 	MSG_WriteByte (buf, i);
-	MSG_WriteFloat (buf, realtime - client->connection_started);
+	MSG_WriteFloat (buf, curtime - client->connection_started);
 
 	Info_ReverseConvert(&client->_userinfoshort_ctx_, info, sizeof(info));
 	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
@@ -618,7 +618,7 @@ static void SVC_Status (void)
 					frags = va("%i", cl->old_frags);
 
 				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i", cl->userid, frags,
-				            (int)(realtime - cl->connection_started)/60, ping, name,
+				            (int)(curtime - cl->connection_started)/60, ping, name,
 				            Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
 
 				if (opt & STATUS_SHOWTEAMS)
@@ -1049,7 +1049,7 @@ qbool CheckReConnect( netadr_t adr, int qport )
 		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) &&
 			(cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port))
 		{
-			if ((realtime - cl->connection_started) < sv_reconnectlimit.value)
+			if ((curtime - cl->connection_started) < sv_reconnectlimit.value)
 			{
 				Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
 				return false;
@@ -1485,8 +1485,6 @@ static qbool rcon_bandlim (void)
 //bliP: master rcon/logging ->
 int Rcon_Validate (char *client_string, char *password1)
 {
-	time_t server_time, client_time = 0;
-	double difftime_server_client;
 	unsigned int i;
 
 	if (rcon_bandlim()) {
@@ -1498,14 +1496,24 @@ int Rcon_Validate (char *client_string, char *password1)
 	}
 
 	if ((int)sv_crypt_rcon.value) {
-		time(&server_time);
-		for (i = 0; i < sizeof(client_time) * 2; i += 2) {
-			client_time += (char2int((unsigned char)(Cmd_Argv(1) + DIGEST_SIZE * 2)[i]) << (4 + i * 4)) +
-			               (char2int((unsigned char)(Cmd_Argv(1) + DIGEST_SIZE * 2)[i + 1]) << (i * 4));
-		}
-		difftime_server_client = difftime(server_time, client_time);
+		const char* digest = Cmd_Argv(1);
+		const char* time_start = Cmd_Argv(1) + DIGEST_SIZE * 2;
 
-		if (!(int)sv_timestamplen.value) {
+		if (strlen(digest) < DIGEST_SIZE * 2 + sizeof(time_t) * 2) {
+			return 0;
+		}
+
+		if ((int)sv_timestamplen.value) {
+			time_t server_time, client_time = 0;
+			double difftime_server_client;
+
+			time(&server_time);
+			for (i = 0; i < sizeof(client_time) * 2; i += 2) {
+				client_time += (char2int((unsigned char)time_start[i]) << (4 + i * 4)) +
+							   (char2int((unsigned char)time_start[i + 1]) << (i * 4));
+			}
+			difftime_server_client = difftime(server_time, client_time);
+
 			if (difftime_server_client > (double)sv_timestamplen.value || difftime_server_client < -(double)sv_timestamplen.value) {
 				return 0;
 			}
@@ -1514,13 +1522,13 @@ int Rcon_Validate (char *client_string, char *password1)
 		SHA1_Update((unsigned char*)Cmd_Argv(0));
 		SHA1_Update((unsigned char*)" ");
 		SHA1_Update((unsigned char*)password1);
-		SHA1_Update((unsigned char*)Cmd_Argv(1) + DIGEST_SIZE * 2);
+		SHA1_Update((unsigned char*)time_start);
 		SHA1_Update((unsigned char*)" ");
 		for (i = 2; (int) i < Cmd_Argc(); i++) {
 			SHA1_Update((unsigned char*)Cmd_Argv(i));
 			SHA1_Update((unsigned char*)" ");
 		}
-		if (strncmp(Cmd_Argv(1), SHA1_Final(), DIGEST_SIZE * 2)) {
+		if (strncmp(digest, SHA1_Final(), DIGEST_SIZE * 2)) {
 			return 0;
 		}
 	}
@@ -3017,7 +3025,7 @@ static void SV_CheckTimeouts (void)
 			if (!cl->logged)
 				SV_LoginCheckTimeOut(cl);
 		}
-		if (cl->state == cs_zombie && realtime - cl->connection_started > zombietime.value)
+		if (cl->state == cs_zombie && curtime - cl->connection_started > zombietime.value)
 		{
 			cl->state = cs_free;	// can now be reused
 		}

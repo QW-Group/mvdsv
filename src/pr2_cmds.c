@@ -2506,7 +2506,7 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	newcl->datagram.maxsize = sizeof( newcl->datagram_buf );
 	newcl->spectator = 0;
 	newcl->isBot = 1;
-	newcl->connection_started = realtime;
+	newcl->connection_started = curtime;
 	strlcpy(newcl->name, name, sizeof(newcl->name));
 
 	newcl->entgravity = 1.0;

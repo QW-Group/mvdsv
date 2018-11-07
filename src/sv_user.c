@@ -175,7 +175,7 @@ static void Cmd_New_f (void)
 		return;
 
 	if (!sv_client->connection_started || sv_client->state == cs_connected)
-		sv_client->connection_started = realtime;
+		sv_client->connection_started = curtime;
 
 	sv_client->spawncount = svs.spawncount;
 
@@ -212,7 +212,7 @@ static void Cmd_New_f (void)
 								 va("packet %s \"ip %d %d\"\ncmd new\n", server_ip,
 									sv_client - svs.clients, sv_client->realip_num));
 			}
-			if (realtime - sv_client->connection_started > 3 || sv_client->realip_count > 10)
+			if (curtime - sv_client->connection_started > 3 || sv_client->realip_count > 10)
 			{
 				if ((int)sv_getrealip.value == 2)
 				{
@@ -2308,7 +2308,7 @@ static void Cmd_SetInfo_f (void)
 	if (!strcmp(Cmd_Argv(1), "name"))
 	{
 		//bliP: mute ->
-		if (realtime < sv_client->lockedtill)
+		if (!sv.paused && realtime < sv_client->lockedtill)
 		{
 			SV_ClientPrintf(sv_client, PRINT_CHAT,
 			                "You can't change your name while you're muted\n");
@@ -2336,10 +2336,10 @@ static void Cmd_SetInfo_f (void)
 	//bliP: kick top ->
 	if ((int)sv_kicktop.value && !strcmp(Cmd_Argv(1), "topcolor"))
 	{
-		if (!sv_client->lasttoptime || realtime - sv_client->lasttoptime > 8)
+		if (!sv_client->lasttoptime || curtime - sv_client->lasttoptime > 8)
 		{
 			sv_client->lasttopcount = 0;
-			sv_client->lasttoptime = realtime;
+			sv_client->lasttoptime = curtime;
 		}
 		else if (sv_client->lasttopcount++ > 5)
 		{
@@ -2595,9 +2595,9 @@ static void Cmd_Join_f (void)
 		return;
 	}
 
-	if (realtime - sv_client->connection_started < 5)
+	if (curtime - sv_client->connection_started < 5)
 	{
-		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(realtime - sv_client->connection_started));
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(curtime - sv_client->connection_started));
 		return;
 	}
 
@@ -2619,7 +2619,7 @@ static void Cmd_Join_f (void)
 	// this is like SVC_DirectConnect.
 	// turn the spectator into a player
 	sv_client->old_frags = 0;
-	sv_client->connection_started = realtime;
+	sv_client->connection_started = curtime;
 	sv_client->spectator = false;
 	sv_client->spec_track = 0;
 	Info_Remove (&sv_client->_userinfo_ctx_, "*spectator");
@@ -2681,9 +2681,9 @@ static void Cmd_Observe_f (void)
 		return;
 	}
 
-	if (realtime - sv_client->connection_started < 5)
+	if (curtime - sv_client->connection_started < 5)
 	{
-		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(realtime - sv_client->connection_started));
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(curtime - sv_client->connection_started));
 		return;
 	}
 
@@ -2704,7 +2704,7 @@ static void Cmd_Observe_f (void)
 	// this is like SVC_DirectConnect.
 	// turn the player into a spectator
 	sv_client->old_frags = 0;
-	sv_client->connection_started = realtime;
+	sv_client->connection_started = curtime;
 	sv_client->spectator = true;
 	sv_client->spec_track = 0;
 	Info_SetStar (&sv_client->_userinfo_ctx_, "*spectator", "1");
@@ -3498,7 +3498,7 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/
 		EdictFieldVector(sv_player, fofs_movement)[2] = ucmd->upmove;
 	}
 	//bliP: cuff
-	if (sv_client->cuff_time > realtime)
+	if (sv_client->cuff_time > curtime)
 		sv_player->v.button0 = sv_player->v.impulse = 0;
 	//<-
 
@@ -3794,7 +3794,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 	// calc ping time
 	frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
-	frame->ping_time = realtime - frame->senttime;
+	frame->ping_time = curtime - frame->senttime;
 
 	// update delay based on ping and sv_minping
 	if (!cl->spectator && !sv.paused)
@@ -3882,7 +3882,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 		cl->send_message = false;	// don't reply, sequences have slipped
 
 	// save time for ping calculations
-	cl->frames[cl->netchan.outgoing_sequence & UPDATE_MASK].senttime = realtime;
+	cl->frames[cl->netchan.outgoing_sequence & UPDATE_MASK].senttime = curtime;
 	cl->frames[cl->netchan.outgoing_sequence & UPDATE_MASK].ping_time = -1;
 
 	sv_client = cl;

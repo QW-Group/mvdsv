@@ -672,7 +672,7 @@ void SV_ParseLogin(client_t *cl)
 
 void SV_LoginCheckTimeOut(client_t *cl)
 {
-	if (cl->connection_started && realtime - cl->connection_started > 60)
+	if (cl->connection_started && curtime - cl->connection_started > 60)
 	{
 		Sys_Printf("login time out for %s\n", cl->name);
 

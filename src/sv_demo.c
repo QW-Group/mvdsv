@@ -1411,7 +1411,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 		MSG_WriteByte (&buf, svc_updateentertime);
 		MSG_WriteByte (&buf, i);
-		MSG_WriteFloat (&buf, realtime - player->connection_started);
+		MSG_WriteFloat (&buf, curtime - player->connection_started);
 
 		Info_ReverseConvert(&player->_userinfoshort_ctx_, info, sizeof(info));
 		Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
