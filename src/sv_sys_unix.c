@@ -364,7 +364,7 @@ double Sys_DoubleTime(void)
 	static unsigned int secbase;
 	struct timespec ts;
 
-#ifdef __linux__
+#if defined __linux__ && defined CLOCK_MONOTONIC_RAW
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 #else
 	clock_gettime(CLOCK_MONOTONIC, &ts);
