@@ -33,7 +33,22 @@
 
 char	*pr2_ent_data_ptr;
 vm_t	*sv_vm = NULL;
+extern gameData_t gamedata;
+extern field_t *fields;
 
+
+int NUM_FOR_GAME_EDICT(byte *e)
+{
+	int		b;
+
+	b = (byte *)e  - (byte *)sv.game_edicts + pr_edict_offset;
+	b /= pr_edict_size;
+
+	if (b < 0 || b >= sv.num_edicts)
+		SV_Error ("NUM_FOR_GAME_EDICT: bad pointer");
+
+	return b;
+}
 /*
 ============
 PR2_RunError
@@ -201,7 +216,7 @@ void PF2_setorigin(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	origin[1] = stack[2]._float;
 	origin[2] = stack[3]._float;
 
-	VectorCopy(origin, e->v.origin);
+	VectorCopy(origin, e->v->origin);
 	SV_AntilagReset(e);
 	SV_LinkEdict(e, false);
 }
@@ -222,15 +237,15 @@ void PF2_setsize(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 
 	e = EDICT_NUM(stack[0]._int);
 
-	e->v.mins[0] = stack[1]._float;
-	e->v.mins[1] = stack[2]._float;
-	e->v.mins[2] = stack[3]._float;
+	e->v->mins[0] = stack[1]._float;
+	e->v->mins[1] = stack[2]._float;
+	e->v->mins[2] = stack[3]._float;
 
-	e->v.maxs[0] = stack[4]._float;
-	e->v.maxs[1] = stack[5]._float;
-	e->v.maxs[2] = stack[6]._float;
+	e->v->maxs[0] = stack[4]._float;
+	e->v->maxs[1] = stack[5]._float;
+	e->v->maxs[2] = stack[6]._float;
 
-	VectorSubtract(e->v.maxs, e->v.mins, e->v.size);
+	VectorSubtract(e->v->maxs, e->v->mins, e->v->size);
 
 	SV_LinkEdict(e, false);
 }
@@ -263,16 +278,16 @@ void PF2_setmodel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	if (!*check)
 		PR2_RunError("no precache: %s\n", m);
 
-	PR2_SetEntityString(e, &e->v.model, m);
-	e->v.modelindex = i;
+	PR2_SetEntityString(e, &e->v->model, m);
+	e->v->modelindex = i;
 
 	// if it is an inline model, get the size information for it
 	if (m[0] == '*')
 	{
 		mod = CM_InlineModel (m);
-		VectorCopy(mod->mins, e->v.mins);
-		VectorCopy(mod->maxs, e->v.maxs);
-		VectorSubtract(mod->maxs, mod->mins, e->v.size);
+		VectorCopy(mod->mins, e->v->mins);
+		VectorCopy(mod->maxs, e->v->maxs);
+		VectorSubtract(mod->maxs, mod->mins, e->v->size);
 		SV_LinkEdict(e, false);
 	}
 
@@ -314,6 +329,7 @@ void PF2_sprint(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	char *s = (char *) VM_POINTER(base,mask,stack[2].string);
 	int i;
 
+    if( gamedata.APIversion < 15 ) flags = 0;
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 	{
 		Con_Printf("tried to sprint to a non-client %d \n", entnum);
@@ -639,11 +655,11 @@ int PF2_newcheckclient(int check)
 		if (i == check)
 			break;	// didn't find anything else
 
-		if (ent->e->free)
+		if (ent->e.free)
 			continue;
-		if (ent->v.health <= 0)
+		if (ent->v->health <= 0)
 			continue;
-		if ((int) ent->v.flags & FL_NOTARGET)
+		if ((int) ent->v->flags & FL_NOTARGET)
 			continue;
 
 		// anything that is a client, or has a client as an enemy
@@ -651,7 +667,7 @@ int PF2_newcheckclient(int check)
 	}
 
 	// get the PVS for the entity
-	VectorAdd (ent->v.origin, ent->v.view_ofs, org);
+	VectorAdd (ent->v->origin, ent->v->view_ofs, org);
 	checkpvs = CM_LeafPVS (CM_PointInLeaf(org));
 
 	return i;
@@ -674,7 +690,7 @@ void PF2_checkclient(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	// return check if it might be visible
 	ent = EDICT_NUM(sv.lastcheck);
-	if (ent->e->free || ent->v.health <= 0)
+	if (ent->e.free || ent->v->health <= 0)
 	{
 		// RETURN_EDICT(sv.edicts);
 		retval->_int = NUM_FOR_EDICT(sv.edicts);
@@ -683,7 +699,7 @@ void PF2_checkclient(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	// if current entity can't possibly see the check entity, return 0
 	self = PROG_TO_EDICT(pr_global_struct->self);
-	VectorAdd(self->v.origin, self->v.view_ofs, view);
+	VectorAdd(self->v->origin, self->v->view_ofs, view);
 	l = CM_Leafnum(CM_PointInLeaf(view)) - 1;
 	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7))))
 	{
@@ -721,6 +737,7 @@ void PF2_stuffcmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	int flags = stack[2]._int; // using this atm just as hint to not put this in mvd demo
 	int j;
 
+    if( gamedata.APIversion < 15 ) flags = 0;
 	str = (char *) VM_POINTER(base,mask,stack[1].string);
 	if( !str )
 		PR2_RunError("PF2_stuffcmd: NULL pointer");
@@ -888,7 +905,7 @@ void PF2_redirectcmd(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 		return;
 	}
 
-	entnum = NUM_FOR_EDICT((edict_t *)VM_POINTER(base, mask, stack[0]._int));
+	entnum = NUM_FOR_GAME_EDICT((byte *)VM_POINTER(base, mask, stack[0]._int));
 
 	if (entnum < 1 || entnum > MAX_CLIENTS) {
 		PR2_RunError("Parm 0 not a client");
@@ -975,7 +992,7 @@ void PF2_FindRadius( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * r
 	vec3_t	eorg;
 	float rad;
 
-	e = NUM_FOR_EDICT( (edict_t *) VM_POINTER( base, mask, stack[0]._int ) );
+	e = NUM_FOR_GAME_EDICT( (byte *) VM_POINTER( base, mask, stack[0]._int ) );
 	org = (float *) VM_POINTER( base, mask, stack[1]._int );
 	rad = stack[2]._float;
 
@@ -983,15 +1000,15 @@ void PF2_FindRadius( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * r
 	{
 		ed = EDICT_NUM( e );
 
-		if (ed->e->free)
+		if (ed->e.free)
 			continue;
-		if (ed->v.solid == SOLID_NOT)
+		if (ed->v->solid == SOLID_NOT)
 			continue;
 		for (j=0 ; j<3 ; j++)
-			eorg[j] = org[j] - (ed->v.origin[j] + (ed->v.mins[j] + ed->v.maxs[j])*0.5);			
+			eorg[j] = org[j] - (ed->v->origin[j] + (ed->v->mins[j] + ed->v->maxs[j])*0.5);			
 		if (VectorLength(eorg) > rad)
 			continue;
-		retval->_int = POINTER_TO_VM( base, mask, ed );
+		retval->_int = POINTER_TO_VM( base, mask, (byte*)ed->v - pr_edict_offset);
 		return;
 	}
 	retval->_int = 0;
@@ -1028,7 +1045,7 @@ void PF2_walkmove(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	yaw  = stack[1]._float;
 	dist = stack[2]._float;
 
-	if (!((int) ent->v.flags & (FL_ONGROUND | FL_FLY | FL_SWIM)))
+	if (!((int) ent->v->flags & (FL_ONGROUND | FL_FLY | FL_SWIM)))
 	{
 		retval->_int =  0;
 		return;
@@ -1071,17 +1088,17 @@ void PF2_MoveToGoal(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 	int			oldself;
 
 	ent  = PROG_TO_EDICT(pr_global_struct->self);
-	goal = PROG_TO_EDICT(ent->v.goalentity);
+	goal = PROG_TO_EDICT(ent->v->goalentity);
 	dist = stack[0]._float;
 
-	if ( !( (int)ent->v.flags & (FL_ONGROUND|FL_FLY|FL_SWIM) ) )
+	if ( !( (int)ent->v->flags & (FL_ONGROUND|FL_FLY|FL_SWIM) ) )
 	{
 		retval->_int =  0;
 		return;
 	}
 
 	// if the next step hits the enemy, return immediately
-	if ( PROG_TO_EDICT(ent->v.enemy) != sv.edicts && SV_CloseEnough (ent, goal, dist) )
+	if ( PROG_TO_EDICT(ent->v->enemy) != sv.edicts && SV_CloseEnough (ent, goal, dist) )
 		return;
 
 	// save program state, because SV_movestep may call other progs
@@ -1089,7 +1106,7 @@ void PF2_MoveToGoal(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 	oldself = pr_global_struct->self;
 
 	// bump around...
-	if ( (rand()&3)==1 || !SV_StepDirection (ent, ent->v.ideal_yaw, dist))
+	if ( (rand()&3)==1 || !SV_StepDirection (ent, ent->v->ideal_yaw, dist))
 	{
 		SV_NewChaseDir (ent, goal, dist);
 	}
@@ -1117,10 +1134,10 @@ void PF2_droptofloor(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 
 	ent = EDICT_NUM(stack[0]._int);
 
-	VectorCopy(ent->v.origin, end);
+	VectorCopy(ent->v->origin, end);
 	end[2] -= 256;
 
-	trace = SV_Trace(ent->v.origin, ent->v.mins, ent->v.maxs, end, false, ent);
+	trace = SV_Trace(ent->v->origin, ent->v->mins, ent->v->maxs, end, false, ent);
 
 	if (trace.fraction == 1 || trace.allsolid)
 	{
@@ -1129,10 +1146,10 @@ void PF2_droptofloor(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	}
 	else
 	{
-		VectorCopy(trace.endpos, ent->v.origin);
+		VectorCopy(trace.endpos, ent->v->origin);
 		SV_LinkEdict(ent, false);
-		ent->v.flags = (int) ent->v.flags | FL_ONGROUND;
-		ent->v.groundentity = EDICT_TO_PROG(trace.e.ent);
+		ent->v->flags = (int) ent->v->flags | FL_ONGROUND;
+		ent->v->groundentity = EDICT_TO_PROG(trace.e.ent);
 		retval->_int =  1;
 		return;
 	}
@@ -1226,7 +1243,7 @@ void PF2_nextent(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 			return;
 		}
 		ent = EDICT_NUM(i);
-		if (!ent->e->free)
+		if (!ent->e.free)
 		{
 			retval->_int = i;
 			return;
@@ -1248,7 +1265,7 @@ void PF2_nextclient(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 	int		i;
 	edict_t	*ent;
 
-	i = NUM_FOR_EDICT((edict_t *) VM_POINTER(base,mask,stack[0]._int));;
+	i = NUM_FOR_GAME_EDICT((byte *) VM_POINTER(base,mask,stack[0]._int));;
 	while (1)
 	{
 		i++;
@@ -1258,11 +1275,11 @@ void PF2_nextclient(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 			return;
 		}
 		ent = EDICT_NUM(i);
-		if (!ent->e->free) // actually that always true for clients edicts
+		if (!ent->e.free) // actually that always true for clients edicts
 		{
 			if (svs.clients[i-1].state == cs_spawned) // client in game
 			{
-				retval->_int = POINTER_TO_VM(base,mask,ent);
+                retval->_int = POINTER_TO_VM( base, mask, (byte*)ent->v - pr_edict_offset);
 				return;
 			}
 		}
@@ -1283,8 +1300,8 @@ void PF2_Find (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	char*		str, *t;
 	edict_t	*ed;
 
-	e  = NUM_FOR_EDICT((edict_t *) VM_POINTER(base,mask,stack[0]._int));
-	fofs = stack[1]._int;
+	e  = NUM_FOR_GAME_EDICT((byte *) VM_POINTER(base,mask,stack[0]._int));
+	fofs = stack[1]._int - pr_edict_offset;
 
 	str = (char *) VM_POINTER(base,mask,stack[2].string);
 
@@ -1294,20 +1311,20 @@ void PF2_Find (byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 	for (e++ ; e < sv.num_edicts ; e++)
 	{
 		ed = EDICT_NUM(e);
-		if (ed->e->free)
+		if (ed->e.free)
 			continue;
 
 		if (!(intptr_t*)((byte*)ed + fofs))
 			continue;
 
-		t = (char *) VM_POINTER(base,mask,*(intptr_t*)((byte*)ed + fofs));
+		t = (char *) VM_POINTER(base,mask,*(intptr_t*)((byte*)ed->v + fofs));
 
 		if (!t)
 			continue;
 
 		if (!strcmp(t,str))
 		{
-			retval->_int = POINTER_TO_VM(base,mask,ed);
+            retval->_int = POINTER_TO_VM( base, mask, (byte*)ed->v - pr_edict_offset);
 			return;
 		}
 	}
@@ -1612,16 +1629,16 @@ void PF2_makestatic(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval
 	s = &sv.static_entities[sv.static_entity_count];
 	memset(s, 0, sizeof(sv.static_entities[0]));
 	s->number = sv.static_entity_count + 1;
-	s->modelindex = SV_ModelIndex(PR_GetEntityString(ent->v.model));
+	s->modelindex = SV_ModelIndex(PR_GetEntityString(ent->v->model));
 	if (!s->modelindex) {
 		ED_Free (ent);
 		return;
 	}
-	s->frame = ent->v.frame;
-	s->colormap = ent->v.colormap;
-	s->skinnum = ent->v.skin;
-	VectorCopy(ent->v.origin, s->origin);
-	VectorCopy(ent->v.angles, s->angles);
+	s->frame = ent->v->frame;
+	s->colormap = ent->v->colormap;
+	s->skinnum = ent->v->skin;
+	VectorCopy(ent->v->origin, s->origin);
+	VectorCopy(ent->v->angles, s->angles);
 	++sv.static_entity_count;
 
 	// throw the entity away now
@@ -1666,6 +1683,7 @@ void PF2_changelevel(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retva
 	char *entfile = (char *) VM_POINTER(base,mask,stack[1].string);
 	char expanded[MAX_QPATH];
 
+    if( gamedata.APIversion < 15 ) entfile = "";
 	// check to make sure the level exists.
 	// this is work around for bellow check about two changelevels,
 	// which lock server in one map if we trying switch to map which does't exist
@@ -2266,6 +2284,7 @@ void PF2_FS_GetFileList(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*re
 	int numfiles = 0;
 	int i, j;
 
+    if( gamedata.APIversion < 15 ) flags = 0;
 	retval->_int = 0;
 
 	if( ( listbuffoffset ) & (~mask))
@@ -2519,13 +2538,13 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 		val->_float = sv_maxspeed.value;
 
 	newcl->edict = ent;
-	ent->v.colormap = edictnum;
+	ent->v->colormap = edictnum;
 	val = PR2_GetEdictFieldValue( ent, "isBot" );
 	if( val )
 		val->_int = 1;
 
 	// restore client name.
-	PR_SetEntityString(ent, ent->v.netname, newcl->name);
+	PR_SetEntityString(ent, ent->v->netname, newcl->name);
 
 	memset( newcl->stats, 0, sizeof( newcl->stats ) );
 	SZ_InitEx (&newcl->netchan.message, newcl->netchan.message_buf, (int)sizeof(newcl->netchan.message_buf), true);
@@ -2577,7 +2596,7 @@ void RemoveBot(client_t *cl)
 		PR2_GameClientDisconnect(0);
 
 	cl->old_frags = 0;
-	cl->edict->v.frags = 0.0;
+	cl->edict->v->frags = 0.0;
 	cl->name[0] = 0;
 	cl->state = cs_free;
 
@@ -2688,11 +2707,11 @@ void PF2_SetBotCMD( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * re
 	cl->botcmd.upmove = stack[7]._int;
 	cl->botcmd.buttons = stack[8]._int;
 	cl->botcmd.impulse = stack[9]._int;
-	if ( cl->edict->v.fixangle)
+	if ( cl->edict->v->fixangle)
 	{
-		VectorCopy(cl->edict->v.angles, cl->botcmd.angles);
+		VectorCopy(cl->edict->v->angles, cl->botcmd.angles);
 		cl->botcmd.angles[PITCH] *= -3;
-		cl->edict->v.fixangle = 0;
+		cl->edict->v->fixangle = 0;
 	}
 }
 
@@ -2982,20 +3001,44 @@ int sv_sys_callex(byte *data, unsigned int mask, int fn, pr2val_t*arg)
 	pr2val_t ret;
 
 	if( fn >= pr2_numAPI )
-		PR2_RunError ("sv_sys_callex: Bad API call number");
+		PR2_RunError ("sv_sys_callex: Bad API call number %d",fn);
 
 	pr2_API[fn](data, mask, arg,&ret);
 	return ret._int;
 }
 
-extern gameData_t *gamedata;
-extern field_t *fields;
-
 #define GAME_API_VERSION_MIN 8
+
+void static _set_pr_edict_offset(int APIversion)
+{
+    /*
+     * api 12
+     * qvm, 32 - 112
+     * 64 - 128
+     * api 15
+     * qvm, 32 - 4
+     * 64 - 8
+     * api > 15 0
+     */
+    if( sv_vm->type == VM_BYTECODE ){
+        pr_edict_offset = APIversion <= 12 ? 112: (APIversion <= 15 ? 4: 0 );
+        return;
+    }else if ( sv_vm->type == VM_NATIVE ){
+#ifdef idx64
+        pr_edict_offset = APIversion <= 12 ? 128: (APIversion <= 15 ? 8: 0 );
+#else
+        pr_edict_offset = APIversion <= 12 ? 112: (APIversion <= 15 ? 4: 0 );
+#endif
+        return;
+    }
+    pr_edict_offset = 0;
+}
 
 void PR2_InitProg(void)
 {
 	extern cvar_t sv_pr2references;
+    
+    intptr_t gamedata_ptr;
 
 	Cvar_SetValue(&sv_pr2references, 0.0f);
 
@@ -3006,33 +3049,40 @@ void PR2_InitProg(void)
 
 	PR2_FS_Restart();
 
-	gamedata = (gameData_t *) VM_Call(sv_vm, GAME_INIT, (int) (sv.time * 1000),
+    gamedata.APIversion = 0;
+	gamedata_ptr = (intptr_t) VM_Call(sv_vm, GAME_INIT, (int) (sv.time * 1000),
 	                                  (int) (Sys_DoubleTime() * 100000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-	if (!gamedata) {
+	if (!gamedata_ptr) {
 		SV_Error("PR2_InitProg gamedata == NULL");
 	}
 
-	gamedata = (gameData_t *)PR2_GetString((intptr_t)gamedata);
-	if (gamedata->APIversion < GAME_API_VERSION_MIN || gamedata->APIversion > GAME_API_VERSION) {
+	gamedata = *(gameData_t *)PR2_GetString(gamedata_ptr);
+	if (gamedata.APIversion < GAME_API_VERSION_MIN || gamedata.APIversion > GAME_API_VERSION) {
 		if (GAME_API_VERSION_MIN == GAME_API_VERSION) {
-			SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)", gamedata->APIversion, GAME_API_VERSION);
+			SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)", gamedata.APIversion, GAME_API_VERSION);
 		}
 		else {
-			SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)", gamedata->APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
+			SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)", gamedata.APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
 		}
 	}
 
-	sv_vm->pr2_references = gamedata->APIversion >= 15 && (int)sv_pr2references.value;
+	sv_vm->pr2_references = gamedata.APIversion >= 15 && (int)sv_pr2references.value;
+#ifdef idx64
+    if( sv_vm->type == VM_NATIVE && (! sv_vm->pr2_references || gamedata.APIversion < 15 ))
+        SV_Error("PR2_InitProg: Native prog must support sv_pr2references for 64bit mode ( mod API version (%i should be 15+))", gamedata.APIversion);
+#endif
 
-	sv.edicts = (edict_t *)PR2_GetString((intptr_t)gamedata->ents);
-	pr_global_struct = (globalvars_t*)PR2_GetString((intptr_t)gamedata->global);
+    _set_pr_edict_offset( gamedata.APIversion );
+    Con_DPrintf("edict offset %d\n", pr_edict_offset);
+	sv.game_edicts = (entvars_t *)(PR2_GetString((intptr_t)gamedata.ents) + pr_edict_offset);
+	pr_global_struct = (globalvars_t*)PR2_GetString((intptr_t)gamedata.global);
 	pr_globals = (float *) pr_global_struct;
-	fields = (field_t*)PR2_GetString((intptr_t)gamedata->fields);
-	pr_edict_size = gamedata->sizeofent;
+	fields = (field_t*)PR2_GetString((intptr_t)gamedata.fields);
+	pr_edict_size = gamedata.sizeofent;
 
 	sv.max_edicts = MAX_EDICTS;
-	if (gamedata->APIversion >= 14) {
-		sv.max_edicts = min(sv.max_edicts, gamedata->maxentities);
+	if (gamedata.APIversion >= 14) {
+		sv.max_edicts = min(sv.max_edicts, gamedata.maxentities);
 	}
 	else {
 		sv.max_edicts = min(sv.max_edicts, 512);

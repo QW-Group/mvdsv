@@ -95,10 +95,12 @@ typedef struct
 
 	int         num_edicts;         // increases towards MAX_EDICTS
 	int         num_baseline_edicts;// number of entities that have baselines
-	edict_t     *edicts;            // can NOT be array indexed, because
+
+	edict_t     edicts[MAX_EDICTS];
+    entvars_t   *game_edicts;            // can NOT be array indexed, because
 	                                // edict_t is variable sized, but can
 	                                // be used to reference the world ent
-	sv_edict_t  sv_edicts[MAX_EDICTS]; // part of the edict_t
+	//sv_edict_t  sv_edicts[MAX_EDICTS]; // part of the edict_t
 	int         max_edicts;         // might not MAX_EDICTS if mod allocates memory
 
 	byte		*pvs, *phs;			// fully expanded and decompressed

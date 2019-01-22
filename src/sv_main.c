@@ -403,7 +403,7 @@ void SV_DropClient (client_t *drop)
 // <-- MD
 
 	drop->old_frags = 0;
-	drop->edict->v.frags = 0.0;
+	drop->edict->v->frags = 0.0;
 	drop->name[0] = 0;
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);
@@ -1356,10 +1356,10 @@ static void SVC_DirectConnect (void)
 
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
-	ent->e->free = false;
+	ent->e.free = false;
 	newcl->edict = ent;
 	// restore client name.
-	PR_SetEntityString(ent, ent->v.netname, newcl->name);
+	PR_SetEntityString(ent, ent->v->netname, newcl->name);
 
 	s = ( vip ? va("%d", vip) : "" );
 
@@ -1511,14 +1511,14 @@ int Rcon_Validate (char *client_string, char *password1)
 			}
 		}
 		SHA1_Init();
-		SHA1_Update((unsigned char*)Cmd_Argv(0));
-		SHA1_Update((unsigned char*)" ");
-		SHA1_Update((unsigned char*)password1);
-		SHA1_Update((unsigned char*)Cmd_Argv(1) + DIGEST_SIZE * 2);
-		SHA1_Update((unsigned char*)" ");
+		SHA1_Update((char*)Cmd_Argv(0));
+		SHA1_Update((char*)" ");
+		SHA1_Update((char*)password1);
+		SHA1_Update((char*)Cmd_Argv(1) + DIGEST_SIZE * 2);
+		SHA1_Update((char*)" ");
 		for (i = 2; (int) i < Cmd_Argc(); i++) {
-			SHA1_Update((unsigned char*)Cmd_Argv(i));
-			SHA1_Update((unsigned char*)" ");
+			SHA1_Update((char*)Cmd_Argv(i));
+			SHA1_Update((char*)" ");
 		}
 		if (strncmp(Cmd_Argv(1), SHA1_Final(), DIGEST_SIZE * 2)) {
 			return 0;

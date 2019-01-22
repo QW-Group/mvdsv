@@ -580,7 +580,7 @@ void Sys_Printf (char *fmt, ...)
 	va_end (argptr);
 
 	// normalize text before add to console.
-	Q_normalizetext(text);
+	Q_normalizetext((char*)text);
 
 #ifndef _CONSOLE
 	if (!isdaemon)

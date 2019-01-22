@@ -27,7 +27,7 @@
 qbool PR2_IsValidWriteAddress(register qvm_t * qvm, intptr_t address);
 qbool PR2_IsValidReadAddress(register qvm_t * qvm, intptr_t address);
 
-gameData_t *gamedata;
+gameData_t gamedata;
 
 // 0 = pr1 (qwprogs.dat etc), 1 = native (.so/.dll), 2 = q3vm (.qvm)
 cvar_t sv_progtype = { "sv_progtype","0" };
@@ -119,7 +119,7 @@ char *PR2_GetString(intptr_t num)
 intptr_t PR2_EntityStringLocation(string_t offset, int max_size)
 {
 	if (offset > 0 && offset < pr_edict_size * sv.max_edicts - max_size) {
-		return ((intptr_t)sv.edicts + offset);
+		return ((intptr_t)sv.game_edicts - pr_edict_offset + offset);
 	}
 
 	return 0;
@@ -148,13 +148,19 @@ char *PR2_GetEntityString(string_t num)
 		return PR1_GetString(num);
 
 	case VM_NATIVE:
-		if (num) {
-			char** location = (char**)PR2_EntityStringLocation(num, sizeof(char*));
-
-			if (location && *location) {
-				return *location;
-			}
-		}
+        if (num) {
+            if (sv_vm->pr2_references) {
+                char** location = (char**)PR2_EntityStringLocation(num, sizeof(char*));
+                if (location && *location) {
+                    return *location;
+                }
+            }
+#ifndef idx64            
+            else {
+                return (char *) (num);
+            }
+#endif
+        }
 		return "";
 
 	case VM_BYTECODE:
@@ -202,14 +208,18 @@ void PR2_SetEntityString(edict_t* ed, string_t* target, char* s)
 		return;
 
 	case VM_NATIVE:
-		{
+		if (sv_vm->pr2_references) {
 			char** location = (char**)PR2_EntityStringLocation(*target, sizeof(char*));
-
 			if (location) {
 				*location = s;
 			}
+		} 
+#ifndef idx64            
+        else if ( target ){
+            *target = (string_t) s;
 		}
 		return;
+#endif
 
 	case VM_BYTECODE:
 		qvm = (qvm_t*)(sv_vm->hInst);
@@ -247,12 +257,17 @@ void PR2_SetGlobalString(string_t* target, char* s)
 		return;
 
 	case VM_NATIVE:
-		{
-			char** location = (char**)PR2_GlobalStringLocation(*target);
-			if (location) {
-				*location = s;
-			}
-		}
+        if (sv_vm->pr2_references) {
+            char** location = (char**)PR2_GlobalStringLocation(*target);
+            if (location) {
+                *location = s;
+            }
+        } 
+#ifndef idx64            
+        else if ( target ){
+            *target = (string_t)s;
+        }
+#endif
 		return;
 
 	case VM_BYTECODE:
@@ -300,7 +315,7 @@ void PR2_LoadEnts(char *data)
 //===========================================================================
 void PR2_GameStartFrame(qbool isBotFrame)
 {
-	if (isBotFrame && (!sv_vm || sv_vm->type == VM_NONE || !gamedata || gamedata->APIversion < 15)) {
+	if (isBotFrame && (!sv_vm || sv_vm->type == VM_NONE || gamedata.APIversion < 15)) {
 		return;
 	}
 

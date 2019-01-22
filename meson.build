@@ -99,6 +99,12 @@ else
 	c_args += '-D__PDP_ENDIAN__Q__'
 endif
 
+if target_machine.cpu_family() == 'x86_64' 
+	c_args += '-Didx64'
+elif target_machine.cpu_family() == 'x86' 
+	c_args += '-Did386'
+endif
+
 if target_machine.cpu_family() == 'x86' and target_machine.system() != 'darwin'
 	asm_c_args = ['-x', 'assembler-with-cpp', '-Did386']
 	if target_machine.system() != 'windows'
