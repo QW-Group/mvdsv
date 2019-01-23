@@ -304,7 +304,9 @@ bprint(value)
 */
 void PF2_bprint(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval)
 {
-	SV_BroadcastPrintfEx(stack[0]._int, stack[2]._int, "%s", VM_POINTER(base,mask,stack[1].string));
+    int flags = stack[2]._int;
+    if( gamedata.APIversion < 15 ) flags = 0;
+	SV_BroadcastPrintfEx(stack[0]._int, flags, "%s", VM_POINTER(base,mask,stack[1].string));
 }
 
 /*
@@ -2643,6 +2645,7 @@ void PF2_SetBotUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t
 	int     i;
 	extern char *shortinfotbl[];
 
+    if( gamedata.APIversion < 15 ) flags = 0;
 	if (strstr(key, "&c") || strstr(key, "&r") || strstr(value, "&c") || strstr(value, "&r"))
 		return;
 
