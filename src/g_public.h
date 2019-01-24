@@ -215,14 +215,23 @@ typedef struct
 
 typedef struct
 {
-	edict_t         *ents;
-	int             sizeofent;
-	globalvars_t    *global;
-	field_t         *fields;
-	int             APIversion;
-	int             maxentities;
+    intptr_t        ents;
+    int             sizeofent;
+    intptr_t        global;
+    intptr_t        fields;
+    int             APIversion;
+    int             maxentities;
 } gameData_t;
 
+typedef struct
+{
+    int         ents_p;
+    int         sizeofent;
+    int         global_p;
+    int         fields_p;
+    int         APIversion;
+    int         maxentities;
+} gameData_vm_t;
 typedef int		fileHandle_t;
 
 typedef enum {

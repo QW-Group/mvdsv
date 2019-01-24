@@ -3036,40 +3036,59 @@ void static _set_pr_edict_offset(int APIversion)
     }
     pr_edict_offset = 0;
 }
+void LoadGameData( intptr_t gamedata_ptr)
+{
+
+#ifdef idx64
+    gameData_vm_t* gamedata_vm;
+
+    if( sv_vm->type == VM_BYTECODE )
+    {
+        gamedata_vm = (gameData_vm_t *)PR2_GetString(gamedata_ptr);
+        gamedata.ents = (intptr_t)gamedata_vm->ents_p;
+        gamedata.global = (intptr_t)gamedata_vm->global_p;
+        gamedata.fields = (intptr_t)gamedata_vm->fields_p;
+        gamedata.APIversion = gamedata_vm->APIversion;
+        gamedata.sizeofent = gamedata_vm->sizeofent;
+        gamedata.maxentities = gamedata_vm->maxentities;
+        return;
+    }
+#endif
+    gamedata = *(gameData_t *)PR2_GetString(gamedata_ptr);
+}
 
 void PR2_InitProg(void)
 {
-	extern cvar_t sv_pr2references;
-    
+    extern cvar_t sv_pr2references;
+
     intptr_t gamedata_ptr;
 
-	Cvar_SetValue(&sv_pr2references, 0.0f);
+    Cvar_SetValue(&sv_pr2references, 0.0f);
 
-	if ( !sv_vm ) {
-		PR1_InitProg();
-		return;
-	}
+    if ( !sv_vm ) {
+        PR1_InitProg();
+        return;
+    }
 
-	PR2_FS_Restart();
+    PR2_FS_Restart();
 
     gamedata.APIversion = 0;
-	gamedata_ptr = (intptr_t) VM_Call(sv_vm, GAME_INIT, (int) (sv.time * 1000),
-	                                  (int) (Sys_DoubleTime() * 100000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-	if (!gamedata_ptr) {
-		SV_Error("PR2_InitProg gamedata == NULL");
-	}
+    gamedata_ptr = (intptr_t) VM_Call(sv_vm, GAME_INIT, (int) (sv.time * 1000), (int) (Sys_DoubleTime() * 100000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    if (!gamedata_ptr) {
+        SV_Error("PR2_InitProg gamedata == NULL");
+    }
 
-	gamedata = *(gameData_t *)PR2_GetString(gamedata_ptr);
-	if (gamedata.APIversion < GAME_API_VERSION_MIN || gamedata.APIversion > GAME_API_VERSION) {
-		if (GAME_API_VERSION_MIN == GAME_API_VERSION) {
-			SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)", gamedata.APIversion, GAME_API_VERSION);
-		}
-		else {
-			SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)", gamedata.APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
-		}
-	}
+    LoadGameData( gamedata_ptr );
+    if (gamedata.APIversion < GAME_API_VERSION_MIN || gamedata.APIversion > GAME_API_VERSION) {
+        if (GAME_API_VERSION_MIN == GAME_API_VERSION) {
+            SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)", gamedata.APIversion, GAME_API_VERSION);
+        }
+        else {
+            SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)", gamedata.APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
+        }
+    }
 
-	sv_vm->pr2_references = gamedata.APIversion >= 15 && (int)sv_pr2references.value;
+    sv_vm->pr2_references = gamedata.APIversion >= 15 && (int)sv_pr2references.value;
 #ifdef idx64
     if( sv_vm->type == VM_NATIVE && (! sv_vm->pr2_references || gamedata.APIversion < 15 ))
         SV_Error("PR2_InitProg: Native prog must support sv_pr2references for 64bit mode ( mod API version (%i should be 15+))", gamedata.APIversion);
@@ -3077,18 +3096,18 @@ void PR2_InitProg(void)
 
     _set_pr_edict_offset( gamedata.APIversion );
     Con_DPrintf("edict offset %d\n", pr_edict_offset);
-	sv.game_edicts = (entvars_t *)(PR2_GetString((intptr_t)gamedata.ents) + pr_edict_offset);
-	pr_global_struct = (globalvars_t*)PR2_GetString((intptr_t)gamedata.global);
-	pr_globals = (float *) pr_global_struct;
-	fields = (field_t*)PR2_GetString((intptr_t)gamedata.fields);
-	pr_edict_size = gamedata.sizeofent;
+    sv.game_edicts = (entvars_t *)(PR2_GetString((intptr_t)gamedata.ents) + pr_edict_offset);
+    pr_global_struct = (globalvars_t*)PR2_GetString((intptr_t)gamedata.global);
+    pr_globals = (float *) pr_global_struct;
+    fields = (field_t*)PR2_GetString((intptr_t)gamedata.fields);
+    pr_edict_size = gamedata.sizeofent;
 
-	sv.max_edicts = MAX_EDICTS;
-	if (gamedata.APIversion >= 14) {
-		sv.max_edicts = min(sv.max_edicts, gamedata.maxentities);
-	}
-	else {
-		sv.max_edicts = min(sv.max_edicts, 512);
-	}
+    sv.max_edicts = MAX_EDICTS;
+    if (gamedata.APIversion >= 14) {
+        sv.max_edicts = min(sv.max_edicts, gamedata.maxentities);
+    }
+    else {
+        sv.max_edicts = min(sv.max_edicts, 512);
+    }
 }
 #endif /* USE_PR2 */

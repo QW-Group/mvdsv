@@ -630,12 +630,25 @@ void QVM_RunError( qvm_t * qvm, char *error, ... )
 
 int trap_Call( qvm_t * qvm, int apinum )
 {
-	int     ret;
+    int     ret;
 
-	qvm->SP++;
-	ret = qvm->syscall( qvm->ds, qvm->ds_mask, apinum, ( pr2val_t* ) ( qvm->ds + qvm->LP + 2*sizeof(int) ) );
+    qvm->SP++;
+#ifdef idx64
+    // the vm has ints on the stack, we expect
+    // longs so we have to convert it
+    {
+        pr2val_t  argarr[16];
+        int argn;
+        for ( argn = 0; argn <  16; ++argn ) {
+            argarr[ argn ]._int = *(int*)( qvm->ds + qvm->LP + 2*sizeof(int) + 4*argn );
+        }
+        ret = qvm->syscall( qvm->ds, qvm->ds_mask, apinum,  &argarr[0] );
+    }
+#else
+    ret = qvm->syscall( qvm->ds, qvm->ds_mask, apinum, ( pr2val_t* ) ( qvm->ds + qvm->LP + 2*sizeof(int) ) );
+#endif
 
-	return ret;
+    return ret;
 }
 
 
