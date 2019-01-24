@@ -3057,6 +3057,30 @@ void LoadGameData( intptr_t gamedata_ptr)
     gamedata = *(gameData_t *)PR2_GetString(gamedata_ptr);
 }
 
+void LoadFields()
+{
+#ifdef idx64
+    if( sv_vm->type == VM_BYTECODE )
+    {
+        field_vm_t* fieldvm_p;
+        field_t	*f;
+        int i, num = 0;
+        fieldvm_p = (field_vm_t*)PR2_GetString((intptr_t)gamedata.fields);
+        while( fieldvm_p[num].name ) num++;
+		f = fields = (field_t *) Hunk_Alloc( sizeof(field_t) * (num+1) );
+        while( fieldvm_p->name ){
+            f->name = (stringptr_t) fieldvm_p->name;
+            f->ofs =  fieldvm_p->ofs;
+            f->type = (fieldtype_t) fieldvm_p->type;
+            f++; fieldvm_p++;
+        }
+        f->name = 0;
+        return;
+    }
+#endif
+    fields = (field_t*)PR2_GetString((intptr_t)gamedata.fields);
+}
+
 void PR2_InitProg(void)
 {
     extern cvar_t sv_pr2references;
@@ -3099,7 +3123,7 @@ void PR2_InitProg(void)
     sv.game_edicts = (entvars_t *)(PR2_GetString((intptr_t)gamedata.ents) + pr_edict_offset);
     pr_global_struct = (globalvars_t*)PR2_GetString((intptr_t)gamedata.global);
     pr_globals = (float *) pr_global_struct;
-    fields = (field_t*)PR2_GetString((intptr_t)gamedata.fields);
+    LoadFields();
     pr_edict_size = gamedata.sizeofent;
 
     sv.max_edicts = MAX_EDICTS;

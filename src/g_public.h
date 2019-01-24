@@ -215,6 +215,13 @@ typedef struct
 
 typedef struct
 {
+	int   name;
+	int   ofs;
+	int   type;
+} field_vm_t;
+
+typedef struct
+{
     intptr_t        ents;
     int             sizeofent;
     intptr_t        global;
