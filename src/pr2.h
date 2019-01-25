@@ -27,6 +27,7 @@ extern intptr_t sv_syscall(intptr_t arg, ...);
 //extern int sv_sys_callex(byte *data, unsigned int len, int fn, pr2val_t*arg);
 //typedef void (*pr2_trapcall_t)(byte* base, uintptr_t mask, pr2val_t* stack, pr2val_t*retval);
 
+intptr_t PR2_GameSystemCalls( intptr_t *args );
 //extern int usedll;
 extern cvar_t sv_progtype;
 extern vm_t* sv_vm;

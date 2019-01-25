@@ -23,7 +23,7 @@
 #ifdef USE_PR2
 
 #include "qwsvdef.h"
-
+#include "vm_local.h"
 qbool PR2_IsValidWriteAddress(register qvm_t * qvm, intptr_t address);
 qbool PR2_IsValidReadAddress(register qvm_t * qvm, intptr_t address);
 
@@ -44,6 +44,8 @@ void ED2_PrintEdicts (void);
 void PR2_Profile_f (void);
 void ED2_PrintEdict_f (void);
 void ED_Count (void);
+void VM_VmInfo_f( void );
+//void VM_VmProfile_f( void );
 void PR2_Init(void)
 {
 	int p;
@@ -55,7 +57,7 @@ void PR2_Init(void)
 	Cvar_Register(&sv_forcenqprogs);
 #endif
 #ifdef QVM_PROFILE
-	Cvar_Register(&sv_enableprofile);
+//	Cvar_Register(&sv_enableprofile);
 #endif
 
 	p = COM_CheckParm ("-progtype");
@@ -64,8 +66,8 @@ void PR2_Init(void)
 	{
 		usedll = Q_atoi(COM_Argv(p + 1));
 
-		if (usedll > 2)
-			usedll = VM_NONE;
+		if (usedll > VMI_COMPILED)
+			usedll = VMI_NONE;
 		Cvar_SetValue(&sv_progtype,usedll);
 	}
 
@@ -75,9 +77,19 @@ void PR2_Init(void)
 	Cmd_AddCommand ("profile", PR2_Profile_f);
 	Cmd_AddCommand ("mod", PR2_GameConsoleCommand);
 
+    //	Cmd_AddCommand( "vmprofile", VM_VmProfile_f );
+	Cmd_AddCommand( "vminfo", VM_VmInfo_f );
 	memset(pr_newstrtbl, 0, sizeof(pr_newstrtbl));
 }
 
+void PR2_Profile_f()
+{
+    if(!sv_vm)
+    {
+        PR_Profile_f();
+        return;
+    }
+}
 //===========================================================================
 // PR2_GetString: only called to get direct addresses now
 //===========================================================================
@@ -518,7 +530,7 @@ void PR2_UnLoadProgs(void)
 //===========================================================================
 void PR2_LoadProgs(void)
 {
-	sv_vm = (vm_t *) VM_Load(sv_vm, (vm_type_t) (int) sv_progtype.value, sv_progsname.string, sv_syscall, sv_sys_callex);
+    sv_vm = VM_Create(VM_GAME, sv_progsname.string, PR2_GameSystemCalls, sv_progtype.value );
 
 	if ( sv_vm )
 	{
