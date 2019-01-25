@@ -87,6 +87,18 @@ void Sys_Sleep (unsigned long ms);
 
 int Sys_Script (const char *path, const char *args);
 
+typedef union floatint_u
+{
+	int i;
+	unsigned int u;
+	float f;
+	byte b[4];
+}
+floatint_t;
+
+#define ARRAY_LEN(x)		(sizeof(x) / sizeof(*(x)))
+
+
 #ifdef _WIN32
 
 #include <conio.h>
@@ -98,6 +110,14 @@ int Sys_Script (const char *path, const char *args);
 #include "sv_windows.h"
 typedef HMODULE DL_t;
 #define DLEXT "dll"
+typedef __int64 int64_t;
+typedef __int32 int32_t;
+typedef __int16 int16_t;
+typedef __int8 int8_t;
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int8 uint8_t;
 
 #else
 
