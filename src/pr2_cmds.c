@@ -2535,9 +2535,9 @@ void PF2_Add_Bot( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * retv
 	if ( val )
 		val->_float = 1.0;
 	sv_client->maxspeed = sv_maxspeed.value;
-	val = PR2_GetEdictFieldValue( ent, "maxspeed" );
-	if ( val )
-		val->_float = sv_maxspeed.value;
+
+	if (fofs_maxspeed)
+		EdictFieldFloat(ent, fofs_maxspeed) = (int)sv_maxspeed.value;
 
 	newcl->edict = ent;
 	ent->v->colormap = edictnum;
