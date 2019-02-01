@@ -250,6 +250,10 @@ void PR2_SetGlobalString(string_t* target, char* s)
 	case VMI_NONE:
 		PR1_SetString(target, s);
 		return;
+	case VMI_NATIVE:
+	case VMI_BYTECODE:
+	case VMI_COMPILED:
+		return;
 
 // dont use this for pr2 mods, use vmCall and apis
 /*

@@ -1077,7 +1077,7 @@ intptr_t PF2_Find( int e, int fofs, char*str)
 		if (!(intptr_t*)((byte*)ed + fofs))
 			continue;
 
-		t = VM_ArgPtr(  *( intptr_t * ) ( ( char * ) ed + fofs ) );
+		t = VM_ArgPtr(  *( intptr_t * ) ( ( char * ) ed->v + fofs ) );
 
 		if (!t)
 			continue;
@@ -1506,6 +1506,9 @@ void PF2_infokey( int e1, char* key, char* valbuff, int sizebuff )
 
 			SV_TimeOfDay(&date);
 			snprintf(ov, sizeof(ov), "%s", date.str);
+		}
+		else if (!strcmp(key, "mapname")) { 
+            value = sv.mapname;
 		}
 		else if (!strcmp(key, "modelname")) { 
             value = sv.modelname;
@@ -2418,7 +2421,7 @@ localcmd (string)
             Cvar_SetByName( VMA(1), VMA(2) );
             return 0;
         case G_FINDRADIUS:
-            return PF2_FindRadius( NUM_FOR_EDICT(VMA(1)), (float*)VMA(2), VMF(3));
+            return PF2_FindRadius( NUM_FOR_GAME_EDICT(VMA(1)), (float*)VMA(2), VMF(3));
         case G_WALKMOVE:
             return PF2_walkmove( VME(1), VMF(2), VMF(3));
         case G_DROPTOFLOOR:
@@ -2563,7 +2566,7 @@ localcmd (string)
             PF2_readcmd( VMA(1), VMA(2), args[3]);
             return 0;
         case G_redirectcmd:
-            PF2_redirectcmd( NUM_FOR_EDICT( VMA(1)), VMA(2));
+            PF2_redirectcmd( NUM_FOR_GAME_EDICT( VMA(1)), VMA(2));
             return 0;
         case G_Add_Bot:
             return PF2_Add_Bot( VMA(1), args[2], args[3], VMA(4));
@@ -2596,7 +2599,7 @@ localcmd (string)
             AngleVectors (VMA(1), pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
             return 0;
         case G_NEXTCLIENT:
-            return PF2_nextclient( NUM_FOR_EDICT( VMA(1)));
+            return PF2_nextclient( NUM_FOR_GAME_EDICT( VMA(1)));
         case G_PRECACHE_VWEP_MODEL:
             return PF2_precache_vwep_model(VMA(1));
         case G_SETPAUSE:
