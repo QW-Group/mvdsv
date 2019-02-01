@@ -2259,7 +2259,7 @@ static void Cmd_SetInfo_f (void)
 
 	pr_global_struct->time = sv.time;
 	pr_global_struct->self = EDICT_TO_PROG(sv_player);
-	if (PR_UserInfoChanged())
+	if (PR_UserInfoChanged(0))
 		return; // does not allowed to be changed by mod.
 
 	Info_Set (&sv_client->_userinfo_ctx_, Cmd_Argv(1), Cmd_Argv(2));
@@ -2329,6 +2329,7 @@ static void Cmd_SetInfo_f (void)
 	//<-
 
 	ProcessUserInfoChange (sv_client, Cmd_Argv (1), oldval);
+	PR_UserInfoChanged(1);
 }
 
 void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* old_value)

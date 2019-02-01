@@ -220,6 +220,7 @@ setmodel(entity, model)
 Also sets size, mins, and maxs for inline bmodels
 =================
 */
+void PR2_SetEntityString_model(edict_t* ed, string_t* target, char* s);
 void PF2_setmodel( edict_t* e, char*m)
 {
 	char		**check;
@@ -236,7 +237,7 @@ void PF2_setmodel( edict_t* e, char*m)
 	if (!*check)
 		PR2_RunError("no precache: %s\n", m);
 
-	PR2_SetEntityString(e, &e->v->model, m);
+	PR2_SetEntityString_model(e, &e->v->model, m);
 	e->v->modelindex = i;
 
 	// if it is an inline model, get the size information for it
@@ -1506,6 +1507,15 @@ void PF2_infokey( int e1, char* key, char* valbuff, int sizebuff )
 			SV_TimeOfDay(&date);
 			snprintf(ov, sizeof(ov), "%s", date.str);
 		}
+		else if (!strcmp(key, "modelname")) { 
+            value = sv.modelname;
+		}
+		else if (!strcmp(key, "version")) { 
+            value = VersionStringFull();
+		}
+		else if (!strcmp(key, "servername")) { 
+            value = SERVER_NAME;
+		}
 		else if ((value = Info_ValueForKey(svs.info, key)) == NULL || !*value)
 			value = Info_Get(&_localinfo_, key);
 	}
@@ -2276,7 +2286,7 @@ void PF2_SetUserInfo(int entnum, char*k, char*v, int flags)
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(cl->edict);
 
-		if( PR2_UserInfoChanged() )
+		if( PR2_UserInfoChanged(0) )
 			return;
 	}
 
@@ -2286,6 +2296,7 @@ void PF2_SetUserInfo(int entnum, char*k, char*v, int flags)
 		Info_Set( &cl->_userinfo_ctx_, key, value );
 
 	SV_ExtractFromUserinfo( cl, !strcmp( key, "name" ) );
+    PR2_UserInfoChanged(1);
 
 	for ( i = 0; shortinfotbl[i] != NULL; i++ )
 	{

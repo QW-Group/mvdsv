@@ -88,7 +88,9 @@ SV_OBJS += \
 		$(SV_DIR)/pr2_cmds.o \
 		$(SV_DIR)/pr2_edict.o \
 		$(SV_DIR)/pr2_exec.o \
-		$(SV_DIR)/pr2_vm.o \
+		$(SV_DIR)/vm.o \
+		$(SV_DIR)/vm_interpreted.o \
+		$(SV_DIR)/vm_x86.o \
 \
 		$(SV_DIR)/sv_ccmds.o \
 		$(SV_DIR)/sv_demo.o \

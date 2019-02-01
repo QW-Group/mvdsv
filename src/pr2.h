@@ -69,7 +69,7 @@ void		PR2_EdictThink(func_t f);
 #define PR_EdictThink PR2_EdictThink
 void		PR2_EdictBlocked(func_t f);
 #define PR_EdictBlocked PR2_EdictBlocked
-qbool 		PR2_UserInfoChanged(void);
+qbool 		PR2_UserInfoChanged(int after);
 #define PR_UserInfoChanged PR2_UserInfoChanged
 void 		PR2_GameShutDown(void);
 #define PR_GameShutDown PR2_GameShutDown

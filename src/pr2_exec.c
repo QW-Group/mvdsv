@@ -189,6 +189,13 @@ void PR2_SetEntityString(edict_t* ed, string_t* target, char* s)
 		PR1_SetString(target, s);
 		return;
 	}
+}
+void PR2_SetEntityString_model(edict_t* ed, string_t* target, char* s)
+{
+	if (!sv_vm) {
+		PR1_SetString(target, s);
+		return;
+	}
 
 	switch (sv_vm->type)
 	{
@@ -196,8 +203,7 @@ void PR2_SetEntityString(edict_t* ed, string_t* target, char* s)
 		PR1_SetString(target, s);
 		return;
 
-// dont use this for pr2 mods, use vmCall and apis
-	/*case VM_NATIVE:
+	case VMI_NATIVE:
 		if (sv_vm->pr2_references) {
 			char** location = (char**)PR2_EntityStringLocation(*target, sizeof(char*));
 			if (location) {
@@ -212,20 +218,21 @@ void PR2_SetEntityString(edict_t* ed, string_t* target, char* s)
 		return;
 	case VMI_BYTECODE:
 	case VMI_COMPILED:
-		qvm = (qvm_t*)(sv_vm->hInst);
-		off = (byte*)s - qvm->ds;
+        {
+            int off = VM_ExplicitPtr2VM(sv_vm, (byte*)s);
 
-		if (sv_vm->pr2_references) {
-			string_t* location = (string_t*)PR2_EntityStringLocation(*target, sizeof(string_t));
+            if (sv_vm->pr2_references) {
+                string_t* location = (string_t*)PR2_EntityStringLocation(*target, sizeof(string_t));
 
-			if (location && PR2_IsValidWriteAddress(qvm, (intptr_t)location)) {
-				*location = off;
-			}
-		}
-		else if (PR2_IsValidWriteAddress(qvm, (intptr_t)target)) {
-			*target = off;
-		}
-		return;*/
+                if (location) {
+                    *location = off;
+                }
+            }
+            else {
+                *target = off;
+            }
+        }
+		return;
 	}
 
 	*target = 0;
@@ -275,7 +282,7 @@ void PR2_SetGlobalString(string_t* target, char* s)
 		return;*/
 	}
 
-	*target = 0;
+	//*target = 0;
 }
 
 /*
@@ -468,10 +475,10 @@ void PR2_EdictBlocked(func_t f)
 //===========================================================================
 // UserInfoChanged
 //===========================================================================
-qbool PR2_UserInfoChanged(void)
+qbool PR2_UserInfoChanged(int after_changed)
 {
 	if (sv_vm)
-		return VM_Call(sv_vm, 0, GAME_CLIENT_USERINFO_CHANGED, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		return VM_Call(sv_vm, 1, GAME_CLIENT_USERINFO_CHANGED, after_changed, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	else
 		return PR1_UserInfoChanged();
 }
