@@ -104,7 +104,7 @@ endif
 if target_machine.cpu_family() == 'x86_64' 
 	c_args += '-Didx64'
 elif target_machine.cpu_family() == 'x86' 
-	c_args += '-Did386'
+	c_args += '-Didx386'
 endif
 
 if target_machine.cpu_family() == 'x86' and target_machine.system() != 'darwin'

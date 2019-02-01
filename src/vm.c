@@ -561,7 +561,7 @@ Dlls will call this directly
 */
 #if 1 // - disabled because now is different for each module
 intptr_t QDECL VM_DllSyscall( intptr_t arg, ... ) {
-#if !id386 || defined __clang__
+#if !idx386 || defined __clang__
   // rcg010206 - see commentary above
   intptr_t	args[16];
   va_list	ap;
@@ -1462,7 +1462,7 @@ intptr_t QDECL VM_Call( vm_t *vm, int nargs, int callnum, ... )
 		// add more agruments if you're changed MAX_VMMAIN_CALL_ARGS:
 		r = vm->entryPoint( callnum, args[0], args[1], args[2] );
 	} else {
-#if id386 && !defined __clang__ // calling convention doesn't need conversion in some cases
+#if idx386 && !defined __clang__ // calling convention doesn't need conversion in some cases
 #ifndef NO_VM_COMPILED
 		if ( vm->compiled )
 			r = VM_CallCompiled( vm, nargs+1, (int*)&callnum );

@@ -1540,6 +1540,8 @@ void PF2_infokey( int e1, char* key, char* valbuff, int sizebuff )
 			value = cl->login;
 		else if (!strcmp(key, "*VIP")) // qqshka: also located in userinfo, but this is more safe/secure way, imo
 			snprintf(ov, sizeof(ov), "%d", cl->vip);
+		else if (!strcmp(key, "netname")) // qqshka: also located in userinfo, but this is more safe/secure way, imo
+			value = cl->name;
 		else if (!strcmp(key, "*state"))
 		{
 			switch (cl->state)
