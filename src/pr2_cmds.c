@@ -822,7 +822,7 @@ static intptr_t PF2_FindRadius( int e, float* org, float rad )
 			eorg[j] = org[j] - (ed->v->origin[j] + (ed->v->mins[j] + ed->v->maxs[j])*0.5);			
 		if (VectorLength(eorg) > rad)
 			continue;
-		return VM_Ptr2VM( ed->v - pr_edict_offset );
+		return VM_Ptr2VM( (byte*)ed->v - pr_edict_offset );
 	}
 	return 0;
 }
