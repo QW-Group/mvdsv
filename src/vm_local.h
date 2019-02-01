@@ -221,6 +221,7 @@ struct vm_s {
 
 	qbool	forceDataMask;
     vmInterpret_t type;
+	qbool pr2_references;
 	//int			privateFlag;
 };
 

@@ -34,7 +34,6 @@
 char	*pr2_ent_data_ptr;
 vm_t	*sv_vm = NULL;
 extern gameData_t gamedata;
-extern field_t *fields;
 
 
 int NUM_FOR_GAME_EDICT(byte *e)
@@ -2864,104 +2863,268 @@ void PF2_SetUserInfo( byte * base, uintptr_t mask, pr2val_t * stack, pr2val_t * 
 // SysCalls
 //===========================================================================
 
-pr2_trapcall_t pr2_API[]=
-    {
-        PF2_GetApiVersion, 	//G_GETAPIVERSION
-        PF2_DPrint,        	//G_DPRINT
-        PF2_Error,         	//G_ERROR
-        PF2_GetEntityToken,	//G_GetEntityToken,
-        PF2_Spawn,		//G_SPAWN_ENT,
-        PF2_Remove,		//G_REMOVE_ENT,
-        PF2_precache_sound,	//G_PRECACHE_SOUND,
-        PF2_precache_model,	//G_PRECACHE_MODEL,
-        PF2_lightstyle,		//G_LIGHTSTYLE,
-        PF2_setorigin,		//G_SETORIGIN,
-        PF2_setsize,		//G_SETSIZE,
-        PF2_setmodel,		//G_SETMODEL,
-        PF2_bprint,		//G_BPRINT,
-        PF2_sprint,		//G_SPRINT,
-        PF2_centerprint,	//G_CENTERPRINT,
-        PF2_ambientsound,	//G_AMBIENTSOUND,
-        PF2_sound,		//G_SOUND,
-        PF2_traceline,		//G_TRACELINE,
-        PF2_checkclient,	//G_CHECKCLIENT,
-        PF2_stuffcmd,		//G_STUFFCMD,
-        PF2_localcmd,		//G_LOCALCMD,
-        PF2_cvar,		//G_CVAR,
-        PF2_cvar_set,		//G_CVAR_SET,
-        PF2_FindRadius,		//G_FINDRADIUS
-        PF2_walkmove,
-        PF2_droptofloor,	//G_DROPTOFLOOR,
-        PF2_checkbottom,	//G_CHECKBOTTOM,
-        PF2_pointcontents,	//G_POINTCONTENTS,
-        PF2_nextent,		//G_NEXTENT,
-        PF2_fixme,		//G_AIM,
-        PF2_makestatic,		//G_MAKESTATIC,
-        PF2_setspawnparms,	//G_SETSPAWNPARAMS,
-        PF2_changelevel,	//G_CHANGELEVEL,
-        PF2_logfrag,		//G_LOGFRAG,
-        PF2_infokey,		//G_GETINFOKEY,
-        PF2_multicast,		//G_MULTICAST,
-        PF2_disable_updates,	//G_DISABLEUPDATES,
-        PF2_WriteByte,		//G_WRITEBYTE,
-        PF2_WriteChar,		//G_WRITECHAR,
-        PF2_WriteShort,		//G_WRITESHORT,
-        PF2_WriteLong,		//G_WRITELONG,
-        PF2_WriteAngle,		//G_WRITEANGLE,
-        PF2_WriteCoord,		//G_WRITECOORD,
-        PF2_WriteString,	//G_WRITESTRING,
-        PF2_WriteEntity,	//G_WRITEENTITY,
-        PR2_FlushSignon,	//G_FLUSHSIGNON,
-        PF2_memset,		//g_memset,
-        PF2_memcpy,		//g_memcpy,
-        PF2_strncpy,	//g_strncpy,
-        PF2_sin,		//g_sin,
-        PF2_cos,		//g_cos,
-        PF2_atan2,		//g_atan2,
-        PF2_sqrt,		//g_sqrt,
-        PF2_floor,		//g_floor,
-        PF2_ceil,		//g_ceil,
-        PF2_acos,		//g_acos,
-        PF2_cmdargc,		//G_CMD_ARGC,
-        PF2_cmdargv,		//G_CMD_ARGV
-        PF2_TraceCapsule,
-        PF2_FS_OpenFile,
-        PF2_FS_CloseFile,
-        PF2_FS_ReadFile,
-        PF2_FS_WriteFile,
-        PF2_FS_SeekFile,
-        PF2_FS_TellFile,
-        PF2_FS_GetFileList,
-        PF2_cvar_set_float,
-        PF2_cvar_string,
-        PF2_Map_Extension,
-        PF2_strcmp,
-        PF2_strncmp,
-        PF2_stricmp,
-        PF2_strnicmp,
-        PF2_Find,
-        PF2_executecmd,
-        PF2_conprint,
-        PF2_readcmd,
-        PF2_redirectcmd,
-        PF2_Add_Bot,
-        PF2_Remove_Bot,
-        PF2_SetBotUserInfo,
-        PF2_SetBotCMD,
-		PF2_QVMstrftime,	//G_QVMstrftime
-		PF2_cmdargs,		//G_CMD_ARGS
-		PF2_tokenize,		//G_CMD_TOKENIZE
-		PF2_strlcpy,		//g_strlcpy
-		PF2_strlcat,		//g_strlcat
-		PF2_makevectors,	//G_MAKEVECTORS
-		PF2_nextclient,		//G_NEXTCLIENT
-		PF2_precache_vwep_model,//G_PRECACHE_VWEP_MODEL
-		PF2_setpause,		//G_SETPAUSE
-		PF2_SetUserInfo,	//G_SETUSERINFO
-		PF2_MoveToGoal,		//G_MOVETOGOAL
-    };
-int pr2_numAPI = sizeof(pr2_API)/sizeof(pr2_API[0]);
-
+#define	VMV(x)	GETFLOAT(args[x]), GETFLOAT(args[x+1]), GETFLOAT(args[x+2])
+#define	VME(x)	EDICT_NUM(args[x])
+intptr_t PR2_GameSystemCalls( intptr_t *args ) {
+	switch( args[0] ) {
+        case G_GETAPIVERSION:
+            return GAME_API_VERSION;
+        case G_DPRINT:
+            Con_DPrintf( "%s", (const char*)VMA(1) );
+            return 0;
+        case G_ERROR:
+			PR2_RunError( VMA(1) );
+            return 0;
+        case G_GetEntityToken:
+            VM_CheckBounds( sv_vm, args[1], args[2]);
+			pr2_ent_data_ptr = COM_Parse( pr2_ent_data_ptr );
+			strlcpy( VMA(1), com_token, args[2]);
+            return pr2_ent_data_ptr != NULL;
+        case G_SPAWN_ENT:
+            return NUM_FOR_EDICT( ED2_Alloc(  ) );
+        case G_REMOVE_ENT:
+			ED2_Free( VME(1) );
+            return 0;
+        case G_PRECACHE_SOUND:
+			PF2_precache_sound(VMA(1));
+            return 0;
+        case G_PRECACHE_MODEL:
+			PF2_precache_model(VMA(1));
+            return 0;
+        case G_LIGHTSTYLE:
+            PF2_lightstyle( args[1], VMA(2) );
+            return 0;
+        case G_SETORIGIN:
+            PF2_setorigin( VME(1), VMV(2));
+            return 0;
+        case G_SETSIZE:
+            PF2_setsize( VME(1), VMV(2), VMV(5));
+            return 0;
+        case G_SETMODEL:
+            PF2_setmodel( VME(1), VMA(2));
+            return 0;
+        case G_BPRINT:
+            SV_BroadcastPrintf( args[1], "%s", VMA(2) );
+            return 0;
+        case G_SPRINT:
+            PF2_sprint( args[1], args[2], VMA(3));
+            return 0;
+        case G_CENTERPRINT:
+            PF2_centerprint( args[1], VMA(2));
+            return 0;
+        case G_AMBIENTSOUND:
+            PF2_ambientsound( VMV(1), VMA(4), VMF(5), VMF(6));
+            return 0;
+        case G_SOUND:
+            SV_StartSound( VME(1), args[2], VMA(3), VMF(4), VMF(5) );
+            return 0;
+        case G_TRACELINE:
+            PF2_traceline( VMV(1), VMV(4), args[7], VME(8) );
+            return 0;
+        case G_CHECKCLIENT:
+            return PF2_checkclient();
+        case G_STUFFCMD:
+            PF2_stuffcmd( args[1], VMA(2));
+            return 0;
+        case G_LOCALCMD:
+            Cbuf_AddText( VMA(1) );
+            return 0;
+        case G_CVAR:
+            return PASSFLOAT( Cvar_VariableValue( VMA(1) ));
+        case G_CVAR_SET:
+            Cvar_SetByName( VMA(1), VMA(2) );
+            return 0;
+        case G_FINDRADIUS:
+            return PF2_FindRadius( NUM_FOR_EDICT(VMA(1)), (float*)VMA(2), VMF(3));
+        case G_WALKMOVE:
+            return PF2_walkmove( VME(1), VMF(2), VMF(3));
+        case G_DROPTOFLOOR:
+            return PF2_droptofloor( VME(1));
+        case G_CHECKBOTTOM:
+            return  SV_CheckBottom( VME(1));
+        case G_POINTCONTENTS:
+            return PF2_pointcontents( VMV(1) );
+        case G_NEXTENT:
+            return PF2_nextent( args[1] );
+        case G_AIM:
+            return 0;
+        case G_MAKESTATIC:
+            PF2_makestatic( VME(1) );
+            return 0;
+        case G_SETSPAWNPARAMS:
+            PF2_setspawnparms( args[1] );
+            return 0;
+        case G_CHANGELEVEL:
+            PF2_changelevel( VMA(1) );
+            return 0;
+        case G_LOGFRAG:
+            PF2_logfrag( args[1], args[2] );
+            return 0;
+        case G_GETINFOKEY:
+            VM_CheckBounds( sv_vm, args[3], args[4]);
+            PF2_infokey( args[1], VMA(2), VMA(3), args[4] );
+            return 0;
+        case G_MULTICAST:
+            PF2_multicast( VMV(1), args[4] );
+            return 0;
+        case G_DISABLEUPDATES:
+            PF2_disable_updates( args[1], VMF(2) );
+            return 0;
+        case G_WRITEBYTE:
+            PF2_WriteByte( args[1], args[2] );
+            return 0;
+        case G_WRITECHAR:
+            PF2_WriteChar( args[1], args[2] );
+            return 0;
+        case G_WRITESHORT:
+            PF2_WriteShort( args[1], args[2] );
+            return 0;
+        case G_WRITELONG:
+            PF2_WriteLong( args[1], args[2] );
+            return 0;
+        case G_WRITEANGLE:
+            PF2_WriteAngle( args[1], VMF(2) );
+            return 0;
+        case G_WRITECOORD:
+            PF2_WriteCoord( args[1], VMF(2) );
+            return 0;
+        case G_WRITESTRING:
+            PF2_WriteString( args[1], VMA(2) );
+            return 0;
+        case G_WRITEENTITY:
+            PF2_WriteEntity( args[1], args[2] );
+            return 0;
+        case G_FLUSHSIGNON:
+            SV_FlushSignon(  );
+            return 0;
+        case g_memset:
+            VM_CheckBounds(sv_vm, args[1], args[3]);
+            return PR2_SetString( memset( VMA(1), args[2], args[3]));
+        case g_memcpy:
+            VM_CheckBounds2(sv_vm, args[1], args[2], args[3]);
+            return PR2_SetString( memcpy( VMA(1), VMA(2), args[3]));
+        case g_strncpy:
+            VM_CheckBounds2(sv_vm, args[1], args[2], args[3]);
+            return PR2_SetString( strncpy( VMA(1), VMA(2), args[3]));
+        case g_sin:
+            return PASSFLOAT( sin( VMF(1)));
+        case g_cos:
+            return PASSFLOAT( cos( VMF(1)));
+        case g_atan2:
+            return PASSFLOAT( atan2( VMF(1), VMF(2)));
+        case g_sqrt:
+            return PASSFLOAT( sqrt( VMF(1)));
+        case g_floor:
+            return PASSFLOAT( floor( VMF(1)));
+        case g_ceil:
+            return PASSFLOAT( ceil( VMF(1)));
+        case g_acos:
+            return PASSFLOAT( acos( VMF(1)));
+        case G_CMD_ARGC:
+            return Cmd_Argc();
+        case G_CMD_ARGV:
+            VM_CheckBounds( sv_vm, args[2], args[3]);
+            strlcpy( VMA(2), Cmd_Argv( args[1]), args[3]);
+            return 0;
+        case G_TraceCapsule:
+            PF2_TraceCapsule( VMV(1), VMV(4), args[7], VME(8), VMV(9), VMV(12) );
+            return 0;
+        case G_FSOpenFile:
+            return PF2_FS_OpenFile(VMA(1), (fileHandle_t*) VMA(2), (fsMode_t)args[3]);
+        case G_FSCloseFile:
+            PF2_FS_CloseFile( (fileHandle_t) args[1]);
+            return 0;
+        case G_FSReadFile:
+            VM_CheckBounds( sv_vm, args[1], args[2]);
+            return PF2_FS_ReadFile( VMA(1), args[2], (fileHandle_t)args[3]);
+        case G_FSWriteFile:
+            VM_CheckBounds( sv_vm, args[1], args[2]);
+            return PF2_FS_WriteFile( VMA(1), args[2], (fileHandle_t)args[3]);
+        case G_FSSeekFile:
+            return PF2_FS_SeekFile((fileHandle_t) args[1], args[2], (fsOrigin_t) args[3]);
+        case G_FSTellFile:
+            return PF2_FS_TellFile( (fileHandle_t) args[1]);
+        case G_FSGetFileList:
+            VM_CheckBounds( sv_vm, args[3], args[4]);
+            return PF2_FS_GetFileList(VMA(1), VMA(2), VMA(3), args[4]);
+        case G_CVAR_SET_FLOAT:
+            Cvar_SetValueByName( VMA(1), VMF(2) );
+            return 0;
+        case G_CVAR_STRING:
+            VM_CheckBounds( sv_vm, args[2], args[3]);
+            strlcpy( VMA(2), Cvar_VariableString( VMA(1) ), args[3] );
+            return 0;
+        case G_Map_Extension:
+            return PF2_Map_Extension(VMA(1), args[2]);
+        case G_strcmp:
+            return strcmp( VMA(1), VMA(2));
+        case G_strncmp:
+            return strncmp( VMA(1), VMA(2), args[3]);
+        case G_stricmp:
+            return Q_stricmp( VMA(1), VMA(2));
+        case G_strnicmp:
+            return Q_strnicmp( VMA(1), VMA(2), args[3]);
+        case G_Find:
+            return PF2_Find( (edict_t*)VMA(1), args[2], VMA(3));
+        case G_executecmd:
+            PF2_executecmd();
+            return 0;
+        case G_conprint:
+            Sys_Printf( "%s", VMA(1) );
+            return 0;
+        case G_readcmd:
+            VM_CheckBounds( sv_vm, args[2], args[3]);
+            PF2_readcmd( VMA(1), VMA(2), args[3]);
+            return 0;
+        case G_redirectcmd:
+            PF2_redirectcmd( NUM_FOR_EDICT( VMA(1)), VMA(2));
+            return 0;
+        case G_Add_Bot:
+            return PF2_Add_Bot( VMA(1), args[2], args[3], VMA(4));
+        case G_Remove_Bot:
+            PF2_Remove_Bot( args[1]);
+            return 0;
+        case G_SetBotUserInfo:
+            PF2_SetBotUserInfo( args[1], VMA(2), VMA(3));
+            return 0;
+        case G_SetBotCMD:
+            PF2_SetBotCMD( args[1], args[2], VMV(3), args[6], args[7], args[8], args[9], args[10]); 
+            return 0;
+        case G_QVMstrftime:
+            VM_CheckBounds( sv_vm, args[1], args[2]);
+            return PF2_QVMstrftime( VMA(1), args[2], VMA(3), args[4]);
+        case G_CMD_ARGS:
+            VM_CheckBounds( sv_vm, args[1], args[2]);
+            strlcpy(VMA(1), Cmd_Args(), args[2]);
+            return 0;
+        case G_CMD_TOKENIZE:
+            Cmd_TokenizeString(VMA(1));
+            return 0;
+        case g_strlcpy:
+            VM_CheckBounds( sv_vm, args[1], args[3]);
+            return strlcpy( VMA(1), VMA(2), args[3]);
+        case g_strlcat:
+            VM_CheckBounds( sv_vm, args[1], args[3]);
+            return strlcat( VMA(1), VMA(2), args[3]);
+        case G_MAKEVECTORS:
+            AngleVectors (VMA(1), pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
+            return 0;
+        case G_NEXTCLIENT:
+            return PF2_nextclient( NUM_FOR_EDICT( VMA(1)));
+        case G_PRECACHE_VWEP_MODEL:
+            return 0;
+        case G_SETPAUSE:
+            return 0;
+        case G_SETUSERINFO:
+            return 0;
+        case G_MOVETOGOAL:
+            return 0;
+        default:
+            SV_Error( "Bad game system trap: %ld", (long int) args[0] );
+    }
+    return 0;
+}
+/*
 intptr_t sv_syscall(intptr_t arg, ...) //must passed ints
 {
 	intptr_t args[20];
@@ -3009,129 +3172,6 @@ int sv_sys_callex(byte *data, unsigned int mask, int fn, pr2val_t*arg)
 	pr2_API[fn](data, mask, arg,&ret);
 	return ret._int;
 }
+*/
 
-#define GAME_API_VERSION_MIN 8
-
-void static _set_pr_edict_offset(int APIversion)
-{
-    /*
-     * api 12
-     * qvm, 32 - 112
-     * 64 - 128
-     * api 15
-     * qvm, 32 - 4
-     * 64 - 8
-     * api > 15 0
-     */
-    if( sv_vm->type == VM_BYTECODE ){
-        pr_edict_offset = APIversion <= 12 ? 112: (APIversion <= 15 ? 4: 0 );
-        return;
-    }else if ( sv_vm->type == VM_NATIVE ){
-#ifdef idx64
-        pr_edict_offset = APIversion <= 12 ? 128: (APIversion <= 15 ? 8: 0 );
-#else
-        pr_edict_offset = APIversion <= 12 ? 112: (APIversion <= 15 ? 4: 0 );
-#endif
-        return;
-    }
-    pr_edict_offset = 0;
-}
-void LoadGameData( intptr_t gamedata_ptr)
-{
-
-#ifdef idx64
-    gameData_vm_t* gamedata_vm;
-
-    if( sv_vm->type == VM_BYTECODE )
-    {
-        gamedata_vm = (gameData_vm_t *)PR2_GetString(gamedata_ptr);
-        gamedata.ents = (intptr_t)gamedata_vm->ents_p;
-        gamedata.global = (intptr_t)gamedata_vm->global_p;
-        gamedata.fields = (intptr_t)gamedata_vm->fields_p;
-        gamedata.APIversion = gamedata_vm->APIversion;
-        gamedata.sizeofent = gamedata_vm->sizeofent;
-        gamedata.maxentities = gamedata_vm->maxentities;
-        return;
-    }
-#endif
-    gamedata = *(gameData_t *)PR2_GetString(gamedata_ptr);
-}
-
-void LoadFields()
-{
-#ifdef idx64
-    if( sv_vm->type == VM_BYTECODE )
-    {
-        field_vm_t* fieldvm_p;
-        field_t	*f;
-        int i, num = 0;
-        fieldvm_p = (field_vm_t*)PR2_GetString((intptr_t)gamedata.fields);
-        while( fieldvm_p[num].name ) num++;
-		f = fields = (field_t *) Hunk_Alloc( sizeof(field_t) * (num+1) );
-        while( fieldvm_p->name ){
-            f->name = (stringptr_t) fieldvm_p->name;
-            f->ofs =  fieldvm_p->ofs;
-            f->type = (fieldtype_t) fieldvm_p->type;
-            f++; fieldvm_p++;
-        }
-        f->name = 0;
-        return;
-    }
-#endif
-    fields = (field_t*)PR2_GetString((intptr_t)gamedata.fields);
-}
-
-void PR2_InitProg(void)
-{
-    extern cvar_t sv_pr2references;
-
-    intptr_t gamedata_ptr;
-
-    Cvar_SetValue(&sv_pr2references, 0.0f);
-
-    if ( !sv_vm ) {
-        PR1_InitProg();
-        return;
-    }
-
-    PR2_FS_Restart();
-
-    gamedata.APIversion = 0;
-    gamedata_ptr = (intptr_t) VM_Call(sv_vm, GAME_INIT, (int) (sv.time * 1000), (int) (Sys_DoubleTime() * 100000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-    if (!gamedata_ptr) {
-        SV_Error("PR2_InitProg gamedata == NULL");
-    }
-
-    LoadGameData( gamedata_ptr );
-    if (gamedata.APIversion < GAME_API_VERSION_MIN || gamedata.APIversion > GAME_API_VERSION) {
-        if (GAME_API_VERSION_MIN == GAME_API_VERSION) {
-            SV_Error("PR2_InitProg: Incorrect API version (%i should be %i)", gamedata.APIversion, GAME_API_VERSION);
-        }
-        else {
-            SV_Error("PR2_InitProg: Incorrect API version (%i should be between %i and %i)", gamedata.APIversion, GAME_API_VERSION_MIN, GAME_API_VERSION);
-        }
-    }
-
-    sv_vm->pr2_references = gamedata.APIversion >= 15 && (int)sv_pr2references.value;
-#ifdef idx64
-    if( sv_vm->type == VM_NATIVE && (! sv_vm->pr2_references || gamedata.APIversion < 15 ))
-        SV_Error("PR2_InitProg: Native prog must support sv_pr2references for 64bit mode ( mod API version (%i should be 15+))", gamedata.APIversion);
-#endif
-
-    _set_pr_edict_offset( gamedata.APIversion );
-    Con_DPrintf("edict offset %d\n", pr_edict_offset);
-    sv.game_edicts = (entvars_t *)(PR2_GetString((intptr_t)gamedata.ents) + pr_edict_offset);
-    pr_global_struct = (globalvars_t*)PR2_GetString((intptr_t)gamedata.global);
-    pr_globals = (float *) pr_global_struct;
-    LoadFields();
-    pr_edict_size = gamedata.sizeofent;
-
-    sv.max_edicts = MAX_EDICTS;
-    if (gamedata.APIversion >= 14) {
-        sv.max_edicts = min(sv.max_edicts, gamedata.maxentities);
-    }
-    else {
-        sv.max_edicts = min(sv.max_edicts, 512);
-    }
-}
 #endif /* USE_PR2 */
