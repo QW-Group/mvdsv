@@ -131,8 +131,8 @@ void PR2_RunError(char *error, ...)
 	va_end(argptr);
 
 	sv_error = true;
-	/*if( sv_vm->type == VMI_BYTECODE )
-		QVM_StackTrace( (qvm_t *) sv_vm->hInst );*/
+	//if( sv_vm->type == VMI_BYTECODE )
+	//	VM_StackTrace(sv_vm, 0, 0);
 
 	Con_Printf("%s\n", string);
 

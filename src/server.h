@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "progs.h"
 #ifdef USE_PR2
 #include "vm.h"
-//#include "pr2_vm.h"
 #include "pr2.h"
 #include "g_public.h"
 #endif
