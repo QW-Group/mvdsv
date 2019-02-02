@@ -181,7 +181,10 @@ char *PR2_GetEntityString(string_t num)
 
 //===========================================================================
 // PR2_SetString
-// FIXME for VM
+// !!!!IMPOTANT!!!!
+// server change string pointers in mod memory only in trapcall( strings passed from mod, and placed in mod memory)
+// never use pointers to memory outside mod memory, this cannot work in qvm in 64 bit server
+// mapname and client netnames getting by get_infokey trap
 //===========================================================================
 void PR2_SetEntityString(edict_t* ed, string_t* target, char* s)
 {
@@ -190,103 +193,12 @@ void PR2_SetEntityString(edict_t* ed, string_t* target, char* s)
 		return;
 	}
 }
-void PR2_SetEntityString_model(edict_t* ed, string_t* target, char* s)
-{
-	if (!sv_vm) {
-		PR1_SetString(target, s);
-		return;
-	}
-
-	switch (sv_vm->type)
-	{
-	case VMI_NONE:
-		PR1_SetString(target, s);
-		return;
-
-	case VMI_NATIVE:
-		if (sv_vm->pr2_references) {
-			char** location = (char**)PR2_EntityStringLocation(*target, sizeof(char*));
-			if (location) {
-				*location = s;
-			}
-		} 
-#ifndef idx64            
-        else if ( target ){
-            *target = (string_t) s;
-		}
-#endif
-		return;
-	case VMI_BYTECODE:
-	case VMI_COMPILED:
-        {
-            int off = VM_ExplicitPtr2VM(sv_vm, (byte*)s);
-
-            if (sv_vm->pr2_references) {
-                string_t* location = (string_t*)PR2_EntityStringLocation(*target, sizeof(string_t));
-
-                if (location) {
-                    *location = off;
-                }
-            }
-            else {
-                *target = off;
-            }
-        }
-		return;
-	}
-
-	*target = 0;
-}
-
 void PR2_SetGlobalString(string_t* target, char* s)
 {
 	if (!sv_vm) {
 		PR1_SetString(target, s);
 		return;
 	}
-
-	switch (sv_vm->type)
-	{
-	case VMI_NONE:
-		PR1_SetString(target, s);
-		return;
-	case VMI_NATIVE:
-	case VMI_BYTECODE:
-	case VMI_COMPILED:
-		return;
-
-// dont use this for pr2 mods, use vmCall and apis
-/*
-	case VM_NATIVE:
-        if (sv_vm->pr2_references) {
-            char** location = (char**)PR2_GlobalStringLocation(*target);
-            if (location) {
-                *location = s;
-            }
-        } 
-#ifndef idx64            
-        else if ( target ){
-            *target = (string_t)s;
-        }
-#endif
-		return;
-
-	case VM_BYTECODE:
-		qvm = (qvm_t*)(sv_vm->hInst);
-		off = (byte*)s - qvm->ds;
-		if (sv_vm->pr2_references) {
-			string_t* location = (string_t*)PR2_GlobalStringLocation(*target);
-			if (location && PR2_IsValidWriteAddress(qvm, (intptr_t)location)) {
-				*location = off;
-			}
-		}
-		else if (PR2_IsValidWriteAddress(qvm, (intptr_t)target)) {
-			*target = off;
-		}
-		return;*/
-	}
-
-	//*target = 0;
 }
 
 /*
@@ -590,7 +502,7 @@ void PR2_ClearEdict(edict_t* e)
 //===========================================================================
 // InitProgs
 //===========================================================================
-#define GAME_API_VERSION_MIN 8
+#define GAME_API_VERSION_MIN 16
 void PR2_FS_Restart();
 
 void static _set_pr_edict_offset(int APIversion)

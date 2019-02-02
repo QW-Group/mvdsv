@@ -25,6 +25,7 @@
 #include "qwsvdef.h"
 
 #include "vm.h"
+#include "vm_local.h"
 #define SETUSERINFO_STAR          (1<<0) // allow set star keys
 
 #ifdef SERVERONLY
@@ -63,6 +64,56 @@ int NUM_FOR_GAME_EDICT(byte *e)
 
 	return b;
 }
+
+intptr_t PR2_EntityStringLocation(string_t offset, int max_size);
+void static PR2_SetEntityString_model(edict_t* ed, string_t* target, char* s)
+{
+	if (!sv_vm) {
+		PR1_SetString(target, s);
+		return;
+	}
+
+	switch (sv_vm->type)
+	{
+	case VMI_NONE:
+		PR1_SetString(target, s);
+		return;
+
+	case VMI_NATIVE:
+		if (sv_vm->pr2_references) {
+			char** location = (char**)PR2_EntityStringLocation(*target, sizeof(char*));
+			if (location) {
+				*location = s;
+			}
+		} 
+#ifndef idx64            
+        else if ( target ){
+            *target = (string_t) s;
+		}
+#endif
+		return;
+	case VMI_BYTECODE:
+	case VMI_COMPILED:
+        {
+            int off = VM_ExplicitPtr2VM(sv_vm, (byte*)s);
+
+            if (sv_vm->pr2_references) {
+                string_t* location = (string_t*)PR2_EntityStringLocation(*target, sizeof(string_t));
+
+                if (location) {
+                    *location = off;
+                }
+            }
+            else {
+                *target = off;
+            }
+        }
+		return;
+	}
+
+	*target = 0;
+}
+
 /*
 ============
 PR2_RunError
@@ -220,7 +271,6 @@ setmodel(entity, model)
 Also sets size, mins, and maxs for inline bmodels
 =================
 */
-void PR2_SetEntityString_model(edict_t* ed, string_t* target, char* s);
 void PF2_setmodel( edict_t* e, char*m)
 {
 	char		**check;
@@ -2618,54 +2668,5 @@ localcmd (string)
     }
     return 0;
 }
-/*
-intptr_t sv_syscall(intptr_t arg, ...) //must passed ints
-{
-	intptr_t args[20];
-	va_list argptr;
-	pr2val_t ret;
-
-	if( arg >= pr2_numAPI )
-		PR2_RunError ("sv_syscall: Bad API call number");
-
-	va_start(argptr, arg);
-	args[0] =va_arg(argptr, intptr_t);
-	args[1] =va_arg(argptr, intptr_t);
-	args[2] =va_arg(argptr, intptr_t);
-	args[3] =va_arg(argptr, intptr_t);
-	args[4] =va_arg(argptr, intptr_t);
-	args[5] =va_arg(argptr, intptr_t);
-	args[6] =va_arg(argptr, intptr_t);
-	args[7] =va_arg(argptr, intptr_t);
-	args[8] =va_arg(argptr, intptr_t);
-	args[9] =va_arg(argptr, intptr_t);
-	args[10]=va_arg(argptr, intptr_t);
-	args[11]=va_arg(argptr, intptr_t);
-	args[12]=va_arg(argptr, intptr_t);
-	args[13]=va_arg(argptr, intptr_t);
-	args[14]=va_arg(argptr, intptr_t);
-	args[15]=va_arg(argptr, intptr_t);
-	args[16]=va_arg(argptr, intptr_t);
-	args[17]=va_arg(argptr, intptr_t);
-	args[18]=va_arg(argptr, intptr_t);
-	args[19]=va_arg(argptr, intptr_t);
-	va_end(argptr);
-
-	pr2_API[arg] ( 0, (uintptr_t)~0, (pr2val_t*)args, &ret);
-
-	return ret._int;
-}
-
-int sv_sys_callex(byte *data, unsigned int mask, int fn, pr2val_t*arg)
-{
-	pr2val_t ret;
-
-	if( fn >= pr2_numAPI )
-		PR2_RunError ("sv_sys_callex: Bad API call number %d",fn);
-
-	pr2_API[fn](data, mask, arg,&ret);
-	return ret._int;
-}
-*/
 
 #endif /* USE_PR2 */
