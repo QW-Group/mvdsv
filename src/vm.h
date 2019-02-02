@@ -65,7 +65,7 @@ void	VM_CheckBounds2( const vm_t *vm, unsigned int addr1, unsigned int addr2, un
 #endif
 
 void	    *VM_ArgPtr( intptr_t intValue );
-void *VM_ExplicitArgPtr( vm_t *vm, int intValue );
+void *VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
 intptr_t     VM_Ptr2VM( void* ptr ) ;
 intptr_t VM_ExplicitPtr2VM( vm_t *vm, void* ptr );
 
