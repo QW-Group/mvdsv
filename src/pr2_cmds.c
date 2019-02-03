@@ -2377,7 +2377,7 @@ void PF2_SetUserInfo(int entnum, char*k, char*v, int flags)
 // SysCalls
 //===========================================================================
 
-#define	VMV(x)	GETFLOAT(args[x]), GETFLOAT(args[x+1]), GETFLOAT(args[x+2])
+#define	VMV(x)	_vmf(args[x]), _vmf(args[x+1]), _vmf(args[x+2])
 #define	VME(x)	EDICT_NUM(args[x])
 intptr_t PR2_GameSystemCalls( intptr_t *args ) {
 	switch( args[0] ) {
@@ -2446,10 +2446,10 @@ already running on that entity/channel pair.
  
 An attenuation of 0 will play full volume everywhere in the level.
 Larger attenuations will drop off.
- 
+void sound( gedict_t * ed, int channel, char *samp, float vol, float att ) 
 =================
 */
-            SV_StartSound( VME(1), args[2], VMA(3), VMF(4), VMF(5) );
+            SV_StartSound( VME(1), args[2], VMA(3), VMF(4) * 255, VMF(5) );
             return 0;
         case G_TRACELINE:
             PF2_traceline( VMV(1), VMV(4), args[7], VME(8) );
