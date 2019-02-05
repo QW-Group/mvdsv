@@ -197,7 +197,7 @@ const char *opname[ 256 ] = {
 	"OP_CVFI"
 };
 
-cvar_t	*vm_rtChecks;
+cvar_t	vm_rtChecks		= { "vm_rtChecks", "1"};
 
 int		vm_debugLevel;
 

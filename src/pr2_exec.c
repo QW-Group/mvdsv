@@ -52,6 +52,7 @@ void PR2_Init(void)
 	Cvar_Register(&sv_progtype);
 	Cvar_Register(&sv_progsname);
 	Cvar_Register(&sv_pr2references);
+	Cvar_Register(&vm_rtChecks);
 #ifdef WITH_NQPROGS
 	Cvar_Register(&sv_forcenqprogs);
 #endif
@@ -535,7 +536,7 @@ void LoadGameData( intptr_t gamedata_ptr)
 #ifdef idx64
     gameData_vm_t* gamedata_vm;
 
-    if( sv_vm->type == VMI_BYTECODE )
+    if( sv_vm->type == VMI_BYTECODE || sv_vm->type == VMI_COMPILED )
     {
         gamedata_vm = (gameData_vm_t *)PR2_GetString(gamedata_ptr);
         gamedata.ents = (intptr_t)gamedata_vm->ents_p;
@@ -553,7 +554,7 @@ void LoadGameData( intptr_t gamedata_ptr)
 void LoadFields()
 {
 #ifdef idx64
-    if( sv_vm->type == VMI_BYTECODE )
+    if( sv_vm->type == VMI_BYTECODE || sv_vm->type == VMI_COMPILED )
     {
         field_vm_t* fieldvm_p;
         field_t	*f;

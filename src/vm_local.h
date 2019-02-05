@@ -35,6 +35,9 @@
 // for some buggy mods
 #define	PROGRAM_STACK_EXTRA	(32*1024)
 
+#define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
+#define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
+
 typedef enum {
 	OP_UNDEF,
 
@@ -227,6 +230,7 @@ struct vm_s {
 
 extern	int		vm_debugLevel;
 
+extern cvar_t	vm_rtChecks;
 qbool VM_Compile( vm_t *vm, vmHeader_t *header );
 int	VM_CallCompiled( vm_t *vm, int nargs, int *args );
 
