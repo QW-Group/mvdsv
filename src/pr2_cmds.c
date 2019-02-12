@@ -625,7 +625,7 @@ int PF2_newcheckclient(int check)
 
 #define	MAX_CHECK	16
 
-intptr_t PF2_checkclient()
+intptr_t PF2_checkclient(void)
 {
 	edict_t	*ent, *self;
 	int		l;
@@ -767,7 +767,7 @@ Sends text over to the server's execution buffer
 localcmd (string)
 =================
 */
-void PF2_executecmd()
+void PF2_executecmd(void)
 {
 	int old_other, old_self; // mod_consolecmd will be executed, so we need to store this
 
@@ -1662,7 +1662,7 @@ void PF2_disable_updates( int entnum, float time1 )
 	client->disable_updates_stop = realtime + time1;
 }
 
-void PF2_fixme()
+void PF2_fixme(void)
 {
 	PR2_RunError ("unimplemented bulitin");
 }

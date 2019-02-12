@@ -259,7 +259,7 @@ void ED2_PrintEdicts (void);
 void PR2_Profile_f (void);
 void ED2_PrintEdict_f (void);
 void ED_Count (void);
-void PR_CleanLogText_Init(); 
+void PR_CleanLogText_Init(void); 
 vm_t	*currentVM = NULL; // bk001212
 vm_t	*lastVM    = NULL; // bk001212
 int     vm_debugLevel;

@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // the file should be in BINARY mode for stupid OSs that care
 #define MAX_DIRFILES 4096
 #define MAX_DEMO_NAME 196
+#include "q_platform.h"
 
 typedef struct
 {
@@ -109,7 +110,6 @@ floatint_t;
 #include "resource.h"
 #include "sv_windows.h"
 typedef HMODULE DL_t;
-#define DLEXT "dll"
 typedef __int64 int64_t;
 typedef __int32 int32_t;
 typedef __int16 int16_t;
@@ -151,11 +151,6 @@ typedef unsigned __int8 uint8_t;
 #endif // __sun__ have no _PATH_DEVNULL
 
 typedef void *DL_t;
-#ifdef __APPLE__
-#define DLEXT "dylib"
-#else
-#define DLEXT "so"
-#endif
 
 #endif /* _WIN32 */
 

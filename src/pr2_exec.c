@@ -82,7 +82,7 @@ void PR2_Init(void)
 	memset(pr_newstrtbl, 0, sizeof(pr_newstrtbl));
 }
 
-void PR2_Profile_f()
+void PR2_Profile_f(void)
 {
     if(!sv_vm)
     {
@@ -504,7 +504,7 @@ void PR2_ClearEdict(edict_t* e)
 // InitProgs
 //===========================================================================
 #define GAME_API_VERSION_MIN 16
-void PR2_FS_Restart();
+void PR2_FS_Restart(void);
 
 void static _set_pr_edict_offset(int APIversion)
 {
@@ -551,7 +551,7 @@ void LoadGameData( intptr_t gamedata_ptr)
     gamedata = *(gameData_t *)PR2_GetString(gamedata_ptr);
 }
 
-void LoadFields()
+void LoadFields(void)
 {
 #ifdef idx64
     if( sv_vm->type == VMI_BYTECODE || sv_vm->type == VMI_COMPILED )
