@@ -565,7 +565,7 @@ void PM_CategorizePosition (void)
 	if (pmove.velocity[2] > 180) {
 		pmove.onground = false;
 	}
-	else if (!movevars.pground || pmove.onground || pmove.waterlevel  ) {
+	else if (!movevars.pground || pmove.onground) {
 		trace = PM_PlayerTrace (pmove.origin, point);
 		if (trace.fraction == 1 || trace.plane.normal[2] < MIN_STEP_NORMAL) {
 			pmove.onground = false;
