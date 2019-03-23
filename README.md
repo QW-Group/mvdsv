@@ -146,7 +146,7 @@ We use a pretty crappy system for versioning for now. For the versions available
 
 (Listed by last name alphabetic order)
 
-* **Ivan Bolshunov** - *qqshka*
+* **Ivan Bolsunov** - *qqshka*
 * **Dominic Evans** - *oldman*
 * **Anton Gavrilov** - *tonik*
 * **Dmitry Musatov** - *disconnect*
