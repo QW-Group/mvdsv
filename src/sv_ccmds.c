@@ -615,7 +615,7 @@ void SV_RemoveDirectory_f (void)
 	}
 
 	if (!Sys_rmdir(dirname))
-		Con_Printf("Directory %s succesfully removed\n", dirname);
+		Con_Printf("Directory %s successfully removed\n", dirname);
 	else
 		Con_Printf("Unable to remove directory %s\n", dirname);
 }
@@ -684,7 +684,7 @@ void SV_RemoveFile_f (void)
 	else // 1 file
 	{
 		if (!Sys_remove(va("%s/%s", dirname, filename)))
-			Con_Printf("File %s succesfully removed\n", filename);
+			Con_Printf("File %s successfully removed\n", filename);
 		else
 			Con_Printf("Unable to remove file %s\n", filename);
 	}
@@ -733,7 +733,7 @@ void SV_ChmodFile_f (void)
 	if (chmod(filename, mode))
 		Con_Printf("Unable to chmod %s\n", filename);
 	else
-		Con_Printf("Chmod %s succesful\n", filename);
+		Con_Printf("Chmod %s successful\n", filename);
 }
 #endif //_WIN32
 

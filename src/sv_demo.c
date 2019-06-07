@@ -950,7 +950,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 				SV_BroadcastPrintf (PRINT_CHAT, "Server recording completed\n");
 		}
 		else
-			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stoped\nMax demo size exceeded\n");
+			SV_BroadcastPrintf (PRINT_CHAT, "Server recording stopped\nMax demo size exceeded\n");
 	}
 
 	Cvar_SetROM(&serverdemo, "");
