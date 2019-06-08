@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 #ifndef SERVERONLY
-#include "pcre.h"
+#include <pcre.h>
 #endif
 #include "sv_mod_frags.h"
 

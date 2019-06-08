@@ -23,6 +23,12 @@ ifeq ($(shell pkg-config --exists libcurl && echo 1),1)
 	CURL_LIBS = `pkg-config libcurl --libs`
 endif
 
+# libpcre support
+ifeq ($(shell pkg-config --exists libpcre && echo 1),1)
+	PCRE_CFLAGS = `pkg-config libpcre --cflags`
+	PCRE_LIBS = `pkg-config libpcre --libs`
+endif
+
 USE_ASM=-Did386
 ifeq ($(WITH_OPTIMIZED_CFLAGS),YES)
 	ifeq ($(ARCH),x86)
@@ -65,6 +71,13 @@ ifdef CURL_CFLAGS
 	CFLAGS += $(CURL_CFLAGS)
 	CFLAGS += -DWWW_INTEGRATION
 	LDFLAGS += $(CURL_LIBS)
+endif
+
+ifdef PCRE_CFLAGS
+	CFLAGS += $(PCRE_CFLAGS)
+	LDFLAGS += $(PCRE_LIBS)
+else
+	CFLAGS += -I$(SV_DIR)/pcre
 endif
 
 ifeq ($(CC_BASEVERSION),4) # if gcc4 then build universal binary
@@ -126,13 +139,16 @@ SV_OBJS += \
 		$(SV_DIR)/sha1.o \
 		$(SV_DIR)/build.o \
 		$(SV_DIR)/world.o \
-		$(SV_DIR)/zone.o \
-\
-		$(SV_DIR)/pcre/get.o \
-		$(SV_DIR)/pcre/pcre.o \
+		$(SV_DIR)/zone.o
 
 ifdef CURL_CFLAGS
 		SV_WEB_INTEGRATION = $(SV_DIR)/central.o
+endif
+
+ifndef PCRE_CFLAGS
+	SV_OBJS += \
+		$(SV_DIR)/pcre/get.o \
+		$(SV_DIR)/pcre/pcre.o
 endif
 
 ifeq ($(USE_ASM),$(ASM))
@@ -172,4 +188,4 @@ mvdsv : $(SV_WEB_INTEGRATION) $(SV_OBJS) $(SV_ASM_OBJS)
 
 clean : 
 	$(E) [CLEAN]
-	$(Q)-rm -f $(SV_DIR)/core $(SV_DIR)/*.o $(SV_DIR)/pcre/*.o mvdsv
+	$(Q)-rm -f $(SV_DIR)/core $(SV_OBJS) mvdsv
