@@ -56,11 +56,13 @@ deps = [
 pcre = dependency('libpcre', required : false)
 if pcre.found()
 	deps += pcre
+	inc_dir = include_directories('')
 else
 	mvdsv_sources += [
 		'src/pcre/get.c',
 		'src/pcre/pcre.c'
 	]
+	inc_dir = include_directories('src/pcre')
 endif
 
 curl = dependency('libcurl', required : false)
@@ -116,5 +118,6 @@ endif
 executable('mvdsv', mvdsv_sources,
 	dependencies : deps,
 	c_args : c_args,
-	link_args : link_args
+	link_args : link_args,
+	include_directories: inc_dir
 )
