@@ -235,6 +235,8 @@ typedef struct
 	double		cleartime;			// if curtime > nc->cleartime, free to go
 	double		rate;				// seconds / byte
 
+	int			dupe;				//extra packet dupes to send.
+
 	// sequencing variables
 	int			incoming_sequence;
 	int			incoming_acknowledged;
