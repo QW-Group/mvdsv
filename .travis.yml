@@ -1,76 +1,93 @@
-dist: trusty
-sudo: required
-
 os:
   - linux
+  - osx
 
 # in theory travis should detect what to install,
 # but we use meson, which is not supported by travis yet and we need custom commands
 compiler:
   - gcc
 
-language:
-  - c
+language: c
 
 env:
   global:
     DATETIME=$(date +%Y%m%d-%H%M%S)
 
+sudo: required
+dist: trusty
+
 matrix:
   include:
     - os: linux
-      dist: trusty
       env: 
         TARGET=linux-amd64
         EXTENSION=
     - os: linux
-      dist: trusty
       env:
         TARGET=linux-armhf
         EXTENSION=
     - os: linux
-      dist: trusty
       env:
         TARGET=linux-i686
         EXTENSION=
+
     - os: linux
-      dist: trusty
       env:
         TARGET=windows-x86
         EXTENSION=.exe
+      addons:
+        apt:
+          packages:
+            - mingw-w64
     - os: linux
-      dist: trusty
       env:
         TARGET=windows-x64
         EXTENSION=.exe
+      addons:
+        apt:
+          packages:
+            - mingw-w64
+    - os: osx
+      env:
+        TARGET=darwin-amd64
+        EXTENSION=
+  exclude:
+    compiler: gcc
+
+addons:
+    apt:
+      update: true
+      packages:
+        build-essential
+        python-virtualenv
+        python3-dev
+        python3-pip
+        ninja-build
+        cmake
+        gcc-multilib
 
 before_install:
   # show some extra info
   - export | sort
   - env | sort
-  # update base distro
-  - sudo apt-get update
-  # install base packages
-  - sudo apt-get -y install build-essential python-virtualenv python3-dev python3-pip ninja-build cmake gcc-multilib
+  # Setup macos build environment
+  - if [ $TRAVIS_OS_NAME = osx ]; then brew install meson ninja; fi
   # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail
-  - sudo apt-get -y remove libcurl.*-dev
-  - sudo apt-get -y remove libpcre*-dev
-  # install cross complier if we gonna do binaries for windows
-  - if [ -z "${TARGET##*win*}" ]; then sudo apt-get -y install mingw-w64 ; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libcurl.*-dev; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libpcre*-dev; fi
   # install cross compiler tools if we gonna do binares for arm/raspberry
   # notice it will remove gcc-multilib
   - if [ -z "${TARGET##*arm*}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf ;fi
   # activate virtualenv with python3, meson requires python3
-  - virtualenv .venv --python=python3
-  - . .venv/bin/activate
-  - pip3 install --upgrade pip
+  - if [ $TRAVIS_OS_NAME = linux ]; then virtualenv .venv --python=python3; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then . .venv/bin/activate; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then pip3 install --upgrade pip; fi
   # install python packages like meson, ninja etc...
-  - pip3 install -r requirements.txt
+  - if [ $TRAVIS_OS_NAME = linux ]; then pip3 install -r requirements.txt; fi
 
 # each script section is executed in matrix build
 script:
   - echo TARGET=${TARGET}
-  - mkdir build_${TARGET} || true
   - meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
   - ninja -v -C build_${TARGET}
   # print basic info about compiled files
