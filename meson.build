@@ -115,6 +115,10 @@ if target_machine.cpu_family() == 'x86' and target_machine.system() != 'darwin'
 	)
 endif
 
+if target_machine.system() == 'windows' 
+    link_args += '-mwindows'
+endif
+
 executable('mvdsv', mvdsv_sources,
 	dependencies : deps,
 	c_args : c_args,
