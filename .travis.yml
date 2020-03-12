@@ -12,6 +12,7 @@ env:
   global:
     DATE=$(date +%Y%m%d)
     TIME=$(date +%H%M%S)
+    DATETIME=${DATE}-${TIME}
 
 jobs:
   include:
@@ -84,13 +85,13 @@ script:
     # create built items directories
   - mkdir -p built_assets/{commits,latest}/${TARGET}
   - if [ -n "${TRAVIS_TAG}" ]; then mkdir -p built_assets/stable/${TRAVIS_TAG} ;fi
-  - mv build_${TARGET}/mvdsv${EXTENSION} built_assets/commits/${TARGET}/${DATE}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION}
-  - mv build_${TARGET}/mvdsv.md5 built_assets/commits/${TARGET}/${DATE}_${TRAVIS_COMMIT:0:7}_mvdsv.md5
+  - mv build_${TARGET}/mvdsv${EXTENSION} built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION}
+  - mv build_${TARGET}/mvdsv.md5 built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv.md5
   # update stable links if necessary
-  - if [ -n "${TRAVIS_TAG}" ]; then cp built_assets/commits/${TARGET}/${DATE}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION} built_assets/stable/${TRAVIS_TAG}/${TARGET}/mvdsv${EXTENSION} ;fi
-  - if [ -n "${TRAVIS_TAG}" ]; then cp built_assets/commits/${TARGET}/${DATE}_${TRAVIS_COMMIT:0:7}_mvdsv.md5 built_assets/stable/${TRAVIS_TAG}/${TARGET}/mvdsv.md5 ;fi
+  - if [ -n "${TRAVIS_TAG}" ]; then cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION} built_assets/stable/${TRAVIS_TAG}/${TARGET}/mvdsv${EXTENSION} ;fi
+  - if [ -n "${TRAVIS_TAG}" ]; then cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv.md5 built_assets/stable/${TRAVIS_TAG}/${TARGET}/mvdsv.md5 ;fi
   # update latest links
-  - cp built_assets/commits/${TARGET}/${DATE}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION} built_assets/latest/${TARGET}/mvdsv${EXTENSION}
-  - cp built_assets/commits/${TARGET}/${DATE}_${TRAVIS_COMMIT:0:7}_mvdsv.md5 built_assets/latest/${TARGET}/mvdsv.md5
+  - cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION} built_assets/latest/${TARGET}/mvdsv${EXTENSION}
+  - cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv.md5 built_assets/latest/${TARGET}/mvdsv.md5
   # push built items to SFTP storage
   - sftp -q -i mvdsv_builds.key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${SFTP_PORT} ${SFTP_USERNAME}@${SFTP_HOST}:/ <<< $'put -rp built_assets/*'
