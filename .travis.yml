@@ -1,9 +1,9 @@
+dist: trusty
+
 os:
   - linux
   - osx
 
-# in theory travis should detect what to install,
-# but we use meson, which is not supported by travis yet and we need custom commands
 compiler:
   - gcc
 
@@ -14,10 +14,7 @@ env:
     DATE=$(date +%Y%m%d)
     TIME=$(date +%H%M%S)
 
-sudo: required
-dist: trusty
-
-matrix:
+jobs:
   include:
     - os: linux
       env: 
@@ -31,7 +28,6 @@ matrix:
       env:
         TARGET=linux-i686
         EXTENSION=
-
     - os: linux
       env:
         TARGET=windows-x86
