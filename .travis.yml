@@ -2,7 +2,6 @@ dist: trusty
 
 os:
   - linux
-  - osx
 
 compiler:
   - gcc
@@ -22,20 +21,12 @@ jobs:
         EXTENSION=
     - os: linux
       env:
-        TARGET=linux-armhf
-        EXTENSION=
-    - os: linux
-      env:
         TARGET=linux-i686
         EXTENSION=
     - os: linux
       env:
-        TARGET=windows-x86
-        EXTENSION=.exe
-      addons:
-        apt:
-          packages:
-            - mingw-w64
+        TARGET=linux-armhf
+        EXTENSION=
     - os: linux
       env:
         TARGET=windows-x64
@@ -44,37 +35,45 @@ jobs:
         apt:
           packages:
             - mingw-w64
-    - os: osx
+    - os: linux
       env:
-        TARGET=darwin-amd64
-        EXTENSION=
+        TARGET=windows-x86
+        EXTENSION=.exe
+      addons:
+        apt:
+          packages:
+            - mingw-w64
+
+addons:
+  apt:
+    update: true
+    packages:
+      build-essential
+      python-virtualenv
+      python3-dev
+      python3-pip
+      ninja-build
+      cmake
+      gcc-multilib
 
 before_install:
-  # update base distro
-  - sudo apt-get update
-  # install base packages
-  - sudo apt-get -y install build-essential python-virtualenv python3-dev python3-pip ninja-build cmake gcc-multilib
-  # Setup macos build environment
-  - if [ $TRAVIS_OS_NAME = osx ]; then brew install meson ninja; fi
   # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail
-  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libcurl.*-dev; fi
-  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -y remove libpcre*-dev; fi
-  # install cross compiler tools if we gonna do binares for arm/raspberry
-  # notice it will remove gcc-multilib
+  - sudo apt-get -y remove libcurl.*-dev libpcre*-dev; fi
+  # install cross compiler tools if we are going to compile binares for arm (notice it will remove gcc-multilib and creates a dependency issue if we try to install those packages with the others)
   - if [ -z "${TARGET##*arm*}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf ;fi
   # activate virtualenv with python3, meson requires python3
-  - if [ $TRAVIS_OS_NAME = linux ]; then virtualenv .venv --python=python3; fi
-  - if [ $TRAVIS_OS_NAME = linux ]; then . .venv/bin/activate; fi
-  - if [ $TRAVIS_OS_NAME = linux ]; then pip3 install --upgrade pip; fi
+  - virtualenv .venv --python=python3
+  - . .venv/bin/activate
+  - pip3 install --upgrade pip
   # install python packages like meson, ninja etc...
-  - if [ $TRAVIS_OS_NAME = linux ]; then pip3 install -r requirements.txt; fi
+  - pip3 install -r requirements.txt
   # add SFTP authentication key to the build environment
   - openssl aes-256-cbc -K $encrypted_1e5406d6c11a_key -iv $encrypted_1e5406d6c11a_iv -in mvdsv_builds.key.enc -out mvdsv_builds.key -d
   # set correct permissions on private key
   - chmod 600 mvdsv_builds.key
 
-# each script section is executed in matrix build
 script:
+  # create build target directory and build binary
   - mkdir -p build_${TARGET}
   - meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
   - ninja -v -C build_${TARGET}
