@@ -48,22 +48,12 @@ jobs:
       env:
         TARGET=darwin-amd64
         EXTENSION=
-  exclude:
-    compiler: gcc
-
-addons:
-    apt:
-      update: true
-      packages:
-        build-essential
-        python-virtualenv
-        python3-dev
-        python3-pip
-        ninja-build
-        cmake
-        gcc-multilib
 
 before_install:
+  # update base distro
+  - sudo apt-get update
+  # install base packages
+  - sudo apt-get -y install build-essential python-virtualenv python3-dev python3-pip ninja-build cmake gcc-multilib
   # Setup macos build environment
   - if [ $TRAVIS_OS_NAME = osx ]; then brew install meson ninja; fi
   # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail
