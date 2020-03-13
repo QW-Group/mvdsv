@@ -17,20 +17,24 @@ env:
 jobs:
   include:
     - os: linux
-      env: 
-        TARGET=linux-amd64
+      env:
+        OS=linux
+        ARCH=amd64
         EXTENSION=
     - os: linux
       env:
-        TARGET=linux-i686
+        OS=linux
+        ARCH=i686
         EXTENSION=
     - os: linux
       env:
-        TARGET=linux-armhf
+        OS=linux
+        ARCH=armhf
         EXTENSION=
     - os: linux
       env:
-        TARGET=windows-x64
+        OS=windows
+        ARCH=x64
         EXTENSION=.exe
       addons:
         apt:
@@ -38,7 +42,8 @@ jobs:
             - mingw-w64
     - os: linux
       env:
-        TARGET=windows-x86
+        OS=windows
+        ARCH=x86
         EXTENSION=.exe
       addons:
         apt:
@@ -58,10 +63,8 @@ addons:
       gcc-multilib
 
 before_install:
-  # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail
-  - sudo apt-get -y remove libcurl.*-dev libpcre*-dev
   # install cross compiler tools if we are going to compile binares for arm (notice it will remove gcc-multilib and creates a dependency issue if we try to install those packages with the others)
-  - if [ -z "${TARGET##*arm*}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf ;fi
+  - if [ -z "${ARCH##arm*}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf ;fi
   # activate virtualenv with python3, meson requires python3
   - virtualenv .venv --python=python3
   - . .venv/bin/activate
@@ -70,30 +73,33 @@ before_install:
   - pip3 install -r requirements.txt
 
 script:
-  # create build target directory and build binary
-  - mkdir -p build_${TARGET}
-  - meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
-  - ninja -v -C build_${TARGET}
-  # print basic info about compiled files
-  - file build_${TARGET}/mvdsv${EXTENSION}
-  # create hash for download verification
-  - md5sum build_${TARGET}/mvdsv${EXTENSION} > build_${TARGET}/mvdsv.md5
-    # create built items directories
-  - mkdir -p built_assets/{commits,latest}/${TARGET}
-  - if [ -n "${TRAVIS_TAG}" ]; then mkdir -p built_assets/stable/${TRAVIS_TAG} ;fi
-  - mv build_${TARGET}/mvdsv${EXTENSION} built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION}
-  - mv build_${TARGET}/mvdsv.md5 built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv.md5
-  # update stable links if necessary
-  - if [ -n "${TRAVIS_TAG}" ]; then cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION} built_assets/stable/${TRAVIS_TAG}/${TARGET}/mvdsv${EXTENSION} ;fi
-  - if [ -n "${TRAVIS_TAG}" ]; then cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv.md5 built_assets/stable/${TRAVIS_TAG}/${TARGET}/mvdsv.md5 ;fi
-  # update latest links
-  - cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION} built_assets/latest/${TARGET}/mvdsv${EXTENSION}
-  - cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv.md5 built_assets/latest/${TARGET}/mvdsv.md5
+  # build binary
+  - meson build --buildtype=release --cross-file tools/cross-compilation/${OS}-${ARCH}.txt
+  - ninja -v -C build
 
 after_success:
+  - export BINARY=mvdsv${EXTENSION}
+  - export CHECKSUM=mvdsv.md5
+  # print basic info about compiled files
+  - file build/${BINARY}
+  # create hash for download verification
+  - md5sum build/${BINARY} > build/${CHECKSUM}
+  # update snapshots links
+  - if [ -z "${TRAVIS_TAG}" ]; then mkdir -p upload/snapshots/${OS}/${ARCH} ;fi
+  - if [ -z "${TRAVIS_TAG}" ]; then mkdir -p upload/snapshots/latest/${OS}/${ARCH} ;fi
+  - if [ -z "${TRAVIS_TAG}" ]; then cp build/${BINARY} upload/snapshots/${OS}/${ARCH}/${DATETIME}_${TRAVIS_COMMIT:0:7}_${BINARY} ;fi
+  - if [ -z "${TRAVIS_TAG}" ]; then cp build/${CHECKSUM} upload/snapshots/${OS}/${ARCH}/${DATETIME}_${TRAVIS_COMMIT:0:7}_${CHECKSUM} ;fi
+  - if [ -z "${TRAVIS_TAG}" ]; then cp build/${BINARY} upload/snapshots/latest/${OS}/${ARCH}/${BINARY} ;fi
+  - if [ -z "${TRAVIS_TAG}" ]; then cp build/${CHECKSUM} upload/snapshots/latest/${OS}/${ARCH}/${CHECKSUM} ;fi
+  # update releases links
+  - if [ -n "${TRAVIS_TAG}" ]; then mkdir -p upload/releases/{latest,${TRAVIS_TAG}}/${OS}/${ARCH} ;fi
+  - if [ -n "${TRAVIS_TAG}" ]; then cp build/${BINARY} upload/releases/${TRAVIS_TAG}/${OS}/${ARCH}/${BINARY} ;fi
+  - if [ -n "${TRAVIS_TAG}" ]; then cp build/${CHECKSUM} upload/releases/${TRAVIS_TAG}/${OS}/${ARCH}/${CHECKSUM} ;fi
+  - if [ -n "${TRAVIS_TAG}" ]; then cp build/${BINARY} upload/releases/latest/${OS}/${ARCH}/${BINARY} ;fi
+  - if [ -n "${TRAVIS_TAG}" ]; then cp build/${CHECKSUM} upload/releases/latest/${OS}/${ARCH}/${CHECKSUM} ;fi
   # add SFTP authentication key to the build environment
   - openssl aes-256-cbc -K $encrypted_1e5406d6c11a_key -iv $encrypted_1e5406d6c11a_iv -in mvdsv_builds.key.enc -out mvdsv_builds.key -d
   # set correct permissions on private key
   - chmod 600 mvdsv_builds.key
   # push built items to SFTP storage
-  - sftp -q -i mvdsv_builds.key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${SFTP_PORT} ${SFTP_USERNAME}@${SFTP_HOST}:/ <<< $'put -rp built_assets/*'
+  - sftp -q -i mvdsv_builds.key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${SFTP_PORT} ${SFTP_USERNAME}@${SFTP_HOST}:/ <<< $'put -rp upload/*'
