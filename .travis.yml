@@ -10,9 +10,9 @@ language: c
 
 env:
   global:
-    DATE=$(date +%Y%m%d)
-    TIME=$(date +%H%M%S)
-    DATETIME=${DATE}-${TIME}
+    DATETIME=$(date +%Y%m%d-%H%M%S)
+    DATE=${DATETIME%%-*}
+    TIME=${DATETIME##*-}
 
 jobs:
   include:
@@ -68,10 +68,6 @@ before_install:
   - pip3 install --upgrade pip
   # install python packages like meson, ninja etc...
   - pip3 install -r requirements.txt
-  # add SFTP authentication key to the build environment
-  - openssl aes-256-cbc -K $encrypted_1e5406d6c11a_key -iv $encrypted_1e5406d6c11a_iv -in mvdsv_builds.key.enc -out mvdsv_builds.key -d
-  # set correct permissions on private key
-  - chmod 600 mvdsv_builds.key
 
 script:
   # create build target directory and build binary
@@ -93,5 +89,11 @@ script:
   # update latest links
   - cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv${EXTENSION} built_assets/latest/${TARGET}/mvdsv${EXTENSION}
   - cp built_assets/commits/${TARGET}/${DATETIME}_${TRAVIS_COMMIT:0:7}_mvdsv.md5 built_assets/latest/${TARGET}/mvdsv.md5
+
+after_success:
+  # add SFTP authentication key to the build environment
+  - openssl aes-256-cbc -K $encrypted_1e5406d6c11a_key -iv $encrypted_1e5406d6c11a_iv -in mvdsv_builds.key.enc -out mvdsv_builds.key -d
+  # set correct permissions on private key
+  - chmod 600 mvdsv_builds.key
   # push built items to SFTP storage
   - sftp -q -i mvdsv_builds.key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${SFTP_PORT} ${SFTP_USERNAME}@${SFTP_HOST}:/ <<< $'put -rp built_assets/*'
