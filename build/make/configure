@@ -112,7 +112,7 @@ fi
 
 # if BITS not set try autodetection...
 if [ x${BITS} = x ]; then
-	if [ x${ARCH} = xx86_64 ]; then
+	if [ x${ARCH} = xx86_64 ] || [ x${ARCH} = xaarch64 ]; then
 		BITS=64
 	elif [ x${ARCH} = xarmv7l ]; then
 		# arm7 /rasberry pi 3 compilers will fail saying -m32 is unknown flag
