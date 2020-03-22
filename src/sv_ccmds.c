@@ -454,7 +454,7 @@ void SV_Map (qbool now)
 		}
 		// <-
 
-		SV_SpawnServer (level, !strcasecmp(Cmd_Argv(0), "devmap"), entityfile);
+		SV_SpawnServer (level, !strcasecmp(Cmd_Argv(0), "devmap"), entityfile, false);
 
 #ifdef SERVERONLY
 		SV_BroadcastCommand ("changing\n"
@@ -615,7 +615,7 @@ void SV_RemoveDirectory_f (void)
 	}
 
 	if (!Sys_rmdir(dirname))
-		Con_Printf("Directory %s succesfully removed\n", dirname);
+		Con_Printf("Directory %s successfully removed\n", dirname);
 	else
 		Con_Printf("Unable to remove directory %s\n", dirname);
 }
@@ -684,7 +684,7 @@ void SV_RemoveFile_f (void)
 	else // 1 file
 	{
 		if (!Sys_remove(va("%s/%s", dirname, filename)))
-			Con_Printf("File %s succesfully removed\n", filename);
+			Con_Printf("File %s successfully removed\n", filename);
 		else
 			Con_Printf("Unable to remove file %s\n", filename);
 	}
@@ -733,7 +733,7 @@ void SV_ChmodFile_f (void)
 	if (chmod(filename, mode))
 		Con_Printf("Unable to chmod %s\n", filename);
 	else
-		Con_Printf("Chmod %s succesful\n", filename);
+		Con_Printf("Chmod %s successful\n", filename);
 }
 #endif //_WIN32
 
@@ -1368,8 +1368,10 @@ void SV_SendServerInfoChange(char *key, char *value)
 void SV_ServerinfoChanged (char *key, char *string)
 {
 	// force serverinfo "0" vars to be "".
-	if (!strcmp(string, "0"))
+	// meag: deathmatch is a special case as clients default 'not in serverinfo' to non-coop
+	if (!strcmp(string, "0") && strcmp(key, "deathmatch")) {
 		string = "";
+	}
 
 	if (strcmp(string, Info_ValueForKey (svs.info, key)))
 	{

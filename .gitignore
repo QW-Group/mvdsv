@@ -26,3 +26,8 @@ build_*/*
 build.ninja
 compile_commands.json
 meson-*/
+build/vs/.vs/*
+build/vs/*.exe
+build/vs/*.db
+build/vs/*.def
+build/vs/*.ilk

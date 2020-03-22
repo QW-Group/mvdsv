@@ -1,7 +1,9 @@
 # MVDSV: a QuakeWorld server
+![MVDSV Logo](https://raw.githubusercontent.com/deurk/mvdsv/master/resources/logo/mvdsv.png)
+
 [![Build Status](https://travis-ci.org/deurk/mvdsv.svg?branch=master)](https://travis-ci.org/deurk/mvdsv)
 
-**[MVDSV][mvdsv]** (MultiView Demo SerVer) has been the most popular **QuakeWorld** server in the world for the more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy **QuakeWorld** with.
+**[MVDSV][mvdsv]** (MultiView Demo SerVer) has been the most popular **QuakeWorld** server in the world for more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy **QuakeWorld** with.
 
 _(This README.md file is still a work in progress. bear with us while we polish it!)_
 
@@ -12,16 +14,18 @@ The following instructions will help you get a **[MVDSV][mvdsv]** server up and 
 ## Supported architectures
 
 The following architectures are fully supported by **[MVDSV][mvdsv]** and are available as prebuilt binaries:
-* Linux i686 (Intel and AMD 32-bit processors)
 * Linux amd64 (Intel and AMD 64-bits processors)
-* Windows x86 (Intel and AMD 32-bit processors)
-* Windows x64 (Intel and AMD 64-bits processors)
-* Mac OS X (Intel 64-bit processors)
+* Linux i686 (Intel and AMD 32-bit processors)
 * Linux armhf (ARM 32-bit processors)
+* Windows x64 (Intel and AMD 64-bits processors)
+* Windows x86 (Intel and AMD 32-bit processors)
+
+## Prebuilt binaries
+You can find the prebuilt binaries on [this download page][mvdsv_builds].
 
 ## Prerequisites
 
-TBD
+None at the moment.
 
 ## Installing
 
@@ -134,19 +138,16 @@ This will create an executable binary at `mvdsv/build/make/mvdsv`.
 
 Copy it to your server.
 
-## Built With
-
-TBD
 
 ## Versioning
 
-We use a pretty crappy system for versioning for now. For the versions available, see the [tags on this repository][mvdsv-tags].
+For the versions available, see the [tags on this repository][mvdsv-tags].
 
 ## Authors
 
 (Listed by last name alphabetic order)
 
-* **Ivan Bolshunov** - *qqshka*
+* **Ivan Bolsunov** - *qqshka*
 * **Dominic Evans** - *oldman*
 * **Anton Gavrilov** - *tonik*
 * **Dmitry Musatov** - *disconnect*
@@ -179,3 +180,4 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 [mvdsv]: https://github.com/deurk/mvdsv
 [mvdsv-tags]: https://github.com/deurk/mvdsv/tags
 [nquake-linux]: https://github.com/nQuake/server-linux
+[mvdsv_builds]: https://builds.quakeworld.nu/mvdsv

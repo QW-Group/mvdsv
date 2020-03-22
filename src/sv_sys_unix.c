@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 extern cvar_t sys_restart_on_error;
-extern cvar_t sys_select_timeout;
+extern cvar_t sys_select_timeout, sys_simulation;
 
 cvar_t sys_nostdout = {"sys_nostdout", "0"};
 cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
@@ -364,7 +364,7 @@ double Sys_DoubleTime(void)
 	static unsigned int secbase;
 	struct timespec ts;
 
-#ifdef __linux__
+#if defined __linux__ && defined CLOCK_MONOTONIC_RAW
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 #else
 	clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -739,7 +739,9 @@ int main (int argc, char *argv[])
 		// the only reason we have a timeout at all is so that if the last
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
-		stdin_ready = NET_Sleep ((int)sys_select_timeout.value / 1000, do_stdin);
+		if (!sys_simulation.value) {
+			stdin_ready = NET_Sleep((int)sys_select_timeout.value / 1000, do_stdin);
+		}
 
 		// find time passed since last cycle
 		newtime = Sys_DoubleTime ();

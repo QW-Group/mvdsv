@@ -39,7 +39,7 @@ typedef struct
 	char        pass[MAX_LOGINNAME];
 	int         failures;
 	int         inuse;
-	ipfilter_t  adress;
+	ipfilter_t  address;
 	acc_state_t state;
 	quse_t      use;
 } account_t;
@@ -139,7 +139,7 @@ void SV_LoadAccounts(void)
 			Con_Printf("Error reading account data\n");
 			break;
 		}
-		if (StringToFilter(acc->login, &acc->adress))
+		if (StringToFilter(acc->login, &acc->address))
 		{
 			strlcpy(acc->pass, acc->login, MAX_LOGINNAME);
 			acc->use = use_ip;
@@ -217,7 +217,7 @@ void SV_CreateAccount_f(void)
 
 	if (Cmd_Argc() < 2)
 	{
-		Con_Printf("usage: acc_create <login> [<password>]\n       acc_create <address> <username>\nmaximum %d characters for login/pass\n", MAX_LOGINNAME - 1); //bliP: adress typo
+		Con_Printf("usage: acc_create <login> [<password>]\n       acc_create <address> <username>\nmaximum %d characters for login/pass\n", MAX_LOGINNAME - 1); //bliP: address typo
 		return;
 	}
 
@@ -232,7 +232,7 @@ void SV_CreateAccount_f(void)
 		use = use_ip;
 		if (Cmd_Argc() < 3)
 		{
-			Con_Printf("usage: acc_create <address> <username>\nmaximum %d characters for username\n", MAX_LOGINNAME - 1); //bliP; adress typo
+			Con_Printf("usage: acc_create <address> <username>\nmaximum %d characters for username\n", MAX_LOGINNAME - 1); //bliP; address typo
 			return;
 		}
 	}

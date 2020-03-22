@@ -24,8 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __QUAKEASM_H__
 #define __QUAKEASM_H__
 
-#if (defined _WIN32 && !defined _WIN64 && !defined id386)
-#define id386
+// Disallow assembler for 64-bit builds
+#if defined(_WIN32) && defined(_WIN64) && defined(id386)
+#undef id386
 #endif
 
 #endif /* !__QUAKEASM_H__ */

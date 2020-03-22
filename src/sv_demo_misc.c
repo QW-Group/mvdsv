@@ -133,25 +133,6 @@ char *SV_CleanName (unsigned char *name)
 	return text;
 }
 
-// only one .. is allowed (security)
-void sv_demoDir_OnChange (cvar_t *cvar, char *value, qbool *cancel)
-{
-	if (!value[0])
-	{
-		*cancel = true;
-		return;
-	}
-
-	if (value[0] == '.' && value[1] == '.')
-		value += 2;
-
-	if (strstr(value,"/.."))
-	{
-		*cancel = true;
-		return;
-	}
-}
-
 /*
 ====================
 SV_DirSizeCheck
@@ -695,7 +676,7 @@ void SV_MVDRemoveNum_f (void)
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, name);
 		if (!Sys_remove(path))
 		{
-			Con_Printf("demo %s succesfully removed\n", name);
+			Con_Printf("demo %s successfully removed\n", name);
 			if (*sv_ondemoremove.string)
 			{
 				extern redirect_t sv_redirected;
