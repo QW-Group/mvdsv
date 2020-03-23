@@ -88,7 +88,8 @@ typedef struct
 	int	        headnode[MAX_MAP_HULLS];
 	int         visleafs;                    // not including the solid leaf 0
 	int         firstface, numfaces;
-} dmodel_t;
+} dmodel_t __attribute__((aligned(1)));
+
 
 
 typedef struct
