@@ -32,8 +32,8 @@ cvar_t	sv_mapcheck = {"sv_mapcheck", "1"};
 cvar_t	sv_minping = {"sv_minping", "0"};
 cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "1"};
 
-cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "3"};
-cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "30"};
+cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "1"};
+cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "100"};
 
 cvar_t	sv_maxuploadsize = {"sv_maxuploadsize", "1048576"};
 
