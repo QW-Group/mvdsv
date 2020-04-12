@@ -437,6 +437,13 @@ void Sys_Printf (char *fmt, ...)
 {
 	va_list		argptr;
 	char		text[4096];
+	time_t t ; 
+	struct tm *tmp ; 
+	char MY_TIME[20]; 
+	
+	time( &t ); 
+      
+	tmp = localtime( &t ); 
 
 	va_start (argptr,fmt);
 	vsnprintf(text, sizeof(text), fmt, argptr);
@@ -448,7 +455,8 @@ void Sys_Printf (char *fmt, ...)
 	// normalize text before add to console.
 	Q_normalizetext(text);
 
-	fprintf(stdout, "%s", text);
+	strftime(MY_TIME, sizeof(MY_TIME), "%Y-%m-%d %H:%M:%S", tmp);
+	fprintf(stdout, "[%s] %s", MY_TIME, text) ;
 	fflush(stdout);
 }
 
