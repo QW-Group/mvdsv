@@ -448,7 +448,10 @@ void Sys_Printf (char *fmt, ...)
 	// normalize text before add to console.
 	Q_normalizetext(text);
 
-	fprintf(stdout, "%s", text);
+	date_t date;
+	SV_TimeOfDay(&date, "%Y-%m-%d %H:%M:%S");
+
+	fprintf(stdout, "[%s] %s", date.str, text);
 	fflush(stdout);
 }
 
