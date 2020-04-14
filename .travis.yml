@@ -76,7 +76,7 @@ before_install:
 
 before_script:
   # add current commit ref to include files for debugging ease
-  - sed -i "s/#define GIT_COMMIT.*$/$(git log -n 1 --format=format:"#define GIT_COMMIT \"%h\"" HEAD)/" src/build.c
+  - sed -i "s/#define GIT_COMMIT.*$/$(git log -n 1 --format=format:"#define GIT_COMMIT \"%h\"" HEAD)/" src/version.h
 
 script:
   # build binary

@@ -3486,6 +3486,9 @@ void SV_InitLocal (void)
 	Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " VERSION_NUMBER, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
 
+	Info_SetValueForStarKey (svs.info, "mvdsvver", VERSION_NUMBER, MAX_SERVERINFO_STRING);
+	Info_SetValueForStarKey (svs.info, "mvsvbuild", GIT_COMMIT, MAX_SERVERINFO_STRING);
+
 	// init fraglog stuff
 	svs.logsequence = 1;
 	svs.logtime = realtime;
