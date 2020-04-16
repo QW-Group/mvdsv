@@ -25,39 +25,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #if defined(_WIN32)
 #define QW_PLATFORM			"Windows"
-#define QW_PLATFORM_SHORT	"(w)"
+#define QW_PLATFORM_SHORT	"w"
 
 #elif defined(__FreeBSD__)
 #define QW_PLATFORM			"FreeBSD"
-#define QW_PLATFORM_SHORT	"(f)"
+#define QW_PLATFORM_SHORT	"f"
 
 #elif defined(__OpenBSD__)
 #define QW_PLATFORM			"OpenBSD"
-#define QW_PLATFORM_SHORT	"(o)"
+#define QW_PLATFORM_SHORT	"o"
 
 #elif defined(__NetBSD__)
 #define QW_PLATFORM			"NetBSD"
-#define QW_PLATFORM_SHORT	"(n)"
+#define QW_PLATFORM_SHORT	"n"
 
 #elif defined(__DragonFly__)
 #define QW_PLATFORM			"DragonFly"
-#define QW_PLATFORM_SHORT	"(d)"
+#define QW_PLATFORM_SHORT	"d"
 
 #elif defined(__linux__)
 #define QW_PLATFORM			"Linux"
-#define QW_PLATFORM_SHORT	"(l)"
+#define QW_PLATFORM_SHORT	"l"
 
 #elif defined(__sun__)
 #define QW_PLATFORM			"SunOS"
-#define QW_PLATFORM_SHORT	"(s)"
+#define QW_PLATFORM_SHORT	"s"
 
 #elif defined(__APPLE__)
 #define QW_PLATFORM			"MacOS"
-#define QW_PLATFORM_SHORT	"(m)"
+#define QW_PLATFORM_SHORT	"m"
 
 #else
 #define QW_PLATFORM			"Unknown"
-#define QW_PLATFORM_SHORT	"(u)"
+#define QW_PLATFORM_SHORT	"u"
 #endif
 
 
@@ -67,14 +67,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SERVER_NAME         "MVDSV"
 #define HOMEPAGE_URL        "https://github.com/deurk/mvdsv"
 #define BUILD_DATE          __DATE__ ", " __TIME__
-#define GIT_COMMIT          "unknown"
+#define GIT_COMMIT          ""
 
 
 #define QWDTOOLS_NAME       "QWDtools"
 
-char *VersionString (void);
 char *VersionStringFull (void);
-void Version_f (void);
 
 #endif /* !__VERSION_H__ */
 

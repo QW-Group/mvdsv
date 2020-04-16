@@ -3799,7 +3799,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	Con_Printf ("%4.1f megabyte heap\n", (float)hunk_size / (1024 * 1024));
 	Con_Printf ("QuakeWorld Initialized\n");
-	Version_f();
+	Con_Printf (VersionStringFull());
 
 	Cbuf_InsertText ("exec server.cfg\n");
 

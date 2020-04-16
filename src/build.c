@@ -29,16 +29,6 @@
 
 /*
 =======================
-VersionString
-======================
-*/
-char *VersionString (void)
-{
-	return VERSION_NUMBER " (build " GIT_COMMIT ")";
-}
-
-/*
-=======================
 VersionStringFull
 ======================
 */
@@ -47,19 +37,12 @@ char *VersionStringFull (void)
 	static char str[256];
 
 	if (!str[0]) {
-		snprintf(str, sizeof(str), SERVER_NAME " " VERSION_NUMBER " (" QW_PLATFORM " build " GIT_COMMIT ")");
+		if (GIT_COMMIT) {
+			snprintf(str, sizeof(str), SERVER_NAME " " VERSION_NUMBER);
+		} else {
+			snprintf(str, sizeof(str), SERVER_NAME " " VERSION_NUMBER " (build " GIT_COMMIT "/" QW_PLATFORM_SHORT ")");
+		}
 	}
 
 	return str;
 }
-
-/*
-=======================
-Version_f
-======================
-*/
-void Version_f (void)
-{
-	Con_Printf ("%s\n%s\nHome page: %s\n", VersionStringFull(), BUILD_DATE, HOMEPAGE_URL);
-}
-
