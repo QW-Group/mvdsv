@@ -5,8 +5,6 @@
 
 **[MVDSV][mvdsv]** (MultiView Demo SerVer) has been the most popular **QuakeWorld** server in the world for more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy **QuakeWorld** with.
 
-_(This README.md file is still a work in progress. bear with us while we polish it!)_
-
 ## Getting Started
 
 The following instructions will help you get a **[MVDSV][mvdsv]** server up and running on your local machine from prebuilt binaries. Details on how to compile your own **[MVDSV][mvdsv]** binary will also be included to match specific architectures or for development purposes.
@@ -40,14 +38,14 @@ There are extra conditionals to install desired packages based on the TARGET.
 
 In general:
 
-- use Ubuntu 14.04 (but should work under 16.04 as well) as virtual machine, check out source code there
+- use Ubuntu 18.04 as virtual machine, check out details about it on code on [Travis CI website][travis-build-env]
 - install required packages for compilation
 - set up virtualenv and install python packages (required for meson and ninja builders)
 - run meson build for given directory (optionally with cross compilation settings)
-- run ninja to generate .so file
-- you should have ``mvdsv`` file in ``build_*`` directory, put it in your quake server/ directory.
+- run ninja to generate the binary file
+- you should have ``mvdsv`` file in ``build`` directory, put it in your quake server/ directory.
 
-Example for Linux amd64 under Ubuntu 14.04 (should be similar under 16.04)
+#### Example for Linux amd64
 
 Install required packages:
 
@@ -77,13 +75,13 @@ Export env var to define what target to compile, run the build commands.
 
 ```bash
 $ export TARGET=linux-amd64
-$ rm -rf build_${TARGET}
+$ rm -rf build
 
 $ meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
 The Meson build system
 Version: 0.41.2
 Source dir: /mvdsv/src
-Build dir: /mvdsv/src/build_linux-linux-amd64
+Build dir: /mvdsv/src/build
 Build type: cross build
 Project name: mvdsv
 Native c compiler: cc (gcc 5.4.0)
@@ -101,9 +99,9 @@ Library m found: YES
 Library dl found: YES
 Build targets in project: 1
 
-$ ninja -C build_${TARGET}
+$ ninja -C build
 
-ninja: Entering directory `build_linux-amd64'
+ninja: Entering directory `build'
 [46/46] Linking target mvdsv.
 
 ```
@@ -111,12 +109,12 @@ ninja: Entering directory `build_linux-amd64'
 Check the output binary file:
 
 ```bash
-$ file build_${TARGET}/mvdsv
-build_linux-amd64/mvdsv: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=dedd6661cff55d457b15d2641c02baaf7be9a8b1, not stripped
+$ file build/mvdsv
+build/mvdsv: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=dedd6661cff55d457b15d2641c02baaf7be9a8b1, not stripped
 
 ```
 
-In ``build_*/`` there will be ``mvdsv`` binary, change permissions to executable and copy it to quake directory to start quake server.
+In ``build/`` there will be ``mvdsv`` binary, change permissions to executable and copy it to quake directory to start quake server.
 
 Known issues:
 
@@ -172,12 +170,13 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* Thanks to **Jon "bps" Cednert** for the **[MVDSV][mvdsv]** logo.
+* Thanks to the fine folks on [Quakeworld Discord][discord-qw] for their support and ideas.
 
-[ktx]: https://github.com/deurk/ktx
 [mvdsv]: https://github.com/deurk/mvdsv
 [mvdsv-tags]: https://github.com/deurk/mvdsv/tags
-[nquake-linux]: https://github.com/nQuake/server-linux
 [mvdsv_builds]: https://builds.quakeworld.nu/mvdsv
+[ktx]: https://github.com/deurk/ktx
+[nquake-linux]: https://github.com/nQuake/server-linux
+[travis-build-env]: https://docs.travis-ci.com/user/reference/bionic/
+[discord-qw]: http://discord.quake.world/

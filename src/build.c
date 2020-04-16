@@ -27,10 +27,6 @@
 
 #include "qwsvdef.h"
 
-#ifndef GIT_COMMIT
-#define GIT_COMMIT "unknown"
-#endif
-
 /*
 =======================
 VersionString
@@ -64,6 +60,6 @@ Version_f
 */
 void Version_f (void)
 {
-	Con_Printf ("%s\n%s\nHomepage: %s\n", VersionStringFull(), BUILD_DATE, PROJECT_URL);
+	Con_Printf ("%s\n%s\nHome page: %s\n", VersionStringFull(), BUILD_DATE, HOMEPAGE_URL);
 }
 

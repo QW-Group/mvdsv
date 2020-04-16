@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #if defined(_WIN32)
-#define QW_PLATFORM			"Win32"
+#define QW_PLATFORM			"Windows"
 #define QW_PLATFORM_SHORT	"(w)"
 
 #elif defined(__FreeBSD__)
@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define QW_PLATFORM_SHORT	"(s)"
 
 #elif defined(__APPLE__)
-#define QW_PLATFORM			"MacOSX" // Darwin was changed to MacOSX
+#define QW_PLATFORM			"MacOS"
 #define QW_PLATFORM_SHORT	"(m)"
 
 #else
@@ -65,10 +65,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define VERSION_NUMBER      "0.33-beta"
 #define VERSION_NUM         0.32
 #define SERVER_NAME         "MVDSV"
-
-#define PROJECT_NAME        SERVER_NAME
-#define PROJECT_URL         "https://github.com/deurk/mvdsv"
-#define BUILD_DATE          "Build date: " __DATE__ ", " __TIME__
+#define HOMEPAGE_URL        "https://github.com/deurk/mvdsv"
+#define BUILD_DATE          __DATE__ ", " __TIME__
 #define GIT_COMMIT          "unknown"
 
 
