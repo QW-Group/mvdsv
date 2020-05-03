@@ -3289,6 +3289,24 @@ void SV_InitLocal (void)
 	//extern	cvar_t	pm_slidefix;
 	extern	cvar_t	pm_ktjump;
 	//extern	cvar_t	pm_bunnyspeedcap;
+
+	// qws = QuakeWorld Server information
+	static cvar_t qws_name = { "qws_name", SERVER_NAME, CVAR_ROM };
+	static cvar_t qws_fullname = { "qws_fullname", SERVER_FULLNAME, CVAR_ROM };
+	static cvar_t qws_version = { "qws_version", VERSION_NUMBER, CVAR_ROM };
+	static cvar_t qws_buildnum = { "qws_buildnum", (GIT_COMMIT ? GIT_COMMIT : "unknown"), CVAR_ROM };
+	static cvar_t qws_platform = { "qws_platform", QW_PLATFORM_SHORT, CVAR_ROM };
+	static cvar_t qws_builddate = { "qws_builddate", BUILD_DATE, CVAR_ROM };
+	static cvar_t qws_homepage = { "qws_homepage", HOMEPAGE_URL, CVAR_ROM };
+	// qwm = QuakeWorld Mod information placeholders
+	static cvar_t qwm_name = { "qwm_name", "" };
+	static cvar_t qwm_fullname = { "qwm_fullname", "" };
+	static cvar_t qwm_version = { "qwm_version", "" };
+	static cvar_t qwm_buildnum = { "qwm_buildnum", "" };
+	static cvar_t qwm_platform = { "qwm_platform", "" };
+	static cvar_t qwm_builddate = { "qwm_builddate", "" };
+	static cvar_t qwm_homepage = { "qwm_homepage", "" };
+
 	packet_t *packet_freeblock; // initialise delayed packet free block
 
 	SV_InitOperatorCommands	();
@@ -3430,6 +3448,21 @@ void SV_InitLocal (void)
 
 	Cvar_Register (&sv_reliable_sound);
 
+	Cvar_Register (&qws_name);
+	Cvar_Register (&qws_fullname);
+	Cvar_Register (&qws_version);
+	Cvar_Register (&qws_buildnum);
+	Cvar_Register (&qws_platform);
+	Cvar_Register (&qws_builddate);
+	Cvar_Register (&qws_homepage);
+	Cvar_Register (&qwm_name);
+	Cvar_Register (&qwm_fullname);
+	Cvar_Register (&qwm_version);
+	Cvar_Register (&qwm_buildnum);
+	Cvar_Register (&qwm_platform);
+	Cvar_Register (&qwm_builddate);
+	Cvar_Register (&qwm_homepage);
+
 // QW262 -->
 	Cmd_AddCommand ("svadmin", SV_Admin_f);
 // <-- QW262
@@ -3485,11 +3518,6 @@ void SV_InitLocal (void)
 
 	Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " VERSION_NUMBER, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
-
-	Info_SetValueForStarKey (svs.info, "mvdsvver", VERSION_NUMBER, MAX_SERVERINFO_STRING);
-	//Info_SetValueForStarKey (svs.info, "mvdsvbuild", GIT_COMMIT, MAX_SERVERINFO_STRING);
-	//Info_SetValueForStarKey (svs.info, "mvdsvdate", BUILD_DATE, MAX_SERVERINFO_STRING);
-	//Info_SetValueForStarKey (svs.info, "mvdsvurl", HOMEPAGE_URL, MAX_SERVERINFO_STRING);
 
 	// init fraglog stuff
 	svs.logsequence = 1;
@@ -3717,7 +3745,7 @@ void COM_Init (void)
 	Cvar_Register (&version);
 	Cvar_Register (&sys_simulation);
 
-	Cvar_SetROM(&version, VersionStringFull());
+	Cvar_SetROM(&version, SERVER_NAME " " VERSION_NUMBER);
 }
 
 //Free hunk memory up to host_hunklevel
@@ -3764,7 +3792,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	Host_InitMemory (default_memsize);
 
-	Con_Printf ("============= Starting " SERVER_NAME " =============\n");
+	Con_Printf ("============= Starting %s =============\n", VersionStringFull());
 
 	Cbuf_Init ();
 	Cmd_Init ();
@@ -3799,7 +3827,6 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	Con_Printf ("%4.1f megabyte heap\n", (float)hunk_size / (1024 * 1024));
 	Con_Printf ("QuakeWorld Initialized\n");
-	Con_Printf (VersionStringFull());
 
 	Cbuf_InsertText ("exec server.cfg\n");
 

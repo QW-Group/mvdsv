@@ -65,7 +65,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define VERSION_NUMBER      "0.33-beta"
 #define VERSION_NUM         0.32
 #define SERVER_NAME         "MVDSV"
-#define HOMEPAGE_URL        "https://github.com/deurk/mvdsv"
+#define SERVER_FULLNAME     "MVDSV: MultiView Demo SerVer"
+#define HOMEPAGE_URL        "https://mvdsv.deurk.net"
 #define BUILD_DATE          __DATE__ ", " __TIME__
 #define GIT_COMMIT          ""
 

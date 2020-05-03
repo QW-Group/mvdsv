@@ -37,10 +37,10 @@ char *VersionStringFull (void)
 	static char str[256];
 
 	if (!str[0]) {
-		if (GIT_COMMIT) {
+		if (!strlen(GIT_COMMIT)) {
 			snprintf(str, sizeof(str), SERVER_NAME " " VERSION_NUMBER);
 		} else {
-			snprintf(str, sizeof(str), SERVER_NAME " " VERSION_NUMBER " (build " GIT_COMMIT "/" QW_PLATFORM_SHORT ")");
+			snprintf(str, sizeof(str), SERVER_NAME " " VERSION_NUMBER " (build " GIT_COMMIT "-" QW_PLATFORM_SHORT ")");
 		}
 	}
 
