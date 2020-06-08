@@ -30,6 +30,7 @@ cvar_t	sv_spectalk = {"sv_spectalk", "1"};
 cvar_t	sv_sayteam_to_spec = {"sv_sayteam_to_spec", "1"};
 cvar_t	sv_mapcheck = {"sv_mapcheck", "1"};
 cvar_t	sv_minping = {"sv_minping", "0"};
+cvar_t	sv_maxping = {"sv_maxping", "0"};
 cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "1"};
 
 cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "1"};
@@ -132,6 +133,26 @@ USER STRINGCMD EXECUTION
 sv_client and sv_player will be valid.
 ============================================================
 */
+
+/*
+==================
+PlayerCheckPing
+
+Check that player's ping falls below sv_maxping value
+==================
+*/
+qbool PlayerCheckPing()
+{
+	int maxping = Q_atof(sv_maxping.string);
+	int playerping = sv_client->frames[sv_client->netchan.incoming_acknowledged&UPDATE_MASK].ping_time * 1000;
+
+	if (maxping && playerping > maxping)
+	{
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "\nYour ping is too high for this server!  Maximum ping is set to %i, your ping is %i.\nForcing spectator.\n\n",maxping,playerping);
+		return false;
+	}
+	return true;
+}
 
 /*
 ================
@@ -360,6 +381,17 @@ static void Cmd_New_f (void)
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.friction);
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.waterfriction);
 	MSG_WriteFloat(&sv_client->netchan.message, /* sv_client->entgravity */ movevars.entgravity); // FIXME: this does't work, Tonik?
+
+	if (!sv_client->spectator) {
+		if (!PlayerCheckPing()) {
+			sv_client->old_frags = 0;
+			sv_client->connection_started = realtime;
+			sv_client->spectator = true;
+			sv_client->spec_track = 0;
+			Info_SetStar (&sv_client->_userinfo_ctx_, "*spectator", "1");
+			Info_SetStar (&sv_client->_userinfoshort_ctx_, "*spectator", "1");
+		}
+	}
 
 	if (sv_client->rip_vip)
 	{
@@ -2577,6 +2609,8 @@ static void Cmd_Join_f (void)
 		return;
 	}
 
+	if (!PlayerCheckPing()) return;
+
 	// call the prog function for removing a client
 	// this will set the body to a dead frame, among other things
 	pr_global_struct->self = EDICT_TO_PROG(sv_player);
@@ -4022,6 +4056,7 @@ void SV_UserInit (void)
 	Cvar_Register (&sv_sayteam_to_spec);
 	Cvar_Register (&sv_mapcheck);
 	Cvar_Register (&sv_minping);
+	Cvar_Register (&sv_maxping);
 	Cvar_Register (&sv_enable_cmd_minping);
 	Cvar_Register (&sv_kickuserinfospamtime);
 	Cvar_Register (&sv_kickuserinfospamcount);
