@@ -3302,7 +3302,7 @@ void SV_InitLocal (void)
 	static cvar_t qws_name = { "qws_name", SERVER_NAME, CVAR_ROM };
 	static cvar_t qws_fullname = { "qws_fullname", SERVER_FULLNAME, CVAR_ROM };
 	static cvar_t qws_version = { "qws_version", VERSION_NUMBER, CVAR_ROM };
-	static cvar_t qws_buildnum = { "qws_buildnum", (GIT_COMMIT ? GIT_COMMIT : "unknown"), CVAR_ROM };
+	static cvar_t qws_buildnum = { "qws_buildnum", "unknown", CVAR_ROM };
 	static cvar_t qws_platform = { "qws_platform", QW_PLATFORM_SHORT, CVAR_ROM };
 	static cvar_t qws_builddate = { "qws_builddate", BUILD_DATE, CVAR_ROM };
 	static cvar_t qws_homepage = { "qws_homepage", HOMEPAGE_URL, CVAR_ROM };
@@ -3459,6 +3459,9 @@ void SV_InitLocal (void)
 	Cvar_Register (&qws_name);
 	Cvar_Register (&qws_fullname);
 	Cvar_Register (&qws_version);
+	if (GIT_COMMIT[0]) {
+		qws_buildnum.string = GIT_COMMIT;
+	}
 	Cvar_Register (&qws_buildnum);
 	Cvar_Register (&qws_platform);
 	Cvar_Register (&qws_builddate);
