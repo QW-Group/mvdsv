@@ -21,14 +21,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
+#ifdef WEBSITE_LOGIN_SUPPORT
+#undef WEBSITE_LOGIN_SUPPORT
+#endif
+#if defined(SERVERONLY) && defined(WWW_INTEGRATION)
+#define WEBSITE_LOGIN_SUPPORT
+#include "central.h"
+#endif
+
 #define MAX_ACCOUNTS 1000
 #define MAX_FAILURES 10
 #define MAX_LOGINNAME (DIGEST_SIZE * 2 + 1)
 #define ACC_FILE "accounts"
 #define ACC_DIR "users"
 
-cvar_t	sv_login = {"sv_login", "0"};	// if enabled, login required
+cvar_t sv_login = {"sv_login", "0"};	// if enabled, login required
+#ifdef WEBSITE_LOGIN_SUPPORT
+cvar_t sv_login_web = { "sv_login_web", "1" }; // 0=local files, 1=auth via website (bans can be in local files), 2=mandatory auth (must have account in local files)
+#endif
+
 extern cvar_t sv_hashpasswords;
+static void SV_SuccessfulLogin(client_t* cl);
+static void SV_BlockedLogin(client_t* cl);
+static void SV_ForceClientName(client_t* cl, const char* forced_name);
 
 typedef enum {a_free, a_ok, a_blocked} acc_state_t;
 typedef enum {use_log, use_ip} quse_t;
@@ -56,7 +71,8 @@ static qbool validAcc(char *acc)
 		if (*acc < 'a' || *acc > 'z')
 			if (*acc < 'A' || *acc > 'Z')
 				if (*acc < '0' || *acc > '9')
-					return false;
+					if (*acc != '.' && *acc != '_')
+						return false;
 	}
 
 	return acc - s <= MAX_LOGINNAME && acc - s >= 3 ;
@@ -124,9 +140,12 @@ void SV_LoadAccounts(void)
 		num_accounts = 0;
 		for (cl = svs.clients; cl - svs.clients < MAX_CLIENTS; cl++)
 		{
-			if (cl->logged > 0)
+			if (cl->logged > 0) {
 				cl->logged = 0;
-			cl->login[0] = 0;
+			}
+			if (!cl->logged_in_via_web) {
+				cl->login[0] = 0;
+			}
 		}
 		return;
 	}
@@ -170,6 +189,9 @@ void SV_LoadAccounts(void)
 			continue;
 
 		if (cl->logged <= 0)
+			continue;
+
+		if (cl->logged_in_via_web)
 			continue;
 
 		for (i = 0, acc = accounts; i < num_accounts; i++, acc++)
@@ -304,10 +326,9 @@ acc_remove <login>
 removes the login
 =================
 */
-
 void SV_RemoveAccount_f(void)
 {
-	int i, c;
+	int i, c, j;
 
 	if (Cmd_Argc() < 2)
 	{
@@ -320,14 +341,38 @@ void SV_RemoveAccount_f(void)
 		if (accounts[i].state == a_free)
 			continue;
 
-		if (!strcasecmp(accounts[i].login, Cmd_Argv(1)))
-		{
-			if (accounts[i].inuse)
-				SV_Logout(&svs.clients[accounts[i].inuse -1]);
+		if (!strcasecmp(accounts[i].login, Cmd_Argv(1))) {
+			// Logout anyone using this login
+			if ((int)sv_login.value == 1) {
+				// Mandatory web logins, or using local files
+				if ((int)sv_login_web.value == 2 || (int)sv_login_web.value == 0) {
+					for (j = 0; j < MAX_CLIENTS; ++j) {
+						client_t* cl = &svs.clients[j];
 
-			accounts[i].state = a_free;
+						if (!strcasecmp(cl->login, Cmd_Argv(1))) {
+							SV_Logout(cl);
+							SV_DropClient(cl);
+						}
+					}
+				}
+			}
+
+			// Update 'logged' pointers back to accounts list
+			if (i != num_accounts - 1) {
+				memcpy(&accounts[i], &accounts[num_accounts - 1], sizeof(accounts[i]));
+				memset(&accounts[num_accounts - 1], 0, sizeof(accounts[num_accounts - 1]));
+
+				// Update references from the last account which we just moved
+				for (j = 0; j < MAX_CLIENTS; ++j) {
+					client_t* cl = &svs.clients[j];
+					if (svs.clients[j].logged == num_accounts) {
+						svs.clients[j].logged = i + 1;
+					}
+				}
+			}
+
 			num_accounts--;
-			Con_Printf("login %s removed\n", accounts[i].login);
+			Con_Printf("login %s removed\n", Cmd_Argv(1));
 			WriteAccounts();
 			return;
 		}
@@ -345,7 +390,6 @@ SV_ListAccount_f
 shows the list of accounts
 =================
 */
-
 void SV_ListAccount_f (void)
 {
 	int i,c;
@@ -380,26 +424,32 @@ blocks/unblocks an account
 
 void SV_blockAccount(qbool block)
 {
-	int i, c;
+	int i, j;
 
-	for (i = 0, c = 0; c < num_accounts; i++)
+	for (i = 0; i < num_accounts; i++)
 	{
 		if (accounts[i].state == a_free)
 			continue;
 
 		if (!strcasecmp(accounts[i].login, Cmd_Argv(1)))
 		{
-			if (block)
-			{
+			if (block) {
 				accounts[i].state = a_blocked;
 				Con_Printf("account %s blocked\n", Cmd_Argv(1));
+
+				for (j = 0; j < MAX_CLIENTS; ++j) {
+					if (!strcasecmp(svs.clients[j].login, accounts[i].login)) {
+						SV_DropClient(&svs.clients[j]);
+						break;
+					}
+				}
 				return;
 			}
 
-			if (accounts[i].state != a_blocked)
+			if (accounts[i].state != a_blocked) {
 				Con_Printf("account %s not blocked\n", Cmd_Argv(1));
-			else
-			{
+			}
+			else {
 				accounts[i].state = a_ok;
 				accounts[i].failures = 0;
 				Con_Printf("account %s unblocked\n", Cmd_Argv(1));
@@ -407,7 +457,6 @@ void SV_blockAccount(qbool block)
 
 			return;
 		}
-		c++;
 	}
 
 	Con_Printf("account %s not found\n", Cmd_Argv(1));
@@ -446,7 +495,7 @@ returns positive value if login/pass are valid
 values <= 0 indicates a failure
 =================
 */
-static int checklogin(char *log1, char *pass, int num, quse_t use)
+static int checklogin(char *log1, char *pass, quse_t use)
 {
 	int i,c;
 
@@ -459,28 +508,33 @@ static int checklogin(char *log1, char *pass, int num, quse_t use)
 		        /*use == use_log && accounts[i].use == use_log && */
 			!strcasecmp(log1, accounts[i].login))
 		{
-			if (accounts[i].inuse && accounts[i].use == use_log)
-				return -1;
-
 			if (accounts[i].state == a_blocked)
 				return -2;
 
-			if (use == use_ip ||
-			        (!(int)sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
-			        ( (int)sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass)))
-			{
-				accounts[i].failures = 0;
-				accounts[i].inuse++;
-				return i+1;
-			}
+			// Only do logins/failures if using file-based login list
+			if (sv_login_web.value == 0) {
+				if (accounts[i].inuse && accounts[i].use == use_log) {
+					return -1;
+				}
 
-			if (++accounts[i].failures >= MAX_FAILURES)
-			{
-				Sys_Printf("account %s blocked after %d failed login attempts\n", accounts[i].login, accounts[i].failures);
-				accounts[i].state = a_blocked;
-			}
+				if (use == use_ip ||
+						(!(int)sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
+						( (int)sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass)))
+				{
+					accounts[i].failures = 0;
+					accounts[i].inuse++;
+					return i+1;
+				}
 
-			WriteAccounts();
+				if (++accounts[i].failures >= MAX_FAILURES) {
+					Sys_Printf("account %s blocked after %d failed login attempts\n", accounts[i].login, accounts[i].failures);
+					accounts[i].state = a_blocked;
+				}
+				WriteAccounts();
+			}
+			else {
+				return i + 1;
+			}
 
 			return 0;
 		}
@@ -494,6 +548,9 @@ static int checklogin(char *log1, char *pass, int num, quse_t use)
 void Login_Init (void)
 {
 	Cvar_Register (&sv_login);
+#ifdef WEBSITE_LOGIN_SUPPORT
+	Cvar_Register(&sv_login_web);
+#endif
 
 	Cmd_AddCommand ("acc_create",SV_CreateAccount_f);
 	Cmd_AddCommand ("acc_remove",SV_RemoveAccount_f);
@@ -516,20 +573,22 @@ called on connect after cmd new is issued
 qbool SV_Login(client_t *cl)
 {
 	extern cvar_t sv_registrationinfo;
-	char info[256];
 	char *ip;
 
 	// is sv_login is disabled, login is not necessery
-	if (!(int)sv_login.value)
-	{
-		SV_Logout(cl);
-		cl->logged = -1;
+	if (!(int)sv_login.value) {
+		// If using local files then logout
+		if (!cl->logged_in_via_web) {
+			SV_Logout(cl);
+			cl->logged = -1;
+		}
 		return true;
 	}
 
-	// if we're already logged return (probobly map change)
-	if (cl->logged > 0)
+	// if we're already logged return (probably map change)
+	if (cl->logged > 0 || cl->logged_in_via_web) {
 		return true;
+	}
 
 	// sv_login == 1 -> spectators don't login
 	if ((int)sv_login.value == 1 && cl->spectator)
@@ -541,45 +600,99 @@ qbool SV_Login(client_t *cl)
 
 	// check for account for ip
 	ip = va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]);
-	if ((cl->logged = checklogin(ip, ip, cl - svs.clients + 1, use_ip)) > 0)
+	if ((cl->logged = checklogin(ip, ip, use_ip)) > 0)
 	{
 		strlcpy(cl->login, accounts[cl->logged-1].pass, CLIENT_LOGIN_LEN);
 		return true;
 	}
 
 	// need to login before connecting
-	cl->logged = false;
+	cl->logged = 0;
 	cl->login[0] = 0;
 
 	if (sv_registrationinfo.string[0])
-	{
-		strlcpy (info, sv_registrationinfo.string, 254);
-		strlcat (info, "\n", 255);
-		MSG_WriteByte (&cl->netchan.message, svc_print);
-		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, info);
+		SV_ClientPrintf2(cl, PRINT_HIGH, "%s\n", sv_registrationinfo.string);
+
+#ifdef WEBSITE_LOGIN_SUPPORT
+	if ((int)sv_login_web.value) {
+		char buffer[128];
+		strlcpy(buffer, "//authprompt\n", sizeof(buffer));
+
+		ClientReliableWrite_Begin(cl, svc_stufftext, 2 + strlen(buffer));
+		ClientReliableWrite_String(cl, buffer);
+
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Enter username:\n");
 	}
-	MSG_WriteByte (&cl->netchan.message, svc_print);
-	MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-	MSG_WriteString (&cl->netchan.message, "Enter your login and password:\n");
+	else
+#endif
+	{
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Enter login & password:\n");
+	}
 
 	return false;
 }
 
 void SV_Logout(client_t *cl)
 {
-	if (cl->logged > 0)
-	{
-		accounts[cl->logged-1].inuse--;
-		cl->login[0] = 0;
-		cl->logged = 0;
+	if (cl->logged > 0 && cl->logged <= sizeof(accounts) / sizeof(accounts[0])) {
+		accounts[cl->logged - 1].inuse--;
+	}
+
+	Info_SetStar(&cl->_userinfo_ctx_, "*auth", "");
+	Info_SetStar(&cl->_userinfo_ctx_, "*flag", "");
+	ProcessUserInfoChange(cl, "*auth", cl->login);
+	ProcessUserInfoChange(cl, "*flag", cl->login_flag);
+
+	memset(cl->login, 0, sizeof(cl->login));
+	memset(cl->login_alias, 0, sizeof(cl->login_alias));
+	memset(cl->login_flag, 0, sizeof(cl->login_flag));
+	memset(cl->login_challenge, 0, sizeof(cl->login_challenge));
+	memset(cl->login_confirmation, 0, sizeof(cl->login_confirmation));
+	cl->logged = 0;
+	cl->logged_in_via_web = false;
+}
+
+void SV_ParseWebLogin(client_t* cl)
+{
+	char parameter[128] = { 0 };
+	char* p;
+
+	strlcpy(parameter, Cmd_Argv(1), sizeof(parameter));
+	for (p = parameter; *p > 32; ++p) {
+	}
+	*p = '\0';
+
+	if (!parameter[0]) {
+		return;
+	}
+
+	if (cl->login_challenge[0]) {
+		// This is response to challenge, treat as password
+		Central_VerifyChallengeResponse(cl, cl->login_challenge, parameter);
+
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Challenge received, please wait...\n");
+	}
+	else if (curtime - cl->login_request_time < LOGIN_MIN_RETRY_TIME) {
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Please wait and try again\n");
+	}
+	else {
+		// Treat as username
+		Central_GenerateChallenge(cl, parameter, true);
+
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Generating challenge, please wait...\n");
 	}
 }
 
 void SV_ParseLogin(client_t *cl)
 {
-	extern cvar_t sv_forcenick;
 	char *log1, *pass;
+
+#ifdef WEBSITE_LOGIN_SUPPORT
+	if (sv_login_web.value) {
+		SV_ParseWebLogin(cl);
+		return;
+	}
+#endif
 
 	if (Cmd_Argc() > 2)
 	{
@@ -587,7 +700,8 @@ void SV_ParseLogin(client_t *cl)
 		pass = Cmd_Argv(2);
 	}
 	else
-	{ // bah usually whole text in 'say' is put into ""
+	{
+		// bah usually whole text in 'say' is put into ""
 		log1 = pass = Cmd_Argv(1);
 		while (*pass && *pass != ' ')
 			pass++;
@@ -613,72 +727,133 @@ void SV_ParseLogin(client_t *cl)
 	if (!*pass)
 	{
 		strlcpy(cl->login, log1, CLIENT_LOGIN_LEN);
-		MSG_WriteByte (&cl->netchan.message, svc_print);
-		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, va("Password for %s:\n", cl->login));
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Enter password for %s:\n", cl->login);
 
 		return;
 	}
 
-	cl->logged = checklogin(log1, pass, cl - svs.clients + 1, use_log);
+	cl->logged = checklogin(log1, pass, use_log);
 
 	switch (cl->logged)
 	{
 	case -2:
-		MSG_WriteByte (&cl->netchan.message, svc_print);
-		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, "Login blocked\n");
-		cl->logged = 0;
-		cl->login[0] = 0;
+		SV_BlockedLogin(cl);
 		break;
 	case -1:
-		MSG_WriteByte (&cl->netchan.message, svc_print);
-		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, "Login in use!\ntry again:\n");
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Login in use!\ntry again:\n");
 		cl->logged = 0;
 		cl->login[0] = 0;
 		break;
 	case 0:
-		MSG_WriteByte (&cl->netchan.message, svc_print);
-		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, va("Access denied\nPassword for %s:\n", cl->login));
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Access denied\nPassword for %s:\n", cl->login);
 		break;
 	default:
-		Sys_Printf("%s logged in as %s\n", cl->name, cl->login);
-		MSG_WriteByte (&cl->netchan.message, svc_print);
-		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, va("Welcome %s\n", log1));
-
-		//VVD: forcenick ->
-		if ((int)sv_forcenick.value && cl->login[0])
-		{
-			char oldval[MAX_EXT_INFO_STRING];
-			strlcpy (oldval, cl->name, MAX_EXT_INFO_STRING);
-
-			Info_Set (&cl->_userinfo_ctx_, "name", cl->login);
-
-			ProcessUserInfoChange (cl, "name", oldval);
-
-			// Change name cvar in client
-			MSG_WriteByte (&cl->netchan.message, svc_stufftext);
-			MSG_WriteString (&cl->netchan.message, va("name %s\n", cl->login));
-		}
-		//<-
-
-		MSG_WriteByte (&cl->netchan.message, svc_stufftext);
-		MSG_WriteString (&cl->netchan.message, "cmd new\n");
+		strlcpy(cl->login_alias, cl->login, sizeof(cl->login_alias));
+		SV_SuccessfulLogin(cl);
+		break;
 	}
+}
+
+static void SV_BlockedLogin(client_t* cl)
+{
+	SV_ClientPrintf2(cl, PRINT_HIGH, "Login blocked\n");
+	SV_DropClient(cl);
+}
+
+static void SV_SuccessfulLogin(client_t* cl)
+{
+	extern cvar_t sv_forcenick;
+
+	if (!cl->spectator || !GameStarted()) {
+		SV_BroadcastPrintf(PRINT_HIGH, "%s logged in as %s\n", cl->name, cl->login);
+	}
+	if (cl->state < cs_spawned) {
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Welcome %s\n", cl->login);
+	}
+
+	//VVD: forcenick ->
+	if ((int)sv_forcenick.value)
+	{
+		const char* forced_name = cl->login_alias[0] ? cl->login_alias : cl->login;
+
+		if (forced_name[0]) {
+			SV_ForceClientName(cl, forced_name);
+		}
+	}
+	//<-
+
+	if (cl->state < cs_spawned) {
+		MSG_WriteByte(&cl->netchan.message, svc_stufftext);
+		MSG_WriteString(&cl->netchan.message, "cmd new\n");
+	}
+}
+
+static void SV_ForceClientName(client_t* cl, const char* forced_name)
+{
+	char oldval[MAX_EXT_INFO_STRING];
+	int i;
+
+	// If any other clients are using this name, kick them
+	for (i = 0; i < MAX_CLIENTS; ++i) {
+		client_t* other = &svs.clients[i];
+
+		if (!other->state)
+			continue;
+		if (other == cl) {
+			continue;
+		}
+
+		if (!strcasecmp(other->name, forced_name)) {
+			SV_KickClient(other, " (using authenticated user's name)");
+		}
+	}
+
+	// Set server-side name
+	strlcpy(oldval, cl->name, MAX_EXT_INFO_STRING);
+	Info_Set(&cl->_userinfo_ctx_, "name", forced_name);
+	ProcessUserInfoChange(cl, "name", oldval);
+
+	// Change name cvar in client
+	MSG_WriteByte(&cl->netchan.message, svc_stufftext);
+	MSG_WriteString(&cl->netchan.message, va("name %s\n", forced_name));
 }
 
 void SV_LoginCheckTimeOut(client_t *cl)
 {
 	if (cl->connection_started && curtime - cl->connection_started > 60)
 	{
-		Sys_Printf("login time out for %s\n", cl->name);
+		Sys_Printf("Login time out for %s\n", cl->name);
 
-		MSG_WriteByte (&cl->netchan.message, svc_print);
-		MSG_WriteByte (&cl->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&cl->netchan.message, "waited too long, Bye!\n");
+		SV_ClientPrintf2(cl, PRINT_HIGH, "Login timeout expired\n");
 		SV_DropClient(cl);
+	}
+}
+
+void SV_LoginWebCheck(client_t* cl)
+{
+	int status = checklogin(cl->login, cl->login, use_log);
+
+	if (status < 0) {
+		// Server admin explicitly blocked this account
+		SV_BlockedLogin(cl);
+	}
+	else if (status == 0 && (int)sv_login_web.value == 2) {
+		// Server admin needs to create accounts for people to use
+		SV_BlockedLogin(cl);
+	}
+	else {
+		// Continue logging in
+		SV_SuccessfulLogin(cl);
+	}
+}
+
+void SV_LoginWebFailed(client_t* cl)
+{
+	memset(cl->login_challenge, 0, sizeof(cl->login_challenge));
+	cl->login_request_time = 0;
+
+	SV_ClientPrintf2(cl, PRINT_HIGH, "Challenge response failed.\n");
+	if (cl->state < cs_spawned) {
+		SV_BlockedLogin(cl);
 	}
 }

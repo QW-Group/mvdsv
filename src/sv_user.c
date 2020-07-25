@@ -244,6 +244,8 @@ static void Cmd_New_f (void)
 	// we can be connected now, announce it, and possibly login
 	if (!sv_client->rip_vip)
 	{
+		extern cvar_t sv_login_web;
+
 		if (sv_client->state == cs_preconnected)
 		{
 			// get highest VIP level
@@ -266,8 +268,15 @@ static void Cmd_New_f (void)
 		if (!SV_Login(sv_client))
 			return;
 
-		if (!sv_client->logged && (int)sv_login.value)
-			return; // not so fast;
+		// If logins are mandatory, check
+		if ((int)sv_login.value) {
+			if (!sv_login_web.value && !sv_client->logged) {
+				return; // not so fast;
+			}
+			else if (sv_login_web.value && !sv_client->logged_in_via_web) {
+				return; // need to login first
+			}
+		}
 
 		//bliP: cuff, mute ->
 		sv_client->lockedtill = SV_RestorePenaltyFilter(sv_client, ft_mute);
@@ -1751,7 +1760,7 @@ static void SV_Say (qbool team)
 		snprintf(text, sizeof(text), "%s\n", p);
 	}
 
-	if (!sv_client->logged)
+	if (!sv_client->logged && !sv_client->logged_in_via_web)
 	{
 		SV_ParseLogin(sv_client);
 		return;
@@ -2214,6 +2223,7 @@ char *shortinfotbl[] =
 #endif
 	"gender",
 	"*auth",
+	"*flag",
 	//"*client",
 	//"*spectator",
 	//"*VIP",
@@ -2310,24 +2320,21 @@ static void Cmd_SetInfo_f (void)
 		//bliP: mute ->
 		if (!sv.paused && realtime < sv_client->lockedtill)
 		{
-			SV_ClientPrintf(sv_client, PRINT_CHAT,
-			                "You can't change your name while you're muted\n");
+			SV_ClientPrintf(sv_client, PRINT_CHAT, "You can't change your name while you're muted\n");
 			return;
 		}
 		//<-
 		//VVD: forcenick ->
-		if ((int)sv_forcenick.value && (int)sv_login.value && sv_client->login[0])
+		//meag: removed sv_login check to allow optional logins... sv_forcenick should still take effect
+		if ((int)sv_forcenick.value && /*(int)sv_login.value &&*/ sv_client->login[0])
 		{
-			SV_ClientPrintf(sv_client, PRINT_CHAT,
-			                "You can't change your name while logged in on this server.\n");
+			SV_ClientPrintf(sv_client, PRINT_CHAT, "You can't change your name while logged in on this server.\n");
 			Info_Set (&sv_client->_userinfo_ctx_, "name", sv_client->login);
 			strlcpy (sv_client->name, sv_client->login, CLIENT_NAME_LEN);
 			MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
-			MSG_WriteString (&sv_client->netchan.message,
-			                 va("name %s\n", sv_client->login));
+			MSG_WriteString (&sv_client->netchan.message, va("name %s\n", sv_client->login));
 			MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
-			MSG_WriteString (&sv_client->netchan.message,
-			                 va("setinfo name %s\n", sv_client->login));
+			MSG_WriteString (&sv_client->netchan.message, va("setinfo name %s\n", sv_client->login));
 			return;
 		}
 		//<-
@@ -2569,7 +2576,7 @@ Set client to player mode without reconnecting
 */
 static void Cmd_Join_f (void)
 {
-	extern cvar_t sv_login;
+	extern cvar_t sv_login, sv_login_web;
 	int i;
 	int clients;
 
@@ -2590,8 +2597,12 @@ static void Cmd_Join_f (void)
 	}
 
 	// Might have been 'not necessary' for spectator but needed for player
-	if (sv_client->logged <= 0 && (int)sv_login.value) {
+	if (sv_client->logged <= 0 && (int)sv_login.value && !(int)sv_login_web.value) {
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "This server requires users to login.  Please disconnect and reconnect as a player.\n");
+		return;
+	}
+	else if (!sv_client->logged_in_via_web && (int)sv_login.value && (int)sv_login_web.value) {
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "This server requires users to login.  Please authenticate first (/cmd login <username>).\n");
 		return;
 	}
 
@@ -3081,54 +3092,76 @@ void Cmd_PEXT_f(void)
 // { Central login
 void Cmd_Login_f(void)
 {
-	extern void Central_GenerateChallenge(client_t* client, const char* username);
+	if (sv_client->state != cs_spawned) {
+		extern cvar_t sv_login;
+
+		if (!(int)sv_login.value) {
+			SV_ClientPrintf2(sv_client, PRINT_HIGH, "Cannot login during connection\n");
+			return;
+		}
+	}
 
 	if (Cmd_Argc() != 2) {
-		MSG_WriteByte (&sv_client->netchan.message, svc_print);
-		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&sv_client->netchan.message, "Usage: login <username>\n");
+		SV_ClientPrintf2(sv_client, PRINT_HIGH, "Usage: login <username>\n");
 		return;
 	}
 
-	if (sv.time - sv_client->login_request_time < LOGIN_MIN_RETRY_TIME) {
-		MSG_WriteByte (&sv_client->netchan.message, svc_print);
-		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&sv_client->netchan.message, "Please wait and try again\n");
+	if (curtime - sv_client->login_request_time < LOGIN_MIN_RETRY_TIME) {
+		SV_ClientPrintf2(sv_client, PRINT_HIGH, "Please wait and try again\n");
 		return;
 	}
 
-	Central_GenerateChallenge(sv_client, Cmd_Argv(1));
+	if (sv_client->logged_in_via_web) {
+		SV_ClientPrintf2(sv_client, PRINT_HIGH, "You are already logged in as '%s'\n", sv_client->login);
+		return;
+	}
+
+	if (sv_client->state != cs_spawned) {
+		SV_ParseWebLogin(sv_client);
+	}
+	else {
+		Central_GenerateChallenge(sv_client, Cmd_Argv(1), false);
+	}
 }
 
 void Cmd_ChallengeResponse_f(void)
 {
-	extern void Central_VerifyChallengeResponse(client_t* client, const char* challenge, const char* response);
-
 	if (Cmd_Argc() != 2) {
-		MSG_WriteByte (&sv_client->netchan.message, svc_print);
-		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&sv_client->netchan.message, "Usage: challenge-response <response>\n");
+		MSG_WriteByte(&sv_client->netchan.message, svc_print);
+		MSG_WriteByte(&sv_client->netchan.message, PRINT_HIGH);
+		MSG_WriteString(&sv_client->netchan.message, "Usage: challenge-response <response>\n");
 		return;
 	}
 
-	if (sv.time - sv_client->login_request_time < LOGIN_MIN_RETRY_TIME || !sv_client->challenge[0]) {
-		MSG_WriteByte (&sv_client->netchan.message, svc_print);
-		MSG_WriteByte (&sv_client->netchan.message, PRINT_HIGH);
-		MSG_WriteString (&sv_client->netchan.message, "Please wait and try again\n");
+	if (!sv_client->login_challenge[0]) {
+		MSG_WriteByte(&sv_client->netchan.message, svc_print);
+		MSG_WriteByte(&sv_client->netchan.message, PRINT_HIGH);
+		MSG_WriteString(&sv_client->netchan.message, "Please wait and try again\n");
 		return;
 	}
 
-	Central_VerifyChallengeResponse(sv_client, sv_client->challenge, Cmd_Argv(1));
+	Central_VerifyChallengeResponse(sv_client, sv_client->login_challenge, Cmd_Argv(1));
 }
 
 void Cmd_Logout_f(void)
 {
-	if (sv_client->login[0]) {
-		SV_BroadcastPrintf(PRINT_HIGH, "%s logged out\n", sv_client->name);
+	extern cvar_t sv_login;
+
+	if (sv_client->logged_in_via_web) {
+		if (sv_client->login[0]) {
+			SV_BroadcastPrintf(PRINT_HIGH, "%s logged out\n", sv_client->name);
+		}
+
+		SV_Logout(sv_client);
+		if (!(int)sv_login.value || ((int)sv_login.value == 1 && sv_client->spectator)) {
+			sv_client->logged = -1;
+		}
 	}
 
-	sv_client->login[0] = '\0';
-	sv_client->logged = 0;
+	// If logins are mandatory then treat as disconnect
+	if ((int)sv_login.value > 1 || ((int)sv_login.value == 1 && !sv_client->spectator)) {
+		SV_DropClient(sv_client);
+	}
 }
 // } Central login
 #endif

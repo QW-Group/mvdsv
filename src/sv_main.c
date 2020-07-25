@@ -344,7 +344,7 @@ or unwillingly.  This is NOT called if the entire server is quiting
 or crashing.
 =====================
 */
-void SV_DropClient (client_t *drop)
+void SV_DropClient(client_t *drop)
 {
 	//bliP: cuff, mute ->
 	SV_SavePenaltyFilter (drop, ft_mute, drop->lockedtill);
@@ -410,7 +410,7 @@ void SV_DropClient (client_t *drop)
 	Info_RemoveAll(&drop->_userinfoshort_ctx_);
 
 	// send notification to all remaining clients
-	SV_FullClientUpdate (drop, &sv.reliable_datagram);
+	SV_FullClientUpdate(drop, &sv.reliable_datagram);
 }
 
 
@@ -575,6 +575,7 @@ This message can be up to around 5k with worst case string lengths.
 #define STATUS_SPECTATORS_AS_PLAYERS    8 //for ASE - change only frags: show as "S"
 #define STATUS_SHOWTEAMS                16
 #define STATUS_SHOWQTV                  32
+#define STATUS_SHOWFLAGS                64
 
 static void SVC_Status (void)
 {
@@ -621,10 +622,23 @@ static void SVC_Status (void)
 				            (int)(curtime - cl->connection_started)/60, ping, name,
 				            Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
 
-				if (opt & STATUS_SHOWTEAMS)
-					Con_Printf (" \"%s\"\n", cl->team);
-				else
-					Con_Printf ("\n");
+				if (opt & STATUS_SHOWTEAMS) {
+					Con_Printf(" \"%s\"", cl->team);
+				}
+
+				if (opt & STATUS_SHOWFLAGS) {
+					if (cl->login_flag[0]) {
+						Con_Printf(" \"%s\"", cl->login_flag);
+					}
+					else if (cl->logged_in_via_web || cl->logged > 0) {
+						Con_Printf(" \"none\"");
+					}
+					else {
+						Con_Printf(" \"\"");
+					}
+				}
+
+				Con_Printf("\n");
 			}
 		}
 
@@ -3022,8 +3036,9 @@ static void SV_CheckTimeouts (void)
 				SV_DropClient (cl);
 				cl->state = cs_free;	// don't bother with zombie state
 			}
-			if (!cl->logged)
+			if (!cl->logged && !cl->logged_in_via_web) {
 				SV_LoginCheckTimeOut(cl);
+			}
 		}
 		if (cl->state == cs_zombie && curtime - cl->connection_started > zombietime.value)
 		{
