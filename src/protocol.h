@@ -68,6 +68,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MVD_PEXT1_FLOATCOORDS       0x00000001 // FTE_PEXT_FLOATCOORDS but for entity/player coords only
 #define MVD_PEXT1_HIGHLAGTELEPORT   0x00000002 // Adjust movement direction for frames following teleport
+#define MVD_PEXT1_SERVERSIDEWEAPON  0x00000004 // Server-side weapon selection
 
 #endif // PROTOCOL_VERSION_MVD1
 
@@ -242,6 +243,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef FTE_PEXT2_VOICECHAT
 #define clc_voicechat	83		// FTE voice chat.
+#endif
+
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
+#define clc_mvd_weapon 200     // server-side weapon selection
+
+// selection options
+#define clc_mvd_weapon_mode_presel      1    // preselect (don't send impulses until -attack/+attack)
+#define clc_mvd_weapon_mode_iffiring    2    // don't wait for -attack before pre-selecting weapon
+#define clc_mvd_weapon_forget_ranking   4    // forget priority list after initial selection (requires extra byte for age)
+
+// hide options
+#define clc_mvd_weapon_hide_axe         8    // on subsequent -attack, hide weapon and switch to axe
+#define clc_mvd_weapon_hide_sg          16   // on subsequent -attack, hide weapon and switch to sg
+#define clc_mvd_weapon_reset_on_death   32   // on death, go back to 2 1
+#define clc_mvd_weapon_switching        64   // if not set, disable all server-side weapon switching
+
+//byte MSG_EncodeMVDSVWeaponFlags(int deathmatch, int weaponmode, int weaponhide, qbool weaponhide_axe, qbool forgetorder, qbool forgetondeath);
+//void MSG_DecodeMVDSVWeaponFlags(int flags, int* weaponmode, int* weaponhide, qbool* forgetorder, int* sequence);
 #endif
 
 //==============================================

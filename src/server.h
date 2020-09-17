@@ -180,6 +180,10 @@ typedef struct
 #define LOGIN_FLAG_LENGTH            8
 #define LOGIN_MIN_RETRY_TIME         5    // 1 login attempt per x seconds
 
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
+#define MAX_WEAPONSWITCH_OPTIONS    10
+#endif
+
 typedef struct client_s
 {
 	sv_client_state_t	state;
@@ -351,10 +355,26 @@ typedef struct client_s
 	packet_t        *packets, *last_packet;
 
 	// lagged-teleport extension
+#ifdef MVD_PEXT1_HIGHLAGTELEPORT
 	qbool           lastteleport_teleport;    // true if teleport, otherwise it was spawn
 	int             lastteleport_outgoingseq; // outgoing sequence# when the player teleported
 	int             lastteleport_incomingseq; // incoming sequence# when the player teleported
 	float           lastteleport_teleportyaw; // new yaw angle, post-teleport
+#endif
+
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
+	// server-side weapons extension
+	int             weaponswitch_sequence_set; // need to remember what packet current choices were sent in for forgetorder
+	qbool           weaponswitch_pending;
+	qbool           weaponswitch_hide;         // automatically flick back when not firing
+	qbool           weaponswitch_hide_on_death;// switch back to 2 1 when dying
+	qbool           weaponswitch_wasfiring;    // fire pressed on previous frame (will only hide if so)
+
+	qbool           weaponswitch_enabled;      // allow user to disable while connected
+	int             weaponswitch_mode;         // user preference
+	qbool           weaponswitch_forgetorder;  // if set, decide best weapon immediately and don't rank on fire
+	int             weaponswitch_priority[MAX_WEAPONSWITCH_OPTIONS];
+#endif
 } client_t;
 
 // a client can leave the server in one of four ways:

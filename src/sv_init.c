@@ -373,6 +373,15 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 		svs.mvdprotocolextension1 &= ~MVD_PEXT1_HIGHLAGTELEPORT;
 	}
 #endif
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
+	// Cheap 'ktx' detection
+	if (strstr(Cvar_String("qwm_name"), "KTX")) {
+		svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON;
+	}
+	else {
+		svs.mvdprotocolextension1 &= ~MVD_PEXT1_SERVERSIDEWEAPON;
+	}
+#endif
 
 	// find optional QC-exported functions.
 	// we have it here, so we set it to NULL in case of PR2 progs.

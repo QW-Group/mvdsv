@@ -745,6 +745,7 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 
 		MSG_WriteByte (msg, svc_setangle);
 
+#ifdef MVD_PEXT1_HIGHLAGTELEPORT
 		if (client->mvdprotocolextensions1 & MVD_PEXT1_HIGHLAGTELEPORT) {
 			if (fofs_teleported) {
 				client->lastteleport_teleport = ((eval_t *)((byte *)&(client->edict)->v + fofs_teleported))->_int;
@@ -765,6 +766,7 @@ void SV_WriteClientdataToMessage (client_t *client, sizebuf_t *msg)
 				MSG_WriteByte(msg, 0); // we don't know, so no changes made...
 			}
 		}
+#endif
 
 		for (i=0 ; i < 3 ; i++)
 			MSG_WriteAngle (msg, ent->v.angles[i] );
