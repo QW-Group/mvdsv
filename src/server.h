@@ -1036,6 +1036,8 @@ void SV_ParseLogin(client_t *cl);
 void SV_LoginCheckTimeOut(client_t *cl);
 void SV_LoginWebCheck(client_t* cl);
 void SV_LoginWebFailed(client_t* cl);
+qbool SV_LoginRequired(client_t* cl);
+qbool SV_LoginBlockJoinRequest(client_t* cl);
 
 // sv_master.c
 void SV_SetMaster_f (void);

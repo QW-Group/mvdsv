@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27428.2043
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30309.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qwsv", "mvdsv_vc2017.vcxproj", "{617E4627-FBC6-4834-9C6B-B178EACE973E}"
 EndProject
@@ -9,6 +9,7 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Debug-NoAsm|Win32 = Debug-NoAsm|Win32
+		debug-noweb|Win32 = debug-noweb|Win32
 		Release|Win32 = Release|Win32
 		Release-NoAsm|Win32 = Release-NoAsm|Win32
 	EndGlobalSection
@@ -17,6 +18,8 @@ Global
 		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Debug|Win32.Build.0 = Debug|Win32
 		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Debug-NoAsm|Win32.ActiveCfg = Debug-NoAsm|Win32
 		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Debug-NoAsm|Win32.Build.0 = Debug-NoAsm|Win32
+		{617E4627-FBC6-4834-9C6B-B178EACE973E}.debug-noweb|Win32.ActiveCfg = debug-noweb|Win32
+		{617E4627-FBC6-4834-9C6B-B178EACE973E}.debug-noweb|Win32.Build.0 = debug-noweb|Win32
 		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Release|Win32.ActiveCfg = Release|Win32
 		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Release|Win32.Build.0 = Release|Win32
 		{617E4627-FBC6-4834-9C6B-B178EACE973E}.Release-NoAsm|Win32.ActiveCfg = Release-NoAsm|Win32

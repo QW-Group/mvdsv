@@ -38,6 +38,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t sv_login = {"sv_login", "0"};	// if enabled, login required
 #ifdef WEBSITE_LOGIN_SUPPORT
 cvar_t sv_login_web = { "sv_login_web", "1" }; // 0=local files, 1=auth via website (bans can be in local files), 2=mandatory auth (must have account in local files)
+#define LoginMustHaveLocalAccount() ((int)sv_login_web.value == 2 || (int)sv_login_web.value == 0)
+#define WebLoginsEnabled() ((int)sv_login_web.value != 0)
+#else
+#define LoginMustHaveLocalAccount() (1)
+#define WebLoginsEnabled() (0)
 #endif
 
 extern cvar_t sv_hashpasswords;
@@ -345,7 +350,7 @@ void SV_RemoveAccount_f(void)
 			// Logout anyone using this login
 			if ((int)sv_login.value == 1) {
 				// Mandatory web logins, or using local files
-				if ((int)sv_login_web.value == 2 || (int)sv_login_web.value == 0) {
+				if (LoginMustHaveLocalAccount()) {
 					for (j = 0; j < MAX_CLIENTS; ++j) {
 						client_t* cl = &svs.clients[j];
 
@@ -512,7 +517,7 @@ static int checklogin(char *log1, char *pass, quse_t use)
 				return -2;
 
 			// Only do logins/failures if using file-based login list
-			if (sv_login_web.value == 0) {
+			if (LoginMustHaveLocalAccount()) {
 				if (accounts[i].inuse && accounts[i].use == use_log) {
 					return -1;
 				}
@@ -613,8 +618,7 @@ qbool SV_Login(client_t *cl)
 	if (sv_registrationinfo.string[0])
 		SV_ClientPrintf2(cl, PRINT_HIGH, "%s\n", sv_registrationinfo.string);
 
-#ifdef WEBSITE_LOGIN_SUPPORT
-	if ((int)sv_login_web.value) {
+	if (WebLoginsEnabled()) {
 		char buffer[128];
 		strlcpy(buffer, "//authprompt\n", sizeof(buffer));
 
@@ -624,7 +628,6 @@ qbool SV_Login(client_t *cl)
 		SV_ClientPrintf2(cl, PRINT_HIGH, "Enter username:\n");
 	}
 	else
-#endif
 	{
 		SV_ClientPrintf2(cl, PRINT_HIGH, "Enter login & password:\n");
 	}
@@ -652,6 +655,7 @@ void SV_Logout(client_t *cl)
 	cl->logged_in_via_web = false;
 }
 
+#ifdef WEBSITE_LOGIN_SUPPORT
 void SV_ParseWebLogin(client_t* cl)
 {
 	char parameter[128] = { 0 };
@@ -682,17 +686,20 @@ void SV_ParseWebLogin(client_t* cl)
 		SV_ClientPrintf2(cl, PRINT_HIGH, "Generating challenge, please wait...\n");
 	}
 }
+#else
+void SV_ParseWebLogin(client_t* cl)
+{
+}
+#endif
 
 void SV_ParseLogin(client_t *cl)
 {
 	char *log1, *pass;
 
-#ifdef WEBSITE_LOGIN_SUPPORT
-	if (sv_login_web.value) {
+	if (WebLoginsEnabled()) {
 		SV_ParseWebLogin(cl);
 		return;
 	}
-#endif
 
 	if (Cmd_Argc() > 2)
 	{
@@ -837,7 +844,7 @@ void SV_LoginWebCheck(client_t* cl)
 		// Server admin explicitly blocked this account
 		SV_BlockedLogin(cl);
 	}
-	else if (status == 0 && (int)sv_login_web.value == 2) {
+	else if (status == 0 && LoginMustHaveLocalAccount()) {
 		// Server admin needs to create accounts for people to use
 		SV_BlockedLogin(cl);
 	}
@@ -856,4 +863,36 @@ void SV_LoginWebFailed(client_t* cl)
 	if (cl->state < cs_spawned) {
 		SV_BlockedLogin(cl);
 	}
+}
+
+qbool SV_LoginRequired(client_t* cl)
+{
+	int login = (int)sv_login.value;
+
+	if (login == 2 || (login == 1 && !cl->spectator)) {
+		if (WebLoginsEnabled()) {
+			return !cl->logged_in_via_web;
+		}
+		else {
+			return !cl->logged;
+		}
+	}
+	return false;
+}
+
+qbool SV_LoginBlockJoinRequest(client_t* cl)
+{
+	if (WebLoginsEnabled()) {
+		if (!cl->logged_in_via_web && (int)sv_login.value) {
+			SV_ClientPrintf(cl, PRINT_HIGH, "This server requires users to login.  Please authenticate first (/cmd login <username>).\n");
+			return true;
+		}
+	}
+	else if (cl->logged <= 0 && (int)sv_login.value) {
+		SV_ClientPrintf(cl, PRINT_HIGH, "This server requires users to login.  Please disconnect and reconnect as a player.\n");
+		return true;
+	}
+
+	// Allow
+	return false;
 }

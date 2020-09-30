@@ -169,7 +169,6 @@ static void Cmd_New_f (void)
 {
 	char		*gamedir;
 	int			playernum;
-	extern cvar_t sv_login;
 	extern cvar_t sv_serverip;
 	extern cvar_t sv_getrealip;
 
@@ -246,8 +245,6 @@ static void Cmd_New_f (void)
 	// we can be connected now, announce it, and possibly login
 	if (!sv_client->rip_vip)
 	{
-		extern cvar_t sv_login_web;
-
 		if (sv_client->state == cs_preconnected)
 		{
 			// get highest VIP level
@@ -271,13 +268,8 @@ static void Cmd_New_f (void)
 			return;
 
 		// If logins are mandatory, check
-		if ((int)sv_login.value) {
-			if (!sv_login_web.value && !sv_client->logged) {
-				return; // not so fast;
-			}
-			else if (sv_login_web.value && !sv_client->logged_in_via_web) {
-				return; // need to login first
-			}
+		if (SV_LoginRequired(sv_client)) {
+			return;
 		}
 
 		//bliP: cuff, mute ->
@@ -2234,7 +2226,7 @@ char *shortinfotbl[] =
 
 static void Cmd_SetInfo_f (void)
 {
-	extern cvar_t sv_forcenick, sv_login;
+	extern cvar_t sv_forcenick;
 	sv_client_state_t saved_state;
 	char oldval[MAX_EXT_INFO_STRING];
 	char info[MAX_EXT_INFO_STRING];
@@ -2578,7 +2570,6 @@ Set client to player mode without reconnecting
 */
 static void Cmd_Join_f (void)
 {
-	extern cvar_t sv_login, sv_login_web;
 	int i;
 	int clients;
 
@@ -2599,12 +2590,7 @@ static void Cmd_Join_f (void)
 	}
 
 	// Might have been 'not necessary' for spectator but needed for player
-	if (sv_client->logged <= 0 && (int)sv_login.value && !(int)sv_login_web.value) {
-		SV_ClientPrintf (sv_client, PRINT_HIGH, "This server requires users to login.  Please disconnect and reconnect as a player.\n");
-		return;
-	}
-	else if (!sv_client->logged_in_via_web && (int)sv_login.value && (int)sv_login_web.value) {
-		SV_ClientPrintf(sv_client, PRINT_HIGH, "This server requires users to login.  Please authenticate first (/cmd login <username>).\n");
+	if (SV_LoginBlockJoinRequest(sv_client)) {
 		return;
 	}
 
@@ -3094,13 +3080,11 @@ void Cmd_PEXT_f(void)
 // { Central login
 void Cmd_Login_f(void)
 {
-	if (sv_client->state != cs_spawned) {
-		extern cvar_t sv_login;
+	extern cvar_t sv_login;
 
-		if (!(int)sv_login.value) {
-			SV_ClientPrintf2(sv_client, PRINT_HIGH, "Cannot login during connection\n");
-			return;
-		}
+	if (sv_client->state != cs_spawned && !(int)sv_login.value) {
+		SV_ClientPrintf2(sv_client, PRINT_HIGH, "Cannot login during connection\n");
+		return;
 	}
 
 	if (Cmd_Argc() != 2) {
@@ -3155,6 +3139,8 @@ void Cmd_Logout_f(void)
 		}
 
 		SV_Logout(sv_client);
+
+		// 
 		if (!(int)sv_login.value || ((int)sv_login.value == 1 && sv_client->spectator)) {
 			sv_client->logged = -1;
 		}
