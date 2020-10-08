@@ -3627,7 +3627,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 			val = Info_Get (&cl->_userinfo_ctx_, "name");
 		}
 
-		if (!val[0] || !strcasecmp(val, "console") || strstr(val, "&c") || strstr(val, "&r"))
+		if (!val[0] || !Q_namecmp(val, "console") || strstr(val, "&c") || strstr(val, "&r"))
 		{
 			Info_Set (&cl->_userinfo_ctx_, "name", sv_default_name.string);
 			val = Info_Get (&cl->_userinfo_ctx_, "name");
@@ -3641,7 +3641,7 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 				if (client->state != cs_spawned || client == cl)
 					continue;
 
-				if (!strcasecmp(client->name, val))
+				if (!Q_namecmp(client->name, val))
 					break;
 			}
 			if (i != MAX_CLIENTS)
@@ -3668,28 +3668,26 @@ void SV_ExtractFromUserinfo (client_t *cl, qbool namechanged)
 
 		if (strncmp(val, cl->name, strlen(cl->name) + 1))
 		{
-			if (!sv.paused)
+			if (!cl->lastnametime || curtime - cl->lastnametime > 5)
 			{
-				if (!cl->lastnametime || realtime - cl->lastnametime > 5)
-				{
-					cl->lastnamecount = 0;
-					cl->lastnametime = realtime;
-				}
-				else if (cl->lastnamecount++ > 4)
-				{
-					SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name spamming\n", cl->name);
-					SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game for name spamming\n");
-					SV_LogPlayer(cl, "name spam", 1); //bliP: player logging
-					SV_DropClient (cl);
-					return;
-				}
+				cl->lastnamecount = 0;
+				cl->lastnametime = curtime;
+			}
+			else if (cl->lastnamecount++ > 4)
+			{
+				SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked for name spamming\n", cl->name);
+				SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game for name spamming\n");
+				SV_LogPlayer(cl, "name spam", 1); //bliP: player logging
+				SV_DropClient (cl);
+				return;
 			}
 
-			if (cl->state >= cs_spawned && !cl->spectator)
-				SV_BroadcastPrintf (PRINT_HIGH, "%s changed name to %s\n", cl->name, val);
+			if (cl->state >= cs_spawned && !cl->spectator) {
+				SV_BroadcastPrintf(PRINT_HIGH, "%s changed name to %s\n", cl->name, val);
+			}
 		}
 
-		strlcpy (cl->name, val, CLIENT_NAME_LEN);
+		strlcpy(cl->name, val, CLIENT_NAME_LEN);
 
 		if (cl->state >= cs_spawned) //bliP: player logging
 			SV_LogPlayer(cl, "name change", 1);

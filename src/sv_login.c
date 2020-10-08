@@ -810,12 +810,15 @@ static void SV_ForceClientName(client_t* cl, const char* forced_name)
 			continue;
 		}
 
-		if (!strcasecmp(other->name, forced_name)) {
+		if (!Q_namecmp(other->name, forced_name)) {
 			SV_KickClient(other, " (using authenticated user's name)");
 		}
 	}
 
-	// Set server-side name
+	// Set server-side name: allow colors/case changes
+	if (!Q_namecmp(cl->name, forced_name)) {
+		return;
+	}
 	strlcpy(oldval, cl->name, MAX_EXT_INFO_STRING);
 	Info_Set(&cl->_userinfo_ctx_, "name", forced_name);
 	ProcessUserInfoChange(cl, "name", oldval);

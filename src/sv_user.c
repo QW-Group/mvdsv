@@ -388,7 +388,7 @@ static void Cmd_New_f (void)
 	if (!sv_client->spectator) {
 		if (!PlayerCheckPing()) {
 			sv_client->old_frags = 0;
-			sv_client->connection_started = realtime;
+			sv_client->connection_started = curtime;
 			sv_client->spectator = true;
 			sv_client->spec_track = 0;
 			Info_SetStar (&sv_client->_userinfo_ctx_, "*spectator", "1");
@@ -2322,14 +2322,17 @@ static void Cmd_SetInfo_f (void)
 		//meag: removed sv_login check to allow optional logins... sv_forcenick should still take effect
 		if ((int)sv_forcenick.value && /*(int)sv_login.value &&*/ sv_client->login[0])
 		{
-			SV_ClientPrintf(sv_client, PRINT_CHAT, "You can't change your name while logged in on this server.\n");
-			Info_Set (&sv_client->_userinfo_ctx_, "name", sv_client->login);
-			strlcpy (sv_client->name, sv_client->login, CLIENT_NAME_LEN);
-			MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
-			MSG_WriteString (&sv_client->netchan.message, va("name %s\n", sv_client->login));
-			MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
-			MSG_WriteString (&sv_client->netchan.message, va("setinfo name %s\n", sv_client->login));
-			return;
+			// allow differences in case, redtext
+			if (Q_namecmp(sv_client->login, Cmd_Argv(2))) {
+				SV_ClientPrintf(sv_client, PRINT_CHAT, "You can't change your name while logged in on this server.\n");
+				Info_Set(&sv_client->_userinfo_ctx_, "name", sv_client->login);
+				strlcpy(sv_client->name, sv_client->login, CLIENT_NAME_LEN);
+				MSG_WriteByte(&sv_client->netchan.message, svc_stufftext);
+				MSG_WriteString(&sv_client->netchan.message, va("name %s\n", sv_client->login));
+				MSG_WriteByte(&sv_client->netchan.message, svc_stufftext);
+				MSG_WriteString(&sv_client->netchan.message, va("setinfo name %s\n", sv_client->login));
+				return;
+			}
 		}
 		//<-
 	}

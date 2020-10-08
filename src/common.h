@@ -222,4 +222,7 @@ typedef struct qtvuser_s
 
 qbool COM_FileExists(char *path);
 
+// Name comparison: case insensitive, red/white text insensitive
+int Q_namecmp(const char* s1, const char* s2);
+
 #endif /* !__COMMON_H__ */
