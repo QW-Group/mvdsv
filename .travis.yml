@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 
 os:
   - linux
@@ -68,11 +68,9 @@ addons:
       gcc-multilib
 
 before_install:
-  # ensure we do not have curl dev libs, otherwise it caused cross compilations to fail	
-  - sudo apt-get -y remove libcurl.*-dev libpcre*-dev
   # install cross compiler tools if we are going to compile binares for arm (notice it will remove gcc-multilib and creates a dependency issue if we try to install those packages with the others)
-  - if [ -z "${ARCH##armhf}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf ;fi
-  - if [ -z "${ARCH##aarch64}" ]; then sudo apt-get -y install gcc-aarch64-linux-gnu ;fi
+  - if [ -z "${ARCH##armhf}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf libc6-dev-armhf-armel-cross ;fi
+  - if [ -z "${ARCH##aarch64}" ]; then sudo apt-get -y install gcc-aarch64-linux-gnu libc6-dev-arm64-cross ;fi
   # activate virtualenv with python3, meson requires python3
   - virtualenv .venv --python=python3
   - . .venv/bin/activate
