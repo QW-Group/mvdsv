@@ -462,7 +462,7 @@ void Sys_Printf (char *fmt, ...)
 
 		if (endpos > 0) {
 			strlcpy(line, text, len + 1);
-			strlcpy(text, endpos + 1, strlen(text) - len + 1);
+			memmove(text, endpos + 1, strlen(text) - len + 1);
 			fprintf(stdout, "[%s] %s", date.str, line);
 		} else {
 			fprintf(stdout, "[%s] %s", date.str, text);
