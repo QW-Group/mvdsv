@@ -58,7 +58,7 @@ typedef vec_t vec3_t[3];
 
 #define VectorCopy(a,b) {b[0]=a[0];b[1]=a[1];b[2]=a[2];}
 #define VectorSubtract(a,b,c) {c[0]=a[0]-b[0];c[1]=a[1]-b[1];c[2]=a[2]-b[2];}
-
+/*
 #define DF_ORIGIN		1
 #define DF_ANGLES		(1<<3)
 #define DF_EFFECTS		(1<<6)
@@ -67,7 +67,7 @@ typedef vec_t vec3_t[3];
 #define DF_GIB			(1<<9)
 #define DF_WEAPONFRAME	(1<<10)
 #define DF_MODEL		(1<<11)
-
+*/
 // QWDTools options
 
 #define O_CONVERT		1
@@ -170,6 +170,10 @@ typedef struct
 	dbuffer_t	dbuffer;
 	qbool		signonloaded;
 	float		ratio;
+
+	unsigned int extensions_fte1;
+	unsigned int extensions_fte2;
+	unsigned int extensions_mvd1;
 } source_t;
 
 typedef enum

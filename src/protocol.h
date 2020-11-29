@@ -23,6 +23,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	PROTOCOL_VERSION	28
 
+#define PROTOCOL_VERSION_FTE    (('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24)) //fte extensions.
+#define PROTOCOL_VERSION_FTE2   (('F'<<0) + ('T'<<8) + ('E'<<16) + ('2' << 24)) //fte extensions.
+#define PROTOCOL_VERSION_MVD1   (('M'<<0) + ('V'<<8) + ('D'<<16) + ('1' << 24)) //mvdsv extensions
+
+// qqshka: FTE_PEXT_ACCURATETIMINGS - not actually used in ezquake.
+//			I added it to ezquake in hope what someone made some rockets(enitities) smoothing code...
+//			But it not happens, so better turn it off.
+#define	FTE_PEXT_TRANS				0x00000008	// .alpha support
+//#define FTE_PEXT_ACCURATETIMINGS	0x00000040
+#define FTE_PEXT_HLBSP				0x00000200	//stops fte servers from complaining
+#define FTE_PEXT_MODELDBL			0x00001000
+#define FTE_PEXT_ENTITYDBL			0x00002000	//max of 1024 ents instead of 512
+#define FTE_PEXT_ENTITYDBL2			0x00004000	//max of 1024 ents instead of 512
+#define FTE_PEXT_FLOATCOORDS		0x00008000	//supports floating point origins.
+#define FTE_PEXT_SPAWNSTATIC2		0x00400000	//Sends an entity delta instead of a baseline.
+#define FTE_PEXT_256PACKETENTITIES	0x01000000	//Client can recieve 256 packet entities.
+#define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	//alternate file download method. Hopefully it'll give quadroupled download speed, especially on higher pings.
+
+#define MVD_PEXT1_FLOATCOORDS       0x00000001 // FTE_PEXT_FLOATCOORDS but for entity/player coords only
+#define MVD_PEXT1_HIGHLAGTELEPORT   0x00000002 // Adjust movement direction for frames following teleport
+#define MVD_PEXT1_SERVERSIDEWEAPON  0x00000004 // Server-side weapon selection
+
 //===============================================
 
 #define	PORT_CLIENT	27001
@@ -69,6 +91,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MVD_PEXT1_FLOATCOORDS       0x00000001 // FTE_PEXT_FLOATCOORDS but for entity/player coords only
 #define MVD_PEXT1_HIGHLAGTELEPORT   0x00000002 // Adjust movement direction for frames following teleport
 #define MVD_PEXT1_SERVERSIDEWEAPON  0x00000004 // Server-side weapon selection
+
+#define MVD_PEXT1_INCLUDEINMVD      (0x0)
 
 #endif // PROTOCOL_VERSION_MVD1
 
