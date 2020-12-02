@@ -435,11 +435,12 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
-	va_list		argptr;
-	char		text[4096], line[4096];
-	char		*startpos, *endpos;
-	int		len;
-        date_t		date;
+	va_list     argptr;
+	char        text[4096], line[4096];
+	char*       startpos;
+	char*       endpos;
+	int         len;
+	date_t      date;
 
 	va_start (argptr,fmt);
 	vsnprintf(text, sizeof(text), fmt, argptr);
@@ -450,29 +451,30 @@ void Sys_Printf (char *fmt, ...)
 
 	if (strlen(text) < 2)
 		return;
+
 	// normalize text before add to console.
 	Q_normalizetext(text);
 
-        SV_TimeOfDay(&date, "%Y-%m-%d %H:%M:%S");
+    SV_TimeOfDay(&date, "%Y-%m-%d %H:%M:%S");
 
-	do {
-		endpos = strchr(text, '\n');
-		startpos = text;
-		len = endpos - startpos + 1;
-
-		if (endpos > 0) {
-			strlcpy(line, text, len + 1);
-			strlcpy(text, endpos + 1, strlen(text) - len + 1);
-			fprintf(stdout, "[%s] %s", date.str, line);
-		} else {
-			fprintf(stdout, "[%s] %s", date.str, text);
-			text[0] = '\0';
+	startpos = text;
+	while (startpos && startpos[0]) {
+		endpos = strchr(startpos, '\n');
+		if (endpos) {
+			*endpos = '\0';
 		}
-
+		fprintf(stdout, "[%s] %s\n", date.str, startpos);
 		fflush(stdout);
-
-	} while (strlen(text));
-
+		if (endpos) {
+			startpos = endpos + 1;
+			if (startpos[0] == (char)10) {
+				++startpos;
+			}
+		}
+		else {
+			break;
+		}
+	}
 }
 
 /*
