@@ -185,6 +185,10 @@ cvar_t sv_serveme_fix = { "sv_serveme_fix", "1", CVAR_ROM };
 #ifdef FTE_PEXT_FLOATCOORDS
 cvar_t sv_bigcoords = {"sv_bigcoords", "", CVAR_SERVERINFO};
 #endif
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
+// Only enabled on KTX mod (see sv_init)
+cvar_t sv_pext_mvdsv_serversideweapon = { "sv_pext_mvdsv_serversideweapon", "1" };
+#endif
 
 cvar_t sv_extlimits = { "sv_extlimits", "2" };
 
@@ -3468,6 +3472,7 @@ void SV_InitLocal (void)
 #endif
 
 	Cvar_Register (&sv_extlimits);
+	Cvar_Register (&sv_pext_mvdsv_serversideweapon);
 
 	Cvar_Register (&sv_reliable_sound);
 

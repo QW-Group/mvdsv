@@ -374,12 +374,16 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 	}
 #endif
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
-	// Cheap 'ktx' detection
-	if (strstr(Cvar_String("qwm_name"), "KTX")) {
-		svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON;
-	}
-	else {
-		svs.mvdprotocolextension1 &= ~MVD_PEXT1_SERVERSIDEWEAPON;
+	{
+		extern cvar_t sv_pext_mvdsv_serversideweapon;
+
+		// Cheap 'ktx' detection
+		if (sv_pext_mvdsv_serversideweapon.value && strstr(Cvar_String("qwm_name"), "KTX")) {
+			svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON;
+		}
+		else {
+			svs.mvdprotocolextension1 &= ~MVD_PEXT1_SERVERSIDEWEAPON;
+		}
 	}
 #endif
 
