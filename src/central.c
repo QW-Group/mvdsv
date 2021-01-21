@@ -621,7 +621,7 @@ static void Web_PostFileRequest_f(void)
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string, SV_MVDName2Txt(demoname));
 	}
 	else {
-		if (strstr(specified, ".cfg") || !strchr(specified, '/')) {
+		if (strstr(specified, ".cfg") || strchr(specified, '/')) {
 			Con_Printf("Filename invalid\n");
 			return;
 		}
