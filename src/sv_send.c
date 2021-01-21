@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
+static void SV_BotWriteDamage(client_t* c, int i);
+
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1
 #define CHAN_VOICE  2
@@ -1149,14 +1151,16 @@ void SV_SendClientMessages (void)
 		}
 
 #ifdef USE_PR2
-		if(c->isBot)
-		{
-			SZ_Clear (&c->netchan.message);
-			SZ_Clear (&c->datagram);
+		if (c->isBot) {
+			// Write damage to bot clients too (for mvd playback)
+			SV_BotWriteDamage(c, i);
+
+			SZ_Clear(&c->netchan.message);
+			SZ_Clear(&c->datagram);
 			c->num_backbuf = 0;
 
 			// Need to tell mod what the bot would have seen
-			SV_SetVisibleEntitiesForBot (c);
+			SV_SetVisibleEntitiesForBot(c);
 			continue;
 		}
 #endif
@@ -1189,6 +1193,30 @@ void SV_SendClientMessages (void)
 		else {
 			Netchan_Transmit (&c->netchan, c->datagram.cursize, c->datagram.data);	// just update reliable
 			c->datagram.cursize = 0;
+		}
+	}
+}
+
+static void SV_BotWriteDamage(client_t* c, int i)
+{
+	edict_t* ent = c->edict;
+
+	if (c->edict->v.dmg_take || c->edict->v.dmg_save) {
+		if (ent->v.dmg_take || ent->v.dmg_save) {
+			int length = 3 + 3 * msg_coordsize;
+
+			if (MVDWrite_Begin(dem_single, i, length)) {
+				edict_t* other = PROG_TO_EDICT(ent->v.dmg_inflictor);
+
+				MVD_MSG_WriteByte(svc_damage);
+				MVD_MSG_WriteByte(ent->v.dmg_save);
+				MVD_MSG_WriteByte(ent->v.dmg_take);
+				for (i = 0; i < 3; i++)
+					MVD_MSG_WriteCoord(other->v.origin[i] + 0.5 * (other->v.mins[i] + other->v.maxs[i]));
+			}
+
+			ent->v.dmg_take = 0;
+			ent->v.dmg_save = 0;
 		}
 	}
 }
