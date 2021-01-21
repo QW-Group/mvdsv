@@ -476,6 +476,20 @@ qbool MVDWrite_Begin (byte type, int to, int size)
 	return (sv.mvdrecording ? true : false);
 }
 
+qbool MVDWrite_HiddenBlockBegin(int length)
+{
+	return MVDWrite_Begin(dem_multiple, 0, length);
+}
+
+qbool MVDWrite_HiddenBlock(const void* data, int length)
+{
+	if (MVDWrite_HiddenBlockBegin(length)) {
+		MVD_SZ_Write(data, length);
+		return true;
+	}
+	return false;
+}
+
 /*
 ====================
 MVD_FrameDeltaTime
@@ -1136,24 +1150,24 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
 	return true;
 }
 
-void SV_MVD_SendInitialGamestate(mvddest_t *dest)
+void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 {
 	sizebuf_t	buf;
 	unsigned char buf_data[MAX_MSGLEN];
 	unsigned int n;
-	char *s, info[MAX_EXT_INFO_STRING];
+	char* s, info[MAX_EXT_INFO_STRING];
 
-	client_t *player;
-	edict_t *ent;
-	char *gamedir;
+	client_t* player;
+	edict_t* ent;
+	char* gamedir;
 	int i;
 
 	if (!demo.dest)
 		return;
 
 	sv.mvdrecording = true; // NOTE:  afaik set to false on map change, so restore it here
-	
-	
+
+
 	demo.pingtime = demo.time = sv.time;
 
 
@@ -1169,11 +1183,11 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 
 	// send the serverdata
 
-	gamedir = Info_ValueForKey (svs.info, "*gamedir");
+	gamedir = Info_ValueForKey(svs.info, "*gamedir");
 	if (!gamedir[0])
 		gamedir = "qw";
 
-	MSG_WriteByte (&buf, svc_serverdata);
+	MSG_WriteByte(&buf, svc_serverdata);
 
 #ifdef FTE_PEXT_FLOATCOORDS
 	//fix up extensions to match sv_bigcoords correctly. sorry for old clients not working.
@@ -1196,6 +1210,15 @@ void SV_MVD_SendInitialGamestate(mvddest_t *dest)
 	{
 		MSG_WriteLong(&buf, PROTOCOL_VERSION_FTE2);
 		MSG_WriteLong(&buf, demo.recorder.fteprotocolextensions2);
+	}
+#endif
+
+#ifdef PROTOCOL_VERSION_MVD1
+	demo.recorder.mvdprotocolextensions1 |= MVD_PEXT1_HIDDEN_MESSAGES;
+	if (demo.recorder.mvdprotocolextensions1)
+	{
+		MSG_WriteLong(&buf, PROTOCOL_VERSION_MVD1);
+		MSG_WriteLong(&buf, demo.recorder.mvdprotocolextensions1);
 	}
 #endif
 
@@ -1787,7 +1810,47 @@ static void MVD_Init (void)
 	CleanName_Init();
 }
 
-void SV_MVDInit (void)
+void SV_UserCmdTrace_f(void)
+{
+	const char* user = Cmd_Argv(1);
+	const char* option_ = Cmd_Argv(2);
+	qbool option = false;
+	int uid, i;
+
+	if (Cmd_Argc() != 3) {
+		Con_Printf("Usage: %s userid (on | off)\n", Cmd_Argv(0));
+		return;
+	}
+
+	if (!strcmp(option_, "on")) {
+		option = true;
+	}
+	else if (strcmp(option_, "off")) {
+		Con_Printf("Usage: %s userid (on | off)\n", Cmd_Argv(0));
+		return;
+	}
+
+	uid = atoi(user);
+	if (!uid) {
+		Con_Printf("Usage: %s userid (on | off)\n", Cmd_Argv(0));
+		return;
+	}
+
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		if (!svs.clients[i].state) {
+			continue;
+		}
+		if (svs.clients[i].userid == uid) {
+			svs.clients[i].mvd_write_usercmds = option;
+			return;
+		}
+	}
+
+	Con_Printf("Couldn't find userid %d\n", uid);
+	return;
+}
+
+void SV_MVDInit(void)
 {
 	MVD_Init();
 
@@ -1818,8 +1881,11 @@ void SV_MVDInit (void)
 	Cmd_AddCommand ("sv_demoinfoadd",	SV_MVDInfoAdd_f);
 	Cmd_AddCommand ("sv_demoinforemove",SV_MVDInfoRemove_f);
 	Cmd_AddCommand ("sv_demoinfo",		SV_MVDInfo_f);
+	Cmd_AddCommand ("sv_demoembedinfo", SV_MVDEmbedInfo_f);
 	// not prefixed.
 	Cmd_AddCommand ("script",			SV_Script_f);
+
+	Cmd_AddCommand ("sv_usercmdtrace",  SV_UserCmdTrace_f);
 
 	SV_QTV_Init();
 }

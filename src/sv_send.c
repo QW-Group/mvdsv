@@ -400,12 +400,13 @@ MULTICAST_PHS	send to clients potentially hearable from org
 */
 void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 {
-	client_t	*client;
-	byte		*mask;
-	int		leafnum;
-	int		j;
-	qbool		reliable;
-	vec3_t		vieworg;
+	client_t*   client;
+	byte*       mask;
+	int         leafnum;
+	int         j;
+	qbool       reliable;
+	vec3_t      vieworg;
+	qbool       mvd_only = false;
 
 	reliable = false;
 
@@ -428,6 +429,10 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 	case MULTICAST_PVS:
 		mask = CM_LeafPVS (CM_PointInLeaf (origin));
 		break;
+	case MULTICAST_MVD_HIDDEN:
+		mask = NULL;
+		mvd_only = true;
+		break;
 
 	default:
 		mask = NULL;
@@ -435,7 +440,7 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 	}
 
 	// send the data to all relevent clients
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
+	for (j = 0, client = svs.clients; j < MAX_CLIENTS && !mvd_only; j++, client++)
 	{
 		int trackent = 0;
 
@@ -494,19 +499,27 @@ inrange:
 			SZ_Write (&client->datagram, sv.multicast.data, sv.multicast.cursize);
 	}
 
-	if (sv.mvdrecording)
-	{
-		if (reliable)
-		{
-			if (MVDWrite_Begin(dem_all, 0, sv.multicast.cursize))
-			{
+	if (sv.mvdrecording) {
+		if (mvd_only) {
+			mvdhidden_block_header_t header;
+			header.length = sv.multicast.cursize - 2;
+			// header.type_id = ...; < up to the mod to fill this part in
+
+			// write to dem_multiple(0), which will be skipped by all major clients (ezQuake, FTE, fod)
+			if (MVDWrite_HiddenBlockBegin(sv.multicast.cursize + sizeof(header.length))) {
+				MVD_SZ_Write(&header.length, sizeof(header.length));
 				MVD_SZ_Write(sv.multicast.data, sv.multicast.cursize);
 			}
 		}
-		else
+		else if (reliable) {
+			if (MVDWrite_Begin(dem_all, 0, sv.multicast.cursize)) {
+				MVD_SZ_Write(sv.multicast.data, sv.multicast.cursize);
+			}
+		}
+		else {
 			SZ_Write(&demo.datagram, sv.multicast.data, sv.multicast.cursize);
+		}
 	}
-
 
 	SZ_Clear (&sv.multicast);
 }

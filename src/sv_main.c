@@ -54,6 +54,7 @@ void OnChange_sysselecttimeout_var (cvar_t *var, char *value, qbool *cancel);
 cvar_t	sys_select_timeout = {"sys_select_timeout", "10000", 0, OnChange_sysselecttimeout_var}; // microseconds.
 
 cvar_t	sys_restart_on_error = {"sys_restart_on_error", "0"};
+cvar_t  sv_mod_extensions = { "sv_mod_extensions", "2", CVAR_ROM };
 
 #ifdef SERVERONLY
 cvar_t  sys_simulation = { "sys_simulation", "0" };
@@ -3494,6 +3495,8 @@ void SV_InitLocal (void)
 	Cvar_Register (&qwm_builddate);
 	Cvar_Register (&qwm_homepage);
 
+	Cvar_Register(&sv_mod_extensions);
+
 // QW262 -->
 	Cmd_AddCommand ("svadmin", SV_Admin_f);
 // <-- QW262
@@ -3548,6 +3551,12 @@ void SV_InitLocal (void)
 #endif
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
 	svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON;
+#endif
+#ifdef MVD_PEXT1_HIDDEN_MESSAGES
+	svs.mvdprotocolextension1 |= MVD_PEXT1_HIDDEN_MESSAGES;
+#endif
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON2
+	svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON2;
 #endif
 
 	Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " VERSION_NUMBER, MAX_SERVERINFO_STRING);

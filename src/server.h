@@ -245,6 +245,7 @@ typedef struct client_s
 	laggedentinfo_t	laggedents[MAX_CLIENTS];
 	unsigned int	laggedents_count;
 	float			laggedents_frac;
+	float           laggedents_time;
 // }
 
 	// spawn parms are carried from level to level
@@ -373,8 +374,10 @@ typedef struct client_s
 	qbool           weaponswitch_enabled;      // allow user to disable while connected
 	int             weaponswitch_mode;         // user preference
 	qbool           weaponswitch_forgetorder;  // if set, decide best weapon immediately and don't rank on fire
-	int             weaponswitch_priority[MAX_WEAPONSWITCH_OPTIONS];
+	byte            weaponswitch_priority[MAX_WEAPONSWITCH_OPTIONS];
 #endif
+
+	qbool           mvd_write_usercmds;
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -673,6 +676,9 @@ typedef struct
 #define	MULTICAST_PHS_R			4
 #define	MULTICAST_PVS_R			5
 
+#define MULTICAST_KTX1_EXT      6  // Only send to those using ktx1 protocol extension (todo)
+#define MULTICAST_MVD_HIDDEN    7  // Insert into MVD stream only, as dem_multiple(0)
+
 #define MAX_LOCALINFOS			10000
 // maps in localinfo {
 #define LOCALINFO_MAPS_LIST_START	1000
@@ -936,6 +942,8 @@ void MVD_MSG_WriteAngle  (const float f);
 void MVD_SZ_Write        (const void *data, int length);
 
 qbool MVDWrite_Begin(byte type, int to, int size);
+qbool MVDWrite_HiddenBlockBegin(int length);
+qbool MVDWrite_HiddenBlock(const void* data, int length);
 
 void SV_MVD_Record_f (void);
 void SV_MVDEasyRecord_f (void);
@@ -1002,6 +1010,7 @@ void	SV_MVDInfoRemove_f (void);
 void	SV_MVDInfo_f (void);
 void	SV_LastScores_f (void);
 char*   SV_MVDName2Txt (const char *name);
+void SV_MVDEmbedInfo_f(void);
 
 //
 // sv_demo_qtv.c

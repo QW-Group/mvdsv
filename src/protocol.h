@@ -41,10 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define FTE_PEXT_256PACKETENTITIES	0x01000000	//Client can recieve 256 packet entities.
 #define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	//alternate file download method. Hopefully it'll give quadroupled download speed, especially on higher pings.
 
-#define MVD_PEXT1_FLOATCOORDS       0x00000001 // FTE_PEXT_FLOATCOORDS but for entity/player coords only
-#define MVD_PEXT1_HIGHLAGTELEPORT   0x00000002 // Adjust movement direction for frames following teleport
-#define MVD_PEXT1_SERVERSIDEWEAPON  0x00000004 // Server-side weapon selection
-
 //===============================================
 
 #define	PORT_CLIENT	27001
@@ -88,11 +84,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef PROTOCOL_VERSION_MVD1
 
-#define MVD_PEXT1_FLOATCOORDS       0x00000001 // FTE_PEXT_FLOATCOORDS but for entity/player coords only
-#define MVD_PEXT1_HIGHLAGTELEPORT   0x00000002 // Adjust movement direction for frames following teleport
-#define MVD_PEXT1_SERVERSIDEWEAPON  0x00000004 // Server-side weapon selection
+#define MVD_PEXT1_FLOATCOORDS       (1 <<  0) // FTE_PEXT_FLOATCOORDS but for entity/player coords only
+#define MVD_PEXT1_HIGHLAGTELEPORT   (1 <<  1) // Adjust movement direction for frames following teleport
+#define MVD_PEXT1_SERVERSIDEWEAPON  (1 <<  2) // Server-side weapon selection
+#define MVD_PEXT1_DEBUG_WEAPON      (1 <<  3) // Send weapon-choice explanation to server for logging
+#define MVD_PEXT1_DEBUG_ANTILAG     (1 <<  4) // Send predicted positions to server (compare to antilagged positions)
+#define MVD_PEXT1_HIDDEN_MESSAGES   (1 <<  5) // dem_multiple(0) packets are in format (<length> <type-id>+ <packet-data>)*
+#define MVD_PEXT1_SERVERSIDEWEAPON2 (1 <<  6) // Server-side weapon selection supports clc_mvd_weapon_full_impulse
 
-#define MVD_PEXT1_INCLUDEINMVD      (0x0)
+#if defined(MVD_PEXT1_DEBUG_ANTILAG) || defined(MVD_PEXT1_DEBUG_WEAPON)
+#define MVD_PEXT1_DEBUG
+#define MVD_PEXT1_ANTILAG_CLIENTPOS       128 // flag set on the playernum if the client positions are also included
+#define clc_mvd_debug 201
+
+#define clc_mvd_debug_type_antilag 1
+#define clc_mvd_debug_type_weapon  2
+#endif
+
+#define MVD_PEXT1_INCLUDEINMVD      (MVD_PEXT1_HIDDEN_MESSAGES)
 
 #endif // PROTOCOL_VERSION_MVD1
 
@@ -282,6 +291,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define clc_mvd_weapon_hide_sg          16   // on subsequent -attack, hide weapon and switch to sg
 #define clc_mvd_weapon_reset_on_death   32   // on death, go back to 2 1
 #define clc_mvd_weapon_switching        64   // if not set, disable all server-side weapon switching
+#define clc_mvd_weapon_full_impulse    128   // if set, each weapon set as a byte, rather than packing two into one
 
 //byte MSG_EncodeMVDSVWeaponFlags(int deathmatch, int weaponmode, int weaponhide, qbool weaponhide_axe, qbool forgetorder, qbool forgetondeath);
 //void MSG_DecodeMVDSVWeaponFlags(int flags, int* weaponmode, int* weaponhide, qbool* forgetorder, int* sequence);
@@ -526,5 +536,77 @@ typedef struct usercmd_s
 #define	dem_single		4 // MVD ONLY. This message is directed to a single client.
 #define dem_stats		5 // MVD ONLY. Stats update for a player.
 #define dem_all			6 // MVD ONLY. This message is directed to all clients.
+
+#ifndef SERVERONLY
+#define	MAX_TEMP_ENTITIES 32
+typedef struct temp_entity_s
+{
+	vec3_t	pos;	// Position of temp entity.
+	float	time;	// Time of temp entity.
+	int		type;	// Type of temp entity.
+} temp_entity_t;
+
+typedef struct temp_entity_list_s
+{
+	temp_entity_t	list[MAX_TEMP_ENTITIES];
+	int				count;
+} temp_entity_list_t;
+#endif // !SERVERONLY
+
+// hidden messages inserted into .mvd files
+// embedded in dem_multiple(0) - should be safely skipped in clients
+// format is <length> <type>*   where <type> is duplicated if 0xFFFF.  <length> is length of the data packet, not the header
+enum {
+	mvdhidden_antilag_position           = 0x0000,  // mvdhidden_antilag_position_header_t mvdhidden_antilag_position_t*
+	mvdhidden_usercmd                    = 0x0001,  // <byte: playernum> <byte:dropnum> <byte: msec, vec3_t: angles, short[3]: forward side up> <byte: buttons> <byte: impulse>
+	mvdhidden_usercmd_weapons            = 0x0002,  // <byte: source playernum> <int: items> <byte[4]: ammo> <byte: result> <byte*: weapon priority (nul terminated)>
+	mvdhidden_demoinfo                   = 0x0003,  // <short: block#> <byte[] content>
+	mvdhidden_commentary_track           = 0x0004,  // <byte: track#> [todo... <byte: audioformat> <string: short-name> <string: author(s)> <float: start-offset>?]
+	mvdhidden_commentary_data            = 0x0005,  // <byte: track#> [todo... format-specific]
+	mvdhidden_commentary_text_segment    = 0x0006,  // <byte: track#> [todo... <float: duration> <string: text (utf8)>]
+	mvdhidden_dmgdone                    = 0x0007,  // <byte: type-flags> <short: damaged ent#> <short: damaged ent#> <short: damage>
+	mvdhidden_usercmd_weapons_ss         = 0x0008,  // (same format as mvdhidden_usercmd_weapons)
+	mvdhidden_usercmd_weapon_instruction = 0x0009,  // <byte: playernum> <byte: flags> <int: sequence#> <int: mode> <byte[10]: weaponlist>
+	mvdhidden_extended                   = 0xFFFF   // doubt we'll ever get here: read next short...
+};
+
+#define sizeof_mvdhidden_block_header_t_usercmd (1 + 1 + 1 + 3 * 4 + 3 * 2 + 1 + 1)
+#define sizeof_mvdhidden_usercmd_weapon_instruction (1 + 1 + 4 + 4 + 10)
+
+typedef struct {
+	int                 length;    // this is the number of bytes in the packet, not including this header
+	unsigned short      type_id;   // If 0xFFFF, read again to extend range
+} mvdhidden_block_header_t;
+
+#define sizeof_mvdhidden_block_header_t_range0 (4 + 2)
+
+typedef struct {
+	byte playernum;
+	byte players;
+	unsigned int incoming_seq;
+	float server_time;
+	float target_time;
+} mvdhidden_antilag_position_header_t;
+
+#define sizeof_mvdhidden_antilag_position_header_t (1 + 1 + 4 + 4 + 4)
+
+typedef struct {
+	float clientpos[3];
+	float pos[3];
+	byte playernum;
+	byte msec;
+	byte predmodel;
+} mvdhidden_antilag_position_t;
+
+#define sizeof_mvdhidden_antilag_position_t (12 + 12 + 1 + 1 + 1)
+
+// mvdhidden_usercmd_weapon_instruction
+#define MVDHIDDEN_SSWEAPON_PENDING        1
+#define MVDHIDDEN_SSWEAPON_HIDE_AXE       2
+#define MVDHIDDEN_SSWEAPON_HIDE_SG        4
+#define MVDHIDDEN_SSWEAPON_HIDEONDEATH    8
+#define MVDHIDDEN_SSWEAPON_WASFIRING     16
+#define MVDHIDDEN_SSWEAPON_ENABLED       32
+#define MVDHIDDEN_SSWEAPON_FORGETORDER   64
 
 #endif /* !__PROTOCOL_H__ */
