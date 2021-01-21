@@ -83,12 +83,13 @@ extern	vec3_t	player_mins;
 
 extern int	fp_messages, fp_persecond, fp_secondsdead;
 extern char	fp_msg[];
-extern cvar_t	pausable;
-extern cvar_t	pm_bunnyspeedcap;
-extern cvar_t	pm_ktjump;
-extern cvar_t	pm_slidefix;
-extern cvar_t	pm_airstep;
-extern cvar_t	pm_pground;
+extern cvar_t   pausable;
+extern cvar_t   pm_bunnyspeedcap;
+extern cvar_t   pm_ktjump;
+extern cvar_t   pm_slidefix;
+extern cvar_t   pm_airstep;
+extern cvar_t   pm_pground;
+extern cvar_t   pm_rampjump;
 extern double	sv_frametime;
 
 //bliP: init ->
@@ -3647,6 +3648,7 @@ FIXME
 	movevars.slidefix = ((int)pm_slidefix.value != 0);
 	movevars.airstep = ((int)pm_airstep.value != 0);
 	movevars.pground = ((int)pm_pground.value != 0);
+	movevars.rampjump = ((int)pm_rampjump.value != 0);
 	
 	// do the move
 	blocked = PM_PlayerMove ();
