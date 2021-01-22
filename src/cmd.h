@@ -102,6 +102,37 @@ void Cmd_AddCommand (const char *cmd_name, xcommand_t function);
 qbool Cmd_Exists (const char *cmd_name);
 // used by the cvar code to check for cvar / command name overlap
 
+
+#define	MAX_ARGS		80
+
+typedef struct tokenizecontext_s
+{
+	int		cmd_argc; // arguments count
+	char* cmd_argv[MAX_ARGS]; // links to argv_buf[]
+
+	// FIXME: MAX_COM_TOKEN not defined here, need redesign headers or something
+
+	char	argv_buf[/*MAX_COM_TOKEN*/ 1024]; // here we store data for *cmd_argv[]
+
+	char	cmd_args[/*MAX_COM_TOKEN*/ 1024 * 2]; // here we store original of what we parse, from argv(1) to argv(argc() - 1)
+
+	char	text[/*MAX_COM_TOKEN*/ 1024]; // this is used/overwrite each time we using Cmd_MakeArgs()
+
+} tokenizecontext_t;
+
+int Cmd_ArgcEx(tokenizecontext_t* ctx);
+char* Cmd_ArgvEx(tokenizecontext_t* ctx, int arg);
+
+//Returns a single string containing argv(1) to argv(argc() - 1)
+char* Cmd_ArgsEx(tokenizecontext_t* ctx);
+
+//Returns a single string containing argv(start) to argv(argc() - 1)
+//Unlike Cmd_Args, shrinks spaces between argvs
+char* Cmd_MakeArgsEx(tokenizecontext_t* ctx, int start);
+
+//Parses the given string into command line tokens.
+void Cmd_TokenizeStringEx(tokenizecontext_t* ctx, char* text);
+
 int Cmd_Argc (void);
 char *Cmd_Argv (int arg);
 char *Cmd_Args (void);
