@@ -32,15 +32,13 @@ playermove_t    pmove;
 static float	pm_frametime;
 
 static vec3_t	pm_forward, pm_right;
-static vec3_t   groundnormal;
 
-static plane_t groundplane;
+static vec3_t   groundnormal;
 
 vec3_t	player_mins = {-16, -16, -24};
 vec3_t	player_maxs = {16, 16, 32};
 
 #define STEPSIZE        18
-#define MIN_STEP_NORMAL	0.7 // roughly 45 degrees
 
 #define pm_flyfriction	4
 
@@ -596,12 +594,10 @@ void PM_CategorizePosition(void)
 	pmove.maxgroundspeed = MAXGROUNDSPEED_DEFAULT;
 
 	// if the player hull point one unit down is solid, the player is on ground
-
 	// see if standing on something solid
 	point[0] = pmove.origin[0];
 	point[1] = pmove.origin[1];
 	point[2] = pmove.origin[2] - 1;
-
 
 	if (movevars.rampjump) {
 		// Increase speed limit for player as steepness of the floor increases
@@ -638,7 +634,6 @@ void PM_CategorizePosition(void)
 		else {
 			pmove.onground = true;
 			pmove.groundent = trace.e.entnum;
-			groundplane = trace.plane;
 			pmove.waterjumptime = 0;
 		}
 
@@ -722,7 +717,7 @@ static void PM_CheckJump (void)
 		// groundplane normal was set in the call to PM_CategorizePosition
 		if ((movevars.rampjump || pmove.velocity[2] < 0) && DotProduct(pmove.velocity, groundnormal) < MAX_JUMPFIX_DOTPRODUCT) {
 			// pmove.velocity is pointing into the ground, clip it
-			PM_ClipVelocity (pmove.velocity, groundnormal, pmove.velocity, 1);
+			PM_ClipVelocity(pmove.velocity, groundnormal, pmove.velocity, 1);
 		}
 	}
 

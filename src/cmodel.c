@@ -79,7 +79,6 @@ static mphysicsnormal_t* map_physicsnormals;     // must be same number as clipn
 
 static byte			*cmod_base;					// for CM_Load* functions
 
-#ifdef SERVERONLY
 // lumps immediately follow:
 typedef struct {
 	char lumpname[24];
@@ -89,7 +88,6 @@ typedef struct {
 
 void* Mod_BSPX_FindLump(bspx_header_t* bspx_header, char* lumpname, int* plumpsize, byte* mod_base);
 bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base);
-#endif
 
 /*
 ===============================================================================
@@ -144,6 +142,38 @@ hull_t *CM_HullForBox (vec3_t mins, vec3_t maxs)
 	box_planes[5].dist = mins[2];
 
 	return &box_hull;
+}
+
+int CM_CachedHullPointContents(hull_t* hull, int num, vec3_t p, float* min_dist)
+{
+	mclipnode_t* node;
+	mplane_t* plane;
+	float d;
+
+	*min_dist = 999;
+	while (num >= 0) {
+		if (num < hull->firstclipnode || num > hull->lastclipnode) {
+			if (map_halflife && num == hull->lastclipnode + 1) {
+				return CONTENTS_EMPTY;
+			}
+			Sys_Error("CM_HullPointContents: bad node number");
+		}
+
+		node = hull->clipnodes + num;
+		plane = hull->planes + node->planenum;
+
+		d = PlaneDiff(p, plane);
+		if (d < 0) {
+			*min_dist = min(*min_dist, -d);
+			num = node->children[1];
+		}
+		else {
+			*min_dist = min(*min_dist, d);
+			num = node->children[0];
+		}
+	}
+
+	return num;
 }
 
 int CM_HullPointContents(hull_t *hull, int num, vec3_t p)
@@ -1412,7 +1442,6 @@ void CM_Init (void)
 	CM_InitBoxHull ();
 }
 
-
 #ifndef SERVER_ONLY
 // Allow in-memory modifications to ground normals...
 void CM_PhysicsNormalSet(int num, float x, float y, float z, int flags)
@@ -1436,9 +1465,10 @@ void CM_PhysicsNormalDump(FILE* out, float rampjump, float maxgroundspeed)
 
 mphysicsnormal_t CM_PhysicsNormal(int num)
 {
-	static mphysicsnormal_t null_physicsnormal = { 0 };
-	mphysicsnormal_t ret = null_physicsnormal;
+	mphysicsnormal_t ret;
 	qbool inverse = num < 0;
+
+	memset(&ret, 0, sizeof(ret));
 
 	num = abs(num);
 
@@ -1452,7 +1482,6 @@ mphysicsnormal_t CM_PhysicsNormal(int num)
 	return ret;
 }
 
-#ifdef SERVERONLY
 void* Mod_BSPX_FindLump(bspx_header_t* bspx_header, char* lumpname, int* plumpsize, byte* mod_base)
 {
 	int i;
@@ -1515,4 +1544,3 @@ bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base)
 	// success
 	return xheader;
 }
-#endif

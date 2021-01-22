@@ -95,7 +95,6 @@ typedef struct
 } dmodel_t __attribute__((aligned(1)));
 
 
-
 typedef struct
 {
 	int         version;
