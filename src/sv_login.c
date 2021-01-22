@@ -830,7 +830,9 @@ static void SV_ForceClientName(client_t* cl, const char* forced_name)
 
 void SV_LoginCheckTimeOut(client_t *cl)
 {
-	if (cl->connection_started && curtime - cl->connection_started > 60)
+	double connected = SV_ClientConnectedTime(cl);
+
+	if (connected && connected > 60)
 	{
 		Sys_Printf("Login time out for %s\n", cl->name);
 

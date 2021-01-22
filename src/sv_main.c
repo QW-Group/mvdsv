@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 #ifdef SERVERONLY
@@ -400,7 +401,7 @@ void SV_DropClient(client_t *drop)
 	SV_Logout(drop);
 
 	drop->state = cs_zombie;		// become free in a few seconds
-	drop->connection_started = curtime;	// for zombie timeout
+	SV_SetClientConnectionTime(drop); // for zombie timeout
 
 // MD -->
 	if (drop == WatcherId)
@@ -491,7 +492,7 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 
 	MSG_WriteByte (buf, svc_updateentertime);
 	MSG_WriteByte (buf, i);
-	MSG_WriteFloat (buf, curtime - client->connection_started);
+	MSG_WriteFloat (buf, SV_ClientGameTime(client));
 
 	Info_ReverseConvert(&client->_userinfoshort_ctx_, info, sizeof(info));
 	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
@@ -624,7 +625,7 @@ static void SVC_Status (void)
 					frags = va("%i", cl->old_frags);
 
 				Con_Printf ("%i %s %i %i \"%s\" \"%s\" %i %i", cl->userid, frags,
-				            (int)(curtime - cl->connection_started)/60, ping, name,
+				            (int)(SV_ClientConnectedTime(cl)) / 60, ping, name,
 				            Info_Get (&cl->_userinfo_ctx_, "skin"), top, bottom);
 
 				if (opt & STATUS_SHOWTEAMS) {
@@ -1068,7 +1069,7 @@ qbool CheckReConnect( netadr_t adr, int qport )
 		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) &&
 			(cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port))
 		{
-			if ((curtime - cl->connection_started) < sv_reconnectlimit.value)
+			if (SV_ClientConnectedTime(cl) < sv_reconnectlimit.value)
 			{
 				Con_Printf ("%s:reconnect rejected: too soon\n", NET_AdrToString (adr));
 				return false;
@@ -3045,7 +3046,7 @@ static void SV_CheckTimeouts (void)
 				SV_LoginCheckTimeOut(cl);
 			}
 		}
-		if (cl->state == cs_zombie && curtime - cl->connection_started > zombietime.value)
+		if (cl->state == cs_zombie && SV_ClientConnectedTime(cl) > zombietime.value)
 		{
 			cl->state = cs_free;	// can now be reused
 		}
@@ -4069,3 +4070,31 @@ int Sys_compare_by_name (const void *a, const void *b)
 {
 	return strncmp(((file_t *)a)->name, ((file_t *)b)->name, MAX_DEMO_NAME);
 }
+
+// real-world time passed
+double SV_ClientConnectedTime(client_t* client)
+{
+	if (!client->connection_started_curtime) {
+		return 0;
+	}
+	return curtime - client->connection_started_curtime;
+}
+
+// affected by pause
+double SV_ClientGameTime(client_t* client)
+{
+	
+	if (!client->connection_started_realtime) {
+		return 0;
+	}
+
+	return realtime - client->connection_started_realtime;
+}
+
+void SV_SetClientConnectionTime(client_t* client)
+{
+	client->connection_started_realtime = realtime;
+	client->connection_started_curtime = curtime;
+}
+
+#endif // !CLIENTONLY

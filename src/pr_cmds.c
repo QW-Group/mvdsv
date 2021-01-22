@@ -935,7 +935,7 @@ float argc(void)
 
 void PF_argc (void)
 {
-	G_FLOAT(OFS_RETURN) = (float)Cmd_ArgcEx(&pr1_tokencontext);
+	G_FLOAT(OFS_RETURN) = (float) Cmd_ArgcEx(&pr1_tokencontext);
 }
 
 /*
@@ -961,7 +961,7 @@ void PF_argv (void)
 		RETURN_STRING("");
 	}
 	else {
-		snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_ArgvEx(&pr1_tokencontext, num));
+		snprintf(pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_ArgvEx(&pr1_tokencontext, num));
 		RETURN_STRING(pr_string_temp);
 		PF_SetTempString();
 	}

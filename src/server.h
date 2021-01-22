@@ -238,8 +238,10 @@ typedef struct client_s
 
 	char			stufftext_buf[MAX_STUFFTEXT];
 
-	double			connection_started;		// or time of disconnect for zombies
-	qbool			send_message;			// set on frames a datagram arived on
+	// Use SV_ClientConnectedTime & SV_ClientGameTime instead
+	double          connection_started_realtime; // or time of disconnect for zombies
+	double          connection_started_curtime;  // like connection_started but curtime (not affected by pause)
+	qbool           send_message;                // set on frames a datagram arrived on
 
 // { sv_antilag related
 	laggedentinfo_t	laggedents[MAX_CLIENTS];
@@ -355,8 +357,8 @@ typedef struct client_s
 	double          disable_updates_stop;     // Vladis
 	packet_t        *packets, *last_packet;
 
-	// lagged-teleport extension
 #ifdef MVD_PEXT1_HIGHLAGTELEPORT
+	// lagged-teleport extension
 	qbool           lastteleport_teleport;    // true if teleport, otherwise it was spawn
 	int             lastteleport_outgoingseq; // outgoing sequence# when the player teleported
 	int             lastteleport_incomingseq; // incoming sequence# when the player teleported
@@ -1068,5 +1070,14 @@ qbool SV_SkipCommsBotMessage(client_t* client);
 #else
 extern qbool server_cfg_done;
 #endif
+
+// These functions tell us how much time has passed since the client connected
+// Sometimes this should be affected by pause (scoreboards) and sometimes not (spam, networking)
+// GameTime() stops while game is paused, Connected() continues as normal
+// Both return 0 if client hasn't connected yet
+double SV_ClientConnectedTime(client_t* client);    // real-world time passed
+double SV_ClientGameTime(client_t* client);         // affected by pause
+void SV_SetClientConnectionTime(client_t* client);
+
 
 #endif /* !__SERVER_H__ */

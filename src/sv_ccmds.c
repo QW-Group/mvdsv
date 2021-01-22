@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 cvar_t	sv_cheats = {"sv_cheats", "0"};
@@ -1566,8 +1567,8 @@ void SV_Gamedir (void)
 
 	dir = Cmd_Argv(1);
 
-	if (strstr(dir, "..") || strstr(dir, "/")
-	        || strstr(dir, "\\") || strstr(dir, ":") )
+	if (strstr(dir, "..") || strchr(dir, '/')
+	        || strchr(dir, '\\') || strchr(dir, ':') )
 	{
 		Con_Printf ("*Gamedir should be a single filename, not a path\n");
 		return;
@@ -1668,8 +1669,7 @@ void SV_Gamedir_f (void)
 
 	dir = Cmd_Argv(1);
 
-	if (strstr(dir, "..") || strstr(dir, "/")
-	        || strstr(dir, "\\") || strstr(dir, ":") )
+	if (strstr(dir, "..") || strchr(dir, '/') || strchr(dir, '\\') || strchr(dir, ':') )
 	{
 		Con_Printf ("Gamedir should be a single filename, not a path\n");
 		return;
@@ -1848,7 +1848,13 @@ void SV_InitOperatorCommands (void)
 		Cmd_AddCommand ("localcommand", SV_LocalCommand_f);
 
 	Cmd_AddCommand ("map", SV_Map_f);
+#ifdef SERVERONLY
 	Cmd_AddCommand ("devmap", SV_Map_f);
+#else
+	if (IsDeveloperMode()) {
+		Cmd_AddCommand("devmap", SV_Map_f);
+	}
+#endif
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
 
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
@@ -1885,3 +1891,5 @@ void SV_InitOperatorCommands (void)
 
 	Cmd_AddCommand ("master_rcon_password", SV_MasterPassword_f);
 }
+
+#endif // !CLIENTONLY

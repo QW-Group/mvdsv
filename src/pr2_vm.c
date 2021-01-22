@@ -27,6 +27,7 @@
   reenterable vmMain
 */
 
+#ifndef CLIENTONLY
 #ifdef USE_PR2
 
 #include "qwsvdef.h"
@@ -209,6 +210,7 @@ qbool VM_LoadNative( vm_t * vm )
 	char   *gpath = NULL;
 	void    ( *dllEntry ) ( void * );
 
+	memset(name, 0, sizeof(name));
 	while ( ( gpath = FS_NextPath( gpath ) ) )
 	{
 		snprintf(name, sizeof(name), "%s/%s." DLEXT, gpath, vm->name);
@@ -1275,3 +1277,5 @@ void PrintInstruction( qvm_t * qvm )
 }
 
 #endif /* USE_PR2 */
+
+#endif // !CLIENTONLY

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // sv_demo.c - mvd demo related code
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 // minimal cache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
@@ -197,7 +198,7 @@ void DestFlush (qbool compleate)
 		case DEST_BUFFEREDFILE:
 			if (d->cacheused + DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS > d->maxcachesize || compleate)
 			{
-				len = fwrite(d->cache, 1, d->cacheused, d->file);
+				len = (int)fwrite(d->cache, 1, d->cacheused, d->file);
 				if (len != d->cacheused)
 				{
 					Sys_Printf("DestFlush: fwrite() error\n");
@@ -321,7 +322,7 @@ int DemoWriteDest (void *data, int len, mvddest_t *d)
 	switch(d->desttype)
 	{
 		case DEST_FILE:
-			ret = fwrite(data, 1, len, d->file);
+			ret = (int)fwrite(data, 1, len, d->file);
 			if (ret != len)
 			{
 				Sys_Printf("DemoWriteDest: fwrite() error\n");
@@ -1116,7 +1117,7 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
 
     	// and here we memset() not whole demo_t struct, but part,
     	// so demo.dest and demo.pendingdest is not overwriten
-		memset(&demo, 0, ((int)&(((demo_t *)0)->mem_set_point)));
+		memset(&demo, 0, (int)((uintptr_t)&(((demo_t *)0)->mem_set_point)));
 
 		for (i = 0; i < UPDATE_BACKUP; i++)
 		{
@@ -1166,11 +1167,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 		return;
 
 	sv.mvdrecording = true; // NOTE:  afaik set to false on map change, so restore it here
-
-
 	demo.pingtime = demo.time = sv.time;
-
-
 	singledest = dest;
 
 	/*-------------------------------------------------*/
@@ -1434,7 +1431,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 
 		MSG_WriteByte (&buf, svc_updateentertime);
 		MSG_WriteByte (&buf, i);
-		MSG_WriteFloat (&buf, curtime - player->connection_started);
+		MSG_WriteFloat (&buf, SV_ClientGameTime(player));
 
 		Info_ReverseConvert(&player->_userinfoshort_ctx_, info, sizeof(info));
 		Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
@@ -1905,3 +1902,5 @@ const char* SV_MVDDemoName(void)
 
 	return NULL;
 }
+
+#endif // !CLIENTONLY

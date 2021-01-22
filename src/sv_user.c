@@ -202,8 +202,9 @@ static void Cmd_New_f (void)
 	if (sv_client->state == cs_spawned)
 		return;
 
-	if (!sv_client->connection_started || sv_client->state == cs_connected)
-		sv_client->connection_started = curtime;
+	if (!SV_ClientConnectedTime(sv_client) || sv_client->state == cs_connected) {
+		SV_SetClientConnectionTime(sv_client);
+	}
 
 	sv_client->spawncount = svs.spawncount;
 
@@ -240,18 +241,16 @@ static void Cmd_New_f (void)
 								 va("packet %s \"ip %d %d\"\ncmd new\n", server_ip,
 									sv_client - svs.clients, sv_client->realip_num));
 			}
-			if (curtime - sv_client->connection_started > 3 || sv_client->realip_count > 10)
-			{
-				if ((int)sv_getrealip.value == 2)
-				{
-					Netchan_OutOfBandPrint (NS_SERVER, net_from,
-						"%c\nFailed to validate client's IP.\n\n", A2C_PRINT);
+			if (SV_ClientConnectedTime(sv_client) > 3 || sv_client->realip_count > 10) {
+				if ((int)sv_getrealip.value == 2) {
+					Netchan_OutOfBandPrint (NS_SERVER, net_from, "%c\nFailed to validate client's IP.\n\n", A2C_PRINT);
 					sv_client->rip_vip = 2;
 				}
 				sv_client->state = cs_connected;
 			}
-			else
+			else {
 				return;
+			}
 		}
 	}
 
@@ -415,11 +414,11 @@ static void Cmd_New_f (void)
 	if (!sv_client->spectator) {
 		if (!PlayerCheckPing()) {
 			sv_client->old_frags = 0;
-			sv_client->connection_started = curtime;
+			SV_SetClientConnectionTime(sv_client);
 			sv_client->spectator = true;
 			sv_client->spec_track = 0;
-			Info_SetStar (&sv_client->_userinfo_ctx_, "*spectator", "1");
-			Info_SetStar (&sv_client->_userinfoshort_ctx_, "*spectator", "1");
+			Info_SetStar(&sv_client->_userinfo_ctx_, "*spectator", "1");
+			Info_SetStar(&sv_client->_userinfoshort_ctx_, "*spectator", "1");
 		}
 	}
 
@@ -2624,21 +2623,21 @@ static void Cmd_Join_f (void)
 		return;
 	}
 
-	if (curtime - sv_client->connection_started < 5)
-	{
-		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(curtime - sv_client->connection_started));
+	if (SV_ClientConnectedTime(sv_client) < 5) {
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)SV_ClientConnectedTime(sv_client));
 		return;
 	}
 
 	// count players already on server
 	CountPlayersSpecsVips(&clients, NULL, NULL, NULL);
-	if (!PlayerCanConnect(clients))
-	{
+	if (!PlayerCanConnect(clients)) {
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "Can't join, all player slots full\n");
 		return;
 	}
 
-	if (!PlayerCheckPing()) return;
+	if (!PlayerCheckPing()) {
+		return;
+	}
 
 	// call the prog function for removing a client
 	// this will set the body to a dead frame, among other things
@@ -2648,7 +2647,7 @@ static void Cmd_Join_f (void)
 	// this is like SVC_DirectConnect.
 	// turn the spectator into a player
 	sv_client->old_frags = 0;
-	sv_client->connection_started = curtime;
+	SV_SetClientConnectionTime(sv_client);
 	sv_client->spectator = false;
 	sv_client->spec_track = 0;
 	Info_Remove (&sv_client->_userinfo_ctx_, "*spectator");
@@ -2710,9 +2709,9 @@ static void Cmd_Observe_f (void)
 		return;
 	}
 
-	if (curtime - sv_client->connection_started < 5)
+	if (SV_ClientConnectedTime(sv_client) < 5)
 	{
-		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)(curtime - sv_client->connection_started));
+		SV_ClientPrintf (sv_client, PRINT_HIGH, "Wait %d seconds\n", 5 - (int)SV_ClientConnectedTime(sv_client));
 		return;
 	}
 
@@ -2733,7 +2732,7 @@ static void Cmd_Observe_f (void)
 	// this is like SVC_DirectConnect.
 	// turn the player into a spectator
 	sv_client->old_frags = 0;
-	sv_client->connection_started = curtime;
+	SV_SetClientConnectionTime(sv_client);
 	sv_client->spectator = true;
 	sv_client->spec_track = 0;
 	Info_SetStar (&sv_client->_userinfo_ctx_, "*spectator", "1");
