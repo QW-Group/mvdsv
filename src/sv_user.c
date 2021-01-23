@@ -1809,34 +1809,28 @@ static void SV_Say (qbool team)
 		strlcpy(text, va("%s: %s", sv_client->name, text), sizeof(text));
 	}
 
-	if (fp_messages)
-	{
-		if (!sv.paused && realtime<sv_client->lockedtill)
-		{
-			SV_ClientPrintf(sv_client, PRINT_CHAT,
-			                "You can't talk for %d more seconds\n",
-			                (int) (sv_client->lockedtill - realtime));
+	if (fp_messages) {
+		if (curtime < sv_client->lockedtill) {
+			SV_ClientPrintf(sv_client, PRINT_CHAT, "You can't talk for %d more seconds\n", (int) (sv_client->lockedtill - curtime));
 			return;
 		}
 		tmp = sv_client->whensaidhead - fp_messages + 1;
 		if (tmp < 0)
 			tmp = 10+tmp;
-		if (!sv.paused &&
-			sv_client->whensaid[tmp] && (realtime-sv_client->whensaid[tmp] < fp_persecond))
-		{
-			sv_client->lockedtill = realtime + fp_secondsdead;
-			if (fp_msg[0])
-				SV_ClientPrintf(sv_client, PRINT_CHAT,
-				                "FloodProt: %s\n", fp_msg);
-			else
-				SV_ClientPrintf(sv_client, PRINT_CHAT,
-				                "FloodProt: You can't talk for %d seconds.\n", fp_secondsdead);
+		if (sv_client->whensaid[tmp] && (curtime - sv_client->whensaid[tmp] < fp_persecond)) {
+			sv_client->lockedtill = curtime + fp_secondsdead;
+			if (fp_msg[0]) {
+				SV_ClientPrintf(sv_client, PRINT_CHAT, "FloodProt: %s\n", fp_msg);
+			}
+			else {
+				SV_ClientPrintf(sv_client, PRINT_CHAT, "FloodProt: You can't talk for %d seconds.\n", fp_secondsdead);
+			}
 			return;
 		}
 		sv_client->whensaidhead++;
 		if (sv_client->whensaidhead > 9)
 			sv_client->whensaidhead = 0;
-		sv_client->whensaid[sv_client->whensaidhead] = realtime;
+		sv_client->whensaid[sv_client->whensaidhead] = curtime;
 	}
 
 	Sys_Printf ("%s", text);
@@ -2339,7 +2333,7 @@ static void Cmd_SetInfo_f (void)
 	if (!strcmp(Cmd_Argv(1), "name"))
 	{
 		//bliP: mute ->
-		if (!sv.paused && realtime < sv_client->lockedtill)
+		if (curtime < sv_client->lockedtill)
 		{
 			SV_ClientPrintf(sv_client, PRINT_CHAT, "You can't change your name while you're muted\n");
 			return;
