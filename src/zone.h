@@ -83,7 +83,7 @@ startup hunk allocations
 void Memory_Init (void *buf, int size);
 
 void *Hunk_Alloc (int size); // returns 0 filled memory
-void *Hunk_AllocName (int size, char *name);
+void *Hunk_AllocName (int size, const char *name);
 
 void *Hunk_HighAllocName (int size, char *name);
 
@@ -97,6 +97,7 @@ void *Hunk_TempAlloc (int size);
 
 void Hunk_Check (void);
 
+#ifdef SERVERONLY
 typedef struct cache_user_s
 {
 	void *data;
@@ -108,14 +109,14 @@ void *Cache_Check (cache_user_t *c);
 // returns the cached data, and moves to the head of the LRU list
 // if present, otherwise returns NULL
 
-void Cache_Free (cache_user_t *c);
+void Cache_Free(cache_user_t *c);
 
-void *Cache_Alloc (cache_user_t *c, int size, char *name);
+void *Cache_Alloc (cache_user_t *c, int size, const char *name);
 // Returns NULL if all purgeable data was tossed and there still
 // wasn't enough room.
 
 void Cache_Report (void);
-
 void Cache_Init_Commands (void);
+#endif
 
 #endif /* !__ZONE_H__ */

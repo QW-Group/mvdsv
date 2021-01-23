@@ -1788,7 +1788,7 @@ static void MVD_Init (void)
 
 	Cvar_Register (&extralogname);
 
-	p = COM_CheckParm ("-democache");
+	p = SV_CommandLineDemoCacheArgument();
 	if (p)
 	{
 		if (p < COM_Argc()-1)
@@ -1895,7 +1895,7 @@ const char* SV_MVDDemoName(void)
 		if (d->desttype == DEST_STREAM) {
 			continue; // streams are not saved on to HDD, so ignore it...
 		}
-		if (d->name[0] != '\0') {
+		if (d->name[0]) {
 			return d->name;
 		}
 	}

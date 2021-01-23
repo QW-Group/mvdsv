@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 
@@ -706,7 +707,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 				cmd.impulse = EdictFieldFloat (ent, fofs_vw_index);
 			}
 
-			MSG_WriteDeltaUsercmd (msg, &nullcmd, &cmd);
+			MSG_WriteDeltaUsercmd (msg, &nullcmd, &cmd, 0);
 		}
 
 		for (i=0 ; i<3 ; i++)
@@ -1035,3 +1036,5 @@ qbool SV_SkipCommsBotMessage(client_t* client)
 
 	return sv_serveme_fix.value && client->spectator && !strcmp(client->name, "[ServeMe]");
 }
+
+#endif // !CLIENTONLY

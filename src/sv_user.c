@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sv_user.c -- server code for moving users
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 edict_t	*sv_player;
@@ -33,8 +34,8 @@ cvar_t	sv_minping = {"sv_minping", "0"};
 cvar_t	sv_maxping = {"sv_maxping", "0"};
 cvar_t	sv_enable_cmd_minping = {"sv_enable_cmd_minping", "1"};
 
-cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "1"};
-cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "100"};
+cvar_t	sv_kickuserinfospamtime = {"sv_kickuserinfospamtime", "3"};
+cvar_t	sv_kickuserinfospamcount = {"sv_kickuserinfospamcount", "300"};
 
 cvar_t	sv_maxuploadsize = {"sv_maxuploadsize", "1048576"};
 
@@ -173,11 +174,11 @@ Check that player's ping falls below sv_maxping value
 qbool PlayerCheckPing()
 {
 	int maxping = Q_atof(sv_maxping.string);
-	int playerping = sv_client->frames[sv_client->netchan.incoming_acknowledged&UPDATE_MASK].ping_time * 1000;
+	int playerping = sv_client->frames[sv_client->netchan.incoming_acknowledged & UPDATE_MASK].ping_time * 1000;
 
 	if (maxping && playerping > maxping)
 	{
-		SV_ClientPrintf (sv_client, PRINT_HIGH, "\nYour ping is too high for this server!  Maximum ping is set to %i, your ping is %i.\nForcing spectator.\n\n",maxping,playerping);
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "\nYour ping is too high for this server!  Maximum ping is set to %i, your ping is %i.\nForcing spectator.\n\n", maxping, playerping);
 		return false;
 	}
 	return true;
@@ -2309,9 +2310,9 @@ static void Cmd_SetInfo_f (void)
 	}
 
 	if (Cmd_Argv(1)[0] == '*')
-		return;		// don't set priveledged values
+		return;		// don't set privileged values
 
-	if (strstr(Cmd_Argv(1), "\\") || strstr(Cmd_Argv(2), "\\"))
+	if (strchr(Cmd_Argv(1), '\\') || strchr(Cmd_Argv(2), '\\'))
 		return;		// illegal char
 
 	if (strstr(Cmd_Argv(1), "&c") || strstr(Cmd_Argv(1), "&r") || strstr(Cmd_Argv(2), "&c") || strstr(Cmd_Argv(2), "&r"))
@@ -2650,8 +2651,8 @@ static void Cmd_Join_f (void)
 	SV_SetClientConnectionTime(sv_client);
 	sv_client->spectator = false;
 	sv_client->spec_track = 0;
-	Info_Remove (&sv_client->_userinfo_ctx_, "*spectator");
-	Info_Remove (&sv_client->_userinfoshort_ctx_, "*spectator");
+	Info_Remove(&sv_client->_userinfo_ctx_, "*spectator");
+	Info_Remove(&sv_client->_userinfoshort_ctx_, "*spectator");
 
 	// like Cmd_Spawn_f()
 	SetUpClientEdict (sv_client, sv_client->edict);
@@ -2769,10 +2770,10 @@ static void Cmd_Observe_f (void)
 
 #ifdef FTE_PEXT2_VOICECHAT
 /*
-Pivicy issues:
+Privacy issues:
 By sending voice chat to a server, you are unsure who might be listening.
 Voice can be recorded to an mvd, potentially including voice.
-Spectators tracvking you are able to hear team chat of your team.
+Spectators tracking you are able to hear team chat of your team.
 You're never quite sure if anyone might join the server and your team before you finish saying a sentance.
 You run the risk of sounds around you being recorded by quake, including but not limited to: TV channels, loved ones, phones, YouTube videos featuring certain moans.
 Default on non-team games is to broadcast.
@@ -2812,13 +2813,11 @@ void SV_VoiceReadPacket(void)
 	/*read the data from the client*/
 	bytes = MSG_ReadShort();
 	ring = &voice.ring[voice.write & (VOICE_RING_SIZE-1)];
-	if (bytes > sizeof(ring->data) || realtime < host_client->lockedtill || !sv_voip.ival)
-	{
+	if (bytes > sizeof(ring->data) || curtime < host_client->lockedtill || !sv_voip.ival) {
 		MSG_ReadSkip(bytes);
 		return;
 	}
-	else
-	{
+	else {
 		voice.write++;
 		MSG_ReadData(ring->data, bytes);
 	}
@@ -2891,7 +2890,8 @@ void SV_VoiceReadPacket(void)
 				// prevent dem_multiple(0) being sent
 				return;
 			}
-			MVDWrite_Begin (dem_multiple, cls, ring->datalen+6);
+
+			MVDWrite_Begin(dem_multiple, cls, ring->datalen + 6);
 		}
 
 		MVD_MSG_WriteByte( svc_fte_voicechat);
@@ -3543,7 +3543,7 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/
 
 	// copy humans' intentions to progs
 	sv_player->v.button0 = ucmd->buttons & 1;
-	sv_player->v.button2 = (ucmd->buttons & 2) >>1;
+	sv_player->v.button2 = (ucmd->buttons & 2) >> 1;
 	sv_player->v.button1 = (ucmd->buttons & 4) >> 2;
 	if (ucmd->impulse)
 		sv_player->v.impulse = ucmd->impulse;
@@ -3648,7 +3648,7 @@ FIXME
 	movevars.airstep = ((int)pm_airstep.value != 0);
 	movevars.pground = ((int)pm_pground.value != 0);
 	movevars.rampjump = ((int)pm_rampjump.value != 0);
-	
+
 	// do the move
 	blocked = PM_PlayerMove ();
 
@@ -3752,65 +3752,65 @@ void SV_ServerSideWeaponRank(client_t* client, int* best_weapon, int* best_impul
 
 	for (i = 0; i < sizeof(client->weaponswitch_priority) / sizeof(client->weaponswitch_priority[0]); ++i) {
 		switch (client->weaponswitch_priority[i]) {
-		case 0:
-			// end of list
-			return;
-		case 1:
-			if (items & IT_AXE) {
-				*best_weapon = IT_AXE;
-				*best_impulse = 1;
+			case 0:
+				// end of list
 				return;
-			}
-			break;
-		case 2:
-			if ((items & IT_SHOTGUN) && shells > 0) {
-				*best_weapon = IT_SHOTGUN;
-				*best_impulse = 2;
-				return;
-			}
-			break;
-		case 3:
-			if ((items & IT_SUPER_SHOTGUN) && shells > 1) {
-				*best_weapon = IT_SUPER_SHOTGUN;
-				*best_impulse = 3;
-				return;
-			}
-			break;
-		case 4:
-			if ((items & IT_NAILGUN) && nails > 0) {
-				*best_weapon = IT_NAILGUN;
-				*best_impulse = 4;
-				return;
-			}
-			break;
-		case 5:
-			if ((items & IT_SUPER_NAILGUN) && nails > 1) {
-				*best_weapon = IT_SUPER_NAILGUN;
-				*best_impulse = 5;
-				return;
-			}
-			break;
-		case 6:
-			if ((items & IT_GRENADE_LAUNCHER) && rockets > 0) {
-				*best_weapon = IT_GRENADE_LAUNCHER;
-				*best_impulse = 6;
-				return;
-			}
-			break;
-		case 7:
-			if ((items & IT_ROCKET_LAUNCHER) && rockets > 0) {
-				*best_weapon = IT_ROCKET_LAUNCHER;
-				*best_impulse = 7;
-				return;
-			}
-			break;
-		case 8:
-			if ((items & IT_LIGHTNING) && cells > 0) {
-				*best_weapon = IT_LIGHTNING;
-				*best_impulse = 8;
-				return;
-			}
-			break;
+			case 1:
+				if (items & IT_AXE) {
+					*best_weapon = IT_AXE;
+					*best_impulse = 1;
+					return;
+				}
+				break;
+			case 2:
+				if ((items & IT_SHOTGUN) && shells > 0) {
+					*best_weapon = IT_SHOTGUN;
+					*best_impulse = 2;
+					return;
+				}
+				break;
+			case 3:
+				if ((items & IT_SUPER_SHOTGUN) && shells > 1) {
+					*best_weapon = IT_SUPER_SHOTGUN;
+					*best_impulse = 3;
+					return;
+				}
+				break;
+			case 4:
+				if ((items & IT_NAILGUN) && nails > 0) {
+					*best_weapon = IT_NAILGUN;
+					*best_impulse = 4;
+					return;
+				}
+				break;
+			case 5:
+				if ((items & IT_SUPER_NAILGUN) && nails > 1) {
+					*best_weapon = IT_SUPER_NAILGUN;
+					*best_impulse = 5;
+					return;
+				}
+				break;
+			case 6:
+				if ((items & IT_GRENADE_LAUNCHER) && rockets > 0) {
+					*best_weapon = IT_GRENADE_LAUNCHER;
+					*best_impulse = 6;
+					return;
+				}
+				break;
+			case 7:
+				if ((items & IT_ROCKET_LAUNCHER) && rockets > 0) {
+					*best_weapon = IT_ROCKET_LAUNCHER;
+					*best_impulse = 7;
+					return;
+				}
+				break;
+			case 8:
+				if ((items & IT_LIGHTNING) && cells > 0) {
+					*best_weapon = IT_LIGHTNING;
+					*best_impulse = 8;
+					return;
+				}
+				break;
 		}
 	}
 
@@ -4644,7 +4644,6 @@ static qbool SV_ClientExtensionWeaponSwitch(client_t* cl)
 }
 #endif // MVD_PEXT1_SERVERSIDEWEAPON
 
-
 /*
 ==============
 SV_UserInit
@@ -4709,3 +4708,5 @@ static void SV_DebugClientCommand(byte playernum, const usercmd_t* usercmd, int 
 		}
 	}
 }
+
+#endif // !CLIENTONLY

@@ -222,7 +222,7 @@ void MSG_WriteAngle16 (sizebuf_t *sb, const float f)
 	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
 }
 
-void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd)
+void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd, unsigned int mvdsv_extensions)
 {
 	int bits;
 

@@ -600,6 +600,8 @@ typedef struct {
 
 #define sizeof_mvdhidden_antilag_position_t (12 + 12 + 1 + 1 + 1)
 
+#define MVDHIDDEN_DMGDONE_SPLASHDAMAGE    (1 << 15)
+
 // mvdhidden_usercmd_weapon_instruction
 #define MVDHIDDEN_SSWEAPON_PENDING        1
 #define MVDHIDDEN_SSWEAPON_HIDE_AXE       2

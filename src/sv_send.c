@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 static void SV_BotWriteDamage(client_t* c, int i);
@@ -1453,3 +1454,4 @@ void SV_SendMessagesToAll (void)
 	SV_SendClientMessages ();
 }
 
+#endif // !CLIENTONLY

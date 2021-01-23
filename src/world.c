@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // world.c -- world query functions
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 /*
@@ -633,9 +634,9 @@ void SV_AntilagClipSetUp ( areanode_t *node, moveclip_t *clip )
 	if (entnum && entnum <= MAX_CLIENTS && !svs.clients[entnum - 1].isBot)
 	{
 		clip->type |= MOVE_LAGGED;
-		w.lagents = svs.clients[entnum -1].laggedents;
-		w.maxlagents = svs.clients[entnum-1].laggedents_count;
-		w.lagentsfrac = svs.clients[entnum-1].laggedents_frac;
+		w.lagents = svs.clients[entnum - 1].laggedents;
+		w.maxlagents = svs.clients[entnum - 1].laggedents_count;
+		w.lagentsfrac = svs.clients[entnum - 1].laggedents_frac;
 	}
 	else if (passedict->v.owner)
 	{
@@ -644,9 +645,9 @@ void SV_AntilagClipSetUp ( areanode_t *node, moveclip_t *clip )
 		if (owner && owner <= MAX_CLIENTS && !svs.clients[owner - 1].isBot)
 		{
 			clip->type |= MOVE_LAGGED;
-			w.lagents = svs.clients[owner-1].laggedents;
-			w.maxlagents = svs.clients[owner-1].laggedents_count;
-			w.lagentsfrac = svs.clients[owner-1].laggedents_frac;
+			w.lagents = svs.clients[owner - 1].laggedents;
+			w.maxlagents = svs.clients[owner - 1].laggedents_count;
+			w.lagentsfrac = svs.clients[owner - 1].laggedents_frac;
 		}
 	}
 }
@@ -772,3 +773,5 @@ trace_t SV_Trace (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, 
 
 	return clip.trace;
 }
+
+#endif // !CLIENTONLY

@@ -1079,5 +1079,23 @@ double SV_ClientConnectedTime(client_t* client);    // real-world time passed
 double SV_ClientGameTime(client_t* client);         // affected by pause
 void SV_SetClientConnectionTime(client_t* client);
 
+#ifdef SERVERONLY
+// mvdsv not changed over to enums yet, which was more about documentation
+#define SV_CommandLineEnableCheats() (COM_CheckParm("-cheats"))
+#define SV_CommandLineEnableLocalCommand() (COM_CheckParm("-enablelocalcommand"))
+#define SV_CommandLineDemoCacheArgument() (COM_CheckParm("-democache"))
+#define SV_CommandLineProgTypeArgument() (COM_CheckParm("-progtype"))
+#define SV_CommandLineUseMinimumMemory() (COM_CheckParm("-minmemory"))
+#define SV_CommandLineHeapSizeMemoryKB() (COM_CheckParm("-heapsize"))
+#define SV_CommandLineHeapSizeMemoryMB() (COM_CheckParm("-mem"))
+#else
+#define SV_CommandLineEnableCheats() (COM_CheckParm(cmdline_param_server_enablecheats))
+#define SV_CommandLineEnableLocalCommand() (COM_CheckParm(cmdline_param_server_enablelocalcommand))
+#define SV_CommandLineDemoCacheArgument() (COM_CheckParm(cmdline_param_server_democache_kb))
+#define SV_CommandLineProgTypeArgument() (COM_CheckParm(cmdline_param_server_progtype))
+#define SV_CommandLineUseMinimumMemory() (COM_CheckParm(cmdline_param_host_memory_minimum))
+#define SV_CommandLineHeapSizeMemoryKB() (COM_CheckParm(cmdline_param_host_memory_kb))
+#define SV_CommandLineHeapSizeMemoryMB() (COM_CheckParm(cmdline_param_host_memory_mb))
+#endif
 
 #endif /* !__SERVER_H__ */

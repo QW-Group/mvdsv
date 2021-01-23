@@ -1,24 +1,25 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
- 
+
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version 2
 of the License, or (at your option) any later version.
- 
+
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
- 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 See the GNU General Public License for more details.
- 
+
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- 
-	
+
+
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 #ifdef WEBSITE_LOGIN_SUPPORT
@@ -35,12 +36,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ACC_FILE "accounts"
 #define ACC_DIR "users"
 
-cvar_t sv_login = {"sv_login", "0"};	// if enabled, login required
+cvar_t sv_login = { "sv_login", "0" };	// if enabled, login required
 #ifdef WEBSITE_LOGIN_SUPPORT
 cvar_t sv_login_web = { "sv_login_web", "1" }; // 0=local files, 1=auth via website (bans can be in local files), 2=mandatory auth (must have account in local files)
-#define LoginMustHaveLocalAccount() ((int)sv_login_web.value == 2 || (int)sv_login_web.value == 0)
-#define WebLoginsEnabled() ((int)sv_login_web.value != 0)
+#define LoginModeFileBased() ((int)sv_login_web.value == 0)
+#define LoginModeOptionalWeb() ((int)sv_login_web.value == 1)
+#define LoginModeMandatoryWeb() ((int)sv_login_web.value == 2)
+#define LoginMustHaveLocalAccount() (LoginModeMandatoryWeb() || LoginModeFileBased())
+#define WebLoginsEnabled() (!LoginModeFileBased())
 #else
+#define LoginModeFileBased() (1)
+#define LoginModeOptionalWeb() (0)
+#define LoginModeMandatoryWeb() (0)
 #define LoginMustHaveLocalAccount() (1)
 #define WebLoginsEnabled() (0)
 #endif
@@ -50,8 +57,8 @@ static void SV_SuccessfulLogin(client_t* cl);
 static void SV_BlockedLogin(client_t* cl);
 static void SV_ForceClientName(client_t* cl, const char* forced_name);
 
-typedef enum {a_free, a_ok, a_blocked} acc_state_t;
-typedef enum {use_log, use_ip} quse_t;
+typedef enum { a_free, a_ok, a_blocked } acc_state_t;
+typedef enum { use_log, use_ip } quse_t;
 
 typedef struct
 {
@@ -67,9 +74,9 @@ typedef struct
 static account_t accounts[MAX_ACCOUNTS];
 static int       num_accounts = 0;
 
-static qbool validAcc(char *acc)
+static qbool validAcc(char* acc)
 {
-	char *s = acc;
+	char* s = acc;
 
 	for (; *acc; acc++)
 	{
@@ -80,13 +87,13 @@ static qbool validAcc(char *acc)
 						return false;
 	}
 
-	return acc - s <= MAX_LOGINNAME && acc - s >= 3 ;
+	return acc - s <= MAX_LOGINNAME && acc - s >= 3;
 }
 
 /*
 =================
 WriteAccounts
- 
+
 Writes account list to disk
 =================
 */
@@ -94,11 +101,11 @@ Writes account list to disk
 static void WriteAccounts(void)
 {
 	int c;
-	FILE *f;
-	account_t *acc;
+	FILE* f;
+	account_t* acc;
 
 	//Sys_mkdir(ACC_DIR);
-	if ( (f = fopen( va("%s/" ACC_FILE, fs_gamedir) ,"wt")) == NULL)
+	if ((f = fopen(va("%s/" ACC_FILE, fs_gamedir), "wt")) == NULL)
 	{
 		Con_Printf("Warning: couldn't open for writing " ACC_FILE "\n");
 		return;
@@ -126,19 +133,19 @@ static void WriteAccounts(void)
 /*
 =================
 SV_LoadAccounts
- 
+
 loads account list from disk
 =================
 */
-qbool StringToFilter (char *s, ipfilter_t *f);
+qbool StringToFilter(char* s, ipfilter_t* f);
 void SV_LoadAccounts(void)
 {
 	int i;
-	FILE *f;
-	account_t *acc = accounts;
-	client_t *cl;
+	FILE* f;
+	account_t* acc = accounts;
+	client_t* cl;
 
-	if ( (f = fopen( va("%s/" ACC_FILE, fs_gamedir) ,"rt")) == NULL)
+	if ((f = fopen(va("%s/" ACC_FILE, fs_gamedir), "rt")) == NULL)
 	{
 		Con_DPrintf("couldn't open " ACC_FILE "\n");
 		// logout
@@ -167,13 +174,13 @@ void SV_LoadAccounts(void)
 		{
 			strlcpy(acc->pass, acc->login, MAX_LOGINNAME);
 			acc->use = use_ip;
-			if (fscanf(f, "%s %d\n", acc->pass, (int *)&acc->state) != 2) {
+			if (fscanf(f, "%s %d\n", acc->pass, (int*)&acc->state) != 2) {
 				Con_Printf("Error reading account data\n");
 				break;
 			}
 		}
 		else {
-			if (fscanf(f, "%s %d %d\n", acc->pass,  (int *)&acc->state, &acc->failures) != 3) {
+			if (fscanf(f, "%s %d %d\n", acc->pass, (int*)&acc->state, &acc->failures) != 3) {
 				Con_Printf("Error reading account data\n");
 				break;
 			}
@@ -200,8 +207,8 @@ void SV_LoadAccounts(void)
 			continue;
 
 		for (i = 0, acc = accounts; i < num_accounts; i++, acc++)
-			if ( (acc->use == use_log && !strncmp(acc->login, cl->login, CLIENT_LOGIN_LEN))
-			        || (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]))) )
+			if ((acc->use == use_log && !strncmp(acc->login, cl->login, CLIENT_LOGIN_LEN))
+				|| (acc->use == use_ip && !strcmp(acc->login, va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]))))
 				break;
 
 		if (i < num_accounts && acc->state == a_ok)
@@ -209,7 +216,7 @@ void SV_LoadAccounts(void)
 			// login again if possible
 			if (!acc->inuse || acc->use == use_ip)
 			{
-				cl->logged = i+1;
+				cl->logged = i + 1;
 				if (acc->use == use_ip)
 					strlcpy(cl->login, acc->pass, CLIENT_LOGIN_LEN);
 
@@ -221,21 +228,17 @@ void SV_LoadAccounts(void)
 		cl->logged = 0;
 		cl->login[0] = 0;
 	}
-
 }
-
-
 
 /*
 =================
 SV_CreateAccount_f
- 
+
 acc_create <login> [<password>]
 if password is not given, login will be used for password
 login/pass has to be max 16 chars and at least 3, only regular chars are acceptable
 =================
 */
-
 void SV_CreateAccount_f(void)
 {
 	int i, spot, c;
@@ -282,7 +285,7 @@ void SV_CreateAccount_f(void)
 	}
 
 	// find free spot, check if login exist;
-	for (i = 0, c = 0, spot = -1 ; c < num_accounts; i++)
+	for (i = 0, c = 0, spot = -1; c < num_accounts; i++)
 	{
 		if (accounts[i].state == a_free)
 		{
@@ -314,7 +317,7 @@ void SV_CreateAccount_f(void)
 	else
 		i = 1;
 	strlcpy(accounts[spot].pass, (int)sv_hashpasswords.value && use == use_log ?
-	        SHA1(Cmd_Argv(i)) : Cmd_Argv(i), MAX_LOGINNAME);
+		SHA1(Cmd_Argv(i)) : Cmd_Argv(i), MAX_LOGINNAME);
 
 	accounts[spot].state = a_ok;
 	accounts[spot].use = use;
@@ -326,7 +329,7 @@ void SV_CreateAccount_f(void)
 /*
 =================
 SV_RemoveAccount_f
- 
+
 acc_remove <login>
 removes the login
 =================
@@ -370,8 +373,8 @@ void SV_RemoveAccount_f(void)
 				// Update references from the last account which we just moved
 				for (j = 0; j < MAX_CLIENTS; ++j) {
 					client_t* cl = &svs.clients[j];
-					if (svs.clients[j].logged == num_accounts) {
-						svs.clients[j].logged = i + 1;
+					if (cl->logged == num_accounts) {
+						cl->logged = i + 1;
 					}
 				}
 			}
@@ -391,13 +394,13 @@ void SV_RemoveAccount_f(void)
 /*
 =================
 SV_ListAccount_f
- 
+
 shows the list of accounts
 =================
 */
-void SV_ListAccount_f (void)
+void SV_ListAccount_f(void)
 {
-	int i,c;
+	int i, c;
 
 	if (!num_accounts)
 	{
@@ -422,11 +425,10 @@ void SV_ListAccount_f (void)
 /*
 =================
 SV_blockAccount
- 
+
 blocks/unblocks an account
 =================
 */
-
 void SV_blockAccount(qbool block)
 {
 	int i, j;
@@ -500,9 +502,9 @@ returns positive value if login/pass are valid
 values <= 0 indicates a failure
 =================
 */
-static int checklogin(char *log1, char *pass, quse_t use)
+static int checklogin(char* log1, char* pass, quse_t use)
 {
-	int i,c;
+	int i, c;
 
 	for (i = 0, c = 0; c < num_accounts; i++)
 	{
@@ -510,7 +512,7 @@ static int checklogin(char *log1, char *pass, quse_t use)
 			continue;
 
 		if (use == accounts[i].use &&
-		        /*use == use_log && accounts[i].use == use_log && */
+			/*use == use_log && accounts[i].use == use_log && */
 			!strcasecmp(log1, accounts[i].login))
 		{
 			if (accounts[i].state == a_blocked)
@@ -523,12 +525,12 @@ static int checklogin(char *log1, char *pass, quse_t use)
 				}
 
 				if (use == use_ip ||
-						(!(int)sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
-						( (int)sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass)))
+					(!(int)sv_hashpasswords.value && !strcasecmp(pass,       accounts[i].pass)) ||
+					( (int)sv_hashpasswords.value && !strcasecmp(SHA1(pass), accounts[i].pass)))
 				{
 					accounts[i].failures = 0;
 					accounts[i].inuse++;
-					return i+1;
+					return i + 1;
 				}
 
 				if (++accounts[i].failures >= MAX_FAILURES) {
@@ -550,18 +552,18 @@ static int checklogin(char *log1, char *pass, quse_t use)
 	return 0;
 }
 
-void Login_Init (void)
+void Login_Init(void)
 {
-	Cvar_Register (&sv_login);
+	Cvar_Register(&sv_login);
 #ifdef WEBSITE_LOGIN_SUPPORT
 	Cvar_Register(&sv_login_web);
 #endif
 
-	Cmd_AddCommand ("acc_create",SV_CreateAccount_f);
-	Cmd_AddCommand ("acc_remove",SV_RemoveAccount_f);
-	Cmd_AddCommand ("acc_list",SV_ListAccount_f);
-	Cmd_AddCommand ("acc_unblock",SV_UnblockAccount_f);
-	Cmd_AddCommand ("acc_block",SV_BlockAccount_f);
+	Cmd_AddCommand("acc_create", SV_CreateAccount_f);
+	Cmd_AddCommand("acc_remove", SV_RemoveAccount_f);
+	Cmd_AddCommand("acc_list", SV_ListAccount_f);
+	Cmd_AddCommand("acc_unblock", SV_UnblockAccount_f);
+	Cmd_AddCommand("acc_block", SV_BlockAccount_f);
 
 	// load account list
 	//SV_LoadAccounts();
@@ -570,15 +572,14 @@ void Login_Init (void)
 /*
 ===============
 SV_Login
- 
+
 called on connect after cmd new is issued
 ===============
 */
-
-qbool SV_Login(client_t *cl)
+qbool SV_Login(client_t* cl)
 {
 	extern cvar_t sv_registrationinfo;
-	char *ip;
+	char* ip;
 
 	// is sv_login is disabled, login is not necessery
 	if (!(int)sv_login.value) {
@@ -607,7 +608,7 @@ qbool SV_Login(client_t *cl)
 	ip = va("%d.%d.%d.%d", cl->realip.ip[0], cl->realip.ip[1], cl->realip.ip[2], cl->realip.ip[3]);
 	if ((cl->logged = checklogin(ip, ip, use_ip)) > 0)
 	{
-		strlcpy(cl->login, accounts[cl->logged-1].pass, CLIENT_LOGIN_LEN);
+		strlcpy(cl->login, accounts[cl->logged - 1].pass, CLIENT_LOGIN_LEN);
 		return true;
 	}
 
@@ -627,15 +628,14 @@ qbool SV_Login(client_t *cl)
 
 		SV_ClientPrintf2(cl, PRINT_HIGH, "Enter username:\n");
 	}
-	else
-	{
+	else {
 		SV_ClientPrintf2(cl, PRINT_HIGH, "Enter login & password:\n");
 	}
 
 	return false;
 }
 
-void SV_Logout(client_t *cl)
+void SV_Logout(client_t* cl)
 {
 	if (cl->logged > 0 && cl->logged <= sizeof(accounts) / sizeof(accounts[0])) {
 		accounts[cl->logged - 1].inuse--;
@@ -692,7 +692,7 @@ void SV_ParseWebLogin(client_t* cl)
 }
 #endif
 
-void SV_ParseLogin(client_t *cl)
+void SV_ParseLogin(client_t* cl)
 {
 	char *log1, *pass;
 
@@ -828,7 +828,7 @@ static void SV_ForceClientName(client_t* cl, const char* forced_name)
 	MSG_WriteString(&cl->netchan.message, va("name %s\n", forced_name));
 }
 
-void SV_LoginCheckTimeOut(client_t *cl)
+void SV_LoginCheckTimeOut(client_t* cl)
 {
 	double connected = SV_ClientConnectedTime(cl);
 
@@ -901,3 +901,5 @@ qbool SV_LoginBlockJoinRequest(client_t* cl)
 	// Allow
 	return false;
 }
+
+#endif // !CLIENTONLY

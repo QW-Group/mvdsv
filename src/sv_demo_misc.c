@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // sv_demo_misc.c - misc demo related stuff, helpers
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 #ifndef SERVERONLY
 #include "pcre.h"
@@ -213,7 +214,7 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 		redirect_t old = sv_redirected;
 		char *p;
 	
-		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
+		if ((p = strchr(sv_onrecordfinish.string, ' ')) != NULL)
 			*p = 0; // strip parameters
 	
 		strlcpy(path, dest_name, sizeof(path));
@@ -364,14 +365,14 @@ void SV_DemoList (qbool use_regex)
 				{
 					Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
 					           Cmd_Argv(j), errbuf, r);
-					Q_free(preg);
+					pcre_free(preg);
 					break;
 				}
 				switch (r = pcre_exec(preg, NULL, list->name,
 				                      strlen(list->name), 0, 0, NULL, 0))
 				{
 				case 0:
-					Q_free(preg);
+					pcre_free(preg);
 					continue;
 				case PCRE_ERROR_NOMATCH:
 					break;
@@ -379,7 +380,7 @@ void SV_DemoList (qbool use_regex)
 					Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
 					           Cmd_Argv(j), list->name, r);
 				}
-				Q_free(preg);
+				pcre_free(preg);
 				break;
 			}
 			else
@@ -518,11 +519,11 @@ char *SV_MVDName2Txt (const char *name)
 	{
 		Con_Printf("SV_MVDName2Txt: pcre_compile(%s) error: %s at offset %d\n",
 					sv_demoRegexp.string, errbuf, r);
-		Q_free(preg);
+		pcre_free(preg);
 		return NULL;
 	}
 	r = pcre_exec(preg, NULL, s, len, 0, 0, ovector, OVECCOUNT);
-	Q_free(preg);
+	pcre_free(preg);
 	if (r < 0)
 	{
 		switch (r)
@@ -1156,3 +1157,5 @@ char *quote (char *str)
 	*s = '\0';
 	return out;
 }
+
+#endif // !CLIENTONLY
