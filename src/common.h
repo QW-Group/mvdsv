@@ -33,6 +33,12 @@ typedef struct sizebuf_s
 	int cursize;
 } sizebuf_t;
 
+#ifdef SERVERONLY
+#define MSG_HasOverflowHandler(m) (0)
+#else
+#define MSG_HasOverflowHandler(msg) (msg->overflow_handler != NULL)
+#endif
+
 void SZ_Clear (sizebuf_t *buf);
 void SZ_InitEx (sizebuf_t *buf, byte *data, const int length, qbool allowoverflow);
 void SZ_Init (sizebuf_t *buf, byte *data, const int length);
