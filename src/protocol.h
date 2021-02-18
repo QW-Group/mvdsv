@@ -555,7 +555,7 @@ typedef struct temp_entity_list_s
 
 // hidden messages inserted into .mvd files
 // embedded in dem_multiple(0) - should be safely skipped in clients
-// format is <length> <type>*   where <type> is duplicated if 0xFFFF.  <length> is length of the data packet, not the header
+// format is <int:length> <short:type>*   where <type> is duplicated if 0xFFFF.  <length> is length of the data packet, not the header
 enum {
 	mvdhidden_antilag_position           = 0x0000,  // mvdhidden_antilag_position_header_t mvdhidden_antilag_position_t*
 	mvdhidden_usercmd                    = 0x0001,  // <byte: playernum> <byte:dropnum> <byte: msec, vec3_t: angles, short[3]: forward side up> <byte: buttons> <byte: impulse>
@@ -567,6 +567,7 @@ enum {
 	mvdhidden_dmgdone                    = 0x0007,  // <byte: type-flags> <short: damaged ent#> <short: damaged ent#> <short: damage>
 	mvdhidden_usercmd_weapons_ss         = 0x0008,  // (same format as mvdhidden_usercmd_weapons)
 	mvdhidden_usercmd_weapon_instruction = 0x0009,  // <byte: playernum> <byte: flags> <int: sequence#> <int: mode> <byte[10]: weaponlist>
+	mvdhidden_paused_duration            = 0x000A,  // <byte: msec> ... actual time elapsed, not gametime (can be used to keep stream running) ... expected to be QTV only
 	mvdhidden_extended                   = 0xFFFF   // doubt we'll ever get here: read next short...
 };
 
