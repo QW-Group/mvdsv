@@ -113,7 +113,7 @@ unsigned char *Q_yelltext (unsigned char *str); //VVD: white to red text and yel
 extern char com_token[MAX_COM_TOKEN];
 typedef enum {TTP_UNKNOWN, TTP_STRING} com_tokentype_t;
 
-char *COM_Parse (char *data);
+const char *COM_Parse (const char *data);
 char *COM_ParseToken (const char *data, const char *punctuation);
 
 extern int com_argc;

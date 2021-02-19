@@ -602,7 +602,7 @@ COM_Parse
 Parse a token out of a string
 ==============
 */
-char *COM_Parse (char *data)
+const char *COM_Parse (const char *data)
 {
 	unsigned char c;
 	int len;

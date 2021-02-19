@@ -609,7 +609,7 @@ char* Cmd_MakeArgsEx(tokenizecontext_t* ctx, int start)
 }
 
 // Parses the given string into command line tokens.
-void Cmd_TokenizeStringEx(tokenizecontext_t* ctx, char* text)
+void Cmd_TokenizeStringEx(tokenizecontext_t* ctx, const char* text)
 {
 	int idx = 0, token_len;
 
@@ -692,7 +692,7 @@ Cmd_TokenizeString
 Parses the given string into command line tokens.
 ============
 */
-void Cmd_TokenizeString (char *text)
+void Cmd_TokenizeString (const char *text)
 {
 	Cmd_TokenizeStringEx(&cmd_tokenizecontext, text);
 }
