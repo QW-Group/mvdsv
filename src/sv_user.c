@@ -3917,9 +3917,7 @@ static void SV_ServerSideWeaponLogic_PrePostThink(client_t* sv_client, ssw_info_
 		if (switch_to_best_weapon && sv_client->weaponswitch_forgetorder) {
 			SV_ExecuteServerSideWeaponForgetOrder(sv_client, best_impulse, hide_impulse);
 		}
-		else {
-			SV_ExecuteServerSideWeaponHideOnDeath(sv_client, hide_impulse, ssw->hide_weapon);
-		}
+		SV_ExecuteServerSideWeaponHideOnDeath(sv_client, hide_impulse, ssw->hide_weapon);
 
 		if (!ent->impulse) {
 			if (switch_to_best_weapon) {
