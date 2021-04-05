@@ -3907,10 +3907,7 @@ static void SV_ServerSideWeaponLogic_PrePostThink(client_t* sv_client, ssw_info_
 		if (mode == 2) {
 			mode = (ssw->firing ? 0 : 1);
 		}
-
-		// by this point we should be down to 0 or 1
-		switch_to_best_weapon = (mode == 0 && sv_client->weaponswitch_pending) || (ssw->firing && !sv_client->weaponswitch_wasfiring);
-		switch_to_best_weapon &= (ent->health >= 1.0f); // Don't try and switch if dead
+		switch_to_best_weapon = sv_client->weaponswitch_pending && (mode == 0 || ssw->firing) && (ent->health >= 1.0f);
 
 		SV_ServerSideWeaponRank(sv_client, &ssw->best_weapon, &best_impulse, &ssw->hide_weapon, &hide_impulse);
 
