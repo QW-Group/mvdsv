@@ -3965,14 +3965,20 @@ static void SV_ServerSideWeaponLogic_PostPostThink(client_t* sv_client, ssw_info
 	if (ssw->impulse_set) {
 		qbool hide_failed = (ssw->impulse_set == 1 && ent->weapon != ssw->hide_weapon);
 		qbool pickbest_failed = (ssw->impulse_set == 2 && ent->weapon != ssw->best_weapon);
+		qbool failure = (hide_failed || pickbest_failed);
 
 		ent->impulse = 0;
 
 		if (dev_trace) {
-			SV_ClientPrintf(sv_client, PRINT_HIGH, "... %s failed, will try again\n", ssw->impulse_set == 1 ? "hide" : "pickbest");
+			if (failure) {
+				SV_ClientPrintf(sv_client, PRINT_HIGH, "... %s failed, will try again\n", ssw->impulse_set == 1 ? "hide" : "pickbest");
+			}
+			else {
+				SV_ClientPrintf(sv_client, PRINT_HIGH, "... %s successful, stopping\n", ssw->impulse_set == 1 ? "hide" : "pickbest");
+			}
 		}
 
-		sv_client->weaponswitch_pending &= (hide_failed || pickbest_failed);
+		sv_client->weaponswitch_pending &= failure;
 	}
 	if (ssw->hiding && ent->weapon == ssw->hide_weapon) {
 		if (dev_trace) {
