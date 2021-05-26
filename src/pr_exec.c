@@ -19,8 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
    
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
-
+#include <limits.h>
 
 typedef struct prstack_s
 {
@@ -705,7 +706,7 @@ void PR1_SetString(string_t* address, char* s)
 		return;
 	}
 
-	if (s - pr_strings < 0) {
+	if (s - pr_strings < 0 || s - pr_strings > INT_MAX) {
 		for (i = 0; i < num_prstr; i++) {
 			if (pr_strtbl[i] == s) {
 				*address = -i;
@@ -873,3 +874,4 @@ void PR1_UnLoadProgs(void)
 	}
 }
 
+#endif // !CLIENTONLY

@@ -562,13 +562,95 @@ void Cmd_UnAliasAll_f (void)
 =============================================================================
 */
 
-static	int			cmd_argc;
-static	char		*cmd_argv[MAX_ARGS];
 static	char		*cmd_null_string = "";
-static	char		*cmd_args = NULL;
 
 static cmd_function_t	*cmd_hash_array[32];
 static cmd_function_t	*cmd_functions;		// possible commands to execute
+
+static  tokenizecontext_t cmd_tokenizecontext;
+
+int Cmd_ArgcEx(tokenizecontext_t* ctx)
+{
+	return ctx->cmd_argc;
+}
+
+char* Cmd_ArgvEx(tokenizecontext_t* ctx, int arg)
+{
+	if (arg >= ctx->cmd_argc || arg < 0)
+		return cmd_null_string;
+
+	return ctx->cmd_argv[arg];
+}
+
+// Returns a single string containing argv(1) to argv(argc() - 1)
+char* Cmd_ArgsEx(tokenizecontext_t* ctx)
+{
+	return ctx->cmd_args;
+}
+
+// Returns a single string containing argv(start) to argv(argc() - 1)
+// Unlike Cmd_Args, shrinks spaces between argvs
+char* Cmd_MakeArgsEx(tokenizecontext_t* ctx, int start)
+{
+	int i, c;
+
+	ctx->text[0] = 0;
+	c = Cmd_ArgcEx(ctx);
+
+	for (i = start; i < c; i++)
+	{
+		if (i > start)
+			strlcat(ctx->text, " ", sizeof(ctx->text) - strlen(ctx->text));
+
+		strlcat(ctx->text, Cmd_ArgvEx(ctx, i), sizeof(ctx->text) - strlen(ctx->text));
+	}
+
+	return ctx->text;
+}
+
+// Parses the given string into command line tokens.
+void Cmd_TokenizeStringEx(tokenizecontext_t* ctx, const char* text)
+{
+	int idx = 0, token_len;
+
+	memset(ctx, 0, sizeof(*ctx));
+
+	while (1)
+	{
+		// skip whitespace
+		while (*text == ' ' || *text == '\t' || *text == '\r')
+			text++;
+
+		// a newline separates commands in the buffer
+		if (*text == '\n')
+			return;
+
+		if (!*text)
+			return;
+
+		if (ctx->cmd_argc == 1)
+			strlcpy(ctx->cmd_args, text, sizeof(ctx->cmd_args));
+
+		text = COM_Parse(text);
+		if (!text)
+			return;
+
+		if (ctx->cmd_argc >= MAX_ARGS)
+			return;
+
+		token_len = strlen(com_token);
+
+		// ouch ouch, no more space
+		if (idx + token_len + 1 > sizeof(ctx->argv_buf))
+			return;
+
+		ctx->cmd_argv[ctx->cmd_argc] = ctx->argv_buf + idx;
+		strcpy(ctx->cmd_argv[ctx->cmd_argc], com_token);
+		ctx->cmd_argc++;
+
+		idx += token_len + 1;
+	}
+}
 
 /*
 ============
@@ -577,7 +659,7 @@ Cmd_Argc
 */
 int Cmd_Argc (void)
 {
-	return cmd_argc;
+	return Cmd_ArgcEx(&cmd_tokenizecontext);
 }
 
 /*
@@ -587,7 +669,7 @@ Cmd_Argv
 */
 char *Cmd_Argv (int arg)
 {
-	return (arg >= cmd_argc) ? cmd_null_string : cmd_argv[arg];
+	return Cmd_ArgvEx(&cmd_tokenizecontext, arg);
 }
 
 /*
@@ -599,9 +681,7 @@ Returns a single string containing argv(1) to argv(argc()-1)
 */
 char *Cmd_Args (void)
 {
-	if (!cmd_args)
-		return "";
-	return cmd_args;
+	return Cmd_ArgsEx(&cmd_tokenizecontext);
 }
 
 
@@ -612,54 +692,9 @@ Cmd_TokenizeString
 Parses the given string into command line tokens.
 ============
 */
-void Cmd_TokenizeString (char *text)
+void Cmd_TokenizeString (const char *text)
 {
-	size_t idx, token_len;
-	static char argv_buf[MAX_MSGLEN + MAX_ARGS];
-
-	idx = 0;
-
-	cmd_argc = 0;
-	cmd_args = NULL;
-
-	while (1)
-	{
-		// skip whitespace
-		while (*text == ' ' || *text == '\t' || *text == '\r')
-		{
-			text++;
-		}
-
-		if (*text == '\n')
-		{	// a newline seperates commands in the buffer
-			text++;
-			break;
-		}
-
-		if (!*text)
-			return;
-
-		if (cmd_argc == 1)
-			cmd_args = (char *) text;
-
-		text = COM_Parse (text);
-		if (!text)
-			return;
-
-		if (cmd_argc >= MAX_ARGS)
-			return;			
-
-		token_len = strlen(com_token);
-
-		if (idx + token_len + 1 > sizeof(argv_buf))
-			return;
-
-		cmd_argv[cmd_argc] = argv_buf + idx;
-		strlcpy (cmd_argv[cmd_argc], com_token, sizeof(argv_buf) - idx);
-		cmd_argc++;
-
-		idx += token_len + 1;
-	}
+	Cmd_TokenizeStringEx(&cmd_tokenizecontext, text);
 }
 
 
@@ -892,12 +927,12 @@ void Cmd_ExecuteString (const char *text)
 	if (!Cmd_Argc())
 		return;		// no tokens
 
-	key = Com_HashKey (cmd_argv[0]);
+	key = Com_HashKey(Cmd_Argv(0));
 
 	// check functions
 	for (cmd=cmd_hash_array[key] ; cmd ; cmd=cmd->hash_next)
 	{
-		if (!strcasecmp (cmd_argv[0], cmd->name))
+		if (!strcasecmp(Cmd_Argv(0), cmd->name))
 		{
 			if (cmd->function)
 				cmd->function ();
@@ -913,7 +948,7 @@ void Cmd_ExecuteString (const char *text)
 	// check alias
 	for (a=cmd_alias_hash[key] ; a ; a=a->hash_next)
 	{
-		if (!strcasecmp (cmd_argv[0], a->name))
+		if (!strcasecmp(Cmd_Argv(0), a->name))
 		{
 			Cbuf_InsertText ("\n");
 			Cbuf_InsertText (a->value);
