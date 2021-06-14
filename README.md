@@ -99,7 +99,7 @@ Library m found: YES
 Library dl found: YES
 Build targets in project: 1
 
-$ ninja -C build
+$ ninja -C build_${TARGET}
 
 ninja: Entering directory `build'
 [46/46] Linking target mvdsv.
