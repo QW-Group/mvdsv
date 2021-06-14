@@ -3,7 +3,6 @@ c = 'x86_64-linux-gnu-gcc'
 cpp = 'x86_64-linux-gnu-g++'
 ar = 'x86_64-linux-gnu-ar'
 strip = 'x86_64-linux-gnu-strip'
-pkgconfig = 'x86_64-linux-gnu-pkg-config'
 
 [host_machine]
 system = 'linux'
