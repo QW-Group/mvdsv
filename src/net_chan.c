@@ -307,14 +307,17 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	if (!cls.demoplayback)
 #endif
 	{
-		for (i = 0; i <= chan->dupe; i++)
-			NET_SendPacket (chan->sock, send.cursize, send.data, chan->remote_address);
+		for (i = 0; i <= chan->dupe; ++i) {
+			NET_SendPacket(chan->sock, send.cursize, send.data, chan->remote_address);
+		}
 	}
 
-	if (chan->cleartime < curtime)
-		chan->cleartime = curtime + send.cursize*i * chan->rate;
-	else
-		chan->cleartime += send.cursize*i * chan->rate;
+	if (chan->cleartime < curtime) {
+		chan->cleartime = curtime + send.cursize * i * chan->rate;
+	}
+	else {
+		chan->cleartime += send.cursize * i * chan->rate;
+	}
 
 #ifndef CLIENTONLY
 	if (chan->sock == NS_SERVER && sv.paused)

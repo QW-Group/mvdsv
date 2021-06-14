@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <errno.h>
 
+#define MAX_DUPLICATE_PACKETS (3)
+
 #ifdef _WIN32
 
 //
@@ -235,7 +237,7 @@ typedef struct
 	double		cleartime;			// if curtime > nc->cleartime, free to go
 	double		rate;				// seconds / byte
 
-	int			dupe;				//extra packet dupes to send.
+	int         dupe;               // duplicate packets to send (0 = no duplicates, as normal)
 
 	// sequencing variables
 	int			incoming_sequence;

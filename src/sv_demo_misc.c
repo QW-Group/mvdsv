@@ -19,11 +19,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // sv_demo_misc.c - misc demo related stuff, helpers
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 #ifndef SERVERONLY
 #include "pcre.h"
 #endif
 
+#define MAX_DEMOINFO_SIZE (1024 * 200)
 static char chartbl[256];
 
 /*
@@ -212,7 +214,7 @@ void Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *de
 		redirect_t old = sv_redirected;
 		char *p;
 	
-		if ((p = strstr(sv_onrecordfinish.string, " ")) != NULL)
+		if ((p = strchr(sv_onrecordfinish.string, ' ')) != NULL)
 			*p = 0; // strip parameters
 	
 		strlcpy(path, dest_name, sizeof(path));
@@ -363,14 +365,14 @@ void SV_DemoList (qbool use_regex)
 				{
 					Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
 					           Cmd_Argv(j), errbuf, r);
-					Q_free(preg);
+					pcre_free(preg);
 					break;
 				}
 				switch (r = pcre_exec(preg, NULL, list->name,
 				                      strlen(list->name), 0, 0, NULL, 0))
 				{
 				case 0:
-					Q_free(preg);
+					pcre_free(preg);
 					continue;
 				case PCRE_ERROR_NOMATCH:
 					break;
@@ -378,7 +380,7 @@ void SV_DemoList (qbool use_regex)
 					Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
 					           Cmd_Argv(j), list->name, r);
 				}
-				Q_free(preg);
+				pcre_free(preg);
 				break;
 			}
 			else
@@ -517,11 +519,11 @@ char *SV_MVDName2Txt (const char *name)
 	{
 		Con_Printf("SV_MVDName2Txt: pcre_compile(%s) error: %s at offset %d\n",
 					sv_demoRegexp.string, errbuf, r);
-		Q_free(preg);
+		pcre_free(preg);
 		return NULL;
 	}
 	r = pcre_exec(preg, NULL, s, len, 0, 0, ovector, OVECCOUNT);
-	Q_free(preg);
+	pcre_free(preg);
 	if (r < 0)
 	{
 		switch (r)
@@ -740,7 +742,8 @@ void SV_MVDInfoAdd_f (void)
 	}
 
 	if (!strcmp(Cmd_Argv(1), "**"))
-	{ // put content of one file to another
+	{
+		// put content of one file to another
 		FILE *src;
 
 		snprintf(path, MAX_OSPATH, "%s/%s", fs_gamedir, Cmd_Argv(2));
@@ -751,13 +754,18 @@ void SV_MVDInfoAdd_f (void)
 		}
 		else
 		{
-			char buf[1024*200] = {0}; // 200 kb
-			size_t sz = fread((void*) buf, 1, sizeof(buf), src); // read from src
+			byte buf[1024 * 200] = { 0 }; // 200 kb
+			size_t sz = fread((void*)buf, 1, sizeof(buf), src); // read from src
 
-			if (sz <= 0)
+			if (sz <= 0) {
 				Con_Printf("failed to read or empty input file\n");
-			else if (sz != fwrite((void*) buf, 1, sz, f)) // write to f
-				Con_Printf("failed write to file\n");
+			}
+			else {
+				// write to f
+				if (sz != fwrite((void*)buf, 1, sz, f)) {
+					Con_Printf("failed write to file\n");
+				}
+			}
 
 			fclose(src); // close src
 		}
@@ -779,6 +787,85 @@ void SV_MVDInfoAdd_f (void)
 
 	// force cache rebuild.
 	FS_FlushFSHash();
+}
+
+// Put content of one file into .mvd
+void SV_MVDEmbedInfo_f(void)
+{
+	// put content of one file to another
+	FILE* src;
+	byte* buf;
+	size_t sz;
+	char name[MAX_OSPATH];
+	char path[MAX_OSPATH];
+
+	if (Cmd_Argc() == 1) {
+		Con_Printf("Embeds contents of a file into mvd/qtv stream\n");
+		Con_Printf("Usage: %s <filename>\n", Cmd_Argv(0));
+		return;
+	}
+
+	// No config files, no sub-directories
+	strlcpy(name, Cmd_Argv(1), sizeof(name));
+	snprintf(path, MAX_OSPATH, "%s/%s", fs_gamedir, Cmd_Argv(1));
+	if (FS_UnsafeFilename(path) || !strcasecmp(COM_FileExtension(name), "cfg")) {
+		Con_Printf("Unsafe filename detected - cancelled\n");
+		return;
+	}
+
+	if ((src = fopen(path, "rb")) == NULL) {
+		Con_Printf("failed to open input file\n");
+		return;
+	}
+
+	buf = Q_malloc(MAX_DEMOINFO_SIZE);
+	sz = fread((void*)buf, 1, MAX_DEMOINFO_SIZE, src);
+	fclose(src);
+	if (sz <= 0) {
+		Con_Printf("failed to read or empty input file\n");
+		Q_free(buf);
+		return;
+	}
+
+	Con_Printf("Embedding (%s):\n", path);
+
+	// embed in .mvd/qtv (sanity check limits)
+	if (sz < 2 * 1024 * 1024) {
+		mvdhidden_block_header_t header;
+		byte* data = buf;
+		short block_number = 1;
+
+		while (sz > 0) {
+			int prefix_length = sizeof_mvdhidden_block_header_t_range0 + sizeof(block_number);
+			int length = (int)min(sz + prefix_length, MAX_MVD_SIZE);
+
+			if (MVDWrite_HiddenBlockBegin(length)) {
+				length -= prefix_length;
+
+				sz -= length;
+				if (sz == 0) {
+					block_number = 0;
+				}
+
+				header.length = LittleLong(length + sizeof(short));
+				header.type_id = LittleShort(mvdhidden_demoinfo);
+				MVD_SZ_Write(&header.length, sizeof(header.length));
+				MVD_SZ_Write(&header.type_id, sizeof(header.type_id));
+				MVD_SZ_Write(&block_number, sizeof(block_number));
+				MVD_SZ_Write(data, length);
+
+				data += length;
+				++block_number;
+			}
+			else {
+				Con_Printf("failed write to mvd/qtv\n");
+				Q_free(buf);
+				break;
+			}
+		}
+	}
+
+	Q_free(buf);
 }
 
 void SV_MVDInfoRemove_f (void)
@@ -1070,3 +1157,5 @@ char *quote (char *str)
 	*s = '\0';
 	return out;
 }
+
+#endif // !CLIENTONLY

@@ -27,7 +27,10 @@ typedef struct bucket_s {
 	void *data;
 	char *keystring;
 	struct bucket_s *next;
+	int flags;
 } bucket_t;
+
+#define HASH_BUCKET_KEYSTRING_OWNED 1
 
 typedef struct hashtable_s {
 	int numbuckets;
@@ -35,6 +38,8 @@ typedef struct hashtable_s {
 } hashtable_t;
 
 hashtable_t *Hash_InitTable(int numbucks);
+void Hash_ShutdownTable(hashtable_t* table);
+
 int Hash_Key(char *name, int modulus);
 void *Hash_Get(hashtable_t *table, char *name);
 void *Hash_GetInsensitive(hashtable_t *table, const char *name);
