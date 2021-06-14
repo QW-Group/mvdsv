@@ -301,6 +301,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	chan->outgoing_size[i] = send.cursize;
 	chan->outgoing_time[i] = curtime;
 
+	i = 1;  //for s2c packet multiplication
 #ifndef SERVERONLY
 	//zoid, no input in demo playback mode
 	if (!cls.demoplayback)

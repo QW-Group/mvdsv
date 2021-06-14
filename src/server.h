@@ -356,6 +356,7 @@ typedef struct client_s
 	int             rip_vip;
 	double          delay;
 	double          disable_updates_stop;     // Vladis
+	qbool           maxping_met;              // set if user meets maxping requirements
 	packet_t        *packets, *last_packet;
 
 #ifdef MVD_PEXT1_HIGHLAGTELEPORT

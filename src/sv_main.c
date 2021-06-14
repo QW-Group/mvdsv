@@ -3120,6 +3120,7 @@ int SV_BoundRate (qbool dl, int rate)
 
 	if (rate < 500)
 		rate = 500;
+
 	if (rate > 100000 * MAX_DUPLICATE_PACKETS)
 		rate = 100000 * MAX_DUPLICATE_PACKETS;
 

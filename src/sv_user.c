@@ -175,6 +175,9 @@ Check that player's ping falls below sv_maxping value
 */
 qbool PlayerCheckPing(void)
 {
+
+	if (sv_client->maxping_met) return true;
+
 	int maxping = Q_atof(sv_maxping.string);
 	int playerping = sv_client->frames[sv_client->netchan.incoming_acknowledged & UPDATE_MASK].ping_time * 1000;
 
@@ -183,6 +186,7 @@ qbool PlayerCheckPing(void)
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "\nYour ping is too high for this server!  Maximum ping is set to %i, your ping is %i.\nForcing spectator.\n\n", maxping, playerping);
 		return false;
 	}
+	sv_client->maxping_met = true;
 	return true;
 }
 
@@ -216,7 +220,7 @@ static void Cmd_New_f (void)
 	{
 		MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
 		MSG_WriteString (&sv_client->netchan.message, "cmd pext\n");
-		return;	
+		return;
 	}
 
 	// do not proceed if realip is unknown
