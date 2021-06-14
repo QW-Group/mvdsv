@@ -77,7 +77,7 @@ Export env var to define what target to compile, run the build commands.
 $ export TARGET=linux-amd64
 $ rm -rf build
 
-$ meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
+$ meson build --cross-file tools/cross-compilation/${TARGET}.txt
 The Meson build system
 Version: 0.41.2
 Source dir: /mvdsv/src
@@ -99,7 +99,7 @@ Library m found: YES
 Library dl found: YES
 Build targets in project: 1
 
-$ ninja -C build_${TARGET}
+$ ninja -C build
 
 ninja: Entering directory `build'
 [46/46] Linking target mvdsv.
