@@ -119,4 +119,6 @@ cvar_t *Cvar_Create (const char *name, char *string, int cvarflags);
 
 void Cvar_Init (void);
 
+char* Cvar_ServerInfoValue(char* key, char* value);
+
 #endif /* !__CVAR_H__ */

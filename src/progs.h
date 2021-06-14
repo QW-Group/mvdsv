@@ -132,12 +132,12 @@ char *ED_NewString (char *string);
 
 void ED_Print (edict_t *ed);
 void ED_Write (FILE *f, edict_t *ed);
-char *ED_ParseEdict (char *data, edict_t *ent);
+const char *ED_ParseEdict (const char *data, edict_t *ent);
 
 void ED_WriteGlobals (FILE *f);
-void ED_ParseGlobals (char *data);
+void ED_ParseGlobals (const char *data);
 
-void ED_LoadFromFile (char *data);
+void ED_LoadFromFile (const char *data);
 
 edict_t *EDICT_NUM(int n);
 int NUM_FOR_EDICT(edict_t *e);
@@ -249,6 +249,7 @@ qbool PR1_ClientCmd(void);
 	#define PR_Init PR1_Init
 	//#define PR_GetString PR1_GetString
 	//#define PR_SetString PR1_SetString
+	#define PR_GetEntityString PR1_GetString
 	#define PR_SetEntityString(ent, target, value) PR1_SetString(&target, value)
 	#define PR_SetGlobalString(target, value) PR1_SetString(&target, value)
 	#define ED_FindFieldOffset ED1_FindFieldOffset

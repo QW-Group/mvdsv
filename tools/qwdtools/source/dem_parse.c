@@ -177,14 +177,31 @@ void Dem_ParseServerData (void)
 
 	// parse protocol version number
 	// allow 2.2 and 2.29 demos to play
-	protover = MSG_ReadLong ();
-	count += 4;
-	if (protover != PROTOCOL_VERSION &&
-	        !(protover == 26 || protover == 27 || protover == 28))
-	{
-		Sys_Printf ("Incompatible demo version: %i\n", protover);
-		Dem_Stop(from);
-		return;
+	for (;;) {
+		protover = MSG_ReadLong();
+		count += 4;
+		if (protover == PROTOCOL_VERSION_FTE) {
+			from->extensions_fte1 = MSG_ReadLong();
+			count += 4;
+			continue;
+		}
+		if (protover == PROTOCOL_VERSION_FTE2) {
+			from->extensions_fte2 = MSG_ReadLong();
+			count += 4;
+			continue;
+		}
+		if (protover == PROTOCOL_VERSION_MVD1) {
+			from->extensions_mvd1 = MSG_ReadLong();
+			count += 4;
+			continue;
+		}
+
+		if (protover != PROTOCOL_VERSION && !(protover == 26 || protover == 27 || protover == 28)) {
+			Sys_Printf("Incompatible demo version: %i\n", protover);
+			Dem_Stop(from);
+			return;
+		}
+		break;
 	}
 
 	from->servercount = MSG_ReadLong ();
@@ -226,6 +243,18 @@ void Dem_ParseServerData (void)
 
 	MVDWrite_Begin(dem_all, 0, count + 40+1);
 	MSG_WriteByte(msgbuf, svc_serverdata);
+	if (from->extensions_fte1) {
+		MSG_WriteLong(msgbuf, PROTOCOL_VERSION_FTE);
+		MSG_WriteLong(msgbuf, from->extensions_fte1);
+	}
+	if (from->extensions_fte2) {
+		MSG_WriteLong(msgbuf, PROTOCOL_VERSION_FTE2);
+		MSG_WriteLong(msgbuf, from->extensions_fte2);
+	}
+	if (from->extensions_mvd1) {
+		MSG_WriteLong(msgbuf, PROTOCOL_VERSION_MVD1);
+		MSG_WriteLong(msgbuf, from->extensions_mvd1 & MVD_PEXT1_INCLUDEINMVD);
+	}
 	MSG_WriteLong(msgbuf, protover);
 	MSG_WriteLong(msgbuf, from->servercount);
 	MSG_WriteString(msgbuf, str);
@@ -286,9 +315,9 @@ void Dem_Parselist (byte type)
 		}
 	}
 
-	MSG_ReadByte();
+	n = MSG_ReadByte();
 
-	MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount+1);
+	MVDWrite_Begin(dem_all, 0, msg_readcount - msg_startcount + 1);
 	MSG_WriteByte(msgbuf, type);
 	MSG_Forward(msgbuf, msg_startcount, msg_readcount - msg_startcount);
 }
@@ -641,7 +670,7 @@ Can go from either a baseline or a previous packet_entity
 int	bitcounts[32]; // just for protocol profiling
 void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 {
-	int i;
+	int i, morebits = 0;
 
 	// set everything to the state we are delta'ing from
 	*eto = *efrom;
@@ -654,6 +683,16 @@ void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 		// read in the low order bits
 		i = MSG_ReadByte ();
 		bits |= i;
+	}
+
+	if ((bits & U_FTE_EVENMORE) && from->extensions_fte1) {
+		morebits = MSG_ReadByte();
+		if (morebits & U_FTE_YETMORE) {
+			morebits |= MSG_ReadByte() << 8;
+		}
+	}
+	else {
+		morebits = 0;
 	}
 
 	// count the bits for net profiling
@@ -678,20 +717,38 @@ void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 	if (bits & U_EFFECTS)
 		eto->effects = MSG_ReadByte();
 
-	if (bits & U_ORIGIN1)
-		eto->origin[0] = MSG_ReadCoord ();
+	if (bits & U_ORIGIN1) {
+		if (from->extensions_mvd1 & MVD_PEXT1_FLOATCOORDS) {
+			eto->origin[0] = MSG_ReadLongCoord();
+		}
+		else {
+			eto->origin[0] = MSG_ReadCoord();
+		}
+	}
 
 	if (bits & U_ANGLE1)
 		eto->angles[0] = MSG_ReadAngle();
 
-	if (bits & U_ORIGIN2)
-		eto->origin[1] = MSG_ReadCoord ();
+	if (bits & U_ORIGIN2) {
+		if (from->extensions_mvd1 & MVD_PEXT1_FLOATCOORDS) {
+			eto->origin[1] = MSG_ReadLongCoord();
+		}
+		else {
+			eto->origin[1] = MSG_ReadCoord();
+		}
+	}
 
 	if (bits & U_ANGLE2)
 		eto->angles[1] = MSG_ReadAngle();
 
-	if (bits & U_ORIGIN3)
-		eto->origin[2] = MSG_ReadCoord ();
+	if (bits & U_ORIGIN3) {
+		if (from->extensions_mvd1 & MVD_PEXT1_FLOATCOORDS) {
+			eto->origin[2] = MSG_ReadLongCoord();
+		}
+		else {
+			eto->origin[2] = MSG_ReadCoord();
+		}
+	}
 
 	if (bits & U_ANGLE3)
 		eto->angles[2] = MSG_ReadAngle();
@@ -699,6 +756,23 @@ void Dem_ParseDelta (entity_state_t *efrom, entity_state_t *eto, int bits)
 	if (bits & U_SOLID)
 	{
 		// FIXME
+	}
+
+	if ((morebits & U_FTE_TRANS) && from->extensions_fte1 & FTE_PEXT_TRANS) {
+		//eto->trans = MSG_ReadByte();
+		MSG_ReadByte();
+	}
+
+	if (morebits & U_FTE_ENTITYDBL) {
+		eto->number += 512;
+	}
+
+	if (morebits & U_FTE_ENTITYDBL2) {
+		eto->number += 1024;
+	}
+
+	if (morebits & U_FTE_MODELDBL) {
+		eto->modelindex += 256;
 	}
 }
 
@@ -828,6 +902,27 @@ void Dem_ParsePacketEntities (qbool delta)
 			break;
 		}
 		newnum = word&511;
+
+		if ((word & U_MOREBITS) && (from->extensions_fte1 & FTE_PEXT_ENTITYDBL)) {
+			// Fte extensions for huge entity counts
+			int oldpos = msg_readcount;
+			int excessive;
+			excessive = MSG_ReadByte();
+
+			if (excessive & U_FTE_EVENMORE) {
+				excessive = MSG_ReadByte();
+				if (excessive & U_FTE_ENTITYDBL) {
+					newnum += 512;
+				}
+
+				if (excessive & U_FTE_ENTITYDBL2) {
+					newnum += 1024;
+				}
+			}
+
+			msg_readcount = oldpos; // undo the read...
+		}
+
 		oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
 
 		while (newnum > oldnum)
@@ -856,6 +951,13 @@ void Dem_ParsePacketEntities (qbool delta)
 		{	// new from baseline
 			if (word & U_REMOVE)
 			{
+				// read past extra bytes
+				if ((word & U_MOREBITS) && (from->extensions_fte1 & FTE_PEXT_ENTITYDBL)) {
+					if (MSG_ReadByte() & U_FTE_EVENMORE) {
+						MSG_ReadByte();
+					}
+				}
+
 				if (full)
 				{
 					//world.validsequence = 0;
@@ -885,6 +987,13 @@ void Dem_ParsePacketEntities (qbool delta)
 			}
 			if (word & U_REMOVE)
 			{
+				// read past extra bytes
+				if ((word & U_MOREBITS) && (from->extensions_fte1 & FTE_PEXT_ENTITYDBL)) {
+					if (MSG_ReadByte() & U_FTE_EVENMORE) {
+						MSG_ReadByte();
+					}
+				}
+
 				oldindex++;
 				continue;
 			}
@@ -990,20 +1099,24 @@ void Dem_ParsePlayerinfo (void)
 		state->frame = MSG_ReadByte ();
 		state->command.msec = 0;
 
-		for (i=0; i <3; i++)
-			if (flags & (DF_ORIGIN << i))
-			{
-				state->origin[i] = MSG_ReadCoord ();
+		for (i = 0; i < 3; i++) {
+			if (flags & (DF_ORIGIN << i)) {
+				if (from->extensions_mvd1 & MVD_PEXT1_FLOATCOORDS) {
+					state->origin[i] = MSG_ReadLongCoord();
+				}
+				else {
+					state->origin[i] = MSG_ReadCoord();
+				}
 			}
+		}
 
-		for (i=0; i <3; i++)
-			if (flags & (DF_ANGLES << i))
-			{
-				state->command.angles[i] = MSG_ReadAngle16 ();
+		for (i = 0; i < 3; i++) {
+			if (flags & (DF_ANGLES << i)) {
+				state->command.angles[i] = MSG_ReadAngle16();
 			}
+		}
 
-		if (flags & DF_MODEL)
-		{
+		if (flags & DF_MODEL) {
 			state->modelindex = MSG_ReadByte ();
 		}
 
@@ -1030,9 +1143,16 @@ void Dem_ParsePlayerinfo (void)
 	flags = state->flags = MSG_ReadShort ();
 
 	state->messagenum = from->parsecount;
-	state->origin[0] = MSG_ReadCoord ();
-	state->origin[1] = MSG_ReadCoord ();
-	state->origin[2] = MSG_ReadCoord ();
+	if (from->extensions_mvd1 & MVD_PEXT1_FLOATCOORDS) {
+		state->origin[0] = MSG_ReadLongCoord();
+		state->origin[1] = MSG_ReadLongCoord();
+		state->origin[2] = MSG_ReadLongCoord();
+	}
+	else {
+		state->origin[0] = MSG_ReadCoord();
+		state->origin[1] = MSG_ReadCoord();
+		state->origin[2] = MSG_ReadCoord();
+	}
 
 	state->frame = MSG_ReadByte ();
 
@@ -1191,7 +1311,17 @@ void Dem_ParseBaseline (entity_state_t *es)
 	}
 }
 
-#define SHOWNET(x) if (sworld.options & O_DEBUG && cmd < 60) fprintf(sworld.debug.file, "%3i:%s\n", msg_readcount-1, x);
+#define SHOWNET(x) \
+{ \
+	if (sworld.options & O_DEBUG) { \
+		if (cmd < 60) { \
+			fprintf(sworld.debug.file, "%3i:%s\n", msg_readcount-1, x); \
+		} \
+		else { \
+			fprintf(sworld.debug.file, "%3i:%s\n", msg_readcount-1, "unknown message"); \
+		} \
+	} \
+}
 /*
 =====================
 Dem_ParseServerMessage
@@ -1313,6 +1443,9 @@ void Dem_ParseDemoMessage (void)
 			MSG_WriteByte(msgbuf, cmd);
 			if (from->format == qwd)
 			{
+				if (from->extensions_mvd1 & MVD_PEXT1_HIGHLAGTELEPORT) {
+					MSG_ReadByte(); // flag to indicate if this was a teleport or a spawn
+				}
 				MSG_WriteByte(msgbuf, To());
 				for (i=0 ; i<3 ; i++)
 					from->frames[from->parsecountmod].playerstate[from->to].command.angles[i] = MSG_ReadAngle ();
@@ -1646,8 +1779,13 @@ void Dem_ParseDemoMessage (void)
 			MSG_WriteByte(msgbuf, cmd);
 			MSG_Forward(msgbuf, msg_readcount, 1);
 			break;
+
 		case svc_qizmomsg:
-			// ignore it
+			MSG_ReadByte();
+			MSG_ReadByte();
+
+			for (i = 0; i < 32; i++)
+				MSG_ReadByte();
 			return;
 		}
 	}

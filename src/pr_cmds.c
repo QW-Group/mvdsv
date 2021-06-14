@@ -19,7 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
+
+static tokenizecontext_t pr1_tokencontext;
 
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
 #define	RETURN_STRING(s) (PR1_SetString(&((int *)pr_globals)[OFS_RETURN], s))
@@ -913,11 +916,11 @@ float tokenize(string)
 
 void PF_tokenize (void)
 {
-	char *str;
+	const char *str;
 
 	str = G_STRING(OFS_PARM0);
-	Cmd_TokenizeString(str);
-	G_FLOAT(OFS_RETURN) = Cmd_Argc();
+	Cmd_TokenizeStringEx(&pr1_tokencontext, str);
+	G_FLOAT(OFS_RETURN) = Cmd_ArgcEx(&pr1_tokencontext);
 }
 
 /*
@@ -932,7 +935,7 @@ float argc(void)
 
 void PF_argc (void)
 {
-	G_FLOAT(OFS_RETURN) = (float) Cmd_Argc();
+	G_FLOAT(OFS_RETURN) = (float) Cmd_ArgcEx(&pr1_tokencontext);
 }
 
 /*
@@ -954,10 +957,11 @@ void PF_argv (void)
 //	if (num < 0 ) num = 0;
 //	if (num > Cmd_Argc()-1) num = Cmd_Argc()-1;
 
-	if (num < 0 || num >= Cmd_Argc())
+	if (num < 0 || num >= Cmd_ArgcEx(&pr1_tokencontext)) {
 		RETURN_STRING("");
+	}
 	else {
-		snprintf (pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_Argv(num));
+		snprintf(pr_string_temp, MAX_PR_STRING_SIZE, "%s", Cmd_ArgvEx(&pr1_tokencontext, num));
 		RETURN_STRING(pr_string_temp);
 		PF_SetTempString();
 	}
@@ -2832,3 +2836,4 @@ void PR_InitBuiltins (void)
 	}
 }
 
+#endif // CLIENTONLY

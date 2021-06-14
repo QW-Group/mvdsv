@@ -104,6 +104,15 @@ char *Cvar_String (const char *var_name)
 
 void SV_SendServerInfoChange(char *key, char *value);
 
+char* Cvar_ServerInfoValue(char* key, char* value)
+{
+	// force serverinfo "0" vars to be "".
+	// meag: deathmatch is a special case as clients default 'not in serverinfo' to non-coop
+	if (!strcmp(value, "0") && strcmp(key, "deathmatch")) {
+		return "";
+	}
+	return value;
+}
 
 /*
 ============

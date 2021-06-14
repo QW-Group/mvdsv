@@ -238,13 +238,16 @@ typedef struct client_s
 
 	char			stufftext_buf[MAX_STUFFTEXT];
 
-	double			connection_started;		// or time of disconnect for zombies
-	qbool			send_message;			// set on frames a datagram arived on
+	// Use SV_ClientConnectedTime & SV_ClientGameTime instead
+	double          connection_started_realtime; // or time of disconnect for zombies
+	double          connection_started_curtime;  // like connection_started but curtime (not affected by pause)
+	qbool           send_message;                // set on frames a datagram arrived on
 
 // { sv_antilag related
 	laggedentinfo_t	laggedents[MAX_CLIENTS];
 	unsigned int	laggedents_count;
 	float			laggedents_frac;
+	float           laggedents_time;
 // }
 
 	// spawn parms are carried from level to level
@@ -260,6 +263,7 @@ typedef struct client_s
 	client_frame_t	frames[UPDATE_BACKUP];		// updates can be deltad from here
 
 	vfsfile_t		*download;			// file being downloaded
+	int             dupe;               // duplicate packets requested
 #ifdef PROTOCOL_VERSION_FTE
 #ifdef FTE_PEXT_CHUNKEDDOWNLOADS
 	int				download_chunks_perframe;
@@ -352,10 +356,11 @@ typedef struct client_s
 	int             rip_vip;
 	double          delay;
 	double          disable_updates_stop;     // Vladis
+	qbool           maxping_met;              // set if user meets maxping requirements
 	packet_t        *packets, *last_packet;
 
-	// lagged-teleport extension
 #ifdef MVD_PEXT1_HIGHLAGTELEPORT
+	// lagged-teleport extension
 	qbool           lastteleport_teleport;    // true if teleport, otherwise it was spawn
 	int             lastteleport_outgoingseq; // outgoing sequence# when the player teleported
 	int             lastteleport_incomingseq; // incoming sequence# when the player teleported
@@ -373,8 +378,10 @@ typedef struct client_s
 	qbool           weaponswitch_enabled;      // allow user to disable while connected
 	int             weaponswitch_mode;         // user preference
 	qbool           weaponswitch_forgetorder;  // if set, decide best weapon immediately and don't rank on fire
-	int             weaponswitch_priority[MAX_WEAPONSWITCH_OPTIONS];
+	byte            weaponswitch_priority[MAX_WEAPONSWITCH_OPTIONS];
 #endif
+
+	qbool           mvd_write_usercmds;
 } client_t;
 
 // a client can leave the server in one of four ways:
@@ -406,6 +413,8 @@ typedef struct
 {
 	demo_client_t	clients[MAX_CLIENTS];
 	double			time;
+	qbool           paused;
+	byte            pause_duration;
 
 // { reset each time frame wroten with SV_MVDWritePackets()
 	sizebuf_t		_buf_;
@@ -492,8 +501,9 @@ typedef struct
 	sizebuf_t		datagram;
 	byte			datagram_data[MAX_MVD_SIZE]; // data without mvd header
 
-	double			time;
-	double			pingtime;
+	double          time;             // sv.time
+	double          curtime;          // curtime
+	double          pingtime;         // compare to curtime
 
 	// Something like time of last mvd message, so we can guess delta milliseconds for next message.
 	// you better not relay on this variable...
@@ -672,6 +682,9 @@ typedef struct
 #define	MULTICAST_ALL_R			3
 #define	MULTICAST_PHS_R			4
 #define	MULTICAST_PVS_R			5
+
+#define MULTICAST_KTX1_EXT      6  // Only send to those using ktx1 protocol extension (todo)
+#define MULTICAST_MVD_HIDDEN    7  // Insert into MVD stream only, as dem_multiple(0)
 
 #define MAX_LOCALINFOS			10000
 // maps in localinfo {
@@ -936,6 +949,8 @@ void MVD_MSG_WriteAngle  (const float f);
 void MVD_SZ_Write        (const void *data, int length);
 
 qbool MVDWrite_Begin(byte type, int to, int size);
+qbool MVDWrite_HiddenBlockBegin(int length);
+qbool MVDWrite_HiddenBlock(const void* data, int length);
 
 void SV_MVD_Record_f (void);
 void SV_MVDEasyRecord_f (void);
@@ -1002,6 +1017,7 @@ void	SV_MVDInfoRemove_f (void);
 void	SV_MVDInfo_f (void);
 void	SV_LastScores_f (void);
 char*   SV_MVDName2Txt (const char *name);
+void SV_MVDEmbedInfo_f(void);
 
 //
 // sv_demo_qtv.c
@@ -1058,6 +1074,33 @@ qbool SV_SkipCommsBotMessage(client_t* client);
 #include "central.h"
 #else
 extern qbool server_cfg_done;
+#endif
+
+// These functions tell us how much time has passed since the client connected
+// Sometimes this should be affected by pause (scoreboards) and sometimes not (spam, networking)
+// GameTime() stops while game is paused, Connected() continues as normal
+// Both return 0 if client hasn't connected yet
+double SV_ClientConnectedTime(client_t* client);    // real-world time passed
+double SV_ClientGameTime(client_t* client);         // affected by pause
+void SV_SetClientConnectionTime(client_t* client);
+
+#ifdef SERVERONLY
+// mvdsv not changed over to enums yet, which was more about documentation
+#define SV_CommandLineEnableCheats() (COM_CheckParm("-cheats"))
+#define SV_CommandLineEnableLocalCommand() (COM_CheckParm("-enablelocalcommand"))
+#define SV_CommandLineDemoCacheArgument() (COM_CheckParm("-democache"))
+#define SV_CommandLineProgTypeArgument() (COM_CheckParm("-progtype"))
+#define SV_CommandLineUseMinimumMemory() (COM_CheckParm("-minmemory"))
+#define SV_CommandLineHeapSizeMemoryKB() (COM_CheckParm("-heapsize"))
+#define SV_CommandLineHeapSizeMemoryMB() (COM_CheckParm("-mem"))
+#else
+#define SV_CommandLineEnableCheats() (COM_CheckParm(cmdline_param_server_enablecheats))
+#define SV_CommandLineEnableLocalCommand() (COM_CheckParm(cmdline_param_server_enablelocalcommand))
+#define SV_CommandLineDemoCacheArgument() (COM_CheckParm(cmdline_param_server_democache_kb))
+#define SV_CommandLineProgTypeArgument() (COM_CheckParm(cmdline_param_server_progtype))
+#define SV_CommandLineUseMinimumMemory() (COM_CheckParm(cmdline_param_host_memory_minimum))
+#define SV_CommandLineHeapSizeMemoryKB() (COM_CheckParm(cmdline_param_host_memory_kb))
+#define SV_CommandLineHeapSizeMemoryMB() (COM_CheckParm(cmdline_param_host_memory_mb))
 #endif
 
 #endif /* !__SERVER_H__ */

@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 #ifndef SERVERONLY
 #include "pcre.h"
@@ -126,9 +127,10 @@ const char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
 	}
 
 	stringcount = pcre_exec(reg, NULL, str, str_len, 0, 0, (int *)&ovector[0], 32);
-	Q_free(reg);
-	if (stringcount <= 0)
+	pcre_free(reg);
+	if (stringcount <= 0) {
 		return NULL;
+	}
 
 	pcre_get_substring_list(str, (int *)&ovector[0], stringcount, &buf);
 	return buf;
@@ -175,3 +177,5 @@ char *parse_mod_string(char *str)
 	}
 	return ret;
 }
+
+#endif // !CLIENTONLY

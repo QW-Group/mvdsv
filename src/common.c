@@ -222,7 +222,7 @@ void MSG_WriteAngle16 (sizebuf_t *sb, const float f)
 	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
 }
 
-void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd)
+void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd, unsigned int mvdsv_extensions)
 {
 	int bits;
 
@@ -572,17 +572,21 @@ void *SZ_GetSpace (sizebuf_t *buf, const int length)
 
 void SZ_Write (sizebuf_t *buf, const void *data, int length)
 {
-	memcpy (SZ_GetSpace (buf, length), data, length);
+	byte* dest = SZ_GetSpace(buf, length);
+
+	memcpy(dest, data, length);
 }
 
 void SZ_Print (sizebuf_t *buf, const char *data)
 {
-	int len = strlen (data) + 1;
+	int len = strlen(data) + 1;
 
-	if (!buf->cursize || buf->data[buf->cursize-1])
-		memcpy ((byte *)SZ_GetSpace (buf, len), data, len); // no trailing 0
-	else
-		memcpy ((byte *)SZ_GetSpace (buf, len - 1) - 1, data, len); // write over trailing 0
+	// Remove trailing '\0'
+	if (buf->cursize && !buf->data[buf->cursize - 1]) {
+		--buf->cursize;
+	}
+
+	SZ_Write(buf, data, len);
 }
 
 
@@ -602,7 +606,7 @@ COM_Parse
 Parse a token out of a string
 ==============
 */
-char *COM_Parse (char *data)
+const char *COM_Parse (const char *data)
 {
 	unsigned char c;
 	int len;
