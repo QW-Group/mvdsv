@@ -11,7 +11,7 @@
 #	$Id$
 #
 
-SV_DIR = ../../src
+SV_DIR = ./src
 
 # To compile mvdsv as 32bit on 64bit target platform use next:
 # for gcc its like: make mvdsv FORCE32BITFLAGS=-m32
