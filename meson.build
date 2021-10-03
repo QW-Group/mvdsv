@@ -24,6 +24,7 @@ mvdsv_sources = [
 	'src/pr_edict.c',
 	'src/pr_exec.c',
 	'src/sha1.c',
+	'src/sha3.c',
 	'src/sv_ccmds.c',
 	'src/sv_demo.c',
 	'src/sv_demo_misc.c',
