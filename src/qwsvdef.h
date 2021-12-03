@@ -74,6 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "crc.h"
 #include "sha1.h"
+#include "sha3.h"
 
 #include "server.h"
 
