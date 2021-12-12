@@ -485,6 +485,9 @@ void SV_Map (qbool now)
 	// check to make sure the level exists
 	snprintf (expanded, MAX_QPATH, "maps/%s.bsp", level);
 
+	// Flush FS cache on each map change.
+	FS_FlushFSHash();
+
 	if (!FS_FLocateFile(expanded, FSLFRT_IFFOUND, NULL))
 	{
 		Con_Printf ("Can't find %s\n", expanded);
