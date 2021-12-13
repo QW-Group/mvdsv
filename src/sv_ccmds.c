@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 */
 
+#ifndef CLIENTONLY
 #include "qwsvdef.h"
 
 cvar_t	sv_cheats = {"sv_cheats", "0"};
@@ -437,7 +438,7 @@ void SV_Map (qbool now)
 		{
 			//bliP: date check ->
 			date_t date;
-			SV_TimeOfDay(&date);
+			SV_TimeOfDay(&date, "%a %b %d, %H:%M:%S %Y");
 			s = va("\\newmap\\%s\\\\\\\\%d-%d-%d %d:%d:%d\\\n",
 			       level,
 			       date.year,
@@ -798,7 +799,6 @@ void SV_Kick_f (void)
 	client_t	*cl;
 	int			uid;
 	int			c;
-	int			saved_state;
 	char		reason[80] = "";
 
 	c = Cmd_Argc ();
@@ -839,18 +839,23 @@ void SV_Kick_f (void)
 					strlcat (reason, ")", sizeof(reason));
 			}
 
-			saved_state = cl->state;
-			cl->state = cs_free; // HACK: don't broadcast to this client
-			SV_BroadcastPrintf (PRINT_HIGH, "%s was kicked%s\n", cl->name, reason);
-			cl->state = (sv_client_state_t) saved_state;
-			SV_ClientPrintf (cl, PRINT_HIGH, "You were kicked from the game%s\n", reason);
-			SV_LogPlayer(cl, va("kick%s\n", reason), 1); //bliP: logging
-			SV_DropClient (cl);
+			SV_KickClient(cl, reason);
 			return;
 		}
 	}
 
 	Con_Printf ("Couldn't find user number %i\n", uid);
+}
+
+void SV_KickClient(client_t* cl, const char* reason)
+{
+	sv_client_state_t saved_state = cl->state;
+	cl->state = cs_free; // HACK: don't broadcast to this client
+	SV_BroadcastPrintf(PRINT_HIGH, "%s was kicked%s\n", cl->name, reason);
+	cl->state = (sv_client_state_t)saved_state;
+	SV_ClientPrintf(cl, PRINT_HIGH, "You were kicked from the game%s\n", reason);
+	SV_LogPlayer(cl, va("kick%s\n", reason), 1); //bliP: logging
+	SV_DropClient(cl);
 }
 
 //bliP: mute, cuff ->
@@ -914,7 +919,7 @@ void SV_Cuff_f (void)
 			continue;
 		if (cl->userid == uid)
 		{
-			cl->cuff_time = realtime + (mins * 60.0);
+			cl->cuff_time = curtime + (mins * 60.0);
 			done = true;
 			break;
 		}
@@ -1001,7 +1006,7 @@ void SV_Mute_f (void)
 			continue;
 		if (cl->userid == uid)
 		{
-			cl->lockedtill = realtime + (mins * 60.0);
+			cl->lockedtill = curtime + (mins * 60.0);
 			done = true;
 			break;
 		}
@@ -1081,13 +1086,13 @@ void SV_ListPenalty_f (void)
 		if (!cl->state)
 			continue;
 
-		if (cl->lockedtill >= realtime)
+		if (cl->lockedtill >= curtime)
 		{
-			Con_Printf ("%i %s mute (remaining: %d)\n", cl->userid, cl->name, (cl->lockedtill) ? (int)(cl->lockedtill - realtime) : 0);
+			Con_Printf ("%i %s mute (remaining: %d)\n", cl->userid, cl->name, (cl->lockedtill) ? (int)(cl->lockedtill - curtime) : 0);
 		}
-		if (cl->cuff_time >= realtime)
+		if (cl->cuff_time >= curtime)
 		{
-			Con_Printf ("%i %s cuff (remaining: %d)\n", cl->userid, cl->name, (cl->cuff_time) ? (int)(cl->cuff_time - realtime) : 0);
+			Con_Printf ("%i %s cuff (remaining: %d)\n", cl->userid, cl->name, (cl->cuff_time) ? (int)(cl->cuff_time - curtime) : 0);
 		}
 	}
 
@@ -1367,14 +1372,9 @@ void SV_SendServerInfoChange(char *key, char *value)
 //Cvar system calls this when a CVAR_SERVERINFO cvar changes
 void SV_ServerinfoChanged (char *key, char *string)
 {
-	// force serverinfo "0" vars to be "".
-	// meag: deathmatch is a special case as clients default 'not in serverinfo' to non-coop
-	if (!strcmp(string, "0") && strcmp(key, "deathmatch")) {
-		string = "";
-	}
+	string = Cvar_ServerInfoValue(key, string);
 
-	if (strcmp(string, Info_ValueForKey (svs.info, key)))
-	{
+	if (strcmp(string, Info_ValueForKey (svs.info, key))) {
 		Info_SetValueForKey (svs.info, key, string, MAX_SERVERINFO_STRING);
 		SV_SendServerInfoChange (key, string);
 	}
@@ -1567,8 +1567,8 @@ void SV_Gamedir (void)
 
 	dir = Cmd_Argv(1);
 
-	if (strstr(dir, "..") || strstr(dir, "/")
-	        || strstr(dir, "\\") || strstr(dir, ":") )
+	if (strstr(dir, "..") || strchr(dir, '/')
+	        || strchr(dir, '\\') || strchr(dir, ':') )
 	{
 		Con_Printf ("*Gamedir should be a single filename, not a path\n");
 		return;
@@ -1669,8 +1669,7 @@ void SV_Gamedir_f (void)
 
 	dir = Cmd_Argv(1);
 
-	if (strstr(dir, "..") || strstr(dir, "/")
-	        || strstr(dir, "\\") || strstr(dir, ":") )
+	if (strstr(dir, "..") || strchr(dir, '/') || strchr(dir, '\\') || strchr(dir, ':') )
 	{
 		Con_Printf ("Gamedir should be a single filename, not a path\n");
 		return;
@@ -1813,7 +1812,7 @@ void SV_InitOperatorCommands (void)
 
 	Cvar_Register (&sv_cheats);
 
-	if (COM_CheckParm ("-cheats"))
+	if (SV_CommandLineEnableCheats())
 	{
 		sv_allow_cheats = true;
 		Cvar_SetValue (&sv_cheats, 1);
@@ -1845,11 +1844,17 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("chmod", SV_ChmodFile_f);
 #endif //_WIN32
 	//<-
-	if (COM_CheckParm ("-enablelocalcommand"))
+	if (SV_CommandLineEnableLocalCommand())
 		Cmd_AddCommand ("localcommand", SV_LocalCommand_f);
 
 	Cmd_AddCommand ("map", SV_Map_f);
+#ifdef SERVERONLY
 	Cmd_AddCommand ("devmap", SV_Map_f);
+#else
+	if (IsDeveloperMode()) {
+		Cmd_AddCommand("devmap", SV_Map_f);
+	}
+#endif
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
 
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
@@ -1886,3 +1891,5 @@ void SV_InitOperatorCommands (void)
 
 	Cmd_AddCommand ("master_rcon_password", SV_MasterPassword_f);
 }
+
+#endif // !CLIENTONLY

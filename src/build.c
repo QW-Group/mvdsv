@@ -27,20 +27,6 @@
 
 #include "qwsvdef.h"
 
-#ifndef BUILD_NUMBER
-#define BUILD_NUMBER "0"
-#endif
-
-/*
-=======================
-VersionString
-======================
-*/
-char *VersionString (void)
-{
-	return VERSION_NUMBER ", (build " BUILD_NUMBER ")";
-}
-
 /*
 =======================
 VersionStringFull
@@ -51,20 +37,12 @@ char *VersionStringFull (void)
 	static char str[256];
 
 	if (!str[0]) {
-		snprintf(str, sizeof(str), SERVER_NAME " %s " "(" QW_PLATFORM ")" "\n" BUILD_DATE "\n", VersionString());
+		if (!strlen(GIT_COMMIT)) {
+			snprintf(str, sizeof(str), SERVER_NAME " " SERVER_VERSION);
+		} else {
+			snprintf(str, sizeof(str), SERVER_NAME " " SERVER_VERSION " (build " GIT_COMMIT "-" QW_PLATFORM_SHORT ")");
+		}
 	}
 
 	return str;
 }
-
-/*
-=======================
-Version_f
-======================
-*/
-void Version_f (void)
-{
-	Con_Printf ("%s", VersionStringFull());
-	Con_Printf (PROJECT_NAME " Project home page: " PROJECT_URL "\n\n");
-}
-

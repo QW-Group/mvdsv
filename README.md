@@ -1,9 +1,9 @@
 # MVDSV: a QuakeWorld server
+![MVDSV Logo](https://raw.githubusercontent.com/deurk/mvdsv/master/resources/logo/mvdsv.png)
+
 [![Build Status](https://travis-ci.org/deurk/mvdsv.svg?branch=master)](https://travis-ci.org/deurk/mvdsv)
 
-**[MVDSV][mvdsv]** (MultiView Demo SerVer) has been the most popular **QuakeWorld** server in the world for the more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy **QuakeWorld** with.
-
-_(This README.md file is still a work in progress. bear with us while we polish it!)_
+**[MVDSV][mvdsv]** (MultiView Demo SerVer) has been the most popular **QuakeWorld** server in the world for more than a decade because of its ability to record every player's point of view in a server side demo and provide many different game modes to enjoy **QuakeWorld** with.
 
 ## Getting Started
 
@@ -12,16 +12,18 @@ The following instructions will help you get a **[MVDSV][mvdsv]** server up and 
 ## Supported architectures
 
 The following architectures are fully supported by **[MVDSV][mvdsv]** and are available as prebuilt binaries:
-* Linux i686 (Intel and AMD 32-bit processors)
 * Linux amd64 (Intel and AMD 64-bits processors)
-* Windows x86 (Intel and AMD 32-bit processors)
-* Windows x64 (Intel and AMD 64-bits processors)
-* Mac OS X (Intel 64-bit processors)
+* Linux i686 (Intel and AMD 32-bit processors)
 * Linux armhf (ARM 32-bit processors)
+* Windows x64 (Intel and AMD 64-bits processors)
+* Windows x86 (Intel and AMD 32-bit processors)
+
+## Prebuilt binaries
+You can find the prebuilt binaries on [this download page][mvdsv_builds].
 
 ## Prerequisites
 
-TBD
+None at the moment.
 
 ## Installing
 
@@ -36,14 +38,14 @@ There are extra conditionals to install desired packages based on the TARGET.
 
 In general:
 
-- use Ubuntu 14.04 (but should work under 16.04 as well) as virtual machine, check out source code there
+- use Ubuntu 18.04 as virtual machine, check out details about it on code on [Travis CI website][travis-build-env]
 - install required packages for compilation
 - set up virtualenv and install python packages (required for meson and ninja builders)
 - run meson build for given directory (optionally with cross compilation settings)
-- run ninja to generate .so file
-- you should have ``mvdsv`` file in ``build_*`` directory, put it in your quake server/ directory.
+- run ninja to generate the binary file
+- you should have ``mvdsv`` file in ``build`` directory, put it in your quake server/ directory.
 
-Example for Linux amd64 under Ubuntu 14.04 (should be similar under 16.04)
+#### Example for Linux amd64
 
 Install required packages:
 
@@ -73,46 +75,52 @@ Export env var to define what target to compile, run the build commands.
 
 ```bash
 $ export TARGET=linux-amd64
-$ rm -rf build_${TARGET}
+$ rm -rf build
 
-$ meson build_${TARGET} --cross-file tools/cross-compilation/${TARGET}.txt
+$ meson build --cross-file tools/cross-compilation/${TARGET}.txt
 The Meson build system
-Version: 0.41.2
-Source dir: /mvdsv/src
-Build dir: /mvdsv/src/build_linux-linux-amd64
+Version: 0.58.0
+Source dir: /home/taps/workspace/mvdsv
+Build dir: /home/taps/workspace/mvdsv/build
 Build type: cross build
 Project name: mvdsv
-Native c compiler: cc (gcc 5.4.0)
-Cross c compiler: gcc (gcc 5.4.0)
+Project version: undefined
+C compiler for the host machine: gcc (gcc 9.3.0 "gcc (Ubuntu 9.3.0-17ubuntu1~20.04) 9.3.0")
+C linker for the host machine: gcc ld.bfd 2.34
+C compiler for the build machine: cc (gcc 9.3.0 "cc (Ubuntu 9.3.0-17ubuntu1~20.04) 9.3.0")
+C linker for the build machine: cc ld.bfd 2.34
+Build machine cpu family: x86_64
+Build machine cpu: x86_64
 Host machine cpu family: x86_64
 Host machine cpu: x86_64
 Target machine cpu family: x86_64
 Target machine cpu: x86_64
-Build machine cpu family: x86_64
-Build machine cpu: x86_64
-Dependency threads found: YES
-Cross dependency libpcre found: YES 8.38
-Cross dependency libcurl found: YES 7.47.0
+Run-time dependency threads found: YES
+Found pkg-config: /usr/bin/pkg-config (0.29.1)
+Found CMake: NO
+Run-time dependency libpcre found: NO (tried pkgconfig and cmake)
+Run-time dependency libcurl found: NO (tried pkgconfig and cmake)
 Library m found: YES
 Library dl found: YES
 Build targets in project: 1
 
-$ ninja -C build_${TARGET}
 
-ninja: Entering directory `build_linux-amd64'
-[46/46] Linking target mvdsv.
+$ ninja -C build
+
+ninja: Entering directory `build'
+[47/47] Linking target mvdsv.
 
 ```
 
 Check the output binary file:
 
 ```bash
-$ file build_${TARGET}/mvdsv
-build_linux-amd64/mvdsv: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=dedd6661cff55d457b15d2641c02baaf7be9a8b1, not stripped
+$ file build/mvdsv
+build/mvdsv: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=dedd6661cff55d457b15d2641c02baaf7be9a8b1, not stripped
 
 ```
 
-In ``build_*/`` there will be ``mvdsv`` binary, change permissions to executable and copy it to quake directory to start quake server.
+In ``build/`` there will be ``mvdsv`` binary, change permissions to executable and copy it to quake directory to start quake server.
 
 Known issues:
 
@@ -134,13 +142,10 @@ This will create an executable binary at `mvdsv/build/make/mvdsv`.
 
 Copy it to your server.
 
-## Built With
-
-TBD
 
 ## Versioning
 
-We use a pretty crappy system for versioning for now. For the versions available, see the [tags on this repository][mvdsv-tags].
+For the versions available, see the [tags on this repository][mvdsv-tags].
 
 ## Authors
 
@@ -171,11 +176,13 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* Thanks to **Jon "bps" Cednert** for the **[MVDSV][mvdsv]** logo.
+* Thanks to the fine folks on [Quakeworld Discord][discord-qw] for their support and ideas.
 
-[ktx]: https://github.com/deurk/ktx
 [mvdsv]: https://github.com/deurk/mvdsv
 [mvdsv-tags]: https://github.com/deurk/mvdsv/tags
+[mvdsv_builds]: https://builds.quakeworld.nu/mvdsv
+[ktx]: https://github.com/deurk/ktx
 [nquake-linux]: https://github.com/nQuake/server-linux
+[travis-build-env]: https://docs.travis-ci.com/user/reference/bionic/
+[discord-qw]: http://discord.quake.world/

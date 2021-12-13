@@ -21,13 +21,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef SERVERONLY
 #include "qwsvdef.h"
+
+static void Cache_FreeLow(int new_low_hunk);
+static void Cache_FreeHigh(int new_high_hunk);
 #else
 #include "common.h"
 #include "gl_model.h"
-#endif
 
-void Cache_FreeLow(int new_low_hunk);
-void Cache_FreeHigh(int new_high_hunk);
+#define Cache_FreeLow(...)
+#define Cache_FreeHigh(...)
+#define Cache_Init(...)
+#endif
 
 //============================================================================
 
@@ -102,7 +106,7 @@ void Hunk_Print(qbool all)
 		// skip to the high hunk if done with low hunk
 		if (h == endlow) {
 			Con_Printf("-------------------------\n");
-			Con_Printf("          :%8i REMAINING\n", hunk_size - hunk_low_used - hunk_high_used);
+			Con_Printf("        :%8ikb REMAINING\n", (hunk_size - hunk_low_used - hunk_high_used) / 1024);
 			Con_Printf("-------------------------\n");
 			h = starthigh;
 		}
@@ -134,7 +138,7 @@ void Hunk_Print(qbool all)
 		// print the total
 		if (next == endlow || next == endhigh || strncmp(h->name, next->name, 8)) {
 			if (!all) {
-				Con_Printf("          :%8i %8s (TOTAL)\n", sum, name);
+				Con_Printf("          :%8ikb %8s (TOTAL)\n", sum / 1024, name);
 			}
 			count = 0;
 			sum = 0;
@@ -145,6 +149,7 @@ void Hunk_Print(qbool all)
 
 	Con_Printf("-------------------------\n");
 	Con_Printf("%8i total blocks\n", totalblocks);
+	Con_Printf("High used %i, low used %i\n", hunk_high_used, hunk_low_used);
 }
 
 void Hunk_Print_f(void)
@@ -159,7 +164,7 @@ void Hunk_Print_f(void)
 Hunk_AllocName
 ===================
 */
-void *Hunk_AllocName(int size, char *name)
+void *Hunk_AllocName(int size, const char *name)
 {
 	hunk_t *h;
 
@@ -314,6 +319,7 @@ void *Hunk_TempAlloc(int size)
 	return buf;
 }
 
+#ifdef SERVERONLY
 /*
 ===============================================================================
 
@@ -323,14 +329,14 @@ CACHE MEMORY
 */
 
 typedef struct cache_system_s {
-	int						size; // including this header
-	cache_user_t			*user;
-	char					name[16];
-	struct cache_system_s	*prev, *next;
-	struct cache_system_s	*lru_prev, *lru_next; // for LRU flushing
+	int                     size; // including this header
+	cache_user_t*           user;
+	char                    name[16];
+	struct cache_system_s   *prev, *next;
+	struct cache_system_s   *lru_prev, *lru_next; // for LRU flushing
 } cache_system_t;
 
-cache_system_t *Cache_TryAlloc(int size, qbool nobottom);
+cache_system_t* Cache_TryAlloc(int size, qbool nobottom);
 
 cache_system_t cache_head;
 
@@ -339,9 +345,9 @@ cache_system_t cache_head;
 Cache_Move
 ===========
 */
-void Cache_Move(cache_system_t *c)
+void Cache_Move(cache_system_t* c)
 {
-	cache_system_t *new_block;
+	cache_system_t* new_block;
 
 	// we are clearing up space at the bottom, so only allocate it late
 	new_block = Cache_TryAlloc(c->size, true);
@@ -350,7 +356,7 @@ void Cache_Move(cache_system_t *c)
 		new_block->user = c->user;
 		memcpy(new_block->name, c->name, sizeof(new_block->name));
 		Cache_Free(c->user);
-		new_block->user->data = (void *)(new_block + 1);
+		new_block->user->data = (void*)(new_block + 1);
 	}
 	else {
 		Cache_Free(c->user); // tough luck...
@@ -366,14 +372,14 @@ Throw things out until the hunk can be expanded to the given point
 */
 void Cache_FreeLow(int new_low_hunk)
 {
-	cache_system_t *c;
+	cache_system_t* c;
 
 	while (1) {
 		c = cache_head.next;
 		if (c == &cache_head) {
 			return; // nothing in cache at all
 		}
-		if ((byte *)c >= hunk_base + new_low_hunk) {
+		if ((byte*)c >= hunk_base + new_low_hunk) {
 			return; // there is space to grow the hunk
 		}
 		Cache_Move(c); // reclaim the space
@@ -397,7 +403,7 @@ void Cache_FreeHigh(int new_high_hunk)
 		if (c == &cache_head) {
 			return; // nothing in cache at all
 		}
-		if ((byte *)c + c->size <= hunk_base + hunk_size - new_high_hunk) {
+		if ((byte*)c + c->size <= hunk_base + hunk_size - new_high_hunk) {
 			return; // there is space to grow the hunk
 		}
 		if (c == prev) {
@@ -410,7 +416,7 @@ void Cache_FreeHigh(int new_high_hunk)
 	}
 }
 
-void Cache_UnlinkLRU(cache_system_t *cs)
+void Cache_UnlinkLRU(cache_system_t* cs)
 {
 	if (!cs->lru_next || !cs->lru_prev) {
 		Sys_Error("Cache_UnlinkLRU: NULL link");
@@ -422,7 +428,7 @@ void Cache_UnlinkLRU(cache_system_t *cs)
 	cs->lru_prev = cs->lru_next = NULL;
 }
 
-void Cache_MakeLRU(cache_system_t *cs)
+void Cache_MakeLRU(cache_system_t* cs)
 {
 	if (cs->lru_next || cs->lru_prev) {
 		Sys_Error("Cache_MakeLRU: active link");
@@ -442,7 +448,7 @@ Looks for a free block of memory between the high and low hunk marks
 Size should already include the header and padding
 ============
 */
-cache_system_t *Cache_TryAlloc(int size, qbool nobottom)
+cache_system_t* Cache_TryAlloc(int size, qbool nobottom)
 {
 	cache_system_t *cs, *new_block;
 
@@ -452,7 +458,7 @@ cache_system_t *Cache_TryAlloc(int size, qbool nobottom)
 			Sys_Error("Cache_TryAlloc: %i is greater than free hunk", size);
 		}
 
-		new_block = (cache_system_t *)(hunk_base + hunk_low_used);
+		new_block = (cache_system_t*)(hunk_base + hunk_low_used);
 		memset(new_block, 0, sizeof(*new_block));
 		new_block->size = size;
 
@@ -464,12 +470,12 @@ cache_system_t *Cache_TryAlloc(int size, qbool nobottom)
 	}
 
 	// search from the bottom up for space
-	new_block = (cache_system_t *)(hunk_base + hunk_low_used);
+	new_block = (cache_system_t*)(hunk_base + hunk_low_used);
 	cs = cache_head.next;
 
 	do {
 		if (!nobottom || cs != cache_head.next) {
-			if ((byte *)cs - (byte *)new_block >= size) {
+			if ((byte*)cs - (byte*)new_block >= size) {
 				// found space
 				memset(new_block, 0, sizeof(*new_block));
 				new_block->size = size;
@@ -486,12 +492,12 @@ cache_system_t *Cache_TryAlloc(int size, qbool nobottom)
 		}
 
 		// continue looking
-		new_block = (cache_system_t *)((byte *)cs + cs->size);
+		new_block = (cache_system_t*)((byte*)cs + cs->size);
 		cs = cs->next;
 	} while (cs != &cache_head);
 
 	// try to allocate one at the very end
-	if (hunk_base + hunk_size - hunk_high_used - (byte *)new_block >= size) {
+	if (hunk_base + hunk_size - hunk_high_used - (byte*)new_block >= size) {
 		memset(new_block, 0, sizeof(*new_block));
 		new_block->size = size;
 
@@ -533,7 +539,7 @@ Cache_Print
 */
 void Cache_Print(void)
 {
-	cache_system_t *cd;
+	cache_system_t* cd;
 
 	for (cd = cache_head.next; cd != &cache_head; cd = cd->next) {
 		Con_Printf("%5.1f kB : %s\n", (cd->size / (float)(1024)), cd->name);
@@ -587,15 +593,15 @@ Cache_Free
 Frees the memory and removes it from the LRU list
 ==============
 */
-void Cache_Free(cache_user_t *c)
+void Cache_Free(cache_user_t* c)
 {
-	cache_system_t *cs;
+	cache_system_t* cs;
 
 	if (!c->data) {
 		Sys_Error("Cache_Free: not allocated");
 	}
 
-	cs = ((cache_system_t *)c->data) - 1;
+	cs = ((cache_system_t*)c->data) - 1;
 
 	cs->prev->next = cs->next;
 	cs->next->prev = cs->prev;
@@ -611,15 +617,15 @@ void Cache_Free(cache_user_t *c)
 Cache_Check
 ==============
 */
-void *Cache_Check(cache_user_t *c)
+void* Cache_Check(cache_user_t* c)
 {
-	cache_system_t *cs;
+	cache_system_t* cs;
 
 	if (!c->data) {
 		return NULL;
 	}
 
-	cs = ((cache_system_t *)c->data) - 1;
+	cs = ((cache_system_t*)c->data) - 1;
 
 	// move to head of LRU
 	Cache_UnlinkLRU(cs);
@@ -633,9 +639,9 @@ void *Cache_Check(cache_user_t *c)
 Cache_Alloc
 ==============
 */
-void *Cache_Alloc(cache_user_t *c, int size, char *name)
+void* Cache_Alloc(cache_user_t* c, int size, const char* name)
 {
-	cache_system_t *cs;
+	cache_system_t* cs;
 
 	if (c->data) {
 		Sys_Error("Cache_Alloc: already allocated");
@@ -652,7 +658,7 @@ void *Cache_Alloc(cache_user_t *c, int size, char *name)
 		cs = Cache_TryAlloc(size, false);
 		if (cs) {
 			strlcpy(cs->name, name, sizeof(cs->name));
-			c->data = (void *)(cs + 1);
+			c->data = (void*)(cs + 1);
 			cs->user = c;
 			break;
 		}
@@ -668,7 +674,9 @@ void *Cache_Alloc(cache_user_t *c, int size, char *name)
 
 	return Cache_Check(c);
 }
-#endif
+#endif // !WITH_DP_MEM
+#endif // SERVERONLY
+
 //============================================================================
 
 /*

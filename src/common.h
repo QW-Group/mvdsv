@@ -33,6 +33,12 @@ typedef struct sizebuf_s
 	int cursize;
 } sizebuf_t;
 
+#ifdef SERVERONLY
+#define MSG_HasOverflowHandler(m) (0)
+#else
+#define MSG_HasOverflowHandler(msg) (msg->overflow_handler != NULL)
+#endif
+
 void SZ_Clear (sizebuf_t *buf);
 void SZ_InitEx (sizebuf_t *buf, byte *data, const int length, qbool allowoverflow);
 void SZ_Init (sizebuf_t *buf, byte *data, const int length);
@@ -72,7 +78,7 @@ void MSG_WriteCoord (sizebuf_t *sb, const float f);
 void MSG_WriteAngle (sizebuf_t *sb, const float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, const float f);
 void MSG_WriteLongCoord (sizebuf_t* sb, float f);
-void MSG_WriteDeltaUsercmd (sizebuf_t *sb, const struct usercmd_s *from, const struct usercmd_s *cmd);
+void MSG_WriteDeltaUsercmd (sizebuf_t *sb, const struct usercmd_s *from, const struct usercmd_s *cmd, unsigned int mvdsv_extensions);
 
 extern int msg_readcount;
 extern qbool msg_badread; // set if a read goes beyond end of message
@@ -107,7 +113,7 @@ unsigned char *Q_yelltext (unsigned char *str); //VVD: white to red text and yel
 extern char com_token[MAX_COM_TOKEN];
 typedef enum {TTP_UNKNOWN, TTP_STRING} com_tokentype_t;
 
-char *COM_Parse (char *data);
+const char *COM_Parse (const char *data);
 char *COM_ParseToken (const char *data, const char *punctuation);
 
 extern int com_argc;
@@ -221,5 +227,8 @@ typedef struct qtvuser_s
 //============================================================================
 
 qbool COM_FileExists(char *path);
+
+// Name comparison: case insensitive, red/white text insensitive
+int Q_namecmp(const char* s1, const char* s2);
 
 #endif /* !__COMMON_H__ */

@@ -337,13 +337,24 @@ char *MSG_ReadStringLine (void)
 	return string;
 }
 
-float MSG_ReadCoord (void)
+float MSG_ReadLongCoord(void)
 {
+	return MSG_ReadFloat();
+}
+
+float MSG_ReadCoord(void)
+{
+	if (from->extensions_fte1 & FTE_PEXT_FLOATCOORDS) {
+		return MSG_ReadFloat();
+	}
 	return MSG_ReadShort() * (1.0/8);
 }
 
 float MSG_ReadAngle (void)
 {
+	if (from->extensions_fte1 & FTE_PEXT_FLOATCOORDS) {
+		return MSG_ReadAngle16();
+	}
 	return MSG_ReadChar() * (360.0/256);
 }
 
@@ -862,8 +873,10 @@ int AddToFileList(flist_t *filelist, char *file)
 			continue;
 
 		// realloc flist table
-		if ( (flist = (char**) realloc (flist, sizeof(char*) * count+1)) == NULL)
+		if ((flist = (char**)realloc(flist, sizeof(char*) * (count + 1))) == NULL) {
 			Sys_Error("faild to alloc memory for file list");
+			return 0;
+		}
 
 		// alloc memory for file name
 		p = (char*) Q_malloc (strlen(c_file.name)+1);

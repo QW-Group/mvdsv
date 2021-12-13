@@ -561,44 +561,53 @@ char *Sys_ConsoleInput (void)
 Sys_Printf
 ================
 */
-void Sys_Printf (char *fmt, ...)
+void Sys_Printf(char* fmt, ...)
 {
 	va_list argptr;
-	unsigned char text[MAXCMDBUF];
-	unsigned char *p;
+	char text[MAXCMDBUF];
+	char* startpos;
+	char* endpos;
+	date_t      date;
 
-	if ((
 #ifdef _CONSOLE
-	            (int)sys_nostdout.value ||
-#endif //_CONSOLE
-	            isdaemon)
-	)
+	if ((int)sys_nostdout.value) {
 		return;
+	}
+#endif
 
-	va_start (argptr, fmt);
-	vsnprintf ((char *)text, MAXCMDBUF, fmt, argptr);
-	va_end (argptr);
+	if (isdaemon) {
+		return;
+	}
+
+	va_start(argptr, fmt);
+	vsnprintf(text, MAXCMDBUF, fmt, argptr);
+	va_end(argptr);
 
 	// normalize text before add to console.
 	Q_normalizetext((char*)text);
 
 #ifndef _CONSOLE
-	if (!isdaemon)
-		ConsoleAddText((char *)text);
-#endif //_CONSOLE
-
-
-	for (p = text; *p; p++)
-	{
-#ifdef _CONSOLE
-		if (!((int)sys_nostdout.value || isdaemon))
-			putc(*p, stdout);
-#endif //_CONSOLE
-	}
-
-#ifdef _CONSOLE
-	if (!((int)sys_nostdout.value || isdaemon))
+	ConsoleAddText(text);
+#else
+	SV_TimeOfDay(&date, "%Y-%m-%d %H:%M:%S");
+	startpos = text;
+	while (startpos && startpos[0]) {
+		endpos = strchr(startpos, '\n');
+		if (endpos) {
+			*endpos = '\0';
+		}
+		fprintf(stdout, "[%s] %s\n", date.str, startpos);
 		fflush(stdout);
+		if (endpos) {
+			startpos = endpos + 1;
+			if (startpos[0] == (char)10) {
+				++startpos;
+			}
+		}
+		else {
+			break;
+		}
+	}
 #endif //_CONSOLE
 }
 

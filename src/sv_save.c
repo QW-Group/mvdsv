@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // sv_save.c
 
+#ifndef CLIENTONLY
 #ifdef SERVERONLY
 #include "qwsvdef.h"
 #else
@@ -158,7 +159,8 @@ void SV_SaveGame_f(void)
 
 void SV_LoadGame_f(void)
 {
-	char name[MAX_OSPATH], mapname[MAX_QPATH], str[32 * 1024], *start;
+	char name[MAX_OSPATH], mapname[MAX_QPATH], str[32 * 1024];
+	const char* start;
 	FILE *f;
 	float time, tfloat, spawn_parms[NUM_SPAWN_PARMS];
 	edict_t *ent;
@@ -238,12 +240,13 @@ void SV_LoadGame_f(void)
 
 	// load the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
-		size_t length;
+		int length;
 		if (fscanf (f, "%s\n", str) != 1) {
 			Con_Printf("Couldn't read lightstyles\n");
 			fclose (f);
 			return;
 		}
+		str[sizeof(str) - 1] = '\0';
 		length = strlen(str) + 1;
 		sv.lightstyles[i] = (char *) Hunk_Alloc (length);
 		strlcpy (sv.lightstyles[i], str, length);
@@ -305,3 +308,4 @@ void SV_LoadGame_f(void)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
 }
 
+#endif // !CLIENTONLY

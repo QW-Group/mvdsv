@@ -435,8 +435,12 @@ Sys_Printf
 */
 void Sys_Printf (char *fmt, ...)
 {
-	va_list		argptr;
-	char		text[4096];
+	va_list     argptr;
+	char        text[4096], line[4096];
+	char*       startpos;
+	char*       endpos;
+	int         len;
+	date_t      date;
 
 	va_start (argptr,fmt);
 	vsnprintf(text, sizeof(text), fmt, argptr);
@@ -445,11 +449,32 @@ void Sys_Printf (char *fmt, ...)
 	if (sys_nostdout.value)
 		return;
 
+	if (strlen(text) < 2)
+		return;
+
 	// normalize text before add to console.
 	Q_normalizetext(text);
 
-	fprintf(stdout, "%s", text);
-	fflush(stdout);
+    SV_TimeOfDay(&date, "%Y-%m-%d %H:%M:%S");
+
+	startpos = text;
+	while (startpos && startpos[0]) {
+		endpos = strchr(startpos, '\n');
+		if (endpos) {
+			*endpos = '\0';
+		}
+		fprintf(stdout, "[%s] %s\n", date.str, startpos);
+		fflush(stdout);
+		if (endpos) {
+			startpos = endpos + 1;
+			if (startpos[0] == (char)10) {
+				++startpos;
+			}
+		}
+		else {
+			break;
+		}
+	}
 }
 
 /*

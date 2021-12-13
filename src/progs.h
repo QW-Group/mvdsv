@@ -133,12 +133,12 @@ char *ED_NewString (char *string);
 
 void ED_Print (edict_t *ed);
 void ED_Write (FILE *f, edict_t *ed);
-char *ED_ParseEdict (char *data, edict_t *ent);
+const char *ED_ParseEdict (const char *data, edict_t *ent);
 
 void ED_WriteGlobals (FILE *f);
-void ED_ParseGlobals (char *data);
+void ED_ParseGlobals (const char *data);
 
-void ED_LoadFromFile (char *data);
+void ED_LoadFromFile (const char *data);
 
 edict_t *EDICT_NUM(int n);
 int NUM_FOR_EDICT(edict_t *e);
@@ -162,8 +162,6 @@ int NUM_FOR_EDICT(edict_t *e);
 #define	E_INT(e,o) (*(int *)&((float*)e->v)[o])
 #define	E_VECTOR(e,o) (&((float*)e->v)[o])
 #define	E_STRING(e,o) (PR1_GetString(*(string_t *)&((float*)e->v)[PR_FIELDOFS(o)]))
-
-extern	int		type_size[8];
 
 typedef void		(*builtin_t) (void);
 extern	builtin_t	*pr_builtins;
@@ -236,7 +234,7 @@ qbool PR1_ClientCmd(void);
 #define PR1_GameSetNewParms() PR_ExecuteProgram(PR_GLOBAL(SetNewParms))
 #define PR1_GameStartFrame() PR_ExecuteProgram (PR_GLOBAL(StartFrame))
 #define PR1_ClientKill() PR_ExecuteProgram (PR_GLOBAL(ClientKill))
-#define PR1_UserInfoChanged() (0) // PR1 does not really have it,
+#define PR1_UserInfoChanged(after) (0) // PR1 does not really have it,
                                   // we have mod_UserInfo_Changed but it is slightly different.
 #define PR1_LoadEnts ED_LoadFromFile
 #define PR1_EdictThink PR_ExecuteProgram
@@ -252,6 +250,7 @@ qbool PR1_ClientCmd(void);
 	#define PR_Init PR1_Init
 	//#define PR_GetString PR1_GetString
 	//#define PR_SetString PR1_SetString
+	#define PR_GetEntityString PR1_GetString
 	#define PR_SetEntityString(ent, target, value) PR1_SetString(&target, value)
 	#define PR_SetGlobalString(target, value) PR1_SetString(&target, value)
 	#define ED_FindFieldOffset ED1_FindFieldOffset
