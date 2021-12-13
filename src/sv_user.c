@@ -4188,7 +4188,7 @@ static void SV_DebugServerSideWeaponScript(client_t *cl, int best_impulse) {
     char encoded[128] = {0};
     char *w;
     char *o;
-    entvars_t *ent = &cl->edict->v;
+    entvars_t *ent = cl->edict->v;
 
     strlcpy(old_wrank, Info_Get(&cl->_userinfo_ctx_, "w_rank"),
             sizeof(old_wrank));
