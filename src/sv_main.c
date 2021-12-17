@@ -418,7 +418,7 @@ void SV_DropClient(client_t* drop)
 // <-- MD
 
 	drop->old_frags = 0;
-	drop->edict->v.frags = 0.0;
+	drop->edict->v->frags = 0.0;
 	drop->name[0] = 0;
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);
@@ -1385,10 +1385,10 @@ static void SVC_DirectConnect (void)
 
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
-	ent->e->free = false;
+	ent->e.free = false;
 	newcl->edict = ent;
 	// restore client name.
-	PR_SetEntityString(ent, ent->v.netname, newcl->name);
+	PR_SetEntityString(ent, ent->v->netname, newcl->name);
 
 	s = ( vip ? va("%d", vip) : "" );
 
