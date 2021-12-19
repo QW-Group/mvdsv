@@ -226,7 +226,7 @@ void PR2_GameStartFrame(qbool isBotFrame)
 	}
 
 	if (sv_vm)
-		VM_Call(sv_vm, 2, GAME_START_FRAME, (int) (sv.time * 1000), isBotFrame, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		VM_Call(sv_vm, 2, GAME_START_FRAME, (int) (sv.time * 1000), (int)isBotFrame, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	else
 		PR1_GameStartFrame();
 }
@@ -477,7 +477,7 @@ void PR2_GameConsoleCommand(void)
 void PR2_PausedTic(float duration)
 {
 	if (sv_vm)
-		VM_Call(sv_vm, 1, GAME_PAUSED_TIC, duration*1000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		VM_Call(sv_vm, 1, GAME_PAUSED_TIC, (int)(duration*1000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	else
 		PR1_PausedTic(duration);
 }
