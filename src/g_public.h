@@ -44,7 +44,14 @@
  *  self->s.v.netname = netnames[NUM_FOR_EDICT(self)-1];
  *  infokey( self, "netname", self->s.v.netname,  32);
  *
- * mod should get mapname in  GAME_LOADENTS call:
+ * mod should get mapname in GAME_START_FRAME call:
+ *  if (framecount == 0)
+ *  {
+ *     infokey(world, "mapname", mapname, sizeof(mapname));
+ *     infokey(world, "modelname", worldmodel, sizeof(worldmodel));
+ *     world->model = worldmodel;
+ *  }
+ *
  *  infokey( world, "mapname", mapname, sizeof(mapname) );
  *
  * - QVM GAME_CLIENT_USERINFO_CHANGED call now have integer paramater
