@@ -31,7 +31,7 @@ and one exported function: Perform
 #include "qwsvdef.h"
 #include "vm_local.h"
 
-opcode_info_t ops[ OP_MAX ] = 
+extern opcode_info_t ops[ OP_MAX ] =
 {
 	{ 0, 0, 0, 0 }, // undef
 	{ 0, 0, 0, 0 }, // ignore
