@@ -2350,6 +2350,36 @@ void PF2_SetUserInfo(int entnum, char *k, char *v, int flags)
 	}
 }
 
+void PF2_VisibleTo(int viewer, int first, int len, byte *visible)
+{
+	int e, last = first + len;
+	edict_t *ent;
+	edict_t *viewer_ent = EDICT_NUM(viewer);
+	vec3_t org;
+	byte *pvs;
+
+	if (last > sv.num_edicts)
+		last = sv.num_edicts;
+
+	VectorAdd(viewer_ent->v->origin, viewer_ent->v->view_ofs, org);
+	pvs = CM_FatPVS(org);
+
+	for (e = first, ent = EDICT_NUM(e); e < last; e++, ent = NEXT_EDICT(ent))
+	{
+		int i;
+		if (ent->e.num_leafs < 0 || ent->e.free
+			|| (e >= 1 && e <= MAX_CLIENTS && svs.clients[e - 1].state != cs_spawned)) {
+			continue; // Ignore free edicts or not active client.
+		}
+		for (i = 0; i < ent->e.num_leafs; i++) {
+			if (pvs[ent->e.leafnums[i] >> 3] & (1 << (ent->e.leafnums[i]&7))) {
+				visible[e - first] = true; // seems to be visible
+				break;
+			}
+		}
+	}
+}
+
 //===========================================================================
 // SysCalls
 //===========================================================================
@@ -2640,6 +2670,11 @@ intptr_t PR2_GameSystemCalls(intptr_t *args) {
 		return 0;
 	case G_MOVETOGOAL:
 		PF2_MoveToGoal(VMF(1));
+		return 0;
+	case G_VISIBLETO:
+		VM_CheckBounds(sv_vm, args[4], args[3]);
+		memset(VMA(4), 0, args[3]); // Ensure same memory state on each run.
+		PF2_VisibleTo(args[1], args[2], args[3], VMA(4));
 		return 0;
 	default:
 		SV_Error("Bad game system trap: %ld", (long int)args[0]);
