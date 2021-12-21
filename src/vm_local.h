@@ -260,7 +260,7 @@ typedef struct opcode_info_s
 	int   flags;
 } opcode_info_t ;
 
-opcode_info_t ops[ OP_MAX ];
+extern opcode_info_t ops[ OP_MAX ];
 
 void	VM_Init( void );
 vm_t	*VM_Create( vmIndex_t index, const char* name, syscall_t systemCalls, /*dllSyscall_t dllSyscalls,*/ vmInterpret_t interpret );
