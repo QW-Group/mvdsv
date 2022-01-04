@@ -418,7 +418,7 @@ void SV_DropClient(client_t* drop)
 // <-- MD
 
 	drop->old_frags = 0;
-	drop->edict->v.frags = 0.0;
+	drop->edict->v->frags = 0.0;
 	drop->name[0] = 0;
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);
@@ -1385,10 +1385,10 @@ static void SVC_DirectConnect (void)
 
 	edictnum = (newcl-svs.clients)+1;
 	ent = EDICT_NUM(edictnum);
-	ent->e->free = false;
+	ent->e.free = false;
 	newcl->edict = ent;
 	// restore client name.
-	PR_SetEntityString(ent, ent->v.netname, newcl->name);
+	PR_SetEntityString(ent, ent->v->netname, newcl->name);
 
 	s = ( vip ? va("%d", vip) : "" );
 
@@ -3325,7 +3325,7 @@ void SV_InitLocal (void)
 	extern	cvar_t	pm_airstep;
 	extern	cvar_t	pm_pground;
 	extern  cvar_t  pm_rampjump;
-	//extern	cvar_t	pm_slidefix;
+	extern	cvar_t	pm_slidefix;
 	extern	cvar_t	pm_ktjump;
 	//extern	cvar_t	pm_bunnyspeedcap;
 
@@ -3434,7 +3434,7 @@ void SV_InitLocal (void)
 
 	//Cvar_Register (&pm_bunnyspeedcap);
 	Cvar_Register (&pm_ktjump);
-	//Cvar_Register (&pm_slidefix);
+	Cvar_Register (&pm_slidefix);
 	Cvar_Register (&pm_pground);
 	Cvar_Register (&pm_airstep);
 	Cvar_Register (&pm_rampjump);

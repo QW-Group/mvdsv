@@ -404,7 +404,7 @@ static void Cmd_New_f (void)
 	if (sv_client->rip_vip)
 		MSG_WriteString (&sv_client->netchan.message, "");
 	else
-		MSG_WriteString (&sv_client->netchan.message, PR_GetEntityString(sv.edicts->v.message));
+		MSG_WriteString (&sv_client->netchan.message, PR_GetEntityString(sv.edicts->v->message));
 
 	// send the movevars
 	MSG_WriteFloat(&sv_client->netchan.message, movevars.gravity);
@@ -438,7 +438,7 @@ static void Cmd_New_f (void)
 
 	// send music
 	MSG_WriteByte (&sv_client->netchan.message, svc_cdtrack);
-	MSG_WriteByte (&sv_client->netchan.message, sv.edicts->v.sounds);
+	MSG_WriteByte (&sv_client->netchan.message, sv.edicts->v->sounds);
 
 	// send server info string
 	MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
@@ -724,7 +724,7 @@ static void Cmd_PreSpawn_f (void)
 
 		for (i = buf - sv.static_entity_count; i < sv.num_baseline_edicts; ++i) {
 			edict_t* svent = EDICT_NUM(i);
-			entity_state_t* s = &svent->e->baseline;
+			entity_state_t* s = &svent->e.baseline;
 
 			if (sv_client->netchan.message.cursize >= (sv_client->netchan.message.maxsize / 2)) {
 				break;
@@ -742,13 +742,13 @@ static void Cmd_PreSpawn_f (void)
 			else if (s->modelindex < 256) {
 				MSG_WriteByte(&sv_client->netchan.message, svc_spawnbaseline);
 				MSG_WriteShort(&sv_client->netchan.message, i);
-				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.modelindex);
-				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.frame);
-				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.colormap);
-				MSG_WriteByte(&sv_client->netchan.message, svent->e->baseline.skinnum);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e.baseline.modelindex);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e.baseline.frame);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e.baseline.colormap);
+				MSG_WriteByte(&sv_client->netchan.message, svent->e.baseline.skinnum);
 				for (j = 0; j < 3; j++) {
-					MSG_WriteCoord(&sv_client->netchan.message, svent->e->baseline.origin[j]);
-					MSG_WriteAngle(&sv_client->netchan.message, svent->e->baseline.angles[j]);
+					MSG_WriteCoord(&sv_client->netchan.message, svent->e.baseline.origin[j]);
+					MSG_WriteAngle(&sv_client->netchan.message, svent->e.baseline.angles[j]);
 				}
 			}
 			++buf;
@@ -893,20 +893,20 @@ static void SV_SpawnSpectator (void)
 	int i;
 	edict_t *e;
 
-	VectorClear (sv_player->v.origin);
-	VectorClear (sv_player->v.view_ofs);
-	sv_player->v.view_ofs[2] = 22;
-	sv_player->v.fixangle = true;
-	sv_player->v.movetype = MOVETYPE_NOCLIP; // progs can change this to MOVETYPE_FLY, for example
+	VectorClear (sv_player->v->origin);
+	VectorClear (sv_player->v->view_ofs);
+	sv_player->v->view_ofs[2] = 22;
+	sv_player->v->fixangle = true;
+	sv_player->v->movetype = MOVETYPE_NOCLIP; // progs can change this to MOVETYPE_FLY, for example
 
 	// search for an info_playerstart to spawn the spectator at
 	for (i=MAX_CLIENTS-1 ; i<sv.num_edicts ; i++)
 	{
 		e = EDICT_NUM(i);
-		if (!strcmp(PR_GetEntityString(e->v.classname), "info_player_start"))
+		if (!strcmp(PR_GetEntityString(e->v->classname), "info_player_start"))
 		{
-			VectorCopy (e->v.origin, sv_player->v.origin);
-			VectorCopy (e->v.angles, sv_player->v.angles);
+			VectorCopy (e->v->origin, sv_player->v->origin);
+			VectorCopy (e->v->angles, sv_player->v->angles);
 			return;
 		}
 	}
@@ -999,7 +999,7 @@ static void Cmd_Begin_f (void)
 		ent = EDICT_NUM( 1 + (sv_client - svs.clients) );
 		MSG_WriteByte (&sv_client->netchan.message, svc_setangle);
 		for (i = 0; i < 2; i++)
-			MSG_WriteAngle (&sv_client->netchan.message, ent->v.v_angle[i]);
+			MSG_WriteAngle (&sv_client->netchan.message, ent->v->v_angle[i]);
 		MSG_WriteAngle (&sv_client->netchan.message, 0);
 	}
 
@@ -1089,7 +1089,6 @@ void SV_CompleteDownoload(void)
 		ClientReliableWrite_String (sv_client, str);
 	}
 }
-
 
 /*
 ==================
@@ -1895,7 +1894,6 @@ static void SV_Say (qbool team)
 	}
 }
 
-
 /*
 ==================
 Cmd_Say_f
@@ -1954,7 +1952,7 @@ Cmd_Kill_f
 */
 static void Cmd_Kill_f (void)
 {
-	if (sv_player->v.health <= 0)
+	if (sv_player->v->health <= 0)
 	{
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "Can't suicide -- already dead!\n");
 		return;
@@ -2096,7 +2094,7 @@ static void Cmd_PTrack_f (void)
 		sv_client->spec_track = 0;
 		ent = EDICT_NUM(sv_client - svs.clients + 1);
 		tent = EDICT_NUM(0);
-		ent->v.goalentity = EDICT_TO_PROG(tent);
+		ent->v->goalentity = EDICT_TO_PROG(tent);
 		return;
 	}
 
@@ -2107,14 +2105,14 @@ static void Cmd_PTrack_f (void)
 		sv_client->spec_track = 0;
 		ent = EDICT_NUM(sv_client - svs.clients + 1);
 		tent = EDICT_NUM(0);
-		ent->v.goalentity = EDICT_TO_PROG(tent);
+		ent->v->goalentity = EDICT_TO_PROG(tent);
 		return;
 	}
 	sv_client->spec_track = i + 1; // now tracking
 
 	ent = EDICT_NUM(sv_client - svs.clients + 1);
 	tent = EDICT_NUM(i + 1);
-	ent->v.goalentity = EDICT_TO_PROG(tent);
+	ent->v->goalentity = EDICT_TO_PROG(tent);
 }
 
 /*
@@ -2321,7 +2319,7 @@ static void Cmd_SetInfo_f (void)
 
 	pr_global_struct->time = sv.time;
 	pr_global_struct->self = EDICT_TO_PROG(sv_player);
-	if (PR_UserInfoChanged())
+	if (PR_UserInfoChanged(0))
 		return; // does not allowed to be changed by mod.
 
 	Info_Set (&sv_client->_userinfo_ctx_, Cmd_Argv(1), Cmd_Argv(2));
@@ -2391,6 +2389,7 @@ static void Cmd_SetInfo_f (void)
 	//<-
 
 	ProcessUserInfoChange (sv_client, Cmd_Argv (1), oldval);
+	PR_UserInfoChanged(1);
 }
 
 void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* old_value)
@@ -2566,14 +2565,14 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 {
 	ED_ClearEdict(ent);
 	// restore client name.
-	PR_SetEntityString(ent, ent->v.netname, cl->name);
+	PR_SetEntityString(ent, ent->v->netname, cl->name);
 	// so spec will have right goalentity - if speccing someone
 	if(cl->spectator && cl->spec_track > 0)
-		ent->v.goalentity = EDICT_TO_PROG(svs.clients[cl->spec_track-1].edict);
+		ent->v->goalentity = EDICT_TO_PROG(svs.clients[cl->spec_track-1].edict);
 
-	ent->v.colormap = NUM_FOR_EDICT(ent);
+	ent->v->colormap = NUM_FOR_EDICT(ent);
 
-	ent->v.team = 0;	// FIXME
+	ent->v->team = 0; // FIXME
 
 	cl->entgravity = 1.0;
 	if (fofs_gravity)
@@ -3388,18 +3387,18 @@ static void AddLinksToPmove ( areanode_t *node )
 		next = l->next;
 		check = EDICT_FROM_AREA(l);
 
-		if (check->v.owner == pl)
+		if (check->v->owner == pl)
 			continue;		// player's own missile
-		if (check->v.solid == SOLID_BSP
-				|| check->v.solid == SOLID_BBOX
-				|| check->v.solid == SOLID_SLIDEBOX)
+		if (check->v->solid == SOLID_BSP
+				|| check->v->solid == SOLID_BBOX
+				|| check->v->solid == SOLID_SLIDEBOX)
 		{
 			if (check == sv_player)
 				continue;
 
 			for (i=0 ; i<3 ; i++)
-				if (check->v.absmin[i] > pmove_maxs[i]
-				|| check->v.absmax[i] < pmove_mins[i])
+				if (check->v->absmin[i] > pmove_maxs[i]
+				|| check->v->absmax[i] < pmove_mins[i])
 					break;
 			if (i != 3)
 				continue;
@@ -3408,20 +3407,20 @@ static void AddLinksToPmove ( areanode_t *node )
 			pe = &pmove.physents[pmove.numphysent];
 			pmove.numphysent++;
 
-			VectorCopy (check->v.origin, pe->origin);
+			VectorCopy (check->v->origin, pe->origin);
 			pe->info = NUM_FOR_EDICT(check);
-			if (check->v.solid == SOLID_BSP) {
-				if ((unsigned)check->v.modelindex >= MAX_MODELS)
-					SV_Error ("AddLinksToPmove: check->v.modelindex >= MAX_MODELS");
-				pe->model = sv.models[(int)(check->v.modelindex)];
+			if (check->v->solid == SOLID_BSP) {
+				if ((unsigned)check->v->modelindex >= MAX_MODELS)
+					SV_Error ("AddLinksToPmove: check->v->modelindex >= MAX_MODELS");
+				pe->model = sv.models[(int)(check->v->modelindex)];
 				if (!pe->model)
 					SV_Error ("SOLID_BSP with a non-bsp model");
 			}
 			else
 			{
 				pe->model = NULL;
-				VectorCopy (check->v.mins, pe->mins);
-				VectorCopy (check->v.maxs, pe->maxs);
+				VectorCopy (check->v->mins, pe->mins);
+				VectorCopy (check->v->maxs, pe->maxs);
 			}
 		}
 	}
@@ -3438,22 +3437,22 @@ static void AddLinksToPmove ( areanode_t *node )
 
 int SV_PMTypeForClient (client_t *cl)
 {
-	if (cl->edict->v.movetype == MOVETYPE_NOCLIP) {
+	if (cl->edict->v->movetype == MOVETYPE_NOCLIP) {
 		if (cl->extensions & Z_EXT_PM_TYPE_NEW)
 			return PM_SPECTATOR;
 		return PM_OLD_SPECTATOR;
 	}
 
-	if (cl->edict->v.movetype == MOVETYPE_FLY)
+	if (cl->edict->v->movetype == MOVETYPE_FLY)
 		return PM_FLY;
 
-	if (cl->edict->v.movetype == MOVETYPE_NONE)
+	if (cl->edict->v->movetype == MOVETYPE_NONE)
 		return PM_NONE;
 
-	if (cl->edict->v.movetype == MOVETYPE_LOCK)
+	if (cl->edict->v->movetype == MOVETYPE_LOCK)
 		return PM_LOCK;
 
-	if (cl->edict->v.health <= 0)
+	if (cl->edict->v->health <= 0)
 		return PM_DEAD;
 
 	return PM_NORMAL;
@@ -3541,36 +3540,36 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/
 	}
 
 	// copy humans' intentions to progs
-	sv_player->v.button0 = ucmd->buttons & 1;
-	sv_player->v.button2 = (ucmd->buttons & 2) >> 1;
-	sv_player->v.button1 = (ucmd->buttons & 4) >> 2;
+	sv_player->v->button0 = ucmd->buttons & 1;
+	sv_player->v->button2 = (ucmd->buttons & 2) >> 1;
+	sv_player->v->button1 = (ucmd->buttons & 4) >> 2;
 	if (ucmd->impulse)
-		sv_player->v.impulse = ucmd->impulse;
+		sv_player->v->impulse = ucmd->impulse;
 	if (fofs_movement) {
 		EdictFieldVector(sv_player, fofs_movement)[0] = ucmd->forwardmove;
 		EdictFieldVector(sv_player, fofs_movement)[1] = ucmd->sidemove;
 		EdictFieldVector(sv_player, fofs_movement)[2] = ucmd->upmove;
 	}
-	//bliP: cuff
+	// bliP: cuff
 	if (sv_client->cuff_time > curtime)
-		sv_player->v.button0 = sv_player->v.impulse = 0;
+		sv_player->v->button0 = sv_player->v->impulse = 0;
 	//<-
 
 	// clamp view angles
 	ucmd->angles[PITCH] = bound(sv_minpitch.value, ucmd->angles[PITCH], sv_maxpitch.value);
-	if (!sv_player->v.fixangle && ! second_attempt)
-		VectorCopy (ucmd->angles, sv_player->v.v_angle);
+	if (!sv_player->v->fixangle && ! second_attempt)
+		VectorCopy (ucmd->angles, sv_player->v->v_angle);
 
 	// model angles
 	// show 1/3 the pitch angle and all the roll angle
-	if (sv_player->v.health > 0)
+	if (sv_player->v->health > 0)
 	{
-		if (!sv_player->v.fixangle)
+		if (!sv_player->v->fixangle)
 		{
-			sv_player->v.angles[PITCH] = -sv_player->v.v_angle[PITCH]/3;
-			sv_player->v.angles[YAW] = sv_player->v.v_angle[YAW];
+			sv_player->v->angles[PITCH] = -sv_player->v->v_angle[PITCH]/3;
+			sv_player->v->angles[YAW] = sv_player->v->v_angle[YAW];
 		}
-		sv_player->v.angles[ROLL] = 0;
+		sv_player->v->angles[ROLL] = 0;
 	}
 
 	sv_frametime = ucmd->msec * 0.001;
@@ -3583,11 +3582,11 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/
 		vec3_t	oldvelocity;
 		float	old_teleport_time;
 
-		VectorCopy (sv_player->v.velocity, originalvel);
-		onground = (int) sv_player->v.flags & FL_ONGROUND;
+		VectorCopy (sv_player->v->velocity, originalvel);
+		onground = (int) sv_player->v->flags & FL_ONGROUND;
 
-		VectorCopy (sv_player->v.velocity, oldvelocity);
-		old_teleport_time = sv_player->v.teleport_time;
+		VectorCopy (sv_player->v->velocity, oldvelocity);
+		old_teleport_time = sv_player->v->teleport_time;
 
 		PR_GLOBAL(frametime) = sv_frametime;
 		pr_global_struct->time = sv.time;
@@ -3596,30 +3595,30 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/
 
 		if (pr_nqprogs)
 		{
-			sv_player->v.teleport_time = old_teleport_time;
-			VectorCopy (oldvelocity, sv_player->v.velocity);
+			sv_player->v->teleport_time = old_teleport_time;
+			VectorCopy (oldvelocity, sv_player->v->velocity);
 		}
 
-		if ( onground && originalvel[2] < 0 && sv_player->v.velocity[2] == 0 &&
-		     originalvel[0] == sv_player->v.velocity[0] &&
-		     originalvel[1] == sv_player->v.velocity[1] )
+		if ( onground && originalvel[2] < 0 && sv_player->v->velocity[2] == 0 &&
+		     originalvel[0] == sv_player->v->velocity[0] &&
+		     originalvel[1] == sv_player->v->velocity[1] )
 		{
 			// don't let KTeams mess with physics
-			sv_player->v.velocity[2] = originalvel[2];
+			sv_player->v->velocity[2] = originalvel[2];
 		}
 
 		SV_RunThink (sv_player);
 	}
 
 	// copy player state to pmove
-	VectorSubtract (sv_player->v.mins, player_mins, offset);
-	VectorAdd (sv_player->v.origin, offset, pmove.origin);
-	VectorCopy (sv_player->v.velocity, pmove.velocity);
-	VectorCopy (sv_player->v.v_angle, pmove.angles);
-	pmove.waterjumptime = sv_player->v.teleport_time;
+	VectorSubtract (sv_player->v->mins, player_mins, offset);
+	VectorAdd (sv_player->v->origin, offset, pmove.origin);
+	VectorCopy (sv_player->v->velocity, pmove.velocity);
+	VectorCopy (sv_player->v->v_angle, pmove.angles);
+	pmove.waterjumptime = sv_player->v->teleport_time;
 	pmove.cmd = *ucmd;
 	pmove.pm_type = SV_PMTypeForClient (sv_client);
-	pmove.onground = ((int)sv_player->v.flags & FL_ONGROUND) != 0;
+	pmove.onground = ((int)sv_player->v->flags & FL_ONGROUND) != 0;
 	pmove.jump_held = sv_client->jump_held;
 	pmove.jump_msec = 0;
 	
@@ -3654,7 +3653,7 @@ FIXME
 #ifdef USE_PR2
 	// This is a temporary hack for Frogbots, who adjust after bumping into things
 	// Better would be to provide a way to simulate a move command, but at least this doesn't require API change
-	if (blocked && !second_attempt && sv_client->isBot && sv_player->v.blocked)
+	if (blocked && !second_attempt && sv_client->isBot && sv_player->v->blocked)
 	{
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
 
@@ -3663,14 +3662,14 @@ FIXME
 		VectorCopy (pmove.velocity, pr_global_struct->trace_plane_normal);
 		if (pmove.onground)
 		{
-			pr_global_struct->trace_allsolid = (int) sv_player->v.flags | FL_ONGROUND;
+			pr_global_struct->trace_allsolid = (int) sv_player->v->flags | FL_ONGROUND;
 			pr_global_struct->trace_ent = EDICT_TO_PROG(EDICT_NUM(pmove.physents[pmove.groundent].info));
 		} else {
-			pr_global_struct->trace_allsolid = (int) sv_player->v.flags & ~FL_ONGROUND;
+			pr_global_struct->trace_allsolid = (int) sv_player->v->flags & ~FL_ONGROUND;
 		}
 
 		// Give the mod a chance to replace the command
-		PR_EdictBlocked (sv_player->v.blocked);
+		PR_EdictBlocked (sv_player->v->blocked);
 
 		// Run the command again
 		SV_RunCmd (ucmd, false, true);
@@ -3680,25 +3679,25 @@ FIXME
 
 	// get player state back out of pmove
 	sv_client->jump_held = pmove.jump_held;
-	sv_player->v.teleport_time = pmove.waterjumptime;
+	sv_player->v->teleport_time = pmove.waterjumptime;
 	if (pr_nqprogs)
-		sv_player->v.flags = ((int)sv_player->v.flags & ~FL_WATERJUMP) | (pmove.waterjumptime ? FL_WATERJUMP : 0);
-	sv_player->v.waterlevel = pmove.waterlevel;
-	sv_player->v.watertype = pmove.watertype;
+		sv_player->v->flags = ((int)sv_player->v->flags & ~FL_WATERJUMP) | (pmove.waterjumptime ? FL_WATERJUMP : 0);
+	sv_player->v->waterlevel = pmove.waterlevel;
+	sv_player->v->watertype = pmove.watertype;
 	if (pmove.onground)
 	{
-		sv_player->v.flags = (int) sv_player->v.flags | FL_ONGROUND;
-		sv_player->v.groundentity = EDICT_TO_PROG(EDICT_NUM(pmove.physents[pmove.groundent].info));
+		sv_player->v->flags = (int) sv_player->v->flags | FL_ONGROUND;
+		sv_player->v->groundentity = EDICT_TO_PROG(EDICT_NUM(pmove.physents[pmove.groundent].info));
 	} else {
-		sv_player->v.flags = (int) sv_player->v.flags & ~FL_ONGROUND;
+		sv_player->v->flags = (int) sv_player->v->flags & ~FL_ONGROUND;
 	}
 
-	VectorSubtract (pmove.origin, offset, sv_player->v.origin);
-	VectorCopy (pmove.velocity, sv_player->v.velocity);
+	VectorSubtract (pmove.origin, offset, sv_player->v->origin);
+	VectorCopy (pmove.velocity, sv_player->v->velocity);
 
-	VectorCopy (pmove.angles, sv_player->v.v_angle);
+	VectorCopy (pmove.angles, sv_player->v->v_angle);
 
-	if (sv_player->v.solid != SOLID_NOT)
+	if (sv_player->v->solid != SOLID_NOT)
 	{
 		// link into place and touch triggers
 		SV_LinkEdict (sv_player, true);
@@ -3709,11 +3708,11 @@ FIXME
 			edict_t *ent;
 			n = pmove.physents[pmove.touchindex[i]].info;
 			ent = EDICT_NUM(n);
-			if (!ent->v.touch || (playertouch[n/8]&(1<<(n%8))))
+			if (!ent->v->touch || (playertouch[n/8]&(1<<(n%8))))
 				continue;
 			pr_global_struct->self = EDICT_TO_PROG(ent);
 			pr_global_struct->other = EDICT_TO_PROG(sv_player);
-			PR_EdictTouch (ent->v.touch);
+			PR_EdictTouch (ent->v->touch);
 			playertouch[n/8] |= 1 << (n%8);
 		}
 	}
@@ -3731,7 +3730,7 @@ typedef struct ssw_info_s {
 // Ranks best weapon for player
 void SV_ServerSideWeaponRank(client_t* client, int* best_weapon, int* best_impulse, int* hide_weapon, int* hide_impulse)
 {
-	entvars_t* ent = &client->edict->v;
+	entvars_t* ent = client->edict->v;
 	int i;
 	int items = (int)ent->items;
 	int weapon = (int)ent->weapon;
@@ -3846,7 +3845,6 @@ static void SV_ExecuteServerSideWeaponForgetOrder(client_t* sv_client, int best_
 		if (Info_Get(&sv_client->_userinfo_ctx_, "dev")[0] == '1') {
 			SV_ClientPrintf(sv_client, PRINT_HIGH, "Best: %d, forgetorder enabled\n", best_impulse);
 		}
-
 	}
 	sv_client->weaponswitch_priority[0] = best_impulse;
 	sv_client->weaponswitch_priority[1] = (hide_impulse == 1 || best_impulse == 2 ? 1 : 2);
@@ -3872,7 +3870,7 @@ static void SV_ExecuteServerSideWeaponHideOnDeath(client_t* sv_client, int hide_
 {
 	char new_wrank[16] = { 0 };
 
-	if (sv_client->edict->v.health > 0.0f || !sv_client->weaponswitch_hide_on_death) {
+	if (sv_client->edict->v->health > 0.0f || !sv_client->weaponswitch_hide_on_death) {
 		return;
 	}
 
@@ -3889,14 +3887,14 @@ static void SV_ExecuteServerSideWeaponHideOnDeath(client_t* sv_client, int hide_
 	SV_NotifyUserOfBestWeapon(sv_client, hide_impulse);
 	SV_UserSetWeaponRank(sv_client, new_wrank);
 
-	if (Info_Get(&sv_client->_userinfo_ctx_, "dev")[0] == '1' && sv_client->edict->v.weapon != hide_weapon) {
+	if (Info_Get(&sv_client->_userinfo_ctx_, "dev")[0] == '1' && sv_client->edict->v->weapon != hide_weapon) {
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Hiding on death: %d\n", hide_impulse);
 	}
 }
 
 static void SV_ServerSideWeaponLogic_PrePostThink(client_t* sv_client, ssw_info_t* ssw)
 {
-	entvars_t* ent = &sv_client->edict->v;
+	entvars_t* ent = sv_client->edict->v;
 	qbool dev_trace = (Info_Get(&sv_client->_userinfo_ctx_, "dev")[0] == '1');
 
 	ssw->firing = (ent->button0 != 0);
@@ -3963,7 +3961,7 @@ static void SV_ServerSideWeaponLogic_PrePostThink(client_t* sv_client, ssw_info_
 
 static void SV_ServerSideWeaponLogic_PostPostThink(client_t* sv_client, ssw_info_t* ssw)
 {
-	entvars_t* ent = &sv_client->edict->v;
+	entvars_t* ent = sv_client->edict->v;
 	qbool dev_trace = (Info_Get(&sv_client->_userinfo_ctx_, "dev")[0] == '1');
 
 	if (ssw->impulse_set) {
@@ -4011,7 +4009,6 @@ void SV_PostRunCmd(void)
 	qbool onground;
 	// run post-think
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
-	entvars_t* ent = &sv_client->edict->v;
 	ssw_info_t ssw = { 0 };
 #endif
 
@@ -4021,21 +4018,21 @@ void SV_PostRunCmd(void)
 		SV_ServerSideWeaponLogic_PrePostThink(sv_client, &ssw);
 #endif
 
-		onground = (int) sv_player->v.flags & FL_ONGROUND;
+		onground = (int) sv_player->v->flags & FL_ONGROUND;
 		pr_global_struct->time = sv.time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
-		VectorCopy (sv_player->v.velocity, originalvel);
+		VectorCopy (sv_player->v->velocity, originalvel);
 		PR_GameClientPostThink(0);
 
-		if ( onground && originalvel[2] < 0 && sv_player->v.velocity[2] == 0
-		&& originalvel[0] == sv_player->v.velocity[0]
-		&& originalvel[1] == sv_player->v.velocity[1] ) {
+		if ( onground && originalvel[2] < 0 && sv_player->v->velocity[2] == 0
+		&& originalvel[0] == sv_player->v->velocity[0]
+		&& originalvel[1] == sv_player->v->velocity[1] ) {
 			// don't let KTeams mess with physics
-			sv_player->v.velocity[2] = originalvel[2];
+			sv_player->v->velocity[2] = originalvel[2];
 		}
 
 		if (pr_nqprogs)
-			VectorCopy (originalvel, sv_player->v.velocity);
+			VectorCopy (originalvel, sv_player->v->velocity);
 
 		if (pr_nqprogs)
 			SV_RunNQNewmis ();
@@ -4087,7 +4084,7 @@ void SV_RotateCmd(client_t* cl, usercmd_t* cmd_)
 		cmd_->forwardmove = result[1];
 	}
 	else {
-		cmd_->angles[YAW] = (cl->edict)->v.angles[YAW];
+		cmd_->angles[YAW] = (cl->edict)->v->angles[YAW];
 	}
 }
 
@@ -4130,10 +4127,10 @@ static void SV_ExecuteClientMove(client_t* cl, usercmd_t oldest, usercmd_t oldcm
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
 	{
 		// This is necessary to interrupt LG/SNG where the firing takes place inside animation frames
-		if (sv_client->weaponswitch_enabled && sv_client->weaponswitch_pending && !sv_client->edict->v.impulse) {
-			sv_client->edict->v.impulse = 255;
+		if (sv_client->weaponswitch_enabled && sv_client->weaponswitch_pending && !sv_client->edict->v->impulse) {
+			sv_client->edict->v->impulse = 255;
 			SV_RunCmd(&newcmd, false, false);
-			sv_client->edict->v.impulse = 0;
+			sv_client->edict->v->impulse = 0;
 		}
 		else {
 			SV_RunCmd(&newcmd, false, false);
@@ -4290,7 +4287,7 @@ static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 		char encoded[128] = { 0 };
 		char* w;
 		char* o;
-		entvars_t* ent = &cl->edict->v;
+		entvars_t* ent = cl->edict->v;
 
 		strlcpy(old_wrank, Info_Get(&cl->_userinfo_ctx_, "w_rank"), sizeof(old_wrank));
 
@@ -4388,7 +4385,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			int j;
 
 			// don't hit dead players
-			if (target_cl->state != cs_spawned || target_cl->antilag_position_next == 0 || (target_cl->spectator == 0 && target_cl->edict->v.health <= 0)) {
+			if (target_cl->state != cs_spawned || target_cl->antilag_position_next == 0 || (target_cl->spectator == 0 && target_cl->edict->v->health <= 0)) {
 				cl->laggedents[i].present = false;
 				continue;
 			}
@@ -4398,7 +4395,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 			// target player's movement commands are late, extrapolate his position based on velocity
 			if (target_time > target_cl->localtime) {
-				VectorMA(target_cl->edict->v.origin, min(target_time - target_cl->localtime, MAX_EXTRAPOLATE), target_cl->edict->v.velocity, cl->laggedents[i].laggedpos);
+				VectorMA(target_cl->edict->v->origin, min(target_time - target_cl->localtime, MAX_EXTRAPOLATE), target_cl->edict->v->velocity, cl->laggedents[i].laggedpos);
 				continue;
 			}
 
@@ -4608,14 +4605,13 @@ void SV_ExecuteClientMessage (client_t *cl)
 			if (sv_antilag.value) {
 				if (cl->antilag_position_next == 0 || cl->antilag_positions[(cl->antilag_position_next - 1) % MAX_ANTILAG_POSITIONS].localtime < cl->localtime) {
 					cl->antilag_positions[cl->antilag_position_next % MAX_ANTILAG_POSITIONS].localtime = cl->localtime;
-					VectorCopy(cl->edict->v.origin, cl->antilag_positions[cl->antilag_position_next % MAX_ANTILAG_POSITIONS].origin);
+					VectorCopy(cl->edict->v->origin, cl->antilag_positions[cl->antilag_position_next % MAX_ANTILAG_POSITIONS].origin);
 					cl->antilag_position_next++;
 				}
 			} else {
 				cl->antilag_position_next = 0;
 			}
 			break;
-
 
 		case clc_stringcmd:
 			s = MSG_ReadString ();
@@ -4630,7 +4626,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			// only allowed by spectators
 			if (sv_client->spectator)
 			{
-				VectorCopy(o, sv_player->v.origin);
+				VectorCopy(o, sv_player->v->origin);
 				SV_LinkEdict(sv_player, false);
 			}
 			break;
