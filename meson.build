@@ -56,7 +56,11 @@ deps = [
 	dependency('threads')
 ]
 
-pcre = dependency('libpcre', required : false)
+pcre = disabler()
+if not get_option('force_internal_pcre')
+	pcre = dependency('libpcre', required : false)
+endif
+
 if pcre.found()
 	deps += pcre
 else
