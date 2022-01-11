@@ -16,6 +16,8 @@ jobs:
              sudo apt-get -y install build-essential python3-virtualenv python3-dev python3-pip ninja-build cmake gcc-multilib
              sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
              sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+             # for some reasone the 32bit linux build's gcc doesn't find errno.h in it's place, so we need the following:
+             ln -s /usr/include/asm-generic /usr/include/asm
              virtualenv .venv --python=python3
              . .venv/bin/activate
              pip3 install --upgrade pip
