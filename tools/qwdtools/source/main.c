@@ -1081,7 +1081,7 @@ void QWDToolsMsg(void)
 
 	strlcpy(str, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n"
 	       " This demo was converted\n"
-	       " from QWD by " QWDTOOLS_NAME " " VERSION_NUMBER "\n"
+	       " from QWD by "QWDTOOLS_NAME" "VERSION_NUM_STR"\n"
 	       "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f\n",
 			sizeof(str));
 
@@ -1175,9 +1175,9 @@ int main (int argc, char **argv)
 	World_Init();
 
 	//	Sys_Printf( VERSION " (c) 2001 Bartlomiej Rychtarski\nhttp://qwex.n3.net/   mailto:highlander@gracz.net\n\n");
-	Sys_Printf(QWDTOOLS_NAME " version " VERSION_NUMBER " (c) 2001-2003 Bartlomiej Rychtarski\n");
+	Sys_Printf(QWDTOOLS_NAME " version " VERSION_NUM_STR " (c) 2001-2003 Bartlomiej Rychtarski\n");
 	Sys_Printf("Unix port by David (hexum) Balcom and VVD, 2004-2007\n");
-	Sys_Printf("Part of the " SERVER_NAME " project: " HOMEPAGE_URL "\n\n");
+	Sys_Printf("Part of the " SERVER_NAME " project: " SERVER_HOME_URL "\n\n");
 
 	Tools_Init();
 

@@ -219,6 +219,8 @@ float	FloatSwapPDP2Lit (float f);
 //============================================================================
 
 #ifdef _WIN32
+#undef strcasecmp
+#undef strncasecmp
 #define strcasecmp(s1, s2) _stricmp  ((s1),   (s2))
 #define strncasecmp(s1, s2, n) _strnicmp ((s1),   (s2),   (n))
 int		snprintf(char *str, size_t n, char const *fmt, ...);
