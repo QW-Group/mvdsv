@@ -8,9 +8,9 @@
 #	$Id$
 #
 
-MAINDIR = ../../..
-SV_DIR = $(MAINDIR)/source
-QWDTOOLS_DIR = $(MAINDIR)/tools/qwdtools/source
+MAINDIR = ../..
+SV_DIR = $(MAINDIR)/src
+QWDTOOLS_DIR = $(MAINDIR)/tools/qwdtools/src
 
 # to compile qwdtools as 32bit on 64bit target platform use next:
 # for gcc its like: make qwdtools FORCE32BITFLAGS=-m32

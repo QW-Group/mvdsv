@@ -18,7 +18,6 @@ src/Makefile.dl32
 src/Makefile.vm
 mvdsv
 !qwdtools/
-qwdtools
 .venv/
 build_*/*
 .ninja_deps
