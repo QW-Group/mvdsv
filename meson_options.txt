@@ -1,0 +1,1 @@
+option('force_internal_pcre', type : 'boolean', value : false)
