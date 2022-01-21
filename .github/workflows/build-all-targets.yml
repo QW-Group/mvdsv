@@ -24,7 +24,7 @@ jobs:
              pip3 install -r requirements.txt
       - name: Build
         run: |
-             ./.venv/bin/meson build-${{ matrix.target }} --buildtype=release --cross-file tools/cross-compilation/${{ matrix.target }}.txt
+             ./.venv/bin/meson build-${{ matrix.target }} --buildtype=release -Dwrap_mode=forcefallback --cross-file tools/cross-compilation/${{ matrix.target }}.txt
              ninja -v -C build-${{ matrix.target }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
