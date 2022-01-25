@@ -53,22 +53,9 @@ c_args = ['-DSERVERONLY', '-DUSE_PR2']
 link_args = []
 
 deps = [
-	dependency('threads')
+	dependency('threads'),
+	dependency('libpcre', default_options: ['default_library=static'])
 ]
-
-pcre = disabler()
-if not get_option('force_internal_pcre')
-	pcre = dependency('libpcre', required : false)
-endif
-
-if pcre.found()
-	deps += pcre
-else
-	mvdsv_sources += [
-		'src/pcre/get.c',
-		'src/pcre/pcre.c'
-	]
-endif
 
 curl = dependency('libcurl', required : false)
 if curl.found()
