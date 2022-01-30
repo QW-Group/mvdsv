@@ -2,7 +2,7 @@
 c = 'aarch64-linux-gnu-gcc'
 cpp = 'aarch64-linux-gnu-g++'
 ar = 'aarch64-linux-gnu-gcc-ar'
-strip = 'aarch64-linux-gnu-strip'
+strip = 'aarch64-linux-gnu-gcc-strip'
 pkgconfig = 'aarch64-linux-gnu-pkg-config'
 
 [host_machine]
