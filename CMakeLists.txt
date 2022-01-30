@@ -1,0 +1,153 @@
+cmake_minimum_required(VERSION 3.4.0)
+
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+# Set project name and languge.
+project(mvdsv C)
+
+######################################################################################################
+
+# Set where sources located.
+set(DIR_SRC "src")
+
+# Add sources
+set(SRC_COMMON
+	"${DIR_SRC}/pr_cmds.c"
+	"${DIR_SRC}/pr_edict.c"
+	"${DIR_SRC}/pr_exec.c"
+	"${DIR_SRC}/pr2_cmds.c"
+	"${DIR_SRC}/pr2_edict.c"
+	"${DIR_SRC}/pr2_exec.c"
+	"${DIR_SRC}/vm.c"
+	"${DIR_SRC}/sv_ccmds.c"
+	"${DIR_SRC}/sv_demo.c"
+	"${DIR_SRC}/sv_demo_misc.c"
+	"${DIR_SRC}/sv_demo_qtv.c"
+	"${DIR_SRC}/sv_ents.c"
+	"${DIR_SRC}/sv_init.c"
+	"${DIR_SRC}/sv_login.c"
+	"${DIR_SRC}/sv_main.c"
+	"${DIR_SRC}/sv_master.c"
+	"${DIR_SRC}/sv_mod_frags.c"
+	"${DIR_SRC}/sv_move.c"
+	"${DIR_SRC}/sv_nchan.c"
+	"${DIR_SRC}/sv_phys.c"
+	"${DIR_SRC}/sv_send.c"
+	"${DIR_SRC}/sv_user.c"
+	"${DIR_SRC}/sv_save.c"
+	"${DIR_SRC}/bothtools.c"
+	"${DIR_SRC}/cmd.c"
+	"${DIR_SRC}/common.c"
+	"${DIR_SRC}/cmodel.c"
+	"${DIR_SRC}/crc.c"
+	"${DIR_SRC}/cvar.c"
+	"${DIR_SRC}/hash.c"
+	"${DIR_SRC}/fs.c"
+	"${DIR_SRC}/vfs_os.c"
+	"${DIR_SRC}/vfs_pak.c"
+	"${DIR_SRC}/mathlib.c"
+	"${DIR_SRC}/md4.c"
+	"${DIR_SRC}/net_chan.c"
+	"${DIR_SRC}/net.c"
+	"${DIR_SRC}/pmove.c"
+	"${DIR_SRC}/pmovetst.c"
+	"${DIR_SRC}/sha1.c"
+	"${DIR_SRC}/build.c"
+	"${DIR_SRC}/world.c"
+	"${DIR_SRC}/zone.c"
+	"${DIR_SRC}/pcre/get.c"
+	"${DIR_SRC}/pcre/pcre.c"
+	)
+
+# Check build target, and included sources
+if(UNIX)
+	set(SRC_SYS
+	    "${DIR_SRC}/sv_sys_unix.c"
+	)
+	message(STATUS "We have a *nix build")
+else()
+	set(SRC_SYS
+	    "${DIR_SRC}/sv_sys_win.c"
+	    "${DIR_SRC}/sv_windows.c"
+	)
+endif()
+
+
+######################################################################################################
+
+# Set base compiler flags
+set(CFLAGS -Wall -pipe -funsigned-char)
+
+
+######################################################################################################
+
+# Set target
+add_executable(${PROJECT_NAME} ${SRC_SYS} ${SRC_COMMON})
+set_target_properties(${PROJECT_NAME}
+	PROPERTIES PREFIX "" # Strip lib prefix.
+	C_VISIBILITY_PRESET hidden # Hide all symbols unless excplicitly marked to export.
+	)
+
+
+######################################################################################################
+
+# Check for curl, and include sources and libs, if found
+find_library(CURL_LIBRARY NAMES curl)
+if(NOT CURL_LIBRARY)
+	message(STATUS "Curl library not found")
+else()
+	message(STATUS "Curl library = [" ${CURL_LIBRARY} "]")
+	list(APPEND SRC_COMMON "${DIR_SRC}/central.c")
+	target_compile_definitions(${PROJECT_NAME} PRIVATE WWW_INTEGRATION=1)
+	target_link_libraries(${PROJECT_NAME} curl)
+endif()
+
+
+######################################################################################################
+
+# Check build target, and included sources and libs
+if(UNIX)
+	target_link_libraries(${PROJECT_NAME} m)
+	target_link_libraries(${PROJECT_NAME} dl)
+	message(STATUS "We have a *nix build")
+else()
+	target_link_libraries(${PROJECT_NAME} ws2_32)
+	target_link_libraries(${PROJECT_NAME} winmm)
+endif()
+
+
+######################################################################################################
+
+# Set defines for the build
+target_compile_definitions(${PROJECT_NAME} PRIVATE SERVERONLY=1)
+target_compile_definitions(${PROJECT_NAME} PRIVATE USE_PR2=1)
+
+include (TestBigEndian)
+TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
+if(IS_BIG_ENDIAN)
+	target_compile_definitions(${PROJECT_NAME} __BIG_ENDIAN__Q__=1)
+	message(STATUS "BIG_ENDIAN")
+else()
+	target_compile_definitions(${PROJECT_NAME} PRIVATE __LITTLE_ENDIAN__Q__=1)
+	message(STATUS "LITTLE_ENDIAN")
+endif()
+
+
+######################################################################################################
+
+
+# If not Miscrosoft compilator - then set additional options for linker.
+#if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+#	target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+#else()
+#	target_compile_options(${PROJECT_NAME} PRIVATE -Wall)
+#	target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--no-undefined") # Do not allow undefined symbols while linking.
+#	target_link_libraries(${PROJECT_NAME} PRIVATE m) # Link with libm.
+#endif()
+
+# Assign compiler flags
+target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS})
+
+target_link_libraries(${PROJECT_NAME} -lpthread)
+
+
