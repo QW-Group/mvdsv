@@ -109,6 +109,12 @@ set_target_properties(${PROJECT_NAME}
 
 ######################################################################################################
 
+# Set include directories
+target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+
+
+######################################################################################################
+
 # Check build target, and included sources and libs
 if(UNIX)
 	target_link_libraries(${PROJECT_NAME} m)
@@ -143,19 +149,10 @@ endif()
 
 ######################################################################################################
 
-
-# If not Miscrosoft compilator - then set additional options for linker.
-#if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-#	target_compile_options(${PROJECT_NAME} PRIVATE /W4)
-#else()
-#	target_compile_options(${PROJECT_NAME} PRIVATE -Wall)
-#	target_link_options(${PROJECT_NAME} PRIVATE "-Wl,--no-undefined") # Do not allow undefined symbols while linking.
-#	target_link_libraries(${PROJECT_NAME} PRIVATE m) # Link with libm.
-#endif()
-
 # Assign compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS})
 
 target_link_libraries(${PROJECT_NAME} -lpthread)
 
 
+######################################################################################################
