@@ -80,15 +80,13 @@ endif()
 ######################################################################################################
 
 # Check for curl, and include sources and libs, if found
-find_library(CURL_LIBRARY NAMES curl)
-if(NOT CURL_LIBRARY)
+find_package(CURL)
+if(NOT CURL_FOUND)
 	message(STATUS "Curl library not found")
 else()
-	message(STATUS "Curl library = [" ${CURL_LIBRARY} "]")
 	list(APPEND SRC_COMMON
 	    "${DIR_SRC}/central.c"
 	)
-	set(CURL_FOUND TRUE)
 endif()
 
 
@@ -104,7 +102,7 @@ set(LFLAGS)
 # Set target
 add_executable(${PROJECT_NAME} ${SRC_COMMON})
 set_target_properties(${PROJECT_NAME}
-	PROPERTIES PREFIX "" # Strip lib prefix.
+	PROPERTIES #PREFIX "" # Strip lib prefix.
 	C_VISIBILITY_PRESET hidden # Hide all symbols unless excplicitly marked to export.
 	)
 
@@ -139,7 +137,7 @@ endif()
 
 if(CURL_FOUND)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE WWW_INTEGRATION)
-	target_link_libraries(${PROJECT_NAME} curl)
+	target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
 endif()
 
 
