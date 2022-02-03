@@ -122,6 +122,7 @@ if(UNIX)
 else()
 	target_link_libraries(${PROJECT_NAME} ws2_32)
 	target_link_libraries(${PROJECT_NAME} winmm)
+	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc")
 endif()
 
 
