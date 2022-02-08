@@ -1,0 +1,29 @@
+name: build all targets with cmake
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare Build Environemnt
+        run: |
+             sudo apt-get update
+             sudo apt-get -y install build-essential cmake gcc-i686-linux-gnu
+             sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+             sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+      - name: Build
+        run: |
+             ./build_cmake.sh ${{ matrix.target }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.target }}
+          path: |
+                build/${{ matrix.target }}/mvdsv
+                build/${{ matrix.target }}/mvdsv.exe
+          if-no-files-found: ignore
