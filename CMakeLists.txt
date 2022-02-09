@@ -93,7 +93,7 @@ endif()
 ######################################################################################################
 
 # Set base compiler flags
-set(CFLAGS -Wall -pipe -funsigned-char)
+set(CFLAGS -Wall)
 set(LFLAGS)
 
 
