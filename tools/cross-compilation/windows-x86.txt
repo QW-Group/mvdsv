@@ -6,6 +6,9 @@ strip = 'i686-w64-mingw32-strip'
 pkgconfig = 'i686-w64-mingw32-pkg-config'
 windres = 'i686-w64-mingw32-windres'
 
+[properties]
+c_args = ['-msse2', '-mfpmath=sse']
+
 [host_machine]
 system = 'windows'
 cpu_family = 'x86'

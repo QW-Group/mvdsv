@@ -5,6 +5,10 @@ ar = 'i686-linux-gnu-ar'
 strip = 'i686-linux-gnu-strip'
 pkgconfig = 'i686-linux-gnu-pkg-config'
 
+[properties]
+c_args = ['-m32']
+c_link_args = ['-m32']
+
 [host_machine]
 system = 'linux'
 cpu_family = 'x86'
