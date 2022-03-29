@@ -1,0 +1,71 @@
+name: build and deploy snapshots
+on: [push]
+jobs:
+  build:
+    if: github.repository == 'QW-Group/mvdsv'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+       target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86]
+       include:
+         - target: linux-amd64
+           os: linux
+           arch: amd64
+           ext: ""
+         - target: linux-i686
+           os: linux
+           arch: i686
+           ext: ""
+         - target: linux-armhf
+           os: linux
+           arch: armhf
+           ext: ""
+         - target: linux-aarch64
+           os: linux
+           arch: aarch64
+           ext: ""
+         - target: windows-x64
+           os: windows
+           arch: x64
+           ext: ".exe"
+         - target: windows-x86
+           os: windows
+           arch: x86
+           ext: ".exe"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare Build Environemnt
+        run: |
+             sudo apt-get update
+             sudo apt-get -y install build-essential cmake gcc-i686-linux-gnu
+             sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+             sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+      - name: Build
+        run: |
+             ./build_cmake.sh ${{ matrix.target }}
+      - name: Create checksum
+        run: |
+             md5sum build/${{ matrix.target }}/qwprogs${{ matrix.ext }} > build/${{ matrix.target }}/qwprogs.md5
+      - name: Setup SSH
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Set date
+        run: |
+          sudo timedatectl set-timezone Europe/Amsterdam
+          echo "DATE=$(date "+%Y%m%d-%H%M%S")" >> $GITHUB_ENV
+      - name: Deploy
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+             mkdir -p upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}
+             mkdir -p upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}
+             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_qwprogs${{ matrix.ext }}
+             cp build/${{ matrix.target }}/qwprogs.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_qwprogs.md5
+             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
+             cp build/${{ matrix.target }}/qwprogs.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs.md5
+             sftp -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp upload/snapshots/*'

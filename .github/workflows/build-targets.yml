@@ -1,0 +1,47 @@
+name: build targets
+on: [pull_request]
+jobs:
+  build:
+    if: github.repository == 'QW-Group/mvdsv'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+       target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86]
+       include:
+         - target: linux-amd64
+           os: linux
+           arch: amd64
+           ext: ""
+         - target: linux-i686
+           os: linux
+           arch: i686
+           ext: ""
+         - target: linux-armhf
+           os: linux
+           arch: armhf
+           ext: ""
+         - target: linux-aarch64
+           os: linux
+           arch: aarch64
+           ext: ""
+         - target: windows-x64
+           os: windows
+           arch: x64
+           ext: ".exe"
+         - target: windows-x86
+           os: windows
+           arch: x86
+           ext: ".exe"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare Build Environemnt
+        run: |
+             sudo apt-get update
+             sudo apt-get -y install build-essential cmake gcc-i686-linux-gnu
+             sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+             sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+      - name: Build
+        run: |
+             ./build_cmake.sh ${{ matrix.target }}
