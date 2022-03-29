@@ -18,7 +18,7 @@ The following architectures are fully supported by **[MVDSV][mvdsv]** and are av
 * Windows x86 (Intel and AMD 32-bit processors)
 
 ## Prebuilt binaries
-You can find the prebuilt binaries on [this download page][mvdsv_builds].
+You can find the prebuilt binaries on [this download page][mvdsv-builds].
 
 ## Prerequisites
 
@@ -55,12 +55,6 @@ should build MVDSV for linux-amd64 platform with debug
 V=1 B=Debug ./build_cmake.sh linux-amd64
 ```
 should build MVDSV for linux-amd64 platform with debug, verbose (useful if you need validate compiler flags)
-
-```
-V=1 B=Debug BOT_SUPPORT=OFF ./build_cmake.sh linux-amd64
-```
-
-same as above but compile without bot support
 
 ```
 G="Unix Makefiles" ./build_cmake.sh linux-amd64
@@ -109,7 +103,7 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 
 [mvdsv]: https://github.com/QW-Group/mvdsv
 [mvdsv-tags]: https://github.com/QW-Group/mvdsv/tags
-[mvdsv_builds]: https://builds.quakeworld.nu/mvdsv
+[mvdsv-builds]: https://builds.quakeworld.nu/mvdsv
 [ktx]: https://github.com/QW-Group/ktx
 [nquake-linux]: https://github.com/nQuake/server-linux
 [discord-qw]: http://discord.quake.world/
