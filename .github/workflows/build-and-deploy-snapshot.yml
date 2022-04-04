@@ -47,7 +47,7 @@ jobs:
              ./build_cmake.sh ${{ matrix.target }}
       - name: Create checksum
         run: |
-             md5sum build/${{ matrix.target }}/qwprogs${{ matrix.ext }} > build/${{ matrix.target }}/qwprogs.md5
+             md5sum build/${{ matrix.target }}/mvdsv${{ matrix.ext }} > build/${{ matrix.target }}/mvdsv.md5
       - name: Setup SSH
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -64,8 +64,8 @@ jobs:
         run: |
              mkdir -p upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}
              mkdir -p upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}
-             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_qwprogs${{ matrix.ext }}
-             cp build/${{ matrix.target }}/qwprogs.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_qwprogs.md5
-             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
-             cp build/${{ matrix.target }}/qwprogs.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs.md5
+             cp build/${{ matrix.target }}/mvdsv${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdsv${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdsv.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdsv.md5
+             cp build/${{ matrix.target }}/mvdsv${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdsv${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdsv.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdsv.md5
              sftp -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp upload/snapshots/*'

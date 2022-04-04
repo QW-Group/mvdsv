@@ -49,7 +49,7 @@ jobs:
              ./build_cmake.sh ${{ matrix.target }}
       - name: Create checksum
         run: |
-             md5sum build/${{ matrix.target }}/qwprogs${{ matrix.ext }} > build/${{ matrix.target }}/qwprogs.md5
+             md5sum build/${{ matrix.target }}/mvdsv${{ matrix.ext }} > build/${{ matrix.target }}/mvdsv.md5
       - name: Setup SSH
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -66,8 +66,8 @@ jobs:
         run: |
              mkdir -p upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}
              mkdir -p upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}
-             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
-             cp build/${{ matrix.target }}/qwprogs.md5 upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/qwprogs.md5
-             cp build/${{ matrix.target }}/qwprogs${{ matrix.ext }} upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs${{ matrix.ext }}
-             cp build/${{ matrix.target }}/qwprogs.md5 upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/qwprogs.md5
+             cp build/${{ matrix.target }}/mvdsv${{ matrix.ext }} upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/mvdsv${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdsv.md5 upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/mvdsv.md5
+             cp build/${{ matrix.target }}/mvdsv${{ matrix.ext }} upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdsv${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdsv.md5 upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdsv.md5
              sftp -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/releases <<< $'put -rp upload/releases/*'
