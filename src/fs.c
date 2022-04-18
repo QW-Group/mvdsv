@@ -139,7 +139,7 @@ static const char *FS_GetCleanPath(const char *pattern, char *outbuf, int outlen
 			*s = '/';
 	}
 
-	if (*pattern == '/' || strstr(pattern, "..") || strstr(pattern, ":"))
+	if (*pattern == '/' || strstr(pattern, "../") || strstr(pattern, "..\\") || strstr(pattern, ":"))
 		Con_Printf("Error: absolute path in filename %s\n", pattern);
 	else
 		return pattern;
