@@ -5,7 +5,7 @@ on:
 jobs:
   build:
     if: github.repository == 'QW-Group/mvdsv'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.base-image }}
     strategy:
       fail-fast: false
       matrix:
@@ -14,39 +14,63 @@ jobs:
          - target: linux-amd64
            os: linux
            arch: amd64
+           base-image: ubuntu-latest
+           build-image: amd64/debian:testing
            ext: ""
          - target: linux-i686
            os: linux
            arch: i686
+           base-image: ubuntu-latest
+           build-image: i386/debian:testing
            ext: ""
          - target: linux-armhf
            os: linux
            arch: armhf
+           base-image: ubuntu-latest
+           build-image: arm32v7/debian:testing
            ext: ""
          - target: linux-aarch64
            os: linux
            arch: aarch64
+           base-image: ubuntu-latest
+           build-image: arm64v8/debian:testing
            ext: ""
          - target: windows-x64
            os: windows
            arch: x64
+           base-image: ubuntu-latest
+           build-image: amd64/debian:testing
            ext: ".exe"
          - target: windows-x86
            os: windows
            arch: x86
+           base-image: ubuntu-latest
+           build-image: i386/debian:testing
            ext: ".exe"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Prepare Build Environemnt
+        shell: bash
         run: |
-             sudo apt-get update
-             sudo apt-get -y install build-essential cmake gcc-i686-linux-gnu
-             sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
-             sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+             if ${{ matrix.os  == 'linux' }}; then
+               sudo apt-get update
+               sudo apt-get -y install qemu-system-arm qemu-user-static
+             else
+               sudo apt-get update
+               sudo apt-get -y install build-essential cmake gcc-i686-linux-gnu
+               sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+               sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+             fi
       - name: Build
+        shell: bash
         run: |
-             ./build_cmake.sh ${{ matrix.target }}
+             if ${{ matrix.os  == 'linux' }}; then
+               docker pull ${{ matrix.build-image }}
+               docker run --net=host --rm --device /dev/fuse -v $PWD:/mvdsv ${{ matrix.build-image }} bash -c 'export ARCH=$(dpkg --print-architecture);export DEBIAN_FRONTEND=noninteractive;mkdir -p /etc/apt/apt.conf.d;echo "APT::Install-Recommends "0"; APT::AutoRemove::RecommendsImportant "false";" >> /etc/apt/apt.conf.d/01lean && apt-get -qqy update && apt-get -qqy dist-upgrade && apt-get -qqy install cmake build-essential libcurl4-openssl-dev && ln -sf "$(which make)" /usr/bin/gmake && cd /mvdsv && ./build_cmake.sh ${{ matrix.target }} && chown -Rf '$(id -u ${USER})':'$(id -g ${USER})' /mvdsv/build*'
+             else
+               ./build_cmake.sh ${{ matrix.target }}
+             fi
       - name: Create checksum
         run: |
              md5sum build/${{ matrix.target }}/mvdsv${{ matrix.ext }} > build/${{ matrix.target }}/mvdsv.md5
