@@ -3,7 +3,7 @@ on: [push,pull_request]
 jobs:
   build:
     if: github.repository == 'QW-Group/mvdsv'
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.base-image }}
     strategy:
       fail-fast: false
       matrix:
@@ -12,32 +12,36 @@ jobs:
          - target: linux-amd64
            os: linux
            arch: amd64
+           base-image: ubuntu-latest
            build-image: amd64/ubuntu:bionic
            ext: ""
          - target: linux-i686
            os: linux
            arch: i686
+           base-image: ubuntu-latest
            build-image: i386/ubuntu:bionic
            ext: ""
          - target: linux-armhf
            os: linux
            arch: armhf
+           base-image: ubuntu-latest
            build-image: arm32v7/ubuntu:bionic
            ext: ""
          - target: linux-aarch64
            os: linux
            arch: aarch64
+           base-image: ubuntu-latest
            build-image: arm64v8/ubuntu:bionic
            ext: ""
          - target: windows-x64
            os: windows
            arch: x64
-           build-image: amd64/ubuntu:bionic
+           base-image: ubuntu-18.04
            ext: ".exe"
          - target: windows-x86
            os: windows
            arch: x86
-           build-image: i386/ubuntu:bionic
+           base-image: ubuntu-18.04
            ext: ".exe"
     steps:
       - name: Checkout
