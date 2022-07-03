@@ -13,37 +13,37 @@ jobs:
            os: linux
            arch: amd64
            base-image: ubuntu-latest
-           build-image: amd64/debian:testing
+           build-image: amd64/ubuntu:bionic
            ext: ""
          - target: linux-i686
            os: linux
            arch: i686
            base-image: ubuntu-latest
-           build-image: i386/debian:testing
+           build-image: i386/ubuntu:bionic
            ext: ""
          - target: linux-armhf
            os: linux
            arch: armhf
            base-image: ubuntu-latest
-           build-image: arm32v7/debian:testing
+           build-image: arm32v7/ubuntu:bionic
            ext: ""
          - target: linux-aarch64
            os: linux
            arch: aarch64
            base-image: ubuntu-latest
-           build-image: arm64v8/debian:testing
+           build-image: arm64v8/ubuntu:bionic
            ext: ""
          - target: windows-x64
            os: windows
            arch: x64
            base-image: ubuntu-latest
-           build-image: amd64/debian:testing
+           build-image: amd64/ubuntu:bionic
            ext: ".exe"
          - target: windows-x86
            os: windows
            arch: x86
            base-image: ubuntu-latest
-           build-image: i386/debian:testing
+           build-image: i386/ubuntu:bionic
            ext: ".exe"
     steps:
       - name: Checkout

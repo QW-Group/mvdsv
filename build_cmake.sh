@@ -40,11 +40,14 @@ mkdir -p ${BUILDIR}
 # Build platforms one by one.
 for name in "${PLATFORMS[@]}"; do
 	P="${BUILDIR}/$name"
+	S="${PWD}"
 	mkdir -p "${P}"
 	case "${name}" in
 	* ) # Build native library.
-		cmake -B "${P}" -S . ${BUILD} -DCMAKE_TOOLCHAIN_FILE="tools/cross-cmake/${name}.cmake"
-		cmake --build "${P}" ${V}
+		pushd "${P}"
+		cmake ${BUILD} -DCMAKE_TOOLCHAIN_FILE="tools/cross-cmake/${name}.cmake" "${S}"
+		cmake --build . ${V}
+		popd
 	;;
 	esac
 done
