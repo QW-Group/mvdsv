@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Useful if you willing to stop on first error, also prints what is executed.
 #set -ex
