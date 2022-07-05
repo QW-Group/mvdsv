@@ -63,7 +63,7 @@ jobs:
         run: |
              if ${{ matrix.os  == 'linux' }}; then
                docker pull ${{ matrix.build-image }}
-               docker run --net=host --rm --device /dev/fuse -v $PWD:/mvdsv ${{ matrix.build-image }} bash -c 'export ARCH=$(dpkg --print-architecture);export DEBIAN_FRONTEND=noninteractive;mkdir -p /etc/apt/apt.conf.d;echo "APT::Install-Recommends "0"; APT::AutoRemove::RecommendsImportant "false";" >> /etc/apt/apt.conf.d/01lean && apt-get -qqy update && apt-get -qqy dist-upgrade && apt-get -qqy install cmake build-essential libcurl4-openssl-dev && ln -sf "$(which make)" /usr/bin/gmake && cd /mvdsv && ./build_cmake.sh ${{ matrix.target }} && chown -Rf '$(id -u ${USER})':'$(id -g ${USER})' /mvdsv/build*'
+               docker run --net=host --rm --device /dev/fuse -v $PWD:/mvdsv ${{ matrix.build-image }} bash -c -e 'export ARCH=$(dpkg --print-architecture);export DEBIAN_FRONTEND=noninteractive;mkdir -p /etc/apt/apt.conf.d;echo "APT::Install-Recommends "0"; APT::AutoRemove::RecommendsImportant "false";" >> /etc/apt/apt.conf.d/01lean && apt-get -qqy update && apt-get -qqy dist-upgrade && apt-get -qqy install cmake build-essential libcurl4-openssl-dev && ln -sf "$(which make)" /usr/bin/gmake && cd /mvdsv && ./build_cmake.sh ${{ matrix.target }} && chown -R '$(id -u ${USER})':'$(id -g ${USER})' /mvdsv/build/${{ matrix.target }}||exit 3'
              else
                ./build_cmake.sh ${{ matrix.target }}
              fi
