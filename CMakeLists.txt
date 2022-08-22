@@ -89,6 +89,19 @@ else()
 	)
 endif()
 
+######################################################################################################
+ 
+# Check for pcre, and include sources and libs, if found
+find_library(PCRE_LIBRARIES pcre)
+if(PCRE_LIBRARIES)
+	set(HAVE_LIBPCRE 1)
+	find_path(PCRE_INCLUDE_DIR pcre.h)
+	if(PCRE_INCLUDE_DIR)
+		include_directories(${PCRE_INCLUDE_DIR})
+		set(CMAKE_REQUIRED_INCLUDES ${PCRE_INCLUDE_DIR})
+	endif(PCRE_INCLUDE_DIR)
+	mark_as_advanced(FORCE PCRE_LIBRARIES PCRE_INCLUDE_DIR)
+endif(PCRE_LIBRARIES)
 
 ######################################################################################################
 
@@ -145,6 +158,10 @@ endif()
 if(CURL_FOUND)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE WWW_INTEGRATION)
 	target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
+endif()
+
+if(PCRE_LIBRARIES)
+	target_link_libraries(${PROJECT_NAME} ${PCRE_LIBRARIES})
 endif()
 
 
