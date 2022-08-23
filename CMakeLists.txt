@@ -59,8 +59,6 @@ set(SRC_COMMON
 	"${DIR_SRC}/vfs_pak.c"
 	"${DIR_SRC}/world.c"
 	"${DIR_SRC}/zone.c"
-	"${DIR_SRC}/pcre/get.c"
-	"${DIR_SRC}/pcre/pcre.c"
 	)
 
 # Check build target, and included sources
@@ -91,17 +89,22 @@ endif()
 
 ######################################################################################################
  
-# Check for pcre, and include sources and libs, if found
+# Check for PCRE. if found, include it; if not found, use bundled PCRE.
 find_library(PCRE_LIBRARIES pcre)
 if(PCRE_LIBRARIES)
-	set(HAVE_LIBPCRE 1)
+	set(PCRE_FOUND 1)
 	find_path(PCRE_INCLUDE_DIR pcre.h)
-	if(PCRE_INCLUDE_DIR)
-		include_directories(${PCRE_INCLUDE_DIR})
-		set(CMAKE_REQUIRED_INCLUDES ${PCRE_INCLUDE_DIR})
-	endif(PCRE_INCLUDE_DIR)
-	mark_as_advanced(FORCE PCRE_LIBRARIES PCRE_INCLUDE_DIR)
 endif(PCRE_LIBRARIES)
+
+if(NOT PCRE_FOUND)
+	message(STATUS "PCRE library not found. Using bundled PCRE intead.")
+	list(APPEND SRC_COMMON
+	    "${DIR_SRC}/pcre/get.c"
+	    "${DIR_SRC}/pcre/pcre.c"
+	)
+else()
+	message(STATUS "Found PCRE: ${PCRE_LIBRARIES}")
+endif()
 
 ######################################################################################################
 
@@ -124,6 +127,7 @@ set_target_properties(${PROJECT_NAME}
 
 # Set include directories
 target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PCRE_INCLUDE_DIR})
 
 
 ######################################################################################################
@@ -160,7 +164,7 @@ if(CURL_FOUND)
 	target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
 endif()
 
-if(PCRE_LIBRARIES)
+if(PCRE_FOUND)
 	target_link_libraries(${PROJECT_NAME} ${PCRE_LIBRARIES})
 endif()
 
