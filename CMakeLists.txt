@@ -97,7 +97,7 @@ if(PCRE_LIBRARIES)
 endif(PCRE_LIBRARIES)
 
 if(NOT PCRE_FOUND)
-	message(STATUS "PCRE library not found. Using bundled PCRE intead.")
+	message(STATUS "PCRE library not found. Using bundled PCRE instead.")
 	list(APPEND SRC_COMMON
 	    "${DIR_SRC}/pcre/get.c"
 	    "${DIR_SRC}/pcre/pcre.c"
