@@ -135,7 +135,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${PCRE_INCLUDE_DIR})
 # Check build target, and included sources and libs
 if(UNIX)
 	target_link_libraries(${PROJECT_NAME} m)
-if(NOT CMAKE_SYSTEM_NAME MATCHES OpenBSD)
+if(NOT CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 	target_link_libraries(${PROJECT_NAME} dl)
 endif()
 else()
