@@ -59,8 +59,6 @@ set(SRC_COMMON
 	"${DIR_SRC}/vfs_pak.c"
 	"${DIR_SRC}/world.c"
 	"${DIR_SRC}/zone.c"
-	"${DIR_SRC}/pcre/get.c"
-	"${DIR_SRC}/pcre/pcre.c"
 	)
 
 # Check build target, and included sources
@@ -89,6 +87,24 @@ else()
 	)
 endif()
 
+######################################################################################################
+ 
+# Check for PCRE. if found, include it; if not found, use bundled PCRE.
+find_library(PCRE_LIBRARIES pcre)
+if(PCRE_LIBRARIES)
+	set(PCRE_FOUND 1)
+	find_path(PCRE_INCLUDE_DIR pcre.h)
+endif(PCRE_LIBRARIES)
+
+if(NOT PCRE_FOUND)
+	message(STATUS "PCRE library not found. Using bundled PCRE instead.")
+	list(APPEND SRC_COMMON
+	    "${DIR_SRC}/pcre/get.c"
+	    "${DIR_SRC}/pcre/pcre.c"
+	)
+else()
+	message(STATUS "Found PCRE: ${PCRE_LIBRARIES}")
+endif()
 
 ######################################################################################################
 
@@ -111,6 +127,7 @@ set_target_properties(${PROJECT_NAME}
 
 # Set include directories
 target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PCRE_INCLUDE_DIR})
 
 
 ######################################################################################################
@@ -118,7 +135,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
 # Check build target, and included sources and libs
 if(UNIX)
 	target_link_libraries(${PROJECT_NAME} m)
+if(NOT CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 	target_link_libraries(${PROJECT_NAME} dl)
+endif()
 else()
 	target_link_libraries(${PROJECT_NAME} ws2_32)
 	target_link_libraries(${PROJECT_NAME} winmm)
@@ -145,6 +164,10 @@ endif()
 if(CURL_FOUND)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE WWW_INTEGRATION)
 	target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
+endif()
+
+if(PCRE_FOUND)
+	target_link_libraries(${PROJECT_NAME} ${PCRE_LIBRARIES})
 endif()
 
 
