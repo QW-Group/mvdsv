@@ -968,9 +968,7 @@ void SV_MVDInfo_f (void)
 #define MAXDEMOS_RD_PACKET	100
 void SV_LastScores_f (void)
 {
-	int		demos = MAXDEMOS;
-	int 	i;
-	int		nChars;
+	int		demos = MAXDEMOS, i;
 	char	buf[512];
 	FILE	*f = NULL;
 	char	path[MAX_OSPATH];
@@ -980,71 +978,62 @@ void SV_LastScores_f (void)
 	if (Cmd_Argc() > 2)
 	{
 		Con_Printf("usage: lastscores [<numlastdemos>]\n<numlastdemos> = '0' for all demos\n<numlastdemos> = '' for last %i demos\n", MAXDEMOS);
-
 		return;
 	}
 
 	if (Cmd_Argc() == 2)
-	{
 		if ((demos = Q_atoi(Cmd_Argv(1))) <= 0)
-		{
 			demos = MAXDEMOS;
-		}
-	}
 
-	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string), sv_demoRegexp.string,
-			SORT_BY_DATE);
+	dir = Sys_listdir(va("%s/%s", fs_gamedir, sv_demoDir.string),
+	                  sv_demoRegexp.string, SORT_BY_DATE);
 	if (!dir.numfiles)
 	{
 		Con_Printf("No demos.\n");
-
 		return;
 	}
 
 	if (demos > dir.numfiles)
-	{
 		demos = dir.numfiles;
-	}
 
 	if (demos > MAXDEMOS && GameStarted())
-	{
 		Con_Printf("<numlastdemos> was decreased to %i: match is in progress.\n",
-				demos = MAXDEMOS);
-	}
+					demos = MAXDEMOS);
 
 	if (demos > MAXDEMOS_RD_PACKET && sv_redirected == RD_PACKET)
-	{
 		Con_Printf("<numlastdemos> was decreased to %i: command from connectionless packet.\n",
 					demos = MAXDEMOS_RD_PACKET);
-	}
 
 	Con_Printf("List of %d last demos:\n", demos);
 
-	for (i = dir.numfiles - demos; i < dir.numfiles; i++)
+	for (i = dir.numfiles - demos; i < dir.numfiles; )
 	{
 		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, sv_demoDir.string,
 					SV_MVDName2Txt(dir.files[i].name));
 
+		Con_Printf("%i. ", ++i);
 		if ((f = fopen(path, "rt")) == NULL)
-		{
 			Con_Printf("(empty)\n");
-		}
 		else
 		{
-			while (fread(buf, 1, sizeof(buf)-1, f))
+			if (!feof(f))
 			{
-				Con_Printf("%s", (unsigned char*)buf);
-				memset(buf, 0, sizeof(buf));
+				char *nl;
+
+				buf[fread (buf, 1, sizeof(buf) - 1, f)] = 0;
+				if ((nl = strchr(buf, '\n')))
+					nl[0] = 0;
+				Con_Printf("%s\n", Q_yelltext((unsigned char*)buf));
 			}
-
-			Con_Printf("\n");
-
+			else
+				Con_Printf("(empty)\n");
 			fclose(f);
 		}
 	}
 }
 
 // easyrecord helpers
+
 int Dem_CountPlayers (void)
 {
 	int	i, count;
