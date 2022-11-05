@@ -1036,17 +1036,17 @@ void SV_LastScores_f (void)
 #define STATS_LIMIT_MAX     50
 void SV_LastStats_f (void)
 {
-    int     limit = STATS_LIMIT_DEFAULT;
-	int 	i;
+	int		limit = STATS_LIMIT_DEFAULT;
+	int		i;
 	char	buf[512];
 	FILE	*f = NULL;
 	char	path[MAX_OSPATH];
 	dir_t	dir;
-	extern  redirect_t sv_redirected;
+	extern	redirect_t sv_redirected;
 
 	if (sv_redirected != RD_PACKET)
 	{
-	    return;
+		return;
 	}
 
 	if (Cmd_Argc() > 2)
@@ -1056,7 +1056,7 @@ void SV_LastStats_f (void)
 	}
 	else if (Cmd_Argc() == 2)
 	{
-	    limit = Q_atoi(Cmd_Argv(1));
+		limit = Q_atoi(Cmd_Argv(1));
 
 		if (limit <= 0 || limit > STATS_LIMIT_MAX)
 		{
@@ -1069,8 +1069,8 @@ void SV_LastStats_f (void)
 
 	if (!dir.numfiles)
 	{
-	    Con_Printf("laststats 0:\n");
-	    Con_Printf("[]\n");
+		Con_Printf("laststats 0:\n");
+		Con_Printf("[]\n");
 		return;
 	}
 
@@ -1079,7 +1079,7 @@ void SV_LastStats_f (void)
 		limit = dir.numfiles;
 	}
 
-    Con_Printf("laststats %i\n", limit);
+	Con_Printf("laststats %i\n", limit);
 	Con_Printf("[\n");
 
 	for (i = dir.numfiles - limit; i < dir.numfiles; i++)
@@ -1089,10 +1089,10 @@ void SV_LastStats_f (void)
 
 		if ((f = fopen(path, "rt")) != NULL)
 		{
-		    if (i != dir.numfiles - limit)
-		    {
-		        Con_Printf(",\n");
-		    }
+			if (i != dir.numfiles - limit)
+			{
+				Con_Printf(",\n");
+			}
 
 			while (fread(buf, 1, sizeof(buf)-1, f))
 			{
