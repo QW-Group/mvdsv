@@ -1036,13 +1036,13 @@ void SV_LastScores_f (void)
 #define STATS_LIMIT_MAX     50
 void SV_LastStats_f (void)
 {
-	int		limit = STATS_LIMIT_DEFAULT;
-	int		i;
-	char	buf[512];
-	FILE	*f = NULL;
-	char	path[MAX_OSPATH];
-	dir_t	dir;
-	extern	redirect_t sv_redirected;
+	int limit = STATS_LIMIT_DEFAULT;
+	int i;
+	char buf[512];
+	FILE *f = NULL;
+	char path[MAX_OSPATH];
+	dir_t dir;
+	extern redirect_t sv_redirected;
 
 	if (sv_redirected != RD_PACKET)
 	{
