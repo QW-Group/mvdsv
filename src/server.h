@@ -1008,6 +1008,7 @@ int		Dem_CountTeamPlayers (char *t);
 char	*quote (char *str);
 void	CleanName_Init (void);
 void	SV_LastScores_f (void);
+void	SV_LastStats_f (void);
 void	SV_DemoList_f (void);
 void	SV_DemoListRegex_f (void);
 void	SV_MVDRemove_f (void);
