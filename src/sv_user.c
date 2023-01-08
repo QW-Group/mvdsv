@@ -352,6 +352,25 @@ static void Cmd_New_f (void)
 	}
 #endif
 
+#if defined(FTE_PEXT_TRANS) && defined(MVD_PEXT1_EXTRA_PFS)
+	if (sv_client->fteprotocolextensions & FTE_PEXT_TRANS)
+	{
+		char *version = Info_Get(&sv_client->_userinfo_ctx_, "*ver");
+
+		// Assume FTE has all the features
+		if (strncmp(version, "FTE", 3) != 0 && !(sv_client->mvdprotocolextensions1 & MVD_PEXT1_EXTRA_PFS))
+		{
+			SV_ClientPrintf(sv_client, 2, "\n\nWARNING:\n"
+				"Your client lacks support for extra playerflags, "
+				"if the map contains transparency you may be at a disadvantage.\n"
+				"Please upgrade to one of the following:\n"
+				"> ezQuake (https://ezquake.github.io)\n"
+				"> FTEQW (http://fte.triptohell.info/)\n");
+			sv_client->fteprotocolextensions &= ~FTE_PEXT_TRANS;
+		}
+	}
+#endif
+
 	//NOTE:  This doesn't go through ClientReliableWrite since it's before the user
 	//spawns.  These functions are written to not overflow
 	if (sv_client->num_backbuf)

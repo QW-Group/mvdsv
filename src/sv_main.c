@@ -3568,6 +3568,9 @@ void SV_InitLocal (void)
 #ifdef FTE_PEXT_SPAWNSTATIC2
 	svs.fteprotocolextensions |= FTE_PEXT_SPAWNSTATIC2;
 #endif
+#ifdef FTE_PEXT_TRANS
+	svs.fteprotocolextensions |= FTE_PEXT_TRANS;
+#endif
 
 #ifdef FTE_PEXT2_VOICECHAT
 	svs.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;
@@ -3587,6 +3590,9 @@ void SV_InitLocal (void)
 #endif
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON2
 	svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON2;
+#endif
+#if defined(FTE_PEXT_TRANS) && defined(MVD_PEXT1_EXTRA_PFS)
+	svs.mvdprotocolextension1 |= MVD_PEXT1_EXTRA_PFS;
 #endif
 
 	Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " SERVER_VERSION, MAX_SERVERINFO_STRING);
