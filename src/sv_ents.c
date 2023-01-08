@@ -765,7 +765,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 
 #ifdef PF_TRANS_Z
 		if (pflags & PF_TRANS_Z)
-			MSG_WriteByte (msg, 0);
+			MSG_WriteByte (msg, ent->xv.alpha * 255);
 #endif
 	}
 }
@@ -993,7 +993,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			state->skinnum = ent->v->skin;
 			state->effects = TranslateEffects(ent);
 #ifdef FTE_PEXT_TRANS
-			state->trans = 0;
+			state->trans = ent->xv.alpha ? bound(1, ent->xv.alpha * 254, 254) : 255;
 #endif
 		}
 	} // server flash

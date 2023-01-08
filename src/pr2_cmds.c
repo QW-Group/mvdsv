@@ -20,7 +20,6 @@
  *  
  */
 
-#include "g_public.h"
 #ifndef CLIENTONLY
 #ifdef USE_PR2
 
@@ -61,14 +60,12 @@ static int PASSFLOAT(float f)
 	return fi.i;
 }
 
-#if 0 // Provided for completness.
 static float GETFLOAT(int i)
 {
 	floatint_t fi;
 	fi.i = i;
 	return fi.f;
 }
-#endif
 
 int NUM_FOR_GAME_EDICT(byte *e)
 {
@@ -1419,6 +1416,7 @@ void PF2_makestatic(edict_t *ent)
 	s->frame = ent->v->frame;
 	s->colormap = ent->v->colormap;
 	s->skinnum = ent->v->skin;
+	s->trans = ent->xv.alpha ? bound(1, ent->xv.alpha * 254, 254) : 255;
 	VectorCopy(ent->v->origin, s->origin);
 	VectorCopy(ent->v->angles, s->angles);
 	++sv.static_entity_count;
@@ -1972,6 +1970,12 @@ intptr_t EXT_SetExtField(intptr_t *args)
 	int edictnum = NUM_FOR_GAME_EDICT(VM_ArgPtr(args[1]));
 	edict_t *e = &sv.edicts[edictnum];
 	char *key = VM_ArgPtr(args[2]);
+
+	if (key && !strcmp(key, "alpha"))
+	{
+		e->xv.alpha = GETFLOAT(args[3]);
+		return args[3];
+	}
 
 	return 0;
 }
