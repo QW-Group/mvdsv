@@ -126,6 +126,7 @@ set_target_properties(${PROJECT_NAME}
 ######################################################################################################
 
 # Set include directories
+target_include_directories(${PROJECT_NAME} PRIVATE ${DIR_SRC}/qwprot/src)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PCRE_INCLUDE_DIR})
 
