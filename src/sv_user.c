@@ -4205,7 +4205,7 @@ static void SV_DebugWriteServerAntilagPositions(client_t* cl, int present)
 }
 #endif // MVD_PEXT1_DEBUG_ANTILAG
 
-#ifdef MVD_PEXT1_DEBUG_WEAPON
+#if defined(MVD_PEXT1_DEBUG_WEAPON) && defined(MVD_PEXT1_SERVERSIDEWEAPON)
 static void SV_DebugWriteWeaponScript(byte playernum, qbool server_side, int items, byte shells, byte nails, byte rockets, byte cells, byte choice, const char* weaponlist)
 {
 	if (sv_debug_weapons.value >= 1) {
@@ -4496,9 +4496,11 @@ void SV_ExecuteClientMessage (client_t *cl)
 					}
 				}
 			}
+#if defined(MVD_PEXT1_DEBUG_WEAPON) && defined(MVD_PEXT1_SERVERSIDEWEAPON)
 			else if (type == clc_mvd_debug_type_weapon) {
 				SV_DebugClientSideWeaponScript(cl);
 			}
+#endif
 			else {
 				Con_Printf("SV_ReadClientMessage: unknown debug message type %d\n", type);
 				SV_DropClient(cl);
