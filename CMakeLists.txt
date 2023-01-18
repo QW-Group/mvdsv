@@ -8,6 +8,24 @@ project(mvdsv C)
 
 ######################################################################################################
 
+# Checkout shared qwprot repository
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+endif()
+
+
+######################################################################################################
+
 # Set where sources located.
 set(DIR_SRC "src")
 
@@ -126,6 +144,7 @@ set_target_properties(${PROJECT_NAME}
 ######################################################################################################
 
 # Set include directories
+target_include_directories(${PROJECT_NAME} PRIVATE ${DIR_SRC}/qwprot/src)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PCRE_INCLUDE_DIR})
 
@@ -148,6 +167,9 @@ endif()
 # Set defines for the build
 target_compile_definitions(${PROJECT_NAME} PRIVATE SERVERONLY)
 target_compile_definitions(${PROJECT_NAME} PRIVATE USE_PR2)
+target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON)
+target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON2)
+target_compile_definitions(${PROJECT_NAME} PRIVATE FTE_PEXT2_VOICECHAT)
 
 include (TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
