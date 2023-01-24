@@ -1319,6 +1319,37 @@ static vfsfile_t *CM_OpenMap(char *name, dheader_t *header)
 	return vf;
 }
 
+static void CM_CalcChecksum(vfsfile_t *f, dheader_t *header, unsigned *checksum, unsigned *checksum2)
+{
+	byte *buf;
+	int i;
+
+	// checksum all of the map, except for entities
+	map_checksum = map_checksum2 = 0;
+	for (i = 0; i < HEADER_LUMPS; i++) {
+		if (i == LUMP_ENTITIES)
+			continue;
+
+		VFS_SEEK(f, header->lumps[i].fileofs, SEEK_SET);
+
+		buf = Hunk_TempAlloc (header->lumps[i].filelen);
+		VFS_READ(f, buf, header->lumps[i].filelen, NULL);
+
+		map_checksum ^= LittleLong(Com_BlockChecksum(buf, header->lumps[i].filelen));
+
+		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
+			continue;
+
+		map_checksum2 ^= LittleLong(Com_BlockChecksum(buf, header->lumps[i].filelen));
+	}
+
+	if (checksum)
+		*checksum = map_checksum;
+
+	if (checksum2)
+		*checksum2 = map_checksum2;
+}
+
 /*
 ** CM_LoadMap
 */
@@ -1345,6 +1376,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	}
 
 	vf = CM_OpenMap(name, &header);
+	CM_CalcChecksum(vf, &header, checksum, checksum2);
 	VFS_CLOSE(vf);
 
 	// load the file
@@ -1397,21 +1429,6 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	}
 
 	cmod_base = (byte *) buf;
-
-	// checksum all of the map, except for entities
-	map_checksum = map_checksum2 = 0;
-	for (i = 0; i < HEADER_LUMPS; i++) {
-		if (i == LUMP_ENTITIES)
-			continue;
-		map_checksum ^= LittleLong(Com_BlockChecksum(cmod_base + header.lumps[i].fileofs, header.lumps[i].filelen));
-
-		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
-			continue;
-		map_checksum2 ^= LittleLong(Com_BlockChecksum(cmod_base + header.lumps[i].fileofs, header.lumps[i].filelen));
-	}
-	if (checksum)
-		*checksum = map_checksum;
-	*checksum2 = map_checksum2;
 
 	// load into heap
 	CM_LoadPlanes (&header.lumps[LUMP_PLANES]);
