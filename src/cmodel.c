@@ -1272,24 +1272,68 @@ void CM_InvalidateMap (void)
 	map_physicsnormals = NULL;
 }
 
+static vfsfile_t *CM_OpenMap(char *name, dheader_t *header)
+{
+#ifndef CLIENTONLY
+	extern cvar_t sv_bspversion, sv_halflifebsp;
+#endif
+	vfsfile_t *vf;
+	int i;
+
+	vf = FS_OpenVFS(name, "rb", FS_GAME);
+	if (!vf) {
+		Host_Error ("CM_OpenMap: %s not found", name);
+	}
+
+	VFS_READ(vf, header, sizeof(dheader_t), NULL);
+
+	for (i = 0; i < sizeof(dheader_t) / 4; i++) {
+		((int *)header)[i] = LittleLong(((int *)header)[i]);
+	}
+
+	switch (header->version) {
+	case Q1_BSPVERSION:
+	case HL_BSPVERSION:
+#ifndef CLIENTONLY
+	  Cvar_SetROM(&sv_bspversion, "1");
+#endif
+	  break;
+	case Q1_BSPVERSION2:
+	case Q1_BSPVERSION29a:
+#ifndef CLIENTONLY
+	  Cvar_SetROM(&sv_bspversion, "2");
+#endif
+	  break;
+	default:
+		VFS_CLOSE(vf);
+		Host_Error ("CM_OpenMap: %s has wrong version number (%i should be %i)", name, i, Q1_BSPVERSION);
+		break;
+	}
+
+	map_halflife = (header->version == HL_BSPVERSION);
+
+#ifndef CLIENTONLY
+	Cvar_SetROM(&sv_halflifebsp, map_halflife ? "1" : "0");
+#endif
+
+	return vf;
+}
+
 /*
 ** CM_LoadMap
 */
 typedef void(*BuildPVSFunction)(lump_t *lump_vis, lump_t *lump_leafs);
 cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2)
 {
-#ifndef CLIENTONLY
-	extern cvar_t sv_bspversion, sv_halflifebsp;
-#endif
-
 	unsigned int i;
-	dheader_t *header;
+	dheader_t header;
 	unsigned int *buf;
 	unsigned int *padded_buf = NULL;
 	BuildPVSFunction cm_load_pvs_func = CM_BuildPVS;
 	qbool pad_lumps = false;
 	int required_length = 0;
 	int filelen = 0;
+	vfsfile_t *vf;
 
 	if (map_name[0]) {
 		assert(!strcmp(name, map_name));
@@ -1300,6 +1344,9 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 		return &map_cmodels[0]; // still have the right version
 	}
 
+	vf = CM_OpenMap(name, &header);
+	VFS_CLOSE(vf);
+
 	// load the file
 	buf = (unsigned int *) FS_LoadTempFile (name, &filelen);
 	if (!buf)
@@ -1307,36 +1354,19 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	COM_FileBase (name, loadname);
 
-	header = (dheader_t *)buf;
-
-	i = LittleLong (header->version);
-	if (i != Q1_BSPVERSION && i != HL_BSPVERSION && i != Q1_BSPVERSION2 && i != Q1_BSPVERSION29a)
-		Host_Error ("CM_LoadMap: %s has wrong version number (%i should be %i)", name, i, Q1_BSPVERSION);
-
-	map_halflife = (i == HL_BSPVERSION);
-
-#ifndef CLIENTONLY
-	Cvar_SetROM(&sv_halflifebsp, map_halflife ? "1" : "0");
-	Cvar_SetROM(&sv_bspversion, i == Q1_BSPVERSION || i == HL_BSPVERSION ? "1" : "2");
-#endif
-
-	// swap all the lumps
-	for (i = 0; i < sizeof(dheader_t) / 4; i++) {
-		((int *)header)[i] = LittleLong(((int *)header)[i]);
-	}
 
 	// Align the lumps
 	for (i = 0; i < HEADER_LUMPS; ++i) {
-		pad_lumps |= (header->lumps[i].fileofs % 4) != 0;
+		pad_lumps |= (header.lumps[i].fileofs % 4) != 0;
 
-		if (header->lumps[i].fileofs < 0 || header->lumps[i].filelen < 0) {
+		if (header.lumps[i].fileofs < 0 || header.lumps[i].filelen < 0) {
 			Host_Error("CM_LoadMap: %s has invalid lump definitions", name);
 		}
-		if (header->lumps[i].fileofs + header->lumps[i].filelen > filelen || header->lumps[i].fileofs + header->lumps[i].filelen < 0) {
+		if (header.lumps[i].fileofs + header.lumps[i].filelen > filelen || header.lumps[i].fileofs + header.lumps[i].filelen < 0) {
 			Host_Error("CM_LoadMap: %s has invalid lump definitions", name);
 		}
 
-		required_length += header->lumps[i].filelen;
+		required_length += header.lumps[i].filelen;
 	}
 
 	if (pad_lumps) {
@@ -1346,7 +1376,6 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 		// Copy header
 		memcpy(padded_buf, buf, sizeof(dheader_t));
-		header = (dheader_t*)padded_buf;
 		position += sizeof(dheader_t);
 
 		// Copy lumps: align on 4-byte boundary
@@ -1354,63 +1383,63 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 			if (position % 4) {
 				position += 4 - (position % 4);
 			}
-			if (position + header->lumps[i].filelen > required_size) {
+			if (position + header.lumps[i].filelen > required_size) {
 				Host_Error("CM_LoadMap: %s caused error while aligning lumps", name);
 			}
-			memcpy((byte*)padded_buf + position, ((byte*)buf) + header->lumps[i].fileofs, header->lumps[i].filelen);
-			header->lumps[i].fileofs = position;
+			memcpy((byte*)padded_buf + position, ((byte*)buf) + header.lumps[i].fileofs, header.lumps[i].filelen);
+			header.lumps[i].fileofs = position;
 
-			position += header->lumps[i].filelen;
+			position += header.lumps[i].filelen;
 		}
 
 		// Use the new buffer
 		buf = padded_buf;
 	}
 
-	cmod_base = (byte *)header;
+	cmod_base = (byte *) buf;
 
 	// checksum all of the map, except for entities
 	map_checksum = map_checksum2 = 0;
 	for (i = 0; i < HEADER_LUMPS; i++) {
 		if (i == LUMP_ENTITIES)
 			continue;
-		map_checksum ^= LittleLong(Com_BlockChecksum(cmod_base + header->lumps[i].fileofs, header->lumps[i].filelen));
+		map_checksum ^= LittleLong(Com_BlockChecksum(cmod_base + header.lumps[i].fileofs, header.lumps[i].filelen));
 
 		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
 			continue;
-		map_checksum2 ^= LittleLong(Com_BlockChecksum(cmod_base + header->lumps[i].fileofs, header->lumps[i].filelen));
+		map_checksum2 ^= LittleLong(Com_BlockChecksum(cmod_base + header.lumps[i].fileofs, header.lumps[i].filelen));
 	}
 	if (checksum)
 		*checksum = map_checksum;
 	*checksum2 = map_checksum2;
 
 	// load into heap
-	CM_LoadPlanes (&header->lumps[LUMP_PLANES]);
-	if (LittleLong(header->version) == Q1_BSPVERSION29a) {
-		CM_LoadLeafs29a(&header->lumps[LUMP_LEAFS]);
-		CM_LoadNodes29a(&header->lumps[LUMP_NODES]);
-		CM_LoadClipnodesBSP2(&header->lumps[LUMP_CLIPNODES]);
+	CM_LoadPlanes (&header.lumps[LUMP_PLANES]);
+	if (LittleLong(header.version) == Q1_BSPVERSION29a) {
+		CM_LoadLeafs29a(&header.lumps[LUMP_LEAFS]);
+		CM_LoadNodes29a(&header.lumps[LUMP_NODES]);
+		CM_LoadClipnodesBSP2(&header.lumps[LUMP_CLIPNODES]);
 		cm_load_pvs_func = CM_BuildPVS29a;
 	}
-	else if (LittleLong(header->version) == Q1_BSPVERSION2) {
-		CM_LoadLeafsBSP2(&header->lumps[LUMP_LEAFS]);
-		CM_LoadNodesBSP2(&header->lumps[LUMP_NODES]);
-		CM_LoadClipnodesBSP2(&header->lumps[LUMP_CLIPNODES]);
+	else if (LittleLong(header.version) == Q1_BSPVERSION2) {
+		CM_LoadLeafsBSP2(&header.lumps[LUMP_LEAFS]);
+		CM_LoadNodesBSP2(&header.lumps[LUMP_NODES]);
+		CM_LoadClipnodesBSP2(&header.lumps[LUMP_CLIPNODES]);
 		cm_load_pvs_func = CM_BuildPVSBSP2;
 	}
 	else {
-		CM_LoadLeafs(&header->lumps[LUMP_LEAFS]);
-		CM_LoadNodes(&header->lumps[LUMP_NODES]);
-		CM_LoadClipnodes(&header->lumps[LUMP_CLIPNODES]);
+		CM_LoadLeafs(&header.lumps[LUMP_LEAFS]);
+		CM_LoadNodes(&header.lumps[LUMP_NODES]);
+		CM_LoadClipnodes(&header.lumps[LUMP_CLIPNODES]);
 		cm_load_pvs_func = CM_BuildPVS;
 	}
-	CM_LoadEntities (&header->lumps[LUMP_ENTITIES]);
-	CM_LoadSubmodels (&header->lumps[LUMP_MODELS]);
+	CM_LoadEntities (&header.lumps[LUMP_ENTITIES]);
+	CM_LoadSubmodels (&header.lumps[LUMP_MODELS]);
 
 	CM_LoadPhysicsNormals(filelen);
 	CM_MakeHull0 ();
 
-	cm_load_pvs_func (&header->lumps[LUMP_VISIBILITY], &header->lumps[LUMP_LEAFS]);
+	cm_load_pvs_func (&header.lumps[LUMP_VISIBILITY], &header.lumps[LUMP_LEAFS]);
 
 	if (!clientload) // client doesn't need PHS
 		CM_BuildPHS ();
