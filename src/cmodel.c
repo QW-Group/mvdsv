@@ -1043,18 +1043,18 @@ static void CM_MakeHull0(void)
 CM_LoadPlanes
 =================
 */
-static void CM_LoadPlanes(lump_t *l)
+static void CM_LoadPlanes(byte *buffer, size_t length)
 {
 	int i, j, count, bits;
 	mplane_t *out;
 	dplane_t *in;
 
-	in = (dplane_t *)(cmod_base + l->fileofs);
+	in = (dplane_t *) buffer;
 
-	if (l->filelen % sizeof(*in))
+	if (length % sizeof(*in))
 		Host_Error("CM_LoadMap: funny lump size");
 
-	count = l->filelen / sizeof(*in);
+	count = length / sizeof(*in);
 	out = (mplane_t *)Hunk_AllocName(count * sizeof(*out), loadname);
 
 	map_planes = out;
@@ -1376,6 +1376,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	int required_length = 0;
 	int filelen = 0;
 	vfsfile_t *vf;
+	byte *l_planes;
 
 	if (map_name[0]) {
 		assert(!strcmp(name, map_name));
@@ -1388,7 +1389,8 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	vf = CM_OpenMap(name, &header);
 	CM_CalcChecksum(vf, &header, checksum, checksum2);
-	VFS_CLOSE(vf);
+	// Intentional leak during refactoring
+	// VFS_CLOSE(vf);
 
 	// load the file
 	buf = (unsigned int *) FS_LoadTempFile (name, &filelen);
@@ -1441,8 +1443,10 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	cmod_base = (byte *) buf;
 
+	l_planes = CM_ReadLump(vf, &header.lumps[LUMP_PLANES]);
+
 	// load into heap
-	CM_LoadPlanes (&header.lumps[LUMP_PLANES]);
+	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
 	if (LittleLong(header.version) == Q1_BSPVERSION29a) {
 		CM_LoadLeafs29a(&header.lumps[LUMP_LEAFS]);
 		CM_LoadNodes29a(&header.lumps[LUMP_NODES]);
