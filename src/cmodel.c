@@ -615,18 +615,18 @@ static void CM_LoadEntities (byte *buffer, int length)
 CM_LoadSubmodels
 =================
 */
-static void CM_LoadSubmodels (lump_t *l)
+static void CM_LoadSubmodels (byte *buffer, int length)
 {
 	dmodel_t *in;
 	cmodel_t *out;
 	int i, j, count;
 
-	in = (dmodel_t *)(cmod_base + l->fileofs);
+	in = (dmodel_t *) buffer;
 
-	if (l->filelen % sizeof(*in))
+	if (length % sizeof(*in))
 		Host_Error ("CM_LoadMap: funny lump size");
 
-	count = l->filelen / sizeof(*in);
+	count = length / sizeof(*in);
 
 	if (count < 1)
 		Host_Error ("Map with no models");
@@ -1376,7 +1376,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	int required_length = 0;
 	int filelen = 0;
 	vfsfile_t *vf;
-	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities;
+	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models;
 
 	if (map_name[0]) {
 		assert(!strcmp(name, map_name));
@@ -1448,6 +1448,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	l_nodes = CM_ReadLump(vf, &header.lumps[LUMP_NODES]);
 	l_clipnodes = CM_ReadLump(vf, &header.lumps[LUMP_CLIPNODES]);
 	l_entities = CM_ReadLump(vf, &header.lumps[LUMP_ENTITIES]);
+	l_models = CM_ReadLump(vf, &header.lumps[LUMP_MODELS]);
 
 	// load into heap
 	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
@@ -1470,7 +1471,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 		cm_load_pvs_func = CM_BuildPVS;
 	}
 	CM_LoadEntities (l_entities, header.lumps[LUMP_ENTITIES].filelen);
-	CM_LoadSubmodels (&header.lumps[LUMP_MODELS]);
+	CM_LoadSubmodels (l_models, header.lumps[LUMP_MODELS].filelen);
 
 	CM_LoadPhysicsNormals(filelen);
 	CM_MakeHull0 ();
