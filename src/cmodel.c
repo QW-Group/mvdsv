@@ -698,17 +698,17 @@ static void CM_SetParent (cnode_t *node, cnode_t *parent)
 CM_LoadNodes
 =================
 */
-static void CM_LoadNodes (lump_t *l)
+static void CM_LoadNodes (byte *buffer, int length)
 {
 	int i, j, count, p;
 	dnode_t *in;
 	cnode_t *out;
 
-	in = (dnode_t *)(cmod_base + l->fileofs);
-	if (l->filelen % sizeof(*in))
+	in = (dnode_t *) buffer;
+	if (length % sizeof(*in))
 		Host_Error ("CM_LoadMap: funny lump size");
 
-	count = l->filelen / sizeof(*in);
+	count = length / sizeof(*in);
 	out = (cnode_t *) Hunk_AllocName ( count*sizeof(*out), loadname);
 
 	map_nodes = out;
@@ -729,17 +729,17 @@ static void CM_LoadNodes (lump_t *l)
 	CM_SetParent (map_nodes, NULL); // sets nodes and leafs
 }
 
-static void CM_LoadNodes29a(lump_t *l)
+static void CM_LoadNodes29a(byte *buffer, int length)
 {
 	int i, j, count, p;
 	dnode29a_t *in;
 	cnode_t *out;
 
-	in = (dnode29a_t *)(cmod_base + l->fileofs);
-	if (l->filelen % sizeof(*in))
+	in = (dnode29a_t *) buffer;
+	if (length % sizeof(*in))
 		Host_Error("CM_LoadMap: funny lump size");
 
-	count = l->filelen / sizeof(*in);
+	count = length / sizeof(*in);
 	out = (cnode_t *)Hunk_AllocName(count * sizeof(*out), loadname);
 
 	map_nodes = out;
@@ -758,17 +758,17 @@ static void CM_LoadNodes29a(lump_t *l)
 	CM_SetParent(map_nodes, NULL); // sets nodes and leafs
 }
 
-static void CM_LoadNodesBSP2(lump_t *l)
+static void CM_LoadNodesBSP2(byte *buffer, int length)
 {
 	int i, j, count, p;
 	dnode_bsp2_t *in;
 	cnode_t *out;
 
-	in = (dnode_bsp2_t *)(cmod_base + l->fileofs);
-	if (l->filelen % sizeof(*in))
+	in = (dnode_bsp2_t *) buffer;
+	if (length % sizeof(*in))
 		Host_Error("CM_LoadMap: funny lump size");
 
-	count = l->filelen / sizeof(*in);
+	count = length / sizeof(*in);
 	out = (cnode_t *)Hunk_AllocName(count * sizeof(*out), loadname);
 
 	map_nodes = out;
@@ -1376,7 +1376,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	int required_length = 0;
 	int filelen = 0;
 	vfsfile_t *vf;
-	byte *l_planes, *l_leafs;
+	byte *l_planes, *l_leafs, *l_nodes;
 
 	if (map_name[0]) {
 		assert(!strcmp(name, map_name));
@@ -1445,24 +1445,25 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	l_planes = CM_ReadLump(vf, &header.lumps[LUMP_PLANES]);
 	l_leafs = CM_ReadLump(vf, &header.lumps[LUMP_LEAFS]);
+	l_nodes = CM_ReadLump(vf, &header.lumps[LUMP_NODES]);
 
 	// load into heap
 	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
 	if (LittleLong(header.version) == Q1_BSPVERSION29a) {
 		CM_LoadLeafs29a(l_leafs, header.lumps[LUMP_LEAFS].filelen);
-		CM_LoadNodes29a(&header.lumps[LUMP_NODES]);
+		CM_LoadNodes29a(l_nodes, header.lumps[LUMP_NODES].filelen);
 		CM_LoadClipnodesBSP2(&header.lumps[LUMP_CLIPNODES]);
 		cm_load_pvs_func = CM_BuildPVS29a;
 	}
 	else if (LittleLong(header.version) == Q1_BSPVERSION2) {
 		CM_LoadLeafsBSP2(l_leafs, header.lumps[LUMP_LEAFS].filelen);
-		CM_LoadNodesBSP2(&header.lumps[LUMP_NODES]);
+		CM_LoadNodesBSP2(l_nodes, header.lumps[LUMP_NODES].filelen);
 		CM_LoadClipnodesBSP2(&header.lumps[LUMP_CLIPNODES]);
 		cm_load_pvs_func = CM_BuildPVSBSP2;
 	}
 	else {
 		CM_LoadLeafs(l_leafs, header.lumps[LUMP_LEAFS].filelen);
-		CM_LoadNodes(&header.lumps[LUMP_NODES]);
+		CM_LoadNodes(l_nodes, header.lumps[LUMP_NODES].filelen);
 		CM_LoadClipnodes(&header.lumps[LUMP_CLIPNODES]);
 		cm_load_pvs_func = CM_BuildPVS;
 	}
