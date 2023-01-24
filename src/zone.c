@@ -224,7 +224,7 @@ void Hunk_FreeToLowMark(int mark)
 	hunk_low_used = mark;
 }
 
-int	Hunk_HighMark(void)
+static int Hunk_HighMark(void)
 {
 	if (hunk_tempactive) {
 		hunk_tempactive = false;
@@ -234,7 +234,7 @@ int	Hunk_HighMark(void)
 	return hunk_high_used;
 }
 
-void Hunk_FreeToHighMark(int mark)
+static void Hunk_FreeToHighMark(int mark)
 {
 	if (hunk_tempactive) {
 		hunk_tempactive = false;
@@ -252,7 +252,7 @@ void Hunk_FreeToHighMark(int mark)
 Hunk_HighAllocName
 ===================
 */
-void *Hunk_HighAllocName(int size, char *name)
+static void *Hunk_HighAllocName(int size, char *name)
 {
 	hunk_t *h;
 
