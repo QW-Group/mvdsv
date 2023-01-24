@@ -289,8 +289,6 @@ void *Hunk_TempAlloc(int size)
 {
 	void *buf;
 
-	size = (size + 15) & ~15;
-
 	if (hunk_tempactive) {
 		Hunk_FreeToHighMark(hunk_tempmark);
 		hunk_tempactive = false;
