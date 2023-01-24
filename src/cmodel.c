@@ -1118,9 +1118,9 @@ static byte *DecompressVis(byte *in)
 **
 ** Call after CM_LoadLeafs!
 */
-static void CM_BuildPVS(lump_t *lump_vis, lump_t *lump_leafs)
+static void CM_BuildPVS(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len)
 {
-	byte *visdata, *scan;
+	byte *scan;
 	dleaf_t *in;
 	int i;
 
@@ -1128,17 +1128,15 @@ static void CM_BuildPVS(lump_t *lump_vis, lump_t *lump_leafs)
 	map_vis_rowbytes = map_vis_rowlongs * 4;
 	map_pvs = (byte *)Hunk_Alloc(map_vis_rowbytes * visleafs);
 
-	if (!lump_vis->filelen) {
+	if (!vis_len) {
 		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
 		return;
 	}
 
 	// FIXME, add checks for lump_vis->filelen and leafs' visofs
 
-	visdata = cmod_base + lump_vis->fileofs;
-
 	// go through all leafs and decompress visibility data
-	in = (dleaf_t *)(cmod_base + lump_leafs->fileofs);
+	in = (dleaf_t *) leaf_buf;
 	in++; // pvs row 0 is leaf 1
 	scan = map_pvs;
 	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
@@ -1147,9 +1145,9 @@ static void CM_BuildPVS(lump_t *lump_vis, lump_t *lump_leafs)
 	}
 }
 
-static void CM_BuildPVS29a(lump_t *lump_vis, lump_t *lump_leafs)
+static void CM_BuildPVS29a(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len)
 {
-	byte *visdata, *scan;
+	byte *scan;
 	dleaf29a_t *in;
 	int i;
 
@@ -1157,17 +1155,15 @@ static void CM_BuildPVS29a(lump_t *lump_vis, lump_t *lump_leafs)
 	map_vis_rowbytes = map_vis_rowlongs * 4;
 	map_pvs = (byte *)Hunk_Alloc(map_vis_rowbytes * visleafs);
 
-	if (!lump_vis->filelen) {
+	if (!vis_len) {
 		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
 		return;
 	}
 
 	// FIXME, add checks for lump_vis->filelen and leafs' visofs
 
-	visdata = cmod_base + lump_vis->fileofs;
-
 	// go through all leafs and decompress visibility data
-	in = (dleaf29a_t *)(cmod_base + lump_leafs->fileofs);
+	in = (dleaf29a_t *) leaf_buf;
 	in++; // pvs row 0 is leaf 1
 	scan = map_pvs;
 	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
@@ -1176,9 +1172,9 @@ static void CM_BuildPVS29a(lump_t *lump_vis, lump_t *lump_leafs)
 	}
 }
 
-static void CM_BuildPVSBSP2(lump_t *lump_vis, lump_t *lump_leafs)
+static void CM_BuildPVSBSP2(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len)
 {
-	byte *visdata, *scan;
+	byte *scan;
 	dleaf_bsp2_t *in;
 	int i;
 
@@ -1186,17 +1182,15 @@ static void CM_BuildPVSBSP2(lump_t *lump_vis, lump_t *lump_leafs)
 	map_vis_rowbytes = map_vis_rowlongs * 4;
 	map_pvs = (byte *)Hunk_Alloc(map_vis_rowbytes * visleafs);
 
-	if (!lump_vis->filelen) {
+	if (!vis_len) {
 		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
 		return;
 	}
 
 	// FIXME, add checks for lump_vis->filelen and leafs' visofs
 
-	visdata = cmod_base + lump_vis->fileofs;
-
 	// go through all leafs and decompress visibility data
-	in = (dleaf_bsp2_t *)(cmod_base + lump_leafs->fileofs);
+	in = (dleaf_bsp2_t *) leaf_buf;
 	in++; // pvs row 0 is leaf 1
 	scan = map_pvs;
 	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
@@ -1364,7 +1358,7 @@ static byte *CM_ReadLump(vfsfile_t *vf, lump_t *lump)
 /*
 ** CM_LoadMap
 */
-typedef void(*BuildPVSFunction)(lump_t *lump_vis, lump_t *lump_leafs);
+typedef void(*BuildPVSFunction)(byte *vis_buf, int vis_len, byte *leaf_buf, int leaf_len);
 cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2)
 {
 	unsigned int i;
@@ -1376,7 +1370,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	int required_length = 0;
 	int filelen = 0;
 	vfsfile_t *vf;
-	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models;
+	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models, *l_vis;
 
 	if (map_name[0]) {
 		assert(!strcmp(name, map_name));
@@ -1449,6 +1443,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	l_clipnodes = CM_ReadLump(vf, &header.lumps[LUMP_CLIPNODES]);
 	l_entities = CM_ReadLump(vf, &header.lumps[LUMP_ENTITIES]);
 	l_models = CM_ReadLump(vf, &header.lumps[LUMP_MODELS]);
+	l_vis = CM_ReadLump(vf, &header.lumps[LUMP_VISIBILITY]);
 
 	// load into heap
 	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
@@ -1476,7 +1471,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	CM_LoadPhysicsNormals(filelen);
 	CM_MakeHull0 ();
 
-	cm_load_pvs_func (&header.lumps[LUMP_VISIBILITY], &header.lumps[LUMP_LEAFS]);
+	cm_load_pvs_func (l_vis, header.lumps[LUMP_VISIBILITY].filelen, l_leafs, header.lumps[LUMP_LEAFS].filelen);
 
 	if (!clientload) // client doesn't need PHS
 		CM_BuildPHS ();
