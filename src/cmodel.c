@@ -1350,6 +1350,17 @@ static void CM_CalcChecksum(vfsfile_t *f, dheader_t *header, unsigned *checksum,
 		*checksum2 = map_checksum2;
 }
 
+static byte *CM_ReadLump(vfsfile_t *vf, lump_t *lump)
+{
+	byte *out;
+
+	VFS_SEEK(vf, lump->fileofs, SEEK_SET);
+	out = Hunk_TempAllocMore(lump->filelen);
+	VFS_READ(vf, out, lump->filelen, NULL);
+
+	return out;
+}
+
 /*
 ** CM_LoadMap
 */
