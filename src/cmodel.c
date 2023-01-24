@@ -89,6 +89,9 @@ typedef struct {
 void* Mod_BSPX_FindLump(bspx_header_t* bspx_header, char* lumpname, int* plumpsize, byte* mod_base);
 bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base);
 
+static bspx_lump_t* CM_LoadBSPX(vfsfile_t* vf, dheader_t* header, bspx_header_t *xheader);
+static byte* CM_BSPX_ReadLump(vfsfile_t* vf, bspx_header_t *xheader, bspx_lump_t* lump, char* lumpname, int* plumpsize);
+
 /*
 ===============================================================================
 
@@ -945,12 +948,11 @@ static qbool CM_LoadPhysicsNormalsData(byte* data, int datalength)
 	return true;
 }
 
-static void CM_LoadPhysicsNormals(int filelen)
+static void CM_LoadPhysicsNormals(byte *physnormals, int len_physnormals)
 {
 	// Same logic as .lit file support: load from bspx, allow over-ride with .qpn files
 	//   As client-side movement prediction will be incorrect if physics normals don't
 	//     match, I strongly recommend the .bspx solution
-	bspx_header_t* bspx;
 	int i;
 	qbool bspx_loaded = false;
 
@@ -964,12 +966,8 @@ static void CM_LoadPhysicsNormals(int filelen)
 	map_physicsnormals = Hunk_AllocName(numclipnodes * sizeof(map_physicsnormals[0]), loadname);
 
 	// Try and load from BSPX lump
-	bspx = Mod_LoadBSPX(filelen, cmod_base);
-	if (bspx) {
-		int lumpsize = 0;
-		void* data = Mod_BSPX_FindLump(bspx, "MVDSV_PHYSICSNORMALS", &lumpsize, cmod_base);
-
-		bspx_loaded = CM_LoadPhysicsNormalsData(data, lumpsize);
+	if (physnormals) {
+		bspx_loaded = CM_LoadPhysicsNormalsData(physnormals, len_physnormals);
 		if (bspx_loaded) {
 			Con_Printf("Loading BSPX physics normals\n");
 		}
@@ -1371,6 +1369,10 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	int filelen = 0;
 	vfsfile_t *vf;
 	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models, *l_vis;
+	bspx_header_t xheader;
+	bspx_lump_t *xlumps;
+	byte *l_physnormals = NULL;
+	int l_physnormals_len = 0;
 
 	if (map_name[0]) {
 		assert(!strcmp(name, map_name));
@@ -1445,6 +1447,10 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	l_models = CM_ReadLump(vf, &header.lumps[LUMP_MODELS]);
 	l_vis = CM_ReadLump(vf, &header.lumps[LUMP_VISIBILITY]);
 
+	xlumps = CM_LoadBSPX(vf, &header, &xheader);
+	if (xlumps)
+		l_physnormals = CM_BSPX_ReadLump(vf, &xheader, xlumps, "MVDSV_PHYSICSNORMALS", &l_physnormals_len);
+
 	// load into heap
 	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
 	if (LittleLong(header.version) == Q1_BSPVERSION29a) {
@@ -1468,7 +1474,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	CM_LoadEntities (l_entities, header.lumps[LUMP_ENTITIES].filelen);
 	CM_LoadSubmodels (l_models, header.lumps[LUMP_MODELS].filelen);
 
-	CM_LoadPhysicsNormals(filelen);
+	CM_LoadPhysicsNormals(l_physnormals, l_physnormals_len);
 	CM_MakeHull0 ();
 
 	cm_load_pvs_func (l_vis, header.lumps[LUMP_VISIBILITY].filelen, l_leafs, header.lumps[LUMP_LEAFS].filelen);
@@ -1543,6 +1549,39 @@ mphysicsnormal_t CM_PhysicsNormal(int num)
 	return ret;
 }
 
+static int CM_BSPX_FindOffset(dheader_t *header, int filesize)
+{
+	int i, xofs = 0;
+
+	for (i = 0; i < HEADER_LUMPS; i++) {
+		xofs = max(xofs, header->lumps[i].fileofs + header->lumps[i].filelen);
+	}
+
+	if (xofs + sizeof(bspx_header_t) > filesize) {
+		return -1;
+	}
+
+	return xofs;
+}
+
+static qbool CM_BSPX_LoadLumps(bspx_lump_t *lump, int numlumps, int filesize)
+{
+	int i;
+
+	// byte-swap and check sanity
+	for (i = 0; i < numlumps; i++, lump++) {
+		lump->lumpname[sizeof(lump->lumpname) - 1] = '\0'; // make sure it ends with zero
+		lump->fileofs = LittleLong(lump->fileofs);
+		lump->filelen = LittleLong(lump->filelen);
+		if (lump->fileofs < 0 || lump->filelen < 0 || (unsigned)(lump->fileofs + lump->filelen) >(unsigned)filesize) {
+			return false;
+		}
+	}
+
+    return true;
+}
+
+// Used by ezquake
 void* Mod_BSPX_FindLump(bspx_header_t* bspx_header, char* lumpname, int* plumpsize, byte* mod_base)
 {
 	int i;
@@ -1565,22 +1604,18 @@ void* Mod_BSPX_FindLump(bspx_header_t* bspx_header, char* lumpname, int* plumpsi
 	return NULL;
 }
 
+// Used by ezquake
 bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base)
 {
 	dheader_t* header;
 	bspx_header_t* xheader;
 	bspx_lump_t* lump;
-	int i;
 	int xofs;
 
 	// find end of last lump
 	header = (dheader_t*)mod_base;
-	xofs = 0;
-	for (i = 0; i < HEADER_LUMPS; i++) {
-		xofs = max(xofs, header->lumps[i].fileofs + header->lumps[i].filelen);
-	}
-
-	if (xofs + sizeof(bspx_header_t) > filesize) {
+	xofs = CM_BSPX_FindOffset(header, filesize);
+	if (xofs < 0) {
 		return NULL;
 	}
 
@@ -1591,17 +1626,68 @@ bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base)
 		return NULL;
 	}
 
-	// byte-swap and check sanity
 	lump = (bspx_lump_t*)(xheader + 1); // lumps immediately follow the header
-	for (i = 0; i < xheader->numlumps; i++, lump++) {
-		lump->lumpname[sizeof(lump->lumpname) - 1] = '\0'; // make sure it ends with zero
-		lump->fileofs = LittleLong(lump->fileofs);
-		lump->filelen = LittleLong(lump->filelen);
-		if (lump->fileofs < 0 || lump->filelen < 0 || (unsigned)(lump->fileofs + lump->filelen) >(unsigned)filesize) {
-			return NULL;
-		}
+	if (!CM_BSPX_LoadLumps(lump, xheader->numlumps, filesize)) {
+		return NULL;
 	}
 
 	// success
 	return xheader;
+}
+
+static byte* CM_BSPX_ReadLump(vfsfile_t *vf, bspx_header_t *xheader, bspx_lump_t* lump, char* lumpname, int* plumpsize)
+{
+	byte *buffer;
+	int i;
+
+	if (!lump) {
+		return NULL;
+	}
+
+	for (i = 0; i < xheader->numlumps; i++, lump++) {
+		if (!strcmp(lump->lumpname, lumpname)) {
+			if (plumpsize) {
+				*plumpsize = lump->filelen;
+			}
+
+			buffer = Hunk_TempAllocMore(lump->filelen);
+			VFS_SEEK(vf, lump->fileofs, SEEK_SET);
+			VFS_READ(vf, buffer, lump->filelen, NULL);
+
+			return buffer;
+		}
+	}
+
+	return NULL;
+}
+
+static bspx_lump_t* CM_LoadBSPX(vfsfile_t *vf, dheader_t *header, bspx_header_t *xheader)
+{
+	bspx_lump_t* lump;
+	int xofs;
+	int filesize = VFS_GETLEN(vf);
+
+	// find end of last lump
+	xofs = CM_BSPX_FindOffset(header, filesize);
+	if (xofs < 0) {
+		return NULL;
+	}
+
+	VFS_SEEK(vf, xofs, SEEK_SET);
+	VFS_READ(vf, xheader, sizeof(bspx_header_t), NULL);
+
+	xheader->numlumps = LittleLong(xheader->numlumps);
+
+	if (xheader->numlumps < 0 || xofs + sizeof(bspx_header_t) + xheader->numlumps * sizeof(bspx_lump_t) > filesize) {
+		return NULL;
+	}
+
+	lump = (bspx_lump_t*)Hunk_TempAllocMore(sizeof(bspx_lump_t) * xheader->numlumps);
+	VFS_READ(vf, lump, sizeof(bspx_lump_t) * xheader->numlumps, NULL);
+
+	if (!CM_BSPX_LoadLumps(lump, xheader->numlumps, filesize)) {
+		return NULL;
+	}
+
+	return lump;
 }
