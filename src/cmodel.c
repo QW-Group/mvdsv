@@ -599,14 +599,14 @@ int CM_FindTouchedLeafs (const vec3_t mins, const vec3_t maxs, int leafs[], int 
 ===============================================================================
 */
 
-static void CM_LoadEntities (lump_t *l)
+static void CM_LoadEntities (byte *buffer, int length)
 {
-	if (!l->filelen) {
+	if (!length) {
 		map_entitystring = NULL;
 		return;
 	}
-	map_entitystring = (char *) Hunk_AllocName (l->filelen, loadname);
-	memcpy (map_entitystring, cmod_base + l->fileofs, l->filelen);
+	map_entitystring = (char *) Hunk_AllocName (length, loadname);
+	memcpy (map_entitystring, buffer, length);
 }
 
 
@@ -1376,7 +1376,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	int required_length = 0;
 	int filelen = 0;
 	vfsfile_t *vf;
-	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes;
+	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities;
 
 	if (map_name[0]) {
 		assert(!strcmp(name, map_name));
@@ -1447,6 +1447,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	l_leafs = CM_ReadLump(vf, &header.lumps[LUMP_LEAFS]);
 	l_nodes = CM_ReadLump(vf, &header.lumps[LUMP_NODES]);
 	l_clipnodes = CM_ReadLump(vf, &header.lumps[LUMP_CLIPNODES]);
+	l_entities = CM_ReadLump(vf, &header.lumps[LUMP_ENTITIES]);
 
 	// load into heap
 	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
@@ -1468,7 +1469,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 		CM_LoadClipnodes(l_clipnodes, header.lumps[LUMP_CLIPNODES].filelen);
 		cm_load_pvs_func = CM_BuildPVS;
 	}
-	CM_LoadEntities (&header.lumps[LUMP_ENTITIES]);
+	CM_LoadEntities (l_entities, header.lumps[LUMP_ENTITIES].filelen);
 	CM_LoadSubmodels (&header.lumps[LUMP_MODELS]);
 
 	CM_LoadPhysicsNormals(filelen);
