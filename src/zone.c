@@ -303,6 +303,14 @@ void *Hunk_TempAlloc(int size)
 	return buf;
 }
 
+void *Hunk_TempAllocMore(int size)
+{
+	if (!hunk_tempactive)
+		Sys_Error("Hunk_TempAllocMore: Must be called after Hunk_TempAlloc.");
+
+	return Hunk_HighAllocName(size, "temp+");
+}
+
 #ifdef SERVERONLY
 /*
 ===============================================================================

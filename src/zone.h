@@ -89,6 +89,7 @@ int	Hunk_LowMark (void);
 void Hunk_FreeToLowMark (int mark);
 
 void *Hunk_TempAlloc (int size);
+void *Hunk_TempAllocMore(int size);
 
 void Hunk_Check (void);
 
