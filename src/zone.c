@@ -226,20 +226,11 @@ void Hunk_FreeToLowMark(int mark)
 
 static int Hunk_HighMark(void)
 {
-	if (hunk_tempactive) {
-		hunk_tempactive = false;
-		Hunk_FreeToHighMark(hunk_tempmark);
-	}
-
 	return hunk_high_used;
 }
 
 static void Hunk_FreeToHighMark(int mark)
 {
-	if (hunk_tempactive) {
-		hunk_tempactive = false;
-		Hunk_FreeToHighMark(hunk_tempmark);
-	}
 	if (mark < 0 || mark > hunk_high_used) {
 		Sys_Error("Hunk_FreeToHighMark: bad mark %i", mark);
 	}
@@ -258,11 +249,6 @@ static void *Hunk_HighAllocName(int size, char *name)
 
 	if (size < 0) {
 		Sys_Error("Hunk_HighAllocName: bad size: %i", size);
-	}
-
-	if (hunk_tempactive) {
-		Hunk_FreeToHighMark(hunk_tempmark);
-		hunk_tempactive = false;
 	}
 
 #ifdef PARANOID
