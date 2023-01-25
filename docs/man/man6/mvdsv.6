@@ -1,0 +1,173 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2023 Lee Garrett <debian@rocketjump.eu>,
+.\"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH MVDSV 8 "January 24 2023"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+mvdsv \- QuakeWorld-compatible dedicated server
+.SH SYNOPSIS
+.B mvdsv
+-basedir \fIDIRECTORY\fP
+-game \fIDIRECTORY\fP
+[-t chroot dir]
+[-u user]
+[-g group]
+[-d]
+[-cheats]
+[-enablelocalcommand]
+[-democache \fISIZE_IN_KB\fP]
+[-progtype \fIPROGTYPENUMBER\fP]
+[-minmemory]
+[-heapsize \fISIZE_IN_KB\fP]
+[-mem \fISIZE_IN_MB\fP]
+[-ip \fIIPV4_ADDRESS\fP]
+[-port \fIUDP_PORT\fP]
+.SH DESCRIPTION
+This manual page documents briefly the
+.B mvdsv
+command.
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invode bold face and italics,
+.\" respectively.
+\fBmvdsv\fP (multi-view demo server) is a QuakeWorld-compatible dedicated
+server.
+
+On Debian, it currently requires a package "quake-registered" that can be generated
+from copy of Quake I via game-data-packager(6).
+.SH OPTIONS
+mvdsv does not follow the usual GNU command line syntax, with long
+options starting with two dashes. Most notably, it does not have a --help
+command.
+.TP
+[unix specific parameters]
+.TP
+.B -t \fIDIRECTORY\fP
+chroot to \fIDIRECTORY\fP
+.TP
+.B -u \fIUSER\fP
+setuid to \fIUSER\fP
+.TP
+.B -g \fIGROUP\fP
+setguid to \fIGROUP\fP
+.TP
+.B -d
+daemonize to background (not recommended when run from systemd unit)
+.TP
+[common parameters]
+.TP
+.B -basedir \fIBASEDIR\fP
+The "base directory" is the path to the filesystem directory holding the quake
+game directories (id1/pak0.pak, id1/pak1.pak). The base directory is only used
+during filesystem initialization. Defaults to current directory when not set.
+Example:
+mvdsv -basedir /usr/share/games/quake
+.TP
+.B -game \fIGAMEDIR\fP 
+The "game directory" is the first tree on the search path and directory that all
+generated files (savegames, screenshots, demos, config files) will be saved to.
+This directory is relative to the base directory.
+.TP
+.B +gamedir \fIGAMEDIR\fP
+Identical to "-game". However, when both are set, "-game" takes precedence.
+.TP
+.B -ip \fIIPV4_ADDRESS\fP
+Bind to the network interface with this IPv4 address, instead of all interfaces.
+Currently only IPv4 addresses are supported. IPv6 addresses will silently fail.
+.TP
+.B -port \fIUDP_PORT\fP
+Listen on UDP port number \fIPORT\fP for QuakeWorld clients to connect. Defaults
+to 27500.
+.TP
+.B -cheats
+Enable cheats on this server. Equivalent to setting "sv_cheats 1" in the config.
+This makes a set of cheat commands available on the QuakeWorld client:
+.br
+`god` will make the player invulnerable.
+.br
+`noclip` allows the player to clip through walls.
+.br
+`fly` allows the player to fly, but not clip through walls.
+.br
+`give <alphanum> [amount]` will give the player items.
+.br
+2 = shotgun
+.br
+3 = super shotgun
+.br
+4 = nailgun
+.br
+5 = super nailgun
+.br
+6 = grenade launcher
+.br
+7 = rocket launcher
+.br
+8 = lightning gun
+.br
+s = shotgun ammo
+.br
+n = nailgun ammo
+.br
+r = rocket ammo
+.br
+h = health
+.br
+c = cells ammo
+.TP
+.B -enablelocalcommand
+Allow executing arbitrary shell code from within the server with "localcommand
+\fICMD\fP". VERY DANGEROUS. Only enable this if you know what you are doing.
+.TP
+.B -democache \fISIZE_IN_KB\fP
+Set the demo cache size in KB. Will default to 16 MiB if set below that value.
+.TP
+.B -progtype \fPPROGTYPENUMBER\fP
+Define the type of the qwprogs. This setting is usually not needed, as it is
+autodetected.
+.RS 11
+.br
+0 = pr1 (qwprogs.dat etc)
+.br
+1 = native (.so/.dll)
+.br
+2 = q3vm (.qvm)
+.br
+3 = q3vm (.qvm) with JIT
+.RE
+.TP
+.B -minmemory
+Set memory to 0x550000 bytes (deprecated, use -mem).
+.TP
+.B -heapsize \fISIZE_IN_KB\fP
+Allocate fixed amount of memory in KiB (deprecated, use -mem).
+.TP
+.B -mem \fISIZE_IN_MB\fP
+Allocate fixed amount of memory in Mi. Overrides -heapsize and -minmemory.
+Defaults to 32 MiB.
+.TP
+.B +exec \fIMYSERVER.CFG\fP
+execute all server commands configured in the file \fIMYSERVER.CFG\fP. 
+
+.SH AUTHOR
+This manual page was written by Lee Garrett <debian@rocketjump.eu>,
+for the Debian GNU/Linux system (but may be used by others).
+
+.SH SEE ALSO
+.BR mvdsv.cfg (1),
+.br
+https://github.com/QW-Group/mvdsv
