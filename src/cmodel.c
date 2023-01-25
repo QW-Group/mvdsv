@@ -1380,6 +1380,8 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	COM_FileBase (name, loadname);
 
+	Hunk_TempFlush();
+
 	l_planes = CM_ReadLump(vf, &header.lumps[LUMP_PLANES]);
 	l_leafs = CM_ReadLump(vf, &header.lumps[LUMP_LEAFS]);
 	l_nodes = CM_ReadLump(vf, &header.lumps[LUMP_NODES]);
@@ -1426,6 +1428,8 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 		CM_BuildPHS ();
 
 	strlcpy (map_name, name, sizeof(map_name));
+
+	Hunk_TempFlush();
 
 	return &map_cmodels[0];
 }
