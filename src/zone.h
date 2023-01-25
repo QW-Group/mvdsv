@@ -88,6 +88,7 @@ void *Hunk_AllocName (int size, const char *name);
 int	Hunk_LowMark (void);
 void Hunk_FreeToLowMark (int mark);
 
+void Hunk_TempFlush();
 void *Hunk_TempAlloc (int size);
 void *Hunk_TempAllocMore(int size);
 

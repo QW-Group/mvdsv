@@ -278,6 +278,16 @@ static void *Hunk_HighAllocName(int size, char *name)
 	return (void *)(h + 1);
 }
 
+void Hunk_TempFlush()
+{
+	if (hunk_tempactive) {
+		Hunk_FreeToHighMark(hunk_tempmark);
+		hunk_tempactive = false;
+	}
+
+	hunk_tempmark = Hunk_HighMark();
+}
+
 /*
 =================
 Hunk_TempAlloc
@@ -289,12 +299,7 @@ void *Hunk_TempAlloc(int size)
 {
 	void *buf;
 
-	if (hunk_tempactive) {
-		Hunk_FreeToHighMark(hunk_tempmark);
-		hunk_tempactive = false;
-	}
-
-	hunk_tempmark = Hunk_HighMark();
+	Hunk_TempFlush();
 
 	buf = Hunk_HighAllocName(size, "temp");
 
@@ -306,7 +311,7 @@ void *Hunk_TempAlloc(int size)
 void *Hunk_TempAllocMore(int size)
 {
 	if (!hunk_tempactive)
-		Sys_Error("Hunk_TempAllocMore: Must be called after Hunk_TempAlloc.");
+		return Hunk_TempAlloc(size);
 
 	return Hunk_HighAllocName(size, "temp+");
 }
