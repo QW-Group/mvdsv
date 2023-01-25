@@ -1122,7 +1122,7 @@ static void CM_BuildPVS(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len
 
 	map_vis_rowlongs = (visleafs + 31) >> 5;
 	map_vis_rowbytes = map_vis_rowlongs * 4;
-	map_pvs = (byte *)Hunk_Alloc(map_vis_rowbytes * visleafs);
+	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
 
 	if (!vis_len) {
 		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
@@ -1149,7 +1149,7 @@ static void CM_BuildPVS29a(byte *visdata, int vis_len, byte *leaf_buf, int leaf_
 
 	map_vis_rowlongs = (visleafs + 31) >> 5;
 	map_vis_rowbytes = map_vis_rowlongs * 4;
-	map_pvs = (byte *)Hunk_Alloc(map_vis_rowbytes * visleafs);
+	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
 
 	if (!vis_len) {
 		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
@@ -1176,7 +1176,7 @@ static void CM_BuildPVSBSP2(byte *visdata, int vis_len, byte *leaf_buf, int leaf
 
 	map_vis_rowlongs = (visleafs + 31) >> 5;
 	map_vis_rowbytes = map_vis_rowlongs * 4;
-	map_pvs = (byte *)Hunk_Alloc(map_vis_rowbytes * visleafs);
+	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
 
 	if (!vis_len) {
 		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
@@ -1212,7 +1212,7 @@ static void CM_BuildPHS (void)
 		return;
 	}
 
-	map_phs = (byte *) Hunk_Alloc (map_vis_rowbytes * visleafs);
+	map_phs = (byte *) Hunk_AllocName (map_vis_rowbytes * visleafs, "phs");
 	scan = map_pvs;
 	dest = (unsigned *)map_phs;
 	for (i = 0; i < visleafs; i++, dest += map_vis_rowlongs, scan += map_vis_rowbytes)
