@@ -77,8 +77,6 @@ static qbool		map_halflife;
 
 static mphysicsnormal_t* map_physicsnormals;     // must be same number as clipnodes to save reallocations in worst case scenario
 
-static byte			*cmod_base;					// for CM_Load* functions
-
 // lumps immediately follow:
 typedef struct {
 	char lumpname[24];
@@ -1359,14 +1357,8 @@ static byte *CM_ReadLump(vfsfile_t *vf, lump_t *lump)
 typedef void(*BuildPVSFunction)(byte *vis_buf, int vis_len, byte *leaf_buf, int leaf_len);
 cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2)
 {
-	unsigned int i;
 	dheader_t header;
-	unsigned int *buf;
-	unsigned int *padded_buf = NULL;
 	BuildPVSFunction cm_load_pvs_func = CM_BuildPVS;
-	qbool pad_lumps = false;
-	int required_length = 0;
-	int filelen = 0;
 	vfsfile_t *vf;
 	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models, *l_vis;
 	bspx_header_t xheader;
@@ -1385,59 +1377,8 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	vf = CM_OpenMap(name, &header);
 	CM_CalcChecksum(vf, &header, checksum, checksum2);
-	// Intentional leak during refactoring
-	// VFS_CLOSE(vf);
-
-	// load the file
-	buf = (unsigned int *) FS_LoadTempFile (name, &filelen);
-	if (!buf)
-		Host_Error ("CM_LoadMap: %s not found", name);
 
 	COM_FileBase (name, loadname);
-
-
-	// Align the lumps
-	for (i = 0; i < HEADER_LUMPS; ++i) {
-		pad_lumps |= (header.lumps[i].fileofs % 4) != 0;
-
-		if (header.lumps[i].fileofs < 0 || header.lumps[i].filelen < 0) {
-			Host_Error("CM_LoadMap: %s has invalid lump definitions", name);
-		}
-		if (header.lumps[i].fileofs + header.lumps[i].filelen > filelen || header.lumps[i].fileofs + header.lumps[i].filelen < 0) {
-			Host_Error("CM_LoadMap: %s has invalid lump definitions", name);
-		}
-
-		required_length += header.lumps[i].filelen;
-	}
-
-	if (pad_lumps) {
-		int position = 0;
-		int required_size = sizeof(dheader_t) + required_length + HEADER_LUMPS * 4 + 1;
-		padded_buf = Q_malloc(required_size);
-
-		// Copy header
-		memcpy(padded_buf, buf, sizeof(dheader_t));
-		position += sizeof(dheader_t);
-
-		// Copy lumps: align on 4-byte boundary
-		for (i = 0; i < HEADER_LUMPS; ++i) {
-			if (position % 4) {
-				position += 4 - (position % 4);
-			}
-			if (position + header.lumps[i].filelen > required_size) {
-				Host_Error("CM_LoadMap: %s caused error while aligning lumps", name);
-			}
-			memcpy((byte*)padded_buf + position, ((byte*)buf) + header.lumps[i].fileofs, header.lumps[i].filelen);
-			header.lumps[i].fileofs = position;
-
-			position += header.lumps[i].filelen;
-		}
-
-		// Use the new buffer
-		buf = padded_buf;
-	}
-
-	cmod_base = (byte *) buf;
 
 	l_planes = CM_ReadLump(vf, &header.lumps[LUMP_PLANES]);
 	l_leafs = CM_ReadLump(vf, &header.lumps[LUMP_LEAFS]);
@@ -1450,6 +1391,8 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	xlumps = CM_LoadBSPX(vf, &header, &xheader);
 	if (xlumps)
 		l_physnormals = CM_BSPX_ReadLump(vf, &xheader, xlumps, "MVDSV_PHYSICSNORMALS", &l_physnormals_len);
+
+	VFS_CLOSE(vf);
 
 	// load into heap
 	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
@@ -1483,8 +1426,6 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 		CM_BuildPHS ();
 
 	strlcpy (map_name, name, sizeof(map_name));
-
-	Q_free(padded_buf);
 
 	return &map_cmodels[0];
 }
