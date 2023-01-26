@@ -84,9 +84,6 @@ typedef struct {
 	int filelen;
 } bspx_lump_t;
 
-void* Mod_BSPX_FindLump(bspx_header_t* bspx_header, char* lumpname, int* plumpsize, byte* mod_base);
-bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base);
-
 static bspx_lump_t* CM_LoadBSPX(vfsfile_t* vf, dheader_t* header, bspx_header_t *xheader);
 static byte* CM_BSPX_ReadLump(vfsfile_t* vf, bspx_header_t *xheader, bspx_lump_t* lump, char* lumpname, int* plumpsize);
 
@@ -1526,6 +1523,7 @@ static qbool CM_BSPX_LoadLumps(bspx_lump_t *lump, int numlumps, int filesize)
     return true;
 }
 
+#ifndef SERVERONLY
 // Used by ezquake
 void* Mod_BSPX_FindLump(bspx_header_t* bspx_header, char* lumpname, int* plumpsize, byte* mod_base)
 {
@@ -1579,6 +1577,7 @@ bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base)
 	// success
 	return xheader;
 }
+#endif
 
 static byte* CM_BSPX_ReadLump(vfsfile_t *vf, bspx_header_t *xheader, bspx_lump_t* lump, char* lumpname, int* plumpsize)
 {
