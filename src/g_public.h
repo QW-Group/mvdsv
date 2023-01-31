@@ -285,4 +285,8 @@ typedef enum {
 	FS_SEEK_SET
 } fsOrigin_t;
 
+
+// G_Map_Extension syscalls
+#define G_EXTENSIONS_MAX 512
+
 #endif /* !__G_PUBLIC_H__ */

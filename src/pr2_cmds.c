@@ -38,6 +38,18 @@ const char *pr2_ent_data_ptr;
 vm_t *sv_vm = NULL;
 extern gameData_t gamedata;
 
+typedef intptr_t (*ext_trap_t)(intptr_t *arg);
+
+struct
+{
+	char *extname;
+	ext_trap_t fun;
+} ext_traps[] =
+{
+};
+
+ext_trap_t ext_trap_tbl[G_EXTENSIONS_MAX];
+
 static int PASSFLOAT(float f)
 {
 	floatint_t fi;
@@ -1960,14 +1972,31 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 */
 intptr_t PF2_Map_Extension(char *name, int mapto)
 {
-	if (mapto < _G__LASTAPI)
-	{
+	int i;
 
+	if (mapto < _G__LASTAPI || mapto >= ARRAY_LEN(ext_trap_tbl))
+	{
 		return -2;
 	}
 
+	if (!name)
+	{
+		return -1;
+	}
+
+	for (i = 0; i < ARRAY_LEN(ext_traps); i++)
+	{
+		if (!strcmp(ext_traps[i].extname, name))
+		{
+			ext_trap_tbl[mapto] = ext_traps[i].fun;
+			return mapto;
+		}
+	}
+
+
 	return -1;
 }
+
 /////////Bot Functions
 extern cvar_t maxclients, maxspectators;
 int PF2_Add_Bot(char *name, int bottomcolor, int topcolor, char *skin)
@@ -2677,7 +2706,14 @@ intptr_t PR2_GameSystemCalls(intptr_t *args) {
 		PF2_VisibleTo(args[1], args[2], args[3], VMA(4));
 		return 0;
 	default:
-		SV_Error("Bad game system trap: %ld", (long int)args[0]);
+		if (args[0] >= _G__LASTAPI && args[0] < G_EXTENSIONS_MAX && ext_trap_tbl[args[0]])
+		{
+			return ext_trap_tbl[args[0]](args);
+		}
+		else
+		{
+			SV_Error("Bad game system trap: %ld", (long int)args[0]);
+		}
 	}
 	return 0;
 }
