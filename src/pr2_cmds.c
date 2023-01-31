@@ -40,12 +40,15 @@ extern gameData_t gamedata;
 
 typedef intptr_t (*ext_trap_t)(intptr_t *arg);
 
+intptr_t EXT_SetExtField(intptr_t *args);
+
 struct
 {
 	char *extname;
 	ext_trap_t fun;
 } ext_traps[] =
 {
+	{"SetExtField", EXT_SetExtField},
 };
 
 ext_trap_t ext_trap_tbl[G_EXTENSIONS_MAX];
@@ -1961,6 +1964,15 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 	for (i = 0; i < list_cnt; i++)
 		Q_free(list[i]);
 	return numfiles;
+}
+
+intptr_t EXT_SetExtField(intptr_t *args)
+{
+	int edictnum = NUM_FOR_GAME_EDICT(VM_ArgPtr(args[1]));
+	edict_t *e = &sv.edicts[edictnum];
+	char *key = VM_ArgPtr(args[2]);
+
+	return 0;
 }
 
 /*
