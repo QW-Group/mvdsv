@@ -63,10 +63,16 @@ typedef struct sv_edict_s
 	double		lastruntime;	// sv.time when SV_RunEntity was last called for this edict (Tonik)
 } sv_edict_t;
 
+typedef struct extentvars_s
+{
+	float	alpha;
+} extentvars_t;
+
 typedef struct edict_s
 {
-	sv_edict_t	e;			// server side part of the edict_t
-	entvars_t	*v;			// C exported fields from progs
+	sv_edict_t		e;		// server side part of the edict_t
+	entvars_t		*v;		// C exported fields from progs
+	extentvars_t	xv;		// extended entity fields set via (Get|Set)ExtField
 } edict_t;
 
 //============================================================================
