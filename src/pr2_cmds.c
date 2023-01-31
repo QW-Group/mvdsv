@@ -62,14 +62,12 @@ static int PASSFLOAT(float f)
 	return fi.i;
 }
 
-#if 0 // Provided for completness.
 static float GETFLOAT(int i)
 {
 	floatint_t fi;
 	fi.i = i;
 	return fi.f;
 }
-#endif
 
 int NUM_FOR_GAME_EDICT(byte *e)
 {
@@ -1974,6 +1972,12 @@ intptr_t EXT_SetExtField(intptr_t *args)
 	edict_t *e = &sv.edicts[edictnum];
 	char *key = VM_ArgPtr(args[2]);
 
+	if (key && !strcmp(key, "alpha"))
+	{
+		e->xv.alpha = GETFLOAT(args[3]);
+		return args[3];
+	}
+
 	return 0;
 }
 
@@ -1982,6 +1986,11 @@ intptr_t EXT_GetExtField(intptr_t *args)
 	int edictnum = NUM_FOR_GAME_EDICT(VM_ArgPtr(args[1]));
 	edict_t *e = &sv.edicts[edictnum];
 	char *key = VM_ArgPtr(args[2]);
+
+	if (key && !strcmp(key, "alpha"))
+	{
+		return PASSFLOAT(e->xv.alpha);
+	}
 
 	return 0;
 }
