@@ -1358,7 +1358,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	BuildPVSFunction cm_load_pvs_func = CM_BuildPVS;
 	vfsfile_t *vf;
 	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models, *l_vis;
-	bspx_header_t xheader;
+	bspx_header_t xheader = { 0 };
 	bspx_lump_t *xlumps;
 	byte *l_physnormals = NULL;
 	int l_physnormals_len = 0;
@@ -1516,6 +1516,7 @@ static qbool CM_BSPX_LoadLumps(bspx_lump_t *lump, int numlumps, int filesize)
 		lump->fileofs = LittleLong(lump->fileofs);
 		lump->filelen = LittleLong(lump->filelen);
 		if (lump->fileofs < 0 || lump->filelen < 0 || (unsigned)(lump->fileofs + lump->filelen) >(unsigned)filesize) {
+			Con_Printf("Invalid BSPX lump position, ofs: %d, len: %d, filelen: %d\n", lump->fileofs, lump->filelen, filesize);
 			return false;
 		}
 	}
@@ -1582,7 +1583,7 @@ bspx_header_t* Mod_LoadBSPX(int filesize, byte* mod_base)
 static byte* CM_BSPX_ReadLump(vfsfile_t *vf, bspx_header_t *xheader, bspx_lump_t* lump, char* lumpname, int* plumpsize)
 {
 	byte *buffer;
-	int i;
+	int i, read;
 
 	if (!lump) {
 		return NULL;
@@ -1595,8 +1596,17 @@ static byte* CM_BSPX_ReadLump(vfsfile_t *vf, bspx_header_t *xheader, bspx_lump_t
 			}
 
 			buffer = Hunk_TempAllocMore(lump->filelen);
-			VFS_SEEK(vf, lump->fileofs, SEEK_SET);
-			VFS_READ(vf, buffer, lump->filelen, NULL);
+			if (VFS_SEEK(vf, lump->fileofs, SEEK_SET) < 0)
+			{
+				Con_Printf("Seek to BSPX lump at %d failed\n", lump->fileofs);
+				return NULL;
+			}
+			read = VFS_READ(vf, buffer, lump->filelen, NULL);
+			if (read != lump->filelen)
+			{
+				Con_Printf("Failed to read BSPX lump, got %d of %d bytes\n", read, lump->filelen);
+				return NULL;
+			}
 
 			return buffer;
 		}
@@ -1609,7 +1619,9 @@ static bspx_lump_t* CM_LoadBSPX(vfsfile_t *vf, dheader_t *header, bspx_header_t 
 {
 	bspx_lump_t* lump;
 	int xofs;
-	int filesize = VFS_GETLEN(vf);
+	int read, lumpssize, filesize;
+
+	filesize = VFS_GETLEN(vf);
 
 	// find end of last lump
 	xofs = CM_BSPX_FindOffset(header, filesize);
@@ -1617,17 +1629,34 @@ static bspx_lump_t* CM_LoadBSPX(vfsfile_t *vf, dheader_t *header, bspx_header_t 
 		return NULL;
 	}
 
-	VFS_SEEK(vf, xofs, SEEK_SET);
-	VFS_READ(vf, xheader, sizeof(bspx_header_t), NULL);
-
-	xheader->numlumps = LittleLong(xheader->numlumps);
-
-	if (xheader->numlumps < 0 || xofs + sizeof(bspx_header_t) + xheader->numlumps * sizeof(bspx_lump_t) > filesize) {
+	if (VFS_SEEK(vf, xofs, SEEK_SET) < 0)
+	{
 		return NULL;
 	}
 
-	lump = (bspx_lump_t*)Hunk_TempAllocMore(sizeof(bspx_lump_t) * xheader->numlumps);
-	VFS_READ(vf, lump, sizeof(bspx_lump_t) * xheader->numlumps, NULL);
+	read = VFS_READ(vf, xheader, sizeof(bspx_header_t), NULL);
+	if (read != sizeof(bspx_header_t))
+	{
+		return NULL;
+	}
+
+	xheader->numlumps = LittleLong(xheader->numlumps);
+
+	lumpssize = sizeof(bspx_lump_t) * xheader->numlumps;
+
+	if (xheader->numlumps < 0 || xofs + sizeof(bspx_header_t) + lumpssize > filesize) {
+        Con_Printf("Corrupt BSPX header\n");
+		return NULL;
+	}
+
+	lump = (bspx_lump_t*)Hunk_TempAllocMore(lumpssize);
+
+	read = VFS_READ(vf, lump, lumpssize, NULL);
+	if (read != lumpssize)
+	{
+		Con_Printf("Failed to read BSPX lumps header, got %d of %d bytes\n", read, lumpssize);
+		return NULL;
+	}
 
 	if (!CM_BSPX_LoadLumps(lump, xheader->numlumps, filesize)) {
 		return NULL;
