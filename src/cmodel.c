@@ -1306,10 +1306,10 @@ static vfsfile_t *CM_OpenMap(char *name, dheader_t *header)
 	return vf;
 }
 
-static void CM_CalcChecksum(vfsfile_t *f, dheader_t *header, unsigned *checksum, unsigned *checksum2)
+static qbool CM_CalcChecksum(vfsfile_t *f, dheader_t *header, unsigned *checksum, unsigned *checksum2)
 {
 	byte *buf;
-	int i;
+	int i, read;
 
 	// checksum all of the map, except for entities
 	map_checksum = map_checksum2 = 0;
@@ -1317,10 +1317,20 @@ static void CM_CalcChecksum(vfsfile_t *f, dheader_t *header, unsigned *checksum,
 		if (i == LUMP_ENTITIES)
 			continue;
 
-		VFS_SEEK(f, header->lumps[i].fileofs, SEEK_SET);
+		if (VFS_SEEK(f, header->lumps[i].fileofs, SEEK_SET) < 0)
+		{
+			Con_Printf("Seek to BSP lump at %d failed\n", header->lumps[i].fileofs);
+			return false;
+		}
 
 		buf = Hunk_TempAlloc (header->lumps[i].filelen);
-		VFS_READ(f, buf, header->lumps[i].filelen, NULL);
+
+		read = VFS_READ(f, buf, header->lumps[i].filelen, NULL);
+		if (read != header->lumps[i].filelen)
+		{
+			Con_Printf("Failed to read BSP lump, got %d of %d bytes\n", read, header->lumps[i].filelen);
+			return false;
+		}
 
 		map_checksum ^= LittleLong(Com_BlockChecksum(buf, header->lumps[i].filelen));
 
@@ -1335,6 +1345,8 @@ static void CM_CalcChecksum(vfsfile_t *f, dheader_t *header, unsigned *checksum,
 
 	if (checksum2)
 		*checksum2 = map_checksum2;
+
+	return true;
 }
 
 static byte *CM_ReadLump(vfsfile_t *vf, lump_t *lump)
@@ -1373,7 +1385,12 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	}
 
 	vf = CM_OpenMap(name, &header);
-	CM_CalcChecksum(vf, &header, checksum, checksum2);
+
+	if (!CM_CalcChecksum(vf, &header, checksum, checksum2))
+	{
+		VFS_CLOSE(vf);
+		return NULL;
+	}
 
 	COM_FileBase (name, loadname);
 
