@@ -1358,10 +1358,21 @@ static qbool CM_CalcChecksum(vfsfile_t *f, dheader_t *header, unsigned *checksum
 static byte *CM_ReadLump(vfsfile_t *vf, lump_t *lump)
 {
 	byte *out;
+	int read;
 
-	VFS_SEEK(vf, lump->fileofs, SEEK_SET);
+	if (VFS_SEEK(vf, lump->fileofs, SEEK_SET) < 0)
+	{
+		Con_Printf("Seek to BSP lump at %d failed\n", lump->fileofs);
+		return NULL;
+	}
 	out = Hunk_TempAllocMore(lump->filelen);
-	VFS_READ(vf, out, lump->filelen, NULL);
+
+	read = VFS_READ(vf, out, lump->filelen, NULL);
+	if (read != lump->filelen)
+	{
+		Con_Printf("Failed to read BSP lump, got %d of %d bytes\n", read, lump->filelen);
+		return NULL;
+	}
 
 	return out;
 }
@@ -1420,6 +1431,11 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 		l_physnormals = CM_BSPX_ReadLump(vf, &xheader, xlumps, "MVDSV_PHYSICSNORMALS", &l_physnormals_len);
 
 	VFS_CLOSE(vf);
+
+	if (!l_planes || !l_leafs || !l_nodes || !l_clipnodes || !l_entities || !l_models || !l_vis)
+	{
+		return NULL;
+	}
 
 	// load into heap
 	CM_LoadPlanes (l_planes, header.lumps[LUMP_PLANES].filelen);
