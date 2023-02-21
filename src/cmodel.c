@@ -1265,14 +1265,20 @@ static vfsfile_t *CM_OpenMap(char *name, dheader_t *header)
 	extern cvar_t sv_bspversion, sv_halflifebsp;
 #endif
 	vfsfile_t *vf;
-	int i;
+	int i, read;
 
 	vf = FS_OpenVFS(name, "rb", FS_GAME);
 	if (!vf) {
 		Host_Error ("CM_OpenMap: %s not found", name);
 	}
 
-	VFS_READ(vf, header, sizeof(dheader_t), NULL);
+	read = VFS_READ(vf, header, sizeof(dheader_t), NULL);
+	if (read != sizeof(dheader_t))
+	{
+		Con_Printf("Failed to read BSP header, got %d of %d bytes\n", read, sizeof(dheader_t));
+		VFS_CLOSE(vf);
+		return NULL;
+	}
 
 	for (i = 0; i < sizeof(dheader_t) / 4; i++) {
 		((int *)header)[i] = LittleLong(((int *)header)[i]);
@@ -1366,7 +1372,7 @@ static byte *CM_ReadLump(vfsfile_t *vf, lump_t *lump)
 typedef void(*BuildPVSFunction)(byte *vis_buf, int vis_len, byte *leaf_buf, int leaf_len);
 cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2)
 {
-	dheader_t header;
+	dheader_t header = { 0 };
 	BuildPVSFunction cm_load_pvs_func = CM_BuildPVS;
 	vfsfile_t *vf;
 	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models, *l_vis;
@@ -1385,6 +1391,10 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	}
 
 	vf = CM_OpenMap(name, &header);
+	if (!vf)
+	{
+		return NULL;
+	}
 
 	if (!CM_CalcChecksum(vf, &header, checksum, checksum2))
 	{
