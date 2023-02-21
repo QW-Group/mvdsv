@@ -1377,6 +1377,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	COM_FileBase (name, loadname);
 
+	// Flush to temp zone to leave as much heap available to map loading as possible.
 	Hunk_TempFlush();
 
 	l_planes = CM_ReadLump(vf, &header.lumps[LUMP_PLANES]);
@@ -1426,6 +1427,7 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 
 	strlcpy (map_name, name, sizeof(map_name));
 
+	// Flush temp zone to leave as much heap available to mods as possible.
 	Hunk_TempFlush();
 
 	return &map_cmodels[0];
