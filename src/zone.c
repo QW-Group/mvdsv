@@ -278,6 +278,13 @@ static void *Hunk_HighAllocName(int size, char *name)
 	return (void *)(h + 1);
 }
 
+/*
+=================
+Hunk_TempFlush
+
+Free the temporary memory zone to baseline.
+=================
+*/
 void Hunk_TempFlush()
 {
 	if (hunk_tempactive) {
@@ -308,6 +315,13 @@ void *Hunk_TempAlloc(int size)
 	return buf;
 }
 
+/*
+=================
+Hunk_TempAllocMore
+
+Return space after any previous temporary allocation without clearing first.
+=================
+*/
 void *Hunk_TempAllocMore(int size)
 {
 	if (!hunk_tempactive)
