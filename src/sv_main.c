@@ -3345,7 +3345,7 @@ void SV_InitLocal (void)
 	extern  cvar_t  pm_rampjump;
 	extern	cvar_t	pm_slidefix;
 	extern	cvar_t	pm_ktjump;
-	//extern	cvar_t	pm_bunnyspeedcap;
+	extern	cvar_t	pm_bunnyspeedcap;
 
 	// qws = QuakeWorld Server information
 	static cvar_t qws_name = { "qws_name", SERVER_NAME, CVAR_ROM };
@@ -3450,7 +3450,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_antilag_no_pred);
 	Cvar_Register (&sv_antilag_projectiles);
 
-	//Cvar_Register (&pm_bunnyspeedcap);
+	Cvar_Register (&pm_bunnyspeedcap);
 	Cvar_Register (&pm_ktjump);
 	Cvar_Register (&pm_slidefix);
 	Cvar_Register (&pm_pground);
