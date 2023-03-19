@@ -38,12 +38,12 @@ jobs:
          - target: windows-x64
            os: windows
            arch: x64
-           base-image: ubuntu-18.04
+           base-image: ubuntu-latest
            ext: ".exe"
          - target: windows-x86
            os: windows
            arch: x86
-           base-image: ubuntu-18.04
+           base-image: ubuntu-latest
            ext: ".exe"
     steps:
       - name: Checkout
