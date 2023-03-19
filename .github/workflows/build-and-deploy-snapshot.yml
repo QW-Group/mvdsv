@@ -57,7 +57,7 @@ jobs:
              else
                sudo apt-get update
                sudo apt-get -y install build-essential cmake gcc-i686-linux-gnu
-               sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-aarch64-linux-gnu libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+               sudo apt-get -y install gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gcc-aarch64-linux-gnu libc6-dev-arm64-cross
                sudo apt-get -y install gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
              fi
       - name: Build
