@@ -15,25 +15,25 @@ jobs:
            os: linux
            arch: amd64
            base-image: ubuntu-latest
-           build-image: amd64/ubuntu:bionic
+           build-image: amd64/ubuntu:latest
            ext: ""
          - target: linux-i686
            os: linux
            arch: i686
            base-image: ubuntu-latest
-           build-image: i386/ubuntu:bionic
+           build-image: i386/ubuntu:latest
            ext: ""
          - target: linux-armhf
            os: linux
            arch: armhf
            base-image: ubuntu-latest
-           build-image: arm32v7/ubuntu:bionic
+           build-image: arm32v7/ubuntu:latest
            ext: ""
          - target: linux-aarch64
            os: linux
            arch: aarch64
            base-image: ubuntu-latest
-           build-image: arm64v8/ubuntu:bionic
+           build-image: arm64v8/ubuntu:latest
            ext: ""
          - target: windows-x64
            os: windows
