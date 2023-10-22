@@ -75,7 +75,7 @@ set(SRC_COMMON
 	"${DIR_SRC}/sv_user.c"
 	"${DIR_SRC}/vfs_os.c"
 	"${DIR_SRC}/vfs_pak.c"
-	"${DIR_SRC}/world.c"
+	"${DIR_SRC}/sv_world.c"
 	"${DIR_SRC}/zone.c"
 	)
 

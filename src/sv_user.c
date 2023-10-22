@@ -4241,6 +4241,7 @@ static void SV_DebugClientSideWeaponScript(client_t* cl)
 	SV_DebugWriteWeaponScript(playernum, false, items, shells, nails, rockets, cells, choice, weaponlist);
 }
 
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
 static void SV_DebugServerSideWeaponInstruction(client_t* cl)
 {
 	if (sv_debug_weapons.value >= 1) {
@@ -4276,6 +4277,7 @@ static void SV_DebugServerSideWeaponInstruction(client_t* cl)
 		}
 	}
 }
+#endif
 
 static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 {

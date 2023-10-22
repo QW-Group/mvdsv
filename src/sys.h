@@ -88,15 +88,6 @@ void Sys_Sleep (unsigned long ms);
 
 int Sys_Script (const char *path, const char *args);
 
-typedef union floatint_u
-{
-	int i;
-	unsigned int u;
-	float f;
-	byte b[4];
-}
-floatint_t;
-
 #define ARRAY_LEN(x)		(sizeof(x) / sizeof(*(x)))
 
 
