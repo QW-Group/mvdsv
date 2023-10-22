@@ -21,6 +21,8 @@
 #include "qwsvdef.h"
 #else
 #include "quakedef.h"
+#include "pr_comp.h"
+#include "g_public.h"
 #endif
 #include "vm_local.h"
 

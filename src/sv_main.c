@@ -3503,7 +3503,9 @@ void SV_InitLocal (void)
 #endif
 
 	Cvar_Register (&sv_extlimits);
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
 	Cvar_Register (&sv_pext_mvdsv_serversideweapon);
+#endif
 
 	Cvar_Register (&sv_reliable_sound);
 

@@ -1086,7 +1086,7 @@
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</BrowseInformation>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release-NoAsm|Win32'">true</BrowseInformation>
     </ClCompile>
-    <ClCompile Include="..\..\src\world.c">
+    <ClCompile Include="..\..\src\sv_world.c">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug-NoAsm|Win32'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='debug-noweb|Win32'">Disabled</Optimization>
@@ -1192,7 +1192,7 @@
     <ClInclude Include="..\..\src\sv_windows.h" />
     <ClInclude Include="..\..\src\sys.h" />
     <ClInclude Include="..\..\src\version.h" />
-    <ClInclude Include="..\..\src\world.h" />
+    <ClInclude Include="..\..\src\sv_world.h" />
     <ClInclude Include="..\..\src\hash.h" />
     <ClInclude Include="..\..\src\vfs.h" />
     <ClInclude Include="..\..\src\zone.h" />

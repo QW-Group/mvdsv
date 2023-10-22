@@ -69,6 +69,15 @@ void *VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
 intptr_t     VM_Ptr2VM( void* ptr ) ;
 intptr_t VM_ExplicitPtr2VM( vm_t *vm, void* ptr );
 
+typedef union floatint_u
+{
+	int i;
+	unsigned int u;
+	float f;
+	byte b[4];
+}
+floatint_t;
+
 #define	VMA(x) VM_ArgPtr(args[x])
 static inline float _vmf(intptr_t x)
 {

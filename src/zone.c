@@ -285,7 +285,7 @@ Hunk_TempFlush
 Free the temporary memory zone to baseline.
 =================
 */
-void Hunk_TempFlush()
+void Hunk_TempFlush(void)
 {
 	if (hunk_tempactive) {
 		Hunk_FreeToHighMark(hunk_tempmark);
