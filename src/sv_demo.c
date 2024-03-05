@@ -1183,6 +1183,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	unsigned char buf_data[MAX_MSGLEN];
 	unsigned int n;
 	char* s, info[MAX_EXT_INFO_STRING];
+	char epoch[20];
 
 	client_t* player;
 	edict_t* ent;
@@ -1268,6 +1269,10 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	// send music
 	MSG_WriteByte (&buf, svc_cdtrack);
 	MSG_WriteByte (&buf, 0); // none in demos
+
+	//set start time
+	sprintf(epoch,"%ld", (unsigned long)time(NULL));
+	Info_SetValueForKey (svs.info, "epoch", epoch, MAX_SERVERINFO_STRING);
 
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
