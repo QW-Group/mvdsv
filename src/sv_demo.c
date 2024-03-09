@@ -1183,7 +1183,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	unsigned char buf_data[MAX_MSGLEN];
 	unsigned int n;
 	char* s, info[MAX_EXT_INFO_STRING];
-	char epoch[20];
+	char epoch[21];
 
 	client_t* player;
 	edict_t* ent;
