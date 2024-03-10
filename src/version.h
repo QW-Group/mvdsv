@@ -62,9 +62,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #define QW_VERSION          "2.40"
-#define SERVER_VERSION      "1.00-dev"
+#define SERVER_VERSION      "1.00"
 #define VERSION_NUM         1.00
-#define VERSION_NUM_STR     "1.00-dev"
+#define VERSION_NUM_STR     "1.00"
 #define SERVER_NAME         "MVDSV"
 #define SERVER_FULLNAME     "MVDSV: MultiView Demo SerVer"
 #define SERVER_HOME_URL     "https://github.com/QW-Group/mvdsv"
