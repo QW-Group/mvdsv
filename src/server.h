@@ -218,6 +218,7 @@ typedef struct client_s
 #ifdef USE_PR2
 	int				isBot;
 	usercmd_t		botcmd;				// bot movment
+	int			botSkill;
 #endif
 	char			name[CLIENT_NAME_LEN];		// for printing to other people
 

@@ -1970,7 +1970,7 @@ intptr_t PF2_Map_Extension(char *name, int mapto)
 }
 /////////Bot Functions
 extern cvar_t maxclients, maxspectators;
-int PF2_Add_Bot(char *name, int bottomcolor, int topcolor, char *skin)
+int PF2_Add_Bot(char *name, int bottomcolor, int topcolor, char *skin, int skill)
 {
 	client_t *cl, *newcl = NULL;
 	int     edictnum;
@@ -2043,6 +2043,7 @@ int PF2_Add_Bot(char *name, int bottomcolor, int topcolor, char *skin)
 	newcl->datagram.maxsize = sizeof( newcl->datagram_buf );
 	newcl->spectator = 0;
 	newcl->isBot = 1;
+	newcl->botSkill = skill;
 	SV_SetClientConnectionTime(newcl);
 	strlcpy(newcl->name, name, sizeof(newcl->name));
 
@@ -2628,7 +2629,7 @@ intptr_t PR2_GameSystemCalls(intptr_t *args) {
 		PF2_redirectcmd(NUM_FOR_GAME_EDICT(VMA(1)), VMA(2));
 		return 0;
 	case G_Add_Bot:
-		return PF2_Add_Bot(VMA(1), args[2], args[3], VMA(4));
+		return PF2_Add_Bot(VMA(1), args[2], args[3], VMA(4), args[5]);
 	case G_Remove_Bot:
 		PF2_Remove_Bot(args[1]);
 		return 0;
