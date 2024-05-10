@@ -40,17 +40,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef struct
 {
 	char	name[MAX_DEMO_NAME];
-	int	size;
-	int	time;
+	size_t	size;
+	time_t	time;
 	qbool	isdir; //bliP: list dir
 } file_t;
 
 typedef struct
 {
-	file_t *files;
-	int	size;
-	int	numfiles;
-	int	numdirs;
+	file_t	*files;
+	size_t	size;
+	size_t	numfiles;
+	size_t	numdirs;
 } dir_t;
 
 int		Sys_FileTime (const char *path);
