@@ -231,8 +231,7 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 		}
 		strlcpy (list[dir.numfiles].name, fd.cFileName, sizeof(list[0].name));
 
-		if (++dir.numfiles == MAX_DIRFILES - 1)
-			break;
+		if (dir.numfiles != MAX_DIRFILES - 1) dir.numfiles++;
 
 	}
 	while (FindNextFile(h, &fd));

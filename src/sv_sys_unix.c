@@ -52,7 +52,7 @@ int	Sys_FileTime (const char *path)
 	return stat(path, &buf) == -1 ? -1 : buf.st_mtime;
 }
 
-int Sys_FileSizeTime (char *path, int *time1)
+int Sys_FileSizeTime (char *path, time_t *time1)
 {
 	struct stat buf;
 	if (stat(path, &buf) == -1)
@@ -179,8 +179,8 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 		}
 		strlcpy (list[dir.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
-		if (++dir.numfiles == MAX_DIRFILES - 1)
-			break;
+		if (dir.numfiles != MAX_DIRFILES - 1) dir.numfiles++;
+
 	}
 	closedir(d);
 	if (!all)
