@@ -13,25 +13,25 @@ jobs:
            os: linux
            arch: amd64
            base-image: ubuntu-latest
-           build-image: amd64/ubuntu:latest
+           build-image: amd64/debian:stable
            ext: ""
          - target: linux-i686
            os: linux
            arch: i686
            base-image: ubuntu-latest
-           build-image: i386/ubuntu:latest
+           build-image: i386/debian:stable
            ext: ""
          - target: linux-armhf
            os: linux
            arch: armhf
            base-image: ubuntu-latest
-           build-image: arm32v7/ubuntu:latest
+           build-image: arm32v7/debian:stable
            ext: ""
          - target: linux-aarch64
            os: linux
            arch: aarch64
            base-image: ubuntu-latest
-           build-image: arm64v8/ubuntu:latest
+           build-image: arm64v8/debian:stable
            ext: ""
          - target: windows-x64
            os: windows
@@ -45,7 +45,7 @@ jobs:
            ext: ".exe"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
       - name: Prepare Build Environemnt
@@ -80,8 +80,7 @@ jobs:
           ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
       - name: Set date
         run: |
-          sudo timedatectl set-timezone Europe/Amsterdam
-          echo "DATE=$(date "+%Y%m%d-%H%M%S")" >> $GITHUB_ENV
+          echo "DATE=$(TZ="Europe/Amsterdam" date "+%Y%m%d-%H%M%S")" >> $GITHUB_ENV
       - name: Deploy
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
