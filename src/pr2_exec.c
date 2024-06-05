@@ -563,7 +563,7 @@ void PR2_InitProg(void)
 	PR2_FS_Restart();
 
 	gamedata.APIversion = 0;
-	gamedata_ptr = (intptr_t) VM_Call(sv_vm, 2, GAME_INIT, (int)(sv.time * 1000), (int)(Sys_DoubleTime() * 100000), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	gamedata_ptr = (intptr_t) VM_Call(sv_vm, 2, GAME_INIT, (int)(sv.time * 1000), (int)time(NULL), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	if (!gamedata_ptr) {
 		SV_Error("PR2_InitProg: gamedata == NULL");
 	}
