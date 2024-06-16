@@ -453,7 +453,7 @@ int SV_CalcPing (client_t *cl)
 	count = 0;
 #ifdef USE_PR2
 	if (cl->isBot) {
-		return 10;
+		return cl->botSkill > 0 ? cl->botSkill : 10;
 	}
 #endif
 	for (frame = cl->frames, i=0 ; i<UPDATE_BACKUP ; i++, frame++)
