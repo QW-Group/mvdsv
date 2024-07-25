@@ -1448,7 +1448,7 @@ intptr_t QDECL VM_Call( vm_t *vm, int nargs, int callnum, ... )
 	if ( vm->entryPoint ) 
 	{
 		//rcg010207 -  see dissertation at top of VM_DllSyscall() in this file.
-		int args[MAX_VMMAIN_CALL_ARGS-1];
+		int args[MAX_VMMAIN_CALL_ARGS-1] = {0};
 		va_list ap;
 		va_start( ap, callnum );
 		for ( i = 0; i < nargs; i++ ) {
@@ -1467,7 +1467,7 @@ intptr_t QDECL VM_Call( vm_t *vm, int nargs, int callnum, ... )
 #endif
 			r = VM_CallInterpreted2( vm, nargs+1, (int*)&callnum );
 #else
-		int args[MAX_VMMAIN_CALL_ARGS];
+		int args[MAX_VMMAIN_CALL_ARGS] = {0};
 		va_list ap;
 
 		args[0] = callnum;
