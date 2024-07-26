@@ -82,26 +82,22 @@ set(SRC_COMMON
 # Check build target, and included sources
 if(UNIX)
 	list(APPEND SRC_COMMON
-	    "${DIR_SRC}/sv_sys_unix.c"
+		"${DIR_SRC}/sv_sys_unix.c"
 	)
+	# Check for curl, and include sources and libs, if found
+	find_package(CURL)
+	if(NOT CURL_FOUND)
+		message(STATUS "Curl library not found")
+	else()
+		list(APPEND SRC_COMMON
+			"${DIR_SRC}/central.c"
+		)
+	endif()
 else()
 	list(APPEND SRC_COMMON
-	    "${DIR_SRC}/sv_sys_win.c"
-	    "${DIR_SRC}/sv_windows.c"
-	    "${DIR_SRC}/winquake.rc"
-	)
-endif()
-
-
-######################################################################################################
-
-# Check for curl, and include sources and libs, if found
-find_package(CURL)
-if(NOT CURL_FOUND)
-	message(STATUS "Curl library not found")
-else()
-	list(APPEND SRC_COMMON
-	    "${DIR_SRC}/central.c"
+		"${DIR_SRC}/sv_sys_win.c"
+		"${DIR_SRC}/sv_windows.c"
+		"${DIR_SRC}/winquake.rc"
 	)
 endif()
 
