@@ -1601,6 +1601,12 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
 		else if (!strcmp(key, "ping"))
 			snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
+#ifdef FTE_PEXT_CSQC
+		else if (!strcmp(key, "csqcactive") || !strcmp(key, "*csqcactive") || !strcmp(key, "ezcsqc"))
+		{
+			snprintf(ov, sizeof(ov), "%d", (int)cl->csqcactive);
+		}
+#endif
 		else if (!strcmp(key, "*userid"))
 			snprintf(ov, sizeof(ov), "%d", cl->userid);
 		else if (!strncmp(key, "login", 6))

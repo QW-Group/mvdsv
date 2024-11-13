@@ -206,6 +206,33 @@ static unsigned SV_CheckModel(char *mdl)
 	return crc;
 }
 
+#ifdef FTE_PEXT_CSQC
+static void SV_LoadCSQC(void)
+{
+	extern cvar_t sv_csqc_progname;
+	int size;
+
+	byte *file = FS_LoadTempFile(sv_csqc_progname.string, &size);
+	if (file)
+	{
+		char text[64];
+		sv.csqcchecksum = Com_BlockChecksum(file, size);
+		sprintf(text, "0x%x", sv.csqcchecksum);
+		Info_SetValueForStarKey(svs.info, "*csprogs", text, MAX_SERVERINFO_STRING);
+		sprintf(text, "0x%x", (unsigned int)size);
+		Info_SetValueForStarKey(svs.info, "*csprogssize", text, MAX_SERVERINFO_STRING);
+		Info_SetValueForStarKey(svs.info, "*csprogsname", sv_csqc_progname.string, MAX_SERVERINFO_STRING);
+	}
+	else
+	{
+		sv.csqcchecksum = 0;
+		Info_SetValueForStarKey(svs.info, "*csprogs", "", MAX_SERVERINFO_STRING);
+		Info_SetValueForStarKey(svs.info, "*csprogssize", "", MAX_SERVERINFO_STRING);
+		Info_SetValueForStarKey(svs.info, "*csprogsname", "", MAX_SERVERINFO_STRING);
+	}
+}
+#endif
+
 /*
 ================
 SV_SpawnServer
@@ -348,6 +375,10 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 	sv.num_signon_buffers = 1;
 
 	sv.time = 1.0;
+
+#ifdef FTE_PEXT_CSQC
+	SV_LoadCSQC();
+#endif
 
 	// load progs to get entity field count
 	// which determines how big each edict is
