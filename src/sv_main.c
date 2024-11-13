@@ -3625,6 +3625,9 @@ void SV_InitLocal (void)
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON2
 	svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON2;
 #endif
+#ifdef MVD_PEXT1_EZCSQC
+	svs.mvdprotocolextension1 |= MVD_PEXT1_EZCSQC;
+#endif
 
 	Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " SERVER_VERSION, MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SERVER_EXTENSIONS), MAX_SERVERINFO_STRING);
