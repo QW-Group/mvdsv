@@ -318,6 +318,17 @@ static void Cmd_New_f (void)
 	if (!gamedir[0])
 		gamedir = "qw";
 
+#ifdef FTE_PEXT_CSQC
+	if (sv.csqcchecksum && !(sv_client->fteprotocolextensions & FTE_PEXT_CSQC))
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "\n\n\n\n"
+			"This server is using CSQC - you are missing out due to your choice of outdated client / protocol!\n"
+			"Please upgrade to one of the following:\n"
+			"> ezQuake (https://www.ezquake.com) (hardcoded KTX support)\n"
+			"> FTEQW (http://fte.triptohell.info/)\n");
+	}
+#endif
+
 #ifdef FTE_PEXT_FLOATCOORDS
 	if (msg_coordsize > 2 && !(sv_client->fteprotocolextensions & FTE_PEXT_FLOATCOORDS))
 	{
@@ -1443,10 +1454,14 @@ static void Cmd_Download_f(void)
 
 	if (sv_client->special)
 		allow_dl = true; // NOTE: user used techlogin, allow dl anything in quake dir in such case!
-	else if (!strstr(name, "/"))
-		allow_dl = false; // should be in subdir
 	else if (!(int)allow_download.value)
 		allow_dl = false; // global allow check
+#ifdef FTE_PEXT_CSQC
+	else if (!strncmp(name, "csprogs.dat", 11))
+		allow_dl = true; // we always allow csprogs.dat to be downloaded (if downloads are permitted).
+#endif
+	else if (!strstr(name, "/"))
+		allow_dl = false; // should be in subdir
 	else if (!strncmp(name, "skins/", 6))
 		allow_dl = allow_download_skins.value; // skins
 	else if (!strncmp(name, "progs/", 6))
@@ -3069,6 +3084,18 @@ void SV_Voice_UnmuteAll_f(void)
 
 #endif // FTE_PEXT2_VOICECHAT
 
+#ifdef FTE_PEXT_CSQC
+void SV_EnableClientsCSQC(void)
+{
+	sv_client->csqcactive = true;
+}
+
+void SV_DisableClientsCSQC(void)
+{
+	sv_client->csqcactive = false;
+}
+#endif
+
 /*
  * Parse protocol extensions which supported by client.
  * This is workaround for the proxy case, like: qwfwd. We can't use it in case of qizmo thought.
@@ -3318,6 +3345,11 @@ static ucmd_t ucmds[] =
 	{"vignore", SV_Voice_Ignore_f, false},	/*ignore/mute specific player*/
 	{"muteall", SV_Voice_MuteAll_f, false},	/*disables*/
 	{"unmuteall", SV_Voice_UnmuteAll_f, false}, /*reenables*/
+#endif
+
+#ifdef FTE_PEXT_CSQC
+	{"enablecsqc",	SV_EnableClientsCSQC, false},
+	{"disablecsqc",	SV_DisableClientsCSQC, false},
 #endif
 
 	{"pext", Cmd_PEXT_f, false}, // user reply with supported protocol extensions.
