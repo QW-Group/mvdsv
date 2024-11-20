@@ -492,6 +492,27 @@ void PR2_ClearEdict(edict_t* e)
 	}
 }
 
+#ifdef FTE_PEXT_CSQC
+//===========================================================================
+// SendEntity
+//===========================================================================
+qbool PR2_SendEntity(edict_t* e, edict_t* to, int sendflags)
+{
+	qbool ret_val = false;
+	int old_self = pr_global_struct->self;
+	int old_other = pr_global_struct->other;
+	pr_global_struct->self = EDICT_TO_PROG(e);
+	pr_global_struct->other = to ? EDICT_TO_PROG(to) : 0;
+	if (sv_vm)
+	{
+		ret_val = VM_Call(sv_vm, 1, GAME_EDICT_CSQCSEND, (int)sendflags, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	}
+	pr_global_struct->self = old_self;
+	pr_global_struct->other = old_other;
+	return ret_val;
+}
+#endif
+
 //===========================================================================
 // InitProgs
 //===========================================================================
