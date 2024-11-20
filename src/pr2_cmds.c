@@ -57,6 +57,8 @@ static float GETFLOAT(int i)
 #endif
 
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
+static intptr_t EXT_GetSoundIndex(intptr_t *args);
+static intptr_t EXT_GetModelIndex(intptr_t *args);
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
 static intptr_t EXT_GetExtFieldPtr(intptr_t *args);
@@ -69,6 +71,8 @@ struct
 	{"MapExtFieldPtr",	EXT_MapExtFieldPtr},
 	{"SetExtFieldPtr",	EXT_SetExtFieldPtr},
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
+	{"getsoundindex",		EXT_GetSoundIndex},
+	{"getmodelindex",		EXT_GetModelIndex},
 };
 ext_syscall_t ext_syscall_tbl[256];
 
@@ -1984,6 +1988,38 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 	for (i = 0; i < list_cnt; i++)
 		Q_free(list[i]);
 	return numfiles;
+}
+
+static intptr_t EXT_GetModelIndex(intptr_t *args)
+{
+	int model_num;
+	char *modelname = VM_ArgPtr(args[1]);
+
+	for (model_num = 1; model_num < MAX_MODELS && sv.model_precache[model_num]; model_num++)
+	{
+		if (!strcmp(modelname, sv.model_precache[model_num]))
+		{
+			break;
+		}
+	}
+
+	return model_num;
+}
+
+static intptr_t EXT_GetSoundIndex(intptr_t *args)
+{
+	int sound_num;
+	char *soundname = VM_ArgPtr(args[1]);
+
+	for (sound_num = 1; sound_num < MAX_SOUNDS && sv.sound_precache[sound_num]; sound_num++)
+	{
+		if (!strcmp(soundname, sv.sound_precache[sound_num]))
+		{
+			break;
+		}
+	}
+
+	return sound_num;
 }
 
 // To prevent mods from hardcoding field offsets which would cause engine incompatibilities.
