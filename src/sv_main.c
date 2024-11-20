@@ -498,6 +498,20 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 	char info[MAX_EXT_INFO_STRING];
 	int i;
 
+#ifdef FTE_PEXT_CSQC
+	// Reki: resend all CSQC ents, for reasons. previously the initial CSQC ent states were being dropped for some delta reasons I think.
+	if (client->csqcactive)
+	{
+		for (i = 1; i < MAX_EDICTS; i++)
+		{
+			if (client->csqcentityscope[i] & SCOPE_WANTSEND)
+			{
+				client->csqcentitysendflags[i] = 0xFFFFFF;
+			}
+		}
+	}
+#endif
+
 	i = client - svs.clients;
 
 	//Sys_Printf("SV_FullClientUpdate:  Updated frags for client %d\n", i);

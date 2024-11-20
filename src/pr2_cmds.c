@@ -39,6 +39,9 @@
 const char *pr2_ent_data_ptr;
 vm_t *sv_vm = NULL;
 extern gameData_t gamedata;
+#ifdef FTE_PEXT_CSQC
+extern sizebuf_t *csqcmsgbuffer;
+#endif
 
 static int PASSFLOAT(float f)
 {
@@ -1229,9 +1232,7 @@ sizebuf_t *WriteDest2(int dest)
 		return &sv.multicast;
 
 	case MSG_CSQC:
-		// Should return a reference to the CSQC message buffer managed in sv_ents.c
-		PR2_RunError("PF_Write_*: MSG_CSQC not implemented yet.");
-		return NULL;
+		return csqcmsgbuffer;
 
 	default:
 		PR2_RunError ("WriteDest: bad destination");
@@ -2013,7 +2014,29 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 #ifdef FTE_PEXT_CSQC
 intptr_t EXT_SetSendNeeded(intptr_t *args)
 {
-	PR2_RunError("SetSendNeeded not implemented yet.");
+	unsigned int subject = args[1];
+	unsigned int fl = args[2];
+	unsigned int to = args[3];
+
+	if (!to)
+	{	//broadcast
+		for (to = 0; to < MAX_CLIENTS; to++)
+		{
+			svs.clients[to].csqcentitysendflags[subject] |= fl;
+		}
+	}
+	else
+	{
+		to--;
+		if (to >= MAX_CLIENTS)
+		{
+			;	//some kind of error.
+		}
+		else
+		{
+			svs.clients[to].csqcentitysendflags[subject] |= fl;
+		}
+	}
 	return 0;
 }
 #endif
