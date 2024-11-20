@@ -39,6 +39,9 @@
 const char *pr2_ent_data_ptr;
 vm_t *sv_vm = NULL;
 extern gameData_t gamedata;
+#ifdef FTE_PEXT_CSQC
+extern sizebuf_t *csqcmsgbuffer;
+#endif
 
 static int PASSFLOAT(float f)
 {
@@ -57,6 +60,9 @@ static float GETFLOAT(int i)
 #endif
 
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
+#ifdef FTE_PEXT_CSQC
+static intptr_t EXT_SetSendNeeded(intptr_t *args);
+#endif
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
 static intptr_t EXT_GetExtFieldPtr(intptr_t *args);
@@ -69,6 +75,9 @@ struct
 	{"MapExtFieldPtr",	EXT_MapExtFieldPtr},
 	{"SetExtFieldPtr",	EXT_SetExtFieldPtr},
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
+#ifdef FTE_PEXT_CSQC
+	{"setsendneeded",		EXT_SetSendNeeded},
+#endif
 };
 ext_syscall_t ext_syscall_tbl[256];
 
@@ -1183,6 +1192,9 @@ MESSAGE WRITING
 #define	MSG_ALL			2		// reliable to all
 #define	MSG_INIT		3		// write to the init string
 #define	MSG_MULTICAST	4		// for multicast()
+#ifdef FTE_PEXT_CSQC
+#define MSG_CSQC		5		// for csqc
+#endif
 
 
 sizebuf_t *WriteDest2(int dest)
@@ -1218,6 +1230,9 @@ sizebuf_t *WriteDest2(int dest)
 
 	case MSG_MULTICAST:
 		return &sv.multicast;
+
+	case MSG_CSQC:
+		return csqcmsgbuffer;
 
 	default:
 		PR2_RunError ("WriteDest: bad destination");
@@ -1996,6 +2011,36 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 	return numfiles;
 }
 
+#ifdef FTE_PEXT_CSQC
+intptr_t EXT_SetSendNeeded(intptr_t *args)
+{
+	unsigned int subject = args[1];
+	unsigned int fl = args[2];
+	unsigned int to = args[3];
+
+	if (!to)
+	{	//broadcast
+		for (to = 0; to < MAX_CLIENTS; to++)
+		{
+			svs.clients[to].csqcentitysendflags[subject] |= fl;
+		}
+	}
+	else
+	{
+		to--;
+		if (to >= MAX_CLIENTS)
+		{
+			;	//some kind of error.
+		}
+		else
+		{
+			svs.clients[to].csqcentitysendflags[subject] |= fl;
+		}
+	}
+	return 0;
+}
+#endif
+
 // To prevent mods from hardcoding field offsets which would cause engine incompatibilities.
 static uint32_t GetExtFieldCookie(void)
 {
@@ -2078,6 +2123,14 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		if (!strcmp(key, "colormod"))
 		{
 			return offsetof(ext_entvars_t, colourmod) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "SendEntity"))
+		{
+			return offsetof(ext_entvars_t, sendentity) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "pvsflags"))
+		{
+			return offsetof(ext_entvars_t, pvsflags) | GetExtFieldCookie();
 		}
 	}
 
