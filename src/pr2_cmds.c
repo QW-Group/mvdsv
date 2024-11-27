@@ -167,36 +167,36 @@ void PR2_CheckEmptyString(char *s)
 		PR2_RunError("Bad string");
 }
 
-void PF2_precache_sound(char *s)
+int PF2_precache_sound(char *s)
 {
 	int i;
 
-	if (sv.state != ss_loading)
-		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
-		             "functions");
 	PR2_CheckEmptyString(s);
 
 	for (i = 0; i < MAX_SOUNDS; i++)
 	{
 		if (!sv.sound_precache[i])
 		{
+			if (sv.state != ss_loading)
+			{
+				PR2_RunError("PF_Precache_*: Precache can only add new sounds in spawn "
+							 "functions");
+			}
 			sv.sound_precache[i] = s;
-			return;
+			return i;
 		}
 		if (!strcmp(sv.sound_precache[i], s))
-			return;
+			return i;
 	}
 
 	PR2_RunError ("PF_precache_sound: overflow");
+
+	return 0;
 }
 
-void PF2_precache_model(char *s)
+int PF2_precache_model(char *s)
 {
 	int 	i;
-
-	if (sv.state != ss_loading)
-		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
-		             "functions");
 
 	PR2_CheckEmptyString(s);
 
@@ -204,23 +204,26 @@ void PF2_precache_model(char *s)
 	{
 		if (!sv.model_precache[i])
 		{
+			if (sv.state != ss_loading)
+			{
+				PR2_RunError("PF_Precache_*: Precache can only add new models in spawn "
+							 "functions");
+			}
 			sv.model_precache[i] = s;
-			return;
+			return i;
 		}
 		if (!strcmp(sv.model_precache[i], s))
-			return;
+			return i;
 	}
 
 	PR2_RunError ("PF_precache_model: overflow");
+
+	return 0;
 }
 
 intptr_t PF2_precache_vwep_model(char *s)
 {
 	int 	i;
-
-	if (sv.state != ss_loading)
-		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
-		             "functions");
 
 	PR2_CheckEmptyString(s);
 
@@ -231,9 +234,16 @@ intptr_t PF2_precache_vwep_model(char *s)
 	for (i = 0; i < MAX_VWEP_MODELS; i++)
 	{
 		if (!sv.vw_model_name[i]) {
+			if (sv.state != ss_loading)
+			{
+				PR2_RunError("PF_Precache_*: Precache can only add new vweps in spawn "
+							 "functions");
+			}
 			sv.vw_model_name[i] = s;
 			return i;
 		}
+		if (!strcmp(sv.vw_model_name[i], s))
+			return i;
 	}
 	PR2_RunError ("PF_precache_vwep_model: overflow");
 	return 0;
@@ -2578,11 +2588,9 @@ intptr_t PR2_GameSystemCalls(intptr_t *args) {
 		ED_Free(VME(1));
 		return 0;
 	case G_PRECACHE_SOUND:
-		PF2_precache_sound(VMA(1));
-		return 0;
+		return PF2_precache_sound(VMA(1));
 	case G_PRECACHE_MODEL:
-		PF2_precache_model(VMA(1));
-		return 0;
+		return PF2_precache_model(VMA(1));
 	case G_LIGHTSTYLE:
 		PF2_lightstyle(args[1], VMA(2));
 		return 0;
