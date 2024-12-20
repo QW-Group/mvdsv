@@ -1131,16 +1131,15 @@ qbool CheckReConnect( netadr_t adr, int qport )
 void CountPlayersSpecsVips(int *clients_ptr, int *spectators_ptr, int *vips_ptr, client_t **newcl_ptr)
 {
 	client_t *cl = NULL, *newcl = NULL;
-	int clients = 0, spectators = 0, vips = 0;
+	client_t *free_slots[MAX_CLIENTS];
+	int clients = 0, spectators = 0, vips = 0, free_slots_counter = 0;
 	int i;
 
 	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
 	{
 		if (cl->state == cs_free)
 		{
-			if (!newcl)
-				newcl = cl; // grab first available slot
-
+			free_slots[free_slots_counter++] = cl;
 			continue;
 		}
 
@@ -1163,8 +1162,10 @@ void CountPlayersSpecsVips(int *clients_ptr, int *spectators_ptr, int *vips_ptr,
 		*spectators_ptr = spectators;
 	if (vips_ptr)
 		*vips_ptr = vips;
-	if (newcl_ptr)
-		*newcl_ptr = newcl;
+
+	// select a random free slot from svs.clients for the client
+	if (newcl_ptr && free_slots_counter > 0)
+		*newcl_ptr = free_slots[rand() % free_slots_counter];
 }
 
 //==============================================
