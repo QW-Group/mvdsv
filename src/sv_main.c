@@ -171,6 +171,9 @@ cvar_t	coop = {"coop", "0"}; // dont delete this variable - it used by mods
 cvar_t	sv_paused = {"sv_paused", "0", CVAR_ROM};
 
 cvar_t	hostname = {"hostname", "unnamed", CVAR_SERVERINFO};
+cvar_t	hostport = {"hostport", "", CVAR_SERVERINFO};
+cvar_t	countrycode = {"countrycode", "", CVAR_SERVERINFO};
+cvar_t	city = {"city", "", CVAR_SERVERINFO};
 
 cvar_t sv_forcenick = {"sv_forcenick", "0"}; //0 - don't force; 1 - as login;
 cvar_t sv_registrationinfo = {"sv_registrationinfo", ""}; // text shown before "enter login"
@@ -3431,6 +3434,9 @@ void SV_InitLocal (void)
 	Cvar_Register (&maxspectators);
 	Cvar_Register (&maxvip_spectators);
 	Cvar_Register (&hostname);
+	Cvar_Register (&hostport);
+	Cvar_Register (&countrycode);
+	Cvar_Register (&city);
 	Cvar_Register (&deathmatch);
 	Cvar_Register (&watervis);
 	Cvar_Register (&serverdemo);
