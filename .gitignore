@@ -30,4 +30,5 @@ build/vs/*.exe
 build/vs/*.db
 build/vs/*.def
 build/vs/*.ilk
+build/
 /.cache
