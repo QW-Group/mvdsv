@@ -201,6 +201,10 @@ cvar_t sv_extlimits = { "sv_extlimits", "2" };
 cvar_t sv_pext_ezquake_verfortrans = {"pext_ezquake_verfortrans", "7814", CVAR_NONE};
 #endif
 
+#ifdef FTE_PEXT_CSQC
+cvar_t sv_csqc_progname = { "sv_csqc_progname", "csprogs.dat" };
+#endif
+
 qbool sv_error = false;
 
 client_t *WatcherId = NULL; // QW262
@@ -428,6 +432,10 @@ void SV_DropClient(client_t* drop)
 	drop->edict->v->frags = 0.0;
 	drop->name[0] = 0;
 
+#ifdef FTE_PEXT_CSQC
+	drop->csqcactive = false;
+#endif
+
 	Info_RemoveAll(&drop->_userinfo_ctx_);
 	Info_RemoveAll(&drop->_userinfoshort_ctx_);
 
@@ -489,6 +497,20 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 {
 	char info[MAX_EXT_INFO_STRING];
 	int i;
+
+#ifdef FTE_PEXT_CSQC
+	// Reki: resend all CSQC ents, for reasons. previously the initial CSQC ent states were being dropped for some delta reasons I think.
+	if (client->csqcactive)
+	{
+		for (i = 1; i < MAX_EDICTS; i++)
+		{
+			if (client->csqcentityscope[i] & SCOPE_WANTSEND)
+			{
+				client->csqcentitysendflags[i] = 0xFFFFFF;
+			}
+		}
+	}
+#endif
 
 	i = client - svs.clients;
 
@@ -3543,6 +3565,10 @@ void SV_InitLocal (void)
 
 	Cvar_Register(&sv_mod_extensions);
 
+#ifdef FTE_PEXT_CSQC
+	Cvar_Register (&sv_csqc_progname);
+#endif
+
 // QW262 -->
 	Cmd_AddCommand ("svadmin", SV_Admin_f);
 // <-- QW262
@@ -3590,6 +3616,10 @@ void SV_InitLocal (void)
 #ifdef FTE_PEXT_COLOURMOD
 	svs.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
 #endif
+#ifdef FTE_PEXT_CSQC
+	svs.fteprotocolextensions |= FTE_PEXT_CSQC;
+#endif
+
 #ifdef FTE_PEXT2_VOICECHAT
 	svs.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;
 #endif
@@ -3608,6 +3638,9 @@ void SV_InitLocal (void)
 #endif
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON2
 	svs.mvdprotocolextension1 |= MVD_PEXT1_SERVERSIDEWEAPON2;
+#endif
+#ifdef MVD_PEXT1_EZCSQC
+	svs.mvdprotocolextension1 |= MVD_PEXT1_EZCSQC;
 #endif
 
 	Info_SetValueForStarKey (svs.info, "*version", SERVER_NAME " " SERVER_VERSION, MAX_SERVERINFO_STRING);

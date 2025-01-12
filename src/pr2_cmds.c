@@ -39,6 +39,9 @@
 const char *pr2_ent_data_ptr;
 vm_t *sv_vm = NULL;
 extern gameData_t gamedata;
+#ifdef FTE_PEXT_CSQC
+extern sizebuf_t *csqcmsgbuffer;
+#endif
 
 static int PASSFLOAT(float f)
 {
@@ -57,6 +60,9 @@ static float GETFLOAT(int i)
 #endif
 
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
+#ifdef FTE_PEXT_CSQC
+static intptr_t EXT_SetSendNeeded(intptr_t *args);
+#endif
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
 static intptr_t EXT_GetExtFieldPtr(intptr_t *args);
@@ -69,6 +75,9 @@ struct
 	{"MapExtFieldPtr",	EXT_MapExtFieldPtr},
 	{"SetExtFieldPtr",	EXT_SetExtFieldPtr},
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
+#ifdef FTE_PEXT_CSQC
+	{"setsendneeded",		EXT_SetSendNeeded},
+#endif
 };
 ext_syscall_t ext_syscall_tbl[256];
 
@@ -161,36 +170,36 @@ void PR2_CheckEmptyString(char *s)
 		PR2_RunError("Bad string");
 }
 
-void PF2_precache_sound(char *s)
+int PF2_precache_sound(char *s)
 {
 	int i;
 
-	if (sv.state != ss_loading)
-		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
-		             "functions");
 	PR2_CheckEmptyString(s);
 
 	for (i = 0; i < MAX_SOUNDS; i++)
 	{
 		if (!sv.sound_precache[i])
 		{
+			if (sv.state != ss_loading)
+			{
+				PR2_RunError("PF_Precache_*: Precache can only add new sounds in spawn "
+							 "functions");
+			}
 			sv.sound_precache[i] = s;
-			return;
+			return i;
 		}
 		if (!strcmp(sv.sound_precache[i], s))
-			return;
+			return i;
 	}
 
 	PR2_RunError ("PF_precache_sound: overflow");
+
+	return 0;
 }
 
-void PF2_precache_model(char *s)
+int PF2_precache_model(char *s)
 {
 	int 	i;
-
-	if (sv.state != ss_loading)
-		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
-		             "functions");
 
 	PR2_CheckEmptyString(s);
 
@@ -198,23 +207,26 @@ void PF2_precache_model(char *s)
 	{
 		if (!sv.model_precache[i])
 		{
+			if (sv.state != ss_loading)
+			{
+				PR2_RunError("PF_Precache_*: Precache can only add new models in spawn "
+							 "functions");
+			}
 			sv.model_precache[i] = s;
-			return;
+			return i;
 		}
 		if (!strcmp(sv.model_precache[i], s))
-			return;
+			return i;
 	}
 
 	PR2_RunError ("PF_precache_model: overflow");
+
+	return 0;
 }
 
 intptr_t PF2_precache_vwep_model(char *s)
 {
 	int 	i;
-
-	if (sv.state != ss_loading)
-		PR2_RunError("PF_Precache_*: Precache can only be done in spawn "
-		             "functions");
 
 	PR2_CheckEmptyString(s);
 
@@ -225,9 +237,16 @@ intptr_t PF2_precache_vwep_model(char *s)
 	for (i = 0; i < MAX_VWEP_MODELS; i++)
 	{
 		if (!sv.vw_model_name[i]) {
+			if (sv.state != ss_loading)
+			{
+				PR2_RunError("PF_Precache_*: Precache can only add new vweps in spawn "
+							 "functions");
+			}
 			sv.vw_model_name[i] = s;
 			return i;
 		}
+		if (!strcmp(sv.vw_model_name[i], s))
+			return i;
 	}
 	PR2_RunError ("PF_precache_vwep_model: overflow");
 	return 0;
@@ -1173,6 +1192,9 @@ MESSAGE WRITING
 #define	MSG_ALL			2		// reliable to all
 #define	MSG_INIT		3		// write to the init string
 #define	MSG_MULTICAST	4		// for multicast()
+#ifdef FTE_PEXT_CSQC
+#define MSG_CSQC		5		// for csqc
+#endif
 
 
 sizebuf_t *WriteDest2(int dest)
@@ -1208,6 +1230,9 @@ sizebuf_t *WriteDest2(int dest)
 
 	case MSG_MULTICAST:
 		return &sv.multicast;
+
+	case MSG_CSQC:
+		return csqcmsgbuffer;
 
 	default:
 		PR2_RunError ("WriteDest: bad destination");
@@ -1601,6 +1626,12 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
 		else if (!strcmp(key, "ping"))
 			snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
+#ifdef FTE_PEXT_CSQC
+		else if (!strcmp(key, "csqcactive") || !strcmp(key, "*csqcactive") || !strcmp(key, "ezcsqc"))
+		{
+			snprintf(ov, sizeof(ov), "%d", (int)cl->csqcactive);
+		}
+#endif
 		else if (!strcmp(key, "*userid"))
 			snprintf(ov, sizeof(ov), "%d", cl->userid);
 		else if (!strncmp(key, "login", 6))
@@ -1980,6 +2011,36 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 	return numfiles;
 }
 
+#ifdef FTE_PEXT_CSQC
+intptr_t EXT_SetSendNeeded(intptr_t *args)
+{
+	unsigned int subject = args[1];
+	unsigned int fl = args[2];
+	unsigned int to = args[3];
+
+	if (!to)
+	{	//broadcast
+		for (to = 0; to < MAX_CLIENTS; to++)
+		{
+			svs.clients[to].csqcentitysendflags[subject] |= fl;
+		}
+	}
+	else
+	{
+		to--;
+		if (to >= MAX_CLIENTS)
+		{
+			;	//some kind of error.
+		}
+		else
+		{
+			svs.clients[to].csqcentitysendflags[subject] |= fl;
+		}
+	}
+	return 0;
+}
+#endif
+
 // To prevent mods from hardcoding field offsets which would cause engine incompatibilities.
 static uint32_t GetExtFieldCookie(void)
 {
@@ -2062,6 +2123,14 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		if (!strcmp(key, "colormod"))
 		{
 			return offsetof(ext_entvars_t, colourmod) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "SendEntity"))
+		{
+			return offsetof(ext_entvars_t, sendentity) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "pvsflags"))
+		{
+			return offsetof(ext_entvars_t, pvsflags) | GetExtFieldCookie();
 		}
 	}
 
@@ -2542,11 +2611,9 @@ intptr_t PR2_GameSystemCalls(intptr_t *args) {
 		ED_Free(VME(1));
 		return 0;
 	case G_PRECACHE_SOUND:
-		PF2_precache_sound(VMA(1));
-		return 0;
+		return PF2_precache_sound(VMA(1));
 	case G_PRECACHE_MODEL:
-		PF2_precache_model(VMA(1));
-		return 0;
+		return PF2_precache_model(VMA(1));
 	case G_LIGHTSTYLE:
 		PF2_lightstyle(args[1], VMA(2));
 		return 0;

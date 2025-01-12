@@ -90,4 +90,8 @@ void 		PR2_InitProg(void);
 void        PR2_ClearEdict(edict_t* e);
 #define PR_ClearEdict PR2_ClearEdict
 
+#ifdef FTE_PEXT_CSQC
+qbool       PR2_SendEntity(edict_t* e, edict_t* to, int sendflags);
+#endif
+
 #endif /* !__PR2_H__ */
