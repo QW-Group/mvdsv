@@ -128,9 +128,11 @@ set(LFLAGS)
 
 
 ######################################################################################################
-
-# Set target
-add_executable(${PROJECT_NAME} ${SRC_COMMON})
+# Mark the executable as a non-console application
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+	set(TARGET_TYPE WIN32)
+endif()
+add_executable(${PROJECT_NAME} ${TARGET_TYPE} ${SRC_COMMON})
 set_target_properties(${PROJECT_NAME}
 	PROPERTIES #PREFIX "" # Strip lib prefix.
 	C_VISIBILITY_PRESET hidden # Hide all symbols unless excplicitly marked to export.
@@ -154,7 +156,9 @@ if(UNIX)
 else()
 	target_link_libraries(${PROJECT_NAME} ws2_32)
 	target_link_libraries(${PROJECT_NAME} winmm)
-	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc")
+	if(NOT CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+		set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc")
+	endif()
 endif()
 
 
@@ -192,7 +196,9 @@ endif()
 # Assign compiler flags
 target_compile_options(${PROJECT_NAME} PRIVATE ${CFLAGS})
 
-target_link_libraries(${PROJECT_NAME} -lpthread)
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+	target_link_libraries(${PROJECT_NAME} -lpthread)
+endif()
 
 
 ######################################################################################################
