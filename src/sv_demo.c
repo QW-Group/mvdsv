@@ -1321,8 +1321,9 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	while (s)
 	{
 		MSG_WriteString (&buf, s);
-		if (buf.cursize > MAX_MSGLEN/2)
+		if (buf.cursize > MAX_MSGLEN/2 && n & 0xff)
 		{
+			// partial flush as long as not at a zero boundary
 			MSG_WriteByte (&buf, 0);
 			MSG_WriteByte (&buf, n);
 			SV_WriteRecordMVDMessage (&buf);
