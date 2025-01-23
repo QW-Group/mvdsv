@@ -22,7 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef CLIENTONLY
 #include "qwsvdef.h"
 #ifndef SERVERONLY
-#include "pcre.h"
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #endif
 
 #define MAX_DEMOINFO_SIZE (1024 * 200)
@@ -342,8 +343,10 @@ void SV_DemoList (qbool use_regex)
 	int		files[MAX_DIRFILES + 1];
 
 	int	r;
-	pcre	*preg;
-	const char	*errbuf;
+	size_t erroffset;
+	pcre2_code *preg;
+	pcre2_match_data *md;
+	PCRE2_UCHAR errbuf[120];
 
 	memset(files, 0, sizeof(files));
 
@@ -361,26 +364,29 @@ void SV_DemoList (qbool use_regex)
 		{
 			if (use_regex)
 			{
-				if (!(preg = pcre_compile(Q_normalizetext(Cmd_Argv(j)),	PCRE_CASELESS, &errbuf, &r, NULL)))
+				if (!(preg = pcre2_compile((PCRE2_SPTR)Q_normalizetext(Cmd_Argv(j)), PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &r, &erroffset, NULL)))
 				{
-					Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
-					           Cmd_Argv(j), errbuf, r);
-					pcre_free(preg);
+					pcre2_get_error_message(r, errbuf, sizeof(errbuf));
+					Con_Printf("Sys_listdir: pcre2_compile(%s) error: %s at offset %lu\n",
+					           Cmd_Argv(j), errbuf, erroffset);
 					break;
 				}
-				switch (r = pcre_exec(preg, NULL, list->name,
-				                      strlen(list->name), 0, 0, NULL, 0))
+				md = pcre2_match_data_create_from_pattern(preg, NULL);
+				switch (r = pcre2_match(preg, (PCRE2_SPTR)list->name,
+				                        strlen(list->name), 0, 0, md, NULL))
 				{
 				case 0:
-					pcre_free(preg);
+					pcre2_match_data_free(md);
+					pcre2_code_free(preg);
 					continue;
-				case PCRE_ERROR_NOMATCH:
+				case PCRE2_ERROR_NOMATCH:
 					break;
 				default:
-					Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
+					Con_Printf("Sys_listdir: pcre2_match(%s, %s) error code: %d\n",
 					           Cmd_Argv(j), list->name, r);
 				}
-				pcre_free(preg);
+				pcre2_match_data_free(md);
+				pcre2_code_free(preg);
 				break;
 			}
 			else
@@ -502,9 +508,11 @@ char *SV_MVDName2Txt (const char *name)
 	char	s[MAX_OSPATH];
 	int		len;
 
-	int		r, ovector[OVECCOUNT];
-	pcre	*preg;
-	const char	*errbuf;
+	int		r;
+	size_t erroffset, *ovector;
+	pcre2_code *preg;
+	pcre2_match_data *md;
+	PCRE2_UCHAR errbuf[120];
 
 	if (!name)
 		return NULL;
@@ -515,29 +523,33 @@ char *SV_MVDName2Txt (const char *name)
 	strlcpy(s, name, MAX_OSPATH);
 	len = strlen(s);
 
-	if (!(preg = pcre_compile(sv_demoRegexp.string, PCRE_CASELESS, &errbuf, &r, NULL)))
+	if (!(preg = pcre2_compile((PCRE2_SPTR)sv_demoRegexp.string, PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &r, &erroffset, NULL)))
 	{
-		Con_Printf("SV_MVDName2Txt: pcre_compile(%s) error: %s at offset %d\n",
-					sv_demoRegexp.string, errbuf, r);
-		pcre_free(preg);
+		pcre2_get_error_message(r, errbuf, sizeof(errbuf));
+		Con_Printf("SV_MVDName2Txt: pcre2_compile(%s) error: %s at offset %lu\n",
+					sv_demoRegexp.string, errbuf, erroffset);
 		return NULL;
 	}
-	r = pcre_exec(preg, NULL, s, len, 0, 0, ovector, OVECCOUNT);
-	pcre_free(preg);
+	md = pcre2_match_data_create(OVECCOUNT, NULL);
+	r = pcre2_match(preg, (PCRE2_SPTR)s, len, 0, 0, md, NULL);
+	pcre2_code_free(preg);
 	if (r < 0)
 	{
 		switch (r)
 		{
-		case PCRE_ERROR_NOMATCH:
+		case PCRE2_ERROR_NOMATCH:
+			pcre2_match_data_free(md);
 			return NULL;
 		default:
-			Con_Printf("SV_MVDName2Txt: pcre_exec(%s, %s) error code: %d\n",
+			Con_Printf("SV_MVDName2Txt: pcre2_match(%s, %s) error code: %d\n",
 						sv_demoRegexp.string, s, r);
+			pcre2_match_data_free(md);
 			return NULL;
 		}
 	}
 	else
 	{
+		ovector = pcre2_get_ovector_pointer(md);
 		if (ovector[0] + 5 > MAX_OSPATH)
 			len = MAX_OSPATH - 5;
 		else
@@ -549,6 +561,7 @@ char *SV_MVDName2Txt (const char *name)
 	s[len++] = 't';
 	s[len]   = '\0';
 
+	pcre2_match_data_free(md);
 	//Con_Printf("%d) %s, %s\n", r, name, s);
 	return va("%s", s);
 }

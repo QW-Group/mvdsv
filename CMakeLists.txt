@@ -104,18 +104,14 @@ endif()
 ######################################################################################################
  
 # Check for PCRE. if found, include it; if not found, use bundled PCRE.
-find_library(PCRE_LIBRARIES pcre)
+find_library(PCRE_LIBRARIES pcre2-8)
 if(PCRE_LIBRARIES)
 	set(PCRE_FOUND 1)
-	find_path(PCRE_INCLUDE_DIR pcre.h)
+	find_path(PCRE_INCLUDE_DIR pcre2.h)
 endif(PCRE_LIBRARIES)
 
 if(NOT PCRE_FOUND)
-	message(STATUS "PCRE library not found. Using bundled PCRE instead.")
-	list(APPEND SRC_COMMON
-	    "${DIR_SRC}/pcre/get.c"
-	    "${DIR_SRC}/pcre/pcre.c"
-	)
+	message(FATAL_ERROR "PCRE library not found.")
 else()
 	message(STATUS "Found PCRE: ${PCRE_LIBRARIES}")
 endif()
