@@ -103,17 +103,17 @@ endif()
 
 ######################################################################################################
  
-# Check for PCRE. if found, include it; if not found, use bundled PCRE.
+# Check for PCRE. if found, include it; if not found, fail with an error.
 find_library(PCRE_LIBRARIES pcre2-8)
 if(PCRE_LIBRARIES)
 	set(PCRE_FOUND 1)
 	find_path(PCRE_INCLUDE_DIR pcre2.h)
 endif(PCRE_LIBRARIES)
 
-if(NOT PCRE_FOUND)
-	message(FATAL_ERROR "PCRE library not found.")
-else()
+if(PCRE_FOUND)
 	message(STATUS "Found PCRE: ${PCRE_LIBRARIES}")
+else()
+	message(FATAL_ERROR "PCRE library not found.")
 endif()
 
 ######################################################################################################
