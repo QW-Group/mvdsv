@@ -126,7 +126,7 @@ typedef struct
 
 	qbool		   mvdrecording;
 
-	entity_state_t static_entities[512];
+	entity_state_t static_entities[MAX_STATIC_ENTITIES];
 	int            static_entity_count;
 } server_t;
 
