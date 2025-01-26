@@ -11,36 +11,36 @@ jobs:
          - target: linux-amd64
            os: linux
            arch: amd64
-           base-image: ubuntu-latest
+           base-image: ubuntu-24.04
            build-image: amd64/debian:stable
            ext: ""
          - target: linux-i686
            os: linux
            arch: i386
-           base-image: ubuntu-latest
+           base-image: ubuntu-24.04
            build-image: i386/debian:stable
            ext: ""
          - target: linux-armhf
            os: linux
            arch: arm/v7
-           base-image: ubuntu-latest
+           base-image: ubuntu-24.04
            build-image: arm32v7/debian:stable
            ext: ""
          - target: linux-aarch64
            os: linux
            arch: arm64
-           base-image: ubuntu-latest
+           base-image: ubuntu-24.04
            build-image: arm64v8/debian:stable
            ext: ""
          - target: windows-x64
            os: windows
            arch: x64
-           base-image: ubuntu-latest
+           base-image: ubuntu-24.04
            ext: ".exe"
          - target: windows-x86
            os: windows
            arch: x86
-           base-image: ubuntu-latest
+           base-image: ubuntu-24.04
            ext: ".exe"
     steps:
       - name: Checkout
