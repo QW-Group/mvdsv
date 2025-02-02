@@ -57,6 +57,9 @@ static float GETFLOAT(int i)
 #endif
 
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
+#ifdef FTE_PEXT_CSQC
+static intptr_t EXT_SetSendNeeded(intptr_t *args);
+#endif
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
 static intptr_t EXT_GetExtFieldPtr(intptr_t *args);
@@ -69,6 +72,9 @@ struct
 	{"MapExtFieldPtr",	EXT_MapExtFieldPtr},
 	{"SetExtFieldPtr",	EXT_SetExtFieldPtr},
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
+#ifdef FTE_PEXT_CSQC
+	{"setsendneeded",		EXT_SetSendNeeded},
+#endif
 };
 ext_syscall_t ext_syscall_tbl[256];
 
@@ -1173,6 +1179,9 @@ MESSAGE WRITING
 #define	MSG_ALL			2		// reliable to all
 #define	MSG_INIT		3		// write to the init string
 #define	MSG_MULTICAST	4		// for multicast()
+#ifdef FTE_PEXT_CSQC
+#define	MSG_CSQC		5		// for csqc
+#endif
 
 
 sizebuf_t *WriteDest2(int dest)
@@ -1208,6 +1217,11 @@ sizebuf_t *WriteDest2(int dest)
 
 	case MSG_MULTICAST:
 		return &sv.multicast;
+
+	case MSG_CSQC:
+		// Should return a reference to the CSQC message buffer managed in sv_ents.c
+		PR2_RunError("PF_Write_*: MSG_CSQC not implemented yet.");
+		return NULL;
 
 	default:
 		PR2_RunError ("WriteDest: bad destination");
@@ -1986,6 +2000,14 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 	return numfiles;
 }
 
+#ifdef FTE_PEXT_CSQC
+intptr_t EXT_SetSendNeeded(intptr_t *args)
+{
+	PR2_RunError("SetSendNeeded not implemented yet.");
+	return 0;
+}
+#endif
+
 // To prevent mods from hardcoding field offsets which would cause engine incompatibilities.
 static uint32_t GetExtFieldCookie(void)
 {
@@ -2068,6 +2090,14 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		if (!strcmp(key, "colormod"))
 		{
 			return offsetof(ext_entvars_t, colourmod) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "SendEntity"))
+		{
+			return offsetof(ext_entvars_t, sendentity) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "pvsflags"))
+		{
+			return offsetof(ext_entvars_t, pvsflags) | GetExtFieldCookie();
 		}
 	}
 
