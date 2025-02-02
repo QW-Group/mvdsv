@@ -128,6 +128,9 @@ typedef struct
 
 	entity_state_t static_entities[MAX_STATIC_ENTITIES];
 	int            static_entity_count;
+#ifdef FTE_PEXT_CSQC
+	unsigned int	csqcchecksum;
+#endif
 } server_t;
 
 #define	NUM_SPAWN_PARMS 16
@@ -343,6 +346,10 @@ typedef struct client_s
 		VT_PLAYERSLOT0
 		/*player0+...*/
 	} voice_target;
+#endif
+
+#ifdef FTE_PEXT_CSQC
+	qbool			csqcactive;
 #endif
 
 	//===== NETWORK ============
