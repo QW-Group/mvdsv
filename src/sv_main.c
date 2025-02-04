@@ -141,6 +141,7 @@ cvar_t	sv_getrealip = {"sv_getrealip", "1"};
 cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "2"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
+cvar_t	sv_idlesleep = {"sv_idlesleep", "0"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 cvar_t  sv_loadentfiles_dir = {"sv_loadentfiles_dir", ""}; // check for .ent file in maps/sv_loadentfiles_dir first then just maps/
@@ -3107,6 +3108,27 @@ static void SV_CheckTimeouts (void)
 	}
 }
 
+/*
+==================
+SV_IdleSleep
+
+// If the server is empty, avoid a busy loop by sleeping for the number of
+// milliseconds specified by sv_idlesleep per frame to reduce CPU usage.
+==================
+*/
+static void SV_IdleSleep(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (svs.clients[i].state >= cs_preconnected)
+			return;
+	}
+
+	usleep((int)sv_idlesleep.value * 1000);
+}
+
 #ifdef SERVERONLY
 /*
 ===================
@@ -3329,6 +3351,9 @@ void SV_Frame (double time1)
 		svs.stats.count = 0;
 		svs.stats.demo = 0;
 	}
+
+	if ((int)sv_idlesleep.value > 0)
+		SV_IdleSleep();
 }
 
 /*
@@ -3388,6 +3413,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&sv_maxdownloadrate);
 	Cvar_Register (&sv_serverip);
 	Cvar_Register (&sv_forcespec_onfull);
+	Cvar_Register (&sv_idlesleep);
 
 #ifdef SERVERONLY
 	Cvar_Register (&rcon_password);
