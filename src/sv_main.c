@@ -631,8 +631,8 @@ static void SVC_Status (void)
 			{
 				top    = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "topcolor"));
 				bottom = Q_atoi(Info_Get (&cl->_userinfo_ctx_, "bottomcolor"));
-				top    = (top    < 0) ? 0 : ((top    > 13) ? 13 : top);
-				bottom = (bottom < 0) ? 0 : ((bottom > 13) ? 13 : bottom);
+				top    = (top    < 0) ? 0 : ((top    > 16) ? 16 : top);
+				bottom = (bottom < 0) ? 0 : ((bottom > 16) ? 16 : bottom);
 				ping   = SV_CalcPing (cl);
 				name   = cl->name;
 				if (cl->spectator)
