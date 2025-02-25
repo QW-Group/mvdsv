@@ -3472,6 +3472,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&hostport);
 	Cvar_Register (&countrycode);
 	Cvar_Register (&city);
+	Cvar_Register (&coords);
 	Cvar_Register (&deathmatch);
 	Cvar_Register (&watervis);
 	Cvar_Register (&serverdemo);
