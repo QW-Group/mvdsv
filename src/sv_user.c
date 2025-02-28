@@ -3087,7 +3087,18 @@ void SV_Voice_UnmuteAll_f(void)
 #ifdef FTE_PEXT_CSQC
 void SV_EnableClientsCSQC(void)
 {
+	size_t e;
+
 	sv_client->csqcactive = true;
+
+	//if the csqc has just restarted, its probably going to want us to resend all csqc ents from scratch because of all the setup it might do.
+	for (e = 1; e < MAX_EDICTS; e++)
+	{
+		if (sv_client->csqcentityscope[e] & SCOPE_WANTSEND)
+		{
+			sv_client->csqcentitysendflags[e] = 0xFFFFFF;
+		}
+	}
 }
 
 void SV_DisableClientsCSQC(void)
@@ -3526,6 +3537,40 @@ void SV_PreRunCmd(void)
 {
 	memset(playertouch, 0, sizeof(playertouch));
 }
+
+#ifdef FTE_PEXT_CSQC
+/*
+===========
+CSQC Stuff, for now just SimpleProjectiles
+===========
+*/
+qbool SV_FrameLost(int framenum)
+{
+	if (framenum <= sv_client->csqc_framenum)
+	{
+		EntityFrameCSQC_LostFrame(sv_client, framenum);
+		return true;
+	}
+
+	return false;
+}
+
+static void SV_FrameAck(int framenum)
+{
+	/*
+	int i;
+	// scan for packets made obsolete by this ack and delete them
+	for (i = 0; i < ENTITYFRAME5_MAXPACKETLOGS; i++)
+	{
+		if (d->packetlog[i].packetnumber <= framenum)
+		{
+			d->packetlog[i].packetnumber = 0;
+		}
+	}
+	*/
+}
+#endif
+
 
 /*
 ===========
@@ -4496,6 +4541,18 @@ void SV_ExecuteClientMessage (client_t *cl)
 	sv_player = sv_client->edict;
 
 	seq_hash = cl->netchan.incoming_sequence;
+
+#ifdef FTE_PEXT_CSQC
+	for (i = cl->csqc_latestverified + 1; i < cl->netchan.incoming_acknowledged; i++)
+	{
+		if (!SV_FrameLost(i))
+		{
+			break;
+		}
+	}
+	SV_FrameAck(cl->netchan.incoming_acknowledged);
+	cl->csqc_latestverified = cl->netchan.incoming_acknowledged;
+#endif
 
 	// mark time so clients will know how much to predict
 	// other players

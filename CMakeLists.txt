@@ -170,6 +170,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE USE_PR2)
 target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON)
 target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON2)
 target_compile_definitions(${PROJECT_NAME} PRIVATE FTE_PEXT2_VOICECHAT)
+target_compile_definitions(${PROJECT_NAME} PRIVATE FTE_PEXT_ACCURATETIMINGS=0x40)
 
 include (TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)

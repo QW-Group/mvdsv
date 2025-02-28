@@ -130,6 +130,7 @@ typedef struct
 	int            static_entity_count;
 #ifdef FTE_PEXT_CSQC
 	unsigned int	csqcchecksum;
+	unsigned short	csqcsendstates[MAX_EDICTS];
 #endif
 } server_t;
 
@@ -185,6 +186,24 @@ typedef struct
 
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
 #define MAX_WEAPONSWITCH_OPTIONS    10
+#endif
+
+#ifdef FTE_PEXT_CSQC
+// code adapted from Darkplaces
+#define SCOPE_WANTREMOVE 1        // Set if a remove has been scheduled.
+#define SCOPE_WANTUPDATE 2        // Set if an update has been scheduled.
+#define SCOPE_WANTSEND (SCOPE_WANTREMOVE | SCOPE_WANTUPDATE)
+#define SCOPE_EXISTED_ONCE 4      // Set if the entity once existed. All these get resent on a full loss.
+#define SCOPE_ASSUMED_EXISTING 8  // Set if the entity is currently assumed existing and therefore needs removes.
+
+#define NUM_CSQCENTITIES_PER_FRAME 256
+typedef struct csqcentityframedb_s
+{
+	int framenum;
+	int num;
+	unsigned short entno[NUM_CSQCENTITIES_PER_FRAME];
+	int sendflags[NUM_CSQCENTITIES_PER_FRAME];
+} csqcentityframedb_t;
 #endif
 
 typedef struct client_s
@@ -350,6 +369,16 @@ typedef struct client_s
 
 #ifdef FTE_PEXT_CSQC
 	qbool			csqcactive;
+	int				csqc_framenum;
+	int				csqc_latestverified;
+	int				csqcnumedicts;
+	unsigned char	csqcentityscope[MAX_EDICTS];
+	unsigned int	csqcentitysendflags[MAX_EDICTS];
+
+#define NUM_CSQCENTITYDB_FRAMES		UPDATE_MASK//256
+	csqcentityframedb_t csqcentityframehistory[NUM_CSQCENTITYDB_FRAMES];
+	int					csqcentityframehistory_next;
+	int					csqcentityframe_lastreset;
 #endif
 
 	//===== NETWORK ============
@@ -922,6 +951,10 @@ void SV_KickClient(client_t* client, const char* reason);
 //
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder);
 void SV_SetVisibleEntitiesForBot (client_t* client);
+#ifdef FTE_PEXT_CSQC
+int SV_EmitCSQCUpdate(client_t *client, sizebuf_t *msg, int maxsize, int entlist_size, const unsigned short *entlist);
+void EntityFrameCSQC_LostFrame(client_t *client, int framenum);
+#endif
 
 //
 // sv_nchan.c
