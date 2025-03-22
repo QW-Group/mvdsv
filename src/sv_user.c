@@ -2434,6 +2434,7 @@ static void Cmd_SetInfo_f (void)
 void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* old_value)
 {
 	int i;
+	char *s;
 
 	// process any changed values
 	SV_ExtractFromUserinfo (sv_client, !strcmp(key, "name"));
@@ -2463,6 +2464,11 @@ void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* ol
 			MSG_WriteString (&sv.reliable_datagram, nuw);
 			break;
 		}
+	}
+
+	if (strcmp(key, "qul") == 0 && (s = Info_Get(&sv_client->_userinfo_ctx_, key)) && *s == '1')
+	{
+		QTV_Client_UserList(sv_client);
 	}
 }
 

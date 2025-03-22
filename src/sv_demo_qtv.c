@@ -916,6 +916,29 @@ void QTVsv_FreeUserList(mvddest_t *d)
 
 #define QTV_EVENT_PREFIX "QTV: "
 
+static void QTVsv_EventToClients(qtvuser_t *user, qtvuserlist_t event)
+{
+	char buff[128], *qul;
+	client_t *client;
+	int i;
+
+	snprintf(buff, sizeof(buff), "//qul %d %d \"%s\"\n", event, user->id, user->name);
+
+	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++)
+	{
+		if (client->state < cs_preconnected)
+		{
+			continue;
+		}
+
+		if ((qul = Info_Get(&client->_userinfo_ctx_, "qul")) && *qul == '1')
+		{
+			MSG_WriteByte(&client->netchan.message, svc_stufftext);
+			MSG_WriteString(&client->netchan.message, buff);
+		}
+	}
+}
+
 // user join qtv
 void QTVsv_JoinEvent(mvddest_t *d, qtvuser_t *user)
 {
@@ -934,6 +957,8 @@ void QTVsv_JoinEvent(mvddest_t *d, qtvuser_t *user)
 	}
 
 	Con_Printf("%s%s: %s%s\n", QTV_EVENT_PREFIX, d->qtvname, user->name, /*qtv_event_join.string*/ " join");
+
+	QTVsv_EventToClients(user, QUL_ADD);
 }
 
 // user leaved/left qtv
@@ -952,6 +977,8 @@ void QTVsv_LeaveEvent(mvddest_t *d, qtvuser_t *user)
 	}
 
 	Con_Printf("%s%s: %s%s\n", QTV_EVENT_PREFIX, d->qtvname, olduser->name, /*qtv_event_leave.string*/ " left");
+
+	QTVsv_EventToClients(user, QUL_DEL);
 }
 
 // user changed name on qtv
@@ -971,6 +998,8 @@ void QTVsv_ChangeEvent(mvddest_t *d, qtvuser_t *user)
 	}
 
 	Con_Printf("%s%s: %s%s%s\n", QTV_EVENT_PREFIX, d->qtvname, olduser->name, /*qtv_event_changename.string*/ " changed name to ", user->name);
+
+	QTVsv_EventToClients(user, QUL_CHANGE);
 }
 
 static void QTVcmd_QtvUserList_f(mvddest_t *d)
@@ -1387,6 +1416,28 @@ void QTV_Streams_UserList (void)
 			for (current = dst->qtvuserlist; current; current = current->next)
 				Con_Printf (" \"%s\"", current->name);
 			Con_Printf ("\n");
+		}
+	}
+}
+
+void QTV_Client_UserList (client_t *client)
+{
+	char buff[128];
+	mvddest_t *dst;
+	qtvuser_t *user;
+
+	for (dst = demo.dest; dst; dst = dst->nextdest)
+	{
+		if (dst->desttype != DEST_STREAM)
+		{
+			continue;
+		}
+
+		for (user = dst->qtvuserlist; user; user = user->next)
+		{
+			snprintf(buff, sizeof(buff), "//qul %d %d \"%s\"\n", QUL_INIT, user->id, user->name);
+			MSG_WriteByte(&client->netchan.message, svc_stufftext);
+			MSG_WriteString(&client->netchan.message, buff);
 		}
 	}
 }
