@@ -1478,6 +1478,11 @@ static void SVC_DirectConnect (void)
 	MVD_PlayerReset(NUM_FOR_EDICT(newcl->edict) - 1);
 
 	newcl->sendinfo = true;
+
+	if ((s = Info_Get(&newcl->_userinfo_ctx_, "qul")) && *s == '1')
+	{
+		QTV_Client_UserList(newcl);
+	}
 }
 
 static int char2int (int c)

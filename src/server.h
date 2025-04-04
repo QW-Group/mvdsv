@@ -1042,6 +1042,7 @@ void DemoWriteQTV (sizebuf_t *msg);
 void QTVsv_FreeUserList(mvddest_t *d);
 void QTV_Streams_List (void);
 void QTV_Streams_UserList (void);
+void QTV_Client_UserList (client_t *client);
 const char* SV_MVDDemoName(void);
 
 //
