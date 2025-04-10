@@ -189,6 +189,13 @@ void DestFlush (qbool complete)
 
 	for (d = demo.dest; d; d = d->nextdest)
 	{
+		// Check if demo total size is exceeded, stream dests are not limited.
+		qbool total_size_check = (
+			d->desttype != DEST_STREAM &&
+			(unsigned int)sv_demoMaxSize.value &&
+			d->totalsize > ((unsigned int)sv_demoMaxSize.value * 1024)
+		);
+
 		switch(d->desttype)
 		{
 		case DEST_FILE:
@@ -196,7 +203,7 @@ void DestFlush (qbool complete)
 			break;
 
 		case DEST_BUFFEREDFILE:
-			if (d->cacheused + DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS > d->maxcachesize || complete)
+			if (d->cacheused + DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS > d->maxcachesize || complete || total_size_check)
 			{
 				len = (int)fwrite(d->cache, 1, d->cacheused, d->file);
 				if (len != d->cacheused)
@@ -252,13 +259,11 @@ void DestFlush (qbool complete)
 			Sys_Error("DestFlush: encountered bad dest.");
 		}
 
-		if (d->desttype != DEST_STREAM) // no max size for stream
+		// Keep in mind that stream dests are not limited by this check.
+		if (total_size_check)
 		{
-			if ((unsigned int)sv_demoMaxSize.value && d->totalsize > ((unsigned int)sv_demoMaxSize.value * 1024))
-			{
-				Sys_Printf("DestFlush: sv_demoMaxSize = %db trigger for dest\n", (int)sv_demoMaxSize.value);
-				d->error = true;
-			}
+			Sys_Printf("DestFlush: sv_demoMaxSize = %dKiB trigger for dest\n", (int)sv_demoMaxSize.value);
+			d->error = true;
 		}
 
 		while (d->nextdest && d->nextdest->error)
