@@ -1,0 +1,485 @@
+#include "qwsvdef.h"
+
+typedef struct {
+	char *message;
+	char *name;
+} args_t;
+
+static DWORD WINAPI SV_BroadcastSend(void *data);
+static DWORD WINAPI SV_BroadcastQueryMasters(void *data);
+static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *server, int *server_count);
+
+static mutex_t servers_update_lock;
+static double last_servers_update;
+
+static mutex_t broadcast_lock;
+static double last_broadcast;
+
+static mutex_t server_list_lock;
+static netadr_t server_list[BROADCAST_MAX_SERVERS];
+static int server_list_count;
+
+void SV_BroadcastInit(void)
+{
+	Mutex_Init(&broadcast_lock);
+	last_broadcast = -99999;
+
+	Mutex_Init(&servers_update_lock);
+	last_servers_update = -99999;
+
+	Mutex_Init(&server_list_lock);
+}
+
+void SV_BroadcastUpdateServerList_f(void)
+{
+	SV_BroadcastUpdateServerList(true);
+}
+
+void SV_BroadcastUpdateServerList(qbool force_update)
+{
+	extern netadr_t master_adr[MAX_MASTERS];
+	extern cvar_t sv_broadcast_enabled;
+
+	if (!sv_broadcast_enabled.value)
+	{
+		if (force_update)
+		{
+			Con_Printf("SV_BroadcastUpdateServerList: "
+				"Cannot update broadcast servers, sv_broadcast_enabled is off\n");
+		}
+		return;
+	}
+
+	if (GameStarted())
+	{
+		if (force_update)
+		{
+			Con_Printf("SV_BroadcastUpdateServerList: "
+				"Cannot update broadcast servers, a game has already started\n");
+		}
+		return;
+	}
+
+	if (!force_update && realtime - last_servers_update < BROADCAST_SERVER_LIST_UPDATE_INTERVAL)
+	{
+		return;
+	}
+
+	// If there are no master servers configured, we'll wait the entire
+	// update_interval before trying again.
+	if (!master_adr[0].port)
+	{
+		Con_Printf("SV_BroadcastUpdateServerList: No master servers configured\n");
+		last_servers_update = realtime;
+		return;
+	}
+
+	if (!Mutex_TryLock(&servers_update_lock))
+	{
+		if (force_update)
+		{
+			Con_Printf("SV_BroadcastUpdateServerList: "
+				"An update of broadcast servers is already running\n");
+		}
+		return;
+	}
+
+	Con_Printf("Broadcast server list sync started\n");
+
+	if (Sys_CreateThread(SV_BroadcastQueryMasters, NULL))
+	{
+		Con_Printf("SV_BroadcastUpdateServerList: Unable to start query masters thread\n");
+		last_servers_update = realtime;
+		Mutex_Unlock(&servers_update_lock);
+	}
+}
+
+static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
+{
+	static struct timeval timeout = {BROADCAST_MASTER_TIMEOUT, 0};
+	static netadr_t servers[BROADCAST_MAX_SERVERS];
+	extern netadr_t master_adr[MAX_MASTERS];
+	int server_count = 0;
+	int sock;
+	int i;
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0)
+	{
+		Con_Printf("SV_BroadcastQueryMasters: Unable to initialize socket\n");
+		goto out;
+	}
+
+#ifdef _WIN32
+	static int timeout_ms = -1;
+
+	if (timeout_ms == -1)
+	{
+		timeout_ms = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
+	}
+
+	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout_ms, sizeof(timeout_ms)) < 0)
+#else
+	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
+#endif
+	{
+		Con_Printf("SV_BroadcastQueryMasters: Unable to set timeout on socket\n");
+		goto cleanup;
+	}
+
+	memset(servers, 0, sizeof(servers));
+
+	for (i = 0; i < MAX_MASTERS; i++)
+	{
+		if (!master_adr[i].port)
+		{
+			break;
+		}
+
+		SV_BroadcastQueryMaster(sock, &master_adr[i], servers, &server_count);
+	}
+
+	if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+	{
+		Con_Printf("SV_BroadcastQueryMasters: Failed to acquire server_list_lock, aborting\n");
+		goto cleanup;
+	}
+	server_list_count = server_count;
+	memcpy(server_list, servers, sizeof(netadr_t) * server_list_count);
+	Mutex_Unlock(&server_list_lock);
+	Con_Printf("Broadcast server list sync complete: %d server(s) available.\n", server_list_count);
+
+cleanup:
+	closesocket(sock);
+out:
+	Mutex_Unlock(&servers_update_lock);
+	last_servers_update = realtime;
+
+	return 0;
+}
+
+static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers, int *server_count)
+{
+	// Payload to send to the master server, which returns a list of all
+	// registered servers.
+	static const char payload[] = { 0x63 };
+
+	// This is the header we expect to receive from the master server.
+	static const char header[] = { 0xff, 0xff, 0xff, 0xff, 0x64, 0x0a };
+
+	const size_t header_size = sizeof(header);
+	const int addr_size = 6;
+	struct sockaddr_storage addr;
+	netadr_t new_addr;
+	qbool exists;
+	char buf[1024*64];
+	char *master;
+	int ip_count;
+	int offset;
+	int ret;
+	int i;
+
+	NetadrToSockadr(naddr, &addr);
+	master = NET_AdrToString(*naddr);
+
+	ret = sendto(sock, payload, sizeof(payload), 0, (struct sockaddr *)&addr,
+		sizeof(struct sockaddr_in));
+	if (ret < 0)
+	{
+		Con_Printf("SV_BroadcastQueryMaster: Unable to query %s\n", master);
+		return;
+	}
+
+	ret = recvfrom(sock, &buf, sizeof(buf), 0, NULL, NULL);
+	if (ret <= 0)
+	{
+		Con_Printf("SV_BroadcastQueryMaster: No data received from %s\n", master);
+		return;
+	}
+
+	if (ret < header_size)
+	{
+		Con_Printf("SV_BroadcastQueryMaster: Unexpected data returned from %s\n", master);
+		return;
+	}
+
+	if (memcmp(buf, header, header_size) != 0)
+	{
+		Con_Printf("SV_BroadcastQueryMaster: Unexpected header returned from %s\n", master);
+		return;
+	}
+
+	if ((ret - header_size) % addr_size != 0)
+	{
+		Con_Printf("SV_BroadcastQueryMaster: Invalid data received from %s\n", master);
+		return;
+	}
+
+	for (offset = header_size; offset < ret; offset += addr_size)
+	{
+		if (*server_count >= BROADCAST_MAX_SERVERS)
+		{
+			Con_Printf("SV_BroadcastQueryMaster: Server list is full!\n");
+			break;
+		}
+
+		memcpy(&new_addr.ip, &buf[offset], 4);
+		memcpy(&new_addr.port, &buf[offset + 4], 2);
+		exists = false;
+		ip_count = 0;
+
+		// There are so few servers, so we'll accept the cost of
+		// iterating over all entries.
+		for (i = 0; i < *server_count; i++)
+		{
+			if (NET_CompareAdr(new_addr, servers[i]))
+			{
+				exists = true;
+				break;
+			}
+
+			if (NET_CompareBaseAdr(new_addr, servers[i]))
+			{
+				if (ip_count >= BROADCAST_SERVER_MAX_ENTRIES_PER_IP)
+				{
+					break;
+				}
+
+				ip_count++;
+			}
+		}
+
+		if (exists)
+		{
+			continue;
+		}
+
+		if (ip_count >= BROADCAST_SERVER_MAX_ENTRIES_PER_IP)
+		{
+			Con_Printf("SV_BroadcastQueryMaster: Ignoring %s (IP limit reached)\n",
+				NET_AdrToString(new_addr));
+			continue;
+		}
+
+		memcpy(servers[*server_count].ip, &new_addr.ip, 4);
+		servers[*server_count].port = new_addr.port;
+		(*server_count)++;
+	}
+}
+
+qbool SV_Broadcast(char *message)
+{
+	extern cvar_t sv_broadcast_enabled;
+	args_t *args;
+
+	if (!sv_broadcast_enabled.value)
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Broadcasting is not enabled on this server\n");
+		return false;
+	}
+
+	if (GameStarted())
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Broadcasting is not available during games\n");
+		return false;
+	}
+
+	// When the data in the server list is actually used, we'll acquire the
+	// necessary lock to ensure that the data is correct. However, for this
+	// use case, it should be fine to just check it without a lock.
+	if (server_list_count == 0)
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "No broadcast servers configured\n");
+		return false;
+	}
+
+	if (realtime - last_broadcast < BROADCAST_MESSAGE_INTERVAL - 1)
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Wait %d seconds before broadcasting again\n",
+			(int)(BROADCAST_MESSAGE_INTERVAL - (realtime - last_broadcast)));
+		return false;
+	}
+
+	if (!Mutex_TryLock(&broadcast_lock))
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "A broadcast is already in progress\n");
+		return false;
+	}
+
+	args = Q_malloc(sizeof(args_t));
+	args->message = Q_strdup(message);
+	args->name = Q_strdup(sv_client->name);
+
+	if (Sys_CreateThread(SV_BroadcastSend, args))
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to start broadcast thread\n");
+		Mutex_Unlock(&broadcast_lock);
+		Q_free(args->message);
+		Q_free(args->name);
+		Q_free(args);
+	}
+
+	return true;
+}
+
+static DWORD WINAPI SV_BroadcastSend(void *data)
+{
+	args_t *args = (args_t *)data;
+	char out[1024];
+	int retries;
+	int written;
+	int len;
+	int i;
+
+	memset(out, 0xff, 4);
+	len = 4;
+
+	written = snprintf(out+len, sizeof(out)-len,
+		"broadcast \\hostport\\%s\\name\\%s\\message\\%s\n",
+		Cvar_String("hostport"), args->name, args->message);
+
+	if (written < 0 || written >= sizeof(out) - len)
+	{
+		goto out;
+	}
+
+	len += written;
+
+	if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+	{
+		Con_Printf("SV_BroadcastSend: Failed to acquire server_list_lock, aborting\n");
+		goto out;
+	}
+
+	for (i = 0; i < server_list_count; i++)
+	{
+		retries = BROADCAST_MAX_RETRIES;
+
+		do
+		{
+			// We don't know if the server supports broadcast
+			// messages, but querying each server and tracking their
+			// capabilities would be more costly. So we'll just send
+			// the packet, and hope the target can handle it.
+			NET_SendPacket(NS_SERVER, len, out, server_list[i]);
+
+			if (qerrno == EWOULDBLOCK || qerrno == EAGAIN)
+			{
+				// The silly hack below might not always work.
+				// If that is the case, we'll sleep a bit longer
+				// before retrying.
+				Sys_Sleep(100);
+			}
+			else
+			{
+				break;
+			}
+		} while (--retries > 0);
+
+		// Sleep for a millisecond for each packet, this is just a silly
+		// hack to not exhaust the send buffer.
+		Sys_Sleep(1);
+	}
+
+	Mutex_Unlock(&server_list_lock);
+
+out:
+	Mutex_Unlock(&broadcast_lock);
+	last_broadcast = realtime;
+
+	Q_free(args->message);
+	Q_free(args->name);
+	Q_free(args);
+
+	return 0;
+}
+
+void SVC_Broadcast(void)
+{
+	extern cvar_t sv_broadcast_sender_validation_enabled;
+	extern cvar_t sv_broadcast_enabled;
+	client_t *client;
+	qbool spectalk;
+	qbool started;
+	qbool valid;
+	char log[1024];
+	char out[1024];
+	char *hostport;
+	char *message;
+	char *payload;
+	char *addr;
+	char *name;
+	int i;
+
+	if (!sv_broadcast_enabled.value || Cmd_Argc() < 1)
+	{
+		return;
+	}
+
+	payload = Cmd_Args();
+	addr = NET_AdrToString(net_from);
+
+	// If enabled, ensure that the sender's address exists in the list of
+	// addresses received from the master server.
+	if (sv_broadcast_sender_validation_enabled.value)
+	{
+		valid = false;
+
+		if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+		{
+			Con_Printf("SVC_Broadcast: Failed to acquire server_list_lock, aborting\n");
+			return;
+		}
+
+		for (i = 0; i < server_list_count; i++)
+		{
+			if (NET_CompareAdr(net_from, server_list[i]))
+			{
+				valid = true;
+				break;
+			}
+		}
+
+		Mutex_Unlock(&server_list_lock);
+
+		if (!valid)
+		{
+			Con_Printf("Rejected broadcast from address: %s (payload: %s)\n",
+				addr, payload);
+			return;
+		}
+	}
+
+	hostport = Info_ValueForKey(payload, "hostport");
+	name = Info_ValueForKey(payload, "name");
+	message = Info_ValueForKey(payload, "message");
+
+	if (strlen(name) == 0 && strlen(message) == 0)
+	{
+		Con_Printf("Rejected broadcast with payload: %s (%s)\n", payload, addr);
+		return;
+	}
+
+	snprintf(out, sizeof(out), "[%s] %s: %s",
+		strlen(hostport) > 0 ? hostport : addr, name, message);
+	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
+
+	Con_Printf("%s\n", out);
+	SV_Write_Log(CONSOLE_LOG, 0, log);
+
+	started = GameStarted();
+
+	// If the KTX spectalk feature is enabled, we'll allow the broadcast
+	// message to be seen by players, even if a game has already started.
+	spectalk = strstr(Cvar_String("qwm_name"), "KTX") && Cvar_Value("k_spectalk");
+
+	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++)
+	{
+		if (client->state != cs_spawned || (started && !client->spectator && !spectalk))
+		{
+			continue;
+		}
+
+		SV_ClientPrintf2(client, PRINT_CHAT, "%s\n", out);
+	}
+}

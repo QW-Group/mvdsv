@@ -142,6 +142,8 @@ cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "2"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 cvar_t	sv_idlesleep = {"sv_idlesleep", "0"};
+cvar_t	sv_broadcast_enabled = {"sv_broadcast_enabled", "0"};
+cvar_t	sv_broadcast_sender_validation_enabled = {"sv_broadcast_sender_validation_enabled", "1"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 cvar_t  sv_loadentfiles_dir = {"sv_loadentfiles_dir", ""}; // check for .ent file in maps/sv_loadentfiles_dir first then just maps/
@@ -1947,6 +1949,8 @@ static void SV_ConnectionlessPacket (void)
 		SVC_DemoListRegex ();
 	else if (!strcmp(c,"qtvusers"))
 		SVC_QTVUsers ();
+	else if (!strcmp(c,"broadcast"))
+		SVC_Broadcast ();
 	else
 		Con_Printf ("bad connectionless packet from %s:\n%s\n"
 		            , NET_AdrToString (net_from), s);
@@ -3360,6 +3364,8 @@ void SV_Frame (double time1)
 
 	if ((int)sv_idlesleep.value > 0)
 		SV_IdleSleep();
+
+	SV_BroadcastUpdateServerList(false);
 }
 
 /*
@@ -3414,6 +3420,7 @@ void SV_InitLocal (void)
 
 	SV_InitOperatorCommands	();
 	SV_UserInit ();
+	SV_BroadcastInit ();
 
 	Cvar_Register (&sv_getrealip);
 	Cvar_Register (&sv_maxdownloadrate);
@@ -3424,6 +3431,9 @@ void SV_InitLocal (void)
 #ifdef SERVERONLY
 	Cvar_Register (&rcon_password);
 	Cvar_Register (&password);
+
+	Cvar_Register (&sv_broadcast_enabled);
+	Cvar_Register (&sv_broadcast_sender_validation_enabled);
 #endif
 
 	Cvar_Register (&sv_hashpasswords);

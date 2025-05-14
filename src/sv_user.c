@@ -1807,6 +1807,14 @@ static void SV_Say (qbool team)
 		snprintf(text, sizeof(text), "%s\n", p);
 	}
 
+	if (!team && strncmp(text, BROADCAST_PREFIX, BROADCAST_PREFIX_LEN) == 0)
+	{
+		if (!SV_Broadcast(text+BROADCAST_PREFIX_LEN))
+		{
+			return;
+		}
+	}
+
 	if (!sv_client->logged && !sv_client->logged_in_via_web)
 	{
 		SV_ParseLogin(sv_client);

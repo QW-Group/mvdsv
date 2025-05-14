@@ -713,9 +713,27 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
         CREATE_SUSPENDED,   // creation flags
         &threadid);         // pointer to receive thread ID
 
+    if (thread == NULL)
+        return (int)GetLastError();
+
     ResumeThread(thread);
 
-    return 1;
+    return 0;
+}
+
+void Mutex_Init(mutex_t *m)
+{
+	InitializeCriticalSection(&m->lock);
+}
+
+void Mutex_Unlock(mutex_t *m)
+{
+	LeaveCriticalSection(&m->lock);
+}
+
+qbool Mutex_TryLock(mutex_t *m)
+{
+	return TryEnterCriticalSection(&m->lock) != 0;
 }
 
 #ifdef _CONSOLE

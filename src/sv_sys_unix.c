@@ -586,8 +586,22 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_attr_setschedpolicy(&attr, SCHED_OTHER);   // ale gowno
 
-    pthread_create(&thread, &attr, (void *)func, param);
-    return 1;
+    return pthread_create(&thread, &attr, (void *)func, param);
+}
+
+void Mutex_Init(mutex_t *m)
+{
+	pthread_mutex_init(&m->lock, NULL);
+}
+
+void Mutex_Unlock(mutex_t *m)
+{
+	pthread_mutex_unlock(&m->lock);
+}
+
+qbool Mutex_TryLock(mutex_t *m)
+{
+	return pthread_mutex_trylock(&m->lock) == 0;
 }
 
 // Function only_digits was copied from bind (DNS server) sources.

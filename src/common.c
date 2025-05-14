@@ -1894,3 +1894,27 @@ int Q_namecmp(const char* s1, const char* s2)
 
 	return 0;
 }
+
+qbool Mutex_TryLockWithTimeout(mutex_t *m, unsigned long timeout_ms)
+{
+	unsigned long elapsed = 0;
+	unsigned long sleep_interval = 1;
+
+	while (elapsed < timeout_ms)
+	{
+		if (Mutex_TryLock(m))
+		{
+			return true;
+		}
+
+		Sys_Sleep(sleep_interval);
+		elapsed += sleep_interval;
+
+		if (sleep_interval < 32)
+		{
+			sleep_interval *= 2;
+		}
+	}
+
+	return false;
+}
