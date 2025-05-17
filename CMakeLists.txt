@@ -57,6 +57,7 @@ set(SRC_COMMON
 	"${DIR_SRC}/pr_exec.c"
 	"${DIR_SRC}/sha1.c"
 	"${DIR_SRC}/sha3.c"
+	"${DIR_SRC}/sv_broadcast.c"
 	"${DIR_SRC}/sv_ccmds.c"
 	"${DIR_SRC}/sv_demo.c"
 	"${DIR_SRC}/sv_demo_misc.c"

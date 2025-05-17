@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define HEARTBEAT_SECONDS 300
 
-static netadr_t master_adr[MAX_MASTERS]; // address of group servers
+netadr_t master_adr[MAX_MASTERS]; // address of group servers
 
 /*
 ====================

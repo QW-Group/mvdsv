@@ -1865,6 +1865,7 @@ void SV_InitOperatorCommands (void)
 	}
 #endif
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
+	Cmd_AddCommand ("updatebroadcasts", SV_BroadcastUpdateServerList_f);
 
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
 	Cmd_AddCommand ("save", SV_SaveGame_f); 
