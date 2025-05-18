@@ -721,17 +721,17 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
     return 0;
 }
 
-void Mutex_Init(mutex_t *m)
+void Sys_MutexInit(mutex_t *m)
 {
 	InitializeCriticalSection(&m->lock);
 }
 
-void Mutex_Unlock(mutex_t *m)
+void Sys_MutexUnlock(mutex_t *m)
 {
 	LeaveCriticalSection(&m->lock);
 }
 
-qbool Mutex_TryLock(mutex_t *m)
+qbool Sys_MutexTryLock(mutex_t *m)
 {
 	return TryEnterCriticalSection(&m->lock) != 0;
 }

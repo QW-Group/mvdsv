@@ -159,9 +159,9 @@ typedef struct
 #endif
 } mutex_t;
 
-void Mutex_Init(mutex_t *l);
-void Mutex_Unlock(mutex_t *l);
-qbool Mutex_TryLock(mutex_t *m);
-qbool Mutex_TryLockWithTimeout(mutex_t *m, unsigned long timeout_ms);
+void Sys_MutexInit(mutex_t *l);
+void Sys_MutexUnlock(mutex_t *l);
+qbool Sys_MutexTryLock(mutex_t *m);
+qbool Sys_MutexTryLockWithTimeout(mutex_t *m, unsigned long timeout_ms);
 
 #endif /* !__SYS_H__ */

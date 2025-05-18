@@ -21,13 +21,13 @@ static int server_list_count;
 
 void SV_BroadcastInit(void)
 {
-	Mutex_Init(&broadcast_lock);
+	Sys_MutexInit(&broadcast_lock);
 	last_broadcast = -99999;
 
-	Mutex_Init(&servers_update_lock);
+	Sys_MutexInit(&servers_update_lock);
 	last_servers_update = -99999;
 
-	Mutex_Init(&server_list_lock);
+	Sys_MutexInit(&server_list_lock);
 }
 
 void SV_BroadcastUpdateServerList_f(void)
@@ -74,7 +74,7 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 		return;
 	}
 
-	if (!Mutex_TryLock(&servers_update_lock))
+	if (!Sys_MutexTryLock(&servers_update_lock))
 	{
 		if (force_update)
 		{
@@ -90,7 +90,7 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 	{
 		Con_Printf("SV_BroadcastUpdateServerList: Unable to start query masters thread\n");
 		last_servers_update = realtime;
-		Mutex_Unlock(&servers_update_lock);
+		Sys_MutexUnlock(&servers_update_lock);
 	}
 }
 
@@ -139,20 +139,20 @@ static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
 		SV_BroadcastQueryMaster(sock, &master_adr[i], servers, &server_count);
 	}
 
-	if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
 		Con_Printf("SV_BroadcastQueryMasters: Failed to acquire server_list_lock, aborting\n");
 		goto cleanup;
 	}
 	server_list_count = server_count;
 	memcpy(server_list, servers, sizeof(netadr_t) * server_list_count);
-	Mutex_Unlock(&server_list_lock);
+	Sys_MutexUnlock(&server_list_lock);
 	Con_Printf("Broadcast server list sync complete: %d server(s) available.\n", server_list_count);
 
 cleanup:
 	closesocket(sock);
 out:
-	Mutex_Unlock(&servers_update_lock);
+	Sys_MutexUnlock(&servers_update_lock);
 	last_servers_update = realtime;
 
 	return 0;
@@ -300,7 +300,7 @@ qbool SV_Broadcast(char *message)
 		return false;
 	}
 
-	if (!Mutex_TryLock(&broadcast_lock))
+	if (!Sys_MutexTryLock(&broadcast_lock))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "A broadcast is already in progress\n");
 		return false;
@@ -313,7 +313,7 @@ qbool SV_Broadcast(char *message)
 	if (Sys_CreateThread(SV_BroadcastSend, args))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to start broadcast thread\n");
-		Mutex_Unlock(&broadcast_lock);
+		Sys_MutexUnlock(&broadcast_lock);
 		Q_free(args->message);
 		Q_free(args->name);
 		Q_free(args);
@@ -345,7 +345,7 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 
 	len += written;
 
-	if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
 		Con_Printf("SV_BroadcastSend: Failed to acquire server_list_lock, aborting\n");
 		goto out;
@@ -381,10 +381,10 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 		Sys_Sleep(1);
 	}
 
-	Mutex_Unlock(&server_list_lock);
+	Sys_MutexUnlock(&server_list_lock);
 
 out:
-	Mutex_Unlock(&broadcast_lock);
+	Sys_MutexUnlock(&broadcast_lock);
 	last_broadcast = realtime;
 
 	Q_free(args->message);
@@ -425,7 +425,7 @@ void SVC_Broadcast(void)
 	{
 		valid = false;
 
-		if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+		if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 		{
 			Con_Printf("SVC_Broadcast: Failed to acquire server_list_lock, aborting\n");
 			return;
@@ -440,7 +440,7 @@ void SVC_Broadcast(void)
 			}
 		}
 
-		Mutex_Unlock(&server_list_lock);
+		Sys_MutexUnlock(&server_list_lock);
 
 		if (!valid)
 		{

@@ -589,17 +589,17 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
     return pthread_create(&thread, &attr, (void *)func, param);
 }
 
-void Mutex_Init(mutex_t *m)
+void Sys_MutexInit(mutex_t *m)
 {
 	pthread_mutex_init(&m->lock, NULL);
 }
 
-void Mutex_Unlock(mutex_t *m)
+void Sys_MutexUnlock(mutex_t *m)
 {
 	pthread_mutex_unlock(&m->lock);
 }
 
-qbool Mutex_TryLock(mutex_t *m)
+qbool Sys_MutexTryLock(mutex_t *m)
 {
 	return pthread_mutex_trylock(&m->lock) == 0;
 }
