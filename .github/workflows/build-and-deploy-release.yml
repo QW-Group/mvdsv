@@ -55,7 +55,7 @@ jobs:
         if: matrix.os == 'linux'
       - name: Prepare Build Environemnt
         shell: bash
-        run: sudo apt-get update -qq && sudo apt-get -qq --no-install-recommends install build-essential cmake gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+        run: sudo apt-get update -qq && sudo apt-get -qq --no-install-recommends install build-essential cmake gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 libpcre2-dev
         if: matrix.os == 'windows'
       - name: Build
         run: |
@@ -63,7 +63,7 @@ jobs:
             docker run --platform linux/${{ matrix.arch }} --net=host --rm --device /dev/fuse -v $PWD:/mvdsv -w /mvdsv ${{ matrix.build-image }} bash -c -e '
               set -e
               apt-get -qq update
-              apt-get -qq --no-install-recommends install cmake build-essential libcurl4-openssl-dev ninja-build
+              apt-get -qq --no-install-recommends install cmake build-essential libcurl4-openssl-dev libpcre2-dev ninja-build
               ./build_cmake.sh ${{ matrix.target }}
               chown -R '$(id -u ${USER})':'$(id -g ${USER})' build/${{ matrix.target }} || exit 3
             '

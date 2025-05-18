@@ -30,7 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef CLIENTONLY
 #include "qwsvdef.h"
 #ifndef SERVERONLY
-#include "pcre.h"
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #endif
 #include "sv_mod_frags.h"
 
@@ -113,26 +114,31 @@ void sv_mod_msg_file_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 
 const char **qwmsg_pcre_check(const char *str, const char *qwm_str, int str_len)
 {
-	pcre *reg;
-	int *ovector[32];
-	const char *errbuf;
-	int erroffset = 0;
+	pcre2_code *reg;
+	pcre2_match_data *md;
+	int errcode;
+	PCRE2_UCHAR errbuf[120];
+	size_t erroffset;
 	const char **buf = NULL;
 	int stringcount;
 
-	if (!(reg = pcre_compile(qwm_str, 0, &errbuf, &erroffset, 0)))
+	if (!(reg = pcre2_compile((PCRE2_SPTR)qwm_str, PCRE2_ZERO_TERMINATED, 0, &errcode, &erroffset, NULL)))
 	{
-		Sys_Printf("WARNING: qwmsg_pcre_check: pcre_compile(%s) error %s\n", qwm_str, errbuf);
+		pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+		Sys_Printf("WARNING: qwmsg_pcre_check: pcre2_compile(%s) error %s\n", qwm_str, errbuf);
 		return NULL;
 	}
 
-	stringcount = pcre_exec(reg, NULL, str, str_len, 0, 0, (int *)&ovector[0], 32);
-	pcre_free(reg);
+	md = pcre2_match_data_create(32, NULL);
+	stringcount = pcre2_match(reg, (PCRE2_SPTR)str, str_len, 0, 0, md, NULL);
+	pcre2_code_free(reg);
 	if (stringcount <= 0) {
+		pcre2_match_data_free(md);
 		return NULL;
 	}
 
-	pcre_get_substring_list(str, (int *)&ovector[0], stringcount, &buf);
+	pcre2_substring_list_get(md, (PCRE2_UCHAR ***)&buf, NULL);
+	pcre2_match_data_free(md);
 	return buf;
 }
 
@@ -171,7 +177,7 @@ char *parse_mod_string(char *str)
 				break;
 			default: ret = NULL;
 			}
-			pcre_free_substring_list(buf);
+			pcre2_substring_list_free((PCRE2_SPTR *)buf);
 			break;
 		}
 	}
