@@ -341,18 +341,22 @@ qbool SV_Broadcast(char *message)
 static DWORD WINAPI SV_BroadcastSend(void *data)
 {
 	args_t *args = (args_t *)data;
+	struct sockaddr_storage addr;
 	char out[1024];
 	int retries;
 	int written;
+	int err_count = 0;
+	int sock;
 	int len;
+	int ret;
 	int i;
 
 	memset(out, 0xff, 4);
 	len = 4;
 
 	written = snprintf(out+len, sizeof(out)-len,
-		"broadcast \\hostport\\%s\\name\\%s\\message\\%s\n",
-		Cvar_String("hostport"), args->name, args->message);
+		"broadcast \\hostport\\%s\\port\\%d\\name\\%s\\message\\%s\n",
+		Cvar_String("hostport"), NET_UDPSVPort(), args->name, args->message);
 
 	if (written < 0 || written >= sizeof(out) - len)
 	{
@@ -361,44 +365,40 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 
 	len += written;
 
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0)
+	{
+		Con_Printf("SV_BroadcastSend: Unable to initialize socket\n");
+		goto out;
+	}
+
 	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
 		Con_Printf("SV_BroadcastSend: Failed to acquire server_list_lock, aborting\n");
-		goto out;
+		goto close;
 	}
 
 	for (i = 0; i < server_list_count; i++)
 	{
-		retries = BROADCAST_MAX_RETRIES;
+		NetadrToSockadr(&server_list[i], &addr);
 
-		do
+		ret = sendto(sock, out, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+		if (ret < 0)
 		{
-			// We don't know if the server supports broadcast
-			// messages, but querying each server and tracking their
-			// capabilities would be more costly. So we'll just send
-			// the packet, and hope the target can handle it.
-			NET_SendPacket(NS_SERVER, len, out, server_list[i]);
+			Con_Printf("SV_BroadcastSend: Unable to send broadcast to %s\n",
+				NET_AdrToString(server_list[i]));
 
-			if (qerrno == EWOULDBLOCK || qerrno == EAGAIN)
+			if (err_count++ == BROADCAST_MAX_ERRORS)
 			{
-				// The silly hack below might not always work.
-				// If that is the case, we'll sleep a bit longer
-				// before retrying.
-				Sys_Sleep(100);
+				goto cancel;
 			}
-			else
-			{
-				break;
-			}
-		} while (--retries > 0);
-
-		// Sleep for a millisecond for each packet, this is just a silly
-		// hack to not exhaust the send buffer.
-		Sys_Sleep(1);
+		}
 	}
 
+cancel:
 	Sys_MutexUnlock(&server_list_lock);
-
+close:
+	closesocket(sock);
 out:
 	Sys_MutexUnlock(&broadcast_lock);
 	last_broadcast = realtime;
@@ -418,13 +418,16 @@ void SVC_Broadcast(void)
 	qbool spectalk;
 	qbool started;
 	qbool valid;
+	char addrport[22];
 	char log[1024];
 	char out[1024];
+	char *displayaddr;
 	char *hostport;
 	char *message;
 	char *payload;
 	char *addr;
 	char *name;
+	char *port;
 	int i;
 
 	if (!sv_broadcast_enabled.value || Cmd_Argc() < 1)
@@ -449,7 +452,7 @@ void SVC_Broadcast(void)
 
 		for (i = 0; i < server_list_count; i++)
 		{
-			if (NET_CompareAdr(net_from, server_list[i]))
+			if (NET_CompareBaseAdr(net_from, server_list[i]))
 			{
 				valid = true;
 				break;
@@ -461,7 +464,7 @@ void SVC_Broadcast(void)
 		if (!valid)
 		{
 			Con_Printf("Rejected broadcast from address: %s (payload: %s)\n",
-				addr, payload);
+				addr , payload);
 			return;
 		}
 	}
@@ -469,6 +472,7 @@ void SVC_Broadcast(void)
 	hostport = Info_ValueForKey(payload, "hostport");
 	name = Info_ValueForKey(payload, "name");
 	message = Info_ValueForKey(payload, "message");
+	port = Info_ValueForKey(payload, "port");
 
 	if (strlen(name) == 0 && strlen(message) == 0)
 	{
@@ -476,8 +480,21 @@ void SVC_Broadcast(void)
 		return;
 	}
 
-	snprintf(out, sizeof(out), "[%s] %s: %s",
-		strlen(hostport) > 0 ? hostport : addr, name, message);
+	if (strlen(hostport) > 0)
+	{
+		displayaddr = hostport;
+	}
+	else if (strlen(port) > 0)
+	{
+		snprintf(addrport, sizeof(addrport), "%s:%s", NET_BaseAdrToString(net_from), port);
+		displayaddr = addrport;
+	}
+	else
+	{
+		displayaddr = addr;
+	}
+
+	snprintf(out, sizeof(out), "[%s] %s: %s", displayaddr, name, message);
 	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
 
 	Con_Printf("%s\n", out);

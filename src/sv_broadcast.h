@@ -44,8 +44,8 @@
 // Permits broadcasts every 30 seconds.
 #define BROADCAST_MESSAGE_INTERVAL 30.0
 
-// Maximum number of retries for each message.
-#define BROADCAST_MAX_RETRIES 3
+// Maximum number of errors for a broadcast before giving up.
+#define BROADCAST_MAX_ERRORS 5
 
 // Limits the number of entries each IP address can occupy in the broadcast
 // server list. This is a safeguard against master server poisoning. Currently,
