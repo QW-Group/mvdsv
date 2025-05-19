@@ -54,6 +54,7 @@
 
 qbool SV_Broadcast(char *message);
 void SVC_Broadcast(void);
+void SV_BroadcastEnabledOnChange(cvar_t *cvar, char *value, qbool *cancel);
 void SV_BroadcastInit(void);
 void SV_BroadcastUpdateServerList(qbool force_update);
 void SV_BroadcastUpdateServerList_f(void);
