@@ -118,8 +118,8 @@ static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
 	static netadr_t servers[BROADCAST_MAX_SERVERS];
 	extern netadr_t master_adr[MAX_MASTERS];
 	int server_count = 0;
-	int sock;
-	int i;
+	int sock = 0;
+	int i = 0;
 
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0)
@@ -189,13 +189,13 @@ static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers
 	const int addr_size = 6;
 	struct sockaddr_storage addr;
 	netadr_t new_addr;
-	qbool exists;
-	char buf[1024*64];
-	char *master;
-	int ip_count;
-	int offset;
-	int ret;
-	int i;
+	qbool exists = false;
+	char buf[1024*64] = {0};
+	char *master = NULL;
+	int ip_count = 0;
+	int offset = 0;
+	int ret = 0;
+	int i = 0;
 
 	NetadrToSockadr(naddr, &addr);
 	master = NET_AdrToString(*naddr);
@@ -288,7 +288,7 @@ static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers
 qbool SV_Broadcast(char *message)
 {
 	extern cvar_t sv_broadcast_enabled;
-	args_t *args;
+	args_t *args = NULL;
 
 	if (!sv_broadcast_enabled.value)
 	{
@@ -344,14 +344,14 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 {
 	args_t *args = (args_t *)data;
 	struct sockaddr_storage addr;
-	char out[1024];
-	int retries;
-	int written;
+	char out[1024] = {0};
+	int retries = 0;
+	int written = 0;
 	int err_count = 0;
-	int sock;
-	int len;
-	int ret;
-	int i;
+	int sock = 0;
+	int len = 0;
+	int ret = 0;
+	int i = 0;
 
 	memset(out, 0xff, 4);
 	len = 4;
@@ -416,21 +416,21 @@ void SVC_Broadcast(void)
 {
 	extern cvar_t sv_broadcast_sender_validation_enabled;
 	extern cvar_t sv_broadcast_enabled;
-	client_t *client;
-	qbool spectalk;
-	qbool started;
-	qbool valid;
-	char addrport[22];
-	char log[1024];
-	char out[1024];
-	char *displayaddr;
-	char *hostport;
-	char *message;
-	char *payload;
-	char *addr;
-	char *name;
-	char *port;
-	int i;
+	client_t *client = NULL;
+	qbool spectalk = false;
+	qbool started = false;
+	qbool valid = false;
+	char addrport[22] = {0};
+	char log[1024] = {0};
+	char out[1024] = {0};
+	char *displayaddr = NULL;
+	char *hostport = NULL;
+	char *message = NULL;
+	char *payload = NULL;
+	char *addr = NULL;
+	char *name = NULL;
+	char *port = NULL;
+	int i = 0;
 
 	if (!sv_broadcast_enabled.value || Cmd_Argc() < 1)
 	{
