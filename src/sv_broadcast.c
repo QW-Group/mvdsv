@@ -208,7 +208,7 @@ static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers
 		return;
 	}
 
-	ret = recvfrom(sock, &buf, sizeof(buf), 0, NULL, NULL);
+	ret = recvfrom(sock, buf, sizeof(buf), 0, NULL, NULL);
 	if (ret <= 0)
 	{
 		Con_Printf("SV_BroadcastQueryMaster: No data received from %s\n", master);
