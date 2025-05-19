@@ -475,7 +475,7 @@ void SVC_Broadcast(void)
 	message = Info_ValueForKey(payload, "message");
 	port = Info_ValueForKey(payload, "port");
 
-	if (strlen(name) == 0 && strlen(message) == 0)
+	if (strlen(name) == 0 || strlen(message) == 0)
 	{
 		Con_Printf("Rejected broadcast with payload: %s (%s)\n", payload, addr);
 		return;
