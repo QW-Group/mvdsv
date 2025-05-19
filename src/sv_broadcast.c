@@ -23,9 +23,16 @@ typedef struct {
 	char *name;
 } args_t;
 
+typedef struct {
+	unsigned int ip;
+	unsigned int count;
+	time_t window_start;
+} ratelimit_t;
+
 static DWORD WINAPI SV_BroadcastSend(void *data);
 static DWORD WINAPI SV_BroadcastQueryMasters(void *data);
 static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *server, int *server_count);
+static qbool SVC_BroadcastIsRateLimited(netadr_t *from);
 
 static mutex_t servers_update_lock;
 static double last_servers_update;
@@ -36,6 +43,8 @@ static double last_broadcast;
 static mutex_t server_list_lock;
 static netadr_t server_list[BROADCAST_MAX_SERVERS];
 static int server_list_count;
+
+static ratelimit_t ratelimit[BROADCAST_RATELIMIT_MAX_ENTRIES];
 
 void SV_BroadcastInit(void)
 {
@@ -445,6 +454,11 @@ void SVC_Broadcast(void)
 		return;
 	}
 
+	if (SVC_BroadcastIsRateLimited(&net_from))
+	{
+		return;
+	}
+
 	payload = Cmd_Args();
 	addr = NET_AdrToString(net_from);
 
@@ -525,4 +539,80 @@ void SVC_Broadcast(void)
 
 		SV_ClientPrintf2(client, PRINT_CHAT, "%s\n", out);
 	}
+}
+
+qbool SVC_BroadcastIsRateLimited(netadr_t *from)
+{
+	struct sockaddr_storage addr;
+	struct sockaddr_in *addr_in;
+	time_t now = time(NULL);
+	char *ip_str = NULL;
+	unsigned int ip = 0;
+	int next = -1;
+	int i = 0;
+
+	NetadrToSockadr(from, &addr);
+	addr_in = (struct sockaddr_in *)&addr;
+	ip = ntohl(addr_in->sin_addr.s_addr);
+	ip_str = NET_BaseAdrToString(*from);
+
+	for (i = 0; i < BROADCAST_RATELIMIT_MAX_ENTRIES; i++)
+	{
+		if (ratelimit[i].ip == ip)
+		{
+			// Enough time has passed, let's reset the window and
+			// counter for the given address.
+			if (now - ratelimit[i].window_start >= BROADCAST_RATELIMIT_WINDOW_SECONDS)
+			{
+				Con_DPrintf("SVC_BroadcastIsRateLimited: Reset ratelimit for %s\n",
+					ip_str);
+				ratelimit[i].count = 1;
+				ratelimit[i].window_start = now;
+				return false;
+			}
+
+			// The rate limit has been reached for the given IP,
+			// let's reject it.
+			if (ratelimit[i].count >= BROADCAST_RATELIMIT_LIMIT)
+			{
+				Con_DPrintf("SVC_BroadcastIsRateLimited: %s has been ratelimited\n",
+					ip_str);
+				return true;
+			}
+
+			// Increment the counter and proceed.
+			ratelimit[i].count++;
+			return false;
+		}
+
+		// Check whether or not we can evict the entry for this IP.
+		if (ratelimit[i].ip != 0 &&
+			now - ratelimit[i].window_start >= BROADCAST_RATELIMIT_WINDOW_SECONDS)
+		{
+			ratelimit[i].ip = 0;
+			ratelimit[i].count = 0;
+			ratelimit[i].window_start = 0;
+		}
+
+		// If next isn't set and the spot is available, we'll use it for
+		// the next ratelimit entry.
+		if (next == -1 && ratelimit[i].ip == 0)
+		{
+			next = i;
+		}
+	}
+
+	// No available slots exists in the ratelimit array, if that's the case,
+	// we'll just have to say that the IP is going to be ratelimited.
+	if (next == -1)
+	{
+		Con_DPrintf("SVC_BroadcastIsRateLimited: All slots are full, unable to process %s\n",
+			ip_str);
+		return true;
+	}
+
+	ratelimit[next].ip = ip;
+	ratelimit[next].count = 1;
+	ratelimit[next].window_start = now;
+	return false;
 }
