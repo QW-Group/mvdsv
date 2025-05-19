@@ -52,6 +52,18 @@
 // there is no server that uses more than 12 ports.
 #define BROADCAST_SERVER_MAX_ENTRIES_PER_IP 25
 
+// Maximum number of unique IP addresses to track for rate limiting. This is
+// tied to the maximum number of broadcast servers supported.
+#define BROADCAST_RATELIMIT_MAX_ENTRIES BROADCAST_MAX_SERVERS
+
+// Time window in seconds for which rate limiting is enforced. Entries are
+// limited to a maximum number of actions within this time frame.
+#define BROADCAST_RATELIMIT_WINDOW_SECONDS 60
+
+// Maximum number of allowed broadcast messages per IP address within
+// the rate limiting window.
+#define BROADCAST_RATELIMIT_LIMIT 10
+
 qbool SV_Broadcast(char *message);
 void SVC_Broadcast(void);
 void SV_BroadcastInit(void);
