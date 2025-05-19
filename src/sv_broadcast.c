@@ -1,3 +1,19 @@
+/*
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 #include "qwsvdef.h"
 
 typedef struct {
@@ -21,13 +37,13 @@ static int server_list_count;
 
 void SV_BroadcastInit(void)
 {
-	Mutex_Init(&broadcast_lock);
+	Sys_MutexInit(&broadcast_lock);
 	last_broadcast = -99999;
 
-	Mutex_Init(&servers_update_lock);
+	Sys_MutexInit(&servers_update_lock);
 	last_servers_update = -99999;
 
-	Mutex_Init(&server_list_lock);
+	Sys_MutexInit(&server_list_lock);
 }
 
 void SV_BroadcastUpdateServerList_f(void)
@@ -74,7 +90,7 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 		return;
 	}
 
-	if (!Mutex_TryLock(&servers_update_lock))
+	if (!Sys_MutexTryLock(&servers_update_lock))
 	{
 		if (force_update)
 		{
@@ -90,7 +106,7 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 	{
 		Con_Printf("SV_BroadcastUpdateServerList: Unable to start query masters thread\n");
 		last_servers_update = realtime;
-		Mutex_Unlock(&servers_update_lock);
+		Sys_MutexUnlock(&servers_update_lock);
 	}
 }
 
@@ -139,20 +155,20 @@ static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
 		SV_BroadcastQueryMaster(sock, &master_adr[i], servers, &server_count);
 	}
 
-	if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
 		Con_Printf("SV_BroadcastQueryMasters: Failed to acquire server_list_lock, aborting\n");
 		goto cleanup;
 	}
 	server_list_count = server_count;
 	memcpy(server_list, servers, sizeof(netadr_t) * server_list_count);
-	Mutex_Unlock(&server_list_lock);
+	Sys_MutexUnlock(&server_list_lock);
 	Con_Printf("Broadcast server list sync complete: %d server(s) available.\n", server_list_count);
 
 cleanup:
 	closesocket(sock);
 out:
-	Mutex_Unlock(&servers_update_lock);
+	Sys_MutexUnlock(&servers_update_lock);
 	last_servers_update = realtime;
 
 	return 0;
@@ -300,7 +316,7 @@ qbool SV_Broadcast(char *message)
 		return false;
 	}
 
-	if (!Mutex_TryLock(&broadcast_lock))
+	if (!Sys_MutexTryLock(&broadcast_lock))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "A broadcast is already in progress\n");
 		return false;
@@ -313,7 +329,7 @@ qbool SV_Broadcast(char *message)
 	if (Sys_CreateThread(SV_BroadcastSend, args))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to start broadcast thread\n");
-		Mutex_Unlock(&broadcast_lock);
+		Sys_MutexUnlock(&broadcast_lock);
 		Q_free(args->message);
 		Q_free(args->name);
 		Q_free(args);
@@ -325,18 +341,22 @@ qbool SV_Broadcast(char *message)
 static DWORD WINAPI SV_BroadcastSend(void *data)
 {
 	args_t *args = (args_t *)data;
+	struct sockaddr_storage addr;
 	char out[1024];
 	int retries;
 	int written;
+	int err_count = 0;
+	int sock;
 	int len;
+	int ret;
 	int i;
 
 	memset(out, 0xff, 4);
 	len = 4;
 
 	written = snprintf(out+len, sizeof(out)-len,
-		"broadcast \\hostport\\%s\\name\\%s\\message\\%s\n",
-		Cvar_String("hostport"), args->name, args->message);
+		"broadcast \\hostport\\%s\\port\\%d\\name\\%s\\message\\%s\n",
+		Cvar_String("hostport"), NET_UDPSVPort(), args->name, args->message);
 
 	if (written < 0 || written >= sizeof(out) - len)
 	{
@@ -345,46 +365,42 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 
 	len += written;
 
-	if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0)
+	{
+		Con_Printf("SV_BroadcastSend: Unable to initialize socket\n");
+		goto out;
+	}
+
+	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
 		Con_Printf("SV_BroadcastSend: Failed to acquire server_list_lock, aborting\n");
-		goto out;
+		goto close;
 	}
 
 	for (i = 0; i < server_list_count; i++)
 	{
-		retries = BROADCAST_MAX_RETRIES;
+		NetadrToSockadr(&server_list[i], &addr);
 
-		do
+		ret = sendto(sock, out, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+		if (ret < 0)
 		{
-			// We don't know if the server supports broadcast
-			// messages, but querying each server and tracking their
-			// capabilities would be more costly. So we'll just send
-			// the packet, and hope the target can handle it.
-			NET_SendPacket(NS_SERVER, len, out, server_list[i]);
+			Con_Printf("SV_BroadcastSend: Unable to send broadcast to %s\n",
+				NET_AdrToString(server_list[i]));
 
-			if (qerrno == EWOULDBLOCK || qerrno == EAGAIN)
+			if (err_count++ == BROADCAST_MAX_ERRORS)
 			{
-				// The silly hack below might not always work.
-				// If that is the case, we'll sleep a bit longer
-				// before retrying.
-				Sys_Sleep(100);
+				goto cancel;
 			}
-			else
-			{
-				break;
-			}
-		} while (--retries > 0);
-
-		// Sleep for a millisecond for each packet, this is just a silly
-		// hack to not exhaust the send buffer.
-		Sys_Sleep(1);
+		}
 	}
 
-	Mutex_Unlock(&server_list_lock);
-
+cancel:
+	Sys_MutexUnlock(&server_list_lock);
+close:
+	closesocket(sock);
 out:
-	Mutex_Unlock(&broadcast_lock);
+	Sys_MutexUnlock(&broadcast_lock);
 	last_broadcast = realtime;
 
 	Q_free(args->message);
@@ -402,13 +418,16 @@ void SVC_Broadcast(void)
 	qbool spectalk;
 	qbool started;
 	qbool valid;
+	char addrport[22];
 	char log[1024];
 	char out[1024];
+	char *displayaddr;
 	char *hostport;
 	char *message;
 	char *payload;
 	char *addr;
 	char *name;
+	char *port;
 	int i;
 
 	if (!sv_broadcast_enabled.value || Cmd_Argc() < 1)
@@ -425,7 +444,7 @@ void SVC_Broadcast(void)
 	{
 		valid = false;
 
-		if (!Mutex_TryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
+		if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 		{
 			Con_Printf("SVC_Broadcast: Failed to acquire server_list_lock, aborting\n");
 			return;
@@ -433,19 +452,19 @@ void SVC_Broadcast(void)
 
 		for (i = 0; i < server_list_count; i++)
 		{
-			if (NET_CompareAdr(net_from, server_list[i]))
+			if (NET_CompareBaseAdr(net_from, server_list[i]))
 			{
 				valid = true;
 				break;
 			}
 		}
 
-		Mutex_Unlock(&server_list_lock);
+		Sys_MutexUnlock(&server_list_lock);
 
 		if (!valid)
 		{
 			Con_Printf("Rejected broadcast from address: %s (payload: %s)\n",
-				addr, payload);
+				addr , payload);
 			return;
 		}
 	}
@@ -453,6 +472,7 @@ void SVC_Broadcast(void)
 	hostport = Info_ValueForKey(payload, "hostport");
 	name = Info_ValueForKey(payload, "name");
 	message = Info_ValueForKey(payload, "message");
+	port = Info_ValueForKey(payload, "port");
 
 	if (strlen(name) == 0 && strlen(message) == 0)
 	{
@@ -460,8 +480,21 @@ void SVC_Broadcast(void)
 		return;
 	}
 
-	snprintf(out, sizeof(out), "[%s] %s: %s",
-		strlen(hostport) > 0 ? hostport : addr, name, message);
+	if (strlen(hostport) > 0)
+	{
+		displayaddr = hostport;
+	}
+	else if (strlen(port) > 0)
+	{
+		snprintf(addrport, sizeof(addrport), "%s:%s", NET_BaseAdrToString(net_from), port);
+		displayaddr = addrport;
+	}
+	else
+	{
+		displayaddr = addr;
+	}
+
+	snprintf(out, sizeof(out), "[%s] %s: %s", displayaddr, name, message);
 	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
 
 	Con_Printf("%s\n", out);
