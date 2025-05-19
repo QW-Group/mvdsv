@@ -53,6 +53,15 @@ void SV_BroadcastUpdateServerList_f(void)
 	SV_BroadcastUpdateServerList(true);
 }
 
+void SV_BroadcastEnabledOnChange(cvar_t *cvar, char *value, qbool *cancel)
+{
+	// We can't use the CVAR_SERVERINFO flag in this case because we want
+	// the key to be named "broadcast" not "sv_broadcast_enabled".
+	// Therefore, the cvar will not have this flag set, instead, we'll
+	// trigger the serverinfo update manually.
+	SV_ServerinfoChanged("broadcast", value);
+}
+
 void SV_BroadcastUpdateServerList(qbool force_update)
 {
 	extern netadr_t master_adr[MAX_MASTERS];
