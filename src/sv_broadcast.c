@@ -345,7 +345,6 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 	args_t *args = (args_t *)data;
 	struct sockaddr_storage addr;
 	char out[1024] = {0};
-	int retries = 0;
 	int written = 0;
 	int err_count = 0;
 	int sock = 0;
