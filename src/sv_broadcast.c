@@ -29,10 +29,17 @@ typedef struct {
 	time_t window_start;
 } ratelimit_t;
 
+typedef struct {
+	char message[1024];
+	date_t timestamp;
+
+} broadcast_log_t;
+
 static DWORD WINAPI SV_BroadcastSend(void *data);
 static DWORD WINAPI SV_BroadcastQueryMasters(void *data);
 static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *server, int *server_count);
 static qbool SVC_BroadcastIsRateLimited(netadr_t *from);
+static void SV_BroadcastAddLog(char *msg);
 
 static mutex_t servers_update_lock;
 static double last_servers_update;
@@ -45,6 +52,10 @@ static netadr_t server_list[BROADCAST_MAX_SERVERS];
 static int server_list_count;
 
 static ratelimit_t ratelimit[BROADCAST_RATELIMIT_MAX_ENTRIES];
+
+static broadcast_log_t broadcast_log[BROADCAST_LOG_MAX_ENTRIES];
+static int broadcast_log_head = 0;
+static int broadcast_log_count = 0;
 
 void SV_BroadcastInit(void)
 {
@@ -554,6 +565,8 @@ void SVC_Broadcast(void)
 	}
 	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
 
+	SV_BroadcastAddLog(out);
+
 	Con_Printf("%s\n", out);
 	SV_Write_Log(CONSOLE_LOG, 0, log);
 
@@ -648,4 +661,48 @@ qbool SVC_BroadcastIsRateLimited(netadr_t *from)
 	ratelimit[next].count = 1;
 	ratelimit[next].window_start = now;
 	return false;
+}
+
+static void SV_BroadcastAddLog(char *msg)
+{
+	snprintf(broadcast_log[broadcast_log_head].message,
+		sizeof(broadcast_log[broadcast_log_head].message), "%s", msg);
+	SV_TimeOfDay(&broadcast_log[broadcast_log_head].timestamp, "%Y-%m-%d %H:%M:%S");
+
+	broadcast_log_head = (broadcast_log_head + 1) % BROADCAST_LOG_MAX_ENTRIES;
+	if (broadcast_log_count < BROADCAST_LOG_MAX_ENTRIES)
+	{
+		broadcast_log_count++;
+	}
+}
+
+void SV_BroadcastPrintLog_f(void)
+{
+	int i = 0;
+	int index = 0;
+	int limit = 0;
+	int start = 0;
+
+	if (broadcast_log_count == 0)
+	{
+		Con_Printf("Broadcast log is empty.\n");
+		return;
+	}
+
+	limit = (Cmd_Argc() > 1) ? atoi(Cmd_Argv(1)) : BROADCAST_LOG_DEFAULT_DISPLAY_ENTRIES;
+	limit = bound(1, limit, broadcast_log_count);
+	Con_Printf("List of last %d broadcasts:\n", limit);
+
+	start = (broadcast_log_head - limit + BROADCAST_LOG_MAX_ENTRIES) % BROADCAST_LOG_MAX_ENTRIES;
+
+	for (i = 0; i < limit; i++)
+	{
+		index = (start + i) % BROADCAST_LOG_MAX_ENTRIES;
+
+		if (broadcast_log[index].timestamp.str && broadcast_log[index].message)
+		{
+			Con_Printf("%s: %s\n",
+				broadcast_log[index].timestamp.str, broadcast_log[index].message);
+		}
+	}
 }
