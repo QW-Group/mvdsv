@@ -857,12 +857,12 @@ key and returns the associated value, or an empty string.
 char *Info_ValueForKey (char *s, const char *key)
 {
 	char	pkey[512];
-	static	char value[4][512]; // use two buffers so compares
+	static	char value[INFO_VALUE_MAX_ENTRIES][512]; // use two buffers so compares
 	// work without stomping on each other
 	static	int valueindex;
 	char	*o;
 
-	valueindex = (valueindex + 1) % 4;
+	valueindex = (valueindex + 1) % INFO_VALUE_MAX_ENTRIES;
 	if (*s == '\\')
 		s++;
 	while (1)

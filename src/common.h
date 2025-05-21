@@ -175,6 +175,9 @@ void			Info_PrintList(ctxinfo_t *ctx);
 
 //char *Info_KeyNameForKeyNum (char *s, int key);
 
+// Defines how many Info_ValueForKey entries can be stored simultaneously.
+#define INFO_VALUE_MAX_ENTRIES 8
+
 char *Info_ValueForKey (char *s, const char *key);
 void Info_RemoveKey (char *s, const char *key);
 void Info_RemovePrefixedKeys (char *start, char prefix);
