@@ -362,20 +362,37 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 {
 	args_t *args = (args_t *)data;
 	struct sockaddr_storage addr;
+	client_t *client = NULL;
 	char out[1024] = {0};
-	int written = 0;
 	int err_count = 0;
+	int written = 0;
+	int players = 0;
 	int sock = 0;
 	int len = 0;
 	int ret = 0;
 	int i = 0;
 
+	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++)
+	{
+		if (client->state >= cs_connected && !client->spectator)
+		{
+			players++;
+		}
+	}
+
 	memset(out, 0xff, 4);
 	len = 4;
 
 	written = snprintf(out+len, sizeof(out)-len,
-		"broadcast \\hostport\\%s\\port\\%d\\name\\%s\\message\\%s\n",
-		Cvar_String("hostport"), NET_UDPSVPort(), args->name, args->message);
+		"broadcast "
+		"\\hostport\\%s"
+		"\\port\\%d"
+		"\\name\\%s"
+		"\\players\\%d"
+		"\\maxplayers\\%d"
+		"\\message\\%s\n",
+		Cvar_String("hostport"), NET_UDPSVPort(), args->name,
+		players, (int)maxclients.value, args->message);
 
 	if (written < 0 || written >= sizeof(out) - len)
 	{
@@ -441,9 +458,11 @@ void SVC_Broadcast(void)
 	char log[1024] = {0};
 	char out[1024] = {0};
 	char *displayaddr = NULL;
+	char *maxplayers = NULL;
 	char *hostport = NULL;
 	char *message = NULL;
 	char *payload = NULL;
+	char *players = NULL;
 	char *addr = NULL;
 	char *name = NULL;
 	char *port = NULL;
@@ -497,6 +516,8 @@ void SVC_Broadcast(void)
 	name = Info_ValueForKey(payload, "name");
 	message = Info_ValueForKey(payload, "message");
 	port = Info_ValueForKey(payload, "port");
+	players = Info_ValueForKey(payload, "players");
+	maxplayers = Info_ValueForKey(payload, "maxplayers");
 
 	if (strlen(name) == 0 || strlen(message) == 0)
 	{
@@ -518,7 +539,19 @@ void SVC_Broadcast(void)
 		displayaddr = addr;
 	}
 
-	snprintf(out, sizeof(out), "[%s] %s: %s", displayaddr, name, message);
+	if (strlen(players) > 0 && strlen(maxplayers) > 0)
+	{
+		// Example:
+		// > tot.qwsv.net:27500 [6/8] ToT_Oddjob: prac now
+		snprintf(out, sizeof(out), "%c %s %c%s/%s%c %s: %s",
+			0x8d, displayaddr, 0x10, players, maxplayers, 0x11, name, message);
+	}
+	else
+	{
+		// Example:
+		// [tot.qwsv.net:27500] ToT_Oddjob: prac now
+		snprintf(out, sizeof(out), "[%s] %s: %s", displayaddr, name, message);
+	}
 	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
 
 	Con_Printf("%s\n", out);
