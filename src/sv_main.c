@@ -461,6 +461,7 @@ int SV_CalcPing (client_t *cl)
 	register client_frame_t *frame;
 	int count, i;
 	float ping;
+	char *botskill = NULL;
 
 
 	//bliP: 999 ping for connecting players
@@ -472,7 +473,8 @@ int SV_CalcPing (client_t *cl)
 	count = 0;
 #ifdef USE_PR2
 	if (cl->isBot) {
-		return 10;
+		botskill = Info_Get(&cl->_userinfo_ctx_, "*skill");
+		return strlen(botskill) > 0 ? atoi(botskill) : 10;
 	}
 #endif
 	for (frame = cl->frames, i=0 ; i<UPDATE_BACKUP ; i++, frame++)
