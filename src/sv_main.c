@@ -461,6 +461,7 @@ int SV_CalcPing (client_t *cl)
 	register client_frame_t *frame;
 	int count, i;
 	float ping;
+	char *botskill = NULL;
 
 
 	//bliP: 999 ping for connecting players
@@ -472,7 +473,8 @@ int SV_CalcPing (client_t *cl)
 	count = 0;
 #ifdef USE_PR2
 	if (cl->isBot) {
-		return 10;
+		botskill = Info_Get(&cl->_userinfo_ctx_, "*skill");
+		return strlen(botskill) > 0 ? atoi(botskill) : 10;
 	}
 #endif
 	for (frame = cl->frames, i=0 ; i<UPDATE_BACKUP ; i++, frame++)
@@ -610,6 +612,7 @@ This message can be up to around 5k with worst case string lengths.
 #define STATUS_SHOWTEAMS                16
 #define STATUS_SHOWQTV                  32
 #define STATUS_SHOWFLAGS                64
+#define STATUS_SHOWCLIENTTYPE		128
 
 static void SVC_Status (void)
 {
@@ -670,6 +673,10 @@ static void SVC_Status (void)
 					else {
 						Con_Printf(" \"\"");
 					}
+				}
+
+				if (opt & STATUS_SHOWCLIENTTYPE) {
+					Con_Printf(" \"%c\"", cl->isBot ? 'b' : 'h');
 				}
 
 				Con_Printf("\n");
