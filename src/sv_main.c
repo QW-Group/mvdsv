@@ -612,6 +612,7 @@ This message can be up to around 5k with worst case string lengths.
 #define STATUS_SHOWTEAMS                16
 #define STATUS_SHOWQTV                  32
 #define STATUS_SHOWFLAGS                64
+#define STATUS_SHOWCLIENTTYPE		128
 
 static void SVC_Status (void)
 {
@@ -672,6 +673,10 @@ static void SVC_Status (void)
 					else {
 						Con_Printf(" \"\"");
 					}
+				}
+
+				if (opt & STATUS_SHOWCLIENTTYPE) {
+					Con_Printf(" \"%c\"", cl->isBot ? 'b' : 'h');
 				}
 
 				Con_Printf("\n");
