@@ -2354,7 +2354,10 @@ void PF2_SetBotUserInfo(int entnum, char *key, char *value, int flags)
 		{
 			char *nuw = Info_Get( &cl->_userinfo_ctx_, key );
 
-			Info_Set( &cl->_userinfoshort_ctx_, key, nuw );
+			if ( flags & SETUSERINFO_STAR )
+				Info_SetStar( &cl->_userinfoshort_ctx_, key, nuw );
+			else
+				Info_Set( &cl->_userinfoshort_ctx_, key, nuw );
 
 			i = cl - svs.clients;
 			MSG_WriteByte( &sv.reliable_datagram, svc_setinfo );
