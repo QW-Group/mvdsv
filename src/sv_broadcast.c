@@ -40,6 +40,7 @@ static DWORD WINAPI SV_BroadcastQueryMasters(void *data);
 static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *server, int *server_count);
 static qbool SVC_BroadcastIsRateLimited(netadr_t *from);
 static void SV_BroadcastAddLog(char *msg);
+static void SV_BroadcastAddCache(char *msg);
 
 static mutex_t servers_update_lock;
 static double last_servers_update;
@@ -56,6 +57,10 @@ static ratelimit_t ratelimit[BROADCAST_RATELIMIT_MAX_ENTRIES];
 static broadcast_log_t broadcast_log[BROADCAST_LOG_MAX_ENTRIES];
 static int broadcast_log_head = 0;
 static int broadcast_log_count = 0;
+
+static broadcast_log_t broadcast_cache[BROADCAST_CACHE_MAX_ENTRIES];
+static int broadcast_cache_head = 0;
+static int broadcast_cache_count = 0;
 
 void SV_BroadcastInit(void)
 {
@@ -566,6 +571,7 @@ void SVC_Broadcast(void)
 	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
 
 	SV_BroadcastAddLog(out);
+	SV_BroadcastAddCache(out);
 
 	Con_Printf("%s\n", out);
 	SV_Write_Log(CONSOLE_LOG, 0, log);
@@ -703,6 +709,54 @@ void SV_BroadcastPrintLog_f(void)
 		{
 			Con_Printf("%s: %s\n",
 				broadcast_log[index].timestamp.str, broadcast_log[index].message);
+		}
+	}
+}
+
+static void SV_BroadcastAddCache(char *msg)
+{
+	snprintf(broadcast_cache[broadcast_cache_head].message,
+		sizeof(broadcast_cache[broadcast_cache_head].message), "%s", msg);
+	SV_TimeOfDay(&broadcast_cache[broadcast_cache_head].timestamp, "%Y-%m-%d %H:%M:%S");
+
+	broadcast_cache_head = (broadcast_cache_head + 1) % BROADCAST_CACHE_MAX_ENTRIES;
+	if (broadcast_cache_count < BROADCAST_CACHE_MAX_ENTRIES)
+	{
+		broadcast_cache_count++;
+	}
+}
+
+void SV_BroadcastEmptyCache(void)
+{
+	broadcast_cache_head = 0;
+	broadcast_cache_count = 0;
+	memset(broadcast_cache, 0, sizeof(broadcast_log_t) * BROADCAST_CACHE_MAX_ENTRIES);
+}
+
+void SV_BroadcastPrintCache(void)
+{
+	int i = 0;
+	int index = 0;
+	int start = 0;
+
+	if (broadcast_cache_count == 0)
+	{
+		return;
+	}
+
+	SV_BroadcastPrintf(PRINT_CHAT, "List of cached broadcasts:\n");
+
+	start = (broadcast_cache_head - broadcast_cache_count + BROADCAST_CACHE_MAX_ENTRIES) % BROADCAST_CACHE_MAX_ENTRIES;
+
+	for (i = 0; i < broadcast_cache_count; i++)
+	{
+		index = (start + i) % BROADCAST_CACHE_MAX_ENTRIES;
+
+		if (broadcast_log[index].timestamp.str && broadcast_log[index].message)
+		{
+			SV_BroadcastPrintf(PRINT_CHAT, "%s: %s\n",
+				broadcast_cache[index].timestamp.str,
+				broadcast_cache[index].message);
 		}
 	}
 }

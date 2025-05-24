@@ -856,6 +856,7 @@ static mvddest_t *SV_InitRecordFile (char *name)
 		SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
 		                    (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
 	Cvar_SetROM(&serverdemo, dst->name);
+	SV_BroadcastEmptyCache();
 
 	strlcpy(path, name, MAX_OSPATH);
 	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
@@ -935,7 +936,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	if (!sv.mvdrecording)
 	{
 		Con_Printf ("Not recording a demo.\n");
-		return;
+		goto out;
 	}
 
 	instop = true; // SET TO TRUE, DON'T FORGET SET TO FALSE ON RETURN
@@ -965,7 +966,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 
 		instop = false; // SET TO FALSE
 
-		return;
+		goto out;
 	}
 	
 	// write a disconnect message to the demo file
@@ -1002,6 +1003,10 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	Cvar_SetROM(&serverdemo, "");
 
 	instop = false; // SET TO FALSE
+
+out:
+	if (reason != 3)
+		SV_BroadcastPrintCache();
 }
 
 /*

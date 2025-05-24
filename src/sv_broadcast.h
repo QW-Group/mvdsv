@@ -74,6 +74,11 @@
 // provided.
 #define BROADCAST_LOG_DEFAULT_DISPLAY_ENTRIES 10
 
+// Maximum number of broadcast entries retained in the cache history. When this
+// limit is reached, the oldest entries are overwritten by new ones. The cache
+// messages are reset at the start of a match and printed when the match ends.
+#define BROADCAST_CACHE_MAX_ENTRIES 16
+
 qbool SV_Broadcast(char *message);
 void SVC_Broadcast(void);
 void SV_BroadcastEnabledOnChange(cvar_t *cvar, char *value, qbool *cancel);
@@ -81,5 +86,7 @@ void SV_BroadcastInit(void);
 void SV_BroadcastUpdateServerList(qbool force_update);
 void SV_BroadcastUpdateServerList_f(void);
 void SV_BroadcastPrintLog_f(void);
+void SV_BroadcastEmptyCache(void);
+void SV_BroadcastPrintCache(void);
 
 #endif /* !__SV_BROADCAST_H__ */
