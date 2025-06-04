@@ -86,7 +86,6 @@ void SV_BroadcastInit(void);
 void SV_BroadcastUpdateServerList(qbool force_update);
 void SV_BroadcastUpdateServerList_f(void);
 void SV_BroadcastPrintLog_f(void);
-void SV_BroadcastEmptyCache(void);
 void SV_BroadcastPrintCache(void);
 
 #endif /* !__SV_BROADCAST_H__ */

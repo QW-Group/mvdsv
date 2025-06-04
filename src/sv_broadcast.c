@@ -726,13 +726,6 @@ static void SV_BroadcastAddCache(char *msg)
 	}
 }
 
-void SV_BroadcastEmptyCache(void)
-{
-	broadcast_cache_head = 0;
-	broadcast_cache_count = 0;
-	memset(broadcast_cache, 0, sizeof(broadcast_log_t) * BROADCAST_CACHE_MAX_ENTRIES);
-}
-
 void SV_BroadcastPrintCache(void)
 {
 	int i = 0;
@@ -759,4 +752,8 @@ void SV_BroadcastPrintCache(void)
 				broadcast_cache[index].message);
 		}
 	}
+
+	broadcast_cache_head = 0;
+	broadcast_cache_count = 0;
+	memset(broadcast_cache, 0, sizeof(broadcast_log_t) * BROADCAST_CACHE_MAX_ENTRIES);
 }
