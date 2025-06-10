@@ -142,7 +142,7 @@ cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "2"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 cvar_t	sv_idlesleep = {"sv_idlesleep", "0"};
-cvar_t	sv_broadcast_enabled = {"sv_broadcast_enabled", "0", 0, SV_BroadcastEnabledOnChange};
+cvar_t	sv_broadcast_enabled = {"sv_broadcast_enabled", "1", 0, SV_BroadcastEnabledOnChange};
 cvar_t	sv_broadcast_sender_validation_enabled = {"sv_broadcast_sender_validation_enabled", "1"};
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
