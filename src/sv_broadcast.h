@@ -79,6 +79,10 @@
 // messages are reset at the start of a match and printed when the match ends.
 #define BROADCAST_CACHE_MAX_ENTRIES 16
 
+// Default timeout (in milliseconds) for acquiring the servers update lock and
+// the broadcast update lock.
+#define BROADCAST_DEFAULT_LOCK_TIMEOUT 5000
+
 qbool SV_Broadcast(char *message);
 void SVC_Broadcast(void);
 void SV_BroadcastEnabledOnChange(cvar_t *cvar, char *value, qbool *cancel);

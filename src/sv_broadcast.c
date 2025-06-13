@@ -44,9 +44,11 @@ static void SV_BroadcastAddCache(char *msg);
 
 static mutex_t servers_update_lock;
 static double last_servers_update;
+static qbool update_in_progress;
 
 static mutex_t broadcast_lock;
 static double last_broadcast;
+static qbool broadcast_in_progress;
 
 static mutex_t server_list_lock;
 static netadr_t server_list[BROADCAST_MAX_SERVERS];
@@ -66,9 +68,11 @@ void SV_BroadcastInit(void)
 {
 	Sys_MutexInit(&broadcast_lock);
 	last_broadcast = -99999;
+	broadcast_in_progress = false;
 
 	Sys_MutexInit(&servers_update_lock);
 	last_servers_update = -99999;
+	update_in_progress = false;
 
 	Sys_MutexInit(&server_list_lock);
 }
@@ -126,21 +130,33 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 		return;
 	}
 
-	if (!Sys_MutexTryLock(&servers_update_lock))
+	if (!Sys_MutexTryLockWithTimeout(&servers_update_lock, BROADCAST_DEFAULT_LOCK_TIMEOUT))
+	{
+		Con_Printf("SV_BroadcastUpdateServerList: Failed to acquire servers update lock\n");
+		return;
+	}
+
+	if (update_in_progress)
 	{
 		if (force_update)
 		{
-			Con_Printf("SV_BroadcastUpdateServerList: "
-				"An update of broadcast servers is already running\n");
+			Con_Printf("Broadcast update already in progress\n");
 		}
+		Sys_MutexUnlock(&servers_update_lock);
 		return;
 	}
+
+	update_in_progress = true;
+	Sys_MutexUnlock(&servers_update_lock);
 
 	Con_Printf("Broadcast server list sync started\n");
 
 	if (Sys_CreateThread(SV_BroadcastQueryMasters, NULL))
 	{
 		Con_Printf("SV_BroadcastUpdateServerList: Unable to start query masters thread\n");
+
+		Sys_MutexLock(&servers_update_lock);
+		update_in_progress = false;
 		last_servers_update = realtime;
 		Sys_MutexUnlock(&servers_update_lock);
 	}
@@ -204,8 +220,10 @@ static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
 cleanup:
 	closesocket(sock);
 out:
-	Sys_MutexUnlock(&servers_update_lock);
+	Sys_MutexLock(&servers_update_lock);
+	update_in_progress = false;
 	last_servers_update = realtime;
+	Sys_MutexUnlock(&servers_update_lock);
 
 	return 0;
 }
@@ -352,11 +370,21 @@ qbool SV_Broadcast(char *message)
 		return false;
 	}
 
-	if (!Sys_MutexTryLock(&broadcast_lock))
+	if (!Sys_MutexTryLockWithTimeout(&broadcast_lock, BROADCAST_DEFAULT_LOCK_TIMEOUT))
 	{
-		SV_ClientPrintf(sv_client, PRINT_HIGH, "A broadcast is already in progress\n");
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Failed to acquire broadcast lock\n");
 		return false;
 	}
+
+	if (broadcast_in_progress)
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "A broadcast is already in progress\n");
+		Sys_MutexUnlock(&servers_update_lock);
+		return false;
+	}
+
+	broadcast_in_progress = true;
+	Sys_MutexUnlock(&broadcast_lock);
 
 	args = Q_malloc(sizeof(args_t));
 	args->message = Q_strdup(message);
@@ -365,7 +393,12 @@ qbool SV_Broadcast(char *message)
 	if (Sys_CreateThread(SV_BroadcastSend, args))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to start broadcast thread\n");
+
+		Sys_MutexLock(&broadcast_lock);
+		broadcast_in_progress = false;
+		last_broadcast = realtime;
 		Sys_MutexUnlock(&broadcast_lock);
+
 		Q_free(args->message);
 		Q_free(args->name);
 		Q_free(args);
@@ -452,8 +485,10 @@ cancel:
 close:
 	closesocket(sock);
 out:
-	Sys_MutexUnlock(&broadcast_lock);
+	Sys_MutexLock(&broadcast_lock);
 	last_broadcast = realtime;
+	broadcast_in_progress = false;
+	Sys_MutexUnlock(&broadcast_lock);
 
 	Q_free(args->message);
 	Q_free(args->name);

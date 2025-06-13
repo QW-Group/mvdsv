@@ -160,6 +160,7 @@ typedef struct
 } mutex_t;
 
 void Sys_MutexInit(mutex_t *l);
+void Sys_MutexLock(mutex_t *l);
 void Sys_MutexUnlock(mutex_t *l);
 qbool Sys_MutexTryLock(mutex_t *m);
 qbool Sys_MutexTryLockWithTimeout(mutex_t *m, unsigned long timeout_ms);
