@@ -740,7 +740,7 @@ void SV_BroadcastPrintLog_f(void)
 	{
 		index = (start + i) % BROADCAST_LOG_MAX_ENTRIES;
 
-		if (broadcast_log[index].timestamp.str && broadcast_log[index].message)
+		if (broadcast_log[index].timestamp.str[0] && broadcast_log[index].message[0])
 		{
 			Con_Printf("%s: %s\n",
 				broadcast_log[index].timestamp.str, broadcast_log[index].message);
@@ -780,7 +780,7 @@ void SV_BroadcastPrintCache(void)
 	{
 		index = (start + i) % BROADCAST_CACHE_MAX_ENTRIES;
 
-		if (broadcast_log[index].timestamp.str && broadcast_log[index].message)
+		if (broadcast_log[index].timestamp.str[0] && broadcast_log[index].message[0])
 		{
 			SV_BroadcastPrintf(PRINT_CHAT, "%s: %s\n",
 				broadcast_cache[index].timestamp.str,
