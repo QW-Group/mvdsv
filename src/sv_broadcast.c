@@ -606,12 +606,16 @@ void SVC_Broadcast(void)
 	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
 
 	SV_BroadcastAddLog(out);
-	SV_BroadcastAddCache(out);
+
+	started = GameStarted();
+	if (started)
+	{
+		SV_BroadcastAddCache(out);
+	}
 
 	Con_Printf("%s\n", out);
 	SV_Write_Log(CONSOLE_LOG, 0, log);
 
-	started = GameStarted();
 
 	// If the KTX spectalk feature is enabled, we'll allow the broadcast
 	// message to be seen by players, even if a game has already started.
