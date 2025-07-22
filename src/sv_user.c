@@ -93,6 +93,7 @@ extern cvar_t   pm_slidefix;
 extern cvar_t   pm_airstep;
 extern cvar_t   pm_pground;
 extern cvar_t   pm_rampjump;
+extern cvar_t   sv_safestrafe;
 extern double	sv_frametime;
 
 //bliP: init ->
@@ -2635,6 +2636,9 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 	cl->maxspeed = sv_maxspeed.value;
 	if (fofs_maxspeed)
 		EdictFieldFloat(ent, fofs_maxspeed) = (int)sv_maxspeed.value;
+	
+	// Reset safestrafe state on spawn/respawn
+	memset(&cl->safestrafe, 0, sizeof(cl->safestrafe));
 }
 
 extern cvar_t spectator_password, password;
@@ -3543,6 +3547,74 @@ void SV_PreRunCmd(void)
 }
 
 /*
+==================
+SV_ApplySafestrafe
+==================
+Limit advantages from SOCD related enhancements by enforcing stop frames between strafe direction changes
+Called from SV_RunCmd before physics processing
+*/
+static void SV_ApplySafestrafe(client_t *cl, usercmd_t *ucmd)
+{
+	int required_frames;
+	float current_move;
+	int current_dir, previous_dir;
+	
+	// Check if feature is enabled
+	required_frames = (int)sv_safestrafe.value;
+	if (required_frames <= 0 || cl->spectator)
+		return;
+	
+	current_move = ucmd->sidemove;
+	
+	// Handle pending stop frames
+	if (cl->safestrafe.pending_frames > 0) {
+		ucmd->sidemove = 0;
+		cl->safestrafe.pending_frames--;
+		cl->safestrafe.stop_frames++;
+		cl->safestrafe.last_sidemove = 0;
+		
+		return;
+	}
+	
+	// Determine directions (-1, 0, 1)
+	current_dir = (current_move > 0) - (current_move < 0);
+	previous_dir = (cl->safestrafe.last_sidemove > 0) - 
+	               (cl->safestrafe.last_sidemove < 0);
+	
+	// Check for direction change
+	if (current_dir != 0 && previous_dir != 0 && 
+	    current_dir != previous_dir) {
+		// Direct direction change - enforce stop frames
+		cl->safestrafe.pending_frames = required_frames;
+		cl->safestrafe.pending_direction = current_move;
+		cl->safestrafe.stop_frames = 1;
+		ucmd->sidemove = 0;
+	}
+	else if (current_dir != 0 && previous_dir == 0) {
+		// Starting movement after stop
+		if (cl->safestrafe.stop_frames < required_frames) {
+			// Not enough stop frames
+			cl->safestrafe.pending_frames = 
+				required_frames - cl->safestrafe.stop_frames;
+			cl->safestrafe.pending_direction = current_move;
+			cl->safestrafe.stop_frames++;
+			ucmd->sidemove = 0;
+		}
+		else {
+			// Enough stop frames - allow movement
+			cl->safestrafe.stop_frames = 0;
+		}
+	}
+	else if (current_dir == 0) {
+		// Currently stopped
+		cl->safestrafe.stop_frames++;
+	}
+	
+	// Update last move for next frame
+	cl->safestrafe.last_sidemove = ucmd->sidemove;
+}
+
+/*
 ===========
 SV_RunCmd
 ===========
@@ -3596,6 +3668,12 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/
 	}
 	//<-
 	cmd = *ucmd;
+
+	// Apply safestrafe before physics processing
+	if (!inside) {
+		SV_ApplySafestrafe(sv_client, ucmd);
+		cmd = *ucmd; // Update cmd with potentially modified ucmd
+	}
 
 	// chop up very long command
 	if (cmd.msec > 50)
