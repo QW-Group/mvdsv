@@ -157,7 +157,7 @@ typedef unsigned char byte;
 #undef false
 
 #ifndef __cplusplus
-typedef enum qbool_e {false, true} qbool;
+typedef enum qbool_e {qfalse, qtrue} qbool;
 #else
 typedef bool qbool;
 #endif
