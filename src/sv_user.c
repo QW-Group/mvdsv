@@ -3667,13 +3667,13 @@ void SV_RunCmd (usercmd_t *ucmd, qbool inside, qbool second_attempt) //bliP: 24/
 			sv_client->msecs = 0;
 	}
 	//<-
-	cmd = *ucmd;
 
 	// Apply safestrafe before physics processing
 	if (!inside) {
 		SV_ApplySafestrafe(sv_client, ucmd);
-		cmd = *ucmd; // Update cmd with potentially modified ucmd
 	}
+
+	cmd = *ucmd;
 
 	// chop up very long command
 	if (cmd.msec > 50)
