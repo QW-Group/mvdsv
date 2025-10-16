@@ -1461,6 +1461,9 @@ static void SVC_DirectConnect (void)
 
 	newcl->realip_num = rand();
 
+	// Reset safestrafe state
+	memset(&newcl->safestrafe, 0, sizeof(newcl->safestrafe));
+
 	//bliP: init
 	newcl->spec_print = (int)sv_specprint.value;
 	newcl->logincount = 0;
@@ -3395,6 +3398,7 @@ void SV_InitLocal (void)
 	extern	cvar_t	sv_friction;
 	extern	cvar_t	sv_waterfriction;
 	extern	cvar_t	sv_nailhack;
+	extern	cvar_t	sv_safestrafe;
 
 	extern cvar_t	sv_maxpitch;
 	extern cvar_t	sv_minpitch;
@@ -3524,6 +3528,7 @@ void SV_InitLocal (void)
 	Cvar_Register (&pm_pground);
 	Cvar_Register (&pm_airstep);
 	Cvar_Register (&pm_rampjump);
+	Cvar_Register (&sv_safestrafe);
 
 	Cvar_Register (&filterban);
 
