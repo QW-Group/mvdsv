@@ -124,7 +124,7 @@ endif()
 ######################################################################################################
 
 # Set base compiler flags
-set(CFLAGS -Wall)
+set(CFLAGS -Wall -std=gnu17)
 set(LFLAGS)
 
 
