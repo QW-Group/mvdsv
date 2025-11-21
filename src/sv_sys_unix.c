@@ -594,6 +594,11 @@ void Sys_MutexInit(mutex_t *m)
 	pthread_mutex_init(&m->lock, NULL);
 }
 
+void Sys_MutexLock(mutex_t *m)
+{
+	pthread_mutex_lock(&m->lock);
+}
+
 void Sys_MutexUnlock(mutex_t *m)
 {
 	pthread_mutex_unlock(&m->lock);

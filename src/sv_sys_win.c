@@ -726,6 +726,11 @@ void Sys_MutexInit(mutex_t *m)
 	InitializeCriticalSection(&m->lock);
 }
 
+void Sys_MutexLock(mutex_t *m)
+{
+	EnterCriticalSection(&m->lock);
+}
+
 void Sys_MutexUnlock(mutex_t *m)
 {
 	LeaveCriticalSection(&m->lock);

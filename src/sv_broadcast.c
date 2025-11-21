@@ -29,16 +29,26 @@ typedef struct {
 	time_t window_start;
 } ratelimit_t;
 
+typedef struct {
+	char message[1024];
+	date_t timestamp;
+
+} broadcast_log_t;
+
 static DWORD WINAPI SV_BroadcastSend(void *data);
 static DWORD WINAPI SV_BroadcastQueryMasters(void *data);
 static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *server, int *server_count);
 static qbool SVC_BroadcastIsRateLimited(netadr_t *from);
+static void SV_BroadcastAddLog(char *msg);
+static void SV_BroadcastAddCache(char *msg);
 
 static mutex_t servers_update_lock;
 static double last_servers_update;
+static qbool update_in_progress;
 
 static mutex_t broadcast_lock;
 static double last_broadcast;
+static qbool broadcast_in_progress;
 
 static mutex_t server_list_lock;
 static netadr_t server_list[BROADCAST_MAX_SERVERS];
@@ -46,13 +56,23 @@ static int server_list_count;
 
 static ratelimit_t ratelimit[BROADCAST_RATELIMIT_MAX_ENTRIES];
 
+static broadcast_log_t broadcast_log[BROADCAST_LOG_MAX_ENTRIES];
+static int broadcast_log_head = 0;
+static int broadcast_log_count = 0;
+
+static broadcast_log_t broadcast_cache[BROADCAST_CACHE_MAX_ENTRIES];
+static int broadcast_cache_head = 0;
+static int broadcast_cache_count = 0;
+
 void SV_BroadcastInit(void)
 {
 	Sys_MutexInit(&broadcast_lock);
 	last_broadcast = -99999;
+	broadcast_in_progress = false;
 
 	Sys_MutexInit(&servers_update_lock);
 	last_servers_update = -99999;
+	update_in_progress = false;
 
 	Sys_MutexInit(&server_list_lock);
 }
@@ -110,21 +130,33 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 		return;
 	}
 
-	if (!Sys_MutexTryLock(&servers_update_lock))
+	if (!Sys_MutexTryLockWithTimeout(&servers_update_lock, BROADCAST_DEFAULT_LOCK_TIMEOUT))
+	{
+		Con_Printf("SV_BroadcastUpdateServerList: Failed to acquire servers update lock\n");
+		return;
+	}
+
+	if (update_in_progress)
 	{
 		if (force_update)
 		{
-			Con_Printf("SV_BroadcastUpdateServerList: "
-				"An update of broadcast servers is already running\n");
+			Con_Printf("Broadcast update already in progress\n");
 		}
+		Sys_MutexUnlock(&servers_update_lock);
 		return;
 	}
+
+	update_in_progress = true;
+	Sys_MutexUnlock(&servers_update_lock);
 
 	Con_Printf("Broadcast server list sync started\n");
 
 	if (Sys_CreateThread(SV_BroadcastQueryMasters, NULL))
 	{
 		Con_Printf("SV_BroadcastUpdateServerList: Unable to start query masters thread\n");
+
+		Sys_MutexLock(&servers_update_lock);
+		update_in_progress = false;
 		last_servers_update = realtime;
 		Sys_MutexUnlock(&servers_update_lock);
 	}
@@ -188,8 +220,10 @@ static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
 cleanup:
 	closesocket(sock);
 out:
-	Sys_MutexUnlock(&servers_update_lock);
+	Sys_MutexLock(&servers_update_lock);
+	update_in_progress = false;
 	last_servers_update = realtime;
+	Sys_MutexUnlock(&servers_update_lock);
 
 	return 0;
 }
@@ -336,11 +370,21 @@ qbool SV_Broadcast(char *message)
 		return false;
 	}
 
-	if (!Sys_MutexTryLock(&broadcast_lock))
+	if (!Sys_MutexTryLockWithTimeout(&broadcast_lock, BROADCAST_DEFAULT_LOCK_TIMEOUT))
 	{
-		SV_ClientPrintf(sv_client, PRINT_HIGH, "A broadcast is already in progress\n");
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Failed to acquire broadcast lock\n");
 		return false;
 	}
+
+	if (broadcast_in_progress)
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "A broadcast is already in progress\n");
+		Sys_MutexUnlock(&servers_update_lock);
+		return false;
+	}
+
+	broadcast_in_progress = true;
+	Sys_MutexUnlock(&broadcast_lock);
 
 	args = Q_malloc(sizeof(args_t));
 	args->message = Q_strdup(message);
@@ -349,7 +393,12 @@ qbool SV_Broadcast(char *message)
 	if (Sys_CreateThread(SV_BroadcastSend, args))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to start broadcast thread\n");
+
+		Sys_MutexLock(&broadcast_lock);
+		broadcast_in_progress = false;
+		last_broadcast = realtime;
 		Sys_MutexUnlock(&broadcast_lock);
+
 		Q_free(args->message);
 		Q_free(args->name);
 		Q_free(args);
@@ -436,8 +485,10 @@ cancel:
 close:
 	closesocket(sock);
 out:
-	Sys_MutexUnlock(&broadcast_lock);
+	Sys_MutexLock(&broadcast_lock);
 	last_broadcast = realtime;
+	broadcast_in_progress = false;
+	Sys_MutexUnlock(&broadcast_lock);
 
 	Q_free(args->message);
 	Q_free(args->name);
@@ -554,10 +605,17 @@ void SVC_Broadcast(void)
 	}
 	snprintf(log, sizeof(log), "%s \\addr\\%s%s\n", BROADCAST_LOG_PREFIX, addr, payload);
 
+	SV_BroadcastAddLog(out);
+
+	started = GameStarted();
+	if (started)
+	{
+		SV_BroadcastAddCache(out);
+	}
+
 	Con_Printf("%s\n", out);
 	SV_Write_Log(CONSOLE_LOG, 0, log);
 
-	started = GameStarted();
 
 	// If the KTX spectalk feature is enabled, we'll allow the broadcast
 	// message to be seen by players, even if a game has already started.
@@ -648,4 +706,93 @@ qbool SVC_BroadcastIsRateLimited(netadr_t *from)
 	ratelimit[next].count = 1;
 	ratelimit[next].window_start = now;
 	return false;
+}
+
+static void SV_BroadcastAddLog(char *msg)
+{
+	snprintf(broadcast_log[broadcast_log_head].message,
+		sizeof(broadcast_log[broadcast_log_head].message), "%s", msg);
+	SV_TimeOfDay(&broadcast_log[broadcast_log_head].timestamp, "%Y-%m-%d %H:%M:%S");
+
+	broadcast_log_head = (broadcast_log_head + 1) % BROADCAST_LOG_MAX_ENTRIES;
+	if (broadcast_log_count < BROADCAST_LOG_MAX_ENTRIES)
+	{
+		broadcast_log_count++;
+	}
+}
+
+void SV_BroadcastPrintLog_f(void)
+{
+	int i = 0;
+	int index = 0;
+	int limit = 0;
+	int start = 0;
+
+	if (broadcast_log_count == 0)
+	{
+		Con_Printf("Broadcast log is empty.\n");
+		return;
+	}
+
+	limit = (Cmd_Argc() > 1) ? atoi(Cmd_Argv(1)) : BROADCAST_LOG_DEFAULT_DISPLAY_ENTRIES;
+	limit = bound(1, limit, broadcast_log_count);
+	Con_Printf("List of last %d broadcasts:\n", limit);
+
+	start = (broadcast_log_head - limit + BROADCAST_LOG_MAX_ENTRIES) % BROADCAST_LOG_MAX_ENTRIES;
+
+	for (i = 0; i < limit; i++)
+	{
+		index = (start + i) % BROADCAST_LOG_MAX_ENTRIES;
+
+		if (broadcast_log[index].timestamp.str[0] && broadcast_log[index].message[0])
+		{
+			Con_Printf("%s: %s\n",
+				broadcast_log[index].timestamp.str, broadcast_log[index].message);
+		}
+	}
+}
+
+static void SV_BroadcastAddCache(char *msg)
+{
+	snprintf(broadcast_cache[broadcast_cache_head].message,
+		sizeof(broadcast_cache[broadcast_cache_head].message), "%s", msg);
+	SV_TimeOfDay(&broadcast_cache[broadcast_cache_head].timestamp, "%Y-%m-%d %H:%M:%S");
+
+	broadcast_cache_head = (broadcast_cache_head + 1) % BROADCAST_CACHE_MAX_ENTRIES;
+	if (broadcast_cache_count < BROADCAST_CACHE_MAX_ENTRIES)
+	{
+		broadcast_cache_count++;
+	}
+}
+
+void SV_BroadcastPrintCache(void)
+{
+	int i = 0;
+	int index = 0;
+	int start = 0;
+
+	if (broadcast_cache_count == 0)
+	{
+		return;
+	}
+
+	SV_BroadcastPrintf(PRINT_CHAT, "List of cached broadcasts:\n");
+
+	start = (broadcast_cache_head - broadcast_cache_count + BROADCAST_CACHE_MAX_ENTRIES) % BROADCAST_CACHE_MAX_ENTRIES;
+
+	for (i = 0; i < broadcast_cache_count; i++)
+	{
+		index = (start + i) % BROADCAST_CACHE_MAX_ENTRIES;
+
+		if (broadcast_log[index].timestamp.str[0] && broadcast_log[index].message[0])
+		{
+			SV_BroadcastPrintf(PRINT_CHAT, "%s: %s\n",
+				broadcast_cache[index].timestamp.str,
+				broadcast_cache[index].message);
+		}
+	}
+
+	broadcast_cache_head = 0;
+	broadcast_cache_count = 0;
+	memset(broadcast_cache, 0, sizeof(broadcast_log_t) * BROADCAST_CACHE_MAX_ENTRIES);
 }
