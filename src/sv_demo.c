@@ -935,7 +935,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	if (!sv.mvdrecording)
 	{
 		Con_Printf ("Not recording a demo.\n");
-		return;
+		goto out;
 	}
 
 	instop = true; // SET TO TRUE, DON'T FORGET SET TO FALSE ON RETURN
@@ -965,7 +965,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 
 		instop = false; // SET TO FALSE
 
-		return;
+		goto out;
 	}
 	
 	// write a disconnect message to the demo file
@@ -1002,6 +1002,10 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	Cvar_SetROM(&serverdemo, "");
 
 	instop = false; // SET TO FALSE
+
+out:
+	if (reason != 3)
+		SV_BroadcastPrintCache();
 }
 
 /*

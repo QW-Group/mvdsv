@@ -66,11 +66,30 @@
 // the rate limiting window.
 #define BROADCAST_RATELIMIT_LIMIT 10
 
+// Maximum number of broadcast entries retained in the log history. When the
+// limit is reached, the oldest entries are overwritten by new ones.
+#define BROADCAST_LOG_MAX_ENTRIES 64
+
+// Default number of broadcast log entries to display if no argument is
+// provided.
+#define BROADCAST_LOG_DEFAULT_DISPLAY_ENTRIES 10
+
+// Maximum number of broadcast entries retained in the cache history. When this
+// limit is reached, the oldest entries are overwritten by new ones. The cache
+// messages are reset at the start of a match and printed when the match ends.
+#define BROADCAST_CACHE_MAX_ENTRIES 16
+
+// Default timeout (in milliseconds) for acquiring the servers update lock and
+// the broadcast update lock.
+#define BROADCAST_DEFAULT_LOCK_TIMEOUT 5000
+
 qbool SV_Broadcast(char *message);
 void SVC_Broadcast(void);
 void SV_BroadcastEnabledOnChange(cvar_t *cvar, char *value, qbool *cancel);
 void SV_BroadcastInit(void);
 void SV_BroadcastUpdateServerList(qbool force_update);
 void SV_BroadcastUpdateServerList_f(void);
+void SV_BroadcastPrintLog_f(void);
+void SV_BroadcastPrintCache(void);
 
 #endif /* !__SV_BROADCAST_H__ */
