@@ -89,7 +89,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PCRE_STATIC
 #endif
 
-#include "pcre/pcre.h"
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 //=============================================================================
 
