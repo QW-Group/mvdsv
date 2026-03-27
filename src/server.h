@@ -1034,6 +1034,7 @@ void	SV_MVDInfo_f (void);
 void	SV_LastScores_f (void);
 char*   SV_MVDName2Txt (const char *name);
 void SV_MVDEmbedInfo_f(void);
+void SV_MVDEmbedStartTimestamp(void);
 
 //
 // sv_demo_qtv.c

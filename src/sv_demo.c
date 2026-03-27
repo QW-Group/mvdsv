@@ -561,7 +561,7 @@ static qbool MVD_WriteMessage (sizebuf_t *msg, byte msec)
 	return (sv.mvdrecording ? true : false);
 }
 
-static void SV_MVDWritePausedTimeToStreams(demo_frame_t* frame)
+static void SV_MVDWritePausedTime(demo_frame_t* frame)
 {
 	// When writing out a paused frame, send a packet to let QTV keep delay in sync
 	if (frame->paused) {
@@ -579,9 +579,7 @@ static void SV_MVDWritePausedTimeToStreams(demo_frame_t* frame)
 		MSG_WriteByte(&msg, duration);                                    //    13: true ms value, as demo packets will have 0
 
 		for (d = demo.dest; d; d = d->nextdest) {
-			if (d->desttype == DEST_STREAM) {
-				DemoWriteDest(msg.data, msg.cursize, d);
-			}
+			DemoWriteDest(msg.data, msg.cursize, d);
 		}
 	}
 }
@@ -624,7 +622,7 @@ static qbool SV_MVDWritePacketsEx (int num)
 		time1 = frame->time;
 		nextframe = frame;
 
-		SV_MVDWritePausedTimeToStreams(frame);
+		SV_MVDWritePausedTime(frame);
 
 		// find two frames
 		// one before the exact time (time - msec) and one after,
@@ -1315,6 +1313,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	// flush packet
 	SV_WriteRecordMVDMessage (&buf);
 	SZ_Clear (&buf);
+	SV_MVDEmbedStartTimestamp();
 
 	// soundlist
 	MSG_WriteByte (&buf, svc_soundlist);

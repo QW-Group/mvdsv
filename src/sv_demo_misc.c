@@ -21,12 +21,64 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef CLIENTONLY
 #include "qwsvdef.h"
+#ifndef _WIN32
+#include <sys/time.h>
+#endif
 #ifndef SERVERONLY
 #include "pcre.h"
 #endif
 
 #define MAX_DEMOINFO_SIZE (1024 * 200)
 static char chartbl[256];
+
+static uint64_t SV_TimestampMilliseconds(void)
+{
+#ifdef _WIN32
+	FILETIME ft;
+	ULARGE_INTEGER ticks;
+
+	GetSystemTimeAsFileTime(&ft);
+
+	ticks.LowPart = ft.dwLowDateTime;
+	ticks.HighPart = ft.dwHighDateTime;
+
+	return (uint64_t)((ticks.QuadPart - 116444736000000000ULL) / 10000ULL);
+#else
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+
+	return (uint64_t)tv.tv_sec * 1000ULL + (uint64_t)tv.tv_usec / 1000ULL;
+#endif
+}
+
+void SV_MVDEmbedStartTimestamp(void)
+{
+	mvdhidden_block_header_t header;
+	uint64_t timestamp_ms;
+	byte buf[8];
+	int i;
+
+	if (!sv.mvdrecording) {
+		return;
+	}
+
+	timestamp_ms = SV_TimestampMilliseconds();
+	header.length = LittleLong(8);
+	header.type_id = LittleShort(mvdhidden_demo_start_timestamp_ms);
+
+	if (!MVDWrite_HiddenBlockBegin(sizeof(header.length) + sizeof(header.type_id) + 8)) {
+		return;
+	}
+
+	for (i = 0; i < 8; ++i) {
+		buf[i] = (byte)((timestamp_ms >> (i * 8)) & 0xFF);
+	}
+
+	MVD_SZ_Write(&header.length, sizeof(header.length));
+	MVD_SZ_Write(&header.type_id, sizeof(header.type_id));
+	MVD_SZ_Write(buf, 8);
+}
 
 /*
 ====================
