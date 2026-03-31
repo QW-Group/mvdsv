@@ -76,6 +76,8 @@ void Sys_Quit (qbool restart);
 
 double Sys_DoubleTime (void);
 
+uint64_t Sys_TimestampMilliseconds (void);
+
 char *Sys_ConsoleInput (void);
 
 //void Sys_Sleep (void);

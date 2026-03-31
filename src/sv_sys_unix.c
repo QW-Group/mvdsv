@@ -394,6 +394,21 @@ double Sys_DoubleTime(void)
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
 #endif
+
+/*
+================
+Sys_TimestampMilliseconds
+================
+*/
+uint64_t Sys_TimestampMilliseconds(void)
+{
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+
+	return (uint64_t)tv.tv_sec * 1000ULL + (uint64_t)tv.tv_usec / 1000ULL;
+}
+
 /*
 ================
 Sys_ConsoleInput

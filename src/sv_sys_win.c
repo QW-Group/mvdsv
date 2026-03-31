@@ -490,6 +490,24 @@ double Sys_DoubleTime (void)
 
 /*
 ================
+Sys_TimestampMilliseconds
+================
+*/
+uint64_t Sys_TimestampMilliseconds(void)
+{
+	FILETIME ft;
+	ULARGE_INTEGER ticks;
+
+	GetSystemTimeAsFileTime(&ft);
+
+	ticks.LowPart = ft.dwLowDateTime;
+	ticks.HighPart = ft.dwHighDateTime;
+
+	return (uint64_t)((ticks.QuadPart - 116444736000000000ULL) / 10000ULL);
+}
+
+/*
+================
 Sys_ConsoleInput
 ================
 */
