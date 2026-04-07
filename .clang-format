@@ -1,0 +1,56 @@
+Language: Cpp
+
+# --- Indentation ---
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 8
+
+# --- Braces ---
+BreakBeforeBraces: Linux
+
+# --- Switch/case ---
+IndentCaseLabels: false
+IndentCaseBlocks: false
+AllowShortCaseLabelsOnASingleLine: false
+
+# --- No short forms ---
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+
+# --- Pointer/reference ---
+PointerAlignment: Right
+
+# --- Spacing ---
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+SpaceBeforeAssignmentOperators: true
+SpacesInParentheses: false
+SpaceInEmptyParentheses: false
+
+# --- Line length ---
+ColumnLimit: 0
+
+# --- Alignment ---
+AlignConsecutiveMacros: AcrossEmptyLines
+AlignEscapedNewlines: Right
+AlignAfterOpenBracket: DontAlign
+AlignTrailingComments:
+  Kind: Leave
+
+# --- Packing ---
+BinPackArguments: true
+BinPackParameters: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# --- Includes ---
+SortIncludes: Never
+
+# --- Other ---
+InsertBraces: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+SpacesBeforeTrailingComments: 1
