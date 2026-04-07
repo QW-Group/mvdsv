@@ -644,7 +644,8 @@ static void Cmd_Modellist_f (void)
 	maxclientsupportedmodels = 256;
 #ifdef FTE_PEXT_MODELDBL
 	if (sv_client->fteprotocolextensions & FTE_PEXT_MODELDBL) {
-		maxclientsupportedmodels *= 2;
+		// Artificial limit, ids are sent as short, increase if needed
+		maxclientsupportedmodels *= 8;
 	}
 #endif
 

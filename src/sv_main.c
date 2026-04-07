@@ -3146,7 +3146,7 @@ static void SV_IdleSleep(void)
 			return;
 	}
 
-	usleep((int)sv_idlesleep.value * 1000);
+	Sys_Sleep((int)sv_idlesleep.value);
 }
 
 #ifdef SERVERONLY

@@ -31,7 +31,7 @@ typedef struct cnode_s {
 
 	// node specific
 	mplane_t           *plane;
-	struct cnode_s     *children[2];	
+	struct cnode_s     *children[2];
 } cnode_t;
 
 typedef struct cleaf_s {
@@ -64,7 +64,8 @@ static cleaf_t		*map_leafs;
 static int			numleafs;
 static int			visleafs;
 
-static byte			map_novis[MAX_MAP_LEAFS/8];
+static byte			*map_pvs_novis;
+static byte			*map_pvs_decompressed;
 
 static byte			*map_pvs;					// fully expanded and decompressed
 static byte			*map_phs;					// only valid if we are the server
@@ -420,7 +421,7 @@ cleaf_t *CM_PointInLeaf (const vec3_t p)
 byte *CM_LeafPVS (const cleaf_t *leaf)
 {
 	if (leaf == map_leafs)
-		return map_novis;
+		return map_pvs_novis;
 
 	return map_pvs + (leaf - 1 - map_leafs) * map_vis_rowbytes;
 }
@@ -432,7 +433,7 @@ byte *CM_LeafPVS (const cleaf_t *leaf)
 byte *CM_LeafPHS (const cleaf_t *leaf)
 {
 	if (leaf == map_leafs)
-		return map_novis;
+		return map_pvs_novis;
 
 	if (!map_phs) {
 		return NULL;
@@ -453,7 +454,7 @@ crosses a waterline.
 */
 
 static int	fatbytes;
-static byte	fatpvs[MAX_MAP_LEAFS/8];
+static byte	*map_pvs_fatpvs;
 static vec3_t	fatpvs_org;
 
 static void AddToFatPVS_r (cnode_t *node)
@@ -471,7 +472,7 @@ static void AddToFatPVS_r (cnode_t *node)
 			{
 				pvs = CM_LeafPVS ( (cleaf_t *)node);
 				for (i=0 ; i<fatbytes ; i++)
-					fatpvs[i] |= pvs[i];
+					map_pvs_fatpvs[i] |= pvs[i];
 			}
 			return;
 		}
@@ -503,9 +504,9 @@ byte *CM_FatPVS (vec3_t org)
 	VectorCopy (org, fatpvs_org);
 
 	fatbytes = (visleafs+31)>>3;
-	memset (fatpvs, 0, fatbytes);
+	memset (map_pvs_fatpvs, 0, fatbytes);
 	AddToFatPVS_r (map_nodes);
-	return fatpvs;
+	return map_pvs_fatpvs;
 }
 
 
@@ -1073,19 +1074,18 @@ static void CM_LoadPlanes(byte *buffer, size_t length)
 */
 static byte *DecompressVis(byte *in)
 {
-	static byte decompressed[MAX_MAP_LEAFS / 8];
 	int c, row;
 	byte *out;
 
 	row = (visleafs + 7) >> 3;
-	out = decompressed;
+	out = map_pvs_decompressed;
 
 	if (!in) { // no vis info, so make all visible
 		while (row) {
 			*out++ = 0xff;
 			row--;
 		}
-		return decompressed;
+		return map_pvs_decompressed;
 	}
 
 	do {
@@ -1100,11 +1100,19 @@ static byte *DecompressVis(byte *in)
 			*out++ = 0;
 			c--;
 		}
-	} while (out - decompressed < row);
+	} while (out - map_pvs_decompressed < row);
 
-	return decompressed;
+	return map_pvs_decompressed;
 }
 
+static void CM_AllocPVSBuffers(int rowbytes)
+{
+	map_pvs_novis = (byte *)Hunk_AllocName(rowbytes, "novis");
+	memset(map_pvs_novis, 0xff, rowbytes);
+
+	map_pvs_fatpvs = (byte *)Hunk_AllocName(rowbytes, "fatpvs");
+	map_pvs_decompressed = (byte *)Hunk_AllocName(rowbytes, "visdec");
+}
 
 /*
 ** CM_BuildPVS
@@ -1119,6 +1127,7 @@ static void CM_BuildPVS(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len
 
 	map_vis_rowlongs = (visleafs + 31) >> 5;
 	map_vis_rowbytes = map_vis_rowlongs * 4;
+	CM_AllocPVSBuffers(map_vis_rowbytes);
 	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
 
 	if (!vis_len) {
@@ -1134,7 +1143,7 @@ static void CM_BuildPVS(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len
 	scan = map_pvs;
 	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
 		int p = LittleLong(in->visofs);
-		memcpy(scan, (p == -1) ? map_novis : DecompressVis(visdata + p), map_vis_rowbytes);
+		memcpy(scan, (p == -1) ? map_pvs_novis : DecompressVis(visdata + p), map_vis_rowbytes);
 	}
 }
 
@@ -1146,6 +1155,7 @@ static void CM_BuildPVS29a(byte *visdata, int vis_len, byte *leaf_buf, int leaf_
 
 	map_vis_rowlongs = (visleafs + 31) >> 5;
 	map_vis_rowbytes = map_vis_rowlongs * 4;
+	CM_AllocPVSBuffers(map_vis_rowbytes);
 	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
 
 	if (!vis_len) {
@@ -1161,7 +1171,7 @@ static void CM_BuildPVS29a(byte *visdata, int vis_len, byte *leaf_buf, int leaf_
 	scan = map_pvs;
 	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
 		int p = LittleLong(in->visofs);
-		memcpy(scan, (p == -1) ? map_novis : DecompressVis(visdata + p), map_vis_rowbytes);
+		memcpy(scan, (p == -1) ? map_pvs_novis : DecompressVis(visdata + p), map_vis_rowbytes);
 	}
 }
 
@@ -1173,6 +1183,7 @@ static void CM_BuildPVSBSP2(byte *visdata, int vis_len, byte *leaf_buf, int leaf
 
 	map_vis_rowlongs = (visleafs + 31) >> 5;
 	map_vis_rowbytes = map_vis_rowlongs * 4;
+	CM_AllocPVSBuffers(map_vis_rowbytes);
 	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
 
 	if (!vis_len) {
@@ -1188,7 +1199,7 @@ static void CM_BuildPVSBSP2(byte *visdata, int vis_len, byte *leaf_buf, int leaf
 	scan = map_pvs;
 	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
 		int p = LittleLong(in->visofs);
-		memcpy(scan, (p == -1) ? map_novis : DecompressVis(visdata + p), map_vis_rowbytes);
+		memcpy(scan, (p == -1) ? map_pvs_novis : DecompressVis(visdata + p), map_vis_rowbytes);
 	}
 }
 
@@ -1254,6 +1265,9 @@ void CM_InvalidateMap (void)
 	map_clipnodes = NULL;
 	map_leafs = NULL;
 	map_pvs = NULL;
+	map_pvs_novis = NULL;
+	map_pvs_fatpvs = NULL;
+	map_pvs_decompressed = NULL;
 	map_phs = NULL;
 	map_entitystring = NULL;
 	map_physicsnormals = NULL;
@@ -1492,7 +1506,6 @@ cmodel_t *CM_InlineModel (char *name)
 
 void CM_Init (void)
 {
-	memset (map_novis, 0xff, sizeof(map_novis));
 	CM_InitBoxHull ();
 }
 
