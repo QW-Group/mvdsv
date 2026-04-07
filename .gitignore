@@ -32,3 +32,5 @@ build/vs/*.def
 build/vs/*.ilk
 build/
 /.cache
+/.idea
+/cmake-*
