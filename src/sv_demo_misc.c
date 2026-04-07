@@ -28,6 +28,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAX_DEMOINFO_SIZE (1024 * 200)
 static char chartbl[256];
 
+void SV_MVDEmbedStartTimestamp(void)
+{
+	mvdhidden_block_header_t header;
+	uint64_t timestamp_ms;
+	byte buf[8];
+	int i;
+
+	if (!sv.mvdrecording) {
+		return;
+	}
+
+	timestamp_ms = Sys_TimestampMilliseconds();
+	header.length = LittleLong(8);
+	header.type_id = LittleShort(mvdhidden_demo_start_timestamp_ms);
+
+	if (!MVDWrite_HiddenBlockBegin(sizeof(header.length) + sizeof(header.type_id) + 8)) {
+		return;
+	}
+
+	for (i = 0; i < 8; ++i) {
+		buf[i] = (byte)((timestamp_ms >> (i * 8)) & 0xFF);
+	}
+
+	MVD_SZ_Write(&header.length, sizeof(header.length));
+	MVD_SZ_Write(&header.type_id, sizeof(header.type_id));
+	MVD_SZ_Write(buf, 8);
+}
+
 /*
 ====================
 CleanName_Init
