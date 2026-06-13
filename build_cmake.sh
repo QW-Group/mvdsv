@@ -34,8 +34,8 @@ G="${G:-}"
 [ -z "${G}" ] && hash ninja >/dev/null 2>&1 && G="Ninja"
 [ ! -z "${G}" ] && export CMAKE_GENERATOR="${G}"
 
-rm -rf ${BUILDDIR}
-mkdir -p ${BUILDDIR}
+rm -rf "${BUILDDIR}"
+mkdir -p "${BUILDDIR}"
 
 # Build platforms one by one.
 for name in "${PLATFORMS[@]}"; do
