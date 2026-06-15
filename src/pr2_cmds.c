@@ -63,6 +63,7 @@ static intptr_t EXT_SetSendNeeded(intptr_t *args);
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
 static intptr_t EXT_GetExtFieldPtr(intptr_t *args);
+static intptr_t EXT_SetLastRuntime(intptr_t *args);
 struct
 {
 	char *extname;
@@ -75,6 +76,7 @@ struct
 #ifdef FTE_PEXT_CSQC
 	{"setsendneeded",		EXT_SetSendNeeded},
 #endif
+	{"SetLastRuntime",	EXT_SetLastRuntime},
 };
 ext_syscall_t ext_syscall_tbl[256];
 
@@ -2101,6 +2103,14 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		}
 	}
 
+	return 0;
+}
+
+static intptr_t EXT_SetLastRuntime(intptr_t *args)
+{
+	int entnum = (int)args[1];
+	edict_t *ent = EDICT_NUM(entnum);
+	ent->e.lastruntime = sv.time;
 	return 0;
 }
 
