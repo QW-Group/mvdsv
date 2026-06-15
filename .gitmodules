@@ -1,3 +1,7 @@
 [submodule "src/qwprot"]
 	path = src/qwprot
 	url = https://github.com/QW-Group/qwprot.git
+[submodule "vendor/pcre2"]
+	path = vendor/pcre2
+	url = https://github.com/PCRE2Project/pcre2.git
+	branch = pcre2-10.46
