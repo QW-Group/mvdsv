@@ -68,6 +68,7 @@ static intptr_t EXT_pointerstat(intptr_t *args);
 static intptr_t EXT_globalstat(intptr_t *args);
 static intptr_t EXT_QCRequestArg(intptr_t *args);
 #endif
+static intptr_t EXT_SkipEntityPhysics(intptr_t *args);
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
 static intptr_t EXT_GetExtFieldPtr(intptr_t *args);
@@ -90,6 +91,7 @@ struct
 	{"globalstat",			EXT_globalstat},
 	{"qcrequestarg",		EXT_QCRequestArg},
 #endif
+	{"SkipEntityPhysics",	EXT_SkipEntityPhysics},
 };
 ext_syscall_t ext_syscall_tbl[256];
 
@@ -2172,6 +2174,23 @@ intptr_t EXT_QCRequestArg(intptr_t *args)
 	return SV_QCRequestArg(args[1], VMA(2), args[3]);
 }
 #endif
+
+/*
+ * Marks the entity as already run for the current server frame, making
+ * SV_RunEntity skip its physics and think. For mods that step an entity
+ * themselves (e.g. antilagged projectiles) and do not want the engine to
+ * run it again this frame.
+ */
+intptr_t EXT_SkipEntityPhysics(intptr_t *args)
+{
+	int entnum = (int)args[1];
+
+	if (entnum <= 0 || entnum >= sv.num_edicts)
+		return 0;
+
+	EDICT_NUM(entnum)->e.lastruntime = sv.time;
+	return 0;
+}
 
 // To prevent mods from hardcoding field offsets which would cause engine incompatibilities.
 static uint32_t GetExtFieldCookie(void)
