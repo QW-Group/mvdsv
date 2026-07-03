@@ -16,6 +16,7 @@ The following architectures are fully supported by **[MVDSV][mvdsv]** and are av
 * Linux armhf (ARM 32-bit processors)
 * Windows x64 (Intel and AMD 64-bits processors)
 * Windows x86 (Intel and AMD 32-bit processors)
+* macOS arm64 (Apple Silicon processors)
 
 ## Prebuilt binaries
 You can find the prebuilt binaries on [this download page][mvdsv-builds].

@@ -7,14 +7,20 @@ BUILDDIR="${BUILDDIR:-build}" # Default build dir.
 
 # Define target platforms, feel free to comment out if you does not require some of it,
 # or you can call this script with plaforms list you willing to build on the command line.
-DEFAULT_PLATFORMS=(
-	linux-amd64
-	linux-aarch64
-	linux-armhf
-	linux-i686
-	windows-x64
-	windows-x86
-)
+if [ "$(uname -s)" = "Darwin" ]; then
+	DEFAULT_PLATFORMS=(
+		macos-arm64
+	)
+else
+	DEFAULT_PLATFORMS=(
+		linux-amd64
+		linux-aarch64
+		linux-armhf
+		linux-i686
+		windows-x64
+		windows-x86
+	)
+fi
 PLATFORMS=("${@:-${DEFAULT_PLATFORMS[@]}}")
 
 
