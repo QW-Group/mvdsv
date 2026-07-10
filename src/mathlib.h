@@ -47,7 +47,12 @@ extern int _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
 #define DEG2RAD(a) (((a) * M_PI) / 180.0F)
 
 #define NANMASK (255<<23)
-#define IS_NAN(x) ({ union { float _f; int _i; } _u; _u._f = (x); (_u._i & NANMASK) == NANMASK; })
+static inline int IS_NAN(float x)
+{
+	union { float _f; int _i; } _u;
+	_u._f = x;
+	return (_u._i & NANMASK) == NANMASK;
+}
 
 #ifndef Q_rint
 #define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
