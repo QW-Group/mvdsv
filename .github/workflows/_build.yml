@@ -13,11 +13,11 @@ on:
         default: ''
 jobs:
   build:
-    runs-on: ${{ matrix.runner || inputs.runner }}
+    runs-on: ${{ inputs.runner }}
     strategy:
       fail-fast: false
       matrix:
-        target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86, macos-arm64]
+        target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86]
         include:
           - target: linux-amd64
             os: linux
@@ -42,10 +42,6 @@ jobs:
             os: windows
             arch: x86
             cross-compiler-package: gcc-mingw-w64-i686
-          - target: macos-arm64
-            os: macos
-            arch: arm64
-            runner: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -56,7 +52,7 @@ jobs:
       # foreign arch, `apt update` will fail on it. So add the 'Architectures'
       # field to ensure it fetches the right meta-data.
       - name: Fix the sources
-        if: (matrix.arch == 'armhf' || matrix.arch == 'arm64') && (matrix.runner || inputs.runner) == 'ubuntu-24.04'
+        if: matrix.arch == 'armhf' || matrix.arch == 'arm64'
         run: |
           sudo tee /etc/apt/sources.list.d/ubuntu.sources <<EOF
           Types: deb
@@ -83,8 +79,7 @@ jobs:
           Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
           EOF
 
-      - name: Install build dependencies (Linux/Windows)
-        if: (matrix.runner || inputs.runner) == 'ubuntu-24.04'
+      - name: Install build dependencies
         run: |
           set -x
           if [ -n "${RUNNER_DEBUG:-}" ]; then
@@ -105,12 +100,6 @@ jobs:
             sudo apt-get ${APT_FLAGS} --no-install-recommends install -y libcurl4-openssl-dev:${{ matrix.arch }}
           fi
 
-      - name: Install build dependencies (macOS)
-        if: matrix.os == 'macos'
-        run: |
-          # cmake is preinstalled on the runner; libcurl ships with the SDK.
-          brew install ninja
-
       - name: Build
         run: ./build_cmake.sh ${{ matrix.target }}
 
@@ -127,10 +116,6 @@ jobs:
             echo '== Windows: Check if .exe is a Portable Executable with MS-DOS stub =='
             x86_64-linux-gnu-objdump -p "build/${{ matrix.target }}/${BINARY}" > "${TMPFILE}"
             grep 'file format pei-' "${TMPFILE}" || { cat "${TMPFILE}"; exit 1; }
-          elif [ "${{ matrix.os }}" = "macos" ]; then
-            echo '== macOS: Check if binary is a Mach-O built with curl support =='
-            otool -L "build/${{ matrix.target }}/${BINARY}" > "${TMPFILE}"
-            grep -F 'libcurl' "${TMPFILE}" || { cat "${TMPFILE}"; exit 1; }
           else
             echo "I don't know what I'm building! Unknown OS."
             exit 1
@@ -143,12 +128,12 @@ jobs:
       - name: Create checksums
         env:
           BINARY: ${{ matrix.os == 'windows' && 'mvdsv.exe' || 'mvdsv' }}
-        if: inputs.deploy_type != '' && (matrix.runner || inputs.runner) == 'ubuntu-24.04'
+        if: inputs.deploy_type != ''
         run: |
           md5sum build/${{ matrix.target }}/${BINARY} > build/${{ matrix.target }}/${BINARY}.md5
 
       - name: Setup SSH
-        if: inputs.deploy_type != '' && (matrix.runner || inputs.runner) == 'ubuntu-24.04'
+        if: inputs.deploy_type != ''
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
@@ -156,12 +141,12 @@ jobs:
           ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
 
       - name: Set date
-        if: inputs.deploy_type != '' && (matrix.runner || inputs.runner) == 'ubuntu-24.04'
+        if: inputs.deploy_type != ''
         run: |
           echo "DATE=$(TZ="Europe/Amsterdam" date "+%Y%m%d-%H%M%S")" >> $GITHUB_ENV
 
       - name: Deploy release
-        if: inputs.deploy_type == 'release' && (matrix.runner || inputs.runner) == 'ubuntu-24.04'
+        if: inputs.deploy_type == 'release'
         env:
           BINARY: ${{ matrix.os == 'windows' && 'mvdsv.exe' || 'mvdsv' }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -180,7 +165,7 @@ jobs:
             ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/releases <<< $'put -rp upload/releases/*'
 
       - name: Deploy snapshot
-        if: inputs.deploy_type == 'snapshot' && (matrix.runner || inputs.runner) == 'ubuntu-24.04'
+        if: inputs.deploy_type == 'snapshot'
         env:
           BINARY: ${{ matrix.os == 'windows' && 'mvdsv.exe' || 'mvdsv' }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
