@@ -121,8 +121,10 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 	qbool all;
 
 	int r;
-	pcre *preg = NULL;
-	const char *errbuf;
+	size_t erroffset;
+	pcre2_code *preg = NULL;
+	pcre2_match_data *md = NULL;
+	PCRE2_UCHAR errbuf[120];
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
@@ -130,35 +132,39 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 	dir.files = list;
 	all = !strncmp(ext, ".*", 3);
 	if (!all)
-		if (!(preg = pcre_compile(ext, PCRE_CASELESS, &errbuf, &r, NULL)))
+		if (!(preg = pcre2_compile((PCRE2_SPTR)ext, PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &r, &erroffset, NULL)))
 		{
-			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
-			           ext, errbuf, r);
-			Q_free(preg);
+			pcre2_get_error_message(r, errbuf, sizeof(errbuf));
+			Con_Printf("Sys_listdir: pcre2_compile(%s) error: %s at offset %lu\n",
+			           ext, errbuf, erroffset);
 			return dir;
 		}
 
 	if (!(d = opendir(path)))
 	{
 		if (!all)
-			Q_free(preg);
+			pcre2_code_free(preg);
 		return dir;
 	}
+	if (!all)
+		md = pcre2_match_data_create_from_pattern(preg, NULL);
 	while ((oneentry = readdir(d)))
 	{
 		if (!strncmp(oneentry->d_name, ".", 2) || !strncmp(oneentry->d_name, "..", 3))
 			continue;
 		if (!all)
 		{
-			switch (r = pcre_exec(preg, NULL, oneentry->d_name,
-			                      strlen(oneentry->d_name), 0, 0, NULL, 0))
+			r = pcre2_match(preg, (PCRE2_SPTR)oneentry->d_name,
+			                strlen(oneentry->d_name), 0, 0, md, NULL);
+			if (r == PCRE2_ERROR_NOMATCH)
+				continue;
+			else if (r < 0)
 			{
-			case 0: break;
-			case PCRE_ERROR_NOMATCH: continue;
-			default:
-				Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
+				Con_Printf("Sys_listdir: pcre2_match(%s, %s) error code: %d\n",
 				           ext, oneentry->d_name, r);
-				Q_free(preg);
+				pcre2_match_data_free(md);
+				pcre2_code_free(preg);
+				closedir(d);
 				return dir;
 			}
 		}
@@ -184,7 +190,10 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 	}
 	closedir(d);
 	if (!all)
-		Q_free(preg);
+	{
+		pcre2_code_free(preg);
+		pcre2_match_data_free(md);
+	}
 
 	switch (sort_type)
 	{
