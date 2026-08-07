@@ -65,7 +65,7 @@ int		Sys_compare_by_name (const void *a, const void *b);
 #define SORT_NO			0
 #define SORT_BY_DATE	1
 #define SORT_BY_NAME	2
-#define SORT_NO_METADATA	3
+#define SORT_NO_METADATA	3 // caller does not require size/time
 
 //
 // system IO

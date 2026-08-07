@@ -118,7 +118,7 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 	DIR *d;
 	DIR *testdir; //bliP: list dir
 	struct dirent *oneentry;
-	qbool all;
+	qbool all, isdir;
 
 	int r;
 	pcre *preg = NULL;
@@ -164,9 +164,18 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 		}
 		snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
 		testdir = NULL;
-		if (oneentry->d_type == DT_DIR ||
-		    ((oneentry->d_type == DT_UNKNOWN || oneentry->d_type == DT_LNK) &&
-		     (testdir = opendir(pathname))))
+		if (sort_type == SORT_NO_METADATA &&
+		    oneentry->d_type != DT_UNKNOWN && oneentry->d_type != DT_LNK)
+		{
+			isdir = oneentry->d_type == DT_DIR;
+		}
+		else
+		{
+			testdir = opendir(pathname);
+			isdir = testdir != NULL;
+		}
+
+		if (isdir)
 		{
 			dir.numdirs++;
 			list[dir.numfiles].isdir = true;
@@ -177,11 +186,7 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 		else
 		{
 			list[dir.numfiles].isdir = false;
-			if (sort_type == SORT_NO_METADATA)
-			{
-				list[dir.numfiles].size = list[dir.numfiles].time = 0;
-			}
-			else
+			if (sort_type != SORT_NO_METADATA)
 			{
 				dir.size +=
 					(list[dir.numfiles].size = Sys_FileSizeTime(pathname, &list[dir.numfiles].time));
@@ -264,13 +269,9 @@ int Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void 
 				snprintf(file, sizeof(file), "%s/%s", truepath, ent->d_name);
 				//would use stat, but it breaks on fat32.
 
-				dir2 = NULL;
-				if (ent->d_type == DT_DIR ||
-				    ((ent->d_type == DT_UNKNOWN || ent->d_type == DT_LNK) &&
-				     (dir2 = opendir(file))))
+				if ((dir2 = opendir(file)))
 				{
-					if (dir2)
-						closedir(dir2);
+					closedir(dir2);
 					snprintf(file, sizeof(file), "%s%s/", apath, ent->d_name);
 					//printf("is directory = %s\n", file);
 				}
