@@ -52,6 +52,7 @@ typedef struct
 	size_t	size;
 	size_t	numfiles;
 	size_t	numdirs;
+	qbool	is_metadata_valid; // file size/time and aggregate size are valid
 } dir_t;
 
 int		Sys_FileTime (const char *path);
@@ -59,6 +60,7 @@ void	Sys_mkdir (const char *path);
 int		Sys_rmdir (const char *path);
 int		Sys_remove (const char *path);
 dir_t	Sys_listdir (const char *path, const char *ext, int sort_type);
+dir_t	Sys_listdir_no_metadata (const char *path, const char *ext);
 int		Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void *), void *parm);
 int		Sys_compare_by_date (const void *a, const void *b);
 int		Sys_compare_by_name (const void *a, const void *b);
