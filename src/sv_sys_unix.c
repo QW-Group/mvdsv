@@ -110,7 +110,8 @@ Sys_listdir
 ================
 */
 
-dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
+static dir_t listdir_internal(const char *path, const char *ext,
+	int sort_type, qbool read_metadata)
 {
 	static file_t list[MAX_DIRFILES];
 	dir_t dir;
@@ -173,9 +174,11 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 		else
 		{
 			list[dir.numfiles].isdir = false;
-			//list[dir.numfiles].time = Sys_FileTime(pathname);
-			dir.size +=
-				(list[dir.numfiles].size = Sys_FileSizeTime(pathname, &list[dir.numfiles].time));
+			if (read_metadata)
+			{
+				dir.size +=
+					(list[dir.numfiles].size = Sys_FileSizeTime(pathname, &list[dir.numfiles].time));
+			}
 		}
 		strlcpy (list[dir.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
@@ -198,6 +201,16 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 	}
 
 	return dir;
+}
+
+dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
+{
+	return listdir_internal(path, ext, sort_type, true);
+}
+
+dir_t Sys_listdir_no_metadata (const char *path, const char *ext, int sort_type)
+{
+	return listdir_internal(path, ext, sort_type, false);
 }
 
 int Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void *), void *parm)

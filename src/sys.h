@@ -59,6 +59,9 @@ void	Sys_mkdir (const char *path);
 int		Sys_rmdir (const char *path);
 int		Sys_remove (const char *path);
 dir_t	Sys_listdir (const char *path, const char *ext, int sort_type);
+// Supports SORT_NO and SORT_BY_NAME; file size/time and aggregate size are left zero.
+// SORT_BY_DATE requires metadata and must use Sys_listdir().
+dir_t	Sys_listdir_no_metadata (const char *path, const char *ext, int sort_type);
 int		Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void *), void *parm);
 int		Sys_compare_by_date (const void *a, const void *b);
 int		Sys_compare_by_name (const void *a, const void *b);
