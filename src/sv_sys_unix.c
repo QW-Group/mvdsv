@@ -163,19 +163,29 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 			}
 		}
 		snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
-		if ((testdir = opendir(pathname)))
+		testdir = NULL;
+		if (oneentry->d_type == DT_DIR ||
+		    ((oneentry->d_type == DT_UNKNOWN || oneentry->d_type == DT_LNK) &&
+		     (testdir = opendir(pathname))))
 		{
 			dir.numdirs++;
 			list[dir.numfiles].isdir = true;
 			list[dir.numfiles].size = list[dir.numfiles].time = 0;
-			closedir(testdir);
+			if (testdir)
+				closedir(testdir);
 		}
 		else
 		{
 			list[dir.numfiles].isdir = false;
-			//list[dir.numfiles].time = Sys_FileTime(pathname);
-			dir.size +=
-				(list[dir.numfiles].size = Sys_FileSizeTime(pathname, &list[dir.numfiles].time));
+			if (sort_type == SORT_NO_METADATA)
+			{
+				list[dir.numfiles].size = list[dir.numfiles].time = 0;
+			}
+			else
+			{
+				dir.size +=
+					(list[dir.numfiles].size = Sys_FileSizeTime(pathname, &list[dir.numfiles].time));
+			}
 		}
 		strlcpy (list[dir.numfiles].name, oneentry->d_name, MAX_DEMO_NAME);
 
@@ -188,7 +198,8 @@ dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
 
 	switch (sort_type)
 	{
-	case SORT_NO: break;
+	case SORT_NO:
+	case SORT_NO_METADATA: break;
 	case SORT_BY_DATE:
 		qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
 		break;
@@ -253,9 +264,13 @@ int Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void 
 				snprintf(file, sizeof(file), "%s/%s", truepath, ent->d_name);
 				//would use stat, but it breaks on fat32.
 
-				if ((dir2 = opendir(file)))
+				dir2 = NULL;
+				if (ent->d_type == DT_DIR ||
+				    ((ent->d_type == DT_UNKNOWN || ent->d_type == DT_LNK) &&
+				     (dir2 = opendir(file))))
 				{
-					closedir(dir2);
+					if (dir2)
+						closedir(dir2);
 					snprintf(file, sizeof(file), "%s%s/", apath, ent->d_name);
 					//printf("is directory = %s\n", file);
 				}
