@@ -119,7 +119,7 @@ static dir_t listdir_internal(const char *path, const char *ext,
 	DIR *d;
 	DIR *testdir; //bliP: list dir
 	struct dirent *oneentry;
-	qbool all;
+	qbool all, isdir;
 
 	int r;
 	pcre *preg = NULL;
@@ -165,12 +165,23 @@ static dir_t listdir_internal(const char *path, const char *ext,
 			}
 		}
 		snprintf(pathname, sizeof(pathname), "%s/%s", path, oneentry->d_name);
-		if ((testdir = opendir(pathname)))
+		if (oneentry->d_type != DT_UNKNOWN && oneentry->d_type != DT_LNK)
+		{
+			isdir = oneentry->d_type == DT_DIR;
+		}
+		else
+		{
+			testdir = opendir(pathname);
+			isdir = testdir != NULL;
+			if (testdir)
+				closedir(testdir);
+		}
+
+		if (isdir)
 		{
 			dir.numdirs++;
 			list[dir.numfiles].isdir = true;
 			list[dir.numfiles].size = list[dir.numfiles].time = 0;
-			closedir(testdir);
 		}
 		else
 		{
