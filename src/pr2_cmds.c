@@ -1935,7 +1935,7 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 		snprintf (netpath, sizeof (netpath), "%s/%s", gpath, path);
 
 		// reg exp search...
-		dir = Sys_listdir(netpath, ext, SORT_NO);
+		dir = Sys_listdir_no_metadata(netpath, ext);
 
 		for (j = 0; i < list_cnt && dir.files[j].name[0]; j++, i++)
 		{
