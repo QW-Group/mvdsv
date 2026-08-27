@@ -852,8 +852,6 @@ static void Cmd_Spawn_f (void)
 	}
 
 	// send all current names, colors, and frag counts
-	// FIXME: is this a good thing?
-	SZ_Clear (&sv_client->netchan.message);
 
 	// send current status of all other players
 
