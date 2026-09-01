@@ -133,6 +133,20 @@ typedef struct
 #endif
 } server_t;
 
+#ifdef FTE_PEXT_CSQC
+#define MSG_CSQC		5		// for csqc (pr2_cmds.c WriteDest2)
+
+// per-entity CSQC delta flags, mirror of FTE server.h SENDFLAGS_*
+#define SENDFLAGS_PRESENT	0x1u	// this entity is present on that client
+#define SENDFLAGS_REMOVED	0x2u	// to handle remove packetloss
+#define SENDFLAGS_RESERVED	(SENDFLAGS_PRESENT|SENDFLAGS_REMOVED)
+#define SENDFLAGS_SHIFT		2u
+#define SENDFLAGS_USABLE	(~(uint64_t)SENDFLAGS_RESERVED)	// bits actually safe in a float
+
+// CSQC pvsflags bit
+#define PVSF_NOREMOVE		0x80
+#endif
+
 #define	NUM_SPAWN_PARMS 16
 
 // { sv_antilag related
