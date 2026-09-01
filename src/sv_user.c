@@ -3118,7 +3118,16 @@ void SV_Voice_UnmuteAll_f(void)
 #ifdef FTE_PEXT_CSQC
 void SV_EnableClientsCSQC(void)
 {
+	int e;
+
 	sv_client->csqcactive = true;
+
+	// the client just (re)enabled csqc: resend all entities it already has
+	// so its freshly-loaded csprogs gets the full state.
+	if (sv_client->pendingcsqcbits)
+		for (e = 1; e < sv_client->max_net_ents; e++)
+			if (sv_client->pendingcsqcbits[e] & SENDFLAGS_PRESENT)
+				sv_client->pendingcsqcbits[e] |= SENDFLAGS_USABLE;
 }
 
 void SV_DisableClientsCSQC(void)
@@ -4634,6 +4643,20 @@ void SV_ExecuteClientMessage (client_t *cl)
 			break;
 
 		case clc_delta:
+#ifdef FTE_PEXT_CSQC
+			// if the client asks for a delta from an older sequence than the
+			// last one we sent, some packets were lost - flag all CSQC ents
+			// the client already has for a full resend (simplified NACK).
+			if (cl->pendingcsqcbits &&
+				cl->delta_sequence != -1 &&
+				(unsigned int)cl->delta_sequence < (unsigned int)cl->netchan.outgoing_sequence)
+			{
+				int e;
+				for (e = 1; e < cl->max_net_ents; e++)
+					if (cl->pendingcsqcbits[e] & SENDFLAGS_PRESENT)
+						cl->pendingcsqcbits[e] |= SENDFLAGS_USABLE;
+			}
+#endif
 			cl->delta_sequence = MSG_ReadByte ();
 			break;
 

@@ -905,6 +905,9 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 {
 	byte		buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
+#ifdef FTE_PEXT_CSQC
+	byte		csqcbuf[MAX_DATAGRAM];
+#endif
 	//	packet_t	*pack;
 
 	SZ_InitEx(&msg, buf, sizeof(buf), true);
@@ -922,6 +925,13 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	*/
 
 	if (!SV_SkipCommsBotMessage(client)) {
+#ifdef FTE_PEXT_CSQC
+		// arm the CSQC payload scratch buffer for SV_EmitCSQCUpdate
+		extern sizebuf_t csqcmsgbuffer;
+		csqcmsgbuffer.data = csqcbuf;
+		csqcmsgbuffer.maxsize = sizeof(csqcbuf);
+		csqcmsgbuffer.cursize = 0;
+#endif
 		// add the client specific data to the datagram
 		SV_WriteClientdataToMessage(client, &msg);
 
@@ -930,6 +940,10 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 		// possibly a nails update
 		SV_WriteEntitiesToClient(client, &msg, false);
 
+#ifdef FTE_PEXT_CSQC
+		csqcmsgbuffer.data = NULL;
+		csqcmsgbuffer.maxsize = 0;
+#endif
 #ifdef FTE_PEXT2_VOICECHAT
 		SV_VoiceSendPacket(client, &msg);
 #endif
@@ -1106,6 +1120,10 @@ void SV_SendClientMessages (void)
 		if (!c->state)
 			continue;
 
+#ifdef FTE_PEXT_CSQC
+		SV_ProcessSendFlags (c);
+#endif
+
 		if (c->drop)
 		{
 			SV_DropClient(c);
@@ -1192,6 +1210,12 @@ void SV_SendClientMessages (void)
 			c->datagram.cursize = 0;
 		}
 	}
+
+#ifdef FTE_PEXT_CSQC
+	if (sv.mvdrecording)
+		SV_ProcessSendFlags (&demo.recorder);
+	SV_CleanupEnts ();
+#endif
 }
 
 static void SV_BotWriteDamage(client_t* c, int i)
@@ -1312,6 +1336,9 @@ void SV_SendDemoMessage(void)
 	client_t	*c;
 	sizebuf_t	msg;
 	byte		msg_buf[MAX_MVD_SIZE]; // data without mvd header
+#ifdef FTE_PEXT_CSQC
+	byte		csqcbuf[MAX_MVD_SIZE]; // CSQC payload scratch for the recorder
+#endif
 
 	float		min_fps;
 	extern		cvar_t sv_demofps, sv_demoIdlefps;
@@ -1366,7 +1393,22 @@ void SV_SendDemoMessage(void)
 	if (!demo.recorder.delta_sequence)
 		demo.recorder.delta_sequence = -1;
 
+#ifdef FTE_PEXT_CSQC
+	{
+		// arm the CSQC payload scratch buffer for the demo recorder
+		extern sizebuf_t csqcmsgbuffer;
+		csqcmsgbuffer.data = csqcbuf;
+		csqcmsgbuffer.maxsize = sizeof(csqcbuf);
+		csqcmsgbuffer.cursize = 0;
+	}
+#endif
+
 	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
+
+#ifdef FTE_PEXT_CSQC
+	csqcmsgbuffer.data = NULL;
+	csqcmsgbuffer.maxsize = 0;
+#endif
 
 	if (msg.overflowed)
 	{
