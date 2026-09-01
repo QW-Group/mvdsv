@@ -172,6 +172,7 @@ extern sizebuf_t csqcmsgbuffer;
 void SV_QCStatFieldIdx (int type, unsigned int fieldindex, int statnum);
 void SV_QCStatPtr (int type, void *ptr, int statnum);
 void SV_QCStatGlobal (int type, const char *name, int statnum);
+void SV_UpdateQCStats (edict_t *ent, int *stats);
 #endif
 
 #define	NUM_SPAWN_PARMS 16

@@ -1636,6 +1636,12 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 		// stuff the sigil bits into the high bits of items for sbar
 		stats[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
 
+#ifdef FTE_PEXT_CSQC
+		// clientstat/pointerstat registered stats (32..127), recorder will get FTE_PEXT_CSQC in phase 6
+		if (demo.recorder.fteprotocolextensions & FTE_PEXT_CSQC)
+			SV_UpdateQCStats (ent, stats);
+#endif
+
 		for (j = 0; j < MAX_CL_STATS; j++)
 		{
 			if (stats[j] >= 0 && stats[j] <= 255)

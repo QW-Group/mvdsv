@@ -903,8 +903,7 @@ void SV_QCStatGlobal(int type, const char *name, int statnum)
 	Con_Printf("globalstat \"%s\" unsupported on PR2, use pointerstat\n", name);
 }
 
-static void SV_UpdateQCStats(edict_t *ent, int *stats)
-{
+void SV_UpdateQCStats(edict_t *ent, int *stats){
 	unsigned int i;
 
 	for (i = 0; i < numqcstats; i++)
@@ -987,8 +986,9 @@ void SV_UpdateClientStats (client_t *client)
 		stats[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
 
 #ifdef FTE_PEXT_CSQC
-	// clientstat/pointerstat registered stats (32..127)
-	SV_UpdateQCStats (ent, stats);
+	// clientstat/pointerstat registered stats (32..127), only for CSQC clients
+	if (client->fteprotocolextensions & FTE_PEXT_CSQC)
+		SV_UpdateQCStats (ent, stats);
 #endif
 
 	for (i=0 ; i<MAX_CL_STATS ; i++)
@@ -1411,6 +1411,12 @@ void MVD_WriteStats(void)
 
 		// stuff the sigil bits into the high bits of items for sbar
 		stats[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
+
+#ifdef FTE_PEXT_CSQC
+		// clientstat/pointerstat registered stats (32..127), recorder will get FTE_PEXT_CSQC in phase 6
+		if (demo.recorder.fteprotocolextensions & FTE_PEXT_CSQC)
+			SV_UpdateQCStats (ent, stats);
+#endif
 
 		for (j = 0 ; j < MAX_CL_STATS; j++)
 		{
