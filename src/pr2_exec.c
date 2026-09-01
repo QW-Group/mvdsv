@@ -518,9 +518,11 @@ qbool PR2_SendEntity(edict_t* e, edict_t* to, int sendflags)
 // Writes the eventname string into mod memory (so the QVM mod can read it
 // back via PR2_GetString) and calls GAME_QCREQUEST. Argument values are
 // expected to already be in the parm slots of pr_global_struct (filled by
-// the caller, e.g. SV_ReadQCRequest).
+// the caller, e.g. SV_ReadQCRequest). vm_str_off is the first free scratch
+// offset in the VM data area (after any string args the caller wrote);
+// 0 means "no string args were placed, use the default scratch start".
 //===========================================================================
-void PR2_QCRequest(edict_t* cl_ent, const char* eventname, int argcount, int argtypes)
+void PR2_QCRequest(edict_t* cl_ent, const char* eventname, int argcount, int argtypes, unsigned int vm_str_off)
 {
 	intptr_t name_off;
 	int old_self = pr_global_struct->self;
@@ -540,7 +542,7 @@ void PR2_QCRequest(edict_t* cl_ent, const char* eventname, int argcount, int arg
 		// exactDataLength is the end of the mod's declared data, with the
 		// PROGRAM_STACK_EXTRA reserved area after it - safe scratch for a
 		// short string (stack grows down from the top, bounded by stackBottom).
-		unsigned int off = sv_vm->exactDataLength;
+		unsigned int off = vm_str_off ? vm_str_off : sv_vm->exactDataLength;
 		size_t len = strlen(scratch) + 1;
 
 		if (off + len > sv_vm->dataLength)

@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef CLIENTONLY
 #include "qwsvdef.h"
+#ifdef USE_PR2
+#include "vm_local.h"
+#endif
 
 static void SV_ClientDownloadComplete(client_t* cl);
 
@@ -4477,6 +4480,169 @@ static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 }
 #endif
 
+#ifdef FTE_PEXT_CSQC
+// sendevent type codes (design doc ezquake_csqc_pr2.md §5.2); engine and mod must agree
+#define QCREQ_T_FLOAT	0
+#define QCREQ_T_VECTOR	1
+#define QCREQ_T_STRING	2
+#define QCREQ_T_ENTITY	3
+#define QCREQ_T_INT		4
+
+// wire type codes (FTE etype convention; mvdsv's own etype_t lacks ev_integer)
+#define QCREQ_EV_INTEGER	8
+
+/*
+===================
+SV_ReadQCRequest
+
+Parses a clcfte_qcrequest (client CSQC sendevent) message and dispatches
+to the game: PR2 -> GAME_QCREQUEST export, PR1 -> CSEv_* function.
+
+Wire layout (client->server, matches the client-side writer):
+  for each arg: [byte type] [value]
+    ev_float   -> float
+    ev_vector  -> 3 floats
+    ev_integer -> long
+    ev_entity  -> short (entity number)
+    ev_string  -> string
+  then [string eventname]
+===================
+*/
+static void SV_ReadQCRequest(void)
+{
+	char args[8];
+	char *rname;
+	int i;
+	int argtypes = 0;
+	// scratch strings for the mod (PR2: written into VM data area)
+	static char strbuf[6][64];
+#ifdef USE_PR2
+	unsigned int vm_str_off = 0;
+	qbool vm_str_armed = false;
+#endif
+
+	if (!sv_client)
+		return;
+
+	// qcrequest only makes sense for a game with a VM loaded
+	if (!sv_vm && !progs)
+	{
+		msg_badread = true;
+		return;
+	}
+
+	for (i = 0; i < 6; i++)
+	{
+		int ev = MSG_ReadByte();
+		if (ev == -1)
+		{
+			msg_badread = true;
+			return;
+		}
+
+		switch (ev)
+		{
+		case ev_void:
+			goto done;
+		case ev_float:
+			args[i] = 'f';
+			(&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadFloat();
+			argtypes |= QCREQ_T_FLOAT << (i * 3);
+			break;
+		case ev_vector:
+			args[i] = 'v';
+			(&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadFloat();
+			(&PR_GLOBAL(parm1))[i*3 + 1] = MSG_ReadFloat();
+			(&PR_GLOBAL(parm1))[i*3 + 2] = MSG_ReadFloat();
+			argtypes |= QCREQ_T_VECTOR << (i * 3);
+			break;
+		case QCREQ_EV_INTEGER:
+			args[i] = 'i';
+			((int *)&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadLong();
+			argtypes |= QCREQ_T_INT << (i * 3);
+			break;
+		case ev_entity:
+			{
+				int e = (short)MSG_ReadShort();
+				if (e < 0 || e >= sv.num_edicts)
+				{
+					Con_Printf("client %s sent invalid entity in qcrequest\n", sv_client->name);
+					sv_client->drop = true;
+					return;
+				}
+				((int *)&PR_GLOBAL(parm1))[i*3 + 0] = EDICT_TO_PROG(&sv.edicts[e]);
+				args[i] = 'e';
+				argtypes |= QCREQ_T_ENTITY << (i * 3);
+			}
+			break;
+		case ev_string:
+			{
+				char *s = MSG_ReadString();
+				args[i] = 's';
+				strlcpy(strbuf[i], s, sizeof(strbuf[i]));
+#ifdef USE_PR2
+				if (sv_vm && sv_vm->type != VMI_NATIVE)
+				{	// qvm: write into VM data scratch, store the offset
+					size_t len = strlen(strbuf[i]) + 1;
+					if (!vm_str_armed)
+					{
+						vm_str_off = sv_vm->exactDataLength;
+						vm_str_armed = true;
+					}
+					if (vm_str_off + len > sv_vm->dataLength)
+						break;
+					memcpy(sv_vm->dataBase + vm_str_off, strbuf[i], len);
+					((int *)&PR_GLOBAL(parm1))[i*3 + 0] = vm_str_off;
+					vm_str_off += len;
+				}
+				else
+#endif
+				{
+					((int *)&PR_GLOBAL(parm1))[i*3 + 0] = (intptr_t)strbuf[i];
+				}
+				argtypes |= QCREQ_T_STRING << (i * 3);
+			}
+			break;
+		default:
+			msg_badread = true;
+			return;
+		}
+	}
+
+done:
+	args[i] = 0;
+	rname = MSG_ReadString();
+	if (msg_badread)
+		return;
+
+	if (sv_vm)
+	{	// PR2: fixed export
+		PR2_QCRequest(sv_client->edict, rname, i, argtypes, vm_str_off);
+	}
+	else
+	{	// PR1: lookup CSEv_<name>_<args>
+		extern func_t ED_FindFunctionOffset (char *name);
+		char fname[128];
+		func_t f;
+
+		snprintf(fname, sizeof(fname), "CSEv_%s_%s", rname, args);
+		f = ED_FindFunctionOffset(fname);
+		if (!f && i == 0)
+		{
+			snprintf(fname, sizeof(fname), "CSEv_%s", rname);
+			f = ED_FindFunctionOffset(fname);
+		}
+		if (!f)
+		{
+			SV_ClientPrintf(sv_client, PRINT_HIGH, "qcrequest \"%s\" not supported\n", rname);
+			return;
+		}
+		pr_global_struct->self = EDICT_TO_PROG(sv_client->edict);
+		PR_ExecuteProgram(f);
+	}
+}
+#endif
+
 /*
 ===================
 SV_ExecuteClientMessage
@@ -4825,6 +4991,18 @@ void SV_ExecuteClientMessage (client_t *cl)
 #ifdef FTE_PEXT2_VOICECHAT
 		case clc_voicechat:
 			SV_VoiceReadPacket();
+			break;
+#endif
+
+#ifdef FTE_PEXT_CSQC
+		case clcfte_qcrequest:
+			if (!(cl->fteprotocolextensions & FTE_PEXT_CSQC))
+			{
+				Con_Printf("client %s sent qcrequest without CSQC extension\n", cl->name);
+				SV_DropClient(cl);
+				return;
+			}
+			SV_ReadQCRequest();
 			break;
 #endif
 		}
