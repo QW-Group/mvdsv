@@ -30,9 +30,13 @@
 //
 // g_public.h -- game module information visible to server
 
-#define	GAME_API_VERSION	16
+#define	GAME_API_VERSION	17
 
 /*
+ * Changes in GAME_API_VERSION 17:
+ * - GAME_EDICT_CSQCSEND (200) and GAME_QCREQUEST exports for CSQC
+ * - clientstat/pointerstat/setsendneeded extensions via G_Map_Extension
+ *
  * Changes in GAME_API_VERSION 16:
  * - server edict data removed from game edict: typedef struct shared_edict_s { entvars_t v;} edict_t;
  * - SetSting works for PR1 only
@@ -223,6 +227,7 @@ typedef enum
 	GAME_CLEAR_EDICT,           // (self)
 #ifdef FTE_PEXT_CSQC
 	GAME_EDICT_CSQCSEND = 200,	// (self,other,int sendflags)
+	GAME_QCREQUEST,				// CSQC sendevent: (self=client, eventname, argcount, argtypes)
 #endif
 } gameExport_t;
 

@@ -92,6 +92,7 @@ void        PR2_ClearEdict(edict_t* e);
 
 #ifdef FTE_PEXT_CSQC
 qbool       PR2_SendEntity(edict_t* e, edict_t* to, int sendflags);
+void        PR2_QCRequest(edict_t* cl_ent, const char* eventname, int argcount, int argtypes);
 #endif
 
 #endif /* !__PR2_H__ */

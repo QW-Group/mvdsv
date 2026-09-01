@@ -834,6 +834,115 @@ Performs a delta update of the stats array.  This should only be performed
 when a reliable message can be delivered this frame.
 =======================
 */
+#ifdef FTE_PEXT_CSQC
+// etype codes passed by mods (FTE convention; mvdsv's own etype_t lacks ev_integer)
+#define CSQC_EV_FLOAT		2
+#define CSQC_EV_VECTOR		3
+#define CSQC_EV_ENTITY		4
+#define CSQC_EV_INTEGER		8
+
+typedef struct
+{
+	int		type;		// CSQC_EV_*
+	int		statnum;	// 32..127
+	int		fieldofs;	// clientstat: offset into entvars (0 if pointerstat)
+	void	*ptr;		// pointerstat: resolved host pointer (NULL if clientstat)
+	qbool	isfield;	// true = clientstat (per-client field), false = pointerstat (global)
+} qcstat_t;
+
+static qcstat_t qcstats[MAX_CL_STATS];
+static unsigned int numqcstats;
+
+static void SV_QCStatEval(int type, int statnum, int fieldofs, void *ptr, qbool isfield)
+{
+	unsigned int i;
+
+	if (statnum < 32 || statnum >= MAX_CL_STATS)
+	{
+		Con_Printf("csqc stat %i out of range (32..%i)\n", statnum, MAX_CL_STATS - 1);
+		return;
+	}
+
+	for (i = 0; i < numqcstats; i++)
+		if (qcstats[i].statnum == statnum)
+			break;
+
+	if (i == numqcstats)
+	{
+		if (i == sizeof(qcstats) / sizeof(qcstats[0]))
+		{
+			Con_Printf("Too many csqc stats specified\n");
+			return;
+		}
+		numqcstats++;
+	}
+
+	qcstats[i].type = type;
+	qcstats[i].statnum = statnum;
+	qcstats[i].fieldofs = fieldofs;
+	qcstats[i].ptr = ptr;
+	qcstats[i].isfield = isfield;
+}
+
+// clientstat: register a per-client stat from a field offset into the mod's entvars
+void SV_QCStatFieldIdx(int type, unsigned int fieldindex, int statnum)
+{
+	SV_QCStatEval(type, statnum, fieldindex, NULL, true);
+}
+
+// pointerstat: register a global stat from a resolved host pointer
+void SV_QCStatPtr(int type, void *ptr, int statnum)
+{
+	SV_QCStatEval(type, statnum, 0, ptr, false);
+}
+
+// globalstat: resolve a global by name. PR2 has no name-based global lookup,
+// so this is a no-op that logs (use pointerstat instead).
+void SV_QCStatGlobal(int type, const char *name, int statnum)
+{
+	Con_Printf("globalstat \"%s\" unsupported on PR2, use pointerstat\n", name);
+}
+
+static void SV_UpdateQCStats(edict_t *ent, int *stats)
+{
+	unsigned int i;
+
+	for (i = 0; i < numqcstats; i++)
+	{
+		eval_t *eval;
+		qcstat_t *q = &qcstats[i];
+
+		if (q->isfield)
+			eval = (eval_t *)((byte *)ent->v + q->fieldofs);
+		else
+			eval = (eval_t *)q->ptr;
+
+		if (!eval)
+			continue;
+
+		switch (q->type)
+		{
+		case CSQC_EV_FLOAT:
+			stats[q->statnum] = (int)eval->_float;
+			break;
+		case CSQC_EV_VECTOR:
+			stats[q->statnum + 0] = (int)eval->vector[0];
+			stats[q->statnum + 1] = (int)eval->vector[1];
+			stats[q->statnum + 2] = (int)eval->vector[2];
+			break;
+		case CSQC_EV_ENTITY:
+			stats[q->statnum] = NUM_FOR_EDICT(PROG_TO_EDICT(eval->edict));
+			break;
+		case CSQC_EV_INTEGER:
+			stats[q->statnum] = eval->_int;
+			break;
+		default:
+			break;
+		}
+	}
+}
+#endif
+
 void SV_UpdateClientStats (client_t *client)
 {
 	edict_t *ent;
@@ -876,6 +985,11 @@ void SV_UpdateClientStats (client_t *client)
 
 	if (ent->v->health > 0 || client->spectator) // viewheight for PF_DEAD & PF_GIB is hardwired
 		stats[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
+
+#ifdef FTE_PEXT_CSQC
+	// clientstat/pointerstat registered stats (32..127)
+	SV_UpdateQCStats (ent, stats);
+#endif
 
 	for (i=0 ; i<MAX_CL_STATS ; i++)
 		if (stats[i] != client->stats[i])

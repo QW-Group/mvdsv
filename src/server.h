@@ -168,6 +168,10 @@ typedef struct
 
 // sv_ents.c
 extern sizebuf_t csqcmsgbuffer;
+// sv_send.c
+void SV_QCStatFieldIdx (int type, unsigned int fieldindex, int statnum);
+void SV_QCStatPtr (int type, void *ptr, int statnum);
+void SV_QCStatGlobal (int type, const char *name, int statnum);
 #endif
 
 #define	NUM_SPAWN_PARMS 16
