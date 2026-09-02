@@ -900,6 +900,12 @@ static void SV_QCStatEval(int type, int statnum, int fieldofs, void *ptr, qbool 
 		return;
 	}
 
+	if (type == CSQC_EV_VECTOR && statnum + 2 >= MAX_CL_STATS)
+	{	// a vector stat occupies 3 consecutive slots (statnum..statnum+2)
+		Con_Printf("csqc vector stat %i needs slots %i..%i (max %i)\n", statnum, statnum, statnum + 2, MAX_CL_STATS - 1);
+		return;
+	}
+
 	for (i = 0; i < numqcstats; i++)
 		if (qcstats[i].statnum == statnum)
 			break;
@@ -940,7 +946,8 @@ void SV_QCStatGlobal(int type, const char *name, int statnum)
 	Con_Printf("globalstat \"%s\" unsupported on PR2, use pointerstat\n", name);
 }
 
-void SV_UpdateQCStats(edict_t *ent, int *stats){
+void SV_UpdateQCStats(edict_t *ent, int *stats)
+{
 	unsigned int i;
 
 	for (i = 0; i < numqcstats; i++)
