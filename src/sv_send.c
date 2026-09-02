@@ -883,6 +883,14 @@ typedef struct
 static qcstat_t qcstats[MAX_CL_STATS];
 static unsigned int numqcstats;
 
+// progs (re)loaded (new map / new mod): drop all registered stats so stale
+// pointerstat pointers into the old VM are never dereferenced and re-registration
+// on the next map does not hit "Too many csqc stats".
+void SV_ClearQCStats(void)
+{
+	numqcstats = 0;
+}
+
 static void SV_QCStatEval(int type, int statnum, int fieldofs, void *ptr, qbool isfield)
 {
 	unsigned int i;

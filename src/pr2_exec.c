@@ -428,7 +428,9 @@ void PR2_LoadProgs(void)
 
 	if ( sv_vm )
 	{
-		; // nothing.
+#ifdef FTE_PEXT_CSQC
+		SV_ClearQCStats ();
+#endif
 	}
 	else
 	{
