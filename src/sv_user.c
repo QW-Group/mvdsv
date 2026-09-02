@@ -4864,6 +4864,9 @@ void SV_ExecuteClientMessage (client_t *cl)
 			// if the client asks for a delta from an older sequence than the
 			// last one we sent, some packets were lost - flag all CSQC ents
 			// the client already has for a full resend (simplified NACK).
+			// TODO (F8): heuristic is unverified under packet loss - add the
+			// loss scenario from mvdsv_csqc_steps.md Phase 8 and only tune it
+			// against measured results before changing it.
 			if (cl->pendingcsqcbits &&
 				cl->delta_sequence != -1 &&
 				(unsigned int)cl->delta_sequence < (unsigned int)cl->netchan.outgoing_sequence)
