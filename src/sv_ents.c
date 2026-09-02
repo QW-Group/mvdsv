@@ -602,9 +602,7 @@ static void SV_EmitCSQCUpdate (client_t *client, sizebuf_t *msg, int svcnumber)
 	else
 		viewerent = 0; /*for mvds, its as if world is looking*/
 
-	csqcmsgbuffer.data = messagebuffer;
-	csqcmsgbuffer.maxsize = sizeof(messagebuffer);
-	csqcmsgbuffer.cursize = 0;
+	SZ_InitEx (&csqcmsgbuffer, messagebuffer, sizeof(messagebuffer), true);
 
 	for (e = 1; e < sv.num_edicts && e < client->max_net_ents; e++)
 	{
@@ -673,6 +671,13 @@ static void SV_EmitCSQCUpdate (client_t *client, sizebuf_t *msg, int svcnumber)
 			PR_ExecuteProgram (ent->xv.sendentity);
 			mod_result = G_INT(OFS_RETURN);
 			pr_global_struct->self = old_self;
+		}
+
+		if (csqcmsgbuffer.overflowed)
+		{	// payload too big for the scratch buffer: drop it and retry next frame
+			csqcmsgbuffer.overflowed = false;
+			client->pendingcsqcbits[e] = bits;
+			continue;
 		}
 
 		if (mod_result)	//0 means not to tell the client about it

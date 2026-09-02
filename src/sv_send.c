@@ -1071,10 +1071,7 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	if (!SV_SkipCommsBotMessage(client)) {
 #ifdef FTE_PEXT_CSQC
 		// arm the CSQC payload scratch buffer for SV_EmitCSQCUpdate
-		extern sizebuf_t csqcmsgbuffer;
-		csqcmsgbuffer.data = csqcbuf;
-		csqcmsgbuffer.maxsize = sizeof(csqcbuf);
-		csqcmsgbuffer.cursize = 0;
+		SZ_InitEx (&csqcmsgbuffer, csqcbuf, sizeof(csqcbuf), true);
 #endif
 		// add the client specific data to the datagram
 		SV_WriteClientdataToMessage(client, &msg);
@@ -1546,10 +1543,7 @@ void SV_SendDemoMessage(void)
 #ifdef FTE_PEXT_CSQC
 	{
 		// arm the CSQC payload scratch buffer for the demo recorder
-		extern sizebuf_t csqcmsgbuffer;
-		csqcmsgbuffer.data = csqcbuf;
-		csqcmsgbuffer.maxsize = sizeof(csqcbuf);
-		csqcmsgbuffer.cursize = 0;
+		SZ_InitEx (&csqcmsgbuffer, csqcbuf, sizeof(csqcbuf), true);
 	}
 #endif
 
