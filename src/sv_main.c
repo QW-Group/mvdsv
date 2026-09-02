@@ -3665,9 +3665,8 @@ void SV_InitLocal (void)
 #ifdef FTE_PEXT_COLOURMOD
 	svs.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
 #endif
-#ifdef FTE_PEXT_CSQC
-	svs.fteprotocolextensions |= FTE_PEXT_CSQC;
-#endif
+// FTE_PEXT_CSQC is NOT set here: it is added/removed per map in
+// SV_UpdateCSQCExtension() (sv_init.c) depending on whether a PR2 mod is loaded.
 
 #ifdef FTE_PEXT2_VOICECHAT
 	svs.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;

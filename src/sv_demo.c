@@ -1252,13 +1252,16 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	demo.recorder.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
 #endif
 #ifdef FTE_PEXT_CSQC
-	demo.recorder.fteprotocolextensions |= FTE_PEXT_CSQC;
-	demo.recorder.csqcactive = true;
-	// lazily allocate the recorder's CSQC delta bitset
-	if (!demo.recorder.pendingcsqcbits && sv.max_edicts > 0)
+	if (SV_CSQCActive())
 	{
-		demo.recorder.pendingcsqcbits = Q_calloc(sv.max_edicts, sizeof(uint64_t));
-		demo.recorder.max_net_ents = sv.max_edicts;
+		demo.recorder.fteprotocolextensions |= FTE_PEXT_CSQC;
+		demo.recorder.csqcactive = true;
+		// lazily allocate the recorder's CSQC delta bitset
+		if (!demo.recorder.pendingcsqcbits && sv.max_edicts > 0)
+		{
+			demo.recorder.pendingcsqcbits = Q_calloc(sv.max_edicts, sizeof(uint64_t));
+			demo.recorder.max_net_ents = sv.max_edicts;
+		}
 	}
 #endif
 #ifdef FTE_PEXT2_VOICECHAT

@@ -3123,6 +3123,9 @@ void SV_EnableClientsCSQC(void)
 {
 	int e;
 
+	if (!SV_CSQCActive())
+		return; // PR1 mod: no CSQC support, ignore the client request
+
 	sv_client->csqcactive = true;
 
 	// the client just (re)enabled csqc: resend all entities it already has
@@ -3135,6 +3138,9 @@ void SV_EnableClientsCSQC(void)
 
 void SV_DisableClientsCSQC(void)
 {
+	if (!SV_CSQCActive())
+		return; // PR1 mod: no CSQC support, ignore the client request
+
 	sv_client->csqcactive = false;
 }
 #endif
@@ -5054,6 +5060,12 @@ void SV_ExecuteClientMessage (client_t *cl)
 
 #ifdef FTE_PEXT_CSQC
 		case clcfte_qcrequest:
+			if (!SV_CSQCActive())
+			{
+				// PR1 mod: CSQC is disabled, ignore the sendevent instead of dropping
+				Con_DPrintf("client %s sent qcrequest but the loaded mod is PR1 (no CSQC)\n", cl->name);
+				break;
+			}
 			if (!(cl->fteprotocolextensions & FTE_PEXT_CSQC))
 			{
 				Con_Printf("client %s sent qcrequest without CSQC extension\n", cl->name);

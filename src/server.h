@@ -170,6 +170,9 @@ typedef struct
 extern sizebuf_t csqcmsgbuffer;
 // sv_main.c
 extern cvar_t sv_csqcdebug;
+// sv_init.c
+qbool SV_CSQCActive (void);   // true if a PR2 mod (native/QVM) is loaded; PR1 (.dat) -> false
+void SV_UpdateCSQCExtension (void); // set/clear FTE_PEXT_CSQC in svs.fteprotocolextensions by mod type
 // sv_send.c
 void SV_ClearQCStats (void);
 void SV_QCStatFieldIdx (int type, unsigned int fieldindex, int statnum);

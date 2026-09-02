@@ -1121,7 +1121,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 {
 #ifdef FTE_PEXT_CSQC
 	// lazily allocate the per-client CSQC delta bitset
-	if (!client->pendingcsqcbits && sv.max_edicts > 0)
+	if (SV_CSQCActive() && !client->pendingcsqcbits && sv.max_edicts > 0)
 	{
 		client->pendingcsqcbits = Q_calloc(sv.max_edicts, sizeof(uint64_t));
 		client->max_net_ents = sv.max_edicts;
