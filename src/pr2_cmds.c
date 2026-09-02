@@ -2146,6 +2146,10 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		{
 			return offsetof(ext_entvars_t, colourmod) | GetExtFieldCookie();
 		}
+		if (!strcmp(key, "sendflags"))
+		{
+			return offsetof(ext_entvars_t, sendflags) | GetExtFieldCookie();
+		}
 		if (!strcmp(key, "SendEntity"))
 		{
 			return offsetof(ext_entvars_t, sendentity) | GetExtFieldCookie();

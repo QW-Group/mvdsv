@@ -755,9 +755,12 @@ void SV_ProcessSendFlags (client_t *c)
 		ent = EDICT_NUM(e);
 		if (ent->e.free)
 			continue;
-		if (ent->xv.sendflags)
+		if (ent->xv.sendflags[0] || ent->xv.sendflags[1] || ent->xv.sendflags[2])
 		{
-			c->pendingcsqcbits[e] |= (uint64_t)ent->xv.sendflags << SENDFLAGS_SHIFT;
+			// pack the 3 float components into the 24-bit fields of pendingcsqcbits
+			c->pendingcsqcbits[e] |= ((uint64_t)((int)ent->xv.sendflags[0] & 0xffffff)
+				| ((uint64_t)((int)ent->xv.sendflags[1] & 0xffffff) << 24)
+				| ((uint64_t)((int)ent->xv.sendflags[2] & 0xffffff) << 48)) << SENDFLAGS_SHIFT;
 			h = e;
 		}
 	}
@@ -787,7 +790,9 @@ void SV_CleanupEnts (void)
 	for (e = 1; e <= needcleanup; e++)
 	{
 		ent = EDICT_NUM(e);
-		ent->xv.sendflags = 0;
+		ent->xv.sendflags[0] = 0;
+		ent->xv.sendflags[1] = 0;
+		ent->xv.sendflags[2] = 0;
 	}
 	needcleanup = 0;
 }
