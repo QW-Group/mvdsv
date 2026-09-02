@@ -4487,6 +4487,7 @@ static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 #define QCREQ_T_STRING	2
 #define QCREQ_T_ENTITY	3
 #define QCREQ_T_INT		4
+#define QCREQ_T_UNKNOWN	5	// wire type consumed, but no usable value delivered
 
 // wire type codes (FTE etype convention; mvdsv's own etype_t lacks the
 // extended integer/pointer types). Consumed by width so a client using the
@@ -4519,8 +4520,8 @@ Wire layout (client->server, matches the FTE csqc writer PF_cs_sendevent):
   an optional [200+seat] marker byte may precede the terminator
   then [0 terminator] then [string eventname]
 Unknown/unsupported arg types are consumed (never msg_badread on the type
-itself) so the client is not kicked; such args are delivered as '?' with no
-argtypes bits set.
+itself) so the client is not kicked; such args are tagged UNKNOWN (5) in
+argtypes and carry no usable value in the parm slots.
 ===================
 */
 static void SV_ReadQCRequest(void)
@@ -4596,6 +4597,7 @@ static void SV_ReadQCRequest(void)
 			MSG_ReadByte();
 			MSG_ReadByte();
 			MSG_ReadByte();
+			argtypes |= QCREQ_T_UNKNOWN << (i * 3);
 			break;
 		case ev_pointer:
 			args[i] = 'p';
@@ -4607,6 +4609,7 @@ static void SV_ReadQCRequest(void)
 					break;	// nonsense length: cannot realign, stop parsing args
 				while (len-- > 0)
 					MSG_ReadByte();
+				argtypes |= QCREQ_T_UNKNOWN << (i * 3);	// consumed, no PR2 slot
 			}
 			break;
 		case ev_entity:
@@ -4653,9 +4656,10 @@ static void SV_ReadQCRequest(void)
 			break;
 		default:
 			// unknown wire type: don't kick the client, consume it as a long
-			// (FTE fallback width) and mark the arg as unsupported
+			// (FTE fallback width) and tag the arg UNKNOWN
 			args[i] = '?';
 			MSG_ReadLong();
+			argtypes |= QCREQ_T_UNKNOWN << (i * 3);
 			break;
 		}
 	}
