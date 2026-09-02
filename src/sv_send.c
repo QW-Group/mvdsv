@@ -1447,7 +1447,8 @@ void MVD_WriteStats(void)
 		stats[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
 
 #ifdef FTE_PEXT_CSQC
-		// clientstat/pointerstat registered stats (32..127), recorder will get FTE_PEXT_CSQC in phase 6
+		// clientstat/pointerstat registered stats (32..127) - only for the
+		// MVD recorder, which has FTE_PEXT_CSQC set while recording
 		if (demo.recorder.fteprotocolextensions & FTE_PEXT_CSQC)
 			SV_UpdateQCStats (ent, stats);
 #endif
