@@ -410,6 +410,10 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 	qbool       reliable;
 	vec3_t      vieworg;
 	qbool       mvd_only = false;
+#ifdef FTE_PEXT_CSQC
+	qbool       csqc_only = false;
+	extern cvar_t sv_csqcdebug;
+#endif
 
 	reliable = false;
 
@@ -442,6 +446,27 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 		SV_Error ("SV_Multicast: bad to:%i", to);
 	}
 
+#ifdef FTE_PEXT_CSQC
+	// svc_fte_cgamepacket (ssqc->csqc) only makes sense for CSQC clients.
+	// Convert to the sized variant under sv_csqcdebug (mirror of FTE net_preparse).
+	if (sv.multicast.cursize > 0 && sv.multicast.data[0] == svc_fte_cgamepacket)
+	{
+		int payload_len = sv.multicast.cursize - 1;
+
+		if ((int)sv_csqcdebug.value && sv.multicast.cursize + 2 <= sv.multicast.maxsize)
+		{
+			// buffer: [83][payload] -> [90][lenlo][lenhi][payload]
+			memmove(sv.multicast.data + 3, sv.multicast.data + 1, payload_len);
+			sv.multicast.data[0] = svc_fte_cgamepacket_sized;
+			sv.multicast.data[1] = payload_len & 0xff;
+			sv.multicast.data[2] = (payload_len >> 8) & 0xff;
+			sv.multicast.cursize += 2;
+		}
+
+		csqc_only = true;
+	}
+#endif
+
 	// send the data to all relevent clients
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS && !mvd_only; j++, client++)
 	{
@@ -451,6 +476,11 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 			continue;
 		if (SV_SkipCommsBotMessage(client))
 			continue;
+#ifdef FTE_PEXT_CSQC
+		// svc_fte_cgamepacket is CSQC-only
+		if (csqc_only && !(client->fteprotocolextensions & FTE_PEXT_CSQC))
+			continue;
+#endif
 
 		if (!mask)
 			goto inrange; // multicast to all

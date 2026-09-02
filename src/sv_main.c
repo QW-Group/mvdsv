@@ -207,6 +207,7 @@ cvar_t sv_pext_ezquake_verfortrans = {"pext_ezquake_verfortrans", "7814", CVAR_N
 
 #ifdef FTE_PEXT_CSQC
 cvar_t sv_csqc_progname = { "sv_csqc_progname", "csprogs.dat" };
+cvar_t sv_csqcdebug = { "sv_csqcdebug", "0", CVAR_NONE };
 #endif
 
 qbool sv_error = false;
@@ -3614,6 +3615,7 @@ void SV_InitLocal (void)
 
 #ifdef FTE_PEXT_CSQC
 	Cvar_Register (&sv_csqc_progname);
+	Cvar_Register (&sv_csqcdebug);
 #endif
 
 // QW262 -->
