@@ -4488,8 +4488,14 @@ static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 #define QCREQ_T_ENTITY	3
 #define QCREQ_T_INT		4
 
-// wire type codes (FTE etype convention; mvdsv's own etype_t lacks ev_integer)
+// wire type codes (FTE etype convention; mvdsv's own etype_t lacks the
+// extended integer/pointer types). Consumed by width so a client using the
+// richer FTE types is not dropped (F9).
 #define QCREQ_EV_INTEGER	8
+#define QCREQ_EV_UINT		9
+#define QCREQ_EV_INT64		10
+#define QCREQ_EV_UINT64		11
+#define QCREQ_EV_DOUBLE		12
 
 /*
 ===================
@@ -4498,14 +4504,23 @@ SV_ReadQCRequest
 Parses a clcfte_qcrequest (client CSQC sendevent) message and dispatches
 to the game: PR2 -> GAME_QCREQUEST export, PR1 -> CSEv_* function.
 
-Wire layout (client->server, matches the client-side writer):
+Wire layout (client->server, matches the FTE csqc writer PF_cs_sendevent):
   for each arg: [byte type] [value]
-    ev_float   -> float
-    ev_vector  -> 3 floats
-    ev_integer -> long
-    ev_entity  -> short (entity number)
-    ev_string  -> string
-  then [string eventname]
+    ev_void     -> end of args
+    ev_float    -> float
+    ev_vector   -> 3 floats
+    ev_integer  -> long
+    ev_uint     -> long (consumed; PR2 has no unsigned slot)
+    ev_int64/ev_uint64/ev_double -> 8 bytes (consumed)
+    ev_entity   -> short (entity number)
+    ev_string   -> string
+    ev_pointer  -> payload whose byte length is the preceding ev_integer value
+    other       -> treated as a long (FTE default), arg marked '?'
+  an optional [200+seat] marker byte may precede the terminator
+  then [0 terminator] then [string eventname]
+Unknown/unsupported arg types are consumed (never msg_badread on the type
+itself) so the client is not kicked; such args are delivered as '?' with no
+argtypes bits set.
 ===================
 */
 static void SV_ReadQCRequest(void)
@@ -4540,6 +4555,9 @@ static void SV_ReadQCRequest(void)
 			return;
 		}
 
+		if (ev >= 200)
+			continue;	// fte split-screen seat marker: ignore (mvdsv has no csqc seats)
+
 		switch (ev)
 		{
 		case ev_void:
@@ -4560,6 +4578,36 @@ static void SV_ReadQCRequest(void)
 			args[i] = 'i';
 			((int *)&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadLong();
 			argtypes |= QCREQ_T_INT << (i * 3);
+			break;
+		case QCREQ_EV_UINT:
+			args[i] = 'u';
+			((int *)&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadLong();
+			argtypes |= QCREQ_T_INT << (i * 3);
+			break;
+		case QCREQ_EV_INT64:
+		case QCREQ_EV_UINT64:
+		case QCREQ_EV_DOUBLE:
+			args[i] = '?';	// 64-bit/double: no PR2 slot, consume and skip
+			MSG_ReadByte();	// 8 bytes
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			break;
+		case ev_pointer:
+			args[i] = 'p';
+			// payload length is carried by the preceding ev_integer arg value
+			if (i > 0 && args[i-1] == 'i')
+			{
+				int len = ((int *)&PR_GLOBAL(parm1))[(i-1)*3 + 0];
+				if (len < 0 || len > (1 << 16))
+					break;	// nonsense length: cannot realign, stop parsing args
+				while (len-- > 0)
+					MSG_ReadByte();
+			}
 			break;
 		case ev_entity:
 			{
@@ -4604,8 +4652,11 @@ static void SV_ReadQCRequest(void)
 			}
 			break;
 		default:
-			msg_badread = true;
-			return;
+			// unknown wire type: don't kick the client, consume it as a long
+			// (FTE fallback width) and mark the arg as unsupported
+			args[i] = '?';
+			MSG_ReadLong();
+			break;
 		}
 	}
 
