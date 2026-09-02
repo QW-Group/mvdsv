@@ -179,6 +179,9 @@ void SV_QCStatFieldIdx (int type, unsigned int fieldindex, int statnum);
 void SV_QCStatPtr (int type, void *ptr, int statnum);
 void SV_QCStatGlobal (int type, const char *name, int statnum);
 void SV_UpdateQCStats (edict_t *ent, int *stats);
+// sv_user.c - state of the qcrequest (sendevent) currently being dispatched
+const char *SV_QCRequestName (void);	// event name (via trap_Argv(0) in the game)
+int SV_QCRequestArg (int idx, void *dst, size_t dstsize);	// copies arg, returns QCREQ_T_* / -1
 #endif
 
 #define	NUM_SPAWN_PARMS 16

@@ -517,46 +517,22 @@ qbool PR2_SendEntity(edict_t* e, edict_t* to, int sendflags)
 //===========================================================================
 // QCRequest (sendevent, client -> server)
 //
-// Writes the eventname string into mod memory (so the QVM mod can read it
-// back via PR2_GetString) and calls GAME_QCREQUEST. Argument values are
-// expected to already be in the parm slots of pr_global_struct (filled by
-// the caller, e.g. SV_ReadQCRequest). vm_str_off is the first free scratch
-// offset in the VM data area (after any string args the caller wrote);
-// 0 means "no string args were placed, use the default scratch start".
+// Calls GAME_QCREQUEST with arg0 = number of parsed args (self = the sending
+// client). The mod pulls the event name via trap_Argv(0) - the name is made
+// available as one raw argv by Cmd_SetRawArgv0 (no tokenization) - and typed
+// argument values via the qcrequestarg extension trap. No strings cross the
+// 32-bit VM_Call boundary, so this works on QVM and native alike.
 //===========================================================================
-void PR2_QCRequest(edict_t* cl_ent, const char* eventname, int argcount, int argtypes, unsigned int vm_str_off)
+void PR2_QCRequest(edict_t* cl_ent, int argcount)
 {
-	intptr_t name_off;
 	int old_self = pr_global_struct->self;
-	static char scratch[64];
 
-	if (!sv_vm || !eventname)
+	if (!sv_vm || !cl_ent)
 		return;
 
-	strlcpy(scratch, eventname, sizeof(scratch));
-
-	if (sv_vm->type == VMI_NATIVE)
-	{	// native: strings are host pointers, pass directly
-		name_off = (intptr_t)scratch;
-	}
-	else
-	{	// qvm: copy the string into the VM data area and pass its offset.
-		// exactDataLength is the end of the mod's declared data, with the
-		// PROGRAM_STACK_EXTRA reserved area after it - safe scratch for a
-		// short string (stack grows down from the top, bounded by stackBottom).
-		unsigned int off = vm_str_off ? vm_str_off : sv_vm->exactDataLength;
-		size_t len = strlen(scratch) + 1;
-
-		if (off + len > sv_vm->dataLength)
-		{	// shouldn't happen; bail out safely
-			return;
-		}
-		memcpy(sv_vm->dataBase + off, scratch, len);
-		name_off = off;
-	}
-
+	Cmd_SetRawArgv0(SV_QCRequestName());
 	pr_global_struct->self = EDICT_TO_PROG(cl_ent);
-	VM_Call(sv_vm, 3, GAME_QCREQUEST, (int)name_off, argcount, argtypes, 0, 0, 0, 0, 0, 0, 0, 0);
+	VM_Call(sv_vm, 1, GAME_QCREQUEST, argcount, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	pr_global_struct->self = old_self;
 }
 #endif

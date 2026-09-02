@@ -65,6 +65,7 @@ static intptr_t EXT_SetSendNeeded(intptr_t *args);
 static intptr_t EXT_clientstat(intptr_t *args);
 static intptr_t EXT_pointerstat(intptr_t *args);
 static intptr_t EXT_globalstat(intptr_t *args);
+static intptr_t EXT_QCRequestArg(intptr_t *args);
 #endif
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
@@ -83,6 +84,7 @@ struct
 	{"clientstat",			EXT_clientstat},
 	{"pointerstat",			EXT_pointerstat},
 	{"globalstat",			EXT_globalstat},
+	{"qcrequestarg",		EXT_QCRequestArg},
 #endif
 };
 ext_syscall_t ext_syscall_tbl[256];
@@ -2058,6 +2060,17 @@ intptr_t EXT_globalstat(intptr_t *args)
 {
 	SV_QCStatGlobal (args[2], VMA(3), args[1]);
 	return 0;
+}
+
+// trap_qcrequestarg(idx, buf, size): copies argument idx of the qcrequest
+// currently being dispatched into the mod's buf and returns its type
+// (QCREQ_T_*, or -1 on out-of-range idx). Only meaningful inside the
+// GAME_QCREQUEST callback.
+intptr_t EXT_QCRequestArg(intptr_t *args)
+{
+	if (args[3] > 0)
+		VM_CheckBounds(sv_vm, args[2], args[3]);
+	return SV_QCRequestArg(args[1], VMA(2), args[3]);
 }
 #endif
 

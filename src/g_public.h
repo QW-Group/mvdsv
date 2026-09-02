@@ -227,7 +227,9 @@ typedef enum
 	GAME_CLEAR_EDICT,           // (self)
 #ifdef FTE_PEXT_CSQC
 	GAME_EDICT_CSQCSEND = 200,	// (self,other,int sendflags)
-	GAME_QCREQUEST,				// CSQC sendevent: (self=client, eventname, argcount, argtypes)
+	GAME_QCREQUEST,				// CSQC sendevent: (self=client, arg0=argcount). The game pulls
+								//   the event name via trap_argv(0) (single raw arg, not tokenized)
+								//   and typed arg values via the qcrequestarg extension trap.
 #endif
 } gameExport_t;
 

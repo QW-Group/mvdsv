@@ -4508,8 +4508,10 @@ static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 ===================
 SV_ReadQCRequest
 
-Parses a clcfte_qcrequest (client CSQC sendevent) message and dispatches
-to the game: PR2 -> GAME_QCREQUEST export, PR1 -> CSEv_* function.
+Parses a clcfte_qcrequest (client CSQC sendevent) message and stores it for
+the game: PR2 -> GAME_QCREQUEST export (the mod fetches the event name via
+trap_Argv(0) and typed arg values via the qcrequestarg trap), PR1 -> CSEv_*
+function.
 
 Wire layout (client->server, matches the FTE csqc writer PF_cs_sendevent):
   for each arg: [byte type] [value]
@@ -4517,7 +4519,7 @@ Wire layout (client->server, matches the FTE csqc writer PF_cs_sendevent):
     ev_float    -> float
     ev_vector   -> 3 floats
     ev_integer  -> long
-    ev_uint     -> long (consumed; PR2 has no unsigned slot)
+    ev_uint     -> long (delivered as int)
     ev_int64/ev_uint64/ev_double -> 8 bytes (consumed)
     ev_entity   -> short (entity number)
     ev_string   -> string
@@ -4526,8 +4528,89 @@ Wire layout (client->server, matches the FTE csqc writer PF_cs_sendevent):
   an optional [200+seat] marker byte may precede the terminator
   then [0 terminator] then [string eventname]
 Unknown/unsupported arg types are consumed (never msg_badread on the type
-itself) so the client is not kicked; such args are tagged UNKNOWN (5) in
-argtypes and carry no usable value in the parm slots.
+itself) so the client is not kicked; such args are stored as UNKNOWN (5)
+and carry no usable value.
+===================
+*/
+
+// one parsed qcrequest argument; values are delivered to the mod by SV_QCRequestArg
+typedef struct
+{
+	int		type;		// QCREQ_T_*
+	float	f[3];		// float (f[0]) / vector (f[0..2])
+	int		i;			// int / uint / entity (EDICT_TO_PROG value)
+	char	s[64];		// string
+} qcrequest_arg_t;
+
+// state of the qcrequest currently being dispatched; valid only during the
+// GAME_QCREQUEST call / PR1 CSEv_* execute
+static qcrequest_arg_t qcrequest_args[6];
+static int qcrequest_argc;
+static char qcrequest_eventname[128];
+
+/*
+===================
+SV_QCRequestName
+
+Returns the event name of the qcrequest currently being dispatched.
+===================
+*/
+const char *SV_QCRequestName(void)
+{
+	return qcrequest_eventname;
+}
+
+/*
+===================
+SV_QCRequestArg
+
+Copies argument idx into dst (up to dstsize bytes) and returns its type
+(QCREQ_T_*); returns -1 for an out-of-range index or NULL dst. Strings are
+copied null-terminated; UNKNOWN args report their type but copy nothing.
+===================
+*/
+int SV_QCRequestArg(int idx, void *dst, size_t dstsize)
+{
+	qcrequest_arg_t *a;
+	const void *src;
+	int size;
+
+	if (idx < 0 || idx >= qcrequest_argc || !dst)
+		return -1;
+
+	a = &qcrequest_args[idx];
+
+	switch (a->type)
+	{
+	case QCREQ_T_STRING:
+		strlcpy(dst, a->s, dstsize);
+		return QCREQ_T_STRING;
+	case QCREQ_T_VECTOR:
+		src = &a->f[0];
+		size = 12;
+		break;
+	case QCREQ_T_FLOAT:
+		src = &a->f[0];
+		size = 4;
+		break;
+	case QCREQ_T_INT:
+	case QCREQ_T_ENTITY:
+		src = &a->i;
+		size = 4;
+		break;
+	default:
+		return QCREQ_T_UNKNOWN;	// no usable value
+	}
+
+	if ((size_t)size > dstsize)
+		return a->type;	// buffer too small: still report the type
+	memcpy(dst, src, size);
+	return a->type;
+}
+
+/*
+===================
+SV_ReadQCRequest
 ===================
 */
 static void SV_ReadQCRequest(void)
@@ -4535,13 +4618,6 @@ static void SV_ReadQCRequest(void)
 	char args[8];
 	char *rname;
 	int i;
-	int argtypes = 0;
-	// scratch strings for the mod (PR2: written into VM data area)
-	static char strbuf[6][64];
-#ifdef USE_PR2
-	unsigned int vm_str_off = 0;
-	qbool vm_str_armed = false;
-#endif
 
 	if (!sv_client)
 		return;
@@ -4553,7 +4629,7 @@ static void SV_ReadQCRequest(void)
 		return;
 	}
 
-	for (i = 0; i < 6; i++)
+	for (i = 0; ; i++)
 	{
 		int ev = MSG_ReadByte();
 		if (ev == -1)
@@ -4563,7 +4639,20 @@ static void SV_ReadQCRequest(void)
 		}
 
 		if (ev >= 200)
-			continue;	// fte split-screen seat marker: ignore (mvdsv has no csqc seats)
+		{	// fte split-screen seat marker: does not consume an arg slot
+			i--;
+			continue;
+		}
+
+		if (i >= 6)
+		{	// the client sends at most 6 args; anything further must be the terminator
+			if (ev != ev_void)
+			{
+				msg_badread = true;
+				return;
+			}
+			goto done;
+		}
 
 		switch (ev)
 		{
@@ -4571,30 +4660,31 @@ static void SV_ReadQCRequest(void)
 			goto done;
 		case ev_float:
 			args[i] = 'f';
-			(&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadFloat();
-			argtypes |= QCREQ_T_FLOAT << (i * 3);
+			qcrequest_args[i].type = QCREQ_T_FLOAT;
+			qcrequest_args[i].f[0] = MSG_ReadFloat();
 			break;
 		case ev_vector:
 			args[i] = 'v';
-			(&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadFloat();
-			(&PR_GLOBAL(parm1))[i*3 + 1] = MSG_ReadFloat();
-			(&PR_GLOBAL(parm1))[i*3 + 2] = MSG_ReadFloat();
-			argtypes |= QCREQ_T_VECTOR << (i * 3);
+			qcrequest_args[i].type = QCREQ_T_VECTOR;
+			qcrequest_args[i].f[0] = MSG_ReadFloat();
+			qcrequest_args[i].f[1] = MSG_ReadFloat();
+			qcrequest_args[i].f[2] = MSG_ReadFloat();
 			break;
 		case QCREQ_EV_INTEGER:
 			args[i] = 'i';
-			((int *)&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadLong();
-			argtypes |= QCREQ_T_INT << (i * 3);
+			qcrequest_args[i].type = QCREQ_T_INT;
+			qcrequest_args[i].i = MSG_ReadLong();
 			break;
 		case QCREQ_EV_UINT:
 			args[i] = 'u';
-			((int *)&PR_GLOBAL(parm1))[i*3 + 0] = MSG_ReadLong();
-			argtypes |= QCREQ_T_INT << (i * 3);
+			qcrequest_args[i].type = QCREQ_T_INT;
+			qcrequest_args[i].i = MSG_ReadLong();
 			break;
 		case QCREQ_EV_INT64:
 		case QCREQ_EV_UINT64:
 		case QCREQ_EV_DOUBLE:
 			args[i] = '?';	// 64-bit/double: no PR2 slot, consume and skip
+			qcrequest_args[i].type = QCREQ_T_UNKNOWN;
 			MSG_ReadByte();	// 8 bytes
 			MSG_ReadByte();
 			MSG_ReadByte();
@@ -4603,19 +4693,18 @@ static void SV_ReadQCRequest(void)
 			MSG_ReadByte();
 			MSG_ReadByte();
 			MSG_ReadByte();
-			argtypes |= QCREQ_T_UNKNOWN << (i * 3);
 			break;
 		case ev_pointer:
 			args[i] = 'p';
+			qcrequest_args[i].type = QCREQ_T_UNKNOWN;	// consumed, no usable value
 			// payload length is carried by the preceding ev_integer arg value
 			if (i > 0 && args[i-1] == 'i')
 			{
-				int len = ((int *)&PR_GLOBAL(parm1))[(i-1)*3 + 0];
+				int len = qcrequest_args[i-1].i;
 				if (len < 0 || len > (1 << 16))
-					break;	// nonsense length: cannot realign, stop parsing args
+					break;	// nonsense length: cannot realign
 				while (len-- > 0)
 					MSG_ReadByte();
-				argtypes |= QCREQ_T_UNKNOWN << (i * 3);	// consumed, no PR2 slot
 			}
 			break;
 		case ev_entity:
@@ -4627,61 +4716,44 @@ static void SV_ReadQCRequest(void)
 					sv_client->drop = true;
 					return;
 				}
-				((int *)&PR_GLOBAL(parm1))[i*3 + 0] = EDICT_TO_PROG(&sv.edicts[e]);
 				args[i] = 'e';
-				argtypes |= QCREQ_T_ENTITY << (i * 3);
+				qcrequest_args[i].type = QCREQ_T_ENTITY;
+				qcrequest_args[i].i = EDICT_TO_PROG(&sv.edicts[e]);
 			}
 			break;
 		case ev_string:
-			{
-				char *s = MSG_ReadString();
-				args[i] = 's';
-				strlcpy(strbuf[i], s, sizeof(strbuf[i]));
-#ifdef USE_PR2
-				if (sv_vm && sv_vm->type != VMI_NATIVE)
-				{	// qvm: write into VM data scratch, store the offset
-					size_t len = strlen(strbuf[i]) + 1;
-					if (!vm_str_armed)
-					{
-						vm_str_off = sv_vm->exactDataLength;
-						vm_str_armed = true;
-					}
-					if (vm_str_off + len > sv_vm->dataLength)
-						break;
-					memcpy(sv_vm->dataBase + vm_str_off, strbuf[i], len);
-					((int *)&PR_GLOBAL(parm1))[i*3 + 0] = vm_str_off;
-					vm_str_off += len;
-				}
-				else
-#endif
-				{
-					((int *)&PR_GLOBAL(parm1))[i*3 + 0] = (intptr_t)strbuf[i];
-				}
-				argtypes |= QCREQ_T_STRING << (i * 3);
-			}
+			args[i] = 's';
+			qcrequest_args[i].type = QCREQ_T_STRING;
+			strlcpy(qcrequest_args[i].s, MSG_ReadString(), sizeof(qcrequest_args[i].s));
 			break;
 		default:
 			// unknown wire type: don't kick the client, consume it as a long
 			// (FTE fallback width) and tag the arg UNKNOWN
 			args[i] = '?';
+			qcrequest_args[i].type = QCREQ_T_UNKNOWN;
 			MSG_ReadLong();
-			argtypes |= QCREQ_T_UNKNOWN << (i * 3);
 			break;
 		}
 	}
 
 done:
 	args[i] = 0;
+	qcrequest_argc = i;
 	rname = MSG_ReadString();
 	if (msg_badread)
 		return;
 
+	strlcpy(qcrequest_eventname, rname, sizeof(qcrequest_eventname));
+
 	if (sv_vm)
-	{	// PR2: fixed export
-		PR2_QCRequest(sv_client->edict, rname, i, argtypes, vm_str_off);
+	{	// PR2: fixed export. self=client, arg0=argcount; the mod pulls the
+		// event name via trap_Argv(0) and arg values via the qcrequestarg trap.
+		PR2_QCRequest(sv_client->edict, qcrequest_argc);
 	}
 	else
 	{	// PR1: lookup CSEv_<name>_<args>
+		// NOTE (Package B): PR1 argument delivery (parm slots / temp-strings)
+		// is not implemented yet - CSQC is gated off for PR1 mods.
 		extern func_t ED_FindFunctionOffset (char *name);
 		char fname[128];
 		func_t f;
