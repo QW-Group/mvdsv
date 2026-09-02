@@ -1325,8 +1325,10 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	SV_EmitPacketEntities (client, pack, msg);
 
 #ifdef FTE_PEXT_CSQC
-	// CSQC entity lump (delta-compressed), after the regular packetentities
-	SV_EmitCSQCUpdate (client, msg, svc_fte_csqcentities);
+	// CSQC entity lump (delta-compressed), after the regular packetentities.
+	// The sized (92) variant is only for live CSQC clients under sv_csqcdebug;
+	// recorded demos keep the plain (76) form so they play back elsewhere (F6).
+	SV_EmitCSQCUpdate (client, msg, (recorder || !(int)sv_csqcdebug.value) ? svc_fte_csqcentities : svc_fte_csqcentities_sized);
 #endif
 
 	// now add the specialized nail update

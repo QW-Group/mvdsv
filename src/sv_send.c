@@ -412,7 +412,6 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 	qbool       mvd_only = false;
 #ifdef FTE_PEXT_CSQC
 	qbool       csqc_only = false;
-	extern cvar_t sv_csqcdebug;
 #endif
 
 	reliable = false;
