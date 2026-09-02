@@ -1023,7 +1023,10 @@ void SV_UpdateClientStats (client_t *client)
 		stats[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
 
 #ifdef FTE_PEXT_CSQC
-	// clientstat/pointerstat registered stats (32..127), only for CSQC clients
+	// clientstat/pointerstat registered stats (32..127), only for CSQC clients.
+	// TODO (F13): gate decision - csqcactive vs FTE_PEXT_CSQC ext. Kept on the
+	// ext gate by default: a CSQC-capable client that never runs csqc simply
+	// ignores the extra stats, and csqcactive implies the ext anyway.
 	if (client->fteprotocolextensions & FTE_PEXT_CSQC)
 		SV_UpdateQCStats (ent, stats);
 #endif
@@ -1448,7 +1451,8 @@ void MVD_WriteStats(void)
 
 #ifdef FTE_PEXT_CSQC
 		// clientstat/pointerstat registered stats (32..127) - only for the
-		// MVD recorder, which has FTE_PEXT_CSQC set while recording
+		// MVD recorder, which has FTE_PEXT_CSQC set while recording.
+		// TODO (F13): same csqcactive-vs-ext gate question as SV_UpdateClientStats.
 		if (demo.recorder.fteprotocolextensions & FTE_PEXT_CSQC)
 			SV_UpdateQCStats (ent, stats);
 #endif
