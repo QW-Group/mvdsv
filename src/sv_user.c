@@ -4702,9 +4702,21 @@ static void SV_ReadQCRequest(void)
 			{
 				int len = qcrequest_args[i-1].i;
 				if (len < 0 || len > (1 << 16))
-					break;	// nonsense length: cannot realign
+				{
+					// nonsense length: cannot realign - drop the message instead
+					// of continuing the parse misaligned
+					msg_badread = true;
+					return;
+				}
 				while (len-- > 0)
 					MSG_ReadByte();
+			}
+			else
+			{
+				// ev_pointer without a preceding ev_integer length: no way to
+				// know the payload width - drop the message
+				msg_badread = true;
+				return;
 			}
 			break;
 		case ev_entity:

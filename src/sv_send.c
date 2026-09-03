@@ -882,6 +882,23 @@ typedef struct
 static qcstat_t qcstats[MAX_CL_STATS];
 static unsigned int numqcstats;
 
+// byte size of the value the mod reads for a given stat type (used to bound
+// the field offset against the entvars block)
+static int qcstat_type_size(int type)
+{
+	switch (type)
+	{
+	case CSQC_EV_FLOAT:
+	case CSQC_EV_ENTITY:
+	case CSQC_EV_INTEGER:
+		return 4;
+	case CSQC_EV_VECTOR:
+		return 12;
+	default:
+		return -1;
+	}
+}
+
 // progs (re)loaded (new map / new mod): drop all registered stats so stale
 // pointerstat pointers into the old VM are never dereferenced and re-registration
 // on the next map does not hit "Too many csqc stats".
@@ -930,6 +947,18 @@ static void SV_QCStatEval(int type, int statnum, int fieldofs, void *ptr, qbool 
 // clientstat: register a per-client stat from a field offset into the mod's entvars
 void SV_QCStatFieldIdx(int type, unsigned int fieldindex, int statnum)
 {
+	int sz = qcstat_type_size(type);
+
+	// the engine later reads (ent->v + fieldofs) up to sz bytes; make sure the
+	// index stays within one entity's entvars block (pr_edict_size bytes)
+	if (sz < 0 || fieldindex > (unsigned int)pr_edict_size
+		|| (unsigned int)sz > (unsigned int)pr_edict_size - fieldindex)
+	{
+		Con_Printf("csqc clientstat field index %u+%d out of entvars (%d)\n",
+			fieldindex, sz, pr_edict_size);
+		return;
+	}
+
 	SV_QCStatEval(type, statnum, fieldindex, NULL, true);
 }
 
