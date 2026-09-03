@@ -1231,7 +1231,7 @@ sizebuf_t *WriteDest2(int dest)
 
 	case MSG_CSQC:
 		// Only valid inside a GAME_EDICT_CSQCSEND call; the buffer is
-		// armed by SV_SendClientDatagram / SV_SendDemoMessage.
+		// armed per-client inside SV_EmitCSQCUpdate (sv_ents.c).
 		if (!csqcmsgbuffer.maxsize || !csqcmsgbuffer.data)
 			PR2_RunError("PF_Write_*: MSG_CSQC outside of SendEntity method");
 		return &csqcmsgbuffer;

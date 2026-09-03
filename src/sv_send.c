@@ -1095,9 +1095,6 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 {
 	byte		buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
-#ifdef FTE_PEXT_CSQC
-	byte		csqcbuf[MAX_DATAGRAM];
-#endif
 	//	packet_t	*pack;
 
 	SZ_InitEx(&msg, buf, sizeof(buf), true);
@@ -1115,10 +1112,6 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	*/
 
 	if (!SV_SkipCommsBotMessage(client)) {
-#ifdef FTE_PEXT_CSQC
-		// arm the CSQC payload scratch buffer for SV_EmitCSQCUpdate
-		SZ_InitEx (&csqcmsgbuffer, csqcbuf, sizeof(csqcbuf), true);
-#endif
 		// add the client specific data to the datagram
 		SV_WriteClientdataToMessage(client, &msg);
 
@@ -1127,10 +1120,6 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 		// possibly a nails update
 		SV_WriteEntitiesToClient(client, &msg, false);
 
-#ifdef FTE_PEXT_CSQC
-		csqcmsgbuffer.data = NULL;
-		csqcmsgbuffer.maxsize = 0;
-#endif
 #ifdef FTE_PEXT2_VOICECHAT
 		SV_VoiceSendPacket(client, &msg);
 #endif
@@ -1531,9 +1520,6 @@ void SV_SendDemoMessage(void)
 	client_t	*c;
 	sizebuf_t	msg;
 	byte		msg_buf[MAX_MVD_SIZE]; // data without mvd header
-#ifdef FTE_PEXT_CSQC
-	byte		csqcbuf[MAX_MVD_SIZE]; // CSQC payload scratch for the recorder
-#endif
 
 	float		min_fps;
 	extern		cvar_t sv_demofps, sv_demoIdlefps;
@@ -1588,19 +1574,7 @@ void SV_SendDemoMessage(void)
 	if (!demo.recorder.delta_sequence)
 		demo.recorder.delta_sequence = -1;
 
-#ifdef FTE_PEXT_CSQC
-	{
-		// arm the CSQC payload scratch buffer for the demo recorder
-		SZ_InitEx (&csqcmsgbuffer, csqcbuf, sizeof(csqcbuf), true);
-	}
-#endif
-
 	SV_WriteEntitiesToClient (&demo.recorder, &msg, true);
-
-#ifdef FTE_PEXT_CSQC
-	csqcmsgbuffer.data = NULL;
-	csqcmsgbuffer.maxsize = 0;
-#endif
 
 	if (msg.overflowed)
 	{
