@@ -62,6 +62,7 @@ static float GETFLOAT(int i)
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
 #ifdef FTE_PEXT_CSQC
 static intptr_t EXT_SetSendNeeded(intptr_t *args);
+static intptr_t EXT_SetSendNeeded64(intptr_t *args);
 static intptr_t EXT_clientstat(intptr_t *args);
 static intptr_t EXT_pointerstat(intptr_t *args);
 static intptr_t EXT_globalstat(intptr_t *args);
@@ -81,6 +82,7 @@ struct
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
 #ifdef FTE_PEXT_CSQC
 	{"setsendneeded",		EXT_SetSendNeeded},
+	{"setsendneeded64",		EXT_SetSendNeeded64},
 	{"clientstat",			EXT_clientstat},
 	{"pointerstat",			EXT_pointerstat},
 	{"globalstat",			EXT_globalstat},
@@ -2021,6 +2023,38 @@ intptr_t EXT_SetSendNeeded(intptr_t *args)
 	unsigned int subject = (unsigned int)args[1];
 	uint64_t fl = (uint64_t)args[2] << SENDFLAGS_SHIFT;
 	unsigned int to = (unsigned int)args[3];
+
+	if (!to)
+	{	// broadcast
+		unsigned int i;
+		for (i = 0; i < MAX_CLIENTS; i++)
+			if (svs.clients[i].pendingcsqcbits && subject < (unsigned int)svs.clients[i].max_net_ents)
+				svs.clients[i].pendingcsqcbits[subject] |= fl;
+	}
+	else
+	{
+		to--;
+		if (to >= MAX_CLIENTS || !svs.clients[to].pendingcsqcbits || subject >= (unsigned int)svs.clients[to].max_net_ents)
+			return 0;	// some kind of error.
+		else
+			svs.clients[to].pendingcsqcbits[subject] |= fl;
+	}
+	return 0;
+}
+
+// trap_SetSendNeeded64(subject, flagslo, flagshi, to)
+//   64-битный вариант setsendneeded: маска мода (62 usable бита: lo = 0..31,
+//   hi = 32..61) передаётся двумя int, т.к. границы VM (native и QVM)
+//   32-битны. PRESENT/REMOVED (биты 0..1 pending-слова) движковые — маска
+//   режется до 62 бит ДО сдвига, чтобы не задеть их.
+intptr_t EXT_SetSendNeeded64(intptr_t *args)
+{
+	unsigned int subject = (unsigned int)args[1];
+	uint64_t fl = ((uint64_t)(uint32_t)args[2]) | ((uint64_t)(uint32_t)args[3] << 32);
+	unsigned int to = (unsigned int)args[4];
+
+	fl &= (SENDFLAGS_USABLE >> SENDFLAGS_SHIFT);
+	fl <<= SENDFLAGS_SHIFT;
 
 	if (!to)
 	{	// broadcast
