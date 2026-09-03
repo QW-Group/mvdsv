@@ -657,7 +657,7 @@ static void SV_EmitCSQCUpdate (client_t *client, sizebuf_t *msg, int svcnumber)
 		{
 			pr_global_struct->self = EDICT_TO_PROG(ent);
 			pr_global_struct->other = viewerent;
-			mod_result = PR2_SendEntity (ent, client->edict, (int)(bits >> SENDFLAGS_SHIFT));
+			mod_result = PR2_SendEntity (ent, client->edict, (uint64_t)(bits >> SENDFLAGS_SHIFT));
 		}
 		else
 #endif

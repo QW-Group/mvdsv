@@ -498,7 +498,7 @@ void PR2_ClearEdict(edict_t* e)
 //===========================================================================
 // SendEntity
 //===========================================================================
-qbool PR2_SendEntity(edict_t* e, edict_t* to, int sendflags)
+qbool PR2_SendEntity(edict_t* e, edict_t* to, uint64_t sendflags)
 {
 	qbool ret_val = false;
 	int old_self = pr_global_struct->self;
@@ -507,7 +507,9 @@ qbool PR2_SendEntity(edict_t* e, edict_t* to, int sendflags)
 	pr_global_struct->other = to ? EDICT_TO_PROG(to) : 0;
 	if (sv_vm)
 	{
-		ret_val = VM_Call(sv_vm, 1, GAME_EDICT_CSQCSEND, (int)sendflags, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		// QVM/native границы 32-битны: 64-битная маска идёт двумя int
+		// (lo = биты 0..31, hi = биты 32..61; PRESENT/REMOVED остаются в движке).
+		ret_val = VM_Call(sv_vm, 2, GAME_EDICT_CSQCSEND, (int)(uint32_t)sendflags, (int)(sendflags >> 32), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	}
 	pr_global_struct->self = old_self;
 	pr_global_struct->other = old_other;
