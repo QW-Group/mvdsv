@@ -861,9 +861,10 @@ static void Cmd_Spawn_f (void)
 
 	if (i < MAX_CLIENTS)
 	{
-		MSG_WriteByte (&sv_client->netchan.message, svc_stufftext);
-		MSG_WriteString (&sv_client->netchan.message,
-		                 va("cmd spawn %i %d\n", svs.spawncount, i) );
+		char *cmd = va("cmd spawn %i %d\n", svs.spawncount, i);
+
+		ClientReliableWrite_Begin (sv_client, svc_stufftext, 2 + strlen(cmd));
+		ClientReliableWrite_String (sv_client, cmd);
 		return;
 	}
 
