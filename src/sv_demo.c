@@ -1003,6 +1003,17 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	instop = false; // SET TO FALSE
 
 out:
+#ifdef FTE_PEXT_CSQC
+	// the recorder struct is memset on the next fresh record start, so free
+	// the CSQC delta bitset here to avoid leaking it
+	if (demo.recorder.pendingcsqcbits)
+	{
+		Q_free(demo.recorder.pendingcsqcbits);
+		demo.recorder.pendingcsqcbits = NULL;
+	}
+	demo.recorder.max_net_ents = 0;
+	demo.recorder.csqcactive = false;
+#endif
 	if (reason != 3)
 		SV_BroadcastPrintCache();
 }
@@ -1239,6 +1250,19 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 #endif
 #ifdef FTE_PEXT_COLOURMOD
 	demo.recorder.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
+#endif
+#ifdef FTE_PEXT_CSQC
+	if (SV_CSQCActive())
+	{
+		demo.recorder.fteprotocolextensions |= FTE_PEXT_CSQC;
+		demo.recorder.csqcactive = true;
+		// lazily allocate the recorder's CSQC delta bitset
+		if (!demo.recorder.pendingcsqcbits && sv.max_edicts > 0)
+		{
+			demo.recorder.pendingcsqcbits = Q_calloc(sv.max_edicts, sizeof(uint64_t));
+			demo.recorder.max_net_ents = sv.max_edicts;
+		}
+	}
 #endif
 #ifdef FTE_PEXT2_VOICECHAT
 	demo.recorder.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;
@@ -1635,6 +1659,14 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 
 		// stuff the sigil bits into the high bits of items for sbar
 		stats[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
+
+#ifdef FTE_PEXT_CSQC
+		// clientstat/pointerstat registered stats (32..127) - only for the
+		// MVD recorder, which has FTE_PEXT_CSQC set while recording.
+		// TODO (F13): same csqcactive-vs-ext gate question as SV_UpdateClientStats.
+		if (demo.recorder.fteprotocolextensions & FTE_PEXT_CSQC)
+			SV_UpdateQCStats (ent, stats);
+#endif
 
 		for (j = 0; j < MAX_CL_STATS; j++)
 		{

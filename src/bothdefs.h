@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 // stats are integers communicated to the client by the server
 //
-#define	MAX_CL_STATS			32
+#define	MAX_CL_STATS			128		// 0..31 engine-fixed, 32..127 CSQC (clientstat/pointerstat)
 #define	STAT_HEALTH				0
 //#define	STAT_FRAGS				1
 #define	STAT_WEAPON				2

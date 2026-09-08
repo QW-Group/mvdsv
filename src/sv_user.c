@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef CLIENTONLY
 #include "qwsvdef.h"
+#ifdef USE_PR2
+#include "vm_local.h"
+#endif
 
 static void SV_ClientDownloadComplete(client_t* cl);
 
@@ -3118,11 +3121,26 @@ void SV_Voice_UnmuteAll_f(void)
 #ifdef FTE_PEXT_CSQC
 void SV_EnableClientsCSQC(void)
 {
+	int e;
+
+	if (!SV_CSQCActive())
+		return; // PR1 mod: no CSQC support, ignore the client request
+
 	sv_client->csqcactive = true;
+
+	// the client just (re)enabled csqc: resend all entities it already has
+	// so its freshly-loaded csprogs gets the full state.
+	if (sv_client->pendingcsqcbits)
+		for (e = 1; e < sv_client->max_net_ents; e++)
+			if (sv_client->pendingcsqcbits[e] & SENDFLAGS_PRESENT)
+				sv_client->pendingcsqcbits[e] |= SENDFLAGS_USABLE;
 }
 
 void SV_DisableClientsCSQC(void)
 {
+	if (!SV_CSQCActive())
+		return; // PR1 mod: no CSQC support, ignore the client request
+
 	sv_client->csqcactive = false;
 }
 #endif
@@ -4468,6 +4486,308 @@ static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 }
 #endif
 
+#ifdef FTE_PEXT_CSQC
+// sendevent type codes (design doc ezquake_csqc_pr2.md §5.2); engine and mod must agree
+#define QCREQ_T_FLOAT	0
+#define QCREQ_T_VECTOR	1
+#define QCREQ_T_STRING	2
+#define QCREQ_T_ENTITY	3
+#define QCREQ_T_INT		4
+#define QCREQ_T_UNKNOWN	5	// wire type consumed, but no usable value delivered
+
+// wire type codes (FTE etype convention; mvdsv's own etype_t lacks the
+// extended integer/pointer types). Consumed by width so a client using the
+// richer FTE types is not dropped (F9).
+#define QCREQ_EV_INTEGER	8
+#define QCREQ_EV_UINT		9
+#define QCREQ_EV_INT64		10
+#define QCREQ_EV_UINT64		11
+#define QCREQ_EV_DOUBLE		12
+
+/*
+===================
+SV_ReadQCRequest
+
+Parses a clcfte_qcrequest (client CSQC sendevent) message and stores it for
+the game: PR2 -> GAME_QCREQUEST export (the mod fetches the event name via
+trap_Argv(0) and typed arg values via the qcrequestarg trap), PR1 -> CSEv_*
+function.
+
+Wire layout (client->server, matches the FTE csqc writer PF_cs_sendevent):
+  for each arg: [byte type] [value]
+    ev_void     -> end of args
+    ev_float    -> float
+    ev_vector   -> 3 floats
+    ev_integer  -> long
+    ev_uint     -> long (delivered as int)
+    ev_int64/ev_uint64/ev_double -> 8 bytes (consumed)
+    ev_entity   -> short (entity number)
+    ev_string   -> string
+    ev_pointer  -> payload whose byte length is the preceding ev_integer value
+    other       -> treated as a long (FTE default), arg marked '?'
+  an optional [200+seat] marker byte may precede the terminator
+  then [0 terminator] then [string eventname]
+Unknown/unsupported arg types are consumed (never msg_badread on the type
+itself) so the client is not kicked; such args are stored as UNKNOWN (5)
+and carry no usable value.
+===================
+*/
+
+// one parsed qcrequest argument; values are delivered to the mod by SV_QCRequestArg
+typedef struct
+{
+	int		type;		// QCREQ_T_*
+	float	f[3];		// float (f[0]) / vector (f[0..2])
+	int		i;			// int / uint / entity (EDICT_TO_PROG value)
+	char	s[64];		// string
+} qcrequest_arg_t;
+
+// state of the qcrequest currently being dispatched; valid only during the
+// GAME_QCREQUEST call / PR1 CSEv_* execute
+static qcrequest_arg_t qcrequest_args[6];
+static int qcrequest_argc;
+static char qcrequest_eventname[128];
+
+/*
+===================
+SV_QCRequestName
+
+Returns the event name of the qcrequest currently being dispatched.
+===================
+*/
+const char *SV_QCRequestName(void)
+{
+	return qcrequest_eventname;
+}
+
+/*
+===================
+SV_QCRequestArg
+
+Copies argument idx into dst (up to dstsize bytes) and returns its type
+(QCREQ_T_*); returns -1 for an out-of-range index or NULL dst. Strings are
+copied null-terminated; UNKNOWN args report their type but copy nothing.
+===================
+*/
+int SV_QCRequestArg(int idx, void *dst, size_t dstsize)
+{
+	qcrequest_arg_t *a;
+	const void *src;
+	int size;
+
+	if (idx < 0 || idx >= qcrequest_argc || !dst)
+		return -1;
+
+	a = &qcrequest_args[idx];
+
+	switch (a->type)
+	{
+	case QCREQ_T_STRING:
+		strlcpy(dst, a->s, dstsize);
+		return QCREQ_T_STRING;
+	case QCREQ_T_VECTOR:
+		src = &a->f[0];
+		size = 12;
+		break;
+	case QCREQ_T_FLOAT:
+		src = &a->f[0];
+		size = 4;
+		break;
+	case QCREQ_T_INT:
+	case QCREQ_T_ENTITY:
+		src = &a->i;
+		size = 4;
+		break;
+	default:
+		return QCREQ_T_UNKNOWN;	// no usable value
+	}
+
+	if ((size_t)size > dstsize)
+		return a->type;	// buffer too small: still report the type
+	memcpy(dst, src, size);
+	return a->type;
+}
+
+/*
+===================
+SV_ReadQCRequest
+===================
+*/
+static void SV_ReadQCRequest(void)
+{
+	char args[8];
+	char *rname;
+	int i;
+
+	if (!sv_client)
+		return;
+
+	// qcrequest only makes sense for a game with a VM loaded
+	if (!sv_vm && !progs)
+	{
+		msg_badread = true;
+		return;
+	}
+
+	for (i = 0; ; i++)
+	{
+		int ev = MSG_ReadByte();
+		if (ev == -1)
+		{
+			msg_badread = true;
+			return;
+		}
+
+		if (ev >= 200)
+		{	// fte split-screen seat marker: does not consume an arg slot
+			i--;
+			continue;
+		}
+
+		if (i >= 6)
+		{	// the client sends at most 6 args; anything further must be the terminator
+			if (ev != ev_void)
+			{
+				msg_badread = true;
+				return;
+			}
+			goto done;
+		}
+
+		switch (ev)
+		{
+		case ev_void:
+			goto done;
+		case ev_float:
+			args[i] = 'f';
+			qcrequest_args[i].type = QCREQ_T_FLOAT;
+			qcrequest_args[i].f[0] = MSG_ReadFloat();
+			break;
+		case ev_vector:
+			args[i] = 'v';
+			qcrequest_args[i].type = QCREQ_T_VECTOR;
+			qcrequest_args[i].f[0] = MSG_ReadFloat();
+			qcrequest_args[i].f[1] = MSG_ReadFloat();
+			qcrequest_args[i].f[2] = MSG_ReadFloat();
+			break;
+		case QCREQ_EV_INTEGER:
+			args[i] = 'i';
+			qcrequest_args[i].type = QCREQ_T_INT;
+			qcrequest_args[i].i = MSG_ReadLong();
+			break;
+		case QCREQ_EV_UINT:
+			args[i] = 'u';
+			qcrequest_args[i].type = QCREQ_T_INT;
+			qcrequest_args[i].i = MSG_ReadLong();
+			break;
+		case QCREQ_EV_INT64:
+		case QCREQ_EV_UINT64:
+		case QCREQ_EV_DOUBLE:
+			args[i] = '?';	// 64-bit/double: no PR2 slot, consume and skip
+			qcrequest_args[i].type = QCREQ_T_UNKNOWN;
+			MSG_ReadByte();	// 8 bytes
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			MSG_ReadByte();
+			break;
+		case ev_pointer:
+			args[i] = 'p';
+			qcrequest_args[i].type = QCREQ_T_UNKNOWN;	// consumed, no usable value
+			// payload length is carried by the preceding ev_integer arg value
+			if (i > 0 && args[i-1] == 'i')
+			{
+				int len = qcrequest_args[i-1].i;
+				if (len < 0 || len > (1 << 16))
+				{
+					// nonsense length: cannot realign - drop the message instead
+					// of continuing the parse misaligned
+					msg_badread = true;
+					return;
+				}
+				while (len-- > 0)
+					MSG_ReadByte();
+			}
+			else
+			{
+				// ev_pointer without a preceding ev_integer length: no way to
+				// know the payload width - drop the message
+				msg_badread = true;
+				return;
+			}
+			break;
+		case ev_entity:
+			{
+				int e = (short)MSG_ReadShort();
+				if (e < 0 || e >= sv.num_edicts)
+				{
+					Con_Printf("client %s sent invalid entity in qcrequest\n", sv_client->name);
+					sv_client->drop = true;
+					return;
+				}
+				args[i] = 'e';
+				qcrequest_args[i].type = QCREQ_T_ENTITY;
+				qcrequest_args[i].i = EDICT_TO_PROG(&sv.edicts[e]);
+			}
+			break;
+		case ev_string:
+			args[i] = 's';
+			qcrequest_args[i].type = QCREQ_T_STRING;
+			strlcpy(qcrequest_args[i].s, MSG_ReadString(), sizeof(qcrequest_args[i].s));
+			break;
+		default:
+			// unknown wire type: don't kick the client, consume it as a long
+			// (FTE fallback width) and tag the arg UNKNOWN
+			args[i] = '?';
+			qcrequest_args[i].type = QCREQ_T_UNKNOWN;
+			MSG_ReadLong();
+			break;
+		}
+	}
+
+done:
+	args[i] = 0;
+	qcrequest_argc = i;
+	rname = MSG_ReadString();
+	if (msg_badread)
+		return;
+
+	strlcpy(qcrequest_eventname, rname, sizeof(qcrequest_eventname));
+
+	if (sv_vm)
+	{	// PR2: fixed export. self=client, arg0=argcount; the mod pulls the
+		// event name via trap_Argv(0) and arg values via the qcrequestarg trap.
+		PR2_QCRequest(sv_client->edict, qcrequest_argc);
+	}
+	else
+	{	// PR1: lookup CSEv_<name>_<args>
+		// NOTE (Package B): PR1 argument delivery (parm slots / temp-strings)
+		// is not implemented yet - CSQC is gated off for PR1 mods.
+		extern func_t ED_FindFunctionOffset (char *name);
+		char fname[128];
+		func_t f;
+
+		snprintf(fname, sizeof(fname), "CSEv_%s_%s", rname, args);
+		f = ED_FindFunctionOffset(fname);
+		if (!f && i == 0)
+		{
+			snprintf(fname, sizeof(fname), "CSEv_%s", rname);
+			f = ED_FindFunctionOffset(fname);
+		}
+		if (!f)
+		{
+			SV_ClientPrintf(sv_client, PRINT_HIGH, "qcrequest \"%s\" not supported\n", rname);
+			return;
+		}
+		pr_global_struct->self = EDICT_TO_PROG(sv_client->edict);
+		PR_ExecuteProgram(f);
+	}
+}
+#endif
+
 /*
 ===================
 SV_ExecuteClientMessage
@@ -4634,6 +4954,23 @@ void SV_ExecuteClientMessage (client_t *cl)
 			break;
 
 		case clc_delta:
+#ifdef FTE_PEXT_CSQC
+			// if the client asks for a delta from an older sequence than the
+			// last one we sent, some packets were lost - flag all CSQC ents
+			// the client already has for a full resend (simplified NACK).
+			// TODO (F8): heuristic is unverified under packet loss - add the
+			// loss scenario from docs/mvdsv_csqc_plan.md (sec. 5/6) and only tune it
+			// against measured results before changing it.
+			if (cl->pendingcsqcbits &&
+				cl->delta_sequence != -1 &&
+				(unsigned int)cl->delta_sequence < (unsigned int)cl->netchan.outgoing_sequence)
+			{
+				int e;
+				for (e = 1; e < cl->max_net_ents; e++)
+					if (cl->pendingcsqcbits[e] & SENDFLAGS_PRESENT)
+						cl->pendingcsqcbits[e] |= SENDFLAGS_USABLE;
+			}
+#endif
 			cl->delta_sequence = MSG_ReadByte ();
 			break;
 
@@ -4802,6 +5139,24 @@ void SV_ExecuteClientMessage (client_t *cl)
 #ifdef FTE_PEXT2_VOICECHAT
 		case clc_voicechat:
 			SV_VoiceReadPacket();
+			break;
+#endif
+
+#ifdef FTE_PEXT_CSQC
+		case clcfte_qcrequest:
+			if (!SV_CSQCActive())
+			{
+				// PR1 mod: CSQC is disabled, ignore the sendevent instead of dropping
+				Con_DPrintf("client %s sent qcrequest but the loaded mod is PR1 (no CSQC)\n", cl->name);
+				break;
+			}
+			if (!(cl->fteprotocolextensions & FTE_PEXT_CSQC))
+			{
+				Con_Printf("client %s sent qcrequest without CSQC extension\n", cl->name);
+				SV_DropClient(cl);
+				return;
+			}
+			SV_ReadQCRequest();
 			break;
 #endif
 		}

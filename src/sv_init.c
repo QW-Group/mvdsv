@@ -207,10 +207,35 @@ static unsigned SV_CheckModel(char *mdl)
 }
 
 #ifdef FTE_PEXT_CSQC
+// CSQC is only meaningful for a PR2 mod (native/QVM). A PR1 classic progs.dat
+// cannot drive CSQC, so with it loaded we must not load/announce csprogs and
+// must not advertise FTE_PEXT_CSQC to clients.
+qbool SV_CSQCActive(void)
+{
+	return sv_vm != NULL;
+}
+
+void SV_UpdateCSQCExtension(void)
+{
+	if (sv_vm)
+		svs.fteprotocolextensions |= FTE_PEXT_CSQC;
+	else
+		svs.fteprotocolextensions &= ~FTE_PEXT_CSQC;
+}
+
 static void SV_LoadCSQC(void)
 {
 	extern cvar_t sv_csqc_progname;
 	int size;
+
+	if (!SV_CSQCActive())
+	{
+		sv.csqcchecksum = 0;
+		Info_SetValueForStarKey(svs.info, "*csprogs", "", MAX_SERVERINFO_STRING);
+		Info_SetValueForStarKey(svs.info, "*csprogssize", "", MAX_SERVERINFO_STRING);
+		Info_SetValueForStarKey(svs.info, "*csprogsname", "", MAX_SERVERINFO_STRING);
+		return;
+	}
 
 	byte *file = FS_LoadTempFile(sv_csqc_progname.string, &size);
 	if (file)
@@ -376,10 +401,6 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 
 	sv.time = 1.0;
 
-#ifdef FTE_PEXT_CSQC
-	SV_LoadCSQC();
-#endif
-
 	// load progs to get entity field count
 	// which determines how big each edict is
 	// and allocate edicts
@@ -388,6 +409,13 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 	PR_InitPatchTables();
 #endif
 	PR_InitProg();
+
+#ifdef FTE_PEXT_CSQC
+	// after progs are loaded we know whether the mod is PR2 (CSQC-capable) or
+	// PR1 (.dat, no CSQC); recompute the advertised extension and csprogs keys.
+	SV_UpdateCSQCExtension();
+	SV_LoadCSQC();
+#endif
 
 	for (i = 0; i < sv.max_edicts; i++)
 	{

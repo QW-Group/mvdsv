@@ -39,6 +39,9 @@
 const char *pr2_ent_data_ptr;
 vm_t *sv_vm = NULL;
 extern gameData_t gamedata;
+#ifdef FTE_PEXT_CSQC
+extern sizebuf_t csqcmsgbuffer;
+#endif
 
 static int PASSFLOAT(float f)
 {
@@ -59,6 +62,11 @@ static float GETFLOAT(int i)
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
 #ifdef FTE_PEXT_CSQC
 static intptr_t EXT_SetSendNeeded(intptr_t *args);
+static intptr_t EXT_SetSendNeeded64(intptr_t *args);
+static intptr_t EXT_clientstat(intptr_t *args);
+static intptr_t EXT_pointerstat(intptr_t *args);
+static intptr_t EXT_globalstat(intptr_t *args);
+static intptr_t EXT_QCRequestArg(intptr_t *args);
 #endif
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
@@ -74,6 +82,11 @@ struct
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
 #ifdef FTE_PEXT_CSQC
 	{"setsendneeded",		EXT_SetSendNeeded},
+	{"setsendneeded64",		EXT_SetSendNeeded64},
+	{"clientstat",			EXT_clientstat},
+	{"pointerstat",			EXT_pointerstat},
+	{"globalstat",			EXT_globalstat},
+	{"qcrequestarg",		EXT_QCRequestArg},
 #endif
 };
 ext_syscall_t ext_syscall_tbl[256];
@@ -1179,9 +1192,7 @@ MESSAGE WRITING
 #define	MSG_ALL			2		// reliable to all
 #define	MSG_INIT		3		// write to the init string
 #define	MSG_MULTICAST	4		// for multicast()
-#ifdef FTE_PEXT_CSQC
-#define	MSG_CSQC		5		// for csqc
-#endif
+// MSG_CSQC (5) is defined once in server.h, not duplicated here (F11)
 
 
 sizebuf_t *WriteDest2(int dest)
@@ -1219,9 +1230,11 @@ sizebuf_t *WriteDest2(int dest)
 		return &sv.multicast;
 
 	case MSG_CSQC:
-		// Should return a reference to the CSQC message buffer managed in sv_ents.c
-		PR2_RunError("PF_Write_*: MSG_CSQC not implemented yet.");
-		return NULL;
+		// Only valid inside a GAME_EDICT_CSQCSEND call; the buffer is
+		// armed per-client inside SV_EmitCSQCUpdate (sv_ents.c).
+		if (!csqcmsgbuffer.maxsize || !csqcmsgbuffer.data)
+			PR2_RunError("PF_Write_*: MSG_CSQC outside of SendEntity method");
+		return &csqcmsgbuffer;
 
 	default:
 		PR2_RunError ("WriteDest: bad destination");
@@ -2003,8 +2016,95 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 #ifdef FTE_PEXT_CSQC
 intptr_t EXT_SetSendNeeded(intptr_t *args)
 {
-	PR2_RunError("SetSendNeeded not implemented yet.");
+	// trap_SetSendNeeded(subject, flags, to)
+	//   subject - entity number to flag
+	//   flags   - changed-field bits (shifted by SENDFLAGS_SHIFT on resend)
+	//   to      - 0 = broadcast, 1..N = specific client
+	unsigned int subject = (unsigned int)args[1];
+	uint64_t fl = (uint64_t)args[2] << SENDFLAGS_SHIFT;
+	unsigned int to = (unsigned int)args[3];
+
+	if (!to)
+	{	// broadcast
+		unsigned int i;
+		for (i = 0; i < MAX_CLIENTS; i++)
+			if (svs.clients[i].pendingcsqcbits && subject < (unsigned int)svs.clients[i].max_net_ents)
+				svs.clients[i].pendingcsqcbits[subject] |= fl;
+	}
+	else
+	{
+		to--;
+		if (to >= MAX_CLIENTS || !svs.clients[to].pendingcsqcbits || subject >= (unsigned int)svs.clients[to].max_net_ents)
+			return 0;	// some kind of error.
+		else
+			svs.clients[to].pendingcsqcbits[subject] |= fl;
+	}
 	return 0;
+}
+
+// trap_SetSendNeeded64(subject, flagslo, flagshi, to)
+ //   64-bit setsendneeded variant: the mod's mask (62 usable bits: lo = 0..31,
+ //   hi = 32..61) is passed as two ints, since VM word sizes (native and QVM)
+ //   are 32-bit. PRESENT/REMOVED (bits 0..1 of the pending word) are engine-side,
+ //   so the mask is trimmed to 62 bits BEFORE the shift to avoid touching them.
+intptr_t EXT_SetSendNeeded64(intptr_t *args)
+{
+	unsigned int subject = (unsigned int)args[1];
+	uint64_t fl = ((uint64_t)(uint32_t)args[2]) | ((uint64_t)(uint32_t)args[3] << 32);
+	unsigned int to = (unsigned int)args[4];
+
+	fl &= (SENDFLAGS_USABLE >> SENDFLAGS_SHIFT);
+	fl <<= SENDFLAGS_SHIFT;
+
+	if (!to)
+	{	// broadcast
+		unsigned int i;
+		for (i = 0; i < MAX_CLIENTS; i++)
+			if (svs.clients[i].pendingcsqcbits && subject < (unsigned int)svs.clients[i].max_net_ents)
+				svs.clients[i].pendingcsqcbits[subject] |= fl;
+	}
+	else
+	{
+		to--;
+		if (to >= MAX_CLIENTS || !svs.clients[to].pendingcsqcbits || subject >= (unsigned int)svs.clients[to].max_net_ents)
+			return 0;	// some kind of error.
+		else
+			svs.clients[to].pendingcsqcbits[subject] |= fl;
+	}
+	return 0;
+}
+
+// trap_clientstat(statnum, type, fieldoffset)
+intptr_t EXT_clientstat(intptr_t *args)
+{
+	SV_QCStatFieldIdx (args[2], args[3], args[1]);
+	return 0;
+}
+
+// trap_pointerstat(statnum, type, ptr)
+intptr_t EXT_pointerstat(intptr_t *args)
+{
+	void *ptr = VM_ArgPtr(args[3]);
+	SV_QCStatPtr (args[2], ptr, args[1]);
+	return 0;
+}
+
+// trap_globalstat(statnum, type, name)
+intptr_t EXT_globalstat(intptr_t *args)
+{
+	SV_QCStatGlobal (args[2], VMA(3), args[1]);
+	return 0;
+}
+
+// trap_qcrequestarg(idx, buf, size): copies argument idx of the qcrequest
+// currently being dispatched into the mod's buf and returns its type
+// (QCREQ_T_*, or -1 on out-of-range idx). Only meaningful inside the
+// GAME_QCREQUEST callback.
+intptr_t EXT_QCRequestArg(intptr_t *args)
+{
+	if (args[3] > 0)
+		VM_CheckBounds(sv_vm, args[2], args[3]);
+	return SV_QCRequestArg(args[1], VMA(2), args[3]);
 }
 #endif
 
@@ -2090,6 +2190,10 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		if (!strcmp(key, "colormod"))
 		{
 			return offsetof(ext_entvars_t, colourmod) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "sendflags"))
+		{
+			return offsetof(ext_entvars_t, sendflags) | GetExtFieldCookie();
 		}
 		if (!strcmp(key, "SendEntity"))
 		{

@@ -410,6 +410,9 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 	qbool       reliable;
 	vec3_t      vieworg;
 	qbool       mvd_only = false;
+#ifdef FTE_PEXT_CSQC
+	qbool       csqc_only = false;
+#endif
 
 	reliable = false;
 
@@ -442,6 +445,27 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 		SV_Error ("SV_Multicast: bad to:%i", to);
 	}
 
+#ifdef FTE_PEXT_CSQC
+	// svc_fte_cgamepacket (ssqc->csqc) only makes sense for CSQC clients.
+	// Convert to the sized variant under sv_csqcdebug (mirror of FTE net_preparse).
+	if (sv.multicast.cursize > 0 && sv.multicast.data[0] == svc_fte_cgamepacket)
+	{
+		int payload_len = sv.multicast.cursize - 1;
+
+		if ((int)sv_csqcdebug.value && sv.multicast.cursize + 2 <= sv.multicast.maxsize)
+		{
+			// buffer: [83][payload] -> [90][lenlo][lenhi][payload]
+			memmove(sv.multicast.data + 3, sv.multicast.data + 1, payload_len);
+			sv.multicast.data[0] = svc_fte_cgamepacket_sized;
+			sv.multicast.data[1] = payload_len & 0xff;
+			sv.multicast.data[2] = (payload_len >> 8) & 0xff;
+			sv.multicast.cursize += 2;
+		}
+
+		csqc_only = true;
+	}
+#endif
+
 	// send the data to all relevent clients
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS && !mvd_only; j++, client++)
 	{
@@ -451,6 +475,11 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 			continue;
 		if (SV_SkipCommsBotMessage(client))
 			continue;
+#ifdef FTE_PEXT_CSQC
+		// svc_fte_cgamepacket is CSQC-only
+		if (csqc_only && !(client->fteprotocolextensions & FTE_PEXT_CSQC))
+			continue;
+#endif
 
 		if (!mask)
 			goto inrange; // multicast to all
@@ -834,6 +863,158 @@ Performs a delta update of the stats array.  This should only be performed
 when a reliable message can be delivered this frame.
 =======================
 */
+#ifdef FTE_PEXT_CSQC
+// etype codes passed by mods (FTE convention; mvdsv's own etype_t lacks ev_integer)
+#define CSQC_EV_FLOAT		2
+#define CSQC_EV_VECTOR		3
+#define CSQC_EV_ENTITY		4
+#define CSQC_EV_INTEGER		8
+
+typedef struct
+{
+	int		type;		// CSQC_EV_*
+	int		statnum;	// 32..127
+	int		fieldofs;	// clientstat: offset into entvars (0 if pointerstat)
+	void	*ptr;		// pointerstat: resolved host pointer (NULL if clientstat)
+	qbool	isfield;	// true = clientstat (per-client field), false = pointerstat (global)
+} qcstat_t;
+
+static qcstat_t qcstats[MAX_CL_STATS];
+static unsigned int numqcstats;
+
+// byte size of the value the mod reads for a given stat type (used to bound
+// the field offset against the entvars block)
+static int qcstat_type_size(int type)
+{
+	switch (type)
+	{
+	case CSQC_EV_FLOAT:
+	case CSQC_EV_ENTITY:
+	case CSQC_EV_INTEGER:
+		return 4;
+	case CSQC_EV_VECTOR:
+		return 12;
+	default:
+		return -1;
+	}
+}
+
+// progs (re)loaded (new map / new mod): drop all registered stats so stale
+// pointerstat pointers into the old VM are never dereferenced and re-registration
+// on the next map does not hit "Too many csqc stats".
+void SV_ClearQCStats(void)
+{
+	numqcstats = 0;
+}
+
+static void SV_QCStatEval(int type, int statnum, int fieldofs, void *ptr, qbool isfield)
+{
+	unsigned int i;
+
+	if (statnum < 32 || statnum >= MAX_CL_STATS)
+	{
+		Con_Printf("csqc stat %i out of range (32..%i)\n", statnum, MAX_CL_STATS - 1);
+		return;
+	}
+
+	if (type == CSQC_EV_VECTOR && statnum + 2 >= MAX_CL_STATS)
+	{	// a vector stat occupies 3 consecutive slots (statnum..statnum+2)
+		Con_Printf("csqc vector stat %i needs slots %i..%i (max %i)\n", statnum, statnum, statnum + 2, MAX_CL_STATS - 1);
+		return;
+	}
+
+	for (i = 0; i < numqcstats; i++)
+		if (qcstats[i].statnum == statnum)
+			break;
+
+	if (i == numqcstats)
+	{
+		if (i == sizeof(qcstats) / sizeof(qcstats[0]))
+		{
+			Con_Printf("Too many csqc stats specified\n");
+			return;
+		}
+		numqcstats++;
+	}
+
+	qcstats[i].type = type;
+	qcstats[i].statnum = statnum;
+	qcstats[i].fieldofs = fieldofs;
+	qcstats[i].ptr = ptr;
+	qcstats[i].isfield = isfield;
+}
+
+// clientstat: register a per-client stat from a field offset into the mod's entvars
+void SV_QCStatFieldIdx(int type, unsigned int fieldindex, int statnum)
+{
+	int sz = qcstat_type_size(type);
+
+	// the engine later reads (ent->v + fieldofs) up to sz bytes; make sure the
+	// index stays within one entity's entvars block (pr_edict_size bytes)
+	if (sz < 0 || fieldindex > (unsigned int)pr_edict_size
+		|| (unsigned int)sz > (unsigned int)pr_edict_size - fieldindex)
+	{
+		Con_Printf("csqc clientstat field index %u+%d out of entvars (%d)\n",
+			fieldindex, sz, pr_edict_size);
+		return;
+	}
+
+	SV_QCStatEval(type, statnum, fieldindex, NULL, true);
+}
+
+// pointerstat: register a global stat from a resolved host pointer
+void SV_QCStatPtr(int type, void *ptr, int statnum)
+{
+	SV_QCStatEval(type, statnum, 0, ptr, false);
+}
+
+// globalstat: resolve a global by name. PR2 has no name-based global lookup,
+// so this is a no-op that logs (use pointerstat instead).
+void SV_QCStatGlobal(int type, const char *name, int statnum)
+{
+	Con_Printf("globalstat \"%s\" unsupported on PR2, use pointerstat\n", name);
+}
+
+void SV_UpdateQCStats(edict_t *ent, int *stats)
+{
+	unsigned int i;
+
+	for (i = 0; i < numqcstats; i++)
+	{
+		eval_t *eval;
+		qcstat_t *q = &qcstats[i];
+
+		if (q->isfield)
+			eval = (eval_t *)((byte *)ent->v + q->fieldofs);
+		else
+			eval = (eval_t *)q->ptr;
+
+		if (!eval)
+			continue;
+
+		switch (q->type)
+		{
+		case CSQC_EV_FLOAT:
+			stats[q->statnum] = (int)eval->_float;
+			break;
+		case CSQC_EV_VECTOR:
+			stats[q->statnum + 0] = (int)eval->vector[0];
+			stats[q->statnum + 1] = (int)eval->vector[1];
+			stats[q->statnum + 2] = (int)eval->vector[2];
+			break;
+		case CSQC_EV_ENTITY:
+			stats[q->statnum] = NUM_FOR_EDICT(PROG_TO_EDICT(eval->edict));
+			break;
+		case CSQC_EV_INTEGER:
+			stats[q->statnum] = eval->_int;
+			break;
+		default:
+			break;
+		}
+	}
+}
+#endif
+
 void SV_UpdateClientStats (client_t *client)
 {
 	edict_t *ent;
@@ -876,6 +1057,15 @@ void SV_UpdateClientStats (client_t *client)
 
 	if (ent->v->health > 0 || client->spectator) // viewheight for PF_DEAD & PF_GIB is hardwired
 		stats[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
+
+#ifdef FTE_PEXT_CSQC
+	// clientstat/pointerstat registered stats (32..127), only for CSQC clients.
+	// TODO (F13): gate decision - csqcactive vs FTE_PEXT_CSQC ext. Kept on the
+	// ext gate by default: a CSQC-capable client that never runs csqc simply
+	// ignores the extra stats, and csqcactive implies the ext anyway.
+	if (client->fteprotocolextensions & FTE_PEXT_CSQC)
+		SV_UpdateQCStats (ent, stats);
+#endif
 
 	for (i=0 ; i<MAX_CL_STATS ; i++)
 		if (stats[i] != client->stats[i])
@@ -1106,6 +1296,10 @@ void SV_SendClientMessages (void)
 		if (!c->state)
 			continue;
 
+#ifdef FTE_PEXT_CSQC
+		SV_ProcessSendFlags (c);
+#endif
+
 		if (c->drop)
 		{
 			SV_DropClient(c);
@@ -1192,6 +1386,12 @@ void SV_SendClientMessages (void)
 			c->datagram.cursize = 0;
 		}
 	}
+
+#ifdef FTE_PEXT_CSQC
+	if (sv.mvdrecording)
+		SV_ProcessSendFlags (&demo.recorder);
+	SV_CleanupEnts ();
+#endif
 }
 
 static void SV_BotWriteDamage(client_t* c, int i)
@@ -1273,6 +1473,14 @@ void MVD_WriteStats(void)
 
 		// stuff the sigil bits into the high bits of items for sbar
 		stats[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
+
+#ifdef FTE_PEXT_CSQC
+		// clientstat/pointerstat registered stats (32..127) - only for the
+		// MVD recorder, which has FTE_PEXT_CSQC set while recording.
+		// TODO (F13): same csqcactive-vs-ext gate question as SV_UpdateClientStats.
+		if (demo.recorder.fteprotocolextensions & FTE_PEXT_CSQC)
+			SV_UpdateQCStats (ent, stats);
+#endif
 
 		for (j = 0 ; j < MAX_CL_STATS; j++)
 		{

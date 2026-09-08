@@ -117,7 +117,7 @@ typedef struct
 
 	// the signon buffer will be sent to each client as they connect
 	// includes the entity baselines, the static entities, etc
-	// large levels will have >MAX_DATAGRAM sized signons, so 
+	// large levels will have >MAX_DATAGRAM sized signons, so
 	// multiple signon messages are kept
 	sizebuf_t      signon;
 	unsigned int   num_signon_buffers;
@@ -132,6 +132,38 @@ typedef struct
 	unsigned int	csqcchecksum;
 #endif
 } server_t;
+
+#ifdef FTE_PEXT_CSQC
+
+#define MSG_CSQC		5		// for csqc (pr2_cmds.c WriteDest2)
+
+// per-entity CSQC delta flags, mirror of FTE server.h SENDFLAGS_*
+#define SENDFLAGS_PRESENT	0x1u	// this entity is present on that client
+#define SENDFLAGS_REMOVED	0x2u	// to handle remove packetloss
+#define SENDFLAGS_RESERVED	(SENDFLAGS_PRESENT|SENDFLAGS_REMOVED)
+#define SENDFLAGS_SHIFT		2u
+#define SENDFLAGS_USABLE	(~(uint64_t)SENDFLAGS_RESERVED)	// bits actually safe in a float
+
+// CSQC pvsflags bit
+#define PVSF_NOREMOVE		0x80
+
+// sv_ents.c
+extern sizebuf_t csqcmsgbuffer;
+// sv_main.c
+extern cvar_t sv_csqcdebug;
+// sv_init.c
+qbool SV_CSQCActive (void);   // true if a PR2 mod (native/QVM) is loaded; PR1 (.dat) -> false
+void SV_UpdateCSQCExtension (void); // set/clear FTE_PEXT_CSQC in svs.fteprotocolextensions by mod type
+// sv_send.c
+void SV_ClearQCStats (void);
+void SV_QCStatFieldIdx (int type, unsigned int fieldindex, int statnum);
+void SV_QCStatPtr (int type, void *ptr, int statnum);
+void SV_QCStatGlobal (int type, const char *name, int statnum);
+void SV_UpdateQCStats (edict_t *ent, int *stats);
+// sv_user.c - state of the qcrequest (sendevent) currently being dispatched
+const char *SV_QCRequestName (void);	// event name (via trap_Argv(0) in the game)
+int SV_QCRequestArg (int idx, void *dst, size_t dstsize);	// copies arg, returns QCREQ_T_* / -1
+#endif
 
 #define	NUM_SPAWN_PARMS 16
 
@@ -350,6 +382,8 @@ typedef struct client_s
 
 #ifdef FTE_PEXT_CSQC
 	qbool			csqcactive;
+	uint64_t		*pendingcsqcbits;	// per-entity CSQC delta bits, size max_net_ents
+	int				max_net_ents;		// actual size of pendingcsqcbits
 #endif
 
 	//===== NETWORK ============
@@ -398,6 +432,12 @@ typedef struct client_s
 		float    last_sidemove;     // Previous frame's sidemove value
 	} safestrafe;
 } client_t;
+
+#ifdef FTE_PEXT_CSQC
+// sv_ents.c
+void SV_ProcessSendFlags (client_t *c);
+void SV_CleanupEnts (void);
+#endif
 
 // a client can leave the server in one of four ways:
 // dropping properly by quiting or disconnecting
@@ -1079,15 +1119,15 @@ void SV_Heartbeat_f (void);
 void Master_Shutdown (void);
 void Master_Heartbeat (void);
 
-// sv_save.c 
-void SV_SaveGame_f (void); 
-void SV_LoadGame_f (void); 
+// sv_save.c
+void SV_SaveGame_f (void);
+void SV_LoadGame_f (void);
 
 //
 void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force);
 qbool SV_SkipCommsBotMessage(client_t* client);
 
-// 
+//
 #ifdef SERVERONLY
 #include "central.h"
 #else

@@ -207,6 +207,7 @@ cvar_t sv_pext_ezquake_verfortrans = {"pext_ezquake_verfortrans", "7814", CVAR_N
 
 #ifdef FTE_PEXT_CSQC
 cvar_t sv_csqc_progname = { "sv_csqc_progname", "csprogs.dat" };
+cvar_t sv_csqcdebug = { "sv_csqcdebug", "0", CVAR_NONE };
 #endif
 
 qbool sv_error = false;
@@ -438,6 +439,12 @@ void SV_DropClient(client_t* drop)
 
 #ifdef FTE_PEXT_CSQC
 	drop->csqcactive = false;
+	if (drop->pendingcsqcbits)
+	{
+		Q_free(drop->pendingcsqcbits);
+		drop->pendingcsqcbits = NULL;
+	}
+	drop->max_net_ents = 0;
 #endif
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);
@@ -3608,6 +3615,7 @@ void SV_InitLocal (void)
 
 #ifdef FTE_PEXT_CSQC
 	Cvar_Register (&sv_csqc_progname);
+	Cvar_Register (&sv_csqcdebug);
 #endif
 
 // QW262 -->
@@ -3657,9 +3665,8 @@ void SV_InitLocal (void)
 #ifdef FTE_PEXT_COLOURMOD
 	svs.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
 #endif
-#ifdef FTE_PEXT_CSQC
-	svs.fteprotocolextensions |= FTE_PEXT_CSQC;
-#endif
+// FTE_PEXT_CSQC is NOT set here: it is added/removed per map in
+// SV_UpdateCSQCExtension() (sv_init.c) depending on whether a PR2 mod is loaded.
 
 #ifdef FTE_PEXT2_VOICECHAT
 	svs.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;
