@@ -2043,10 +2043,10 @@ intptr_t EXT_SetSendNeeded(intptr_t *args)
 }
 
 // trap_SetSendNeeded64(subject, flagslo, flagshi, to)
-//   64-битный вариант setsendneeded: маска мода (62 usable бита: lo = 0..31,
-//   hi = 32..61) передаётся двумя int, т.к. границы VM (native и QVM)
-//   32-битны. PRESENT/REMOVED (биты 0..1 pending-слова) движковые — маска
-//   режется до 62 бит ДО сдвига, чтобы не задеть их.
+ //   64-bit setsendneeded variant: the mod's mask (62 usable bits: lo = 0..31,
+ //   hi = 32..61) is passed as two ints, since VM word sizes (native and QVM)
+ //   are 32-bit. PRESENT/REMOVED (bits 0..1 of the pending word) are engine-side,
+ //   so the mask is trimmed to 62 bits BEFORE the shift to avoid touching them.
 intptr_t EXT_SetSendNeeded64(intptr_t *args)
 {
 	unsigned int subject = (unsigned int)args[1];

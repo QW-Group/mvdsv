@@ -117,7 +117,7 @@ typedef struct
 
 	// the signon buffer will be sent to each client as they connect
 	// includes the entity baselines, the static entities, etc
-	// large levels will have >MAX_DATAGRAM sized signons, so 
+	// large levels will have >MAX_DATAGRAM sized signons, so
 	// multiple signon messages are kept
 	sizebuf_t      signon;
 	unsigned int   num_signon_buffers;
@@ -134,25 +134,6 @@ typedef struct
 } server_t;
 
 #ifdef FTE_PEXT_CSQC
-// CSQC wire message numbers. Not in the qwprot revision mvdsv pins (master
-// still labels 83 as the dead svc_qizmovoice and has no CSQC game-packet/
-// qcrequest messages, and svc_fte_csqcentities_sized is a later upstream
-// addition), so they live here. Numbering matches FTE (fteqw engine/common/
-// protocol.h: svcfte_cgamepacket 83, svcfte_cgamepacket_sized 90,
-// clcfte_qcrequest 81; svc_fte_csqcentities_sized 92).
-// #ifndef guards keep this compiling once upstream qwprot defines the names.
-#ifndef svc_fte_csqcentities_sized
-#define svc_fte_csqcentities_sized	92	// as svc_fte_csqcentities, with a length prefix per update (sv_csqcdebug)
-#endif
-#ifndef svc_fte_cgamepacket
-#define svc_fte_cgamepacket		83	// ssqc->csqc game packets, only via multicast
-#endif
-#ifndef svc_fte_cgamepacket_sized
-#define svc_fte_cgamepacket_sized	90	// cgamepacket with a short length prefix (sv_csqcdebug)
-#endif
-#ifndef clcfte_qcrequest
-#define clcfte_qcrequest	81	// CSQC sendevent (client -> server)
-#endif
 
 #define MSG_CSQC		5		// for csqc (pr2_cmds.c WriteDest2)
 
@@ -1138,15 +1119,15 @@ void SV_Heartbeat_f (void);
 void Master_Shutdown (void);
 void Master_Heartbeat (void);
 
-// sv_save.c 
-void SV_SaveGame_f (void); 
-void SV_LoadGame_f (void); 
+// sv_save.c
+void SV_SaveGame_f (void);
+void SV_LoadGame_f (void);
 
 //
 void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force);
 qbool SV_SkipCommsBotMessage(client_t* client);
 
-// 
+//
 #ifdef SERVERONLY
 #include "central.h"
 #else

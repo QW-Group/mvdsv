@@ -226,9 +226,9 @@ typedef enum
 	GAME_PAUSED_TIC,			// ( int duration_msec );	// duration is in msecs
 	GAME_CLEAR_EDICT,           // (self)
 #ifdef FTE_PEXT_CSQC
-	GAME_EDICT_CSQCSEND = 200,	// (self,other,int sendflags_lo,int sendflags_hi) — 64-битная
-								//   маска sendflags как два int (62 usable бита; fteqw передаёт
-								//   только младшее слово, hi=0)
+	GAME_EDICT_CSQCSEND = 200,	// (self,other,int sendflags_lo,int sendflags_hi) — 64-bit
+								//   sendflags mask as two ints (62 usable bits; fteqw passes
+								//   only the low word, hi=0)
 	GAME_QCREQUEST,				// CSQC sendevent: (self=client, arg0=argcount). The game pulls
 								//   the event name via trap_argv(0) (single raw arg, not tokenized)
 								//   and typed arg values via the qcrequestarg extension trap.

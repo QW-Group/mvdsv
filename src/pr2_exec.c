@@ -507,8 +507,8 @@ qbool PR2_SendEntity(edict_t* e, edict_t* to, uint64_t sendflags)
 	pr_global_struct->other = to ? EDICT_TO_PROG(to) : 0;
 	if (sv_vm)
 	{
-		// QVM/native границы 32-битны: 64-битная маска идёт двумя int
-		// (lo = биты 0..31, hi = биты 32..61; PRESENT/REMOVED остаются в движке).
+		// QVM/native word sizes are 32-bit: the 64-bit mask goes as two ints
+		// (lo = bits 0..31, hi = bits 32..61; PRESENT/REMOVED stay engine-side).
 		ret_val = VM_Call(sv_vm, 2, GAME_EDICT_CSQCSEND, (int)(uint32_t)sendflags, (int)(sendflags >> 32), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	}
 	pr_global_struct->self = old_self;
