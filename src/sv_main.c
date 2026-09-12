@@ -444,7 +444,7 @@ void SV_DropClient(client_t* drop)
 	Info_RemoveAll(&drop->_userinfoshort_ctx_);
 
 	// send notification to all remaining clients
-	SV_FullClientUpdate(drop, &sv.reliable_datagram);
+	SV_QueueFullClientUpdate(drop);
 }
 
 
@@ -534,6 +534,25 @@ void SV_FullClientUpdate (client_t *client, sizebuf_t *buf)
 }
 
 /*
+=======================
+SV_FullClientUpdateSize
+
+Returns the number of bytes SV_FullClientUpdate() will append for client.
+=======================
+*/
+int SV_FullClientUpdateSize (client_t *client)
+{
+	char info[MAX_EXT_INFO_STRING];
+
+	Info_ReverseConvert(&client->_userinfoshort_ctx_, info, sizeof(info));
+	Info_RemovePrefixedKeys(info, '_');
+
+	/* updatefrags (4), updateping (4), updatepl (3), updateentertime (6),
+	 * and the updateuserinfo opcode, client number, userid and NUL (7). */
+	return 24 + strlen(info);
+}
+
+/*
 ===================
 SV_FullClientUpdateToClient
 
@@ -542,11 +561,7 @@ Writes all update values to a client's reliable stream
 */
 void SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 {
-	char info[MAX_EXT_INFO_STRING];
-
-	Info_ReverseConvert(&client->_userinfoshort_ctx_, info, sizeof(info));
-
-	ClientReliableCheckBlock(cl, 24 + strlen(info));
+	ClientReliableCheckBlock(cl, SV_FullClientUpdateSize(client));
 	if (cl->num_backbuf)
 	{
 		SV_FullClientUpdate (client, &cl->backbuf);
