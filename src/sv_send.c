@@ -1000,22 +1000,24 @@ static void SV_FlushReliableDatagram (void)
 SV_QueueFullClientUpdate
 
 Appends a complete client roster update to the shared reliable staging buffer.
-Flushes the current batch first when adding this update would exceed the
-largest reliable packet every client can accept.
+Flushes the current batch first to keep roster-generated batches strictly
+below the smallest client reliable buffer size.
 =======================
 */
-void SV_QueueFullClientUpdate (client_t *client)
+static void SV_QueueFullClientUpdate (client_t *client)
 {
-	int update_size = SV_FullClientUpdateSize(client);
+	byte data[MAX_MSGLEN];
+	sizebuf_t msg;
 
-	/* Client reliable buffers are allowed to be smaller than the
-	 * MAX_MSGLEN-sized global staging buffer.  Keep each complete
-	 * roster update in a batch that every client can accept. */
-	if (sv.reliable_datagram.cursize
-		&& sv.reliable_datagram.cursize + update_size >= MIN_MTU)
+	SZ_Init(&msg, data, sizeof(data));
+	SV_FullClientUpdate(client, &msg);
+
+	/* Keep roster-generated batches strictly below MIN_MTU, the smallest
+	 * client reliable buffer size. */
+	if (sv.reliable_datagram.cursize + msg.cursize >= MIN_MTU)
 		SV_FlushReliableDatagram();
 
-	SV_FullClientUpdate (client, &sv.reliable_datagram);
+	SZ_Write(&sv.reliable_datagram, msg.data, msg.cursize);
 }
 
 /*
@@ -1032,14 +1034,19 @@ static void SV_UpdateToReliableMessages (void)
 	// check for changes to be sent over the reliable streams to all clients
 	for (i=0, sv_client = svs.clients ; i<MAX_CLIENTS ; i++, sv_client++)
 	{
-		if (sv_client->state != cs_spawned)
-			continue;
-
-		if (sv_client->sendinfo)
+		/* Keep connection-time sendinfo pending until the client is spawned.
+		 * Free/zombie states are deferred roster-removal notifications. */
+		if (sv_client->sendinfo
+			&& (sv_client->state == cs_free
+				|| sv_client->state == cs_zombie
+				|| sv_client->state == cs_spawned))
 		{
 			sv_client->sendinfo = false;
 			SV_QueueFullClientUpdate (sv_client);
 		}
+
+		if (sv_client->state != cs_spawned)
+			continue;
 
 		ent = sv_client->edict;
 

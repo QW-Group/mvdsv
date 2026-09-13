@@ -799,8 +799,6 @@ void SV_DropClient (client_t *drop);
 
 int SV_CalcPing (client_t *cl);
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
-int SV_FullClientUpdateSize (client_t *client);
-void SV_QueueFullClientUpdate (client_t *client);
 void SV_FullClientUpdateToClient (client_t *client, client_t *cl);
 
 qbool SV_CheckBottom (edict_t *ent);

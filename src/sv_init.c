@@ -283,12 +283,7 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 			svs.clients[i].state = cs_free;
 			Info_RemoveAll(&svs.clients[i]._userinfo_ctx_);
 			Info_RemoveAll(&svs.clients[i]._userinfoshort_ctx_);
-			/*
-			 * SV_QueueFullClientUpdate(&svs.clients[i]);
-			 *
-			 * Do not queue a roster update while tearing down the old map:
-			 * sv is cleared below, and queueing could flush old-map reliable data.
-			 */
+			/* No roster update needed: sv is cleared below and clients re-sign on. */
 			svs.clients[i].isBot = 0;
 		}
 	}
