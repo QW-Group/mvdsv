@@ -104,21 +104,29 @@ endif()
 
 ######################################################################################################
 
-# Check for PCRE. if found, include it; if not found, use bundled PCRE.
-find_library(PCRE_LIBRARIES pcre)
-if(PCRE_LIBRARIES)
-	set(PCRE_FOUND 1)
-	find_path(PCRE_INCLUDE_DIR pcre.h)
-endif(PCRE_LIBRARIES)
-
-if(NOT PCRE_FOUND)
-	message(STATUS "PCRE library not found. Using bundled PCRE instead.")
-	list(APPEND SRC_COMMON
-	    "${DIR_SRC}/pcre/get.c"
-	    "${DIR_SRC}/pcre/pcre.c"
-	)
+# On Unix, dynamically link the system PCRE2. On Windows, build from vendored source.
+if(UNIX)
+	find_library(PCRE_LIBRARIES pcre2-8)
+	if(PCRE_LIBRARIES)
+		set(PCRE_FOUND 1)
+		find_path(PCRE_INCLUDE_DIR pcre2.h)
+	endif()
+	if(PCRE_FOUND)
+		message(STATUS "Found PCRE: ${PCRE_LIBRARIES}")
+	else()
+		message(FATAL_ERROR "PCRE library not found.")
+	endif()
 else()
-	message(STATUS "Found PCRE: ${PCRE_LIBRARIES}")
+	message(STATUS "Using vendored PCRE2 from vendor/pcre2")
+	set(PCRE2_BUILD_PCRE2_8  ON  CACHE BOOL "" FORCE)
+	set(PCRE2_BUILD_PCRE2_16 OFF CACHE BOOL "" FORCE)
+	set(PCRE2_BUILD_PCRE2_32 OFF CACHE BOOL "" FORCE)
+	set(PCRE2_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+	set(PCRE2_BUILD_PCRE2GREP OFF CACHE BOOL "" FORCE)
+	set(BUILD_SHARED_LIBS    OFF CACHE BOOL "" FORCE)
+	add_subdirectory(vendor/pcre2 EXCLUDE_FROM_ALL)
+	set(PCRE_FOUND 1)
+	set(PCRE_LIBRARIES pcre2-8-static)
 endif()
 
 ######################################################################################################

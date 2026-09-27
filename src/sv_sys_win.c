@@ -172,8 +172,10 @@ static dir_t listdir_internal(const char *path, const char *ext,
 	qbool all;
 
 	int	r;
-	pcre	*preg;
-	const char	*errbuf;
+	size_t erroffset;
+	pcre2_code *preg = NULL;
+	pcre2_match_data *md = NULL;
+	PCRE2_UCHAR errbuf[120];
 
 	memset(list, 0, sizeof(list));
 	memset(&dir, 0, sizeof(dir));
@@ -182,19 +184,25 @@ static dir_t listdir_internal(const char *path, const char *ext,
 	dir.is_metadata_valid = read_metadata;
 	all = !strncmp(ext, ".*", 3);
 	if (!all)
-		if (!(preg = pcre_compile(ext, PCRE_CASELESS, &errbuf, &r, NULL)))
+	{
+		if (!(preg = pcre2_compile((PCRE2_SPTR)ext, PCRE2_ZERO_TERMINATED, PCRE2_CASELESS, &r, &erroffset, NULL)))
 		{
-			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
-			           ext, errbuf, r);
-			Q_free(preg);
+			pcre2_get_error_message(r, errbuf, sizeof(errbuf));
+			Con_Printf("Sys_listdir: pcre2_compile(%s) error: %s at offset %lu\n",
+			           ext, errbuf, erroffset);
 			return dir;
 		}
+		md = pcre2_match_data_create_from_pattern(preg, NULL);
+	}
 
 	snprintf(pathname, sizeof(pathname), "%s/*.*", path);
 	if ((h = FindFirstFile (pathname , &fd)) == INVALID_HANDLE_VALUE)
 	{
 		if (!all)
-			Q_free(preg);
+		{
+			pcre2_match_data_free(md);
+			pcre2_code_free(preg);
+		}
 		return dir;
 	}
 
@@ -204,16 +212,17 @@ static dir_t listdir_internal(const char *path, const char *ext,
 			continue;
 		if (!all)
 		{
-			switch (r = pcre_exec(preg, NULL, fd.cFileName,
-			                      strlen(fd.cFileName), 0, 0, NULL, 0))
+			r = pcre2_match(preg, (PCRE2_SPTR)fd.cFileName,
+			                strlen(fd.cFileName), 0, 0, md, NULL);
+			if (r == PCRE2_ERROR_NOMATCH)
+				continue;
+			else if (r < 0)
 			{
-			case 0: break;
-			case PCRE_ERROR_NOMATCH: continue;
-			default:
-				Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
+				Con_Printf("Sys_listdir: pcre2_match(%s, %s) error code: %d\n",
 				           ext, fd.cFileName, r);
-				if (!all)
-					Q_free(preg);
+				pcre2_match_data_free(md);
+				pcre2_code_free(preg);
+				FindClose(h);
 				return dir;
 			}
 		}
@@ -243,7 +252,10 @@ static dir_t listdir_internal(const char *path, const char *ext,
 
 	FindClose (h);
 	if (!all)
-		Q_free(preg);
+	{
+		pcre2_match_data_free(md);
+		pcre2_code_free(preg);
+	}
 
 	switch (sort_type)
 	{
