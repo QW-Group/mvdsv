@@ -924,7 +924,7 @@ when a reliable message can be delivered this frame.
 typedef struct
 {
 	int		type;		// CSQC_EV_*
-	int		statnum;	// 32..127
+	int		statnum;	// 32..255
 	int		fieldofs;	// clientstat: offset into entvars (0 if pointerstat)
 	void	*ptr;		// pointerstat: resolved host pointer (NULL if clientstat)
 	qbool	isfield;	// true = clientstat (per-client field), false = pointerstat (global)
@@ -1115,7 +1115,7 @@ void SV_UpdateQCStats(edict_t *ent, int *statsi, float *statsf, const char **sta
 }
 
 // Whether a stats destination (a live client or the MVD recorder) wants the
-// clientstat/pointerstat range 32..127 emitted. Live clients: gate on the
+// clientstat/pointerstat range 32..255 emitted. Live clients: gate on the
 // negotiated FTE_PEXT_CSQC ext - a CSQC-capable client that never runs csqc
 // ignores the extra stats, and csqcactive implies the ext anyway. The
 // recorder only gets FTE_PEXT_CSQC when sv_mvd_csqc is set (SV_MVD_Record),
@@ -1177,7 +1177,7 @@ void SV_UpdateClientStats (client_t *client)
 		statsi[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
 
 #ifdef FTE_PEXT_CSQC
-	// clientstat/pointerstat registered stats (32..127), only for CSQC clients.
+	// clientstat/pointerstat registered stats (32..255), only for CSQC clients.
 	if (SV_WantsQCStats (client))
 		SV_UpdateQCStats (ent, statsi, statsf, statss);
 #endif
@@ -1663,7 +1663,7 @@ void MVD_WriteStats(void)
 		statsi[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
 
 #ifdef FTE_PEXT_CSQC
-		// clientstat/pointerstat registered stats (32..127) for the recorder.
+		// clientstat/pointerstat registered stats (32..255) for the recorder.
 		if (SV_WantsQCStats (&demo.recorder))
 			SV_UpdateQCStats (ent, statsi, statsf, statss);
 #endif

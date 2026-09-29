@@ -901,7 +901,7 @@ void SV_DropClient (client_t *drop);
 // sv_ents.c - CSQC loss recovery (FTE SV_AckEntityFrame / SV_CSQC_DroppedPacket)
 void SV_AckEntityFrame (client_t *client, int framenum);
 void SV_CSQC_DroppedPacket (client_t *client, int sequence);
-// sv_send.c - emit CSQC stats 32..127 to this destination (live client / recorder)
+// sv_send.c - emit CSQC stats 32..255 to this destination (live client / recorder)
 qbool SV_WantsQCStats (client_t *client);
 #endif
 

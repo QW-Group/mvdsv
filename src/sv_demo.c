@@ -52,7 +52,7 @@ cvar_t	sv_ondemoremove		= {"sv_onDemoRemove",	""};
 cvar_t	sv_demoRegexp		= {"sv_demoRegexp",		"\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
 cvar_t	sv_silentrecord		= {"sv_silentrecord",   "0"};
-// opt-in: record the CSQC stream (svc 76/83, stats 32..127) into MVD/QTV. Off
+// opt-in: record the CSQC stream (svc 76/83, stats 32..255) into MVD/QTV. Off
 // by default because stock ezQuake/QTV cannot parse it.
 cvar_t	sv_mvd_csqc			= {"sv_mvd_csqc",		"0"};
 
@@ -1725,7 +1725,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 		statsi[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
 
 #ifdef FTE_PEXT_CSQC
-		// clientstat/pointerstat registered stats (32..127) for the recorder.
+		// clientstat/pointerstat registered stats (32..255) for the recorder.
 		if (SV_WantsQCStats (&demo.recorder))
 			SV_UpdateQCStats (ent, statsi, statsf, statss);
 #endif
