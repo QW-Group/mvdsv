@@ -2427,7 +2427,7 @@ int PF2_Add_Bot(char *name, int bottomcolor, int topcolor, char *skin)
 
 	newcl->disable_updates_stop = -1.0;	// Vladis
 
-	SV_FullClientUpdate( newcl, &sv.reliable_datagram );
+	newcl->sendinfo = true;
 
 	old_self = pr_global_struct->self;
 	pr_global_struct->time = sv.time;
@@ -2458,7 +2458,7 @@ void RemoveBot(client_t *cl)
 	Info_RemoveAll(&cl->_userinfo_ctx_);
 	Info_RemoveAll(&cl->_userinfoshort_ctx_);
 
-	SV_FullClientUpdate( cl, &sv.reliable_datagram );
+	cl->sendinfo = true;
 	cl->isBot = 0;
 }
 

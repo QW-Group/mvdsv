@@ -302,7 +302,7 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 			svs.clients[i].state = cs_free;
 			Info_RemoveAll(&svs.clients[i]._userinfo_ctx_);
 			Info_RemoveAll(&svs.clients[i]._userinfoshort_ctx_);
-			SV_FullClientUpdate(&svs.clients[i], &sv.reliable_datagram);
+			/* No roster update needed: sv is cleared below and clients re-sign on. */
 			svs.clients[i].isBot = 0;
 		}
 	}

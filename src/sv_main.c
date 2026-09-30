@@ -458,8 +458,8 @@ void SV_DropClient(client_t* drop)
 	Info_RemoveAll(&drop->_userinfo_ctx_);
 	Info_RemoveAll(&drop->_userinfoshort_ctx_);
 
-	// send notification to all remaining clients
-	SV_FullClientUpdate(drop, &sv.reliable_datagram);
+	// send notification to all remaining clients at the end of the frame
+	drop->sendinfo = true;
 }
 
 
@@ -557,18 +557,14 @@ Writes all update values to a client's reliable stream
 */
 void SV_FullClientUpdateToClient (client_t *client, client_t *cl)
 {
-	char info[MAX_EXT_INFO_STRING];
+	byte data[MAX_MSGLEN];
+	sizebuf_t msg;
 
-	Info_ReverseConvert(&client->_userinfoshort_ctx_, info, sizeof(info));
+	SZ_Init(&msg, data, sizeof(data));
+	SV_FullClientUpdate(client, &msg);
 
-	ClientReliableCheckBlock(cl, 24 + strlen(info));
-	if (cl->num_backbuf)
-	{
-		SV_FullClientUpdate (client, &cl->backbuf);
-		ClientReliable_FinishWrite(cl);
-	}
-	else
-		SV_FullClientUpdate (client, &cl->netchan.message);
+	ClientReliableCheckBlock(cl, msg.cursize);
+	ClientReliableWrite_SZ(cl, msg.data, msg.cursize);
 }
 
 //Returns a unique userid in [1..MAXUSERID] range

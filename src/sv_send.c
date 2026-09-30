@@ -1325,6 +1325,69 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 
 /*
 =======================
+SV_FlushReliableDatagram
+
+Delivers the staged broadcast reliable data to each connected client, writes
+the same data to an MVD recording, and clears the shared staging buffer.
+=======================
+*/
+static void SV_FlushReliableDatagram (void)
+{
+	int j;
+	client_t *client;
+
+	if (!sv.reliable_datagram.cursize)
+		return;
+
+	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
+	{
+		/* Free and zombie slots cannot receive reliable traffic, while
+		 * preconnected clients need roster updates before completing signon. */
+		if (client->state < cs_preconnected)
+			continue;
+
+		ClientReliableCheckBlock(client, sv.reliable_datagram.cursize);
+		ClientReliableWrite_SZ(client, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
+	}
+
+	if (sv.mvdrecording)
+	{
+		if (MVDWrite_Begin(dem_all, 0, sv.reliable_datagram.cursize))
+		{
+			MVD_SZ_Write(sv.reliable_datagram.data, sv.reliable_datagram.cursize);
+		}
+	}
+
+	SZ_Clear (&sv.reliable_datagram);
+}
+
+/*
+=======================
+SV_QueueFullClientUpdate
+
+Appends a complete client roster update to the shared reliable staging buffer.
+Flushes the current batch first to keep roster-generated batches strictly
+below the smallest client reliable buffer size.
+=======================
+*/
+static void SV_QueueFullClientUpdate (client_t *client)
+{
+	byte data[MAX_MSGLEN];
+	sizebuf_t msg;
+
+	SZ_Init(&msg, data, sizeof(data));
+	SV_FullClientUpdate(client, &msg);
+
+	/* Keep roster-generated batches strictly below MIN_MTU, the smallest
+	 * client reliable buffer size. */
+	if (sv.reliable_datagram.cursize + msg.cursize >= MIN_MTU)
+		SV_FlushReliableDatagram();
+
+	SZ_Write(&sv.reliable_datagram, msg.data, msg.cursize);
+}
+
+/*
+=======================
 SV_UpdateToReliableMessages
 =======================
 */
@@ -1337,14 +1400,19 @@ static void SV_UpdateToReliableMessages (void)
 	// check for changes to be sent over the reliable streams to all clients
 	for (i=0, sv_client = svs.clients ; i<MAX_CLIENTS ; i++, sv_client++)
 	{
-		if (sv_client->state != cs_spawned)
-			continue;
-
-		if (sv_client->sendinfo)
+		/* Keep connection-time sendinfo pending until the client is spawned.
+		 * Free/zombie states are deferred roster-removal notifications. */
+		if (sv_client->sendinfo
+			&& (sv_client->state == cs_free
+				|| sv_client->state == cs_zombie
+				|| sv_client->state == cs_spawned))
 		{
 			sv_client->sendinfo = false;
-			SV_FullClientUpdate (sv_client, &sv.reliable_datagram);
+			SV_QueueFullClientUpdate (sv_client);
 		}
+
+		if (sv_client->state != cs_spawned)
+			continue;
 
 		ent = sv_client->edict;
 
@@ -1408,33 +1476,20 @@ static void SV_UpdateToReliableMessages (void)
 	if (sv.datagram.overflowed)
 		SZ_Clear (&sv.datagram);
 
-	// append the broadcast messages to each client messages
-	for (j=0, client = svs.clients ; j<MAX_CLIENTS ; j++, client++)
+	SV_FlushReliableDatagram();
+
+	// Append broadcast datagrams to spawned clients.
+	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++)
 	{
-		if (client->state < cs_preconnected)
-			continue; // reliables go to all connected or spawned
-
-		ClientReliableCheckBlock(client, sv.reliable_datagram.cursize);
-		ClientReliableWrite_SZ(client, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
-
 		if (client->state != cs_spawned)
-			continue; // datagrams only go to spawned
+			continue;
 
-		SZ_Write (&client->datagram, sv.datagram.data, sv.datagram.cursize);
-	}
-
-	if (sv.mvdrecording && sv.reliable_datagram.cursize)
-	{
-		if (MVDWrite_Begin(dem_all, 0, sv.reliable_datagram.cursize))
-		{
-			MVD_SZ_Write(sv.reliable_datagram.data, sv.reliable_datagram.cursize);
-		}
+		SZ_Write(&client->datagram, sv.datagram.data, sv.datagram.cursize);
 	}
 
 	if (sv.mvdrecording)
 		SZ_Write(&demo.datagram, sv.datagram.data, sv.datagram.cursize); // FIXME: ???
 
-	SZ_Clear (&sv.reliable_datagram);
 	SZ_Clear (&sv.datagram);
 }
 
