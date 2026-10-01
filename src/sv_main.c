@@ -207,6 +207,7 @@ cvar_t sv_pext_ezquake_verfortrans = {"pext_ezquake_verfortrans", "7814", CVAR_N
 
 #ifdef FTE_PEXT_CSQC
 cvar_t sv_csqc_progname = { "sv_csqc_progname", "csprogs.dat" };
+cvar_t sv_csqcdebug = { "sv_csqcdebug", "0", CVAR_NONE };
 #endif
 
 qbool sv_error = false;
@@ -263,6 +264,9 @@ void SV_Shutdown (char *finalmsg)
 #endif
 
 	// Shutdown game.
+#ifdef FTE_PEXT_CSQC
+	SV_FreeCSQCList ();
+#endif
 	PR_GameShutDown();
 	PR_UnLoadProgs();
 
@@ -438,6 +442,17 @@ void SV_DropClient(client_t* drop)
 
 #ifdef FTE_PEXT_CSQC
 	drop->csqcactive = false;
+	if (drop->pendingcsqcbits)
+	{
+		Q_free(drop->pendingcsqcbits);
+		drop->pendingcsqcbits = NULL;
+	}
+	drop->max_net_ents = 0;
+	{
+		int si;
+		for (si = 0; si < MAX_CL_STATS; si++)
+			Q_free(drop->statss[si]);	// free cached string stats
+	}
 #endif
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);
@@ -3288,6 +3303,21 @@ void SV_Frame (double time1)
 	// keep the random time dependent
 	rand ();
 
+#ifdef FTE_PEXT_CSQC
+	// A mod that wrote into sv.multicast but did not call multicast() before its
+	// call returned left the buffer unflushed. Left alone it would be merged into
+	// the next multicast() from any source, possibly delivering a CSQC payload to
+	// non-CSQC clients. Drop it and report (diagnostic: sv_csqcdebug).
+	if (sv.multicast.cursize > 0)
+	{
+		if ((int)sv_csqcdebug.value)
+			Con_DPrintf("CSQC: unflushed multicast (%d bytes) dropped (mod missed multicast())\n",
+			            sv.multicast.cursize);
+		SZ_Clear (&sv.multicast);
+		sv.multicast_csqc = false;
+	}
+#endif
+
 	// decide the simulation time
 	if (!sv.paused)
 	{
@@ -3604,6 +3634,7 @@ void SV_InitLocal (void)
 
 #ifdef FTE_PEXT_CSQC
 	Cvar_Register (&sv_csqc_progname);
+	Cvar_Register (&sv_csqcdebug);
 #endif
 
 // QW262 -->
@@ -3653,9 +3684,8 @@ void SV_InitLocal (void)
 #ifdef FTE_PEXT_COLOURMOD
 	svs.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
 #endif
-#ifdef FTE_PEXT_CSQC
-	svs.fteprotocolextensions |= FTE_PEXT_CSQC;
-#endif
+// FTE_PEXT_CSQC is NOT set here: it is added/removed per map in
+// SV_UpdateCSQCExtension() (sv_init.c) depending on whether a PR2 mod is loaded.
 
 #ifdef FTE_PEXT2_VOICECHAT
 	svs.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;

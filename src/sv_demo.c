@@ -52,6 +52,9 @@ cvar_t	sv_ondemoremove		= {"sv_onDemoRemove",	""};
 cvar_t	sv_demoRegexp		= {"sv_demoRegexp",		"\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
 cvar_t	sv_silentrecord		= {"sv_silentrecord",   "0"};
+// opt-in: record the CSQC stream (svc 76/83, stats 32..255) into MVD/QTV. Off
+// by default because stock ezQuake/QTV cannot parse it.
+cvar_t	sv_mvd_csqc			= {"sv_mvd_csqc",		"0"};
 
 cvar_t	extralogname		= {"extralogname",		"unset"}; // no sv_ prefix? WTF!
 
@@ -914,6 +917,33 @@ static void SV_AddLastDemo(void)
 
 /*
 ====================
+SV_MVD_FreeRecorderCSQC
+
+Frees the recorder's CSQC delta state (pendingcsqcbits) without touching
+demo.dest - used by SV_MVDStop when the recorder really goes away and by
+SV_MVD_Record before it partial-memsets the demo struct on a fresh start.
+====================
+*/
+static void SV_MVD_FreeRecorderCSQC (void)
+{
+#ifdef FTE_PEXT_CSQC
+	int i, j;
+	if (demo.recorder.pendingcsqcbits)
+	{
+		Q_free(demo.recorder.pendingcsqcbits);
+		demo.recorder.pendingcsqcbits = NULL;
+	}
+	demo.recorder.max_net_ents = 0;
+	demo.recorder.csqcactive = false;
+	// free the recorder's cached string stats (host copies)
+	for (i = 0; i < MAX_CLIENTS; i++)
+		for (j = 0; j < MAX_CL_STATS; j++)
+			Q_free(demo.statss[i][j]);
+#endif
+}
+
+/*
+====================
 SV_MVDStop
 
 stop recording a demo
@@ -1003,6 +1033,17 @@ void SV_MVDStop (int reason, qbool mvdonly)
 	instop = false; // SET TO FALSE
 
 out:
+	// Free the recorder's CSQC delta state only when the recorder is really
+	// gone. A mvdonly stop (reason 0/2 via SV_MVDStop_f / SV_MVD_Cancel_f, and
+	// KTX's localcmd("stop")) keeps DEST_STREAM (QTV) destinations alive, so
+	// sv.mvdrecording stays true and the stream still needs csqcactive +
+	// pendingcsqcbits to keep emitting CSQC entities. Clearing them here left
+	// a live QTV stream without CSQC (entities fell back to packetentities and
+	// viewers kept stale state) with no way to re-arm, since
+	// SV_MVD_SendInitialGamestate is only called from SV_MVD_Record. On the
+	// next fresh record start the struct is memset anyway.
+	if (!sv.mvdrecording)
+		SV_MVD_FreeRecorderCSQC();
 	if (reason != 3)
 		SV_BroadcastPrintCache();
 }
@@ -1149,6 +1190,14 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
 		// this is either mapchange and we have QTV connected
 		// or we just use /record or whatever command first time and here no recording yet
 
+		// The recorder (demo.recorder, holding the CSQC delta bitset) lives
+		// before mem_set_point, so the partial memset below would overwrite
+		// demo.recorder.pendingcsqcbits without freeing it. The ordinary map
+		// path frees it earlier via SV_MVDStop_f, but the savegame `load` path
+		// calls SV_SpawnServer directly (sv_save.c) without it, so free here to
+		// avoid a leak per load (see sv_save.c).
+		SV_MVD_FreeRecorderCSQC();
+
     	// and here we memset() not whole demo_t struct, but part,
     	// so demo.dest and demo.pendingdest is not overwriten
 		memset(&demo, 0, (int)((uintptr_t)&(((demo_t *)0)->mem_set_point)));
@@ -1205,6 +1254,21 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	demo.pingtime = demo.time = sv.time;
 	singledest = dest;
 
+#ifdef FTE_PEXT_CSQC
+	// A new dest joins mid-stream (QTV attach) or the map changed: the recorder
+	// shares its CSQC delta bitset across all dests, so re-arm the PRESENT
+	// entities for a full resend, otherwise the joining dest never receives the
+	// CSQC entities it missed (FTE parity, sv_mvd.c:1708). No-op unless the
+	// recorder was explicitly armed for CSQC (sv_mvd_csqc).
+	if (demo.recorder.csqcactive && demo.recorder.pendingcsqcbits)
+	{
+		int e;
+		for (e = 1; e < demo.recorder.max_net_ents; e++)
+			if (demo.recorder.pendingcsqcbits[e] & SENDFLAGS_PRESENT)
+				demo.recorder.pendingcsqcbits[e] |= SENDFLAGS_USABLE;
+	}
+#endif
+
 	/*-------------------------------------------------*/
 
 	// serverdata
@@ -1239,6 +1303,21 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 #endif
 #ifdef FTE_PEXT_COLOURMOD
 	demo.recorder.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
+#endif
+#ifdef FTE_PEXT_CSQC
+	// Only arm the recorder for CSQC when explicitly opted in: by default the
+	// MVD/QTV stream must stay parseable by stock ezQuake/QTV.
+	if (SV_CSQCActive() && (int)sv_mvd_csqc.value)
+	{
+		demo.recorder.fteprotocolextensions |= FTE_PEXT_CSQC;
+		demo.recorder.csqcactive = true;
+		// lazily allocate the recorder's CSQC delta bitset
+		if (!demo.recorder.pendingcsqcbits && sv.max_edicts > 0)
+		{
+			demo.recorder.pendingcsqcbits = Q_calloc(sv.max_edicts, sizeof(uint64_t));
+			demo.recorder.max_net_ents = sv.max_edicts;
+		}
+	}
 #endif
 #ifdef FTE_PEXT2_VOICECHAT
 	demo.recorder.fteprotocolextensions2 |= FTE_PEXT2_VOICECHAT;
@@ -1606,8 +1685,13 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	// send stats
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
-		int		stats[MAX_CL_STATS];
+		int		statsi[MAX_CL_STATS];
 		int		j;
+		int		n;
+#ifdef FTE_PEXT_CSQC
+		float	statsf[MAX_CL_STATS];
+		const char *statss[MAX_CL_STATS];
+#endif
 
 		player = svs.clients + i;
 		ent = player->edict;
@@ -1618,37 +1702,86 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 		if (player->spectator)
 			continue;
 
-		memset(stats, 0, sizeof(stats));
+		memset(statsi, 0, sizeof(statsi));
+#ifdef FTE_PEXT_CSQC
+		memset(statsf, 0, sizeof(statsf));
+		memset(statss, 0, sizeof(statss));
+#endif
 
-		stats[STAT_HEALTH]       = ent->v->health;
-		stats[STAT_WEAPON]       = SV_ModelIndex(PR_GetEntityString(ent->v->weaponmodel));
-		stats[STAT_AMMO]         = ent->v->currentammo;
-		stats[STAT_ARMOR]        = ent->v->armorvalue;
-		stats[STAT_SHELLS]       = ent->v->ammo_shells;
-		stats[STAT_NAILS]        = ent->v->ammo_nails;
-		stats[STAT_ROCKETS]      = ent->v->ammo_rockets;
-		stats[STAT_CELLS]        = ent->v->ammo_cells;
-		stats[STAT_ACTIVEWEAPON] = ent->v->weapon;
+		statsi[STAT_HEALTH]       = ent->v->health;
+		statsi[STAT_WEAPON]       = SV_ModelIndex(PR_GetEntityString(ent->v->weaponmodel));
+		statsi[STAT_AMMO]         = ent->v->currentammo;
+		statsi[STAT_ARMOR]        = ent->v->armorvalue;
+		statsi[STAT_SHELLS]       = ent->v->ammo_shells;
+		statsi[STAT_NAILS]        = ent->v->ammo_nails;
+		statsi[STAT_ROCKETS]      = ent->v->ammo_rockets;
+		statsi[STAT_CELLS]        = ent->v->ammo_cells;
+		statsi[STAT_ACTIVEWEAPON] = ent->v->weapon;
 
 		if (ent->v->health > 0) // viewheight for PF_DEAD & PF_GIB is hardwired
-			stats[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
+			statsi[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
 
 		// stuff the sigil bits into the high bits of items for sbar
-		stats[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
+		statsi[STAT_ITEMS] = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
 
-		for (j = 0; j < MAX_CL_STATS; j++)
+#ifdef FTE_PEXT_CSQC
+		// clientstat/pointerstat registered stats (32..255) for the recorder.
+		if (SV_WantsQCStats (&demo.recorder))
+			SV_UpdateQCStats (ent, statsi, statsf, statss);
+#endif
+
+		// legacy 32 stats unless the recorder is explicitly CSQC
+#ifdef FTE_PEXT_CSQC
+		n = SV_WantsQCStats (&demo.recorder) ? MAX_CL_STATS : MAX_WIRE_STATS;
+#else
+		n = MAX_WIRE_STATS;
+#endif
+
+		for (j = 0; j < n; j++)
 		{
-			if (stats[j] >= 0 && stats[j] <= 255)
+#ifdef FTE_PEXT_CSQC
+			// float/string stats use their own wire opcodes
+			if (SV_QCStatKind(j) == QCSTAT_KIND_FLOAT)
+			{
+				if (statsf[j] && statsf[j] != (float)(int)statsf[j])
+				{
+					MSG_WriteByte(&buf, svc_fte_updatestatfloat);
+					MSG_WriteByte(&buf, j);
+					MSG_WriteFloat(&buf, statsf[j]);
+				}
+				else if ((int)statsf[j] >= 0 && (int)statsf[j] <= 255)
+				{
+					MSG_WriteByte(&buf, svc_updatestat);
+					MSG_WriteByte(&buf, j);
+					MSG_WriteByte(&buf, (int)statsf[j]);
+				}
+				else
+				{
+					MSG_WriteByte(&buf, svc_updatestatlong);
+					MSG_WriteByte(&buf, j);
+					MSG_WriteLong(&buf, (int)statsf[j]);
+				}
+				continue;
+			}
+			if (SV_QCStatKind(j) == QCSTAT_KIND_STRING)
+			{
+				MSG_WriteByte(&buf, svc_fte_updatestatstring);
+				MSG_WriteByte(&buf, j);
+				MSG_WriteString(&buf, (char *)(statss[j] ? statss[j] : ""));
+				continue;
+			}
+#endif
+			if (statsi[j] >= 0 && statsi[j] <= 255)
 			{
 				MSG_WriteByte(&buf, svc_updatestat);
 				MSG_WriteByte(&buf, j);
-				MSG_WriteByte(&buf, stats[j]);
+				MSG_WriteByte(&buf, statsi[j]);
 			}
 			else
 			{
 				MSG_WriteByte(&buf, svc_updatestatlong);
 				MSG_WriteByte(&buf, j);
-				MSG_WriteLong(&buf, stats[j]);
+				MSG_WriteLong(&buf, statsi[j]);
 			}
 		}
 
@@ -1856,6 +1989,7 @@ static void MVD_Init (void)
 	Cvar_Register (&sv_demoExtraNames);
 	Cvar_Register (&sv_demoRegexp);
 	Cvar_Register (&sv_silentrecord);
+	Cvar_Register (&sv_mvd_csqc);
 
 	Cvar_Register (&extralogname);
 

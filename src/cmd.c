@@ -697,6 +697,24 @@ void Cmd_TokenizeString (const char *text)
 	Cmd_TokenizeStringEx(&cmd_tokenizecontext, text);
 }
 
+/*
+=============
+Cmd_SetRawArgv0
+
+Sets the command-line token state to a single raw argument (argc=1,
+argv[0] = whole text) WITHOUT tokenizing, so Cmd_Argv(0) returns the full
+string even when it contains whitespace. Used to expose the CSQC sendevent
+event name to the game via trap_Argv(0).
+=============
+*/
+void Cmd_SetRawArgv0 (const char *text)
+{
+	memset(&cmd_tokenizecontext, 0, sizeof(cmd_tokenizecontext));
+	strlcpy(cmd_tokenizecontext.argv_buf, text, sizeof(cmd_tokenizecontext.argv_buf));
+	cmd_tokenizecontext.cmd_argc = 1;
+	cmd_tokenizecontext.cmd_argv[0] = cmd_tokenizecontext.argv_buf;
+}
+
 
 /*
 ============
