@@ -144,17 +144,9 @@ typedef struct
 
 #define MSG_CSQC		5		// for csqc (pr2_cmds.c WriteDest2)
 
-// CSQC stat wire opcodes for fractional/string stats.
-// FTE defines svcfte_updatestatstring/updatestatfloat as 78/79; upstream
-// qwprot/ezQuake do not carry them yet, so define them locally (guarded).
-// mvdsv emits them (live clients and, under sv_mvd_csqc, MVD/QTV); only the
-// client-side receive path is pending on qwprot/ezQuake.
-#ifndef svcfte_updatestatstring
-#define svcfte_updatestatstring	78	// [byte statnum] [string]
-#endif
-#ifndef svcfte_updatestatfloat
-#define svcfte_updatestatfloat	79	// [byte statnum] [float]
-#endif
+// CSQC stat wire opcodes for fractional/string stats (svc_fte_updatestatstring/
+// updatestatfloat 78/79) come from qwprot (upstream master d29fbd4+). mvdsv emits
+// them (live clients and, under sv_mvd_csqc, MVD/QTV).
 
 // per-entity CSQC delta flags, mirror of FTE server.h SENDFLAGS_*
 #define SENDFLAGS_PRESENT	0x1u	// this entity is present on that client

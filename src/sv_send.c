@@ -1199,7 +1199,7 @@ void SV_UpdateClientStats (client_t *client)
 				client->stats[i] = iv;	// keep the int cache in sync
 				if (statsf[i] && statsf[i] != (float)iv)
 				{
-					ClientReliableWrite_Begin(client, svcfte_updatestatfloat, 6);
+					ClientReliableWrite_Begin(client, svc_fte_updatestatfloat, 6);
 					ClientReliableWrite_Byte(client, i);
 					ClientReliableWrite_Float(client, statsf[i]);
 				}
@@ -1230,7 +1230,7 @@ void SV_UpdateClientStats (client_t *client)
 				// "never sent", otherwise an empty value would be re-emitted
 				// every frame (the !statss[i] test would stay true).
 				client->statss[i] = Q_strdup(s);
-				ClientReliableWrite_Begin(client, svcfte_updatestatstring, 3 + (int)strlen(s));
+				ClientReliableWrite_Begin(client, svc_fte_updatestatstring, 3 + (int)strlen(s));
 				ClientReliableWrite_Byte(client, i);
 				ClientReliableWrite_String(client, (char *)s);
 			}
@@ -1739,7 +1739,7 @@ void MVD_WriteStats(void)
 					{
 						if (MVDWrite_Begin(dem_stats, i, 6))
 						{
-							MVD_MSG_WriteByte(svcfte_updatestatfloat);
+							MVD_MSG_WriteByte(svc_fte_updatestatfloat);
 							MVD_MSG_WriteByte(j);
 							MVD_MSG_WriteFloat(statsf[j]);
 						}
@@ -1777,7 +1777,7 @@ void MVD_WriteStats(void)
 					demo.statss[i][j] = Q_strdup(s);
 					if (MVDWrite_Begin(dem_stats, i, 3 + (int)strlen(s)))
 					{
-						MVD_MSG_WriteByte(svcfte_updatestatstring);
+						MVD_MSG_WriteByte(svc_fte_updatestatstring);
 						MVD_MSG_WriteByte(j);
 						MVD_MSG_WriteString(s);
 					}

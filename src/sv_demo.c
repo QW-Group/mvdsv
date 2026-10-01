@@ -1745,7 +1745,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 			{
 				if (statsf[j] && statsf[j] != (float)(int)statsf[j])
 				{
-					MSG_WriteByte(&buf, svcfte_updatestatfloat);
+					MSG_WriteByte(&buf, svc_fte_updatestatfloat);
 					MSG_WriteByte(&buf, j);
 					MSG_WriteFloat(&buf, statsf[j]);
 				}
@@ -1765,7 +1765,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 			}
 			if (SV_QCStatKind(j) == QCSTAT_KIND_STRING)
 			{
-				MSG_WriteByte(&buf, svcfte_updatestatstring);
+				MSG_WriteByte(&buf, svc_fte_updatestatstring);
 				MSG_WriteByte(&buf, j);
 				MSG_WriteString(&buf, (char *)(statss[j] ? statss[j] : ""));
 				continue;
