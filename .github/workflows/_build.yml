@@ -4,7 +4,7 @@ on:
     inputs:
       runner:
         type: string
-        default: ubuntu-24.04
+        default: ubuntu-latest
       deploy_type:
         # options are [snapshot, release]
         type: string
@@ -51,33 +51,33 @@ jobs:
       # The main archive doesn't have armhf, arm64 binaries, so if we add the
       # foreign arch, `apt update` will fail on it. So add the 'Architectures'
       # field to ensure it fetches the right meta-data.
-      - name: Fix the sources
-        if: matrix.arch == 'armhf' || matrix.arch == 'arm64'
-        run: |
-          sudo tee /etc/apt/sources.list.d/ubuntu.sources <<EOF
-          Types: deb
-          Architectures: i386 amd64
-          URIs: http://archive.ubuntu.com/ubuntu/
-          Suites: noble noble-updates
-          Components: main universe restricted multiverse
-          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+      #- name: Fix the sources
+      #  if: matrix.arch == 'armhf' || matrix.arch == 'arm64'
+      #  run: |
+      #    sudo tee /etc/apt/sources.list.d/ubuntu.sources <<EOF
+      #    Types: deb
+      #    Architectures: i386 amd64
+      #    URIs: http://archive.ubuntu.com/ubuntu/
+      #    Suites: noble noble-updates
+      #    Components: main universe restricted multiverse
+      #    Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 
-          Types: deb
-          Architectures: i386 amd64
-          URIs: http://security.ubuntu.com/ubuntu/
-          Suites: noble-security
-          Components: main universe restricted multiverse
-          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
-          EOF
+      #    Types: deb
+      #    Architectures: i386 amd64
+      #    URIs: http://security.ubuntu.com/ubuntu/
+      #    Suites: noble-security
+      #    Components: main universe restricted multiverse
+      #    Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+      #    EOF
 
-          sudo tee /etc/apt/sources.list.d/ubuntu-ports.sources <<EOF
-          Types: deb
-          Architectures: armhf arm64
-          URIs: http://ports.ubuntu.com/ubuntu-ports
-          Suites: noble noble-updates noble-backports
-          Components: main universe restricted multiverse
-          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
-          EOF
+      #    sudo tee /etc/apt/sources.list.d/ubuntu-ports.sources <<EOF
+      #    Types: deb
+      #    Architectures: armhf arm64
+      #    URIs: http://ports.ubuntu.com/ubuntu-ports
+      #    Suites: noble noble-updates noble-backports
+      #    Components: main universe restricted multiverse
+      #    Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+      #    EOF
 
       - name: Install build dependencies
         run: |
