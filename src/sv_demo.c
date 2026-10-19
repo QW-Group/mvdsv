@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_demo.c - mvd demo related code
 
 #ifndef CLIENTONLY
+#include <stddef.h>
+
 #include "qwsvdef.h"
 
 // minimal cache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
@@ -1151,7 +1153,7 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
 
     	// and here we memset() not whole demo_t struct, but part,
     	// so demo.dest and demo.pendingdest is not overwriten
-		memset(&demo, 0, (int)((uintptr_t)&(((demo_t *)0)->mem_set_point)));
+		memset(&demo, 0, offsetof(demo_t, mem_set_point));
 
 		for (i = 0; i < UPDATE_BACKUP; i++)
 		{
