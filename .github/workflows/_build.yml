@@ -74,7 +74,7 @@ jobs:
           Types: deb
           Architectures: armhf arm64
           URIs: http://ports.ubuntu.com/ubuntu-ports
-          Suites: noble noble-updates noble-backports
+          Suites: noble noble-updates noble-backports noble-security
           Components: main universe restricted multiverse
           Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
           EOF
