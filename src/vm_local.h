@@ -172,6 +172,11 @@ typedef struct
 
 typedef struct vm_s vm_t;
 
+// modules define vmMain with fixed int arguments, so it must not be called
+// through a variadic pointer (Apple arm64 passes variadic arguments on the stack)
+typedef intptr_t (QDECL *vmMainProc)( int callNum, int arg0, int arg1, int arg2, int arg3,
+	int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11 );
+
 struct vm_s {
 
 	unsigned int programStack;		// the vm may be recursively entered
@@ -189,7 +194,7 @@ struct vm_s {
 
 	// for dynamic linked modules
 	void		*dllHandle;
-	dllSyscall_t entryPoint;
+	vmMainProc entryPoint;
 	dllSyscall_t dllSyscall;
 	void (*destroy)(vm_t* self);
 
