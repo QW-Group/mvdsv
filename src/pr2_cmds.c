@@ -1164,9 +1164,7 @@ MESSAGE WRITING
 #define	MSG_ALL			2		// reliable to all
 #define	MSG_INIT		3		// write to the init string
 #define	MSG_MULTICAST	4		// for multicast()
-#ifdef FTE_PEXT_CSQC
-#define	MSG_CSQC		5		// for csqc
-#endif
+// MSG_CSQC (5) is defined once in server.h, not duplicated here.
 
 
 sizebuf_t *WriteDest2(int dest)
