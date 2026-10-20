@@ -448,6 +448,11 @@ void SV_DropClient(client_t* drop)
 		drop->pendingcsqcbits = NULL;
 	}
 	drop->max_net_ents = 0;
+	{
+		int si;
+		for (si = 0; si < MAX_CL_STATS; si++)
+			Q_free(drop->statss[si]);	// free cached string stats
+	}
 #endif
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);
