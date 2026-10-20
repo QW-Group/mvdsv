@@ -3303,6 +3303,21 @@ void SV_Frame (double time1)
 	// keep the random time dependent
 	rand ();
 
+#ifdef FTE_PEXT_CSQC
+	// A mod that wrote into sv.multicast but did not call multicast() before its
+	// call returned left the buffer unflushed. Left alone it would be merged into
+	// the next multicast() from any source, possibly delivering a CSQC payload to
+	// non-CSQC clients. Drop it and report (diagnostic: sv_csqcdebug).
+	if (sv.multicast.cursize > 0)
+	{
+		if ((int)sv_csqcdebug.value)
+			Con_DPrintf("CSQC: unflushed multicast (%d bytes) dropped (mod missed multicast())\n",
+			            sv.multicast.cursize);
+		SZ_Clear (&sv.multicast);
+		sv.multicast_csqc = false;
+	}
+#endif
+
 	// decide the simulation time
 	if (!sv.paused)
 	{

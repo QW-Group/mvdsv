@@ -401,7 +401,7 @@ MULTICAST_PVS	send to clients potentially visible from org
 MULTICAST_PHS	send to clients potentially hearable from org
 =================
 */
-void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
+static void SV_MulticastInternal (vec3_t origin, int to, const char *cl_reliable_key, qbool force_csqc)
 {
 	client_t*   client;
 	byte*       mask;
@@ -410,6 +410,9 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 	qbool       reliable;
 	vec3_t      vieworg;
 	qbool       mvd_only = false;
+#ifdef FTE_PEXT_CSQC
+	qbool       csqc_only = false;
+#endif
 
 	reliable = false;
 
@@ -442,6 +445,24 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 		SV_Error ("SV_Multicast: bad to:%i", to);
 	}
 
+#ifdef FTE_PEXT_CSQC
+	// A CSQC packet (svc_fte_cgamepacket) is the whole multicast when it is the
+	// first byte of the buffer (the byte before any payload is always the svc
+	// code, so this can never false-positive on payload). Detect it here as well
+	// as when the caller forces the CSQC path: this keeps a stray CSQC buffer
+	// from reaching non-CSQC clients even if the write-time routing was bypassed.
+	// We do NOT rewrite sv.multicast in place here: the MVD/hidden paths below
+	// must get the original buffer unchanged (recorded demos keep plain svc 76/
+	// 83 so they play back elsewhere, and a hidden block whose first byte is 83
+	// must not be mangled). The sized (90) conversion is applied only when
+	// copying to a live CSQC client under sv_csqcdebug, mirroring FTE's
+	// per-destination net_preparse.
+	csqc_only = force_csqc ||
+		(sv.multicast.cursize > 0 && sv.multicast.data[0] == svc_fte_cgamepacket);
+#else
+	(void)force_csqc;
+#endif
+
 	// send the data to all relevent clients
 	for (j = 0, client = svs.clients; j < MAX_CLIENTS && !mvd_only; j++, client++)
 	{
@@ -451,6 +472,13 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 			continue;
 		if (SV_SkipCommsBotMessage(client))
 			continue;
+#ifdef FTE_PEXT_CSQC
+		// svc_fte_cgamepacket is CSQC-only: skip a client that did not enable
+		// CSQC (it may have negotiated the ext but never sent enablecsqc, so it
+		// has no csprogs to parse the packet).
+		if (csqc_only && !((client->fteprotocolextensions & FTE_PEXT_CSQC) && client->csqcactive))
+			continue;
+#endif
 
 		if (!mask)
 			goto inrange; // multicast to all
@@ -493,13 +521,34 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 		}
 
 inrange:
-		if (reliable || (cl_reliable_key && *cl_reliable_key && strcmp("0", Info_Get(&client->_userinfo_ctx_, cl_reliable_key))))
 		{
-			ClientReliableCheckBlock(client, sv.multicast.cursize);
-			ClientReliableWrite_SZ(client, sv.multicast.data, sv.multicast.cursize);
+			// per-destination view of the payload: normally sv.multicast as-is;
+			// a cgamepacket to a live CSQC client becomes sized under
+			// sv_csqcdebug (MVD/hidden keep the plain form below).
+			byte *data = sv.multicast.data;
+			int   len = sv.multicast.cursize;
+#ifdef FTE_PEXT_CSQC
+			byte  sized[MAX_MSGLEN + 2];
+			if (csqc_only && (int)sv_csqcdebug.value && (client->fteprotocolextensions & FTE_PEXT_CSQC)
+				&& sv.multicast.cursize + 2 <= (int)sizeof(sized))
+			{
+				// [83][payload] -> [90][lenlo][lenhi][payload]
+				sized[0] = svc_fte_cgamepacket_sized;
+				sized[1] = sv.multicast.cursize - 1;
+				sized[2] = (sv.multicast.cursize - 1) >> 8;
+				memcpy(sized + 3, sv.multicast.data + 1, sv.multicast.cursize - 1);
+				data = sized;
+				len = sv.multicast.cursize + 2;
+			}
+#endif
+			if (reliable || (cl_reliable_key && *cl_reliable_key && strcmp("0", Info_Get(&client->_userinfo_ctx_, cl_reliable_key))))
+			{
+				ClientReliableCheckBlock(client, len);
+				ClientReliableWrite_SZ(client, data, len);
+			}
+			else
+				SZ_Write (&client->datagram, data, len);
 		}
-		else
-			SZ_Write (&client->datagram, sv.multicast.data, sv.multicast.cursize);
 	}
 
 	if (sv.mvdrecording) {
@@ -514,6 +563,12 @@ inrange:
 				MVD_SZ_Write(sv.multicast.data, sv.multicast.cursize);
 			}
 		}
+#ifdef FTE_PEXT_CSQC
+		else if (csqc_only && !SV_WantsQCStats(&demo.recorder)) {
+			// CSQC-only message to a stock-compatible recorder: keep it out of
+			// the MVD/QTV stream
+		}
+#endif
 		else if (reliable) {
 			if (MVDWrite_Begin(dem_all, 0, sv.multicast.cursize)) {
 				MVD_SZ_Write(sv.multicast.data, sv.multicast.cursize);
@@ -525,7 +580,31 @@ inrange:
 	}
 
 	SZ_Clear (&sv.multicast);
+#ifdef FTE_PEXT_CSQC
+	sv.multicast_csqc = false;
+#endif
 }
+
+void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
+{
+	SV_MulticastInternal (origin, to, cl_reliable_key, false);
+}
+
+#ifdef FTE_PEXT_CSQC
+/*
+=======================
+SV_CSQCMulticast
+
+Dispatch a mod's CSQC packet (svc_fte_cgamepacket) to clients that negotiated
+FTE_PEXT_CSQC and have CSQC active, plus the MVD recorder when sv_mvd_csqc is
+enabled. Other clients never receive it.
+=======================
+*/
+void SV_CSQCMulticast (vec3_t origin, int to)
+{
+	SV_MulticastInternal (origin, to, NULL, true);
+}
+#endif
 
 void SV_Multicast (vec3_t origin, int to)
 {

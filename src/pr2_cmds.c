@@ -1256,8 +1256,48 @@ static client_t *Write_GetClient(void)
 	return &svs.clients[entnum - 1];
 }
 
+#ifdef FTE_PEXT_CSQC
+/*
+====================
+PF2_WriteCheckCSQC
+
+Classify the first byte written into a fresh multicast buffer: svc 83 starts a
+CSQC packet (PF2_multicast then routes it through SV_CSQCMulticast so only CSQC
+clients receive it), any other value a normal one. Only the first byte is
+inspected, so a payload byte equal to 0x53 is never mistaken for the svc.
+
+Writing svc 83 to a broadcast destination is a mod contract violation: it would
+bypass the CSQC client filter. MSG_ONE/MSG_INIT are accumulating streams whose
+message boundary cannot be recovered, so they cannot be checked here (the mod
+contract forbids CSQC packets there; see g_csqc.h in the mod). The broadcast
+check only sees a cgamepacket written while the destination is still empty; a
+mod that writes any other message first is not caught, so this is a
+non-fatal warning rather than an error.
+====================
+*/
+static void PF2_WriteCheckCSQC (int to, int data)
+{
+	if (to == MSG_MULTICAST)
+	{
+		if (sv.multicast.cursize == 0 && data == svc_fte_cgamepacket)
+			sv.multicast_csqc = true;
+	}
+	else if ((to == MSG_BROADCAST || to == MSG_ALL) && data == svc_fte_cgamepacket)
+	{
+		sizebuf_t *d = WriteDest2(to);
+
+		if (d && d->cursize == 0)
+			Con_DPrintf("WARNING: CSQC packet written to a broadcast destination, "
+				"send it with multicast()\n");
+	}
+}
+#endif
+
 void PF2_WriteByte(int to, int data)
 {
+#ifdef FTE_PEXT_CSQC
+	PF2_WriteCheckCSQC(to, data);
+#endif
 	if (to == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1277,6 +1317,9 @@ void PF2_WriteByte(int to, int data)
 
 void PF2_WriteChar(int to, int data)
 {
+#ifdef FTE_PEXT_CSQC
+	PF2_WriteCheckCSQC(to, data);
+#endif
 	if (to == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1699,7 +1742,15 @@ void PF2_multicast(float x, float y, float z, int to)
 	o[0] = x;
 	o[1] = y;
 	o[2] = z;
-	SV_Multicast(o, to);
+#ifdef FTE_PEXT_CSQC
+	// A CSQC packet (first byte svc_fte_cgamepacket) goes to CSQC clients only.
+	// MULTICAST_MVD_HIDDEN is a raw hidden block, not a CSQC packet, so it is
+	// never routed here even if its first byte happens to be 0x53.
+	if (sv.multicast_csqc && to != MULTICAST_MVD_HIDDEN)
+		SV_CSQCMulticast (o, to);
+	else
+#endif
+		SV_Multicast (o, to);
 }
 
 /*
