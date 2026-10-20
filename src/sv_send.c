@@ -1311,6 +1311,12 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	{
 		Con_Printf ("WARNING: msg overflowed for %s\n", client->name);
 		SZ_Clear (&msg);
+#ifdef FTE_PEXT_CSQC
+		// The CSQC updates logged for this datagram were dropped with it, but
+		// the client still acks the (now empty) packet, so re-flag them here
+		// instead of waiting for an ack that will never report them lost.
+		SV_CSQC_DroppedPacket (client, client->netchan.outgoing_sequence);
+#endif
 	}
 
 	// send the datagram
