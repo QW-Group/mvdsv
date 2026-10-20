@@ -133,6 +133,18 @@ typedef struct
 #endif
 } server_t;
 
+#ifdef FTE_PEXT_CSQC
+
+#define MSG_CSQC		5		// for csqc (pr2_cmds.c WriteDest2)
+
+// CSQC stat wire opcodes for fractional/string stats (svc_fte_updatestatstring/
+// updatestatfloat 78/79) come from qwprot (upstream master d29fbd4+). mvdsv emits
+// them (live clients and, under sv_mvd_csqc, MVD/QTV).
+
+// sv_main.c
+extern cvar_t sv_csqcdebug;
+#endif
+
 #define	NUM_SPAWN_PARMS 16
 
 // { sv_antilag related
@@ -1079,15 +1091,15 @@ void SV_Heartbeat_f (void);
 void Master_Shutdown (void);
 void Master_Heartbeat (void);
 
-// sv_save.c 
-void SV_SaveGame_f (void); 
-void SV_LoadGame_f (void); 
+// sv_save.c
+void SV_SaveGame_f (void);
+void SV_LoadGame_f (void);
 
 //
 void SV_WriteDelta(client_t* client, entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force);
 qbool SV_SkipCommsBotMessage(client_t* client);
 
-// 
+//
 #ifdef SERVERONLY
 #include "central.h"
 #else
