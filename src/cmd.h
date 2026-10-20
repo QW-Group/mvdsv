@@ -148,6 +148,12 @@ void Cmd_TokenizeString (const char *text);
 // Takes a null terminated string.  Does not need to be /n terminated.
 // breaks the string up into arg tokens.
 
+void Cmd_SetRawArgv0 (const char *text);
+// Sets the command-line token state to a single raw argument (argc=1,
+// argv[0] = whole text) WITHOUT tokenizing, so Cmd_Argv(0) returns the
+// full string even when it contains whitespace. Used to expose the CSQC
+// sendevent event name to the game via trap_Argv(0).
+
 void Cmd_ExecuteString (const char *text);
 // Parses a single line of text into arguments and tries to execute it
 // as if it was typed at the console
