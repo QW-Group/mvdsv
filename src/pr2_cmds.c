@@ -63,6 +63,9 @@ typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
 #ifdef FTE_PEXT_CSQC
 static intptr_t EXT_SetSendNeeded(intptr_t *args);
 static intptr_t EXT_SetSendNeeded64(intptr_t *args);
+static intptr_t EXT_clientstat(intptr_t *args);
+static intptr_t EXT_pointerstat(intptr_t *args);
+static intptr_t EXT_globalstat(intptr_t *args);
 #endif
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
@@ -79,6 +82,9 @@ struct
 #ifdef FTE_PEXT_CSQC
 	{"setsendneeded",		EXT_SetSendNeeded},
 	{"setsendneeded64",		EXT_SetSendNeeded64},
+	{"clientstat",			EXT_clientstat},
+	{"pointerstat",			EXT_pointerstat},
+	{"globalstat",			EXT_globalstat},
 #endif
 };
 ext_syscall_t ext_syscall_tbl[256];
@@ -2063,6 +2069,27 @@ intptr_t EXT_SetSendNeeded64(intptr_t *args)
 	return 0;
 }
 
+// trap_clientstat(statnum, type, fieldoffset)
+intptr_t EXT_clientstat(intptr_t *args)
+{
+	SV_QCStatFieldIdx (args[2], args[3], args[1]);
+	return 0;
+}
+
+// trap_pointerstat(statnum, type, ptr)
+intptr_t EXT_pointerstat(intptr_t *args)
+{
+	void *ptr = VM_ArgPtr(args[3]);
+	SV_QCStatPtr (args[2], ptr, args[1]);
+	return 0;
+}
+
+// trap_globalstat(statnum, type, name)
+intptr_t EXT_globalstat(intptr_t *args)
+{
+	SV_QCStatGlobal (args[2], VMA(3), args[1]);
+	return 0;
+}
 
 #endif
 

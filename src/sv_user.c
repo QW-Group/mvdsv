@@ -913,6 +913,21 @@ static void Cmd_Spawn_f (void)
 	//
 	memset (sv_client->stats, 0, sizeof(sv_client->stats));
 
+#ifdef FTE_PEXT_CSQC
+	// CSQC float/string stat caches are per-level too: free the host string
+	// copies and clear the float cache so a fresh signon (map change / respawn)
+	// re-sends them. The client shuts CSQC down on map change and reloads
+	// csprogs, so unchanged values must be re-emitted; otherwise stale host
+	// copies would also leak.
+	{
+		int si;
+
+		memset (sv_client->statsf, 0, sizeof(sv_client->statsf));
+		for (si = 0; si < MAX_CL_STATS; si++)
+			Q_free (sv_client->statss[si]);
+	}
+#endif
+
 	ClientReliableWrite_Begin (sv_client, svc_updatestatlong, 6);
 	ClientReliableWrite_Byte (sv_client, STAT_TOTALSECRETS);
 	ClientReliableWrite_Long (sv_client, PR_GLOBAL(total_secrets));

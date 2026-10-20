@@ -1633,8 +1633,13 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	// send stats
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
-		int		stats[MAX_CL_STATS];
+		int		statsi[MAX_CL_STATS];
 		int		j;
+		int		n;
+#ifdef FTE_PEXT_CSQC
+		float	statsf[MAX_CL_STATS];
+		const char *statss[MAX_CL_STATS];
+#endif
 
 		player = svs.clients + i;
 		ent = player->edict;
@@ -1645,36 +1650,85 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 		if (player->spectator)
 			continue;
 
-		memset(stats, 0, sizeof(stats));
+		memset(statsi, 0, sizeof(statsi));
+#ifdef FTE_PEXT_CSQC
+		memset(statsf, 0, sizeof(statsf));
+		memset(statss, 0, sizeof(statss));
+#endif
 
-		stats[STAT_HEALTH]       = ent->v->health;
-		stats[STAT_WEAPON]       = SV_ModelIndex(PR_GetEntityString(ent->v->weaponmodel));
-		stats[STAT_AMMO]         = ent->v->currentammo;
-		stats[STAT_ARMOR]        = ent->v->armorvalue;
-		stats[STAT_SHELLS]       = ent->v->ammo_shells;
-		stats[STAT_NAILS]        = ent->v->ammo_nails;
-		stats[STAT_ROCKETS]      = ent->v->ammo_rockets;
-		stats[STAT_CELLS]        = ent->v->ammo_cells;
-		stats[STAT_ACTIVEWEAPON] = ent->v->weapon;
+		statsi[STAT_HEALTH]       = ent->v->health;
+		statsi[STAT_WEAPON]       = SV_ModelIndex(PR_GetEntityString(ent->v->weaponmodel));
+		statsi[STAT_AMMO]         = ent->v->currentammo;
+		statsi[STAT_ARMOR]        = ent->v->armorvalue;
+		statsi[STAT_SHELLS]       = ent->v->ammo_shells;
+		statsi[STAT_NAILS]        = ent->v->ammo_nails;
+		statsi[STAT_ROCKETS]      = ent->v->ammo_rockets;
+		statsi[STAT_CELLS]        = ent->v->ammo_cells;
+		statsi[STAT_ACTIVEWEAPON] = ent->v->weapon;
 
 		if (ent->v->health > 0) // viewheight for PF_DEAD & PF_GIB is hardwired
-			stats[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
+			statsi[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
 
-		stats[STAT_ITEMS] = SV_ItemsStat(ent);
+		statsi[STAT_ITEMS] = SV_ItemsStat(ent);
 
-		for (j = 0; j < MAX_CL_STATS; j++)
+#ifdef FTE_PEXT_CSQC
+		// clientstat/pointerstat registered stats (32..255) for the recorder.
+		if (SV_WantsQCStats (&demo.recorder))
+			SV_UpdateQCStats (ent, statsi, statsf, statss);
+#endif
+
+		// legacy 32 stats unless the recorder is explicitly CSQC
+#ifdef FTE_PEXT_CSQC
+		n = SV_WantsQCStats (&demo.recorder) ? MAX_CL_STATS : MAX_WIRE_STATS;
+#else
+		n = MAX_WIRE_STATS;
+#endif
+
+		for (j = 0; j < n; j++)
 		{
-			if (stats[j] >= 0 && stats[j] <= 255)
+#ifdef FTE_PEXT_CSQC
+			// float/string stats use their own wire opcodes
+			if (SV_QCStatKind(j) == QCSTAT_KIND_FLOAT)
+			{
+				if (statsf[j] && statsf[j] != (float)(int)statsf[j])
+				{
+					MSG_WriteByte(&buf, svc_fte_updatestatfloat);
+					MSG_WriteByte(&buf, j);
+					MSG_WriteFloat(&buf, statsf[j]);
+				}
+				else if ((int)statsf[j] >= 0 && (int)statsf[j] <= 255)
+				{
+					MSG_WriteByte(&buf, svc_updatestat);
+					MSG_WriteByte(&buf, j);
+					MSG_WriteByte(&buf, (int)statsf[j]);
+				}
+				else
+				{
+					MSG_WriteByte(&buf, svc_updatestatlong);
+					MSG_WriteByte(&buf, j);
+					MSG_WriteLong(&buf, (int)statsf[j]);
+				}
+				continue;
+			}
+			if (SV_QCStatKind(j) == QCSTAT_KIND_STRING)
+			{
+				MSG_WriteByte(&buf, svc_fte_updatestatstring);
+				MSG_WriteByte(&buf, j);
+				MSG_WriteString(&buf, (char *)(statss[j] ? statss[j] : ""));
+				continue;
+			}
+#endif
+			if (statsi[j] >= 0 && statsi[j] <= 255)
 			{
 				MSG_WriteByte(&buf, svc_updatestat);
 				MSG_WriteByte(&buf, j);
-				MSG_WriteByte(&buf, stats[j]);
+				MSG_WriteByte(&buf, statsi[j]);
 			}
 			else
 			{
 				MSG_WriteByte(&buf, svc_updatestatlong);
 				MSG_WriteByte(&buf, j);
-				MSG_WriteLong(&buf, stats[j]);
+				MSG_WriteLong(&buf, statsi[j]);
 			}
 		}
 

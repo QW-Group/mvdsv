@@ -173,6 +173,17 @@ extern cvar_t sv_csqcdebug;
 // sv_init.c
 qbool SV_CSQCActive (void);   // true if a PR2 mod (native/QVM) is loaded; PR1 (.dat) -> false
 void SV_UpdateCSQCExtension (void); // set/clear FTE_PEXT_CSQC in svs.fteprotocolextensions by mod type
+// sv_send.c
+void SV_ClearQCStats (void);
+void SV_QCStatFieldIdx (int type, unsigned int fieldindex, int statnum);
+void SV_QCStatPtr (int type, void *ptr, int statnum);
+void SV_QCStatGlobal (int type, const char *name, int statnum);
+void SV_UpdateQCStats (edict_t *ent, int *statsi, float *statsf, const char **statss);
+// CSQC stat wire kinds: drives the emit opcode for a statnum
+#define QCSTAT_KIND_INT		0
+#define QCSTAT_KIND_FLOAT	1
+#define QCSTAT_KIND_STRING	2
+int SV_QCStatKind (int statnum);
 #endif
 
 #define	NUM_SPAWN_PARMS 16
@@ -302,6 +313,11 @@ typedef struct client_s
 	int				old_frags;
 
 	int				stats[MAX_CL_STATS];
+
+#ifdef FTE_PEXT_CSQC
+	float			statsf[MAX_CL_STATS];	// last emitted float stat value
+	char			*statss[MAX_CL_STATS];	// last emitted string stat (host copy, Q_strdup)
+#endif
 
 	double			lastservertimeupdate;		// last realtime we sent STAT_TIME to the client
 
@@ -580,6 +596,11 @@ typedef struct
 
 	int				stats[MAX_CLIENTS][MAX_CL_STATS];
 
+#ifdef FTE_PEXT_CSQC
+	float			statsf[MAX_CLIENTS][MAX_CL_STATS];
+	char			*statss[MAX_CLIENTS][MAX_CL_STATS];
+#endif
+
 	int				parsecount;  // current frame, to which we add demo data
 	int				lastwritten; // lastwriten frame
 
@@ -848,6 +869,8 @@ void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
 
 #ifdef FTE_PEXT_CSQC
+// sv_send.c - emit CSQC stats 32..255 to this destination (live client / recorder)
+qbool SV_WantsQCStats (client_t *client);
 #endif
 
 int SV_CalcPing (client_t *cl);
