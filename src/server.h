@@ -229,6 +229,16 @@ typedef struct
 // }
 
 	packet_entities_t	entities;
+
+#ifdef FTE_PEXT_CSQC
+	// outgoing sequence this frame was built for (0 if unused); lets
+	// SV_CSQC_DroppedPacket skip stale slots (FTE checks frame->sequence).
+	int				sequence;
+	// CSQC entities emitted in this frame's datagram (see CSQC_LOG_MAX).
+	int				csqc_lognum;
+	qbool			csqc_log_overflow;
+	csqc_log_t		csqc_log[CSQC_LOG_MAX];
+#endif
 } client_frame_t;
 
 typedef struct
@@ -420,6 +430,7 @@ typedef struct client_s
 	qbool			csqcactive;
 	uint64_t		*pendingcsqcbits;	// per-entity CSQC delta bits, size max_net_ents
 	int				max_net_ents;		// actual size of pendingcsqcbits
+	int				csqc_lastack;		// last outgoing seq known acknowledged (loss recovery)
 #endif
 
 	//===== NETWORK ============
@@ -879,6 +890,9 @@ void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
 
 #ifdef FTE_PEXT_CSQC
+// sv_ents.c - CSQC loss recovery (FTE SV_AckEntityFrame / SV_CSQC_DroppedPacket)
+void SV_AckEntityFrame (client_t *client, int framenum);
+void SV_CSQC_DroppedPacket (client_t *client, int sequence);
 // sv_send.c - emit CSQC stats 32..255 to this destination (live client / recorder)
 qbool SV_WantsQCStats (client_t *client);
 #endif

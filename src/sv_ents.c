@@ -535,7 +535,8 @@ qbool SV_PlayerVisibleToClient (client_t* client, int j, byte* pvs, edict_t* sel
 		if (cl->spectator)
 			return false;
 
-		if (pvs && ent->e.num_leafs >= 0) {
+		if (((int)ent->xv.pvsflags & PVSF_MODE_MASK) != PVSF_IGNOREPVS &&
+			pvs && ent->e.num_leafs >= 0) {
 			// ignore if not touching a PV leaf
 			for (i = 0; i < ent->e.num_leafs; i++) {
 				if (pvs[ent->e.leafnums[i] >> 3] & (1 << (ent->e.leafnums[i] & 7))) {
@@ -615,6 +616,117 @@ static void SV_EmitDeltaEntIndex (sizebuf_t *msg, unsigned int entnum, qbool rem
 	MSG_WriteShort (msg, entnum | rflag);
 }
 
+#ifdef FTE_PEXT_CSQC
+// Record one entity update emitted into the current frame's datagram so a
+// lost packet can re-flag it (FTE SV_EmitCSQCUpdate resend[]). The entry keeps
+// the entity number plus a remove flag; on drop a remove is re-flagged
+// SENDFLAGS_REMOVED (so the remove is re-sent) and a send SENDFLAGS_USABLE
+// (full resend). Overflow falls back to a full resend of all PRESENT entities
+// on drop (csqc_log_overflow).
+static void SV_CSQC_LogAdd (client_t *client, client_frame_t *frame, int entnum, qbool removed)
+{
+	if (client == &demo.recorder)
+		return;	// MVD recorder has its own frame store; no loss recovery there
+	if (frame->csqc_log_overflow)
+		return;
+	if (frame->csqc_lognum >= CSQC_LOG_MAX)
+	{
+		// too many updates in one frame to track individually: on drop, fall
+		// back to a full resend of every PRESENT entity (SV_CSQC_DroppedPacket).
+		frame->csqc_log_overflow = true;
+		return;
+	}
+	frame->csqc_log[frame->csqc_lognum] = entnum | (removed ? CSQC_LOG_REMOVE : 0);
+	frame->csqc_lognum++;
+}
+
+/*
+=============
+SV_CSQC_DroppedPacket
+
+A frame that went out under `sequence` was lost (client acked past it).
+Re-flag the entities whose updates were in it so they are sent again.
+Mirrors FTE sv_ents.c:557.
+=============
+*/
+void SV_CSQC_DroppedPacket (client_t *client, int sequence)
+{
+	int i;
+	client_frame_t *frame;
+
+	if (!client->csqcactive || !client->pendingcsqcbits)
+		return;
+
+	frame = &client->frames[sequence & UPDATE_MASK];
+
+	// skip if we never generated that frame, to avoid pulling in stale data
+	if (frame->sequence != sequence)
+		return;
+
+	if (frame->csqc_log_overflow)
+	{
+		// too many tracked updates in that frame: resend everything PRESENT
+		if ((int)sv_csqcdebug.value)
+			Con_DPrintf("CSQC-DROP frame %d overflow, resend all PRESENT\n", sequence);
+		for (i = 1; i < client->max_net_ents; i++)
+			if (client->pendingcsqcbits[i] & SENDFLAGS_PRESENT)
+				client->pendingcsqcbits[i] |= SENDFLAGS_USABLE;
+	}
+	else if (frame->csqc_lognum)
+	{
+		if ((int)sv_csqcdebug.value)
+			Con_DPrintf("CSQC-DROP frame %d, re-flag %d entities\n", sequence, frame->csqc_lognum);
+		for (i = 0; i < frame->csqc_lognum; i++)
+		{
+			int e = frame->csqc_log[i] & ~CSQC_LOG_REMOVE;
+
+			if (e >= client->max_net_ents)
+				continue;
+			if (frame->csqc_log[i] & CSQC_LOG_REMOVE)
+				client->pendingcsqcbits[e] |= SENDFLAGS_REMOVED;
+			else
+				client->pendingcsqcbits[e] |= SENDFLAGS_USABLE;
+		}
+		frame->csqc_lognum = 0;	// don't resend the same info twice
+	}
+}
+
+/*
+=============
+SV_AckEntityFrame
+
+The client acknowledged up to `framenum`; any frames between the previously
+acknowledged one and this one were lost. Mirrors FTE sv_ents.c:618.
+=============
+*/
+void SV_AckEntityFrame (client_t *client, int framenum)
+{
+	int frame;
+	int acked = framenum;
+
+	if (!client->csqcactive)
+		return;
+
+	frame = client->csqc_lastack + 1;
+	if (framenum > client->csqc_lastack)
+		client->csqc_lastack = framenum;
+	if (framenum > frame + UPDATE_BACKUP)
+		framenum = frame + UPDATE_BACKUP;
+
+	for (; frame < framenum; frame++)
+		SV_CSQC_DroppedPacket (client, frame);
+
+	// The acknowledged datagram itself was delivered: drop its log so a later
+	// slot reuse does not mistake it for a lost frame (it still carries
+	// csqc_lognum from when it was built). Frames strictly between the previous
+	// ack and this one were handled above.
+	if (client->frames[acked & UPDATE_MASK].sequence == acked)
+	{
+		client->frames[acked & UPDATE_MASK].csqc_lognum = 0;
+		client->frames[acked & UPDATE_MASK].csqc_log_overflow = false;
+	}
+}
+
 /*
 =============
 SV_CSQC_EmitRemove
@@ -656,9 +768,11 @@ static qbool SV_CSQC_EmitRemove (client_t *client, sizebuf_t *msg, int svcnumber
 	}
 
 	SV_EmitDeltaEntIndex (msg, e, true);
+	SV_CSQC_LogAdd (client, logframe, e, true);
 	client->pendingcsqcbits[e] = 0;
 	return true;
 }
+#endif
 
 /*
 =============
@@ -698,6 +812,30 @@ static void SV_EmitCSQCUpdate (client_t *client, sizebuf_t *msg, int svcnumber, 
 	{
 		int seq = client->netchan.outgoing_sequence;
 		logframe = &client->frames[seq & UPDATE_MASK];
+		if (logframe->sequence != seq)
+		{
+			// The slot is being reused for a newer datagram. Only an older frame
+			// that was never acknowledged is lost (its log survives because
+			// SV_AckEntityFrame never visited it); re-flag it before overwriting
+			// (FTE SV_ReplaceEntityFrame). A frame that was acknowledged keeps
+			// its log until this point and must not be re-flagged.
+			//
+			// Advancing the ack mark past the reused frame is the other half of
+			// SV_ReplaceEntityFrame: the ring cannot track anything older than
+			// the slot being overwritten, so SV_AckEntityFrame must not try to.
+			// Without it, a one-way server->client outage longer than the frame
+			// ring lets the ack handler's clamp skip the oldest un-acked frames,
+			// which then fall below csqc_lastack and are never re-flagged.
+			if (logframe->sequence > client->csqc_lastack)
+			{
+				if (logframe->csqc_lognum)
+					SV_CSQC_DroppedPacket (client, logframe->sequence);
+				client->csqc_lastack = logframe->sequence;
+			}
+			logframe->sequence = seq;
+			logframe->csqc_lognum = 0;
+			logframe->csqc_log_overflow = false;
+		}
 	}
 
 	SZ_InitEx (&csqcmsgbuffer, messagebuffer, sizeof(messagebuffer), true);
@@ -797,6 +935,7 @@ static void SV_EmitCSQCUpdate (client_t *client, sizebuf_t *msg, int svcnumber, 
 
 			// the entity update went into this frame's datagram: remember what
 			// was sent so a lost packet re-flags exactly these bits.
+			SV_CSQC_LogAdd (client, logframe, e, false);
 
 			client->pendingcsqcbits[e] |= SENDFLAGS_PRESENT;
 		}
@@ -816,6 +955,7 @@ static void SV_EmitCSQCUpdate (client_t *client, sizebuf_t *msg, int svcnumber, 
 			}
 
 			SV_EmitDeltaEntIndex (msg, e, true);
+			SV_CSQC_LogAdd (client, logframe, e, true);
 		}
 	}
 
@@ -1195,11 +1335,17 @@ qbool SV_EntityVisibleToClient (client_t* client, int e, byte* pvs)
 			return false;
 	}
 
-	// ignore ents without visible models
-	if (!ent->v->modelindex || !*PR_GetEntityString(ent->v->model))
+	// CSQC entities are exempt from the visible-model test: a SendEntity entity
+	// need not carry a model (beams, trails, HUD data carriers) and FTE sends
+	// it regardless. Everything else without a visible model is skipped.
+	if (!(ent->xv.sendentity && client->csqcactive) &&
+		(!ent->v->modelindex || !*PR_GetEntityString(ent->v->model)))
 		return false;
 
-	if ( pvs && ent->e.num_leafs >= 0 )
+	// PVSF_IGNOREPVS entities are global (scoreboard/HUD/objectives): skip the
+	// PVS leaf test. PVSF_USEPHS is not implemented and falls back to PVS.
+	if (((int)ent->xv.pvsflags & PVSF_MODE_MASK) != PVSF_IGNOREPVS &&
+		pvs && ent->e.num_leafs >= 0 )
 	{
 		int i;
 

@@ -5183,6 +5183,12 @@ void SV_ExecuteClientMessage (client_t *cl)
 		SV_DebugWriteServerAntilagPositions(cl, antilag_players_present);
 	}
 #endif
+
+#ifdef FTE_PEXT_CSQC
+	// frames this packet implicitly acknowledges are not lost (FTE sv_user.c,
+	// after the clc parse loop)
+	SV_AckEntityFrame (cl, cl->netchan.incoming_acknowledged);
+#endif
 }
 
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
