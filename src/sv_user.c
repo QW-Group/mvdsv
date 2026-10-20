@@ -3117,11 +3117,40 @@ void SV_Voice_UnmuteAll_f(void)
 #ifdef FTE_PEXT_CSQC
 void SV_EnableClientsCSQC(void)
 {
+	int e;
+
+	if (!SV_CSQCActive())
+		return; // PR1 mod: no CSQC support, ignore the client request
+
+	// a client that never negotiated FTE_PEXT_CSQC must not be enabled - svc 76
+	// would be sent to a client that Host_Errors on it.
+	if (!(sv_client->fteprotocolextensions & FTE_PEXT_CSQC))
+		return;
+
 	sv_client->csqcactive = true;
+
+	// arm the CSQC delta bitset now: SV_WriteEntitiesToClient would allocate it
+	// lazily a frame later, and sendflags set this frame would be dropped in the
+	// meantime.
+	if (!sv_client->pendingcsqcbits && sv.max_edicts > 0)
+	{
+		sv_client->pendingcsqcbits = Q_calloc(sv.max_edicts, sizeof(uint64_t));
+		sv_client->max_net_ents = sv.max_edicts;
+	}
+
+	// the client just (re)enabled csqc: resend all entities it already has
+	// so its freshly-loaded csprogs gets the full state.
+	if (sv_client->pendingcsqcbits)
+		for (e = 1; e < sv_client->max_net_ents; e++)
+			if (sv_client->pendingcsqcbits[e] & SENDFLAGS_PRESENT)
+				sv_client->pendingcsqcbits[e] |= SENDFLAGS_USABLE;
 }
 
 void SV_DisableClientsCSQC(void)
 {
+	if (!SV_CSQCActive())
+		return; // PR1 mod: CSQC was never enabled
+
 	sv_client->csqcactive = false;
 }
 #endif
