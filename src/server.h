@@ -114,10 +114,17 @@ typedef struct
 	// the multicast buffer is used to send a message to a set of clients
 	sizebuf_t	multicast;
 	byte		multicast_buf[MAX_MSGLEN];
+#ifdef FTE_PEXT_CSQC
+	// set when a mod's multicast starts with svc_fte_cgamepacket (the first
+	// byte of a fresh buffer); PF2_multicast then dispatches it through
+	// SV_CSQCMulticast so only CSQC clients receive it. Cleared on every
+	// multicast dispatch.
+	qbool		multicast_csqc;
+#endif
 
 	// the signon buffer will be sent to each client as they connect
 	// includes the entity baselines, the static entities, etc
-	// large levels will have >MAX_DATAGRAM sized signons, so 
+	// large levels will have >MAX_DATAGRAM sized signons, so
 	// multiple signon messages are kept
 	sizebuf_t      signon;
 	unsigned int   num_signon_buffers;
@@ -965,6 +972,10 @@ qbool SV_AddToRedirect(char *msg);
 
 void SV_Multicast(vec3_t origin, int to);
 void SV_MulticastEx(vec3_t origin, int to, const char *cl_reliable_key);
+#ifdef FTE_PEXT_CSQC
+// dispatch a mod's CSQC multicast (svc_fte_cgamepacket) to CSQC clients only
+void SV_CSQCMulticast(vec3_t origin, int to);
+#endif
 void SV_StartParticle(vec3_t org, vec3_t dir, int color, int count, int replacement_te, int replacement_count);
 int SV_SoundPrecacheCount(char *const *sounds, int capacity);
 // Resolve a precached ambient sample without reordering the catalog; -1 if missing.
