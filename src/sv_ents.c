@@ -1229,6 +1229,14 @@ svc_playerinfo messages
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 {
 #ifdef FTE_PEXT_CSQC
+	// lazily allocate the per-client CSQC delta bitset, but only for clients
+	// that actually run CSQC: a PR2 server with plain players must not pay for
+	// it. SV_EnableClientsCSQC arms it earlier on enablecsqc.
+	if (SV_CSQCActive() && client->csqcactive && !client->pendingcsqcbits && sv.max_edicts > 0)
+	{
+		client->pendingcsqcbits = Q_calloc(sv.max_edicts, sizeof(uint64_t));
+		client->max_net_ents = sv.max_edicts;
+	}
 
 	// (re)start this client's PVS-visible CSQC entity list; size it once to the
 	// current map's edict count (freed on shutdown)
