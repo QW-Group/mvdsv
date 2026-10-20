@@ -141,6 +141,33 @@ typedef struct
 // updatestatfloat 78/79) come from qwprot (upstream master d29fbd4+). mvdsv emits
 // them (live clients and, under sv_mvd_csqc, MVD/QTV).
 
+// per-entity CSQC delta flags, mirror of FTE server.h SENDFLAGS_*
+#define SENDFLAGS_PRESENT	0x1u	// this entity is present on that client
+#define SENDFLAGS_REMOVED	0x2u	// to handle remove packetloss
+#define SENDFLAGS_RESERVED	(SENDFLAGS_PRESENT|SENDFLAGS_REMOVED)
+#define SENDFLAGS_SHIFT		2u
+#define SENDFLAGS_USABLE	(~(uint64_t)SENDFLAGS_RESERVED)	// bits actually safe in a float
+
+// per-frame CSQC resend log: which entities were updated into which outgoing
+// datagram, so a lost packet re-flags them (FTE SV_CSQC_DroppedPacket). Each
+// entry stores the entity number plus CSQC_LOG_REMOVE; on drop the entity is
+// OR'ed with SENDFLAGS_REMOVED (a lost remove) or SENDFLAGS_USABLE (a send).
+#define CSQC_LOG_MAX		64
+typedef unsigned short	csqc_log_t;
+#define CSQC_LOG_REMOVE		0x8000	// entry flag: this logged update was a remove
+
+// CSQC pvsflags (FTE server.h): the low 2 bits select the visibility mode,
+// 0x80 suppresses the automatic remove when the entity leaves the PVS.
+#define PVSF_NORMALPVS		0x0
+#define PVSF_NOTRACECHECK	0x1
+#define PVSF_USEPHS			0x2
+#define PVSF_IGNOREPVS		0x3
+#define PVSF_MODE_MASK		0x3
+#define PVSF_NOREMOVE		0x80
+
+// sv_ents.c
+extern sizebuf_t csqcmsgbuffer;
+void SV_FreeCSQCList (void);   // release the per-frame CSQC PVS entity list
 // sv_main.c
 extern cvar_t sv_csqcdebug;
 #endif
@@ -362,6 +389,8 @@ typedef struct client_s
 
 #ifdef FTE_PEXT_CSQC
 	qbool			csqcactive;
+	uint64_t		*pendingcsqcbits;	// per-entity CSQC delta bits, size max_net_ents
+	int				max_net_ents;		// actual size of pendingcsqcbits
 #endif
 
 	//===== NETWORK ============
@@ -410,6 +439,12 @@ typedef struct client_s
 		float    last_sidemove;     // Previous frame's sidemove value
 	} safestrafe;
 } client_t;
+
+#ifdef FTE_PEXT_CSQC
+// sv_ents.c
+void SV_ProcessSendFlags (client_t *c);
+void SV_CleanupEnts (void);
+#endif
 
 // a client can leave the server in one of four ways:
 // dropping properly by quiting or disconnecting
@@ -808,6 +843,9 @@ typedef struct
 void SV_Frame (double time);
 void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
+
+#ifdef FTE_PEXT_CSQC
+#endif
 
 int SV_CalcPing (client_t *cl);
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);

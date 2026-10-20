@@ -264,6 +264,9 @@ void SV_Shutdown (char *finalmsg)
 #endif
 
 	// Shutdown game.
+#ifdef FTE_PEXT_CSQC
+	SV_FreeCSQCList ();
+#endif
 	PR_GameShutDown();
 	PR_UnLoadProgs();
 
@@ -439,6 +442,12 @@ void SV_DropClient(client_t* drop)
 
 #ifdef FTE_PEXT_CSQC
 	drop->csqcactive = false;
+	if (drop->pendingcsqcbits)
+	{
+		Q_free(drop->pendingcsqcbits);
+		drop->pendingcsqcbits = NULL;
+	}
+	drop->max_net_ents = 0;
 #endif
 
 	Info_RemoveAll(&drop->_userinfo_ctx_);

@@ -496,7 +496,7 @@ void PR2_ClearEdict(edict_t* e)
 //===========================================================================
 // SendEntity
 //===========================================================================
-qbool PR2_SendEntity(edict_t* e, edict_t* to, int sendflags)
+qbool PR2_SendEntity(edict_t* e, edict_t* to, uint64_t sendflags)
 {
 	qbool ret_val = false;
 	int old_self = pr_global_struct->self;

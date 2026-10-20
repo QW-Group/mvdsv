@@ -39,6 +39,9 @@
 const char *pr2_ent_data_ptr;
 vm_t *sv_vm = NULL;
 extern gameData_t gamedata;
+#ifdef FTE_PEXT_CSQC
+extern sizebuf_t csqcmsgbuffer;
+#endif
 
 static int PASSFLOAT(float f)
 {
@@ -59,6 +62,7 @@ static float GETFLOAT(int i)
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
 #ifdef FTE_PEXT_CSQC
 static intptr_t EXT_SetSendNeeded(intptr_t *args);
+static intptr_t EXT_SetSendNeeded64(intptr_t *args);
 #endif
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
@@ -74,6 +78,7 @@ struct
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
 #ifdef FTE_PEXT_CSQC
 	{"setsendneeded",		EXT_SetSendNeeded},
+	{"setsendneeded64",		EXT_SetSendNeeded64},
 #endif
 };
 ext_syscall_t ext_syscall_tbl[256];
@@ -1202,9 +1207,11 @@ sizebuf_t *WriteDest2(int dest)
 		return &sv.multicast;
 
 	case MSG_CSQC:
-		// Should return a reference to the CSQC message buffer managed in sv_ents.c
-		PR2_RunError("PF_Write_*: MSG_CSQC not implemented yet.");
-		return NULL;
+		// Only valid inside a GAME_EDICT_CSQCSEND call; the buffer is
+		// armed per-client inside SV_EmitCSQCUpdate (sv_ents.c).
+		if (!csqcmsgbuffer.maxsize || !csqcmsgbuffer.data)
+			PR2_RunError("PF_Write_*: MSG_CSQC outside of SendEntity method");
+		return &csqcmsgbuffer;
 
 	default:
 		PR2_RunError ("WriteDest: bad destination");
@@ -1366,7 +1373,23 @@ void PF2_WriteString(int to, char *data)
 		}
 	}
 	else
-		MSG_WriteString(WriteDest2(to), data);
+	{
+		sizebuf_t *dest = WriteDest2(to);
+		int len = (data && *data) ? (int)strlen(data) + 1 : 1;
+
+		// SZ_GetSpace Sys_Errors when a *single* write exceeds
+		// maxsize even with allowoverflow (csqcmsgbuffer is only MAX_DATAGRAM).
+		// Such a payload can never fit the client datagram anyway, so for
+		// allowoverflow destinations mark it overflowed and drop it instead of
+		// killing the server. Non-overflow destinations keep the old Sys_Error.
+		if (dest->allowoverflow && len > dest->maxsize)
+		{
+			SZ_Clear(dest);
+			dest->overflowed = true;
+			return;
+		}
+		MSG_WriteString(dest, data);
+	}
 }
 
 void PF2_WriteEntity(int to, int data)
@@ -1984,11 +2007,63 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 }
 
 #ifdef FTE_PEXT_CSQC
+// Shared broadcast/unicast body of both setsendneeded traps. The mask is
+// already shifted to its final position in the pending word (PRESENT/REMOVED
+// in bits 0..1 are engine-side and must not be touched by mods).
+static void EXT_SetSendNeeded_Apply(unsigned int subject, uint64_t fl, unsigned int to)
+{
+	if (!to)
+	{	// broadcast
+		unsigned int i;
+		for (i = 0; i < MAX_CLIENTS; i++)
+			if (svs.clients[i].pendingcsqcbits && subject < (unsigned int)svs.clients[i].max_net_ents)
+				svs.clients[i].pendingcsqcbits[subject] |= fl;
+	}
+	else
+	{
+		to--;
+		if (to >= MAX_CLIENTS || !svs.clients[to].pendingcsqcbits || subject >= (unsigned int)svs.clients[to].max_net_ents)
+			return;
+		svs.clients[to].pendingcsqcbits[subject] |= fl;
+	}
+}
+
 intptr_t EXT_SetSendNeeded(intptr_t *args)
 {
-	PR2_RunError("SetSendNeeded not implemented yet.");
+	// trap_SetSendNeeded(subject, flags, to)
+	//   subject - entity number to flag
+	//   flags   - changed-field bits (shifted by SENDFLAGS_SHIFT on resend)
+	//   to      - 0 = broadcast, 1..N = specific client
+	unsigned int subject = (unsigned int)args[1];
+	// args[] are intptr_t and both VM backends sign-extend the mod's 32-bit
+	// value (vm_interpreted.c / vm_x86.c movsxd), so a mask with bit31 set must
+	// be re-cast to uint32_t first or it would pollute bits 32..63.
+	uint64_t fl = (uint64_t)(uint32_t)args[2] << SENDFLAGS_SHIFT;
+	unsigned int to = (unsigned int)args[3];
+
+	EXT_SetSendNeeded_Apply(subject, fl, to);
 	return 0;
 }
+
+// trap_SetSendNeeded64(subject, flagslo, flagshi, to)
+ //   64-bit setsendneeded variant: the mod's mask (62 usable bits: lo = 0..31,
+ //   hi = 32..61) is passed as two ints, since VM word sizes (native and QVM)
+ //   are 32-bit. PRESENT/REMOVED (bits 0..1 of the pending word) are engine-side,
+ //   so the mask is trimmed to 62 bits BEFORE the shift to avoid touching them.
+intptr_t EXT_SetSendNeeded64(intptr_t *args)
+{
+	unsigned int subject = (unsigned int)args[1];
+	uint64_t fl = ((uint64_t)(uint32_t)args[2]) | ((uint64_t)(uint32_t)args[3] << 32);
+	unsigned int to = (unsigned int)args[4];
+
+	fl &= (SENDFLAGS_USABLE >> SENDFLAGS_SHIFT);
+	fl <<= SENDFLAGS_SHIFT;
+
+	EXT_SetSendNeeded_Apply(subject, fl, to);
+	return 0;
+}
+
+
 #endif
 
 // To prevent mods from hardcoding field offsets which would cause engine incompatibilities.
@@ -2073,6 +2148,10 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		if (!strcmp(key, "colormod"))
 		{
 			return offsetof(ext_entvars_t, colourmod) | GetExtFieldCookie();
+		}
+		if (!strcmp(key, "sendflags"))
+		{
+			return offsetof(ext_entvars_t, sendflags) | GetExtFieldCookie();
 		}
 		if (!strcmp(key, "SendEntity"))
 		{
