@@ -226,7 +226,7 @@ typedef enum
 	GAME_PAUSED_TIC,			// ( int duration_msec );	// duration is in msecs
 	GAME_CLEAR_EDICT,           // (self)
 #ifdef FTE_PEXT_CSQC
-	GAME_EDICT_CSQCSEND = 200,	// (self,other,int sendflags)
+	GAME_EDICT_CSQCSEND = 200,	// (self,other,int sendflags_lo,int sendflags_hi) — 64-bit
 #endif
 } gameExport_t;
 

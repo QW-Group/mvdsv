@@ -1012,8 +1012,6 @@ static void SV_QueueFullClientUpdate (client_t *client)
 	SZ_Init(&msg, data, sizeof(data));
 	SV_FullClientUpdate(client, &msg);
 
-	/* Keep roster-generated batches strictly below MIN_MTU, the smallest
-	 * client reliable buffer size. */
 	if (sv.reliable_datagram.cursize + msg.cursize >= MIN_MTU)
 		SV_FlushReliableDatagram();
 
@@ -1161,6 +1159,10 @@ void SV_SendClientMessages (void)
 		if (!c->state)
 			continue;
 
+#ifdef FTE_PEXT_CSQC
+		SV_ProcessSendFlags (c);
+#endif
+
 		if (c->drop)
 		{
 			SV_DropClient(c);
@@ -1247,6 +1249,12 @@ void SV_SendClientMessages (void)
 			c->datagram.cursize = 0;
 		}
 	}
+
+#ifdef FTE_PEXT_CSQC
+	if (sv.mvdrecording)
+		SV_ProcessSendFlags (&demo.recorder);
+	SV_CleanupEnts ();
+#endif
 }
 
 static void SV_BotWriteDamage(client_t* c, int i)
