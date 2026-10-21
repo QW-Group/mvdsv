@@ -53,7 +53,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAX_EDICTS_SAFE         512     // lower limit, to make sure no client limits exceeded
 #define	MAX_LIGHTSTYLES         64
 #define	MAX_MODELS              4096    // really just UINT16_MAX, see SV_WriteDelta, PEXT_MODELDBL, dynamic + static entities
-#define	MAX_SOUNDS              256     // so they cannot be blindly increased
+#define MAX_SOUNDS_LEGACY       256     // slot 0 is reserved; legacy IDs fit a byte
+#define	MAX_SOUNDS              4096    // IDs above 255 require FTE_PEXT_SOUNDDBL
 #define MAX_VWEP_MODELS         32      // could be increased to 256
 
 #define	MAX_STYLESTRING			64

@@ -1197,6 +1197,8 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	edict_t* ent;
 	char* gamedir;
 	int i;
+	int sound_count = SV_SoundPrecacheCount(sv.sound_precache, MAX_SOUNDS);
+	int sound_cursor = 0, next_sound;
 
 	if (!demo.dest)
 		return;
@@ -1224,6 +1226,14 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 #endif
 #ifdef FTE_PEXT_MODELDBL
 	demo.recorder.fteprotocolextensions |= FTE_PEXT_MODELDBL;
+#endif
+#ifdef FTE_PEXT_SOUNDDBL
+	if (sound_count >= MAX_SOUNDS_LEGACY) {
+		demo.recorder.fteprotocolextensions |= FTE_PEXT_SOUNDDBL;
+	}
+	else {
+		demo.recorder.fteprotocolextensions &= ~FTE_PEXT_SOUNDDBL;
+	}
 #endif
 #ifdef FTE_PEXT_ENTITYDBL
 	demo.recorder.fteprotocolextensions |= FTE_PEXT_ENTITYDBL;
@@ -1317,34 +1327,15 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	SV_MVDEmbedStartTimestamp();
 
 	// soundlist
-	MSG_WriteByte (&buf, svc_soundlist);
-	MSG_WriteByte (&buf, 0);
-
-	n = 0;
-	s = sv.sound_precache[n+1];
-	while (s)
-	{
-		MSG_WriteString (&buf, s);
-		if (buf.cursize > MAX_MSGLEN/2)
-		{
-			MSG_WriteByte (&buf, 0);
-			MSG_WriteByte (&buf, n);
-			SV_WriteRecordMVDMessage (&buf);
-			SZ_Clear (&buf);
-			MSG_WriteByte (&buf, svc_soundlist);
-			MSG_WriteByte (&buf, n + 1);
+	do {
+		if (!SV_WriteSoundListChunk(&buf, sv.sound_precache, sound_count,
+		                            sound_cursor, MAX_MSGLEN / 2, &next_sound)) {
+			SV_Error("Unable to write MVD soundlist chunk");
 		}
-		n++;
-		s = sv.sound_precache[n+1];
-	}
-
-	if (buf.cursize)
-	{
-		MSG_WriteByte (&buf, 0);
-		MSG_WriteByte (&buf, 0);
 		SV_WriteRecordMVDMessage (&buf);
 		SZ_Clear (&buf);
-	}
+		sound_cursor = next_sound;
+	} while (sound_cursor);
 
 	// modellist
 	MSG_WriteByte (&buf, svc_modellist);

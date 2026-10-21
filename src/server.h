@@ -910,6 +910,7 @@ void SV_FindModelNumbers (void);
 //
 // sv_user.c
 //
+qbool SV_CheckClientSoundSupport(client_t *client);
 void SV_ExecuteClientMessage (client_t *cl);
 void SV_UserInit (void);
 void SV_TogglePause (const char *msg, int bit);
