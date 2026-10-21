@@ -744,13 +744,6 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume, floa
 	//	if (channel == CHAN_BODY || channel == CHAN_VOICE)
 	//		reliable = true;
 
-	channel = (ent<<3) | channel;
-
-	if (volume != DEFAULT_SOUND_PACKET_VOLUME)
-		channel |= SND_VOLUME;
-	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
-		channel |= SND_ATTENUATION;
-
 	// use the entity origin unless it is a bmodel or a trigger
 	if (entity->v->solid == SOLID_BSP || (entity->v->solid == SOLID_TRIGGER && entity->v->modelindex == 0))
 	{
@@ -762,15 +755,8 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume, floa
 		VectorCopy (entity->v->origin, origin);
 	}
 
-	MSG_WriteByte (&sv.multicast, svc_sound);
-	MSG_WriteShort (&sv.multicast, channel);
-	if (channel & SND_VOLUME)
-		MSG_WriteByte (&sv.multicast, volume);
-	if (channel & SND_ATTENUATION)
-		MSG_WriteByte (&sv.multicast, attenuation*64);
-	MSG_WriteByte (&sv.multicast, sound_num);
-	for (i=0 ; i<3 ; i++)
-		MSG_WriteCoord (&sv.multicast, origin[i]);
+	SV_WriteSoundPacket(&sv.multicast, ent, channel, sound_num, volume,
+	                    attenuation, origin);
 
 	if (use_phs)
 		SV_MulticastEx (origin, reliable ? MULTICAST_PHS_R : MULTICAST_PHS, sv_reliable_sound.value ? "rsnd" : NULL);
