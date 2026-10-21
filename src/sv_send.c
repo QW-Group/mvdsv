@@ -579,6 +579,111 @@ void SV_StartParticle (vec3_t org, vec3_t dir, int color, int count,
 }
 
 
+/* Bounded sound precache and wire encoding shared by signon and MVD. */
+int SV_SoundPrecacheCount(char *const *sounds, int capacity)
+{
+	int count = 0;
+
+	while (count + 1 < capacity && sounds[count + 1]) {
+		++count;
+	}
+	return count;
+}
+
+qbool SV_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+                            int count, int cursor, int limit, int *next)
+{
+	int end, size;
+
+	if (count < 0 || count > 65535 || cursor < 0 || cursor > count) {
+		return false;
+	}
+	limit = min(limit, msg->maxsize);
+	/* Opcode, cursor, empty string and continuation; preflight before writing. */
+	size = msg->cursize + (cursor > 255 ? 5 : 4);
+	if (size > limit) {
+		return false;
+	}
+	end = cursor;
+	while (end < count) {
+		size_t length = strlen(sounds[end + 1]) + 1;
+
+		if (length > (size_t)(limit - size)) {
+			break;
+		}
+		size += (int)length;
+		++end;
+	}
+	/* Zero is reserved for completion. Never publish a non-final 256 boundary. */
+	if (end < count && !(end & 255)) {
+		--end;
+	}
+	if (end < cursor || (end == cursor && cursor < count)) {
+		return false;
+	}
+
+	MSG_WriteByte(msg, cursor > 255 ? svc_fte_soundlistshort : svc_soundlist);
+	if (cursor > 255) {
+		MSG_WriteShort(msg, cursor);
+	}
+	else {
+		MSG_WriteByte(msg, cursor);
+	}
+	for (int index = cursor + 1; index <= end; ++index) {
+		MSG_WriteString(msg, sounds[index]);
+	}
+	MSG_WriteByte(msg, 0);
+	MSG_WriteByte(msg, end < count ? end & 255 : 0);
+	*next = end < count ? end : 0;
+	return true;
+}
+
+static void SV_WriteSoundPacket(sizebuf_t *msg, int entity, int channel,
+                         int sound_id, int volume, float attenuation,
+                         const float origin[3])
+{
+	int packed = (entity << 3) | channel;
+
+	if (sound_id > 255) {
+		int flags = NQSND_LARGESOUND;
+
+		if (volume != DEFAULT_SOUND_PACKET_VOLUME) {
+			flags |= NQSND_VOLUME;
+		}
+		if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION) {
+			flags |= NQSND_ATTENUATION;
+		}
+		MSG_WriteByte(msg, svc_fte_soundextended);
+		MSG_WriteByte(msg, flags);
+	}
+	else {
+		MSG_WriteByte(msg, svc_sound);
+		if (volume != DEFAULT_SOUND_PACKET_VOLUME) {
+			packed |= SND_VOLUME;
+		}
+		if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION) {
+			packed |= SND_ATTENUATION;
+		}
+		MSG_WriteShort(msg, packed);
+	}
+	if (volume != DEFAULT_SOUND_PACKET_VOLUME) {
+		MSG_WriteByte(msg, volume);
+	}
+	if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION) {
+		MSG_WriteByte(msg, attenuation * 64);
+	}
+	if (sound_id > 255) {
+		MSG_WriteShort(msg, packed);
+		MSG_WriteShort(msg, sound_id);
+	}
+	else {
+		MSG_WriteByte(msg, sound_id);
+	}
+	for (int index = 0; index < 3; ++index) {
+		MSG_WriteCoord(msg, origin[index]);
+	}
+}
+
 /*
 ==================
 SV_StartSound
