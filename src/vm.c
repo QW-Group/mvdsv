@@ -268,7 +268,7 @@ void *VM_ArgPtr( intptr_t intValue ) {
 	  return NULL;
 
 	if ( currentVM->entryPoint ) {
-		return (void *)(currentVM->dataBase + intValue);
+		return (void *)intValue;
 	}
 	else {
 		return (void *)(currentVM->dataBase + (intValue & currentVM->dataMask));
@@ -286,7 +286,7 @@ void *VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue ) {
 
 	//
 	if ( vm->entryPoint ) {
-		return (void *)(vm->dataBase + intValue);
+		return (void *)intValue;
 	}
 	else {
 		return (void *)(vm->dataBase + (intValue & vm->dataMask));
