@@ -3044,7 +3044,7 @@ void SV_VoiceSendPacket(client_t *client, sizebuf_t *buf)
 
 		if (send)
 		{
-			if (buf->maxsize - buf->cursize < ring->datalen+5)
+			if (buf->maxsize - buf->cursize < ring->datalen+6)
 				break;
 			MSG_WriteByte(buf, svc_fte_voicechat);
 			MSG_WriteByte(buf, ring->sender);
