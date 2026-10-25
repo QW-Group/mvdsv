@@ -2957,6 +2957,71 @@ double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 
 //============================================================================
 
+#define STUN_HEADER_SIZE 20
+
+/*
+=================
+SV_StunBindingPacket
+
+Answers a STUN Binding request (RFC 8489) with the sender's address as seen by
+the server. Lets a browser time a round trip to the game port through
+RTCPeerConnection ICE gathering (stun:<ip>:<port>) without connecting.
+Returns true if the packet was STUN and must not be parsed as game traffic.
+=================
+*/
+static qbool SV_StunBindingPacket(void)
+{
+	static const byte magic_cookie[4] = { 0x21, 0x12, 0xA4, 0x42 };
+	byte *data = net_message.data;
+	byte *port = (byte *) &net_from.port; // already network byte order
+	byte response[STUN_HEADER_SIZE + 12];
+	int len = net_message.cursize;
+	int pos, attr_len, i;
+
+	if (len < STUN_HEADER_SIZE || memcmp(data + 4, magic_cookie, 4)) {
+		return false;
+	}
+
+	// only a Binding request whose length field matches the datagram
+	if (data[0] != 0x00 || data[1] != 0x01 || ((data[2] << 8) | data[3]) != len - STUN_HEADER_SIZE) {
+		return true;
+	}
+
+	// attributes below 0x8000 are comprehension-required and we know none
+	pos = STUN_HEADER_SIZE;
+	while (pos + 4 <= len) {
+		if (data[pos] < 0x80) {
+			return true;
+		}
+		attr_len = (data[pos + 2] << 8) | data[pos + 3];
+		pos += 4 + ((attr_len + 3) & ~3); // values are padded to 4 bytes
+	}
+	if (pos != len) {
+		return true;
+	}
+
+	// cookie and transaction id echo back
+	memcpy(response, data, STUN_HEADER_SIZE);
+	response[0] = 0x01; // Binding success response
+	response[1] = 0x01;
+	response[2] = 0;
+	response[3] = 12;
+	response[20] = 0x00; // XOR-MAPPED-ADDRESS
+	response[21] = 0x20;
+	response[22] = 0;
+	response[23] = 8;
+	response[24] = 0;
+	response[25] = 0x01; // IPv4
+	response[26] = port[0] ^ magic_cookie[0];
+	response[27] = port[1] ^ magic_cookie[1];
+	for (i = 0; i < 4; i++) {
+		response[28 + i] = net_from.ip[i] ^ magic_cookie[i];
+	}
+
+	NET_SendPacket(NS_SERVER, sizeof(response), response, net_from);
+	return true;
+}
+
 /*
 =================
 SV_ReadPackets
@@ -2996,6 +3061,9 @@ static void SV_ReadPackets (void)
 			SV_SendBan ();	// tell them we aren't listening...
 			continue;
 		}
+
+		if (SV_StunBindingPacket())
+			continue;
 
 		// check for connectionless packet (0xffffffff) first
 		if (*(int *)net_message.data == -1)
