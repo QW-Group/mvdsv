@@ -606,7 +606,13 @@ static void Cmd_Modellist_f (void)
 	}
 
 	n = Q_atoi(Cmd_Argv(2));
-	if (n >= MAX_MODELS) {
+	maxclientsupportedmodels = 256;
+#ifdef FTE_PEXT_MODELDBL
+	if (sv_client->fteprotocolextensions & FTE_PEXT_MODELDBL) {
+		maxclientsupportedmodels = MAX_MODELS;
+	}
+#endif
+	if (n >= maxclientsupportedmodels || n >= MAX_MODELS) {
 		SV_ClearReliable (sv_client);
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "SV_Modellist_f: Invalid modellist index\n");
 		SV_DropClient (sv_client);
@@ -654,21 +660,13 @@ static void Cmd_Modellist_f (void)
 		MSG_WriteByte(&sv_client->netchan.message, n);
 	}
 
-	maxclientsupportedmodels = 256;
-#ifdef FTE_PEXT_MODELDBL
-	if (sv_client->fteprotocolextensions & FTE_PEXT_MODELDBL) {
-		// Artificial limit, ids are sent as short, increase if needed
-		maxclientsupportedmodels *= 8;
-	}
-#endif
-
-	s = sv.model_precache + 1 + n;
-	for (i = 1 + n; i < maxclientsupportedmodels && *s && (((i-1)&255) == 0 || sv_client->netchan.message.cursize < (MAX_MSGLEN/2)); i++, s++) {
-		MSG_WriteString (&sv_client->netchan.message, *s);
+	for (i = 1 + n; i < maxclientsupportedmodels && i < MAX_MODELS && sv.model_precache[i]
+			&& (((i-1)&255) == 0 || sv_client->netchan.message.cursize < (MAX_MSGLEN/2)); i++) {
+		MSG_WriteString (&sv_client->netchan.message, sv.model_precache[i]);
 	}
 	n = i - 1;
 
-	if (!s[0] || n == maxclientsupportedmodels - 1) {
+	if (i >= maxclientsupportedmodels || i >= MAX_MODELS || !sv.model_precache[i]) {
 		n = 0;
 	}
 
