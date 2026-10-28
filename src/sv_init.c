@@ -233,6 +233,16 @@ static void SV_LoadCSQC(void)
 }
 #endif
 
+/* Select visibility policy for a freshly loaded server map. */
+static cm_vispolicy_t SV_VisibilityPolicy(void)
+{
+	if (sv_calcphs.value == 0)
+		return CM_VIS_NO_PHS;
+	if (sv_calcphs.value == 1)
+		return CM_VIS_FULL;
+	return CM_VIS_AUTO;
+}
+
 /*
 ================
 SV_SpawnServer
@@ -251,6 +261,7 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 	int i;
 	int inline_models;
 	int skill_level = current_skill;
+	cm_vispolicy_t vispolicy;
 
 	extern cvar_t sv_loadentfiles, sv_loadentfiles_dir;
 	char *entitystring;
@@ -497,7 +508,8 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 	Cvar_ForceSet (&host_mapname, mapname);
 #endif
 
-	if (!(sv.worldmodel = CM_LoadMap (sv.modelname, false, &sv.map_checksum, &sv.map_checksum2))) // true if bad map
+	vispolicy = SV_VisibilityPolicy();
+	if (!(sv.worldmodel = CM_LoadMap (sv.modelname, false, vispolicy, &sv.map_checksum, &sv.map_checksum2))) // true if bad map
 	{
 		Con_Printf ("Cant load map %s, falling back to %s\n", mapname, oldmap);
 
@@ -507,7 +519,7 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 		mapname = oldmap;
 
 		// and re-load old map
-		sv.worldmodel = CM_LoadMap (sv.modelname, false, &sv.map_checksum, &sv.map_checksum2);
+		sv.worldmodel = CM_LoadMap (sv.modelname, false, vispolicy, &sv.map_checksum, &sv.map_checksum2);
 
 		// this should never happen
 		if (!sv.worldmodel)
@@ -521,6 +533,8 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 			sv.max_edicts = min(sv.max_edicts, MAX_EDICTS_SAFE);
 		}
 	}
+
+	sv.checkpvs = (byte *)Hunk_AllocName(CM_PVSRowBytes(), "checkpvs");
 
 	sv.map_checksum2 = Com_TranslateMapChecksum (sv.mapname, sv.map_checksum2);
 	sv.static_entity_count = 0;

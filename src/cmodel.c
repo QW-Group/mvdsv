@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "cvar.h"
 #endif
 
+#include <limits.h>
+
 typedef struct cnode_s {
 	// common with leaf
 	int                contents; // 0, to differentiate from leafs
@@ -41,6 +43,7 @@ typedef struct cleaf_s {
 
 	// leaf specific
 	byte               ambient_sound_level[NUM_AMBIENTS];
+	int                visofs;           // offset into the map-owned compressed PVS, or -1
 } cleaf_t;
 
 static char			loadname[32];	// for hunk tags
@@ -66,6 +69,9 @@ static int			visleafs;
 
 static byte			*map_pvs_novis;
 static byte			*map_pvs_decompressed;
+static byte			*map_visdata;       // retained compressed rows for on-demand lookup
+static int			map_vislength;
+static size_t		map_vis_matrixbytes;
 
 static byte			*map_pvs;					// fully expanded and decompressed
 static byte			*map_phs;					// only valid if we are the server
@@ -87,6 +93,7 @@ typedef struct {
 
 static bspx_lump_t* CM_LoadBSPX(vfsfile_t* vf, dheader_t* header, bspx_header_t *xheader);
 static byte* CM_BSPX_ReadLump(vfsfile_t* vf, bspx_header_t *xheader, bspx_lump_t* lump, char* lumpname, int* plumpsize);
+static byte *DecompressVis(const byte *in);
 
 /*
 ===============================================================================
@@ -423,9 +430,18 @@ byte *CM_LeafPVS (const cleaf_t *leaf)
 	if (leaf == map_leafs)
 		return map_pvs_novis;
 
-	return map_pvs + (leaf - 1 - map_leafs) * map_vis_rowbytes;
+	if (map_pvs)
+		return map_pvs + (size_t)(leaf - 1 - map_leafs) * map_vis_rowbytes;
+	if (!map_visdata || leaf->visofs == -1)
+		return map_pvs_novis;
+	return DecompressVis(map_visdata + leaf->visofs);
 }
 
+// Width of a borrowed visibility row, including initialized word padding.
+int CM_PVSRowBytes(void)
+{
+	return map_vis_rowbytes;
+}
 
 /*
 ** only the server may call this
@@ -439,7 +455,7 @@ byte *CM_LeafPHS (const cleaf_t *leaf)
 		return NULL;
 	}
 
-	return map_phs + (leaf - 1 - map_leafs) * map_vis_rowbytes;
+	return map_phs + (size_t)(leaf - 1 - map_leafs) * map_vis_rowbytes;
 }
 
 /*
@@ -503,7 +519,7 @@ byte *CM_FatPVS (vec3_t org)
 {
 	VectorCopy (org, fatpvs_org);
 
-	fatbytes = (visleafs+31)>>3;
+	fatbytes = map_vis_rowbytes;
 	memset (map_pvs_fatpvs, 0, fatbytes);
 	AddToFatPVS_r (map_nodes);
 	return map_pvs_fatpvs;
@@ -809,6 +825,7 @@ static void CM_LoadLeafs (byte *buffer, int length)
 	for (i = 0; i < count; i++, in++, out++) {
 		p = LittleLong(in->contents);
 		out->contents = p;
+		out->visofs = LittleLong(in->visofs);
 		for (j = 0; j < 4; j++)
 			out->ambient_sound_level[j] = in->ambient_level[j];
 	}
@@ -835,6 +852,7 @@ static void CM_LoadLeafs29a (byte *buffer, int length)
 	for (i = 0; i < count; i++, in++, out++) {
 		p = LittleLong(in->contents);
 		out->contents = p;
+		out->visofs = LittleLong(in->visofs);
 		for (j = 0; j < 4; j++)
 			out->ambient_sound_level[j] = in->ambient_level[j];
 	}
@@ -863,6 +881,7 @@ static void CM_LoadLeafsBSP2 (byte *buffer, int length)
 	for (i = 0; i < count; i++, in++, out++) {
 		p = LittleLong(in->contents);
 		out->contents = p;
+		out->visofs = LittleLong(in->visofs);
 		for (j = 0; j < 4; j++)
 			out->ambient_sound_level[j] = in->ambient_level[j];
 	}
@@ -1072,136 +1091,105 @@ static void CM_LoadPlanes(byte *buffer, size_t length)
 
 /*
 ** DecompressVis
+**
+** Decode one semantic row; callers may copy/OR the initialized word padding.
 */
-static byte *DecompressVis(byte *in)
+static byte *DecompressVis(const byte *in)
 {
-	int c, row;
-	byte *out;
+	const byte *end = map_visdata + map_vislength;
+	byte *out = map_pvs_decompressed;
+	int remaining = (int)(((size_t)visleafs + 7) >> 3);
+	int count;
 
-	row = (visleafs + 7) >> 3;
-	out = map_pvs_decompressed;
-
-	if (!in) { // no vis info, so make all visible
-		while (row) {
-			*out++ = 0xff;
-			row--;
-		}
-		return map_pvs_decompressed;
-	}
-
-	do {
+	memset(out, 0, map_vis_rowbytes);
+	while (remaining > 0) {
+		if (in >= end)
+			Host_Error("DecompressVis: truncated PVS row");
 		if (*in) {
 			*out++ = *in++;
+			remaining--;
 			continue;
 		}
-
-		c = in[1];
-		in += 2;
-		while (c) {
-			*out++ = 0;
-			c--;
-		}
-	} while (out - map_pvs_decompressed < row);
-
+		in++;
+		if (in >= end)
+			Host_Error("DecompressVis: truncated PVS run");
+		count = *in++;
+		if (!count || count > remaining)
+			Host_Error("DecompressVis: invalid PVS run");
+		out += count;
+		remaining -= count;
+	}
 	return map_pvs_decompressed;
 }
 
+#define MAX_EXPANDED_PVS_BYTES 0x100000
+
+/* Expand small visibility matrices automatically; the full policy forces expansion. */
+static qbool CM_ExpandPVS(size_t matrixbytes, cm_vispolicy_t policy)
+{
+	return policy == CM_VIS_FULL || matrixbytes < MAX_EXPANDED_PVS_BYTES;
+}
+
+/* Called once per map. Buffers do not allocate during visibility queries. */
 static void CM_AllocPVSBuffers(int rowbytes)
 {
 	map_pvs_novis = (byte *)Hunk_AllocName(rowbytes, "novis");
 	memset(map_pvs_novis, 0xff, rowbytes);
-
 	map_pvs_fatpvs = (byte *)Hunk_AllocName(rowbytes, "fatpvs");
 	map_pvs_decompressed = (byte *)Hunk_AllocName(rowbytes, "visdec");
 }
 
-/*
-** CM_BuildPVS
-**
-** Call after CM_LoadLeafs!
-*/
-static void CM_BuildPVS(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len)
+/* Retain only the representation selected for this map; disk leaves are copied. */
+static void CM_BuildPVS(byte *visdata, int vis_len, cm_vispolicy_t policy)
 {
-	byte *scan;
-	dleaf_t *in;
-	int i;
+	size_t rowbytes;
+	int i, offset;
+	qbool expand;
 
-	map_vis_rowlongs = (visleafs + 31) >> 5;
-	map_vis_rowbytes = map_vis_rowlongs * 4;
+	if (visleafs < 0 || visleafs >= numleafs || vis_len < 0)
+		Host_Error("CM_BuildPVS: invalid visibility dimensions");
+	rowbytes = (((size_t)visleafs + 31) >> 5) * 4;
+	if (rowbytes > INT_MAX || (visleafs && rowbytes > (size_t)-1 / visleafs))
+		Host_Error("CM_BuildPVS: visibility size overflow");
+	map_vis_rowbytes = (int)rowbytes;
+	map_vis_rowlongs = map_vis_rowbytes / 4;
+	map_vis_matrixbytes = rowbytes * visleafs;
+	expand = CM_ExpandPVS(map_vis_matrixbytes, policy);
 	CM_AllocPVSBuffers(map_vis_rowbytes);
-	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
 
-	if (!vis_len) {
-		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
-		return;
+	map_visdata = NULL;
+	map_vislength = vis_len;
+	map_pvs = NULL;
+	if (vis_len) {
+		map_visdata = visdata;
+		if (!expand) {
+			map_visdata = (byte *)Hunk_AllocName(vis_len, "visdata");
+			memcpy(map_visdata, visdata, vis_len);
+		}
+		for (i = 1; i <= visleafs; i++) {
+			offset = map_leafs[i].visofs;
+			if (offset < -1 || offset >= vis_len)
+				Host_Error("CM_BuildPVS: invalid visibility offset");
+		}
 	}
 
-	// FIXME, add checks for lump_vis->filelen and leafs' visofs
-
-	// go through all leafs and decompress visibility data
-	in = (dleaf_t *) leaf_buf;
-	in++; // pvs row 0 is leaf 1
-	scan = map_pvs;
-	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
-		int p = LittleLong(in->visofs);
-		memcpy(scan, (p == -1) ? map_pvs_novis : DecompressVis(visdata + p), map_vis_rowbytes);
+	if (expand) {
+		if (map_vis_matrixbytes > INT_MAX)
+			Host_Error("CM_BuildPVS: expanded visibility exceeds allocator limit");
+		map_pvs = (byte *)Hunk_AllocName((int)map_vis_matrixbytes, "pvs");
+		for (i = 0; i < visleafs; i++) {
+			offset = map_leafs[i + 1].visofs;
+			memcpy(map_pvs + (size_t)i * rowbytes,
+				!vis_len || offset == -1 ? map_pvs_novis : DecompressVis(map_visdata + offset), rowbytes);
+		}
 	}
-}
-
-static void CM_BuildPVS29a(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len)
-{
-	byte *scan;
-	dleaf29a_t *in;
-	int i;
-
-	map_vis_rowlongs = (visleafs + 31) >> 5;
-	map_vis_rowbytes = map_vis_rowlongs * 4;
-	CM_AllocPVSBuffers(map_vis_rowbytes);
-	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
-
-	if (!vis_len) {
-		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
-		return;
+	if (expand) {
+		map_visdata = NULL;
+		map_vislength = 0;
 	}
-
-	// FIXME, add checks for lump_vis->filelen and leafs' visofs
-
-	// go through all leafs and decompress visibility data
-	in = (dleaf29a_t *) leaf_buf;
-	in++; // pvs row 0 is leaf 1
-	scan = map_pvs;
-	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
-		int p = LittleLong(in->visofs);
-		memcpy(scan, (p == -1) ? map_pvs_novis : DecompressVis(visdata + p), map_vis_rowbytes);
-	}
-}
-
-static void CM_BuildPVSBSP2(byte *visdata, int vis_len, byte *leaf_buf, int leaf_len)
-{
-	byte *scan;
-	dleaf_bsp2_t *in;
-	int i;
-
-	map_vis_rowlongs = (visleafs + 31) >> 5;
-	map_vis_rowbytes = map_vis_rowlongs * 4;
-	CM_AllocPVSBuffers(map_vis_rowbytes);
-	map_pvs = (byte *)Hunk_AllocName(map_vis_rowbytes * visleafs, "pvs");
-
-	if (!vis_len) {
-		memset(map_pvs, 0xff, map_vis_rowbytes * visleafs);
-		return;
-	}
-
-	// FIXME, add checks for lump_vis->filelen and leafs' visofs
-
-	// go through all leafs and decompress visibility data
-	in = (dleaf_bsp2_t *) leaf_buf;
-	in++; // pvs row 0 is leaf 1
-	scan = map_pvs;
-	for (i = 0; i < visleafs; i++, in++, scan += map_vis_rowbytes) {
-		int p = LittleLong(in->visofs);
-		memcpy(scan, (p == -1) ? map_pvs_novis : DecompressVis(visdata + p), map_vis_rowbytes);
-	}
+	Con_DPrintf("PVS: mode %d, %d leafs, %d bytes/row, %zu expanded bytes, %s (%d compressed bytes)\n",
+		policy, visleafs, map_vis_rowbytes, map_vis_matrixbytes,
+		map_pvs ? "expanded" : "on demand", vis_len);
 }
 
 /*
@@ -1210,18 +1198,18 @@ static void CM_BuildPVSBSP2(byte *visdata, int vis_len, byte *leaf_buf, int leaf
 ** Expands the PVS and calculates the PHS (potentially hearable set)
 ** Call after CM_BuildPVS (so that map_vis_rowbytes & map_vis_rowlongs are set)
 */
-static void CM_BuildPHS (void)
+static void CM_BuildPHS (cm_vispolicy_t policy)
 {
 	int i, j, k, l, index1, bitbyte;
 	unsigned *dest, *src;
 	byte *scan;
 
 	map_phs = NULL;
-	if (map_vis_rowbytes * visleafs > 0x100000) {
+	if (policy == CM_VIS_NO_PHS || !map_pvs || !CM_ExpandPVS(map_vis_matrixbytes, policy)) {
 		return;
 	}
 
-	map_phs = (byte *) Hunk_AllocName (map_vis_rowbytes * visleafs, "phs");
+	map_phs = (byte *) Hunk_AllocName ((int)map_vis_matrixbytes, "phs");
 	scan = map_pvs;
 	dest = (unsigned *)map_phs;
 	for (i = 0; i < visleafs; i++, dest += map_vis_rowlongs, scan += map_vis_rowbytes)
@@ -1269,6 +1257,10 @@ void CM_InvalidateMap (void)
 	map_pvs_novis = NULL;
 	map_pvs_fatpvs = NULL;
 	map_pvs_decompressed = NULL;
+	map_visdata = NULL;
+	map_vislength = 0;
+	map_vis_matrixbytes = 0;
+	map_vis_rowbytes = map_vis_rowlongs = 0;
 	map_phs = NULL;
 	map_entitystring = NULL;
 	map_physicsnormals = NULL;
@@ -1395,11 +1387,10 @@ static byte *CM_ReadLump(vfsfile_t *vf, lump_t *lump)
 /*
 ** CM_LoadMap
 */
-typedef void(*BuildPVSFunction)(byte *vis_buf, int vis_len, byte *leaf_buf, int leaf_len);
-cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned *checksum2)
+cmodel_t *CM_LoadMap (char *name, qbool clientload, cm_vispolicy_t vispolicy,
+                     unsigned *checksum, unsigned *checksum2)
 {
 	dheader_t header = { 0 };
-	BuildPVSFunction cm_load_pvs_func = CM_BuildPVS;
 	vfsfile_t *vf;
 	byte *l_planes, *l_leafs, *l_nodes, *l_clipnodes, *l_entities, *l_models, *l_vis;
 	bspx_header_t xheader = { 0 };
@@ -1458,19 +1449,16 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 		CM_LoadLeafs29a(l_leafs, header.lumps[LUMP_LEAFS].filelen);
 		CM_LoadNodes29a(l_nodes, header.lumps[LUMP_NODES].filelen);
 		CM_LoadClipnodesBSP2(l_clipnodes, header.lumps[LUMP_CLIPNODES].filelen);
-		cm_load_pvs_func = CM_BuildPVS29a;
 	}
 	else if (LittleLong(header.version) == Q1_BSPVERSION2) {
 		CM_LoadLeafsBSP2(l_leafs, header.lumps[LUMP_LEAFS].filelen);
 		CM_LoadNodesBSP2(l_nodes, header.lumps[LUMP_NODES].filelen);
 		CM_LoadClipnodesBSP2(l_clipnodes, header.lumps[LUMP_CLIPNODES].filelen);
-		cm_load_pvs_func = CM_BuildPVSBSP2;
 	}
 	else {
 		CM_LoadLeafs(l_leafs, header.lumps[LUMP_LEAFS].filelen);
 		CM_LoadNodes(l_nodes, header.lumps[LUMP_NODES].filelen);
 		CM_LoadClipnodes(l_clipnodes, header.lumps[LUMP_CLIPNODES].filelen);
-		cm_load_pvs_func = CM_BuildPVS;
 	}
 	CM_LoadEntities (l_entities, header.lumps[LUMP_ENTITIES].filelen);
 	CM_LoadSubmodels (l_models, header.lumps[LUMP_MODELS].filelen);
@@ -1478,10 +1466,10 @@ cmodel_t *CM_LoadMap (char *name, qbool clientload, unsigned *checksum, unsigned
 	CM_LoadPhysicsNormals(l_physnormals, l_physnormals_len);
 	CM_MakeHull0 ();
 
-	cm_load_pvs_func (l_vis, header.lumps[LUMP_VISIBILITY].filelen, l_leafs, header.lumps[LUMP_LEAFS].filelen);
+	CM_BuildPVS(l_vis, header.lumps[LUMP_VISIBILITY].filelen, vispolicy);
 
 	if (!clientload) // client doesn't need PHS
-		CM_BuildPHS ();
+		CM_BuildPHS (vispolicy);
 
 	strlcpy (map_name, name, sizeof(map_name));
 
