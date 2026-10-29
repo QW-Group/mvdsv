@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 #define	MAX_STATIC_ENTITIES     2048    // Could be MAX_MODELS - MAX_EDICTS, but static allocation
 #define	MAX_EDICTS              2048    // can't encode more than this, see SV_WriteDelta
+#define MAX_LEGACY_EDICTS       2048    // QW packet entities with ENTITYDBL/ENTITYDBL2
 #define MAX_EDICTS_SAFE         512     // lower limit, to make sure no client limits exceeded
 #define	MAX_LIGHTSTYLES         64
 #define	MAX_MODELS              4096    // really just UINT16_MAX, see SV_WriteDelta, PEXT_MODELDBL, dynamic + static entities

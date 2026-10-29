@@ -101,6 +101,15 @@ void MSG_ReadDeltaUsercmd (const struct usercmd_s *from, struct usercmd_s *cmd);
 void MSG_ReadData (void *data, int len);
 void MSG_ReadSkip(int bytes);
 
+/* Base RD field codec, shared by live networking and demo startup writers. */
+void MSG_RD_InitState(rd_entity_state_t *state);
+unsigned int MSG_RD_StateBits(const rd_entity_state_t *from, const rd_entity_state_t *to);
+/* Ordinary RD entity references; writes are atomic on insufficient space. */
+qbool MSG_RD_WriteEntityRef(sizebuf_t *msg, unsigned int number);
+qbool MSG_RD_WriteEntity(sizebuf_t *msg, const rd_entity_state_t *state, unsigned int bits, qbool floatcoords);
+qbool MSG_RD_WriteRemove(sizebuf_t *msg, int number);
+qbool MSG_RD_WriteBaseline(sizebuf_t *msg, const rd_entity_state_t *state, qbool numbered, qbool floatcoords);
+
 //============================================================================
 
 char *Q_normalizetext (char *name); //bliP: red to white text
