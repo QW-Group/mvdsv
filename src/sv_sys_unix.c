@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 extern cvar_t sys_restart_on_error;
-extern cvar_t sys_select_timeout, sys_simulation;
+extern cvar_t sys_select_timeout, sys_simulation, sys_fixedstep;
 
 cvar_t sys_nostdout = {"sys_nostdout", "0"};
 cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
@@ -825,12 +825,11 @@ int main (int argc, char *argv[])
 		// the only reason we have a timeout at all is so that if the last
 		// connected client times out, the message would not otherwise
 		// be printed until the next event.
-		if (!sys_simulation.value) {
-			stdin_ready = NET_Sleep((int)sys_select_timeout.value / 1000, do_stdin);
-		}
+		// sys_simulation must not wait, but stdin is only read when select reports it
+		stdin_ready = NET_Sleep(sys_simulation.value ? 0 : (int)sys_select_timeout.value / 1000, do_stdin);
 
 		// find time passed since last cycle
-		newtime = Sys_DoubleTime ();
+		newtime = sys_fixedstep.value > 0 ? oldtime + sys_fixedstep.value : Sys_DoubleTime ();
 		time1 = newtime - oldtime;
 		oldtime = newtime;
 

@@ -59,6 +59,10 @@ cvar_t  sv_mod_extensions = { "sv_mod_extensions", "2", CVAR_ROM };
 
 #ifdef SERVERONLY
 cvar_t  sys_simulation = { "sys_simulation", "0" };
+// seconds of game time per frame, whatever the clock says; with sys_simulation
+// (and sys_sleep 0 on windows) it runs as fast as the machine can, so only
+// bots can play
+cvar_t  sys_fixedstep = { "sys_fixedstep", "0" };
 cvar_t	developer = {"developer", "0"};		// show extra messages
 cvar_t	version = {"version", "", CVAR_ROM};
 #endif
@@ -3912,6 +3916,7 @@ void COM_Init (void)
 	Cvar_Register (&developer);
 	Cvar_Register (&version);
 	Cvar_Register (&sys_simulation);
+	Cvar_Register (&sys_fixedstep);
 
 	Cvar_SetROM(&version, SERVER_NAME " " SERVER_VERSION);
 }
