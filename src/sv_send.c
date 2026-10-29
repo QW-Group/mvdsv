@@ -1321,9 +1321,10 @@ void SV_UpdateClientStats (client_t *client)
 		statsi[STAT_ACTIVEWEAPON] = ent->v->weapon;
 	statsi[STAT_ITEMS] = SV_ItemsStat(ent);
 
-	if (ent->v->health > 0 || client->spectator) // viewheight for PF_DEAD & PF_GIB is hardwired
+	/* RD has no legacy PF_DEAD/PF_GIB viewheight override. */
+	if (ent->v->health > 0 || client->spectator
+	    || (client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS))
 		statsi[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
-
 #ifdef FTE_PEXT_CSQC
 	// clientstat/pointerstat registered stats (32..255), only for CSQC clients.
 	if (SV_WantsQCStats (client))
@@ -1467,6 +1468,7 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	if (msg.overflowed)
 	{
 		Con_Printf ("WARNING: msg overflowed for %s\n", client->name);
+		SV_RD_DroppedFrame(client, client->netchan.incoming_sequence);
 		SZ_Clear (&msg);
 #ifdef FTE_PEXT_CSQC
 		// The CSQC updates logged for this datagram were dropped with it, but
@@ -1478,6 +1480,7 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 
 	// send the datagram
 	if (!Netchan_Transmit(&client->netchan, msg.cursize, buf)) {
+		SV_RD_DroppedFrame(client, client->netchan.incoming_sequence);
 #ifdef FTE_PEXT_CSQC
 		/* Recover a pre-existing CSQC omission bug, independent of RD. */
 		SV_CSQC_DroppedPacket(client, sequence);

@@ -1051,8 +1051,10 @@ void SV_RD_FromLegacy(rd_entity_state_t *to, const entity_state_t *from);
 void SV_RD_ClearClient(client_t *client);
 void SV_RD_ResetClient(client_t *client, int capacity);
 void SV_RD_BeginSnapshot(client_t *client);
+void SV_RD_RequestReset(client_t *client);
 void SV_RD_QueueEntity(client_t *client, const rd_entity_state_t *state);
 void SV_RD_AckFrame(client_t *client, int sequence);
+void SV_RD_DroppedFrame(client_t *client, int sequence);
 void SV_RD_WriteFrame(client_t *client, sizebuf_t *msg, int sequence, float time);
 
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder);

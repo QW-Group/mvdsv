@@ -107,6 +107,30 @@ void SV_RD_ResetClient(client_t *client, int capacity)
 	}
 }
 
+/* Reset the world and every retained introduction without changing ACK history. */
+static void SV_RD_ResetWorld(struct sv_rd_state_s *rd)
+{
+	int n;
+	rd->pending[0] = RD_REMOVE;
+	rd->cursor = MAX_CLIENTS + 1;
+	for (n = 1; n < rd->capacity; ++n) {
+		if (rd->current[n].number) {
+			rd->pending[n] = UF_RESET;
+			rd->introduction[n] = -1;
+		}
+	}
+}
+
+/* A client without a valid delta sequence requests the complete current world. */
+void SV_RD_RequestReset(client_t *client)
+{
+	struct sv_rd_state_s *rd = client->rd;
+	if (!rd) {
+		return;
+	}
+	SV_RD_ResetWorld(rd);
+}
+
 /* Begin collecting the real snapshot; unobserved slots become removals. */
 void SV_RD_BeginSnapshot(client_t *client)
 {
@@ -141,14 +165,7 @@ static void SV_RD_Requeue(struct sv_rd_state_s *rd, const rd_frame_t *frame)
 	for (i = 0; i < frame->count; ++i) {
 		n = frame->changes[i].number;
 		if (!n) {
-			rd->pending[0] = RD_REMOVE;
-			rd->cursor = MAX_CLIENTS + 1;
-			for (n = 1; n < rd->capacity; ++n) {
-				if (rd->current[n].number) {
-					rd->pending[n] = UF_RESET;
-					rd->introduction[n] = -1;
-				}
-			}
+			SV_RD_ResetWorld(rd);
 		}
 		else if (!rd->current[n].number) {
 			rd->pending[n] = RD_REMOVE;
@@ -158,6 +175,22 @@ static void SV_RD_Requeue(struct sv_rd_state_s *rd, const rd_frame_t *frame)
 			rd->pending[n] |= frame->changes[i].bits;
 		}
 	}
+}
+
+/* A locally omitted unreliable datagram must not be retired by its packet ACK. */
+void SV_RD_DroppedFrame(client_t *client, int sequence)
+{
+	struct sv_rd_state_s *rd = client->rd;
+	rd_frame_t *frame;
+	if (!rd) {
+		return;
+	}
+	frame = &rd->frames[sequence & UPDATE_MASK];
+	if (frame->sequence != sequence) {
+		return;
+	}
+	SV_RD_Requeue(rd, frame);
+	frame->count = 0;
 }
 
 /* QW netchan ACKs retire one frame and requeue earlier unacknowledged frames. */
@@ -256,6 +289,10 @@ void SV_RD_WriteFrame(client_t *client, sizebuf_t *msg, int sequence, float time
 			if (bits & UF_RESET) {
 				SV_RD_FromLegacy(&baseline, &EDICT_NUM(n)->e.baseline);
 				bits = UF_RESET | MSG_RD_StateBits(&baseline, &rd->current[n]);
+			}
+			/* Player angles carry the view-pitch / -3 basis even at rest. */
+			if (n <= MAX_CLIENTS && (bits & (UF_ANGLESXZ | UF_ANGLESY))) {
+				bits |= UF_PREDINFO;
 			}
 			if (!MSG_RD_WriteEntity(msg, &rd->current[n], bits, (client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) != 0)) {
 				next = n;
@@ -759,6 +796,56 @@ static int TranslateEffects (edict_t *ent)
 			fx |= EF_RED;
 	}
 	return fx;
+}
+
+/* Build the base RD representation from ordinary server entity fields. */
+static void SV_RD_BuildEntityState(rd_entity_state_t *state, edict_t *ent, int number, client_t *client)
+{
+	int i;
+	MSG_RD_InitState(state);
+	state->number = number;
+	VectorCopy(ent->v->origin, state->origin);
+	VectorCopy(ent->v->angles, state->angles);
+	state->modelindex = ent->v->modelindex;
+	state->frame = ent->v->frame;
+	state->skinnum = ent->v->skin;
+	state->colormap = ent->v->colormap;
+	state->effects = TranslateEffects(ent);
+	/* Player modelindex2 selects a vwep entry rather than a model precache. */
+	if (number <= MAX_CLIENTS && sv.vw_model_name[0] && fofs_vw_index) {
+		float index = EdictFieldFloat(ent, fofs_vw_index);
+		if (index > 0 && index < MAX_VWEP_MODELS) {
+			state->modelindex2 = (int)index;
+		}
+	}
+	if (!ent->v->movetype || ent->v->movetype == MOVETYPE_STEP) {
+		state->dpflags |= RENDER_STEP;
+	}
+	if (ent->v->solid == SOLID_BSP || (ent->v->skin < 0 && ent->v->modelindex)) {
+		state->solidsize = ES_SOLID_BSP;
+	} else if (ent->v->solid == SOLID_BBOX || ent->v->solid == SOLID_SLIDEBOX) {
+		int x = bound(0, (int)ent->v->maxs[0] / 8, 31);
+		int down = bound(0, (int)-ent->v->mins[2] / 8, 31);
+		int up = bound(0, ((int)ent->v->maxs[2] + 32) / 8, 63);
+		state->solidsize = x | (down << 5) | (up << 10);
+	}
+	if (ent->v->owner && PROG_TO_EDICT(ent->v->owner) == client->edict) {
+		state->solidsize = 0;
+	}
+#ifdef FTE_PEXT_TRANS
+	if (ent->xv.alpha > 0 && ent->xv.alpha < 1) {
+		state->trans = bound(0, (int)(ent->xv.alpha * 254), 254);
+	}
+#endif
+#ifdef FTE_PEXT_COLOURMOD
+	if (ent->xv.colourmod[0] || ent->xv.colourmod[1] || ent->xv.colourmod[2]) {
+		for (i = 0; i < 3; ++i) {
+			state->colourmod[i] = bound(0, (int)(ent->xv.colourmod[i] * 32), 255);
+		}
+	}
+#else
+	(void)i;
+#endif
 }
 
 /*
@@ -1449,6 +1536,60 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 			continue;
 #endif
 
+		if (client->rd) {
+			rd_entity_state_t rd;
+			int pm = track_ent ? PM_LOCK : SV_PMTypeForClient(cl);
+			SV_RD_BuildEntityState(&rd, ent, j + 1, client);
+			switch (pm) {
+			case PM_DEAD:
+				rd.pmovetype = RD_MOVETYPE_TOSS;
+				break;
+			case PM_SPECTATOR:
+			case PM_OLD_SPECTATOR:
+				rd.pmovetype = RD_MOVETYPE_NOCLIP;
+				break;
+			case PM_FLY:
+				rd.pmovetype = RD_MOVETYPE_FLY;
+				break;
+			case PM_NONE:
+				rd.pmovetype = RD_MOVETYPE_NONE;
+				break;
+			case PM_LOCK:
+				rd.pmovetype = RD_MOVETYPE_LOCK;
+				break;
+			default:
+				rd.pmovetype = RD_MOVETYPE_WALK;
+				break;
+			}
+			if ((int)ent->v->flags & FL_ONGROUND) {
+				rd.pmovetype |= RD_MOVETYPE_ONGROUND;
+			}
+			if (cl->jump_held) {
+				rd.pmovetype |= RD_MOVETYPE_JUMP_HELD;
+			}
+			if (pm != PM_DEAD) {
+				VectorCopy(ent->v->v_angle, rd.angles);
+				rd.angles[0] /= -3;
+			}
+			for (i = 0; i < 3; ++i) {
+				rd.velocity[i] = bound(-32768, (int)(ent->v->velocity[i] * 8), 32767);
+			}
+			if (ent != self_ent) {
+				rd.movement[0] = cl->lastcmd.forwardmove;
+				rd.movement[1] = cl->lastcmd.sidemove;
+				rd.movement[2] = cl->lastcmd.upmove;
+				rd.msec = bound(0, (int)(1000 * (sv.time - cl->localtime)), 255);
+			}
+			if (ent == self_ent || client->spec_track == j + 1) {
+				rd.weaponframe = bound(0, (int)ent->v->weaponframe, 32767);
+			}
+			if (cl->spectator) {
+				rd.modelindex = 0;
+			}
+			SV_RD_QueueEntity(client, &rd);
+			continue;
+		}
+
 		//====================================================
 		// OK, seems we must send info about this player below
 
@@ -1691,6 +1832,24 @@ svc_playerinfo messages
 
 void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 {
+	qbool replacement = !recorder && (client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS);
+	qbool disable_updates; // disables sending entities to the client
+	int e, i, max_packet_entities;
+	int full_limit, datagram_bytes, tail_bytes;
+	packet_entities_t *pack;
+	client_frame_t *frame;
+	entity_state_t *state;
+	edict_t *ent;
+	byte *pvs;
+	int hideent;
+	unsigned int client_flag = (1 << (client - svs.clients));
+	edict_t	*clent = client->edict;
+
+	float distances[MAX_PACKETENTITIES_POSSIBLE] = { 0 };
+	float distance;
+	int position;
+	vec3_t org;
+
 #ifdef FTE_PEXT_CSQC
 	// lazily allocate the per-client CSQC delta bitset, but only for clients
 	// that actually run CSQC: a PR2 server with plain players must not pay for
@@ -1714,22 +1873,6 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 		}
 	}
 #endif
-	qbool disable_updates; // disables sending entities to the client
-	int e, i, max_packet_entities;
-	int full_limit, datagram_bytes, tail_bytes;
-	packet_entities_t *pack;
-	client_frame_t *frame;
-	entity_state_t *state;
-	edict_t *ent;
-	byte *pvs;
-	int hideent;
-	unsigned int client_flag = (1 << (client - svs.clients));
-	edict_t	*clent = client->edict;
-
-	float distances[MAX_PACKETENTITIES_POSSIBLE] = { 0 };
-	float distance;
-	int position;
-	vec3_t org;
 
 	if ( recorder )
 	{
@@ -1794,6 +1937,13 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 		}
 	}
 
+	if (replacement) {
+		if (!client->rd) {
+			SV_RD_ResetClient(client, sv.max_edicts);
+		}
+		SV_RD_BeginSnapshot(client);
+	}
+
 	// send over the players in the PVS
 	if ( recorder )
 		SV_MVD_WritePlayersToClient (); // nice, no params at all!
@@ -1813,7 +1963,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 		// from ZQuake unless using protocol extensions.
 		// max_edicts = min(sv.num_edicts, MAX_EDICTS);
 
-		for (e = pr_nqprogs ? 1 : MAX_CLIENTS + 1, ent = EDICT_NUM(e); e < sv.num_edicts; e++, ent = NEXT_EDICT(ent))
+		for (e = (pr_nqprogs && !replacement) ? 1 : MAX_CLIENTS + 1, ent = EDICT_NUM(e); e < sv.num_edicts; e++, ent = NEXT_EDICT(ent))
 		{
 			if (!SV_EntityVisibleToClient(client, e, pvs)) {
 				if (fofs_visibility) {
@@ -1835,6 +1985,13 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 			if (SV_AddCSQCUpdate(client, ent))
 				continue;
 #endif
+
+			if (replacement) {
+				rd_entity_state_t rd;
+				SV_RD_BuildEntityState(&rd, ent, e, client);
+				SV_RD_QueueEntity(client, &rd);
+				continue;
+			}
 
 			if (SV_AddNailUpdate (ent))
 				continue; // added to the special update list
@@ -1911,11 +2068,19 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	datagram_bytes = !recorder && !client->datagram.overflowed ? client->datagram.cursize : 0;
 	tail_bytes = datagram_bytes + (numnails ? 2 + numnails * (recorder ? 7 : 6) : 0);
 
-	// Encode packet entities, using the client's acknowledged frame when available.
-	SV_EmitPacketEntities(client, pack, msg, max_packet_entities, tail_bytes);
+	if (replacement) {
+		if (datagram_bytes > 0 && full_limit - datagram_bytes - msg->cursize >= 9)
+			msg->maxsize -= datagram_bytes;
+		SV_RD_WriteFrame(client, msg, client->netchan.incoming_sequence, sv.time);
+		msg->maxsize = max(msg->cursize, full_limit - datagram_bytes);
+	}
+	else {
+		// Encode packet entities, using the client's acknowledged frame when available.
+		SV_EmitPacketEntities(client, pack, msg, max_packet_entities, tail_bytes);
 
-	/* Keep optional tails from using space reserved for queued multicast. */
-	msg->maxsize = max(msg->cursize, full_limit - datagram_bytes);
+		/* Keep optional tails from using space reserved for queued multicast. */
+		msg->maxsize = max(msg->cursize, full_limit - datagram_bytes);
+	}
 
 #ifdef FTE_PEXT_CSQC
 	// CSQC entity lump (delta-compressed), after the regular packetentities.
@@ -1926,8 +2091,9 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	SV_EmitCSQCUpdate (client, msg, (recorder || !(int)sv_csqcdebug.value) ? svc_fte_csqcentities : svc_fte_csqcentities_sized, !disable_updates);
 #endif
 
-	// now add the specialized nail update
-	SV_EmitNailUpdate (msg, recorder);
+	if (!replacement) {
+		SV_EmitNailUpdate(msg, recorder);
+	}
 
 	// Translate NQ progs' EF_MUZZLEFLASH to svc_muzzleflash
 	if (pr_nqprogs)
