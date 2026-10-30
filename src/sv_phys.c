@@ -438,9 +438,17 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 	vec3_t		mins, maxs;
 	vec3_t		pushorig;
 	int			num_moved;
-	edict_t		*moved_edict[MAX_EDICTS];
-	vec3_t		moved_from[MAX_EDICTS];
+	edict_t		*local_edict[MAX_LEGACY_EDICTS], **moved_edict = local_edict;
+	vec3_t		local_from[MAX_LEGACY_EDICTS], *moved_from = local_from;
+	void		*storage = NULL;
 	float		solid_save;
+
+	/* Blocked callbacks may push recursively; retain this invocation's rollback. */
+	if (sv.max_edicts > MAX_LEGACY_EDICTS) {
+		storage = Q_malloc(sv.max_edicts * (sizeof(*moved_edict) + sizeof(*moved_from)));
+		moved_edict = storage;
+		moved_from = (vec3_t *)(moved_edict + sv.max_edicts);
+	}
 
 	for (i=0 ; i<3 ; i++)
 	{
@@ -552,9 +560,11 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 			VectorCopy (moved_from[i], moved_edict[i]->v->origin);
 			SV_LinkEdict (moved_edict[i], false);
 		}
+		Q_free(storage);
 		return false;
 	}
 
+	Q_free(storage);
 	return true;
 }
 
