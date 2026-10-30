@@ -1011,7 +1011,7 @@ static qbool SV_AddCSQCUpdate (client_t *client, edict_t *ent)
 SV_EmitDeltaEntIndex
 
 Writes a single entity index for the CSQC lump. 0x8000 flags a remove.
-No big-entity variant: max_net_ents <= 2048 < 0x8000 (no PEXT2_REPLACEMENTDELTAS).
+The highest map slot is 16383, below the extended-index marker (0x4000).
 =============
 */
 static void SV_EmitDeltaEntIndex (sizebuf_t *msg, unsigned int entnum, qbool remove)
