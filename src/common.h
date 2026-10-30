@@ -106,6 +106,8 @@ void MSG_RD_InitState(rd_entity_state_t *state);
 unsigned int MSG_RD_StateBits(const rd_entity_state_t *from, const rd_entity_state_t *to);
 /* Ordinary RD entity references; writes are atomic on insufficient space. */
 qbool MSG_RD_WriteEntityRef(sizebuf_t *msg, unsigned int number);
+/* Atomic RD update/removal index; independent of runtime entity capacity. */
+qbool MSG_RD_WriteEntityIndex(sizebuf_t *msg, unsigned int number, qbool remove);
 qbool MSG_RD_WriteEntity(sizebuf_t *msg, const rd_entity_state_t *state, unsigned int bits, qbool floatcoords);
 qbool MSG_RD_WriteRemove(sizebuf_t *msg, int number);
 qbool MSG_RD_WriteBaseline(sizebuf_t *msg, const rd_entity_state_t *state, qbool numbered, qbool floatcoords);
