@@ -180,9 +180,9 @@ endif()
 # Set defines for the build
 target_compile_definitions(${PROJECT_NAME} PRIVATE SERVERONLY)
 target_compile_definitions(${PROJECT_NAME} PRIVATE USE_PR2)
-target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON)
-target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON2)
-target_compile_definitions(${PROJECT_NAME} PRIVATE FTE_PEXT2_VOICECHAT)
+target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON=4)
+target_compile_definitions(${PROJECT_NAME} PRIVATE MVD_PEXT1_SERVERSIDEWEAPON2=64)
+target_compile_definitions(${PROJECT_NAME} PRIVATE FTE_PEXT2_VOICECHAT=0x00000002)
 
 if(CMAKE_C_BYTE_ORDER STREQUAL "BIG_ENDIAN")
 	target_compile_definitions(${PROJECT_NAME} PRIVATE __BIG_ENDIAN__Q__)
