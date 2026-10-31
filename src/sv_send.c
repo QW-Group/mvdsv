@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 
 static void SV_BotWriteDamage(client_t* c, int i);
+static void SV_FlushReliableDatagram(void);
 
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1
@@ -370,13 +371,16 @@ void SV_BroadcastPrintfEx (int level, int flags, char *fmt, ...)
 =================
 SV_BroadcastCommand
  
-Sends text to all active clients
+Queues connection commands for live clients only. MVD/QTV change maps through
+serverdata and must not receive these commands after their new gamestate.
 =================
 */
 void SV_BroadcastCommand (char *fmt, ...)
 {
 	va_list		argptr;
 	char		string[1024];
+	client_t	*client;
+	int			i, length;
 
 	if (!sv.state)
 		return;
@@ -384,8 +388,16 @@ void SV_BroadcastCommand (char *fmt, ...)
 	vsnprintf (string, sizeof(string), fmt, argptr);
 	va_end (argptr);
 
-	MSG_WriteByte (&sv.reliable_datagram, svc_stufftext);
-	MSG_WriteString (&sv.reliable_datagram, string);
+	/* Preserve ordering with earlier reliable broadcasts before bypassing them. */
+	SV_FlushReliableDatagram();
+	length = strlen(string) + 2;
+	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++) {
+		if (client->state < cs_preconnected) {
+			continue;
+		}
+		ClientReliableWrite_Begin(client, svc_stufftext, length);
+		ClientReliableWrite_String(client, string);
+	}
 }
 
 
