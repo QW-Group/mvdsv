@@ -189,7 +189,7 @@ struct vm_s {
 
 	// for dynamic linked modules
 	void		*dllHandle;
-	dllSyscall_t entryPoint;
+	vmMain_t entryPoint;
 	dllSyscall_t dllSyscall;
 	void (*destroy)(vm_t* self);
 
