@@ -1519,6 +1519,21 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 		demo.recorder.fteprotocolextensions &= ~FTE_PEXT_FLOATCOORDS;
 #endif
 
+#if defined(FTE_PEXT_TE_BULLET) && defined(FTE_PEXT2_REPLACEMENTDELTAS)
+	/* Select both profile bits before writing either extension family. */
+	if (sv.demo_format == 1) {
+		demo.recorder.fteprotocolextensions |= FTE_PEXT_TE_BULLET;
+		demo.recorder.fteprotocolextensions2 |= FTE_PEXT2_REPLACEMENTDELTAS;
+	} else {
+		demo.recorder.fteprotocolextensions &= ~FTE_PEXT_TE_BULLET;
+		demo.recorder.fteprotocolextensions2 &= ~FTE_PEXT2_REPLACEMENTDELTAS;
+	}
+#elif defined(FTE_PEXT_TE_BULLET)
+	demo.recorder.fteprotocolextensions &= ~FTE_PEXT_TE_BULLET;
+#elif defined(FTE_PEXT2_REPLACEMENTDELTAS)
+	demo.recorder.fteprotocolextensions2 &= ~FTE_PEXT2_REPLACEMENTDELTAS;
+#endif
+
 #ifdef PROTOCOL_VERSION_FTE
 	if (demo.recorder.fteprotocolextensions)
 	{
@@ -1528,12 +1543,6 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 #endif
 
 #ifdef PROTOCOL_VERSION_FTE2
-	/* The map selects recording format independently of live client negotiation. */
-	if (sv.demo_format == 1) {
-		demo.recorder.fteprotocolextensions2 |= FTE_PEXT2_REPLACEMENTDELTAS;
-	} else {
-		demo.recorder.fteprotocolextensions2 &= ~FTE_PEXT2_REPLACEMENTDELTAS;
-	}
 	if (demo.recorder.fteprotocolextensions2)
 	{
 		MSG_WriteLong(&buf, PROTOCOL_VERSION_FTE2);
