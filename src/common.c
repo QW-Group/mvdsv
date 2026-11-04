@@ -366,6 +366,16 @@ float MSG_ReadFloat (void)
 		int l;
 	} dat;
 
+	// MSG_ReadFloat was the only reader without a cursize
+	// bound - a truncated message read past net_message (up to 11 bytes into
+	// .bss at max packet size). Set msg_badread and return like the other
+	// readers (FTE does the same).
+	if (msg_readcount + 4 > net_message.cursize)
+	{
+		msg_badread = true;
+		return -1;
+	}
+
 	dat.b[0] =	net_message.data[msg_readcount];
 	dat.b[1] =	net_message.data[msg_readcount+1];
 	dat.b[2] =	net_message.data[msg_readcount+2];
