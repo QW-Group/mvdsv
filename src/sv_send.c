@@ -1413,6 +1413,9 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 {
 	byte		buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
+#ifdef FTE_PEXT_CSQC
+	int sequence = client->netchan.outgoing_sequence;
+#endif
 #ifdef FTE_PEXT2_VOICECHAT
 	int full_limit;
 #endif
@@ -1474,7 +1477,12 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	}
 
 	// send the datagram
-	Netchan_Transmit (&client->netchan, msg.cursize, buf);
+	if (!Netchan_Transmit(&client->netchan, msg.cursize, buf)) {
+#ifdef FTE_PEXT_CSQC
+		/* Recover a pre-existing CSQC omission bug, independent of RD. */
+		SV_CSQC_DroppedPacket(client, sequence);
+#endif
+	}
 }
 
 /*
