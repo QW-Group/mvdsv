@@ -1340,6 +1340,9 @@ static void SVC_DirectConnect (void)
 			vip = rip_vip = 1; // yet can be connected if realip is on vip list
 		}
 		else if (    !spectator && spectators < (int)maxspectators.value
+				  // a forced spectator is still a spectator: it must pass spectator_password,
+				  // which CheckPasswords() only checks when the client asks to be one
+				  && (vip || !spectator_password.string[0] || !strcasecmp(spectator_password.string, "none"))
 				  && (
 				  	      ( (int)sv_forcespec_onfull.value == 2
 							&&   (Q_atoi(Info_ValueForKey(userinfo, "svf")) & SVF_SPEC_ONFULL)
