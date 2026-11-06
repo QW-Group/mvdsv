@@ -1254,7 +1254,7 @@ void SV_UpdateQCStats(edict_t *ent, int *statsi, float *statsf, const char **sta
 		case CSQC_EV_STRING:
 			// a QC string field holds a string_t reference; resolve it (PR2)
 #ifdef USE_PR2
-			statss[q->statnum] = PR2_GetString(eval->string);
+			statss[q->statnum] = PR2_GetEntityString(eval->string);
 #else
 			statss[q->statnum] = PR_GetEntityString(eval->string);
 #endif
