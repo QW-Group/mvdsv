@@ -1194,6 +1194,7 @@ void SV_MVDEmbedStartTimestamp(void);
 //
 
 extern cvar_t	qtv_streamtimeout;
+extern cvar_t	qtv_stream_max_queue_size;
 
 
 void SV_MVDStream_Poll(void);
