@@ -559,6 +559,26 @@ void *Q_calloc (size_t n, size_t size)
 	return p;
 }
 
+/* Preserve the original block on failure; zero size fails without freeing it. */
+void *Q_tryrealloc (void *ptr, size_t size)
+{
+	if (!size) {
+		return NULL;
+	}
+	return realloc(ptr, size);
+}
+
+/* Fatal wrapper for callers which require the resized allocation. */
+void *Q_realloc (void *ptr, size_t size)
+{
+	void *resized = Q_tryrealloc(ptr, size);
+
+	if (!resized) {
+		Sys_Error("Q_realloc: Not enough memory free");
+	}
+	return resized;
+}
+
 /*
 ===================
 Q_strdup

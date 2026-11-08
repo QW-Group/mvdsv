@@ -298,10 +298,15 @@ SV_TouchLinks
 static void SV_TouchLinks ( edict_t *ent, areanode_t *node )
 {
 	int			i, numtouch;
-	edict_t		*touchlist[MAX_EDICTS], *touch;
+	edict_t		*local[MAX_LEGACY_EDICTS], **touchlist = local, *touch;
 	int			old_self, old_other;
 
-	numtouch = SV_AreaEdicts(ent->v->absmin, ent->v->absmax, touchlist, sv.max_edicts, AREA_TRIGGERS);
+	numtouch = SV_AreaEdicts(ent->v->absmin, ent->v->absmax, touchlist, min(sv.max_edicts, MAX_LEGACY_EDICTS), AREA_TRIGGERS);
+	if (numtouch == MAX_LEGACY_EDICTS && sv.max_edicts > MAX_LEGACY_EDICTS) {
+		/* Complete this call's list before callbacks can reenter. */
+		touchlist = Q_malloc(sv.max_edicts * sizeof(*touchlist));
+		numtouch = SV_AreaEdicts(ent->v->absmin, ent->v->absmax, touchlist, sv.max_edicts, AREA_TRIGGERS);
+	}
 
 // touch linked edicts
 	for (i = 0; i < numtouch; i++)
@@ -322,6 +327,9 @@ static void SV_TouchLinks ( edict_t *ent, areanode_t *node )
 
 		pr_global_struct->self = old_self;
 		pr_global_struct->other = old_other;
+	}
+	if (touchlist != local) {
+		Q_free(touchlist);
 	}
 }
 
@@ -521,7 +529,9 @@ Mins and maxs enclose the entire area swept by the move
 void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 {
 	int			i, numtouch;
-	edict_t		*touchlist[MAX_EDICTS], *touch;
+	/* Clipping executes no game callbacks, so this scratch is not reentered. */
+	static edict_t *touchlist[MAX_EDICTS];
+	edict_t		*touch;
 	trace_t		trace;
 
 	numtouch = SV_AreaEdicts (clip->boxmins, clip->boxmaxs, touchlist, sv.max_edicts, AREA_SOLID);

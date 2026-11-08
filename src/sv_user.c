@@ -194,15 +194,38 @@ qbool PlayerCheckPing(void)
 	return true;
 }
 
-qbool SV_CheckClientSoundSupport(client_t *client)
+qbool SV_CheckClientMapSupport(client_t *client)
 {
 #ifdef USE_PR2
 	if (client->isBot) {
 		return true;
 	}
 #endif
+#ifdef FTE_PEXT2_REPLACEMENTDELTAS
+	if ((client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS)
+#ifdef FTE_PEXT_TE_BULLET
+		&& !(client->fteprotocolextensions & FTE_PEXT_TE_BULLET)
+#endif
+	) {
+		SV_ClientPrintf(client, PRINT_HIGH,
+			"This server requires FTE temporary effects (PEXT_TE_BULLET) "
+			"with replacement deltas (PEXT2_REPLACEMENTDELTAS).\n"
+			"Enable both extensions or use a supporting client, then reconnect.\n");
+		SV_DropClient(client);
+		return false;
+	}
+#endif
+	if (SV_EntityCapacityRequiresRD()
+		&& !(client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS)) {
+		SV_ClientPrintf(client, PRINT_HIGH,
+			"Map %s requires replacement deltas (PEXT2_REPLACEMENTDELTAS). "
+			"Reconnect with a supporting client.\n", sv.mapname);
+		SV_DropClient(client);
+		return false;
+	}
 	if (SV_SoundPrecacheCount(sv.sound_precache, MAX_SOUNDS) < MAX_SOUNDS_LEGACY
-	    || (client->fteprotocolextensions & FTE_PEXT_SOUNDDBL)) {
+	    || (client->fteprotocolextensions & FTE_PEXT_SOUNDDBL)
+	    || (client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS)) {
 		return true;
 	}
 	SV_ClientPrintf(client, PRINT_HIGH,
@@ -245,7 +268,7 @@ static void Cmd_New_f (void)
 		return;
 	}
 
-	if (!SV_CheckClientSoundSupport(sv_client)) {
+	if (!SV_CheckClientMapSupport(sv_client)) {
 		return;
 	}
 
@@ -377,7 +400,8 @@ static void Cmd_New_f (void)
 #endif
 
 #ifdef FTE_PEXT_ENTITYDBL
-	if (sv.max_edicts > 512 && !(sv_client->fteprotocolextensions & FTE_PEXT_ENTITYDBL)) {
+	if (sv.max_edicts > 512 && !(sv_client->fteprotocolextensions & FTE_PEXT_ENTITYDBL)
+	    && !(sv_client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS)) {
 		SV_ClientPrintf(sv_client, 2, "\n\nWARNING:\n"
 			"Your client lacks support for extended\n"
 			"  entity limits, some enemies/projectiles\n"
@@ -432,6 +456,15 @@ static void Cmd_New_f (void)
 	if (sv_client->fteprotocolextensions) // let the client know
 	{
 		unsigned int ext = sv_client->fteprotocolextensions;
+
+#if defined(FTE_PEXT_TE_BULLET) && defined(FTE_PEXT2_REPLACEMENTDELTAS)
+		/* Retain client capabilities, but announce the legacy profile without TE. */
+		if (!(sv_client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS)) {
+			ext &= ~FTE_PEXT_TE_BULLET;
+		}
+#elif defined(FTE_PEXT_TE_BULLET)
+		ext &= ~FTE_PEXT_TE_BULLET;
+#endif
 
 #ifdef FTE_PEXT_FLOATCOORDS
 		if (msg_coordsize == 2) //we're not using float orgs on this level.
@@ -611,7 +644,8 @@ static void Cmd_Modellist_f (void)
 	n = Q_atoi(Cmd_Argv(2));
 	maxclientsupportedmodels = 256;
 #ifdef FTE_PEXT_MODELDBL
-	if (sv_client->fteprotocolextensions & FTE_PEXT_MODELDBL) {
+	if ((sv_client->fteprotocolextensions & FTE_PEXT_MODELDBL)
+	    || (sv_client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS)) {
 		maxclientsupportedmodels = MAX_MODELS;
 	}
 #endif
@@ -754,7 +788,17 @@ static void Cmd_PreSpawn_f (void)
 				break;
 			}
 
-			if (sv_client->fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+			if (sv_client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS) {
+				rd_entity_state_t rd;
+				SV_RD_FromLegacy(&rd, s);
+				MSG_WriteByte(&sv_client->netchan.message, svc_fte_spawnstatic2);
+				if (!MSG_RD_WriteBaseline(&sv_client->netchan.message, &rd, false, (sv_client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) != 0)) {
+					SV_ClientPrintf(sv_client, PRINT_HIGH, "Invalid RD static entity\n");
+					SV_DropClient(sv_client);
+					return;
+				}
+			}
+			else if (sv_client->fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
 				MSG_WriteByte(&sv_client->netchan.message, svc_fte_spawnstatic2);
 				SV_WriteDelta(sv_client, &from, s, &sv_client->netchan.message, true);
 			}
@@ -789,7 +833,17 @@ static void Cmd_PreSpawn_f (void)
 				continue;
 			}
 
-			if (sv_client->fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
+			if (sv_client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS) {
+				rd_entity_state_t rd;
+				SV_RD_FromLegacy(&rd, s);
+				MSG_WriteByte(&sv_client->netchan.message, svc_fte_spawnbaseline2);
+				if (!MSG_RD_WriteBaseline(&sv_client->netchan.message, &rd, true, (sv_client->mvdprotocolextensions1 & MVD_PEXT1_FLOATCOORDS) != 0)) {
+					SV_ClientPrintf(sv_client, PRINT_HIGH, "Invalid RD baseline\n");
+					SV_DropClient(sv_client);
+					return;
+				}
+			}
+			else if (sv_client->fteprotocolextensions & FTE_PEXT_SPAWNSTATIC2) {
 				MSG_WriteByte(&sv_client->netchan.message, svc_fte_spawnbaseline2);
 				SV_WriteDelta(sv_client, &empty_baseline, s, &sv_client->netchan.message, true);
 			}
@@ -3223,7 +3277,8 @@ void Cmd_PEXT_f(void)
 			// do not reset it.
 			if (!sv_client->fteprotocolextensions2)
 			{
-				sv_client->fteprotocolextensions2 = proto_value & svs.fteprotocolextensions2;
+				sv_client->fteprotocolextensions2 = proto_value & (svs.fteprotocolextensions2
+					| (SV_EntityCapacityRequiresRD() ? FTE_PEXT2_REPLACEMENTDELTAS : 0));
 				if (sv_client->fteprotocolextensions2)
 					Con_DPrintf("PEXT: Client supports 0x%x fte extensions2\n", sv_client->fteprotocolextensions2);
 			}
@@ -3512,6 +3567,8 @@ AddLinksToPmove
 */
 static void AddLinksToPmove ( areanode_t *node )
 {
+	/* Report an exhausted movement reserve at most once per map. */
+	static int warned_spawncount = -1;
 	link_t		*l, *next;
 	edict_t		*check;
 	int 		pl;
@@ -3548,8 +3605,13 @@ static void AddLinksToPmove ( areanode_t *node )
 					break;
 			if (i != 3)
 				continue;
-			if (pmove.numphysent == MAX_PHYSENTS)
+			if (pmove.numphysent == MAX_PHYSENTS) {
+				if (warned_spawncount != svs.spawncount) {
+					Con_DPrintf("AddLinksToPmove: movement candidate limit reached\n");
+					warned_spawncount = svs.spawncount;
+				}
 				return;
+			}
 			pe = &pmove.physents[pmove.numphysent];
 			pmove.numphysent++;
 
@@ -4841,6 +4903,8 @@ void SV_ExecuteClientMessage (client_t *cl)
 //	if (cl->state == cs_zombie) // FIXME
 //		return; // FIXME
 
+	SV_RD_AckFrame(cl, cl->netchan.incoming_acknowledged);
+
 	// this is a valid, sequenced packet, so process it
 	svs.stats.packets++;
 	cl->send_message = true; // reply at end of frame
@@ -4965,8 +5029,12 @@ void SV_ExecuteClientMessage (client_t *cl)
 		}
 
 		c = MSG_ReadByte ();
-		if (c == -1)
+		if (c == -1) {
+			if (cl->rd && cl->state == cs_spawned && cl->delta_sequence == -1) {
+				SV_RD_RequestReset(cl);
+			}
 			break;
+		}
 
 		switch (c)
 		{
