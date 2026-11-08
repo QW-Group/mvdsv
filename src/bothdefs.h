@@ -263,6 +263,8 @@ char	*va (const char *format, ...);
 
 void	*Q_malloc (size_t size);
 void	*Q_calloc (size_t n, size_t size);
+void	*Q_realloc (void *ptr, size_t size);
+void	*Q_tryrealloc (void *ptr, size_t size);
 #define	Q_free(ptr)	if(ptr) { free(ptr); ptr = NULL; }
 
 char	*Q_strdup (const char *src);
