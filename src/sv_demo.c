@@ -370,7 +370,7 @@ static void OnChange_qtv_stream_max_queue_size(cvar_t *var, char *value, qbool *
 			continue;
 		}
 		if (d->cachesize > limit) {
-			char *cache = realloc(d->cache, limit);
+			char *cache = Q_tryrealloc(d->cache, limit);
 			if (!cache) {
 				Sys_Printf("QTV stream %d: could not resize queue to %d bytes\n", d->id, limit);
 				d->error = true;
@@ -399,7 +399,7 @@ static qbool DemoGrowCache(mvddest_t *d, int needed)
 			capacity *= 2;
 		}
 	}
-	cache = realloc(d->cache, capacity);
+	cache = Q_tryrealloc(d->cache, capacity);
 	if (!cache) {
 		return false;
 	}
@@ -423,7 +423,7 @@ static void DemoTrimCache(mvddest_t *d)
 	if (capacity > d->cachesize / 2) {
 		return;
 	}
-	cache = realloc(d->cache, capacity);
+	cache = Q_tryrealloc(d->cache, capacity);
 	if (cache) {
 		d->cache = cache;
 		d->cachesize = capacity;

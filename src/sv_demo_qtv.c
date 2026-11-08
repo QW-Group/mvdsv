@@ -67,7 +67,12 @@ static mvddest_t *SV_InitStream (int socket1, netadr_t na, char *userinfo)
 	dst->socket = socket1;
 	dst->maxcachesize = (int)qtv_stream_max_queue_size.value * 1024;
 	dst->cachesize = dst->maxcachesize < 65536 ? dst->maxcachesize : 65536;
-	dst->cache = (char *) Q_malloc(dst->cachesize);
+	dst->cache = Q_tryrealloc(NULL, dst->cachesize);
+	if (!dst->cache) {
+		Q_free(dst);
+		return NULL;
+	}
+	memset(dst->cache, 0, dst->cachesize);
 	dst->io_time = Sys_DoubleTime();
 	dst->id = ++lastdest;
 	dst->na = na;

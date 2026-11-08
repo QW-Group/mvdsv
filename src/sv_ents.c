@@ -1020,7 +1020,7 @@ static qbool SV_AddCSQCUpdate (client_t *client, edict_t *ent)
 	if (csqcnuments >= csqcmaxents)
 	{	// grow the per-frame list (normally sized to sv.max_edicts)
 		int newmax = csqcnuments + 256;
-		edict_t **grown = realloc (csqcent, (size_t)newmax * sizeof(*csqcent));
+		edict_t **grown = Q_tryrealloc (csqcent, (size_t)newmax * sizeof(*csqcent));
 		if (!grown)
 			return false;	// out of memory: fall back to packetentities
 		csqcent = grown;
@@ -1927,7 +1927,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	csqcnuments = 0;
 	if (sv.max_edicts > 0 && csqcmaxents < sv.max_edicts)
 	{
-		edict_t **grown = realloc (csqcent, (size_t)sv.max_edicts * sizeof(*csqcent));
+		edict_t **grown = Q_tryrealloc (csqcent, (size_t)sv.max_edicts * sizeof(*csqcent));
 		if (grown)
 		{
 			csqcent = grown;
