@@ -982,6 +982,7 @@ void SV_MVD_FinishMap(void)
 		DestFlush(true);
 	}
 	SV_MVD_ClearRD();
+	SV_ClearEntityHistory(&demo.recorder);
 }
 
 /* Latch once after the game's map capacity is finalized. */
@@ -1245,8 +1246,10 @@ out:
 	// viewers kept stale state) with no way to re-arm, since
 	// SV_MVD_SendInitialGamestate is only called from SV_MVD_Record. On the
 	// next fresh record start the struct is memset anyway.
-	if (!sv.mvdrecording)
+	if (!sv.mvdrecording) {
+		SV_ClearEntityHistory(&demo.recorder);
 		SV_MVD_FreeRecorderCSQC();
+	}
 	if (reason != 3)
 		SV_BroadcastPrintCache();
 }
@@ -1429,6 +1432,7 @@ qbool SV_MVD_Record (mvddest_t *dest, qbool mapchange)
     	// and here we memset() not whole demo_t struct, but part,
     	// so demo.dest and demo.pendingdest is not overwriten
 		SV_MVD_ClearRD();
+		SV_ClearEntityHistory(&demo.recorder);
 		memset(&demo, 0, offsetof(demo_t, mem_set_point));
 		if (sv.demo_format == 1) {
 			demo.prevtime = sv.time;

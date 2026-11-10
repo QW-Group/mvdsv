@@ -349,6 +349,7 @@ void SV_ShutdownGame(void)
 	sv_player = NULL;
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
+		SV_ClearEntityHistory(&svs.clients[i]);
 		svs.clients[i].edict = NULL;
 #ifdef FTE_PEXT_CSQC
 		/* Each map must enable CSQC again. Keep negotiated capabilities so CSQC
@@ -358,6 +359,7 @@ void SV_ShutdownGame(void)
 		svs.clients[i].max_net_ents = 0;
 #endif
 	}
+	SV_ClearEntityHistory(&demo.recorder);
 }
 
 /*
