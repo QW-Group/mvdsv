@@ -295,12 +295,7 @@ void SV_Shutdown (char *finalmsg)
 	Central_Shutdown();
 #endif
 
-	// Shutdown game.
-#ifdef FTE_PEXT_CSQC
-	SV_FreeCSQCList ();
-#endif
-	PR_GameShutDown();
-	PR_UnLoadProgs();
+	SV_ShutdownGame();
 
 	memset (&sv, 0, sizeof(sv));
 	sv.state = ss_dead;
