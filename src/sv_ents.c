@@ -1054,7 +1054,6 @@ static void SV_EmitDeltaEntIndex (sizebuf_t *msg, unsigned int entnum, qbool rem
 	}
 }
 
-#ifdef FTE_PEXT_CSQC
 // Record one entity update emitted into the current frame's datagram so a
 // lost packet can re-flag it (FTE SV_EmitCSQCUpdate resend[]). The entry keeps
 // the entity number plus a remove flag; on drop a remove is re-flagged
@@ -1214,7 +1213,6 @@ static qbool SV_CSQC_EmitRemove (client_t *client, sizebuf_t *msg, int svcnumber
 	client->pendingcsqcbits[e] = 0;
 	return true;
 }
-#endif
 
 /*
 =============
