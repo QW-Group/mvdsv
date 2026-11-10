@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // per-level limits
 //
 #define	MAX_STATIC_ENTITIES     2048    // Could be MAX_MODELS - MAX_EDICTS, but static allocation
-#define	MAX_EDICTS              16384   // RD world ceiling; legacy packet limits remain separate
+#define	MAX_EDICTS              32768   // RD world ceiling; legacy packet limits remain separate
 #define MAX_LEGACY_EDICTS       2048    // QW packet entities with ENTITYDBL/ENTITYDBL2
 #define MAX_EDICTS_SAFE         512     // lower limit, to make sure no client limits exceeded
 #define	MAX_LIGHTSTYLES         64
