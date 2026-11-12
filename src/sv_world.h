@@ -78,6 +78,10 @@ trace_t SV_Trace (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, 
 
 // passedict is explicitly excluded from clipping checks (normally NULL)
 
+trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t *eorg, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end);
+// clips the move against that one entity only
+// eorg, if not NULL, is used in place of the entity's origin
+
 int SV_AreaEdicts (vec3_t mins, vec3_t maxs, edict_t **edicts, int max_edicts, int area);
 
 void SV_AntilagReset (edict_t *ent);
