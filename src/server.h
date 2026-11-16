@@ -581,7 +581,7 @@ typedef struct mvddest_s
 
 	desttype_t desttype;
 
-	int socket;
+	socket_t socket;
 	FILE *file;
 
 	char name[MAX_QPATH];
@@ -595,6 +595,7 @@ typedef struct mvddest_s
 	unsigned int totalsize;
 
 // { used by QTV
+	qbool			reverse;
 	double			io_time; // when last IO occur on socket, so we can timeout this dest
 	double			prefix_time; // when the current queued stream prefix started
 	int				prefix_bytes; // bytes of that prefix still awaiting a stream send
@@ -1214,7 +1215,6 @@ extern cvar_t	qtv_stream_max_queue_size;
 
 
 void SV_MVDStream_Poll(void);
-void SV_MVDCloseStreams(void);
 void SV_QTV_Init(void);
 
 void DemoWriteQTV (sizebuf_t *msg);
