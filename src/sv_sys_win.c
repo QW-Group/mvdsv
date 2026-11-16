@@ -743,13 +743,13 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
         0,                  // initial thread stack size
         func,               // pointer to thread function
         param,              // argument for new thread
-        CREATE_SUSPENDED,   // creation flags
+        0,                  // creation flags
         &threadid);         // pointer to receive thread ID
 
     if (thread == NULL)
         return (int)GetLastError();
 
-    ResumeThread(thread);
+    CloseHandle(thread);
 
     return 0;
 }

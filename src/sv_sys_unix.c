@@ -620,12 +620,15 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
 {
     pthread_t thread;
     pthread_attr_t attr;
+    int result;
 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_attr_setschedpolicy(&attr, SCHED_OTHER);   // ale gowno
 
-    return pthread_create(&thread, &attr, (void *)func, param);
+    result = pthread_create(&thread, &attr, (void *)func, param);
+    pthread_attr_destroy(&attr);
+    return result;
 }
 
 void Sys_MutexInit(mutex_t *m)
