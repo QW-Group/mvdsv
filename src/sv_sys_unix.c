@@ -20,6 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qwsvdef.h"
 
+#ifndef SOCK_CLOEXEC
+// On systems without atomic close-on-exec, exclude process launches until
+// the worker has marked its new socket. DNS and connect run outside this lock.
+static pthread_mutex_t sys_spawn_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 extern cvar_t sys_restart_on_error;
 extern cvar_t sys_select_timeout, sys_simulation;
 
@@ -323,6 +329,11 @@ void Sys_Quit (qbool restart)
 	{
 		int maxfd = getdtablesize() - 1;
 
+#ifndef SOCK_CLOEXEC
+		// No worker may add a descriptor while we close them and replace the process.
+		pthread_mutex_lock(&sys_spawn_mutex);
+#endif
+
 		// close all file descriptors besides stdin stdout and stderr, I am not sure, perhaps I can safely close even those descriptors too.
 		for (; maxfd > 2; maxfd--)
 			close(maxfd);
@@ -535,17 +546,59 @@ void Sys_Sleep(unsigned long ms)
 	usleep(ms*1000);
 }
 
+int Sys_OpenStreamSocket(int family, int protocol)
+{
+#ifdef SOCK_CLOEXEC
+	return socket(family, SOCK_STREAM | SOCK_CLOEXEC, protocol);
+#else
+	int sock;
+
+	pthread_mutex_lock(&sys_spawn_mutex);
+	sock = socket(family, SOCK_STREAM, protocol);
+	if (sock != -1 && fcntl(sock, F_SETFD, FD_CLOEXEC) == -1) {
+		close(sock);
+		sock = -1;
+	}
+	pthread_mutex_unlock(&sys_spawn_mutex);
+	return sock;
+#endif
+}
+
+int Sys_RunCommand(const char *command)
+{
+#ifdef SOCK_CLOEXEC
+	return system(command);
+#else
+	int result;
+
+	pthread_mutex_lock(&sys_spawn_mutex);
+	result = system(command);
+	pthread_mutex_unlock(&sys_spawn_mutex);
+	return result;
+#endif
+}
+
 int Sys_Script (const char *path, const char *args)
 {
 	char exec_path[1024];
 	char *exec_args[1024];
 	char *tmp_args, *p;
+	pid_t child;
 	int i;
 
 	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
 		return 0;
 
-	switch(fork()) {
+#ifndef SOCK_CLOEXEC
+	pthread_mutex_lock(&sys_spawn_mutex);
+#endif
+	child = fork();
+#ifndef SOCK_CLOEXEC
+	if (child != 0) {
+		pthread_mutex_unlock(&sys_spawn_mutex);
+	}
+#endif
+	switch(child) {
 		case -1:
 			/* oops, we cannot fork */
 			return 0;
@@ -620,12 +673,15 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
 {
     pthread_t thread;
     pthread_attr_t attr;
+    int result;
 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_attr_setschedpolicy(&attr, SCHED_OTHER);   // ale gowno
 
-    return pthread_create(&thread, &attr, (void *)func, param);
+    result = pthread_create(&thread, &attr, (void *)func, param);
+    pthread_attr_destroy(&attr);
+    return result;
 }
 
 void Sys_MutexInit(mutex_t *m)

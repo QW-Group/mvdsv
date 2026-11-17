@@ -29,6 +29,30 @@ None at the moment.
 
 For more detailed information we suggest looking at the [nQuake server][nquake-linux], which uses **[MVDSV][mvdsv]** and **[KTX][ktx]** as **QuakeWorld** server.
 
+### Reverse QTV streaming
+
+MVDSV can initiate a QTV stream to a proxy that supports reverse connect. Put
+the proxy's TCP listener address and the shared 64-digit hexadecimal key in a
+private config file at the top level of the game directory, such as `server.cfg`.
+
+```
+qtv_reverse_address proxy.example.net:28000
+qtv_reverse_secret "<64 hexadecimal digits>"
+```
+
+On QTV-Go, set `qtv_reverse_secret` to the same key and set `address` to the
+proxy's public `host:port` for spectator links. Both settings are required.
+
+Use an IPv4 address or a hostname with an IPv4 record for the listener
+address. Keep the key out of command-line arguments and RCON because those
+can be logged. The handshake authenticates MVDSV to the proxy. Use a
+trusted network or an authenticated encrypted tunnel for the connection.
+
+After loading a map, MVDSV connects and retries automatically after a loss
+of connection. The UDP `status 32` query reports the stream using the
+proxy's public address. Set `qtv_reverse_address ""` to disable the connection.
+`qtv_streamport` and `qtv_maxstreams` still control incoming QTV pulls.
+
 ## Building binaries
 
 ### Build from source with CMake
