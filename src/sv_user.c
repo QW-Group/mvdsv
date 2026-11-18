@@ -2737,7 +2737,6 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 }
 
 extern cvar_t spectator_password, password;
-extern void MVD_PlayerReset(int player);
 extern void CountPlayersSpecsVips(int *clients_ptr, int *spectators_ptr, int *vips_ptr, client_t **newcl_ptr);
 extern qbool SpectatorCanConnect(int vip, int spass, int spectators, int vips);
 extern qbool PlayerCanConnect(int clients);
@@ -2827,7 +2826,6 @@ static void Cmd_Join_f (void)
 	G_FLOAT(OFS_PARM0) = (float) sv_client->vip;
 	PR_GamePutClientInServer(0);
 
-	// look in SVC_DirectConnect() for for extended comment whats this for
 	MVD_PlayerReset(NUM_FOR_EDICT(sv_player) - 1);
 
 	// send notification to all clients
@@ -2912,7 +2910,6 @@ static void Cmd_Observe_f (void)
 	pr_global_struct->self = EDICT_TO_PROG(sv_player);
 	PR_GamePutClientInServer(1); // let mod know we put spec not player
 
-	// look in SVC_DirectConnect() for for extended comment whats this for
 	MVD_PlayerReset(NUM_FOR_EDICT(sv_player) - 1);
 
 	// send notification to all clients
