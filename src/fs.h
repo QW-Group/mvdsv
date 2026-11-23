@@ -53,5 +53,6 @@ char *FS_NextPath (char *prevpath);
 void FS_SetGamedir (char *dir, qbool force);
 
 qbool FS_UnsafeFilename(const char* name);
+qbool FS_HasAmbiguousWindowsPath(const char* name);
 
 #endif /* !__FS_H__ */
