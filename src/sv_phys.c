@@ -427,6 +427,80 @@ trace_t SV_PushEntity (edict_t *ent, vec3_t push, unsigned int traceflags)
 
 /*
 ============
+SV_NudgeStuckEntity
+
+Try to move the entity out of solid by 1/64, then by 1/8 (what pmove would try on its
+next command), in any direction. 1/64 is half the normal wall clearance, which leaves
+a margin when something else stands close on the other side. Returns true with the
+entity linked at the free spot, false with its origin unchanged if none is free.
+============
+*/
+static qbool SV_NudgeStuckEntity (edict_t *ent)
+{
+	static const float step[2] = { 1.0f / 64, 1.0f / 8 };
+	static const float sign[3] = { 0, -1, 1 };
+	vec3_t base;
+	int s, x, y, z;
+
+	VectorCopy (ent->v->origin, base);
+	for (s = 0; s < 2; s++)
+		for (z = 0; z < 3; z++)
+			for (y = 0; y < 3; y++)
+				for (x = 0; x < 3; x++)
+				{
+					if (!x && !y && !z)
+						continue;
+					ent->v->origin[0] = base[0] + sign[x] * step[s];
+					ent->v->origin[1] = base[1] + sign[y] * step[s];
+					ent->v->origin[2] = base[2] + sign[z] * step[s];
+					if (!SV_TestEntityPosition (ent))
+					{
+						SV_LinkEdict (ent, false);
+						return true;
+					}
+				}
+
+	VectorCopy (base, ent->v->origin);
+	return false;
+}
+
+/*
+============
+SV_PushNudge
+
+Free a stuck player the pusher is about to move: one standing on it, or one whose box
+is inside its final position. Returns false if the pusher doesn't reach him, or if
+none of the tried spots is free.
+============
+*/
+static qbool SV_PushNudge (edict_t *pusher, edict_t *ent, qbool riding)
+{
+	float solid_save = pusher->v->solid;
+	vec_t *org = ent->v->origin;
+	qbool nudged;
+
+	if (!riding)
+	{
+		// he is stuck in something else, so clip against the pusher alone, with the
+		// exceptions SV_ClipToLinks makes: an owner and what it owns never clip, and
+		// a box never clips against a point
+		if (solid_save != SOLID_BSP
+		|| PROG_TO_EDICT(pusher->v->owner) == ent
+		|| PROG_TO_EDICT(ent->v->owner) == pusher
+		|| (ent->v->size[0] && !pusher->v->size[0])
+		|| !SV_ClipMoveToEntity (pusher, NULL, org, ent->v->mins, ent->v->maxs, org).startsolid)
+			return false;
+	}
+
+	pusher->v->solid = SOLID_NOT;	// he may be inside the pusher as well
+	nudged = SV_NudgeStuckEntity (ent);
+	pusher->v->solid = solid_save;
+
+	return nudged;
+}
+
+/*
+============
 SV_Push
 
 ============
@@ -435,19 +509,14 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 {
 	int			i, e;
 	edict_t		*check, *block;
-	vec3_t		mins, maxs;
 	vec3_t		pushorig;
 	int			num_moved;
 	edict_t		*local_edict[MAX_LEGACY_EDICTS], **moved_edict = local_edict;
 	vec3_t		local_from[MAX_LEGACY_EDICTS], *moved_from = local_from;
 	void		*storage = NULL;
 	float		solid_save;
-
-	for (i=0 ; i<3 ; i++)
-	{
-		mins[i] = pusher->v->absmin[i] + move[i];
-		maxs[i] = pusher->v->absmax[i] + move[i];
-	}
+	vec3_t		from;
+	qbool		riding, nudged, clear;
 
 	VectorCopy (pusher->v->origin, pushorig);
 
@@ -468,29 +537,36 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 		|| check->v->movetype == MOVETYPE_NOCLIP)
 			continue;
 
+		// if the entity is standing on the pusher, it will definately be moved
+		riding = ((int)check->v->flags & FL_ONGROUND)
+			&& PROG_TO_EDICT(check->v->groundentity) == pusher;
+		if ( !riding
+		&& ( check->v->absmin[0] >= pusher->v->absmax[0]
+		|| check->v->absmin[1] >= pusher->v->absmax[1]
+		|| check->v->absmin[2] >= pusher->v->absmax[2]
+		|| check->v->absmax[0] <= pusher->v->absmin[0]
+		|| check->v->absmax[1] <= pusher->v->absmin[1]
+		|| check->v->absmax[2] <= pusher->v->absmin[2] ) )
+			continue;
+
+		VectorCopy (check->v->origin, from);
+
 		solid_save = pusher->v->solid;
 		pusher->v->solid = SOLID_NOT;
 		block = SV_TestEntityPosition (check);
 		pusher->v->solid = solid_save;
-		if (block)
+		// A player in exact contact with a wall or another player tests as stuck. Skipping
+		// him would let the pusher move through him and leave him inside it, so if the
+		// pusher is about to move him, try a tiny nudge first.
+		nudged = block && e <= MAX_CLIENTS && check->v->solid == SOLID_SLIDEBOX
+			&& SV_PushNudge (pusher, check, riding);
+		if (block && !nudged)
 			continue;
 
-		// if the entity is standing on the pusher, it will definately be moved
-		if ( ! ( ((int)check->v->flags & FL_ONGROUND)
-		&& PROG_TO_EDICT(check->v->groundentity) == pusher) )
-		{
-			if ( check->v->absmin[0] >= maxs[0]
-			|| check->v->absmin[1] >= maxs[1]
-			|| check->v->absmin[2] >= maxs[2]
-			|| check->v->absmax[0] <= mins[0]
-			|| check->v->absmax[1] <= mins[1]
-			|| check->v->absmax[2] <= mins[2] )
-				continue;
-
-			// see if the ent's bbox is inside the pusher's final position
-			if (!SV_TestEntityPosition (check))
-				continue;
-		}
+		// see if the ent's bbox is inside the pusher's final position
+		clear = !riding && !SV_TestEntityPosition (check);
+		if (clear && !nudged)
+			continue;
 
 		// remove the onground flag for non-players
 		if (check->v->movetype != MOVETYPE_WALK)
@@ -505,9 +581,12 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 			memcpy(moved_from, local_from, sizeof(local_from));
 		}
 
-		VectorCopy (check->v->origin, moved_from[num_moved]);
+		VectorCopy (from, moved_from[num_moved]);	// a blocked push undoes the nudge too
 		moved_edict[num_moved] = check;
 		num_moved++;
+
+		if (clear)	// the nudge alone took him out of the pusher
+			continue;
 
 		// try moving the contacted entity
 		VectorAdd (check->v->origin, move, check->v->origin);
@@ -526,7 +605,8 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 			//if leaving it where it was, allow it to drop to the floor again (useful for plats that move downward)
 			//check->v->flags = (int)check->v->flags & ~FL_ONGROUND; // disconnect: is it needed?
 
-			num_moved--;
+			if (!nudged)	// a nudged player stays listed, to be put back if the push is blocked
+				num_moved--;
 			continue;
 		}
 
