@@ -4907,6 +4907,26 @@ static double SV_AntilagTargetTime (const client_frame_t *frame)
 
 /*
 ===================
+SV_ClientAntilagRewindMsec
+
+How many milliseconds sv_antilag rewinds the world for this client. A mod
+that does its own rewinding reads it through infokey "*antilag_rewind". Falls
+back to the averaged ping until the acknowledged frame has a ping measurement.
+===================
+*/
+double SV_ClientAntilagRewindMsec (client_t *cl)
+{
+	client_frame_t *frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
+
+	if (frame->ping_time <= 0) {
+		return SV_CalcPing(cl);
+	}
+
+	return max(sv.time - SV_AntilagTargetTime(frame), 0) * 1000;
+}
+
+/*
+===================
 SV_ExecuteClientMessage
 
 The current net_message is parsed for the given client
