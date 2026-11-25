@@ -1632,6 +1632,7 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 			if (   !strcmp(key, "date_str")
 				|| !strcmp(key, "ip") || !strncmp(key, "realip", 7) || !strncmp(key, "download", 9)
 				|| !strcmp(key, "ping") || !strcmp(key, "*antilag_rewind")
+				|| !strcmp(key, "*ping_current")
 				|| !strcmp(key, "*userid") || !strncmp(key, "login", 6)
 				|| !strcmp(key, "*VIP") || !strcmp(key, "*state")
 				|| !strcmp(key, "netname")
@@ -1673,6 +1674,17 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
 		else if (!strcmp(key, "*antilag_rewind")) {
 			snprintf(ov, sizeof(ov), "%.6f", SV_ClientAntilagRewindMsec(cl));
+		}
+		else if (!strcmp(key, "*ping_current")) {
+			// the acknowledged frame's ping, not the averaged one SV_CalcPing returns
+			client_frame_t *frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
+
+			if (frame->ping_time > 0) {
+				snprintf(ov, sizeof(ov), "%.6f", frame->ping_time * 1000);
+			}
+			else {
+				snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
+			}
 		}
 		else if (!strcmp(key, "ping"))
 			snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
