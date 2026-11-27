@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <io.h>
 
 extern cvar_t sys_restart_on_error;
-extern cvar_t sys_select_timeout, sys_simulation;
+extern cvar_t sys_select_timeout, sys_simulation, sys_fixedstep;
 
 cvar_t	sys_nostdout	= {"sys_nostdout", "0"};
 cvar_t	sys_sleep		= {"sys_sleep", "8"};
@@ -822,7 +822,7 @@ int main(int ac, char *av[])
 		}
 
 		// find time passed since last cycle
-		newtime = Sys_DoubleTime ();
+		newtime = sys_fixedstep.value > 0 ? oldtime + sys_fixedstep.value : Sys_DoubleTime ();
 		time = newtime - oldtime;
 		oldtime = newtime;
 
@@ -918,7 +918,7 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		}
 
 		// find time passed since last cycle
-		newtime = Sys_DoubleTime ();
+		newtime = sys_fixedstep.value > 0 ? oldtime + sys_fixedstep.value : Sys_DoubleTime ();
 		time = newtime - oldtime;
 		oldtime = newtime;
 
