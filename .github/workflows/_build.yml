@@ -97,7 +97,7 @@ jobs:
 
           sudo apt-get ${APT_FLAGS} install -y cmake build-essential ninja-build ${{ matrix.cross-compiler-package }}
           if [ "${{ matrix.os }}" = "linux" ]; then
-            sudo apt-get ${APT_FLAGS} --no-install-recommends install -y libcurl4-openssl-dev:${{ matrix.arch }}
+            sudo apt-get ${APT_FLAGS} --no-install-recommends install -y libcurl4-openssl-dev:${{ matrix.arch }} libpcre2-dev:${{ matrix.arch }}
           fi
 
       - name: Build
