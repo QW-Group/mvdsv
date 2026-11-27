@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef CLIENTONLY
 #include "qwsvdef.h"
+#include <errno.h>
+#include <limits.h>
 #include <stddef.h>
 
 // minimal cache which can be used for demos, must be few times greater than DEMO_FLUSH_CACHE_IF_LESS_THAN_THIS
@@ -54,36 +56,46 @@ cvar_t sv_demo_rd_predinfo = {"sv_demo_rd_predinfo", "0"};
 cvar_t	sv_demoPrefix		= {"sv_demoPrefix",		""};
 cvar_t	sv_demoSuffix		= {"sv_demoSuffix",		""};
 cvar_t	sv_demotxt			= {"sv_demotxt",		"1"};
-cvar_t	sv_onrecordfinish	= {"sv_onRecordFinish", ""};
+cvar_t	sv_onrecordfinish	= {"sv_onRecordFinish", "", CVAR_NOTFROMSERVER};
 
-cvar_t	sv_ondemoremove		= {"sv_onDemoRemove",	""};
+cvar_t	sv_ondemoremove		= {"sv_onDemoRemove",	"", CVAR_NOTFROMSERVER};
 cvar_t	sv_demoRegexp		= {"sv_demoRegexp",		"\\.mvd(\\.(gz|bz2|rar|zip))?$"};
 
 cvar_t	sv_silentrecord		= {"sv_silentrecord",   "0"};
 // opt-in: record the CSQC stream (svc 76/83, stats 32..255) into MVD/QTV. Off
 // by default because stock ezQuake/QTV cannot parse it.
+#ifdef SV_HAS_CSQC
 cvar_t	sv_mvd_csqc			= {"sv_mvd_csqc",		"0"};
+#endif
 
 cvar_t	extralogname		= {"extralogname",		"unset"}; // no sv_ prefix? WTF!
 
 mvddest_t			*singledest;
 
-// only one .. is allowed (security)
 static void sv_demoDir_OnChange(cvar_t *cvar, char *value, qbool *cancel)
 {
-	if (cvar == &sv_demoDir && !value[0]) {
-		*cancel = true;
-		return;
+	const char *component = value;
+	size_t length;
+
+	if ((cvar == &sv_demoDir && !*value) || *value == '/' || *value == '\\' || strchr(value, ':')) {
+		goto invalid;
 	}
 
-	if (value[0] == '.' && value[1] == '.') {
-		value += 2;
+	while (*component) {
+		length = strcspn(component, "/\\");
+		if (length == 2 && component[0] == '.' && component[1] == '.') {
+			goto invalid;
+		}
+		component += length;
+		if (*component) {
+			++component;
+		}
 	}
+	return;
 
-	if (strstr(value, "/..")) {
-		*cancel = true;
-		return;
-	}
+invalid:
+	*cancel = true;
+	Con_Printf("%s requires a relative path inside the game directory.\n", cvar->name);
 }
 
 // { MVD writing functions, just wrappers
@@ -140,15 +152,32 @@ mvddest_t *DestByName (char *name)
 	mvddest_t *d;
 
 	for (d = demo.dest; d; d = d->nextdest)
-		if (!strncmp(name, d->name, sizeof(d->name)-1))
+		if (d->name && !strcmp(name, d->name))
 			return d;
 
 	return NULL;
 }
 
-void DestClose (mvddest_t *d, qbool destroyfiles)
+static char *SV_RecordTxtPath(const char *mvd_path)
 {
-	char path[MAX_OSPATH];
+	return va("%.*s.txt", (int)strlen(mvd_path) - 4, mvd_path);
+}
+
+static void SV_WriteRecordTxt(const char *record_path)
+{
+	FILE *file = fopen(SV_RecordTxtPath(record_path), sv_demotxt.value == 2 ? "a+t" : "w+t");
+
+	if (file) {
+		if (sv_demotxt.value != 2) {
+			fputs(SV_PrintTeams(), file);
+		}
+		fclose(file);
+	}
+}
+
+qbool DestClose (mvddest_t *d, qbool destroyfiles)
+{
+	qbool success = true;
 
 	if (d->cache)
 		Q_free(d->cache);
@@ -159,18 +188,26 @@ void DestClose (mvddest_t *d, qbool destroyfiles)
 	if (d->qtvuserlist)
 		QTVsv_FreeUserList(d);
 
-	if (destroyfiles)
+	if (destroyfiles && d->record_path)
 	{
-		snprintf(path, MAX_OSPATH, "%s/%s/%s", fs_gamedir, d->path, d->name);
-		Sys_remove(path);
-		strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
-		Sys_remove(path);
+		if (Sys_remove(d->record_path) != 0) {
+			Con_Printf("Couldn't remove %s: %s\n", d->record_path, strerror(errno));
+			success = false;
+		}
+		else {
+			char *txt_path = SV_RecordTxtPath(d->record_path);
+			if (Sys_remove(txt_path) != 0 && errno != ENOENT) {
+				Con_Printf("Couldn't remove %s: %s\n", txt_path, strerror(errno));
+			}
+		}
 
 		// force cache rebuild.
 		FS_FlushFSHash();
 	}
 
+	Q_free(d->record_path);
 	Q_free(d);
+	return success;
 }
 
 //
@@ -306,10 +343,11 @@ void DestFlush (qbool complete)
 	}
 }
 
-// if param "mvdonly" == true then close only demos, not QTV's steams
+// With mvdonly, keep QTV streams open. Return the number closed, or -1 if a demo could not be removed.
 static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
 {
 	int numclosed = 0;
+	qbool remove_failed = false;
 	mvddest_t *d, **prev, *next;
 
 	DestFlush(true); //make sure it's all written.
@@ -322,19 +360,23 @@ static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
 
 		if (!mvdonly || d->desttype != DEST_STREAM)
 		{
-			desttype_t dt = d->desttype;
-			char dest_name[sizeof(d->name)];
-			char dest_path[sizeof(d->path)];
+			// DestClose frees the recording path before the finish script runs.
+			char *relpath = d->record_relpath ? Q_strdup(d->record_relpath) : NULL;
 
-			strlcpy(dest_name, d->name, sizeof(dest_name));
-			strlcpy(dest_path, d->path, sizeof(dest_path));
+			if (!destroyfiles && d->record_path && (int)sv_demotxt.value) {
+				SV_WriteRecordTxt(d->record_path);
+			}
 
 			*prev = d->nextdest;
-			DestClose(d, destroyfiles); // NOTE: this free dest struck, so we can't use 'd' below
+			if (!DestClose(d, destroyfiles)) {
+				remove_failed = true;
+			}
 			numclosed++;
 
-			if (dt != DEST_STREAM && dest_name[0]) // ignore stream or empty file name
-				Run_sv_demotxt_and_sv_onrecordfinish (dest_name, dest_path, destroyfiles);
+			if (relpath) {
+				SV_RunOnRecordFinish(relpath, destroyfiles);
+				Q_free(relpath);
+			}
 		}
 		else
 			prev = &d->nextdest;
@@ -342,7 +384,7 @@ static int DestCloseAllFlush (qbool destroyfiles, qbool mvdonly)
 		d = next;
 	}
 
-	return numclosed;
+	return remove_failed ? -1 : numclosed;
 }
 
 /* Apply live queue limits without disturbing other destinations or queued bytes. */
@@ -681,27 +723,36 @@ static qbool MVD_WriteMessage (sizebuf_t *msg, byte msec)
 	return (sv.mvdrecording ? true : false);
 }
 
-static void SV_MVDWritePausedTime(demo_frame_t* frame)
+static void SV_MVDWritePausedTime(demo_frame_t *frame)
 {
-	// When writing out a paused frame, send a packet to let QTV keep delay in sync
-	if (frame->paused) {
-		mvddest_t* d;
-		sizebuf_t msg;
-		byte msg_buffer[128];
-		byte duration = frame->pause_duration;
+	mvddest_t *d;
+	sizebuf_t msg;
+	byte msg_buffer[17];
 
-		SZ_Init(&msg, msg_buffer, sizeof(msg_buffer));
-		MSG_WriteByte(&msg, 0);                                           //     0: duration == 0, for demos
-		MSG_WriteByte(&msg, dem_multiple);                                //     1: target of the packet
-		MSG_WriteLong(&msg, 0);                                           //  2- 5: 0 ... demo_multiple(0) => hidden packet
-		MSG_WriteLong(&msg, LittleLong(sizeof_mvdhidden_block_header_t_range0 + sizeof(byte)));  // hidden message payload size: [u32 length][u16 type_id] + body
-		MSG_WriteLong(&msg, LittleLong(sizeof(byte)));                    // hidden-block header: body length (one byte: msec)
-		MSG_WriteShort(&msg, LittleShort(mvdhidden_paused_duration));     // hidden-block header: type id
-		MSG_WriteByte(&msg, duration);                                    // body: true elapsed msec (demo frames carry 0)
+	if (!frame->paused) {
+		return;
+	}
 
-		for (d = demo.dest; d; d = d->nextdest) {
-			DemoWriteDest(msg.data, msg.cursize, d);
+	SZ_Init(&msg, msg_buffer, sizeof(msg_buffer));
+	MSG_WriteByte(&msg, 0);
+	MSG_WriteByte(&msg, dem_multiple);
+	MSG_WriteLong(&msg, 0); // dem_multiple with no recipients is a hidden packet
+#ifdef SV_QTV_LEGACY_PAUSE_BLOCK
+	MSG_WriteLong(&msg, sizeof(short) + sizeof(byte));
+#else
+	MSG_WriteLong(&msg, sizeof_mvdhidden_block_header_t_range0 + sizeof(byte));
+	MSG_WriteLong(&msg, sizeof(byte));
+#endif
+	MSG_WriteShort(&msg, mvdhidden_paused_duration);
+	MSG_WriteByte(&msg, frame->pause_duration);
+
+	for (d = demo.dest; d; d = d->nextdest) {
+#ifdef SV_QTV_LEGACY_PAUSE_BLOCK
+		if (d->desttype != DEST_STREAM) {
+			continue;
 		}
+#endif
+		DemoWriteDest(msg.data, msg.cursize, d);
 	}
 }
 
@@ -1018,13 +1069,12 @@ SV_InitRecord
 */
 static mvddest_t *SV_InitRecordFile (char *name)
 {
-	char *s;
+	char advertised_name[MAX_INFO_KEY];
 	mvddest_t *dst;
 	FILE *file;
 
-	char path[MAX_OSPATH];
-
 	Con_DPrintf("SV_InitRecordFile: Demo name: \"%s\"\n", name);
+	FS_CreatePath(name);
 	file = fopen (name, "wb");
 	if (!file)
 	{
@@ -1033,6 +1083,9 @@ static mvddest_t *SV_InitRecordFile (char *name)
 	}
 
 	dst = (mvddest_t*) Q_malloc (sizeof(mvddest_t));
+	dst->record_path = Q_strdup(name);
+	dst->record_relpath = dst->record_path + strlen(fs_gamedir) + 1;
+	dst->name = strrchr(dst->record_relpath, '/') + 1;
 
 	if (!(int)sv_demoUseCache.value)
 	{
@@ -1049,39 +1102,16 @@ static mvddest_t *SV_InitRecordFile (char *name)
 		dst->cache = (char *) Q_malloc (dst->cachesize);
 	}
 
-	s = name + strlen(name);
-	while (*s != '/') s--;
-	strlcpy(dst->name, s+1, sizeof(dst->name));
-	strlcpy(dst->path, sv_demoDir.string, sizeof(dst->path));
-
 	if ( !sv_silentrecord.value )
 		SV_BroadcastPrintf (PRINT_CHAT, "Server starts recording (%s):\n%s\n",
-		                    (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", s+1);
-	Cvar_SetROM(&serverdemo, dst->name);
-
-	strlcpy(path, name, MAX_OSPATH);
-	strlcpy(path + strlen(path) - 3, "txt", MAX_OSPATH - strlen(path) + 3);
+		                    (dst->desttype == DEST_BUFFEREDFILE) ? "memory" : "disk", dst->name);
+	strlcpy(advertised_name, dst->name, sizeof(advertised_name));
+	Cvar_SetROM(&serverdemo, advertised_name);
 
 	if ((int)sv_demotxt.value)
-	{
-		FILE *f;
-		char *text;
-
-		if (sv_demotxt.value == 2)
-		{
-			if ((f = fopen (path, "a+t")))
-				fclose(f); // at least made empty file
-		}
-		else if ((f = fopen (path, "w+t")))
-		{
-			text = SV_PrintTeams();
-			fwrite(text, strlen(text), 1, f);
-			fflush(f);
-			fclose(f);
-		}
-	}
+		SV_WriteRecordTxt(dst->record_path);
 	else
-		Sys_remove(path);
+		Sys_remove(SV_RecordTxtPath(dst->record_path));
 
 	// force cache rebuild.
 	FS_FlushFSHash();
@@ -1096,7 +1126,7 @@ static void SV_AddLastDemo(void)
 
 	for (d = demo.dest; d; d = d->nextdest)
 	{
-		if (d->desttype != DEST_STREAM && d->name[0])
+		if (d->name)
 		{
 			name = d->name;
 			break; // we found file dest with non empty name, use it as last demo name
@@ -1126,7 +1156,7 @@ SV_MVD_Record before it partial-memsets the demo struct on a fresh start.
 */
 static void SV_MVD_FreeRecorderCSQC (void)
 {
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	int i, j;
 	if (demo.recorder.pendingcsqcbits)
 	{
@@ -1175,7 +1205,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 			mvdonly = false; // if serious error, then close all dests including qtv streams
 
 		// stop and remove
-		DestCloseAllFlush(true, mvdonly);
+		numclosed = DestCloseAllFlush(true, mvdonly);
 
 		if (!demo.dest) {
 			sv.mvdrecording = false;
@@ -1189,7 +1219,7 @@ void SV_MVDStop (int reason, qbool mvdonly)
 		else
 		{
 			if ( !sv_silentrecord.value )
-				SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled, demo removed\n");
+				SV_BroadcastPrintf (PRINT_CHAT, "Server recording canceled%s\n", numclosed > 0 ? ", demo removed" : "");
 		}
 
 		Cvar_SetROM(&serverdemo, "");
@@ -1250,8 +1280,10 @@ out:
 		SV_ClearEntityHistory(&demo.recorder);
 		SV_MVD_FreeRecorderCSQC();
 	}
+#ifdef SV_HAS_BROADCAST
 	if (reason != 3)
 		SV_BroadcastPrintCache();
+#endif
 }
 
 /*
@@ -1492,9 +1524,9 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	char* s, info[MAX_EXT_INFO_STRING];
 	char epoch[21];
 
+	mvddest_t *d;
 	client_t* player;
 	edict_t* ent;
-	char* gamedir;
 	int i;
 	int sound_count = SV_SoundPrecacheCount(sv.sound_precache, MAX_SOUNDS);
 	int sound_cursor = 0, next_sound;
@@ -1506,7 +1538,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	demo.pingtime = demo.time = sv.time;
 	singledest = dest;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// A new dest joins mid-stream (QTV attach) or the map changed: the recorder
 	// shares its CSQC delta bitset across all dests, so re-arm the PRESENT
 	// entities for a full resend, otherwise the joining dest never receives the
@@ -1528,10 +1560,6 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	SZ_Init(&buf, buf_data, sizeof(buf_data));
 
 	// send the serverdata
-
-	gamedir = Info_ValueForKey(svs.info, "*gamedir");
-	if (!gamedir[0])
-		gamedir = "qw";
 
 	MSG_WriteByte(&buf, svc_serverdata);
 
@@ -1564,7 +1592,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 #ifdef FTE_PEXT_COLOURMOD
 	demo.recorder.fteprotocolextensions |= FTE_PEXT_COLOURMOD;
 #endif
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// Only arm the recorder for CSQC when explicitly opted in: by default the
 	// MVD/QTV stream must stay parseable by stock ezQuake/QTV.
 	if (SV_CSQCActive() && (int)sv_mvd_csqc.value)
@@ -1633,7 +1661,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 
 	MSG_WriteLong (&buf, PROTOCOL_VERSION);
 	MSG_WriteLong (&buf, svs.spawncount);
-	MSG_WriteString (&buf, gamedir);
+	MSG_WriteString (&buf, SV_GetAdvertisedGamedir());
 
 
 	MSG_WriteFloat (&buf, sv.time);
@@ -1658,7 +1686,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 	MSG_WriteByte (&buf, 0); // none in demos
 
 	//set start time
-	sprintf(epoch,"%ld", (unsigned long)time(NULL));
+	snprintf(epoch, sizeof(epoch), "%lu", (unsigned long)time(NULL));
 	Info_SetValueForKey (svs.info, "epoch", epoch, MAX_SERVERINFO_STRING);
 
 	// send server info string
@@ -1672,7 +1700,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 
 	// soundlist
 	do {
-		if (!SV_WriteSoundListChunk(&buf, sv.sound_precache, sound_count,
+		if (!MSG_WriteSoundListChunk(&buf, sv.sound_precache, sound_count,
 		                            sound_cursor, MAX_MSGLEN / 2, &next_sound)) {
 			SV_Error("Unable to write MVD soundlist chunk");
 		}
@@ -1956,7 +1984,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 		int		statsi[MAX_CL_STATS];
 		int		j;
 		int		n;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		float	statsf[MAX_CL_STATS];
 		const char *statss[MAX_CL_STATS];
 #endif
@@ -1971,7 +1999,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 			continue;
 
 		memset(statsi, 0, sizeof(statsi));
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		memset(statsf, 0, sizeof(statsf));
 		memset(statss, 0, sizeof(statss));
 #endif
@@ -1993,14 +2021,14 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 
 		statsi[STAT_ITEMS] = SV_ItemsStat(ent);
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		// clientstat/pointerstat registered stats (32..255) for the recorder.
 		if (SV_WantsQCStats (&demo.recorder))
 			SV_UpdateQCStats (ent, statsi, statsf, statss);
 #endif
 
 		// legacy 32 stats unless the recorder is explicitly CSQC
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		n = SV_WantsQCStats (&demo.recorder) ? MAX_CL_STATS : MAX_WIRE_STATS;
 #else
 		n = MAX_WIRE_STATS;
@@ -2008,7 +2036,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 
 		for (j = 0; j < n; j++)
 		{
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 			// float/string stats use their own wire opcodes
 			if (SV_QCStatKind(j) == QCSTAT_KIND_FLOAT)
 			{
@@ -2087,7 +2115,7 @@ void SV_MVD_SendInitialGamestate(mvddest_t* dest)
 
 //	SV_WriteSetMVDMessage();
 
-	for (mvddest_t *d = demo.dest; d; d = d->nextdest) {
+	for (d = demo.dest; d; d = d->nextdest) {
 		if (!dest || dest == d) {
 			DemoTrimCache(d);
 		}
@@ -2104,12 +2132,11 @@ record <demoname>
 */
 void SV_MVD_Record_f (void)
 {
-	int c;
 	char name[MAX_OSPATH+MAX_DEMO_NAME];
 	char newname[MAX_DEMO_NAME];
+	int length;
 
-	c = Cmd_Argc();
-	if (c != 2)
+	if (Cmd_Argc() != 2)
 	{
 		Con_Printf ("record <demoname>\n");
 		return;
@@ -2128,13 +2155,12 @@ void SV_MVD_Record_f (void)
 	strlcpy(newname, va("%s%s%s", sv_demoPrefix.string, SV_CleanName((unsigned char*)Cmd_Argv(1)),
 						sv_demoSuffix.string), sizeof(newname) - 4);
 
-	Sys_mkdir(va("%s/%s", fs_gamedir, sv_demoDir.string));
-
-	snprintf (name, sizeof(name), "%s/%s/%s", fs_gamedir, sv_demoDir.string, newname);
-
-	if ((c = strlen(name)) > 3)
-		if (strcmp(name + c - 4, ".mvd"))
-			strlcat(name, ".mvd", sizeof(name));
+	length = snprintf(name, sizeof(name), "%s/%s/%s%s", fs_gamedir, sv_demoDir.string, newname,
+	                  strcmp(COM_FileExtension(newname), "mvd") ? ".mvd" : "");
+	if (length < 0 || length >= (int)sizeof(name)) {
+		Con_Printf("Demo recording path too long\n");
+		return;
+	}
 
 	//
 	// open the demo file and start recording
@@ -2214,7 +2240,6 @@ void SV_MVDEasyRecord_f (void)
 	strlcpy(name, va("%s%s%s", sv_demoPrefix.string,
 			 SV_CleanName((unsigned char*)name), sv_demoSuffix.string), MAX_DEMO_NAME);
 	strlcpy(name2, name, sizeof(name2));
-	Sys_mkdir(va("%s/%s", fs_gamedir, sv_demoDir.string));
 
 	// FIXME: very SLOW
 	if (!(name3 = quote(name2)))
@@ -2268,7 +2293,9 @@ static void MVD_Init (void)
 	Cvar_Register (&sv_demoExtraNames);
 	Cvar_Register (&sv_demoRegexp);
 	Cvar_Register (&sv_silentrecord);
+#ifdef SV_HAS_CSQC
 	Cvar_Register (&sv_mvd_csqc);
+#endif
 
 	Cvar_Register (&extralogname);
 
@@ -2364,7 +2391,9 @@ void SV_MVDInit(void)
 	Cmd_AddCommand ("sv_demoinfo",		SV_MVDInfo_f);
 	Cmd_AddCommand ("sv_demoembedinfo", SV_MVDEmbedInfo_f);
 	// not prefixed.
+#ifdef SERVERONLY
 	Cmd_AddCommand ("script",			SV_Script_f);
+#endif
 
 	Cmd_AddCommand ("sv_usercmdtrace",  SV_UserCmdTrace_f);
 
@@ -2376,10 +2405,7 @@ const char* SV_MVDDemoName(void)
 	mvddest_t* d;
 
 	for (d = demo.dest; d; d = d->nextdest) {
-		if (d->desttype == DEST_STREAM) {
-			continue; // streams are not saved on to HDD, so ignore it...
-		}
-		if (d->name[0]) {
+		if (d->name) {
 			return d->name;
 		}
 	}

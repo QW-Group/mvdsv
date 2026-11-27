@@ -93,11 +93,16 @@ void Sys_Init (void);
 void Sys_Sleep (unsigned long ms);
 
 #ifdef _WIN32
+#define Sys_OpenSocket(family, type, protocol) \
+	WSASocket((family), (type), (protocol), NULL, 0, WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED)
 #define Sys_OpenStreamSocket(family, protocol) \
-	WSASocket((family), SOCK_STREAM, (protocol), NULL, 0, WSA_FLAG_NO_HANDLE_INHERIT | WSA_FLAG_OVERLAPPED)
+	Sys_OpenSocket((family), SOCK_STREAM, (protocol))
+#define Sys_AcceptSocket accept
 #define Sys_RunCommand system
 #else
+int Sys_OpenSocket(int family, int type, int protocol);
 int Sys_OpenStreamSocket(int family, int protocol);
+int Sys_AcceptSocket(int listener, struct sockaddr *address, socklen_t *length);
 int Sys_RunCommand(const char *command);
 #endif
 int Sys_Script (const char *path, const char *args);
@@ -162,6 +167,7 @@ void *Sys_DLProc (DL_t dl, const char *name);
 #endif
 
 int  Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param);
+int  Sys_CreateDetachedThread(int (*func)(void *), void *data);
 
 
 typedef struct
@@ -172,8 +178,9 @@ typedef struct
 	pthread_mutex_t lock;
 #endif
 } mutex_t;
+typedef mutex_t sys_mutex_t;
 
-void Sys_MutexInit(mutex_t *l);
+qbool Sys_MutexInit(mutex_t *l);
 void Sys_MutexLock(mutex_t *l);
 void Sys_MutexUnlock(mutex_t *l);
 qbool Sys_MutexTryLock(mutex_t *m);

@@ -822,7 +822,7 @@ int SV_SoundPrecacheCount(char *const *sounds, int capacity)
 	return count;
 }
 
-qbool SV_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
                             int count, int cursor, int limit, int *next)
 {
 	int end, size;

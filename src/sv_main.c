@@ -248,6 +248,20 @@ client_t *WatcherId = NULL; // QW262
 
 //============================================================================
 
+const char *SV_GetAdvertisedGamedir(void)
+{
+	const char *gamedir = Info_ValueForKey(svs.info, "*gamedir");
+	const char *base;
+
+	if (*gamedir) {
+		return gamedir;
+	}
+
+	base = strrchr(fs_gamedir, '/');
+	gamedir = base ? base + 1 : fs_gamedir;
+	return *gamedir ? gamedir : "qw";
+}
+
 qbool GameStarted(void)
 {
 	mvddest_t *d;
@@ -307,6 +321,7 @@ void SV_Shutdown (char *finalmsg)
 #endif
 	}
 
+	SV_QTV_ShutdownReverse();
 	SV_ShutdownGame();
 
 	memset (&sv, 0, sizeof(sv));
@@ -2881,9 +2896,10 @@ static char *DecodeArgs(char *args)
 	return string;
 }
 
-void SV_Script_f (void)
+void SV_RunScript(const char *arg_prefix)
 {
-	char *path, *p;
+	char *path, *p, *args;
+	size_t args_size;
 	extern redirect_t sv_redirected;
 
 	if (Cmd_Argc() < 2)
@@ -2918,8 +2934,16 @@ void SV_Script_f (void)
 	if (sv_redirected != RD_MOD)
 		Sys_Printf("Running %s.qws\n", path);
 
-	Sys_Script(path, va("%d %s", sv_redirected, p));
+	args_size = strlen(arg_prefix) + strlen(p) + 32;
+	args = Q_malloc(args_size);
+	snprintf(args, args_size, "%d %s%s", sv_redirected, arg_prefix, p);
+	Sys_Script(path, args);
+	Q_free(args);
+}
 
+void SV_Script_f (void)
+{
+	SV_RunScript("");
 }
 
 //============================================================================

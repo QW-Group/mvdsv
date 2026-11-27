@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qwsvdef.h"
 #include <mmsystem.h>
 #include <io.h>
+#include <process.h>
 
 extern cvar_t sys_restart_on_error;
 extern cvar_t sys_select_timeout, sys_simulation;
@@ -753,9 +754,42 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
     return 0;
 }
 
-void Sys_MutexInit(mutex_t *m)
+typedef struct {
+	int (*func)(void *);
+	void *data;
+} sys_thread_args_t;
+
+static unsigned __stdcall Sys_DetachedThreadMain(void *data)
 {
-	InitializeCriticalSection(&m->lock);
+	sys_thread_args_t args = *(sys_thread_args_t *)data;
+
+	free(data);
+	args.func(args.data);
+	return 0;
+}
+
+int Sys_CreateDetachedThread(int (*func)(void *), void *data)
+{
+	HANDLE thread;
+	sys_thread_args_t *args = malloc(sizeof(*args));
+
+	if (!args) {
+		return -1;
+	}
+	args->func = func;
+	args->data = data;
+	thread = (HANDLE)_beginthreadex(NULL, 0, Sys_DetachedThreadMain, args, 0, NULL);
+	if (!thread) {
+		free(args);
+		return -1;
+	}
+	CloseHandle(thread);
+	return 0;
+}
+
+qbool Sys_MutexInit(mutex_t *m)
+{
+	return InitializeCriticalSectionAndSpinCount(&m->lock, 0) != FALSE;
 }
 
 void Sys_MutexLock(mutex_t *m)

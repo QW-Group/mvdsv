@@ -18,6 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE // accept4
+#endif
 #include "qwsvdef.h"
 
 #ifndef SOCK_CLOEXEC
@@ -545,19 +548,45 @@ void Sys_Sleep(unsigned long ms)
 	usleep(ms*1000);
 }
 
-int Sys_OpenStreamSocket(int family, int protocol)
+#ifndef SOCK_CLOEXEC
+static int Sys_SetSocketCloseOnExec(int sock)
+{
+	if (sock != -1 && fcntl(sock, F_SETFD, FD_CLOEXEC) == -1) {
+		close(sock);
+		return -1;
+	}
+	return sock;
+}
+#endif
+
+int Sys_OpenSocket(int family, int type, int protocol)
 {
 #ifdef SOCK_CLOEXEC
-	return socket(family, SOCK_STREAM | SOCK_CLOEXEC, protocol);
+	return socket(family, type | SOCK_CLOEXEC, protocol);
 #else
 	int sock;
 
 	pthread_mutex_lock(&sys_spawn_mutex);
-	sock = socket(family, SOCK_STREAM, protocol);
-	if (sock != -1 && fcntl(sock, F_SETFD, FD_CLOEXEC) == -1) {
-		close(sock);
-		sock = -1;
-	}
+	sock = Sys_SetSocketCloseOnExec(socket(family, type, protocol));
+	pthread_mutex_unlock(&sys_spawn_mutex);
+	return sock;
+#endif
+}
+
+int Sys_OpenStreamSocket(int family, int protocol)
+{
+	return Sys_OpenSocket(family, SOCK_STREAM, protocol);
+}
+
+int Sys_AcceptSocket(int listener, struct sockaddr *address, socklen_t *length)
+{
+#ifdef SOCK_CLOEXEC
+	return accept4(listener, address, length, SOCK_CLOEXEC);
+#else
+	int sock;
+
+	pthread_mutex_lock(&sys_spawn_mutex);
+	sock = Sys_SetSocketCloseOnExec(accept(listener, address, length));
 	pthread_mutex_unlock(&sys_spawn_mutex);
 	return sock;
 #endif
@@ -581,9 +610,9 @@ int Sys_Script (const char *path, const char *args)
 {
 	char exec_path[1024];
 	char *exec_args[1024];
-	char *tmp_args, *p;
+	char *tmp_args, *p, *out;
 	pid_t child;
-	int i;
+	int argc = 1;
 
 	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
 		return 0;
@@ -618,20 +647,35 @@ int Sys_Script (const char *path, const char *args)
 	memset(exec_args, 0, sizeof(exec_args));
 
 	/* translate args into array of arguments for execv(2) call */
-	i = 0;
-	exec_args[i++] = exec_path;
-	for (p = tmp_args; *p;)
-	{
-		while(*p == ' ') {
-			*(p++) = '\0';
+	exec_args[0] = exec_path;
+	for (p = tmp_args, out = tmp_args; *p;) {
+		qbool quoted = false;
+
+		while (*p == ' ' || *p == '\t') {
+			++p;
 		}
-
-		if (*p)
-			exec_args[i++] = p;
-
-		/* go to another space or end of string */
-		while(*p && *p != ' ')
-			p++;
+		if (!*p) {
+			break;
+		}
+		if (argc == ARRAY_LEN(exec_args) - 1) {
+			goto err_exit;
+		}
+		exec_args[argc++] = out;
+		while (*p && (quoted || (*p != ' ' && *p != '\t'))) {
+			if (*p == '"') {
+				quoted = !quoted;
+				++p;
+				continue;
+			}
+			if (quoted && *p == '\\' && p[1] && strchr("\\\"$`", p[1])) {
+				++p;
+			}
+			*out++ = *p++;
+		}
+		while (*p == ' ' || *p == '\t') {
+			++p;
+		}
+		*out++ = '\0';
 	}
 
 	if (chdir(fs_gamedir) == -1)
@@ -683,9 +727,54 @@ int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
     return result;
 }
 
-void Sys_MutexInit(mutex_t *m)
+typedef struct {
+	int (*func)(void *);
+	void *data;
+} sys_thread_args_t;
+
+static void *Sys_DetachedThreadMain(void *data)
 {
-	pthread_mutex_init(&m->lock, NULL);
+	sys_thread_args_t args = *(sys_thread_args_t *)data;
+
+	free(data);
+	args.func(args.data);
+	return NULL;
+}
+
+int Sys_CreateDetachedThread(int (*func)(void *), void *data)
+{
+	pthread_t thread;
+	pthread_attr_t attr;
+	sys_thread_args_t *args;
+	int error;
+
+	if (pthread_attr_init(&attr) != 0) {
+		return -1;
+	}
+	error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	if (error != 0) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	args = malloc(sizeof(*args));
+	if (!args) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	args->func = func;
+	args->data = data;
+	error = pthread_create(&thread, &attr, Sys_DetachedThreadMain, args);
+	pthread_attr_destroy(&attr);
+	if (error != 0) {
+		free(args);
+		return -1;
+	}
+	return 0;
+}
+
+qbool Sys_MutexInit(mutex_t *m)
+{
+	return pthread_mutex_init(&m->lock, NULL) == 0;
 }
 
 void Sys_MutexLock(mutex_t *m)

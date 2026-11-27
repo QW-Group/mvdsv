@@ -63,6 +63,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "cmd.h"
 #include "hash.h"
 #include "protocol.h"
+#ifdef FTE_PEXT_CSQC
+#define SV_HAS_CSQC
+#endif
 
 #include "common.h"
 #include "net.h"
@@ -82,6 +85,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pmove.h"
 #include "log.h"
 #include "sv_broadcast.h"
+#define SV_HAS_BROADCAST
+#define SV_HAS_LEGACY_QTV_VIEWERS
+
+// MVDSV has no client receiving cvar commands from a remote server.
+#define CVAR_NOTFROMSERVER CVAR_NONE
+#define CVAR_NOUNSAFEEXPAND CVAR_NONE
 
 #include "version.h"
 

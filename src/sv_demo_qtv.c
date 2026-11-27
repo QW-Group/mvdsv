@@ -21,10 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef CLIENTONLY
 #include "qwsvdef.h"
+#include <limits.h>
 
 #ifndef _WIN32
 #include <poll.h>
-#include <time.h>
 #endif
 
 static void SV_ReverseAddressChanged(cvar_t *var, char *value, qbool *cancel);
@@ -32,11 +32,11 @@ void QTV_ReadInput(mvddest_t *d);
 
 static cvar_t qtv_streamport     = {"qtv_streamport",      "0"};
 static cvar_t qtv_maxstreams     = {"qtv_maxstreams",      "1"};
-static cvar_t qtv_password       = {"qtv_password",         ""};
+static cvar_t qtv_password       = {"qtv_password",         "", CVAR_NOTFROMSERVER | CVAR_NOUNSAFEEXPAND};
 static cvar_t qtv_pendingtimeout = {"qtv_pendingtimeout",  "5"}; // 5  seconds must be enough
 static cvar_t qtv_sayenabled     = {"qtv_sayenabled",      "0"}; // allow mod to override GameStarted() logic
 cvar_t qtv_streamtimeout         = {"qtv_streamtimeout",  "45"}; // 45 seconds
-static cvar_t qtv_reverse_address = {"qtv_reverse_address", "", CVAR_NONE, SV_ReverseAddressChanged};
+static cvar_t qtv_reverse_address = {"qtv_reverse_address", "", CVAR_NOTFROMSERVER, SV_ReverseAddressChanged};
 
 static unsigned short int	listenport		= 0;
 static double				warned_time		= 0;
@@ -177,7 +177,8 @@ static struct {
 } reverse;
 
 static struct {
-	mutex_t mutex;
+	sys_mutex_t mutex;
+	qbool mutex_initialized;
 	// Game thread only. An attempt has started and its result has yet to be collected.
 	qbool running;
 	qbool discard_result;
@@ -248,7 +249,12 @@ static void SV_ReverseConfigChanged(void)
 	}
 	if (reverse_job.running) {
 		Sys_MutexLock(&reverse_job.mutex);
+		// A worker still in DNS or socket I/O closes its own socket on return.
 		reverse_job.discard_result = true;
+		if (reverse_job.result_ready && reverse_job.result.sock != INVALID_SOCKET) {
+			closesocket(reverse_job.result.sock);
+			reverse_job.result.sock = INVALID_SOCKET;
+		}
 		Sys_MutexUnlock(&reverse_job.mutex);
 	}
 	reverse.streaming = false;
@@ -309,7 +315,8 @@ static void SV_ReverseSecret_f(void)
 	extern redirect_t sv_redirected;
 	byte secret[QTV_REVERSE_KEY_SIZE];
 
-	if (sv_redirected != RD_NONE) {
+	// The same executable can receive commands as a client or run local gamecode.
+	if (sv_redirected != RD_NONE || (cbuf_current && cbuf_current != &cbuf_main)) {
 		Con_Printf("Configure qtv_reverse_secret from a local configuration file.\n");
 		return;
 	}
@@ -365,6 +372,19 @@ static void SV_ReverseProof(const byte *secret, const byte *challenge, char *hex
 	hex[2 * QTV_REVERSE_KEY_SIZE] = '\0';
 }
 
+// Sys_DoubleTime uses mutable timer state on some platforms.
+static uint64_t SV_ReverseClock(void)
+{
+#ifdef _WIN32
+	return GetTickCount64();
+#else
+	struct timespec now;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return (uint64_t)now.tv_sec * 1000 + now.tv_nsec / 1000000;
+#endif
+}
+
 static void SV_ReverseFailed(double now, const char *reason)
 {
 	static uint32_t retry_random;
@@ -379,19 +399,6 @@ static void SV_ReverseFailed(double now, const char *reason)
 	reverse.retry_delay = reverse.retry_delay ? min(2 * reverse.retry_delay, QTV_REVERSE_MAX_RETRY) : 1;
 	reverse.retry_at = now + jitter * reverse.retry_delay;
 	Con_Printf("Reverse QTV: %s, retrying in %.1f seconds.\n", reason, reverse.retry_at - now);
-}
-
-// Sys_DoubleTime uses mutable timer state on some platforms.
-static uint64_t SV_ReverseClock(void)
-{
-#ifdef _WIN32
-	return GetTickCount64();
-#else
-	struct timespec now;
-
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	return (uint64_t)now.tv_sec * 1000 + now.tv_nsec / 1000000;
-#endif
 }
 
 // Only the worker waits on the handshake socket.
@@ -487,7 +494,7 @@ static const char *SV_ReverseDial(reverse_result_t *result)
 		if (now >= deadline || SV_ReverseDiscarded()) {
 			break;
 		}
-		sock = Sys_OpenStreamSocket(address->ai_family, address->ai_protocol);
+		sock = Sys_OpenSocket(address->ai_family, SOCK_STREAM, address->ai_protocol);
 		if (sock == INVALID_SOCKET) {
 			continue;
 		}
@@ -703,7 +710,7 @@ static const char *SV_ReverseHandshake(reverse_result_t *result)
 	return NULL;
 }
 
-static DWORD WINAPI SV_ReverseWorker(void *unused)
+static int SV_ReverseWorker(void *unused)
 {
 	reverse_result_t result = {0};
 
@@ -712,12 +719,12 @@ static DWORD WINAPI SV_ReverseWorker(void *unused)
 	if (!result.error && !SV_ReverseDiscarded()) {
 		result.error = SV_ReverseHandshake(&result);
 	}
-	if (result.error && result.sock != INVALID_SOCKET) {
+	Sys_MutexLock(&reverse_job.mutex);
+	if ((result.error || reverse_job.discard_result) && result.sock != INVALID_SOCKET) {
 		closesocket(result.sock);
 		result.sock = INVALID_SOCKET;
 	}
-
-	Sys_MutexLock(&reverse_job.mutex);
+	memset(reverse_job.secret, 0, sizeof(reverse_job.secret));
 	reverse_job.result = result;
 	reverse_job.result_ready = true;
 	Sys_MutexUnlock(&reverse_job.mutex);
@@ -778,7 +785,6 @@ static void SV_ReverseCollect(double now)
 	result = reverse_job.result;
 	discard = reverse_job.discard_result;
 	reverse_job.running = false;
-	memset(reverse_job.secret, 0, sizeof(reverse_job.secret));
 	Sys_MutexUnlock(&reverse_job.mutex);
 
 	if (discard || sv.demo_format < 0) {
@@ -831,6 +837,9 @@ static void SV_ReversePoll(void)
 	}
 
 	port = SV_ReversePort(address, false);
+	if (!port || (size_t)(port - address) > sizeof(reverse_job.host)) {
+		return;
+	}
 	host_size = port - address - 1;
 	memcpy(reverse_job.host, address, host_size);
 	reverse_job.host[host_size] = '\0';
@@ -838,12 +847,36 @@ static void SV_ReversePoll(void)
 	memcpy(reverse_job.secret, reverse.secret, sizeof(reverse_job.secret));
 	reverse_job.discard_result = false;
 	reverse_job.result_ready = false;
-	if (Sys_CreateThread(SV_ReverseWorker, NULL)) {
+	if (!reverse_job.mutex_initialized) {
+		if (!Sys_MutexInit(&reverse_job.mutex)) {
+			memset(reverse_job.secret, 0, sizeof(reverse_job.secret));
+			SV_ReverseFailed(now, "could not create the handshake mutex");
+			return;
+		}
+		reverse_job.mutex_initialized = true;
+	}
+	if (Sys_CreateDetachedThread(SV_ReverseWorker, NULL)) {
 		memset(reverse_job.secret, 0, sizeof(reverse_job.secret));
 		SV_ReverseFailed(now, "could not start the handshake worker");
 		return;
 	}
 	reverse_job.running = true;
+}
+
+void SV_QTV_ShutdownReverse(void)
+{
+	mvddest_t **link;
+
+	SV_ReverseConfigChanged();
+	for (link = &demo.dest; *link; link = &(*link)->nextdest) {
+		mvddest_t *d = *link;
+
+		if (d->desttype == DEST_STREAM && d->reverse) {
+			*link = d->nextdest;
+			DestClose(d, false);
+			break;
+		}
+	}
 }
 
 static void SV_CheckQTVPort(void)
@@ -897,7 +930,7 @@ void SV_MVDStream_Poll (void)
 	}
 
 	addrlen = sizeof(addr);
-	client = accept (NET_GetSocket(NS_SERVER, true), (struct sockaddr *)&addr, &addrlen);
+	client = Sys_AcceptSocket(NET_GetSocket(NS_SERVER, true), (struct sockaddr *)&addr, &addrlen);
 
 	if (client == INVALID_SOCKET)
 		return;
@@ -1460,7 +1493,6 @@ void QTVcmd_Say_f(mvddest_t *d)
 	int		j;
 	char	*p;
 	char	text[1024], text2[1024], *cmd;
-	int     sent_to = 0;
 
 	if (Cmd_Argc () < 2)
 		return;
@@ -1509,9 +1541,6 @@ void QTVcmd_Say_f(mvddest_t *d)
 			continue; // game started, don't send QTV chat to players, specs still get QTV chat
 
 		SV_ClientPrintf2(client, PRINT_CHAT, "%s", text);
-		if (!client->spectator) {
-			sent_to |= (1 << j);
-		}
 	}
 
 	if (sv.mvdrecording) {
@@ -1652,6 +1681,7 @@ void QTVsv_FreeUserList(mvddest_t *d)
 
 #define QTV_EVENT_PREFIX "QTV: "
 
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 static void QTVsv_EventToClients(qtvuser_t *user, qtvuserlist_t event)
 {
 	char buff[128], *qul;
@@ -1675,6 +1705,8 @@ static void QTVsv_EventToClients(qtvuser_t *user, qtvuserlist_t event)
 	}
 }
 
+#endif
+
 // user join qtv
 void QTVsv_JoinEvent(mvddest_t *d, qtvuser_t *user)
 {
@@ -1694,7 +1726,9 @@ void QTVsv_JoinEvent(mvddest_t *d, qtvuser_t *user)
 
 	Con_Printf("%s%s: %s%s\n", QTV_EVENT_PREFIX, d->qtvname, user->name, /*qtv_event_join.string*/ " join");
 
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 	QTVsv_EventToClients(user, QUL_ADD);
+#endif
 }
 
 // user leaved/left qtv
@@ -1714,7 +1748,9 @@ void QTVsv_LeaveEvent(mvddest_t *d, qtvuser_t *user)
 
 	Con_Printf("%s%s: %s%s\n", QTV_EVENT_PREFIX, d->qtvname, olduser->name, /*qtv_event_leave.string*/ " left");
 
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 	QTVsv_EventToClients(user, QUL_DEL);
+#endif
 }
 
 // user changed name on qtv
@@ -1735,7 +1771,9 @@ void QTVsv_ChangeEvent(mvddest_t *d, qtvuser_t *user)
 
 	Con_Printf("%s%s: %s%s%s\n", QTV_EVENT_PREFIX, d->qtvname, olduser->name, /*qtv_event_changename.string*/ " changed name to ", user->name);
 
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 	QTVsv_EventToClients(user, QUL_CHANGE);
+#endif
 }
 
 static void QTVcmd_QtvUserList_f(mvddest_t *d)
@@ -2133,9 +2171,9 @@ void QTV_Streams_List (void)
 			int qtv_users = QTVsv_UsersCount (dst);
 
 			if (dst->qtvaddress[0])
-				Con_Printf ("qtv %d \"%s\" \"%d@%s\" %d\n", dst->id, dst->qtvname, dst->qtvstreamid, dst->qtvaddress, qtv_users);
+				SV_AddToRedirect(va("qtv %d \"%s\" \"%d@%s\" %d\n", dst->id, dst->qtvname, dst->qtvstreamid, dst->qtvaddress, qtv_users));
 			else
-				Con_Printf ("qtv %d \"%s\" \"\" %d\n", dst->id, dst->qtvname, qtv_users);
+				SV_AddToRedirect(va("qtv %d \"%s\" \"\" %d\n", dst->id, dst->qtvname, qtv_users));
 		}
 	}
 }
@@ -2148,14 +2186,16 @@ void QTV_Streams_UserList (void)
 		if (dst->desttype == DEST_STREAM && (!dst->reverse || (!dst->error && dst->qtvstreamid))) {
 			qtvuser_t *current;
 
-			Con_Printf ("qtvusers %d", dst->id);
+			SV_AddToRedirect(va("qtvusers %d", dst->id));
 			for (current = dst->qtvuserlist; current; current = current->next)
-				Con_Printf (" \"%s\"", current->name);
-			Con_Printf ("\n");
+				SV_AddToRedirect(va(" \"%s\"", current->name));
+			SV_AddToRedirect("\n");
 		}
 	}
 }
 
+
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 void QTV_Client_UserList (client_t *client)
 {
 	char buff[128];
@@ -2177,6 +2217,7 @@ void QTV_Client_UserList (client_t *client)
 		}
 	}
 }
+#endif
 
 void Qtv_Close_f(void)
 {
@@ -2245,8 +2286,6 @@ void Qtv_Status_f(void)
 
 void SV_QTV_Init(void)
 {
-	Sys_MutexInit(&reverse_job.mutex);
-
 	Cvar_Register (&qtv_streamport);
 	Cvar_Register (&qtv_maxstreams);
 	Cvar_Register (&qtv_password);
@@ -2255,6 +2294,15 @@ void SV_QTV_Init(void)
 	Cvar_Register (&qtv_stream_max_queue_size);
 	Cvar_Register (&qtv_sayenabled);
 	Cvar_Register (&qtv_reverse_address);
+#ifndef SERVERONLY
+	/* Early client configuration may predate registration and skip OnChange. */
+	if (Cvar_ForceCallback(&qtv_stream_max_queue_size)) {
+		Cvar_ResetVar(&qtv_stream_max_queue_size);
+	}
+	if (Cvar_ForceCallback(&qtv_reverse_address)) {
+		Cvar_ResetVar(&qtv_reverse_address);
+	}
+#endif
 
 	Cmd_AddCommand ("qtv_reverse_secret", SV_ReverseSecret_f);
 	Cmd_AddCommand ("qtv_list", Qtv_List_f);

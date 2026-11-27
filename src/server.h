@@ -584,8 +584,9 @@ typedef struct mvddest_s
 	socket_t socket;
 	FILE *file;
 
-	char name[MAX_QPATH];
-	char path[MAX_QPATH];
+	char *record_path; // owns the path used to open the MVD file
+	const char *record_relpath; // points into record_path after the game directory
+	char *name; // basename within record_path
 
 	char *cache;
 	int cacheused; // queued cache bytes
@@ -975,6 +976,7 @@ void SV_SendBan (void);
 qbool GameStarted(void);
 //<-
 void SV_Script_f (void);
+void SV_RunScript(const char *arg_prefix);
 int SV_GenerateUserID (void);
 
 //
@@ -1030,7 +1032,7 @@ int SV_AmbientSoundIndex(const char *sample);
 /* Write a complete static sound record using the current coordinate format. */
 void SV_WriteStaticSound(sizebuf_t *msg, const float origin[3], int sound_id,
                          int volume, int attenuation);
-qbool SV_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
                             int count, int cursor, int limit, int *next);
 void SV_StartSound(edict_t *entity, int channel, char *sample, int volume, float attenuation);
 void SV_ClientPrintf(client_t *cl, int level, char *fmt, ...);
@@ -1149,7 +1151,8 @@ void SV_MVD_FlushCurrentFrame(void);
 qbool SV_MVD_WriteRDMessage(sizebuf_t *msg, qbool initial);
 
 mvddest_t	*DestByName (char *name);
-void		DestClose (mvddest_t *d, qbool destroyfiles);
+qbool		DestClose (mvddest_t *d, qbool destroyfiles);
+const char *SV_GetAdvertisedGamedir(void);
 
 int DemoWriteDest (void *data, int len, mvddest_t *d);
 
@@ -1184,7 +1187,7 @@ char *SV_MVDNum(int num);
 //
 
 char	*SV_PrintTeams (void);
-void	Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *dest_path, qbool destroyfiles);
+void	SV_RunOnRecordFinish(char *relpath, qbool destroyfiles);
 qbool	SV_DirSizeCheck (void);
 char	*SV_CleanName (unsigned char *name);
 int     Dem_CountPlayers (void);
@@ -1218,6 +1221,7 @@ extern cvar_t	qtv_stream_max_queue_size;
 
 void SV_MVDStream_Poll(void);
 void SV_QTV_Init(void);
+void SV_QTV_ShutdownReverse(void);
 
 void DemoWriteQTV (sizebuf_t *msg);
 void QTVsv_FreeUserList(mvddest_t *d);

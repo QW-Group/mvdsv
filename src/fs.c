@@ -839,24 +839,30 @@ FS_FileBase
 
 ============
 */
-void FS_FileBase (char *in, char *out)
+void FS_FileBase (const char *in, char *out)
 {
-	char *begin, *end;
-	int len;
+	const char *start, *end;
+	int	length;
 
-	if (!(end = strrchr (in, '.')))
-		end = in + strlen (in);
+	if (!(end = strrchr(in, '.')))
+		end = in + strlen(in);
 
-	if (!(begin = strchr (in, '/')))
-		begin = in;
+	if (!(start = strrchr(in, '/')))
+		start = in;
 	else
-		begin++;
+		start += 1;
 
-	len = end - begin + 1;
-	if (len < 1)
-		strlcpy (out, "?model?", 8);
-	else
-		strlcpy (out, begin, min (len, MAX_OSPATH));
+	length = end - start;
+	if (length < 0)
+		strcpy (out, "?empty filename?");
+	else if (length == 0)
+		out[0] = 0;
+	else {
+		if (length > 31)
+			length = 31;
+		memcpy (out, start, length);
+		out[length] = 0;
+	}
 }
 
 /*
@@ -927,25 +933,16 @@ Filename are relative to the quake directory.
 Always appends a 0 byte to the loaded data.
 ============
 */
-static byte *FS_LoadFile (char *path, void *allocator, int *file_length)
+static byte *FS_LoadFile (const char *path, void *allocator, int *file_length)
 {
-	vfsfile_t *f = NULL;
+	vfsfile_t *f = FS_OpenVFS(path, "rb", FS_GAME);
 	vfserrno_t err;
-	flocation_t loc = {0};
 	byte *buf;
 	int len;
-
-	// Look for it in the filesystem or pack files.
-    FS_FLocateFile(path, FSLFRT_LENGTH, &loc);
-	if (loc.search)
-	{
-		f = loc.search->funcs->OpenVFS(loc.search->handle, &loc, "rb");
-	}
 
 	if (!f)
 		return NULL;
 
-	// FIXME: should we use loc.len instead?
 	len = VFS_GETLEN(f);
 	if (file_length)
 		*file_length = len;
@@ -987,12 +984,12 @@ static byte *FS_LoadFile (char *path, void *allocator, int *file_length)
 	return buf;
 }
 
-byte *FS_LoadHunkFile (char *path, int *len)
+byte *FS_LoadGameHunkFile (const char *path, int *len)
 {
 	return FS_LoadFile (path, Hunk_AllocName, len);
 }
 
-byte *FS_LoadTempFile (char *path, int *len)
+byte *FS_LoadGameTempFile (const char *path, int *len)
 {
 	return FS_LoadFile (path, Hunk_TempAlloc, len);
 }

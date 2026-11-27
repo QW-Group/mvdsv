@@ -589,7 +589,7 @@ static void Cmd_Soundlist_f (void)
 		SZ_Clear(&sv_client->netchan.message);
 	}
 
-	if (!SV_WriteSoundListChunk(&sv_client->netchan.message, sv.sound_precache,
+	if (!MSG_WriteSoundListChunk(&sv_client->netchan.message, sv.sound_precache,
 	                            count, n, MAX_MSGLEN / 2, &next)) {
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to write soundlist chunk\n");
 		SV_DropClient(sv_client);

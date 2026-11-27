@@ -41,13 +41,13 @@ FUNCTION PROTOTYPES
 void FS_Init (void);
 void FS_ShutDown(void);
 long FS_FileLength (FILE *f);
-void FS_FileBase (char *in, char *out);
+void FS_FileBase (const char *in, char *out);
 #define COM_FileBase FS_FileBase // ezquake compatibility
 
 void FS_WriteFile (char *filename, void *data, int len);
 
-byte *FS_LoadTempFile (char *path, int *len);
-byte *FS_LoadHunkFile (char *path, int *len);
+byte *FS_LoadGameTempFile (const char *path, int *len);
+byte *FS_LoadGameHunkFile (const char *path, int *len);
 void FS_CreatePath (char *path);
 char *FS_NextPath (char *prevpath);
 qbool FS_SetGamedir (char *dir, qbool force);
