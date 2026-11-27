@@ -270,6 +270,8 @@ void SV_Shutdown (char *finalmsg)
 {
 	int i;
 
+	SV_ClearPhysicsScratch();
+
 	if (!sv.state && !sv.max_edicts && !sv.edicts && !progs
 #ifdef USE_PR2
 		&& !sv_vm

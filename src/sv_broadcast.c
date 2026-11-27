@@ -66,6 +66,8 @@ static int broadcast_cache_count = 0;
 
 void SV_BroadcastInit(void)
 {
+	Cmd_AddCommand("updatebroadcasts", SV_BroadcastUpdateServerList_f);
+
 	Sys_MutexInit(&broadcast_lock);
 	last_broadcast = -99999;
 	broadcast_in_progress = false;

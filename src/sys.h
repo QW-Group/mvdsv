@@ -75,7 +75,8 @@ void Sys_Error (const char *error, ...); // an error will cause the entire progr
 
 void Sys_Printf (char *fmt, ...); // send text to the console
 
-void Sys_Quit (qbool restart);
+void Sys_Quit (void);
+void Sys_Restart (void);
 
 double Sys_DoubleTime (void);
 

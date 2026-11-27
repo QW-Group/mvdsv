@@ -271,7 +271,7 @@ char	*Q_strdup (const char *src);
 
 char	*COM_StripExtension (char *str);
 char	*COM_FileExtension (const char *in);
-void	COM_DefaultExtension (char *path, const char *extension);
+void	COM_DefaultExtension (char *path, const char *extension, size_t path_size);
 
 float	AdjustAngle(float current, float ideal, float fraction);
 

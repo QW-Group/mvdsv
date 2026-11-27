@@ -452,19 +452,35 @@ Sets the gamedir and path to a different directory.
 That is basically handy wrapper around FS_AddGameDirectory() for "gamedir" command.
 ============
 */
-void FS_SetGamedir (char *dir, qbool force)
+qbool FS_SetGamedir (char *dir, qbool force)
 {
-	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":")) 
+	char path[MAX_OSPATH];
+	int length;
+
+	if (dir == NULL || !dir[0]) {
+		dir = "qw";
+	}
+
+	if (strlen(dir) >= sizeof(fs_gamedirfile)) {
+		Con_Printf("Gamedir name too long (maximum %d bytes)\n", (int)sizeof(fs_gamedirfile) - 1);
+		return false;
+	}
+
+	if (strstr(dir, "..") || strchr(dir, '/') || strchr(dir, '\\') || strchr(dir, ':'))
 	{
 		Con_Printf ("Gamedir should be a single filename, not a path\n");
-		return;
+		return false;
 	}
 
 	if (!force && !strcmp(fs_gamedirfile, dir))
-		return;		// Still the same, unless we forced.
+		return true;		// Still the same, unless we forced.
 
-	// FIXME: do we need it? since it will be set in FS_AddGameDirectory().
-	strlcpy (fs_gamedirfile, dir, sizeof(fs_gamedirfile));
+	length = snprintf(path, sizeof(path), "%s/%s", fs_basedir, dir);
+	// FS_AddGameDirectory appends a slash when mounting this directory.
+	if (length < 0 || length >= (int)sizeof(path) - 1) {
+		Con_Printf("Gamedir path too long: %s/%s\n", fs_basedir, dir);
+		return false;
+	}
 
 	// Free up any current game dir info.
 	FS_FlushFSHash();
@@ -487,10 +503,8 @@ void FS_SetGamedir (char *dir, qbool force)
 // well, mvdsv does not use cache anyway.
 //	Cache_Flush ();
 
-	// FIXME: do we need it? since it will be set in FS_AddGameDirectory().
-	snprintf (fs_gamedir, sizeof (fs_gamedir), "%s/%s", fs_basedir, dir);
-
-	FS_AddGameDirectory(va("%s/%s", fs_basedir, dir), FS_LOAD_FILE_ALL);
+	FS_AddGameDirectory(path, FS_LOAD_FILE_ALL);
+	return true;
 }
 
 
@@ -556,9 +570,10 @@ void FS_InitEx(void)
 		i = COM_CheckParm ("+gamedir");
 	if (i && i < COM_Argc() - 1)
 	{
-		FS_SetGamedir (COM_Argv(i + 1), true);
-		// FIXME: move in FS_SetGamedir() instead!!!
-		Info_SetValueForStarKey (svs.info, "*gamedir", COM_Argv(i + 1), MAX_SERVERINFO_STRING);
+		if (!FS_SetGamedir(COM_Argv(i + 1), true)) {
+			Sys_Error("Invalid game directory for %s: %s", COM_Argv(i), COM_Argv(i + 1));
+		}
+		Info_SetValueForStarKey (svs.info, "*gamedir", fs_gamedirfile, MAX_SERVERINFO_STRING);
 	}
 }
 

@@ -323,28 +323,27 @@ void Sys_Exit (int code)
 Sys_Quit
 ================
 */
-void Sys_Quit (qbool restart)
+void Sys_Quit (void)
 {
-	if (restart)
-	{
-		int maxfd = getdtablesize() - 1;
+	Sys_Exit(0);
+}
+
+void Sys_Restart (void)
+{
+	int maxfd = getdtablesize() - 1;
 
 #ifndef SOCK_CLOEXEC
-		// No worker may add a descriptor while we close them and replace the process.
-		pthread_mutex_lock(&sys_spawn_mutex);
+	// No worker may add a descriptor while we close them and replace the process.
+	pthread_mutex_lock(&sys_spawn_mutex);
 #endif
 
-		// close all file descriptors besides stdin stdout and stderr, I am not sure, perhaps I can safely close even those descriptors too.
-		for (; maxfd > 2; maxfd--)
-			close(maxfd);
+	// Close all file descriptors besides stdin, stdout and stderr.
+	for (; maxfd > 2; maxfd--)
+		close(maxfd);
 
-		if (execv(com_argv[0], com_argv) == -1)
-		{
-			Sys_Printf("Restart failed: %s\n", strerror(qerrno));
-			Sys_Exit(1);
-		}
-	}
-	Sys_Exit(0);		// appkit isn't running
+	execv(com_argv[0], com_argv);
+	Sys_Printf("Restart failed: %s\n", strerror(qerrno));
+	Sys_Exit(1);
 }
 
 /*
@@ -383,7 +382,7 @@ void Sys_Error (const char *error, ...)
 		SV_Shutdown (va("ERROR: %s\n", text));
 
 	if ((int)sys_restart_on_error.value)
-		Sys_Quit (true);
+		Sys_Restart ();
 
 	Sys_Exit (1);
 }

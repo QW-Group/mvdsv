@@ -43,6 +43,42 @@ typedef struct
 } moveclip_t;
 
 
+/* Invocation-owned lists also survive recoverable game-error unwinding. */
+typedef struct physics_scratch_s {
+	struct physics_scratch_s *previous; // Outer callback's active allocation.
+} physics_scratch_t;
+static physics_scratch_t *physics_scratch; // Active allocations, innermost first.
+
+/* Retain a large physics list until its callback scope ends or the server stops. */
+void *SV_AllocPhysicsScratch(size_t size)
+{
+	physics_scratch_t *scratch = Q_malloc(sizeof(*scratch) + size);
+	scratch->previous = physics_scratch;
+	physics_scratch = scratch;
+	return scratch + 1;
+}
+
+/* Normal callback returns release lists in reverse allocation order. */
+void SV_FreePhysicsScratch(void *memory)
+{
+	physics_scratch_t *scratch;
+
+	if (!memory) {
+		return;
+	}
+	scratch = (physics_scratch_t *)memory - 1;
+	physics_scratch = scratch->previous;
+	Q_free(scratch);
+}
+
+/* A recoverable game error bypasses the normal frees before Host_Abort. */
+void SV_ClearPhysicsScratch(void)
+{
+	while (physics_scratch) {
+		SV_FreePhysicsScratch(physics_scratch + 1);
+	}
+}
+
 /*
 ================
 SV_HullForEntity
@@ -304,7 +340,7 @@ static void SV_TouchLinks ( edict_t *ent, areanode_t *node )
 	numtouch = SV_AreaEdicts(ent->v->absmin, ent->v->absmax, touchlist, min(sv.max_edicts, MAX_LEGACY_EDICTS), AREA_TRIGGERS);
 	if (numtouch == MAX_LEGACY_EDICTS && sv.max_edicts > MAX_LEGACY_EDICTS) {
 		/* Complete this call's list before callbacks can reenter. */
-		touchlist = Q_malloc(sv.max_edicts * sizeof(*touchlist));
+		touchlist = SV_AllocPhysicsScratch(sv.max_edicts * sizeof(*touchlist));
 		numtouch = SV_AreaEdicts(ent->v->absmin, ent->v->absmax, touchlist, sv.max_edicts, AREA_TRIGGERS);
 	}
 
@@ -329,7 +365,7 @@ static void SV_TouchLinks ( edict_t *ent, areanode_t *node )
 		pr_global_struct->other = old_other;
 	}
 	if (touchlist != local) {
-		Q_free(touchlist);
+		SV_FreePhysicsScratch(touchlist);
 	}
 }
 
