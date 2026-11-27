@@ -1673,7 +1673,7 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 		else if (!strcmp(key, "ping"))
 			snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
 #ifdef FTE_PEXT_CSQC
-		else if (!strcmp(key, "csqcactive") || !strcmp(key, "*csqcactive") || !strcmp(key, "ezcsqc"))
+		else if (!strcmp(key, "csqcactive") || !strcmp(key, "*csqcactive"))
 		{
 			snprintf(ov, sizeof(ov), "%d", (int)cl->csqcactive);
 		}
