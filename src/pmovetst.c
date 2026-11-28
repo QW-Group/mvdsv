@@ -60,7 +60,13 @@ PM_PointContents
 */
 int PM_PointContents (vec3_t p)
 {
-	hull_t *hull = &pmove.physents[0].model->hulls[0];
+	hull_t *hull;
+
+	// Safety check for NULL model in case entity updates arrive out of order
+	if (!pmove.physents[0].model)
+		return CONTENTS_EMPTY;
+
+	hull = &pmove.physents[0].model->hulls[0];
 	return CM_HullPointContents (hull, hull->firstclipnode, p);
 }
 
@@ -212,12 +218,13 @@ trace_t PM_PlayerTrace (vec3_t start, vec3_t end)
 	return total;
 }
 
+#ifndef SERVERONLY
 /*
 ================
 PM_TraceLine
 ================
 */
-trace_t PM_TraceLine (vec3_t start, vec3_t end)
+static trace_t PM_TraceLineEx(vec3_t start, vec3_t end, qbool ignore_transparent)
 {
 	int i;
 	hull_t *hull;
@@ -233,6 +240,14 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 
 	for (i = 0; i < pmove.numphysent; i++) {
 		pe = &pmove.physents[i];
+
+#if defined(FTE_PEXT_TRANS)
+		// Only brush models receive an alpha value when the physent list is rebuilt.
+		if (ignore_transparent && pe->model && (cls.fteprotocolextensions & FTE_PEXT_TRANS) && pe->is_transparent) {
+			continue;
+		}
+#endif
+
 		// get the clipping hull
 		hull = (pe->model) ? (&pmove.physents[i].model->hulls[0]) : (CM_HullForBox(pe->mins, pe->maxs));
 
@@ -264,3 +279,14 @@ trace_t PM_TraceLine (vec3_t start, vec3_t end)
 
 	return total;
 }
+
+trace_t PM_TraceLine(vec3_t start, vec3_t end)
+{
+	return PM_TraceLineEx(start, end, false);
+}
+
+trace_t PM_TraceLineForVisibility(vec3_t start, vec3_t end)
+{
+	return PM_TraceLineEx(start, end, true);
+}
+#endif
