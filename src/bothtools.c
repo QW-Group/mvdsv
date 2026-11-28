@@ -599,15 +599,22 @@ char *Q_strdup (const char *src)
 COM_StripExtension
 ============
 */
-char *COM_StripExtension (char *str)
+void COM_StripExtension (const char *in, char *out, int out_size)
 {
-	char *p = strrchr(str, '.');
+	char *dot;
 
-    /* truncate extension */
-    if (p)
-        *p = '\0';
+	if (in != out)
+		strlcpy (out, in, out_size);
 
-    return str;
+	dot = strrchr (out, '.');
+	if (dot) {
+		*dot = 0;
+	}
+}
+
+unsigned int BuffLittleLong (const unsigned char *buffer)
+{
+	return ((unsigned int)buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | buffer[0];
 }
 
 /*

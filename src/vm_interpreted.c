@@ -110,7 +110,7 @@ qbool VM_PrepareInterpreter2( vm_t *vm, vmHeader_t *header )
 {
 	const char *errMsg;
 	instruction_t *buf;
-	buf = ( instruction_t *) Hunk_Alloc( (vm->instructionCount + 8) * sizeof( instruction_t ));
+	buf = ( instruction_t *) Hunk_AllocName( (vm->instructionCount + 8) * sizeof( instruction_t ), "vm");
 
 	errMsg = VM_LoadInstructions( (byte *) header + header->codeOffset, header->codeLength, header->instructionCount, buf );
 	if ( !errMsg ) {
@@ -450,7 +450,7 @@ nextInstruction2:
 
 		case OP_BLOCK_COPY:
 			{
-				int		*src, *dest;
+				byte *src, *dest;
 				int		count, srci, desti;
 
 				count = v0;
@@ -460,8 +460,8 @@ nextInstruction2:
 				count = ((srci + count) & dataMask) - srci;
 				count = ((desti + count) & dataMask) - desti;
 
-				src = (int *)&image[ srci ];
-				dest = (int *)&image[ desti ];
+				src = &image[srci];
+				dest = &image[desti];
 				
 				memcpy( dest, src, count );
 				opStack -= 2;
@@ -477,16 +477,16 @@ nextInstruction2:
 			break;
 
 		case OP_NEGI:
-			*opStack = -r0.i;
+			*opStack = -r0.u;
 			break;
 
 		case OP_ADD:
-			opStack[-1] = r1.i + r0.i;
+			opStack[-1] = r1.u + r0.u;
 			opStack--;
 			break;
 
 		case OP_SUB:
-			opStack[-1] = r1.i - r0.i;
+			opStack[-1] = r1.u - r0.u;
 			opStack--;
 			break;
 
@@ -511,7 +511,7 @@ nextInstruction2:
 			break;
 
 		case OP_MULI:
-			opStack[-1] = r1.i * r0.i;
+			opStack[-1] = r1.u * r0.u;
 			opStack--;
 			break;
 
@@ -540,7 +540,7 @@ nextInstruction2:
 			break;
 
 		case OP_LSH:
-			opStack[-1] = r1.i << r0.i;
+			opStack[-1] = r1.u << r0.i;
 			opStack--;
 			break;
 

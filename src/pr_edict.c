@@ -78,7 +78,7 @@ func_t mod_ConsoleCmd, mod_UserCmd;
 func_t mod_UserInfo_Changed, mod_localinfoChanged;
 func_t mod_ChatMessage;
 
-cvar_t	sv_progsname = {"sv_progsname", "qwprogs"};
+cvar_t	sv_progsname = {"sv_progsname", "qwprogs", CVAR_NOTFROMSERVER};
 #ifdef WITH_NQPROGS
 cvar_t  sv_forcenqprogs = {"sv_forcenqprogs", "0"};
 #endif
@@ -770,7 +770,7 @@ char *ED_NewString (char *string)
 	int		i,l;
 
 	l = strlen(string) + 1;
-	nuw = (char *) Hunk_Alloc (l);
+	nuw = (char *) Hunk_AllocName (l, "edstring");
 	new_p = nuw;
 
 	for (i=0 ; i< l ; i++)
@@ -1256,7 +1256,7 @@ void PR1_LoadProgs (void)
 	for (i = 0; i < progs->numglobals; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// fresh progs image: registered csqc stats (pointerstat pointers into the
 	// old progs memory) are invalid now
 	SV_ClearQCStats ();

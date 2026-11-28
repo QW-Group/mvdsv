@@ -437,7 +437,7 @@ void VM_LoadSymbols( vm_t *vm ) {
 	vmSymbol_t	**prev, *sym;
 	int		count;
 	int		value;
-	int		chars;
+	size_t	chars;
 	int		segment;
 	int		numInstructions;
 
@@ -484,7 +484,7 @@ void VM_LoadSymbols( vm_t *vm ) {
 			break;
 		}
 		chars = strlen( com_token );
-		sym = Hunk_Alloc( sizeof( *sym ) + chars);
+		sym = Hunk_AllocName( sizeof( *sym ) + chars, "qvm-symbols");
 		*prev = sym;
 		prev = &sym->next;
 		sym->next = NULL;
@@ -733,7 +733,7 @@ static vmHeader_t *VM_LoadQVM( vm_t *vm, qbool alloc ) {
 
 	if ( alloc ) {
 		// allocate zero filled space for initialized and uninitialized data
-		vm->dataBase = Hunk_Alloc( dataAlloc);
+		vm->dataBase = Hunk_AllocName( dataAlloc, "qvm");
 		vm->dataMask = dataLength - 1;
 		vm->dataAlloc = dataAlloc;
 	} else {
@@ -762,7 +762,7 @@ static vmHeader_t *VM_LoadQVM( vm_t *vm, qbool alloc ) {
 		Con_DPrintf( "Loading %d jump table targets\n", vm->numJumpTableTargets );
 
 		if ( alloc ) {
-			vm->jumpTableTargets = Hunk_Alloc( header->jtrgLength);
+			vm->jumpTableTargets = Hunk_AllocName( header->jtrgLength, "qvm-jtt");
 		} else {
 			if ( vm->numJumpTableTargets != previousNumJumpTableTargets ) {
 				VM_Free( vm );
@@ -838,7 +838,7 @@ const char *VM_LoadInstructions( const byte *code_pos, int codeLength, int instr
 		code_pos++;
 		ci->op = op0;
 		if ( n == 4 ) {
-			ci->value = LittleLong( *((int*)code_pos) );
+			ci->value = (int)BuffLittleLong(code_pos);
 			code_pos += 4;
 		} else if ( n == 1 ) { 
 			ci->value = *((unsigned char*)code_pos);

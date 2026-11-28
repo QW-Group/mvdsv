@@ -47,6 +47,7 @@ typedef struct cbuf_s {
 } cbuf_t;
 
 extern cbuf_t cbuf_main;
+#define cbuf_server cbuf_main // MVDSV has a single command queue.
 extern cbuf_t *cbuf_current;
 
 void Cbuf_AddTextEx (cbuf_t *cbuf, const char *text);

@@ -31,15 +31,10 @@
 
 #define SETUSERINFO_STAR          (1<<0) // allow set star keys
 
-#ifdef SERVERONLY
-#define Cbuf_AddTextEx(x, y) Cbuf_AddText(y)
-#define Cbuf_ExecuteEx(x) Cbuf_Execute()
-#endif
-
 const char *pr2_ent_data_ptr;
 vm_t *sv_vm = NULL;
 extern gameData_t gamedata;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 extern sizebuf_t csqcmsgbuffer;
 #endif
 
@@ -60,7 +55,7 @@ static float GETFLOAT(int i)
 #endif
 
 typedef intptr_t (*ext_syscall_t)(intptr_t *arg);
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 static intptr_t EXT_SetSendNeeded(intptr_t *args);
 static intptr_t EXT_SetSendNeeded64(intptr_t *args);
 static intptr_t EXT_clientstat(intptr_t *args);
@@ -82,7 +77,7 @@ struct
 	{"SetExtFieldPtr",	EXT_SetExtFieldPtr},
 	{"GetExtFieldPtr",	EXT_GetExtFieldPtr},
 	{"railtrail",		EXT_RailTrail},
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	{"setsendneeded",		EXT_SetSendNeeded},
 	{"setsendneeded64",		EXT_SetSendNeeded64},
 	{"clientstat",			EXT_clientstat},
@@ -1131,10 +1126,11 @@ intptr_t PF2_Find(int e, int fofs, char *str)
 		if (ed->e.free)
 			continue;
 
-		if (!*(intptr_t *)((byte *)ed->v + fofs))
-			continue;
-
-		t = VM_ArgPtr(*(intptr_t *)((char *)ed->v + fofs));
+		// Native fields store pointer-sized references. A QVM stores 32-bit offsets.
+		if (sv_vm->type == VMI_NATIVE)
+			t = VM_ArgPtr(*(intptr_t *)((byte *)ed->v + fofs));
+		else
+			t = VM_ArgPtr(*(string_t *)((byte *)ed->v + fofs));
 
 		if (!t)
 			continue;
@@ -1214,12 +1210,14 @@ sizebuf_t *WriteDest2(int dest)
 	case MSG_MULTICAST:
 		return &sv.multicast;
 
+#ifdef SV_HAS_CSQC
 	case MSG_CSQC:
 		// Only valid inside a GAME_EDICT_CSQCSEND call; the buffer is
 		// armed per-client inside SV_EmitCSQCUpdate (sv_ents.c).
 		if (!csqcmsgbuffer.maxsize || !csqcmsgbuffer.data)
 			PR2_RunError("PF_Write_*: MSG_CSQC outside of SendEntity method");
 		return &csqcmsgbuffer;
+#endif
 
 	default:
 		PR2_RunError ("WriteDest: bad destination");
@@ -1241,7 +1239,7 @@ static client_t *Write_GetClient(void)
 	return &svs.clients[entnum - 1];
 }
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 /*
 ====================
 PF2_WriteCheckCSQC
@@ -1280,7 +1278,7 @@ static void PF2_WriteCheckCSQC (int to, int data)
 
 void PF2_WriteByte(int to, int data)
 {
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	PF2_WriteCheckCSQC(to, data);
 #endif
 	if (to == MSG_ONE)
@@ -1302,7 +1300,7 @@ void PF2_WriteByte(int to, int data)
 
 void PF2_WriteChar(int to, int data)
 {
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	PF2_WriteCheckCSQC(to, data);
 #endif
 	if (to == MSG_ONE)
@@ -1672,7 +1670,7 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
 		else if (!strcmp(key, "ping"))
 			snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		else if (!strcmp(key, "csqcactive") || !strcmp(key, "*csqcactive") || !strcmp(key, "ezcsqc"))
 		{
 			snprintf(ov, sizeof(ov), "%d", (int)cl->csqcactive);
@@ -1727,7 +1725,7 @@ void PF2_multicast(float x, float y, float z, int to)
 	o[0] = x;
 	o[1] = y;
 	o[2] = z;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// A CSQC packet (first byte svc_fte_cgamepacket) goes to CSQC clients only.
 	// MULTICAST_MVD_HIDDEN is a raw hidden block, not a CSQC packet, so it is
 	// never routed here even if its first byte happens to be 0x53.
@@ -1778,7 +1776,6 @@ pr2_fopen_files_t pr2_fopen_files[MAX_PR2_FILES];
 int pr2_num_open_files = 0;
 
 char* cmodes[]={"rb","r","wb","w","ab","a"};
-// FIXME: read from paks
 int PF2_FS_OpenFile(char *name, fileHandle_t *handle, fsMode_t fmode)
 {
 	int i, ret = -1;
@@ -1807,11 +1804,7 @@ int PF2_FS_OpenFile(char *name, fileHandle_t *handle, fsMode_t fmode)
 	{
 	case FS_READ_BIN:
 	case FS_READ_TXT:
-#ifndef SERVERONLY
-		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_ANY);
-#else
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME);
-#endif
 
 		if(!pr2_fopen_files[i].handle)
 		{
@@ -1827,8 +1820,6 @@ int PF2_FS_OpenFile(char *name, fileHandle_t *handle, fsMode_t fmode)
 	case FS_WRITE_TXT:
 	case FS_APPEND_BIN:
 	case FS_APPEND_TXT:
-		// well, perhaps we we should create path...
-		//		FS_CreatePathRelative(name, FS_GAME_OS);
 		pr2_fopen_files[i].handle = FS_OpenVFS(name, cmodes[fmode], FS_GAME_OS);
 		if ( !pr2_fopen_files[i].handle )
 		{
@@ -2022,11 +2013,7 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 
 			// skip file extension
 			if (!(flags & FILELIST_WITH_EXT)) {
-#ifndef SERVERONLY
-				COM_StripExtension(fullname, fullname, sizeof(fullname));
-#else
-				COM_StripExtension(fullname);
-#endif
+				COM_StripExtension(fullname, fullname, 0);
 			}
 
 			list[i] = Q_strdup(fullname); // a bit below we will free it
@@ -2065,7 +2052,7 @@ intptr_t PF2_FS_GetFileList(char *path, char *ext,
 	return numfiles;
 }
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 // Shared broadcast/unicast body of both setsendneeded traps. The mask is
 // already shifted to its final position in the pending word (PRESENT/REMOVED
 // in bits 0..1 are engine-side and must not be touched by mods).
@@ -2240,6 +2227,7 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		{
 			return offsetof(ext_entvars_t, colourmod) | GetExtFieldCookie();
 		}
+#ifdef SV_HAS_CSQC
 		if (!strcmp(key, "sendflags"))
 		{
 			return offsetof(ext_entvars_t, sendflags) | GetExtFieldCookie();
@@ -2252,6 +2240,7 @@ static intptr_t EXT_MapExtFieldPtr(intptr_t *args)
 		{
 			return offsetof(ext_entvars_t, pvsflags) | GetExtFieldCookie();
 		}
+#endif
 	}
 
 	return 0;
@@ -2314,7 +2303,7 @@ int PF2_Add_Bot(char *name, int bottomcolor, int topcolor, char *skin)
 {
 	client_t *cl, *newcl = NULL;
 	int     edictnum;
-	int     clients, spectators, i;
+	int     clients, i;
 	extern char *shortinfotbl[];
 	char   *s;
 	edict_t *ent;
@@ -2322,16 +2311,13 @@ int PF2_Add_Bot(char *name, int bottomcolor, int topcolor, char *skin)
 	int old_self;
 	char info[MAX_EXT_INFO_STRING];
 
-	// count up the clients and spectators
+	// Count active player slots.
 	clients = 0;
-	spectators = 0;
 	for ( i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++ )
 	{
 		if ( cl->state == cs_free )
 			continue;
-		if ( cl->spectator )
-			spectators++;
-		else
+		if ( !cl->spectator )
 			clients++;
 	}
 
@@ -2726,6 +2712,13 @@ void PF2_VisibleTo(int viewer, int first, int len, byte *visible)
 	}
 }
 
+static qbool PR2_CvarWritable(const char *name)
+{
+	cvar_t *var = Cvar_Find(name);
+
+	return !var || !(var->flags & CVAR_NOTFROMSERVER);
+}
+
 //===========================================================================
 // SysCalls
 //===========================================================================
@@ -2735,7 +2728,7 @@ void PF2_VisibleTo(int viewer, int first, int len, byte *visible)
 intptr_t PR2_GameSystemCalls(intptr_t *args) {
 	switch (args[0]) {
 	case G_GETAPIVERSION:
-		return GAME_API_VERSION;
+		return PR2_GAME_API_VERSION;
 	case G_DPRINT:
 		Con_DPrintf("%s", (const char *)VMA(1));
 		return 0;
@@ -2823,7 +2816,8 @@ intptr_t PR2_GameSystemCalls(intptr_t *args) {
 	case G_CVAR:
 		return PASSFLOAT(Cvar_Value(VMA(1)));
 	case G_CVAR_SET:
-		Cvar_SetByName(VMA(1), VMA(2));
+		if (PR2_CvarWritable(VMA(1)))
+			Cvar_SetByName(VMA(1), VMA(2));
 		return 0;
 	case G_FINDRADIUS:
 		return PF2_FindRadius(NUM_FOR_GAME_EDICT(VMA(1)), (float *)VMA(2), VMF(3));
@@ -2942,7 +2936,8 @@ intptr_t PR2_GameSystemCalls(intptr_t *args) {
 		VM_CheckBounds(sv_vm, args[3], args[4]);
 		return PF2_FS_GetFileList(VMA(1), VMA(2), VMA(3), args[4], args[5]);
 	case G_CVAR_SET_FLOAT:
-		Cvar_SetValueByName(VMA(1), VMF(2));
+		if (PR2_CvarWritable(VMA(1)))
+			Cvar_SetValueByName(VMA(1), VMF(2));
 		return 0;
 	case G_CVAR_STRING:
 		VM_CheckBounds(sv_vm, args[2], args[3]);

@@ -271,7 +271,8 @@ void	*Q_tryrealloc (void *ptr, size_t size);
 char	*Q_strdup (const char *src);
 char	*Q_strdup_printf(const char *format, ...);
 
-char	*COM_StripExtension (char *str);
+void COM_StripExtension (const char *in, char *out, int out_size);
+unsigned int BuffLittleLong (const unsigned char *buffer);
 char	*COM_FileExtension (const char *in);
 void	COM_DefaultExtension (char *path, const char *extension, size_t path_size);
 
