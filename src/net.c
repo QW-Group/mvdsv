@@ -47,9 +47,23 @@ sizebuf_t	net_message;
 
 static byte	net_message_buffer[MSG_BUF_SIZE];
 
+#ifdef EZQUAKE_CMDLINE_PARAMS_H
+#define NET_IP_ARGUMENT cmdline_param_net_ipaddress
+#define NET_SERVER_PORT_ARGUMENT cmdline_param_net_serverport
+#else
+#define NET_IP_ARGUMENT "-ip"
+#define NET_SERVER_PORT_ARGUMENT "-port"
+#endif
+
 // forward definition.
 qbool NET_GetPacketEx (netsrc_t netsrc, qbool delay);
 void NET_SendPacketEx (netsrc_t netsrc, int length, void *data, netadr_t to, qbool delay);
+
+#ifdef SERVERONLY
+#define TCP_LISTEN_BACKLOG 2
+#else
+#define TCP_LISTEN_BACKLOG 1
+#endif
 
 //=============================================================================
 //
@@ -1069,18 +1083,37 @@ socket_t TCP_OpenStream (netadr_t remoteaddr)
 socket_t TCP_OpenListenSocket (unsigned short int port)
 {
 	socket_t newsocket;
-	struct sockaddr_in address = {0};
+	struct sockaddr_in address = { 0 };
 	unsigned long nonblocking = true;
 	int i;
 
-	if ((newsocket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
-	{
+	if ((newsocket = Sys_OpenSocket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET) {
 		Con_Printf ("TCP_OpenListenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
 		return INVALID_SOCKET;
 	}
 
-	if (ioctlsocket (newsocket, FIONBIO, &nonblocking) == -1)
-	{ // make asynchronous
+#if defined(SERVERONLY) && !defined(_WIN32)
+	{
+		int reuse = 1;
+
+		// A restarted server must be able to listen while old QTV sockets are in TIME_WAIT.
+		if (setsockopt(newsocket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
+			Con_Printf("TCP_OpenListenSocket: SO_REUSEADDR: (%i): %s\n", qerrno, strerror(qerrno));
+			closesocket(newsocket);
+			return INVALID_SOCKET;
+		}
+	}
+#endif
+
+#ifndef _WIN32
+	if ((fcntl (newsocket, F_SETFL, O_NONBLOCK)) == -1) { // O'Rly?! @@@
+		Con_Printf ("TCP_OpenListenSocket: fcntl: (%i): %s\n", qerrno, strerror(qerrno));
+		closesocket(newsocket);
+		return INVALID_SOCKET;
+	}
+#endif
+
+	if (ioctlsocket (newsocket, FIONBIO, &nonblocking) == -1) { // make asynchronous
 		Con_Printf ("TCP_OpenListenSocket: ioctl: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
@@ -1092,37 +1125,34 @@ socket_t TCP_OpenListenSocket (unsigned short int port)
 	address.sin_family = AF_INET;
 
 	// check for interface binding option
-	if ((i = COM_CheckParm("-ip")) != 0 && i < COM_Argc())
-	{
+	if ((i = COM_CheckParm(NET_IP_ARGUMENT)) != 0 && i < COM_Argc()) {
 		address.sin_addr.s_addr = inet_addr(COM_Argv(i+1));
 		Con_DPrintf ("Binding to IP Interface Address of %s\n", inet_ntoa(address.sin_addr));
 	}
-	else
-	{
+	else {
 		address.sin_addr.s_addr = INADDR_ANY;
 	}
 	
-	if (port == PORT_ANY)
+	if (port == PORT_ANY) {
 		address.sin_port = 0;
-	else
+	}
+	else {
 		address.sin_port = htons(port);
+	}
 
-	if (bind (newsocket, (void *)&address, sizeof(address)) == -1)
-	{
+	if (bind (newsocket, (void *)&address, sizeof(address)) == -1) {
 		Con_Printf ("TCP_OpenListenSocket: bind: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
 	}
 
-	if (listen (newsocket, 2) == INVALID_SOCKET)
-	{
+	if (listen (newsocket, TCP_LISTEN_BACKLOG) == INVALID_SOCKET) {
 		Con_Printf ("TCP_OpenListenSocket: listen: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
 	}
 
-	if (!TCP_Set_KEEPALIVE(newsocket))
-	{
+	if (!TCP_Set_KEEPALIVE(newsocket)) {
 		Con_Printf ("TCP_OpenListenSocket: TCP_Set_KEEPALIVE: failed\n");
 		closesocket(newsocket);
 		return INVALID_SOCKET;
@@ -1138,23 +1168,20 @@ socket_t UDP_OpenSocket (unsigned short int port)
 	unsigned long _true = true;
 	int i;
 
-	if ((newsocket = socket (PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET)
-	{
+	if ((newsocket = Sys_OpenSocket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
 		Con_Printf ("UDP_OpenSocket: socket: (%i): %s\n", qerrno, strerror(qerrno));
 		return INVALID_SOCKET;
 	}
 
 #ifndef _WIN32
-	if ((fcntl (newsocket, F_SETFL, O_NONBLOCK)) == -1)
-	{ // O'Rly?! @@@
+	if ((fcntl (newsocket, F_SETFL, O_NONBLOCK)) == -1) { // O'Rly?! @@@
 		Con_Printf ("UDP_OpenSocket: fcntl: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
 	}
 #endif
 
-	if (ioctlsocket (newsocket, FIONBIO, &_true) == -1)
-	{ // make asynchronous
+	if (ioctlsocket (newsocket, FIONBIO, &_true) == -1) { // make asynchronous
 		Con_Printf ("UDP_OpenSocket: ioctl: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
@@ -1163,23 +1190,22 @@ socket_t UDP_OpenSocket (unsigned short int port)
 	address.sin_family = AF_INET;
 
 	// check for interface binding option
-	if ((i = COM_CheckParm("-ip")) != 0 && i < COM_Argc())
-	{
+	if ((i = COM_CheckParm(NET_IP_ARGUMENT)) != 0 && i < COM_Argc()) {
 		address.sin_addr.s_addr = inet_addr(COM_Argv(i+1));
 		Con_DPrintf ("Binding to IP Interface Address of %s\n", inet_ntoa(address.sin_addr));
 	}
-	else
-	{
+	else {
 		address.sin_addr.s_addr = INADDR_ANY;
 	}
 
-	if (port == PORT_ANY)
+	if (port == PORT_ANY) {
 		address.sin_port = 0;
-	else
+	}
+	else {
 		address.sin_port = htons(port);
+	}
 
-	if (bind (newsocket, (void *)&address, sizeof(address)) == -1)
-	{
+	if (bind (newsocket, (void *)&address, sizeof(address)) == -1) {
 		Con_Printf ("UDP_OpenSocket: bind: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
@@ -1197,30 +1223,30 @@ qbool NET_Sleep(int msec, qbool stdinissocket)
 
 	FD_ZERO (&fdset);
 
-	if (stdinissocket)
-	{
+	if (stdinissocket) {
 		FD_SET (0, &fdset); // stdin is processed too (tends to be socket 0)
 		maxfd = max(0, maxfd);
 	}
 
-	if (svs.socketip != INVALID_SOCKET)
-	{
+#ifndef CLIENTONLY
+	if (svs.socketip != INVALID_SOCKET) {
 		FD_SET(svs.socketip, &fdset); // network socket
 		maxfd = max(svs.socketip, maxfd);
 	}
+#endif
 
 	timeout.tv_sec = msec/1000;
 	timeout.tv_usec = (msec%1000)*1000;
 	switch (select(maxfd + 1, &fdset, NULL, NULL, &timeout))
 	{
-		case -1: break;
-		case  0: break;
+		case -1:
+		case  0:
+			break;
 		default:
-
-		if (stdinissocket)
-			stdin_ready = FD_ISSET (0, &fdset);
-
-		break;
+			if (stdinissocket) {
+				stdin_ready = FD_ISSET(0, &fdset);
+			}
+			break;
 	}
 
 	return stdin_ready;
@@ -1403,47 +1429,37 @@ void NET_InitServer (void)
 	int port = PORT_SERVER;
 	int p;
 
-	p = COM_CheckParm ("-port");
-	if (p && p < COM_Argc())
-	{
+	p = COM_CheckParm (NET_SERVER_PORT_ARGUMENT);
+	if (p && p < COM_Argc()) {
 		port = atoi(COM_Argv(p+1));
 	}
 
-	if (svs.socketip == INVALID_SOCKET)
-	{
+	if (svs.socketip == INVALID_SOCKET) {
 		svs.socketip = UDP_OpenSocket (port);
 	}
 
-	if (svs.socketip != INVALID_SOCKET)
-	{
+	if (svs.socketip != INVALID_SOCKET) {
 		NET_GetLocalAddress (svs.socketip, &net_local_sv_ipadr);
 		Cvar_SetROM (&sv_local_addr, NET_AdrToString (net_local_sv_ipadr));
 	}
-	else
-	{
+	else {
 		// FIXME: is it right???
 		Cvar_SetROM (&sv_local_addr, "");
 	}
 
-// TCPCONNECT -->
-#if 0 // qqshka: TCP port shared with QTV now, so it opened outside here.
-	p = COM_CheckParm ("-tcpport");
-	if (p && p < COM_Argc())
-	{
-		NET_InitServer_TCP(atoi(COM_Argv(p+1)));
-	}
-#endif
-// <-- TCPCONNECT
-
-	if (svs.socketip == INVALID_SOCKET)
-	{
+	if (svs.socketip == INVALID_SOCKET) {
 #ifdef SERVERONLY
 		Sys_Error
 #else
 		Con_Printf
 #endif
- 		("WARNING: Couldn't allocate server socket\n");
+			("WARNING: Couldn't allocate server socket\n");
 	}
+
+#ifndef SERVERONLY
+	// init the message buffer
+	SZ_Init (&net_message, net_message_buffer, sizeof(net_message_buffer));
+#endif
 }
 
 void NET_CloseServer (void)
