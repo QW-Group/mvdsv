@@ -625,6 +625,59 @@ void FS_ShutDown( void )
 //int				fs_hash_files = 0;
 }
 
+static qbool FS_WriteTargetIsIndexed(const char *fullname, const char *filename)
+{
+	const bucket_t *entry;
+	searchpath_t *search;
+	size_t directory_length;
+
+	if (!fs_cache.value || filesystemchanged || !filesystemhash) {
+		return false;
+	}
+
+	// A case-insensitive match can still be a different file on disk.
+	entry = Hash_GetInsensitiveBucket(filesystemhash, filename);
+	if (!entry || strcmp(entry->keystring, filename)) {
+		return false;
+	}
+
+	// fullname was formed by joining the write directory and filename with a slash.
+	directory_length = strlen(fullname) - strlen(filename) - 1;
+	for (search = fs_searchpaths; search; search = search->next) {
+		if (search->funcs == &osfilefuncs && search->handle == entry->data) {
+			const char *directory = search->handle;
+			size_t length = strlen(directory);
+
+			if (length && directory[length - 1] == '/') {
+				length--;
+			}
+			return length == directory_length && !strncmp(directory, fullname, length);
+		}
+	}
+	return false;
+}
+
+static vfsfile_t *FS_OpenGameOS(const char *filename, char *mode)
+{
+	char fullname[MAX_OSPATH];
+	vfsfile_t *vfs;
+	int length = snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, com_gamedirfile, filename);
+
+	if (length < 0 || (size_t)length >= sizeof(fullname))
+		return NULL;
+
+	vfs = VFSOS_Open(fullname, mode);
+	if (mode[0] != 'r') {
+		if (!vfs) {
+			FS_CreatePath(fullname);
+			vfs = VFSOS_Open(fullname, mode);
+		}
+		if (vfs && !FS_WriteTargetIsIndexed(fullname, filename))
+			filesystemchanged = true;
+	}
+	return vfs;
+}
+
 /*
 ================
 FS_OpenVFS
@@ -656,11 +709,8 @@ vfsfile_t *FS_OpenVFS(const char *filename, char *mode, relativeto_t relativeto)
 		snprintf(fullname, sizeof(fullname), "%s", filename);
 		return VFSOS_Open(fullname, mode);
 
-	case FS_GAME_OS:	//OS access only, no paks
-		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, com_gamedirfile, filename);
-		if (strchr(mode, 'w') || strchr(mode, 'a'))
-			FS_CreatePath(fullname); // FIXME: It should be moved to VFSOS_Open() itself? 
-		return VFSOS_Open(fullname, mode);
+	case FS_GAME_OS:	// OS access only, no packs
+		return FS_OpenGameOS(filename, mode);
 
 	case FS_GAME:
 //		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, com_gamedirfile, filename);
