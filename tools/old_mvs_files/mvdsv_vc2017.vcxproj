@@ -502,6 +502,7 @@
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</BrowseInformation>
       <BrowseInformation Condition="'$(Configuration)|$(Platform)'=='Release-NoAsm|Win32'">true</BrowseInformation>
     </ClCompile>
+    <ClCompile Include="..\..\src\com_msg.c" />
     <ClCompile Include="..\..\src\common.c">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug-NoAsm|Win32'">Disabled</Optimization>

@@ -17,11 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 #include "qwsvdef.h"
+#include "sv_broadcast.h"
 
 typedef struct {
-	char *message;
-	char *name;
-} args_t;
+	char packet[1024];
+	int length;
+} broadcast_packet_t;
 
 typedef struct {
 	unsigned int ip;
@@ -35,22 +36,22 @@ typedef struct {
 
 } broadcast_log_t;
 
-static DWORD WINAPI SV_BroadcastSend(void *data);
-static DWORD WINAPI SV_BroadcastQueryMasters(void *data);
-static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *server, int *server_count);
+static int SV_BroadcastSend(void *data);
+static int SV_BroadcastQueryMasters(void *data);
+static void SV_BroadcastQueryMaster(socket_t sock, netadr_t *naddr, netadr_t *server, int *server_count);
 static qbool SVC_BroadcastIsRateLimited(netadr_t *from);
 static void SV_BroadcastAddLog(char *msg);
 static void SV_BroadcastAddCache(char *msg);
 
-static mutex_t servers_update_lock;
+static sys_mutex_t servers_update_lock;
 static double last_servers_update;
 static qbool update_in_progress;
 
-static mutex_t broadcast_lock;
+static sys_mutex_t broadcast_lock;
 static double last_broadcast;
 static qbool broadcast_in_progress;
 
-static mutex_t server_list_lock;
+static sys_mutex_t server_list_lock;
 static netadr_t server_list[BROADCAST_MAX_SERVERS];
 static int server_list_count;
 
@@ -64,8 +65,34 @@ static broadcast_log_t broadcast_cache[BROADCAST_CACHE_MAX_ENTRIES];
 static int broadcast_cache_head = 0;
 static int broadcast_cache_count = 0;
 
+static qbool Sys_MutexTryLockWithTimeout(sys_mutex_t *m, unsigned long timeout_ms)
+{
+	unsigned long elapsed = 0;
+	unsigned long sleep_interval = 1;
+
+	while (elapsed < timeout_ms)
+	{
+		if (Sys_MutexTryLock(m))
+		{
+			return true;
+		}
+
+		Sys_MSleep(sleep_interval);
+		elapsed += sleep_interval;
+
+		if (sleep_interval < 32)
+		{
+			sleep_interval *= 2;
+		}
+	}
+
+	return false;
+}
+
 void SV_BroadcastInit(void)
 {
+	Cmd_AddCommand("updatebroadcasts", SV_BroadcastUpdateServerList_f);
+
 	Sys_MutexInit(&broadcast_lock);
 	last_broadcast = -99999;
 	broadcast_in_progress = false;
@@ -95,6 +122,7 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 {
 	extern netadr_t master_adr[MAX_MASTERS];
 	extern cvar_t sv_broadcast_enabled;
+	netadr_t *masters;
 
 	if (!sv_broadcast_enabled.value)
 	{
@@ -116,23 +144,23 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 		return;
 	}
 
-	if (!force_update && realtime - last_servers_update < BROADCAST_SERVER_LIST_UPDATE_INTERVAL)
-	{
-		return;
-	}
-
-	// If there are no master servers configured, we'll wait the entire
-	// update_interval before trying again.
-	if (!master_adr[0].port)
-	{
-		Con_Printf("SV_BroadcastUpdateServerList: No master servers configured\n");
-		last_servers_update = realtime;
-		return;
-	}
-
 	if (!Sys_MutexTryLockWithTimeout(&servers_update_lock, BROADCAST_DEFAULT_LOCK_TIMEOUT))
 	{
 		Con_Printf("SV_BroadcastUpdateServerList: Failed to acquire servers update lock\n");
+		return;
+	}
+
+	if (!force_update && Sys_DoubleTime() - last_servers_update < BROADCAST_SERVER_LIST_UPDATE_INTERVAL)
+	{
+		Sys_MutexUnlock(&servers_update_lock);
+		return;
+	}
+
+	if (!master_adr[0].port)
+	{
+		last_servers_update = Sys_DoubleTime();
+		Sys_MutexUnlock(&servers_update_lock);
+		Con_Printf("SV_BroadcastUpdateServerList: No master servers configured\n");
 		return;
 	}
 
@@ -149,49 +177,46 @@ void SV_BroadcastUpdateServerList(qbool force_update)
 	update_in_progress = true;
 	Sys_MutexUnlock(&servers_update_lock);
 
+	masters = Q_malloc(sizeof(master_adr));
+	memcpy(masters, master_adr, sizeof(master_adr));
 	Con_Printf("Broadcast server list sync started\n");
 
-	if (Sys_CreateThread(SV_BroadcastQueryMasters, NULL))
+	if (Sys_CreateDetachedThread(SV_BroadcastQueryMasters, masters))
 	{
 		Con_Printf("SV_BroadcastUpdateServerList: Unable to start query masters thread\n");
+		Q_free(masters);
 
 		Sys_MutexLock(&servers_update_lock);
 		update_in_progress = false;
-		last_servers_update = realtime;
+		last_servers_update = Sys_DoubleTime();
 		Sys_MutexUnlock(&servers_update_lock);
 	}
 }
 
-static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
+static int SV_BroadcastQueryMasters(void *data)
 {
-	static struct timeval timeout = {BROADCAST_MASTER_TIMEOUT, 0};
 	static netadr_t servers[BROADCAST_MAX_SERVERS];
-	extern netadr_t master_adr[MAX_MASTERS];
+	netadr_t *masters = data;
 	int server_count = 0;
-	int sock = 0;
+	socket_t sock;
 	int i = 0;
 
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0)
+#ifdef _WIN32
+	const int timeout = BROADCAST_MASTER_TIMEOUT * 1000;
+#else
+	const struct timeval timeout = {BROADCAST_MASTER_TIMEOUT, 0};
+#endif
+
+	sock = Sys_OpenSocket(AF_INET, SOCK_DGRAM, 0);
+	if (sock == INVALID_SOCKET)
 	{
-		Con_Printf("SV_BroadcastQueryMasters: Unable to initialize socket\n");
+		Sys_Printf("SV_BroadcastQueryMasters: Unable to initialize socket\n");
 		goto out;
 	}
 
-#ifdef _WIN32
-	static int timeout_ms = -1;
-
-	if (timeout_ms == -1)
+	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout)) != 0)
 	{
-		timeout_ms = timeout.tv_sec * 1000 + timeout.tv_usec / 1000;
-	}
-
-	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout_ms, sizeof(timeout_ms)) < 0)
-#else
-	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
-#endif
-	{
-		Con_Printf("SV_BroadcastQueryMasters: Unable to set timeout on socket\n");
+		Sys_Printf("SV_BroadcastQueryMasters: Unable to set timeout on socket\n");
 		goto cleanup;
 	}
 
@@ -199,36 +224,37 @@ static DWORD WINAPI SV_BroadcastQueryMasters(void *data)
 
 	for (i = 0; i < MAX_MASTERS; i++)
 	{
-		if (!master_adr[i].port)
+		if (!masters[i].port)
 		{
 			break;
 		}
 
-		SV_BroadcastQueryMaster(sock, &master_adr[i], servers, &server_count);
+		SV_BroadcastQueryMaster(sock, &masters[i], servers, &server_count);
 	}
 
 	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
-		Con_Printf("SV_BroadcastQueryMasters: Failed to acquire server_list_lock, aborting\n");
+		Sys_Printf("SV_BroadcastQueryMasters: Failed to acquire server_list_lock, aborting\n");
 		goto cleanup;
 	}
 	server_list_count = server_count;
 	memcpy(server_list, servers, sizeof(netadr_t) * server_list_count);
 	Sys_MutexUnlock(&server_list_lock);
-	Con_Printf("Broadcast server list sync complete: %d server(s) available.\n", server_list_count);
+	Sys_Printf("Broadcast server list sync complete: %d server(s) available.\n", server_list_count);
 
 cleanup:
 	closesocket(sock);
 out:
+	Q_free(masters);
 	Sys_MutexLock(&servers_update_lock);
 	update_in_progress = false;
-	last_servers_update = realtime;
+	last_servers_update = Sys_DoubleTime();
 	Sys_MutexUnlock(&servers_update_lock);
 
 	return 0;
 }
 
-static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers, int *server_count)
+static void SV_BroadcastQueryMaster(socket_t sock, netadr_t *naddr, netadr_t *servers, int *server_count)
 {
 	// Payload to send to the master server, which returns a list of all
 	// registered servers.
@@ -243,45 +269,46 @@ static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers
 	netadr_t new_addr;
 	qbool exists = false;
 	char buf[1024*64] = {0};
-	char *master = NULL;
+	char master[32];
 	int ip_count = 0;
 	int offset = 0;
 	int ret = 0;
 	int i = 0;
 
 	NetadrToSockadr(naddr, &addr);
-	master = NET_AdrToString(*naddr);
+	snprintf(master, sizeof(master), "%u.%u.%u.%u:%u",
+		naddr->ip[0], naddr->ip[1], naddr->ip[2], naddr->ip[3], ntohs(naddr->port));
 
 	ret = sendto(sock, payload, sizeof(payload), 0, (struct sockaddr *)&addr,
 		sizeof(struct sockaddr_in));
 	if (ret < 0)
 	{
-		Con_Printf("SV_BroadcastQueryMaster: Unable to query %s\n", master);
+		Sys_Printf("SV_BroadcastQueryMaster: Unable to query %s\n", master);
 		return;
 	}
 
 	ret = recvfrom(sock, buf, sizeof(buf), 0, NULL, NULL);
 	if (ret <= 0)
 	{
-		Con_Printf("SV_BroadcastQueryMaster: No data received from %s\n", master);
+		Sys_Printf("SV_BroadcastQueryMaster: No data received from %s\n", master);
 		return;
 	}
 
 	if (ret < header_size)
 	{
-		Con_Printf("SV_BroadcastQueryMaster: Unexpected data returned from %s\n", master);
+		Sys_Printf("SV_BroadcastQueryMaster: Unexpected data returned from %s\n", master);
 		return;
 	}
 
 	if (memcmp(buf, header, header_size) != 0)
 	{
-		Con_Printf("SV_BroadcastQueryMaster: Unexpected header returned from %s\n", master);
+		Sys_Printf("SV_BroadcastQueryMaster: Unexpected header returned from %s\n", master);
 		return;
 	}
 
 	if ((ret - header_size) % addr_size != 0)
 	{
-		Con_Printf("SV_BroadcastQueryMaster: Invalid data received from %s\n", master);
+		Sys_Printf("SV_BroadcastQueryMaster: Invalid data received from %s\n", master);
 		return;
 	}
 
@@ -289,7 +316,7 @@ static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers
 	{
 		if (*server_count >= BROADCAST_MAX_SERVERS)
 		{
-			Con_Printf("SV_BroadcastQueryMaster: Server list is full!\n");
+			Sys_Printf("SV_BroadcastQueryMaster: Server list is full!\n");
 			break;
 		}
 
@@ -326,8 +353,8 @@ static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers
 
 		if (ip_count >= BROADCAST_SERVER_MAX_ENTRIES_PER_IP)
 		{
-			Con_Printf("SV_BroadcastQueryMaster: Ignoring %s (IP limit reached)\n",
-				NET_AdrToString(new_addr));
+			Sys_Printf("SV_BroadcastQueryMaster: Ignoring %u.%u.%u.%u:%u (IP limit reached)\n",
+				new_addr.ip[0], new_addr.ip[1], new_addr.ip[2], new_addr.ip[3], ntohs(new_addr.port));
 			continue;
 		}
 
@@ -340,7 +367,11 @@ static void SV_BroadcastQueryMaster(int sock, netadr_t *naddr, netadr_t *servers
 qbool SV_Broadcast(char *message)
 {
 	extern cvar_t sv_broadcast_enabled;
-	args_t *args = NULL;
+	broadcast_packet_t *job;
+	client_t *client;
+	int i, written, players = 0;
+	int count;
+	double elapsed;
 
 	if (!sv_broadcast_enabled.value)
 	{
@@ -354,25 +385,30 @@ qbool SV_Broadcast(char *message)
 		return false;
 	}
 
-	// When the data in the server list is actually used, we'll acquire the
-	// necessary lock to ensure that the data is correct. However, for this
-	// use case, it should be fine to just check it without a lock.
-	if (server_list_count == 0)
+	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
-		SV_ClientPrintf(sv_client, PRINT_HIGH, "No broadcast servers configured\n");
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Failed to acquire server list lock\n");
 		return false;
 	}
-
-	if (realtime - last_broadcast < BROADCAST_MESSAGE_INTERVAL - 1)
+	count = server_list_count;
+	Sys_MutexUnlock(&server_list_lock);
+	if (!count)
 	{
-		SV_ClientPrintf(sv_client, PRINT_HIGH, "Wait %d seconds before broadcasting again\n",
-			(int)(BROADCAST_MESSAGE_INTERVAL - (realtime - last_broadcast)));
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "No broadcast servers configured\n");
 		return false;
 	}
 
 	if (!Sys_MutexTryLockWithTimeout(&broadcast_lock, BROADCAST_DEFAULT_LOCK_TIMEOUT))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "Failed to acquire broadcast lock\n");
+		return false;
+	}
+	elapsed = Sys_DoubleTime() - last_broadcast;
+	if (elapsed < BROADCAST_MESSAGE_INTERVAL - 1)
+	{
+		Sys_MutexUnlock(&broadcast_lock);
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Wait %d seconds before broadcasting again\n",
+			(int)(BROADCAST_MESSAGE_INTERVAL - elapsed));
 		return false;
 	}
 
@@ -386,53 +422,16 @@ qbool SV_Broadcast(char *message)
 	broadcast_in_progress = true;
 	Sys_MutexUnlock(&broadcast_lock);
 
-	args = Q_malloc(sizeof(args_t));
-	args->message = Q_strdup(message);
-	args->name = Q_strdup(sv_client->name);
-
-	if (Sys_CreateThread(SV_BroadcastSend, args))
-	{
-		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to start broadcast thread\n");
-
-		Sys_MutexLock(&broadcast_lock);
-		broadcast_in_progress = false;
-		last_broadcast = realtime;
-		Sys_MutexUnlock(&broadcast_lock);
-
-		Q_free(args->message);
-		Q_free(args->name);
-		Q_free(args);
-	}
-
-	return true;
-}
-
-static DWORD WINAPI SV_BroadcastSend(void *data)
-{
-	args_t *args = (args_t *)data;
-	struct sockaddr_storage addr;
-	client_t *client = NULL;
-	char out[1024] = {0};
-	int err_count = 0;
-	int written = 0;
-	int players = 0;
-	int sock = 0;
-	int len = 0;
-	int ret = 0;
-	int i = 0;
-
+	// Build the payload on the server thread. The detached worker only sends it.
 	for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++)
 	{
 		if (client->state >= cs_connected && !client->spectator)
-		{
 			players++;
-		}
 	}
 
-	memset(out, 0xff, 4);
-	len = 4;
-
-	written = snprintf(out+len, sizeof(out)-len,
+	job = Q_malloc(sizeof(*job));
+	memset(job->packet, 0xff, 4);
+	written = snprintf(job->packet + 4, sizeof(job->packet) - 4,
 		"broadcast "
 		"\\hostport\\%s"
 		"\\port\\%d"
@@ -440,26 +439,50 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 		"\\players\\%d"
 		"\\maxplayers\\%d"
 		"\\message\\%s\n",
-		Cvar_String("hostport"), NET_UDPSVPort(), args->name,
-		players, (int)maxclients.value, args->message);
-
-	if (written < 0 || written >= sizeof(out) - len)
+		Cvar_String("hostport"), NET_UDPSVPort(), sv_client->name,
+		players, (int)maxclients.value, message);
+	if (written < 0 || written >= sizeof(job->packet) - 4)
 	{
-		goto out;
+		Q_free(job);
+		Sys_MutexLock(&broadcast_lock);
+		broadcast_in_progress = false;
+		Sys_MutexUnlock(&broadcast_lock);
+		return false;
+	}
+	job->length = written + 4;
+
+	if (Sys_CreateDetachedThread(SV_BroadcastSend, job))
+	{
+		SV_ClientPrintf(sv_client, PRINT_HIGH, "Unable to start broadcast thread\n");
+		Q_free(job);
+		Sys_MutexLock(&broadcast_lock);
+		broadcast_in_progress = false;
+		last_broadcast = Sys_DoubleTime();
+		Sys_MutexUnlock(&broadcast_lock);
 	}
 
-	len += written;
+	return true;
+}
 
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0)
+static int SV_BroadcastSend(void *data)
+{
+	broadcast_packet_t *job = data;
+	struct sockaddr_storage addr;
+	int err_count = 0;
+	socket_t sock;
+	int ret = 0;
+	int i = 0;
+
+	sock = Sys_OpenSocket(AF_INET, SOCK_DGRAM, 0);
+	if (sock == INVALID_SOCKET)
 	{
-		Con_Printf("SV_BroadcastSend: Unable to initialize socket\n");
+		Sys_Printf("SV_BroadcastSend: Unable to initialize socket\n");
 		goto out;
 	}
 
 	if (!Sys_MutexTryLockWithTimeout(&server_list_lock, BROADCAST_SERVER_LIST_LOCK_TIMEOUT))
 	{
-		Con_Printf("SV_BroadcastSend: Failed to acquire server_list_lock, aborting\n");
+		Sys_Printf("SV_BroadcastSend: Failed to acquire server_list_lock, aborting\n");
 		goto close;
 	}
 
@@ -467,11 +490,13 @@ static DWORD WINAPI SV_BroadcastSend(void *data)
 	{
 		NetadrToSockadr(&server_list[i], &addr);
 
-		ret = sendto(sock, out, len, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+		ret = sendto(sock, job->packet, job->length, 0, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
 		if (ret < 0)
 		{
-			Con_Printf("SV_BroadcastSend: Unable to send broadcast to %s\n",
-				NET_AdrToString(server_list[i]));
+			const netadr_t *server = &server_list[i];
+
+			Sys_Printf("SV_BroadcastSend: Unable to send broadcast to %u.%u.%u.%u:%u\n",
+				server->ip[0], server->ip[1], server->ip[2], server->ip[3], ntohs(server->port));
 
 			if (err_count++ == BROADCAST_MAX_ERRORS)
 			{
@@ -486,13 +511,11 @@ close:
 	closesocket(sock);
 out:
 	Sys_MutexLock(&broadcast_lock);
-	last_broadcast = realtime;
+	last_broadcast = Sys_DoubleTime();
 	broadcast_in_progress = false;
 	Sys_MutexUnlock(&broadcast_lock);
 
-	Q_free(args->message);
-	Q_free(args->name);
-	Q_free(args);
+	Q_free(job);
 
 	return 0;
 }
@@ -509,14 +532,14 @@ void SVC_Broadcast(void)
 	char log[1024] = {0};
 	char out[1024] = {0};
 	char *displayaddr = NULL;
-	char *maxplayers = NULL;
-	char *hostport = NULL;
-	char *message = NULL;
+	char maxplayers[512];
+	char hostport[512];
+	char message[512];
 	char *payload = NULL;
-	char *players = NULL;
+	char players[512];
 	char *addr = NULL;
-	char *name = NULL;
-	char *port = NULL;
+	char name[512];
+	char port[512];
 	int i = 0;
 
 	if (!sv_broadcast_enabled.value || Cmd_Argc() < 1)
@@ -563,12 +586,12 @@ void SVC_Broadcast(void)
 		}
 	}
 
-	hostport = Info_ValueForKey(payload, "hostport");
-	name = Info_ValueForKey(payload, "name");
-	message = Info_ValueForKey(payload, "message");
-	port = Info_ValueForKey(payload, "port");
-	players = Info_ValueForKey(payload, "players");
-	maxplayers = Info_ValueForKey(payload, "maxplayers");
+	strlcpy(hostport, Info_ValueForKey(payload, "hostport"), sizeof(hostport));
+	strlcpy(name, Info_ValueForKey(payload, "name"), sizeof(name));
+	strlcpy(message, Info_ValueForKey(payload, "message"), sizeof(message));
+	strlcpy(port, Info_ValueForKey(payload, "port"), sizeof(port));
+	strlcpy(players, Info_ValueForKey(payload, "players"), sizeof(players));
+	strlcpy(maxplayers, Info_ValueForKey(payload, "maxplayers"), sizeof(maxplayers));
 
 	if (strlen(name) == 0 || strlen(message) == 0)
 	{

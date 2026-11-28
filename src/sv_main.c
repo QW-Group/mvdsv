@@ -58,8 +58,6 @@ cvar_t	sys_restart_on_error = {"sys_restart_on_error", "0"};
 cvar_t  sv_mod_extensions = { "sv_mod_extensions", "2", CVAR_ROM };
 
 #ifdef SERVERONLY
-cvar_t  sys_simulation = { "sys_simulation", "0" };
-cvar_t	developer = {"developer", "0"};		// show extra messages
 cvar_t	version = {"version", "", CVAR_ROM};
 #endif
 
@@ -68,8 +66,8 @@ cvar_t	zombietime = {"zombietime", "2"};	// seconds to sink messages
 // after disconnect
 
 #ifdef SERVERONLY
-cvar_t	rcon_password = {"rcon_password", ""};	// password for remote server commands
-cvar_t	password = {"password", ""};	// password for entering the game
+cvar_t	rcon_password = {"rcon_password", "", CVAR_NOTFROMSERVER | CVAR_NOUNSAFEEXPAND};	// password for remote server commands
+cvar_t	password = {"password", "", CVAR_NOTFROMSERVER | CVAR_NOUNSAFEEXPAND};	// password for entering the game
 #else
 // client already have such variables.
 extern cvar_t rcon_password;
@@ -96,11 +94,11 @@ void OnChange_qconsolelogsay_var (cvar_t *var, char *string, qbool *cancel);
 cvar_t	qconsole_log_say = {"qconsole_log_say", "0", 0, OnChange_qconsolelogsay_var};
 // logging "say" and "say_team" messages to the qconsole_PORT.log file
 
-cvar_t	sys_command_line = {"sys_command_line", "", CVAR_ROM};
+cvar_t	sys_command_line = {"sys_command_line", "", CVAR_ROM | CVAR_NOUNSAFEEXPAND};
 
 cvar_t	sv_use_dns = {"sv_use_dns", "0"}; // 1 - use DNS lookup in status command, 0 - don't use
-cvar_t	spectator_password = {"spectator_password", ""};	// password for entering as a sepctator
-cvar_t	vip_password = {"vip_password", ""};	// password for entering as a VIP sepctator
+cvar_t	spectator_password = {"spectator_password", "", CVAR_NOTFROMSERVER | CVAR_NOUNSAFEEXPAND};	// password for entering as a sepctator
+cvar_t	vip_password = {"vip_password", "", CVAR_NOTFROMSERVER | CVAR_NOUNSAFEEXPAND};	// password for entering as a VIP sepctator
 cvar_t	vip_values = {"vip_values", ""};
 
 cvar_t	allow_download = {"allow_download", "1"};
@@ -143,8 +141,15 @@ cvar_t	sv_serverip = {"sv_serverip", ""};
 cvar_t	sv_forcespec_onfull = {"sv_forcespec_onfull", "2"};
 cvar_t	sv_maxdownloadrate = {"sv_maxdownloadrate", "0"};
 cvar_t	sv_idlesleep = {"sv_idlesleep", "0"};
-cvar_t	sv_broadcast_enabled = {"sv_broadcast_enabled", "1", 0, SV_BroadcastEnabledOnChange};
-cvar_t	sv_broadcast_sender_validation_enabled = {"sv_broadcast_sender_validation_enabled", "1"};
+#ifdef SV_HAS_BROADCAST
+#ifdef SERVERONLY
+#define SV_BROADCAST_DEFAULT "1"
+#else
+#define SV_BROADCAST_DEFAULT "0"
+#endif
+cvar_t	sv_broadcast_enabled = {"sv_broadcast_enabled", SV_BROADCAST_DEFAULT, CVAR_NOTFROMSERVER, SV_BroadcastEnabledOnChange};
+cvar_t	sv_broadcast_sender_validation_enabled = {"sv_broadcast_sender_validation_enabled", "1", CVAR_NOTFROMSERVER};
+#endif
 
 cvar_t  sv_loadentfiles = {"sv_loadentfiles", "1"}; //loads .ent files by default if there
 cvar_t  sv_loadentfiles_dir = {"sv_loadentfiles_dir", ""}; // check for .ent file in maps/sv_loadentfiles_dir first then just maps/
@@ -237,7 +242,7 @@ cvar_t sv_pext_replacementdeltas = {"sv_pext_replacementdeltas", "0", CVAR_NONE,
 cvar_t sv_pext_ezquake_verfortrans = {"pext_ezquake_verfortrans", "7814", CVAR_NONE};
 #endif
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 cvar_t sv_csqc_progname = { "sv_csqc_progname", "csprogs.dat" };
 cvar_t sv_csqcdebug = { "sv_csqcdebug", "0", CVAR_NONE };
 #endif
@@ -270,6 +275,8 @@ void SV_Shutdown (char *finalmsg)
 {
 	int i;
 
+	SV_ClearPhysicsScratch();
+
 	if (!sv.state && !sv.max_edicts && !sv.edicts && !progs
 #ifdef USE_PR2
 		&& !sv_vm
@@ -296,7 +303,7 @@ void SV_Shutdown (char *finalmsg)
 		if (sv.mvdrecording)
 			SV_MVDStop_f();
 
-#ifndef SERVER_ONLY
+#ifndef SERVERONLY
 		NET_CloseServer ();
 #endif
 
@@ -305,6 +312,7 @@ void SV_Shutdown (char *finalmsg)
 #endif
 	}
 
+	SV_QTV_ShutdownReverse();
 	SV_ShutdownGame();
 
 	memset (&sv, 0, sizeof(sv));
@@ -336,29 +344,28 @@ void SV_Shutdown (char *finalmsg)
 SV_Error
 
 Sends a datagram to all the clients informing them of the server crash,
-then exits
+then stops the server
 ================
 */
 void SV_Error (char *error, ...)
 {
-	static qbool inerror = false;
 	static char string[1024];
 	va_list argptr;
 
 	sv_error = true;
 
-	if (inerror)
-		Sys_Error ("SV_Error: recursively entered (%s)", string);
-
-	inerror = true;
-
 	va_start (argptr, error);
 	vsnprintf (string, sizeof (string), error, argptr);
 	va_end (argptr);
 
+#ifdef SERVERONLY
+	Sys_Error("SV_Error: %s", string);
+#else
 	SV_Shutdown (va ("SV_Error: %s\n", string));
 
-	Sys_Error ("SV_Error: %s", string);
+	Host_EndGame();
+	Host_Error("SV_Error: %s", string);
+#endif
 }
 
 static void SV_FreeHeadDelayedPacket(client_t *cl) {
@@ -483,7 +490,7 @@ void SV_DropClient(client_t* drop)
 	drop->edict->v->frags = 0.0;
 	drop->name[0] = 0;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	drop->csqcactive = false;
 	if (drop->pendingcsqcbits)
 	{
@@ -493,7 +500,7 @@ void SV_DropClient(client_t* drop)
 	drop->max_net_ents = 0;
 	{
 		int si;
-		for (si = 0; si < MAX_CL_STATS; si++)
+		for (si = 0; si < MAX_SV_STATS; si++)
 			Q_free(drop->statss[si]);	// free cached string stats
 	}
 #endif
@@ -519,7 +526,6 @@ int SV_CalcPing (client_t *cl)
 	register client_frame_t *frame;
 	int count, i;
 	float ping;
-	char *botskill = NULL;
 
 
 	//bliP: 999 ping for connecting players
@@ -531,7 +537,7 @@ int SV_CalcPing (client_t *cl)
 	count = 0;
 #ifdef USE_PR2
 	if (cl->isBot) {
-		botskill = Info_Get(&cl->_userinfo_ctx_, "*skill");
+		const char *botskill = Info_Get(&cl->_userinfo_ctx_, "*skill");
 		return strlen(botskill) > 0 ? atoi(botskill) : 10;
 	}
 #endif
@@ -1544,10 +1550,12 @@ static void SVC_DirectConnect (void)
 
 	newcl->sendinfo = true;
 
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 	if ((s = Info_Get(&newcl->_userinfo_ctx_, "qul")) && *s == '1')
 	{
 		QTV_Client_UserList(newcl);
 	}
+#endif
 }
 
 static int char2int (int c)
@@ -2012,8 +2020,10 @@ static void SV_ConnectionlessPacket (void)
 		SVC_DemoListRegex ();
 	else if (!strcmp(c,"qtvusers"))
 		SVC_QTVUsers ();
+#ifdef SV_HAS_BROADCAST
 	else if (!strcmp(c,"broadcast"))
 		SVC_Broadcast ();
+#endif
 	else
 		Con_Printf ("bad connectionless packet from %s:\n%s\n"
 		            , NET_AdrToString (net_from), s);
@@ -2879,9 +2889,9 @@ static char *DecodeArgs(char *args)
 	return string;
 }
 
-void SV_Script_f (void)
+void SV_RunScript(const char *arg_prefix)
 {
-	char *path, *p;
+	char *path, *p, *args;
 	extern redirect_t sv_redirected;
 
 	if (Cmd_Argc() < 2)
@@ -2916,8 +2926,14 @@ void SV_Script_f (void)
 	if (sv_redirected != RD_MOD)
 		Sys_Printf("Running %s.qws\n", path);
 
-	Sys_Script(path, va("%d %s", sv_redirected, p));
+	args = Q_strdup_printf("%d %s%s", sv_redirected, arg_prefix, p);
+	Sys_Script(path, args);
+	Q_free(args);
+}
 
+void SV_Script_f (void)
+{
+	SV_RunScript("");
 }
 
 //============================================================================
@@ -3269,7 +3285,7 @@ static void SV_IdleSleep(void)
 			return;
 	}
 
-	Sys_Sleep((int)sv_idlesleep.value);
+	Sys_MSleep((int)sv_idlesleep.value);
 }
 
 #ifdef SERVERONLY
@@ -3415,7 +3431,7 @@ void SV_Frame (double time1)
 	// keep the random time dependent
 	rand ();
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// A mod that wrote into sv.multicast but did not call multicast() before its
 	// call returned left the buffer unflushed. Left alone it would be merged into
 	// the next multicast() from any source, possibly delivering a CSQC payload to
@@ -3513,7 +3529,9 @@ void SV_Frame (double time1)
 	if ((int)sv_idlesleep.value > 0)
 		SV_IdleSleep();
 
+#ifdef SV_HAS_BROADCAST
 	SV_BroadcastUpdateServerList(false);
+#endif
 }
 
 /*
@@ -3569,7 +3587,9 @@ void SV_InitLocal (void)
 
 	SV_InitOperatorCommands	();
 	SV_UserInit ();
+#ifdef SV_HAS_BROADCAST
 	SV_BroadcastInit ();
+#endif
 
 	Cvar_Register (&sv_getrealip);
 	Cvar_Register (&sv_maxdownloadrate);
@@ -3580,7 +3600,9 @@ void SV_InitLocal (void)
 #ifdef SERVERONLY
 	Cvar_Register (&rcon_password);
 	Cvar_Register (&password);
+#endif
 
+#ifdef SV_HAS_BROADCAST
 	Cvar_Register (&sv_broadcast_enabled);
 	Cvar_Register (&sv_broadcast_sender_validation_enabled);
 #endif
@@ -3716,7 +3738,16 @@ void SV_InitLocal (void)
 
 	Cvar_Register (&sv_extlimits);
 	Cvar_Register (&sv_maxedicts);
+	/* Registration may adopt an early +set value without calling OnChange. */
+	{
+		qbool invalid = false;
+		OnChange_maxedicts(&sv_maxedicts, sv_maxedicts.string, &invalid);
+		if (invalid) {
+			Cvar_Set(&sv_maxedicts, "2048");
+		}
+	}
 	Cvar_Register (&sv_pext_replacementdeltas);
+	OnChange_replacementdeltas(&sv_pext_replacementdeltas, sv_pext_replacementdeltas.string, NULL);
 #ifdef MVD_PEXT1_SERVERSIDEWEAPON
 	Cvar_Register (&sv_pext_mvdsv_serversideweapon);
 #endif
@@ -3747,7 +3778,7 @@ void SV_InitLocal (void)
 
 	Cvar_Register(&sv_mod_extensions);
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	Cvar_Register (&sv_csqc_progname);
 	Cvar_Register (&sv_csqcdebug);
 #endif
@@ -4051,16 +4082,17 @@ void OnChange_qconsolelogsay_var (cvar_t *var, char *value, qbool *cancel)
 	logs[CONSOLE_LOG].log_level = Q_atoi(value);
 }
 
-#ifdef SERVERONLY
-
-void COM_Init (void)
+const char *SV_GetAdvertisedGamedir(void)
 {
-	Cvar_Register (&developer);
-	Cvar_Register (&version);
-	Cvar_Register (&sys_simulation);
+	const char *gamedir = Info_ValueForKey(svs.info, "*gamedir");
 
-	Cvar_SetROM(&version, SERVER_NAME " " SERVER_VERSION);
+	if (*gamedir) {
+		return gamedir;
+	}
+	return *com_gamedirfile ? com_gamedirfile : "qw";
 }
+
+#ifdef SERVERONLY
 
 //Free hunk memory up to host_hunklevel
 //Can only be called when changing levels!
@@ -4095,6 +4127,17 @@ void Host_InitMemory (int memsize)
 	Memory_Init (Q_malloc(memsize), memsize);
 }
 
+void Host_Error(char *error, ...)
+{
+	va_list args;
+	char message[1024];
+
+	va_start(args, error);
+	vsnprintf(message, sizeof(message), error, args);
+	va_end(args);
+	SV_Error("%s", message);
+}
+
 void Host_Init (int argc, char **argv, int default_memsize)
 {
 	extern int		hunk_size;
@@ -4106,14 +4149,16 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	Host_InitMemory (default_memsize);
 
-	Con_Printf ("============= Starting %s =============\n", VersionStringFull());
-
 	Cbuf_Init ();
 	Cmd_Init ();
 	Cvar_Init ();
-	COM_Init ();
+	Con_Printf("Starting %s", VersionStringFull());
 
-	FS_Init ();
+	COM_Init ();
+	Cvar_Register(&version);
+	Cvar_SetROM(&version, SERVER_NAME " " SERVER_VERSION);
+
+	FS_InitFilesystem ();
 	NET_Init ();
 
 	Netchan_Init ();
@@ -4145,9 +4190,10 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	Con_Printf ("www authentication disabled (no curl support)\n");
 #endif
 
+	Info_SetValueForStarKey(svs.info, "*gamedir", com_gamedirfile, MAX_SERVERINFO_STRING);
 	Cbuf_InsertText ("exec server.cfg\n");
 
-	// process command line arguments
+	// Apply startup commands in argument order after server.cfg, as in MVDSV.
 	Cmd_StuffCmds_f ();
 	Cbuf_Execute ();
 
@@ -4155,14 +4201,13 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	SV_Map(true);
 
-	// if a map wasn't specified on the command line, spawn mvdsv-kg map
-	if (sv.state == ss_dead)
-	{
-		Cmd_ExecuteString ("map mvdsv-kg");
+#ifdef SV_PREFERRED_STARTMAP
+	if (sv.state == ss_dead) {
+		Cmd_ExecuteString("map " SV_PREFERRED_STARTMAP);
 		SV_Map(true);
 	}
-
-	// last resort - start map
+#endif
+	// Fall back to the start map if the server still has no active map.
 	if (sv.state == ss_dead)
 	{
 		Cmd_ExecuteString ("map start");
@@ -4171,13 +4216,6 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	if (sv.state == ss_dead)
 		SV_Error ("Couldn't spawn a server");
-
-#if defined (_WIN32) && !defined(_CONSOLE)
-	{
-		void SetWindowText_(char*);
-		SetWindowText_(va(SERVER_NAME ":%d - QuakeWorld server", NET_UDPSVPort()));
-	}
-#endif
 }
 
 #endif // SERVERONLY

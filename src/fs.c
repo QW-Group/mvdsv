@@ -59,7 +59,7 @@ VARIABLES
 static char		fs_basedir[MAX_OSPATH];		// c:/quake
 
 char			fs_gamedir[MAX_OSPATH];		// c:/quake/qw
-static char		fs_gamedirfile[MAX_QPATH];	// qw tf ctf and etc. In other words single dir name without path
+char			com_gamedirfile[MAX_QPATH];	// qw tf ctf and etc. In other words single dir name without path
 
 static searchpath_t	*fs_searchpaths = NULL;
 static searchpath_t	*fs_base_searchpaths = NULL;	// without gamedirs
@@ -425,9 +425,9 @@ static void FS_AddGameDirectory (char *dir, FS_Load_File_Types loadstuff)
 	searchpath_t *search;
 
 	if ((p = strrchr(dir, '/')))
-		strlcpy (fs_gamedirfile, ++p, sizeof (fs_gamedirfile));
+		strlcpy (com_gamedirfile, ++p, sizeof (com_gamedirfile));
 	else
-		strlcpy (fs_gamedirfile, dir, sizeof (fs_gamedirfile));
+		strlcpy (com_gamedirfile, dir, sizeof (com_gamedirfile));
 
 	strlcpy (fs_gamedir, dir, sizeof (fs_gamedir));
 
@@ -452,19 +452,35 @@ Sets the gamedir and path to a different directory.
 That is basically handy wrapper around FS_AddGameDirectory() for "gamedir" command.
 ============
 */
-void FS_SetGamedir (char *dir, qbool force)
+qbool FS_SetGamedir (char *dir, qbool force)
 {
-	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":")) 
-	{
-		Con_Printf ("Gamedir should be a single filename, not a path\n");
-		return;
+	char path[MAX_OSPATH];
+	int length;
+
+	if (dir == NULL || !dir[0]) {
+		dir = "qw";
 	}
 
-	if (!force && !strcmp(fs_gamedirfile, dir))
-		return;		// Still the same, unless we forced.
+	if (strlen(dir) >= sizeof(com_gamedirfile)) {
+		Con_Printf("Gamedir name too long (maximum %d bytes)\n", (int)sizeof(com_gamedirfile) - 1);
+		return false;
+	}
 
-	// FIXME: do we need it? since it will be set in FS_AddGameDirectory().
-	strlcpy (fs_gamedirfile, dir, sizeof(fs_gamedirfile));
+	if (strstr(dir, "..") || strchr(dir, '/') || strchr(dir, '\\') || strchr(dir, ':'))
+	{
+		Con_Printf ("Gamedir should be a single filename, not a path\n");
+		return false;
+	}
+
+	if (!force && !strcmp(com_gamedirfile, dir))
+		return true;		// Still the same, unless we forced.
+
+	length = snprintf(path, sizeof(path), "%s/%s", fs_basedir, dir);
+	// FS_AddGameDirectory appends a slash when mounting this directory.
+	if (length < 0 || length >= (int)sizeof(path) - 1) {
+		Con_Printf("Gamedir path too long: %s/%s\n", fs_basedir, dir);
+		return false;
+	}
 
 	// Free up any current game dir info.
 	FS_FlushFSHash();
@@ -487,10 +503,8 @@ void FS_SetGamedir (char *dir, qbool force)
 // well, mvdsv does not use cache anyway.
 //	Cache_Flush ();
 
-	// FIXME: do we need it? since it will be set in FS_AddGameDirectory().
-	snprintf (fs_gamedir, sizeof (fs_gamedir), "%s/%s", fs_basedir, dir);
-
-	FS_AddGameDirectory(va("%s/%s", fs_basedir, dir), FS_LOAD_FILE_ALL);
+	FS_AddGameDirectory(path, FS_LOAD_FILE_ALL);
+	return true;
 }
 
 
@@ -556,9 +570,10 @@ void FS_InitEx(void)
 		i = COM_CheckParm ("+gamedir");
 	if (i && i < COM_Argc() - 1)
 	{
-		FS_SetGamedir (COM_Argv(i + 1), true);
-		// FIXME: move in FS_SetGamedir() instead!!!
-		Info_SetValueForStarKey (svs.info, "*gamedir", COM_Argv(i + 1), MAX_SERVERINFO_STRING);
+		if (!FS_SetGamedir(COM_Argv(i + 1), true)) {
+			Sys_Error("Invalid game directory for %s: %s", COM_Argv(i), COM_Argv(i + 1));
+		}
+		Info_SetValueForStarKey (svs.info, "*gamedir", com_gamedirfile, MAX_SERVERINFO_STRING);
 	}
 }
 
@@ -568,7 +583,7 @@ FS_Init
 
 ================
 */
-void FS_Init( void )
+void FS_InitFilesystem( void )
 {
 	FS_InitModule(); // init commands and variables.
 	FS_InitEx();
@@ -599,7 +614,7 @@ void FS_ShutDown( void )
 	fs_base_searchpaths = fs_searchpaths = NULL;
 
 	fs_gamedir[0]		= 0;
-	fs_gamedirfile[0]	= 0;
+	com_gamedirfile[0]	= 0;
 
 	fs_basedir[0]		= 0;
 
@@ -608,6 +623,59 @@ void FS_ShutDown( void )
 //qbool				filesystemchanged = true;
 //int				fs_hash_dups = 0;
 //int				fs_hash_files = 0;
+}
+
+static qbool FS_WriteTargetIsIndexed(const char *fullname, const char *filename)
+{
+	const bucket_t *entry;
+	searchpath_t *search;
+	size_t directory_length;
+
+	if (!fs_cache.value || filesystemchanged || !filesystemhash) {
+		return false;
+	}
+
+	// A case-insensitive match can still be a different file on disk.
+	entry = Hash_GetInsensitiveBucket(filesystemhash, filename);
+	if (!entry || strcmp(entry->keystring, filename)) {
+		return false;
+	}
+
+	// fullname was formed by joining the write directory and filename with a slash.
+	directory_length = strlen(fullname) - strlen(filename) - 1;
+	for (search = fs_searchpaths; search; search = search->next) {
+		if (search->funcs == &osfilefuncs && search->handle == entry->data) {
+			const char *directory = search->handle;
+			size_t length = strlen(directory);
+
+			if (length && directory[length - 1] == '/') {
+				length--;
+			}
+			return length == directory_length && !strncmp(directory, fullname, length);
+		}
+	}
+	return false;
+}
+
+static vfsfile_t *FS_OpenGameOS(const char *filename, char *mode)
+{
+	char fullname[MAX_OSPATH];
+	vfsfile_t *vfs;
+	int length = snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, com_gamedirfile, filename);
+
+	if (length < 0 || (size_t)length >= sizeof(fullname))
+		return NULL;
+
+	vfs = VFSOS_Open(fullname, mode);
+	if (mode[0] != 'r') {
+		if (!vfs) {
+			FS_CreatePath(fullname);
+			vfs = VFSOS_Open(fullname, mode);
+		}
+		if (vfs && !FS_WriteTargetIsIndexed(fullname, filename))
+			filesystemchanged = true;
+	}
+	return vfs;
 }
 
 /*
@@ -641,14 +709,11 @@ vfsfile_t *FS_OpenVFS(const char *filename, char *mode, relativeto_t relativeto)
 		snprintf(fullname, sizeof(fullname), "%s", filename);
 		return VFSOS_Open(fullname, mode);
 
-	case FS_GAME_OS:	//OS access only, no paks
-		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, fs_gamedirfile, filename);
-		if (strchr(mode, 'w') || strchr(mode, 'a'))
-			FS_CreatePath(fullname); // FIXME: It should be moved to VFSOS_Open() itself? 
-		return VFSOS_Open(fullname, mode);
+	case FS_GAME_OS:	// OS access only, no packs
+		return FS_OpenGameOS(filename, mode);
 
 	case FS_GAME:
-//		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, fs_gamedirfile, filename);
+//		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, com_gamedirfile, filename);
 
 		// That an error attempt to write with FS_GAME, since file can be in pack file. redirect.
 		if (strchr(mode, 'w') || strchr(mode, 'a'))
@@ -824,24 +889,30 @@ FS_FileBase
 
 ============
 */
-void FS_FileBase (char *in, char *out)
+void FS_FileBase (const char *in, char *out)
 {
-	char *begin, *end;
-	int len;
+	const char *start, *end;
+	int	length;
 
-	if (!(end = strrchr (in, '.')))
-		end = in + strlen (in);
+	if (!(end = strrchr(in, '.')))
+		end = in + strlen(in);
 
-	if (!(begin = strchr (in, '/')))
-		begin = in;
+	if (!(start = strrchr(in, '/')))
+		start = in;
 	else
-		begin++;
+		start += 1;
 
-	len = end - begin + 1;
-	if (len < 1)
-		strlcpy (out, "?model?", 8);
-	else
-		strlcpy (out, begin, min (len, MAX_OSPATH));
+	length = end - start;
+	if (length < 0)
+		strcpy (out, "?empty filename?");
+	else if (length == 0)
+		out[0] = 0;
+	else {
+		if (length > 31)
+			length = 31;
+		memcpy (out, start, length);
+		out[length] = 0;
+	}
 }
 
 /*
@@ -912,25 +983,16 @@ Filename are relative to the quake directory.
 Always appends a 0 byte to the loaded data.
 ============
 */
-static byte *FS_LoadFile (char *path, void *allocator, int *file_length)
+static byte *FS_LoadFile (const char *path, void *allocator, int *file_length)
 {
-	vfsfile_t *f = NULL;
+	vfsfile_t *f = FS_OpenVFS(path, "rb", FS_GAME);
 	vfserrno_t err;
-	flocation_t loc = {0};
 	byte *buf;
 	int len;
-
-	// Look for it in the filesystem or pack files.
-    FS_FLocateFile(path, FSLFRT_LENGTH, &loc);
-	if (loc.search)
-	{
-		f = loc.search->funcs->OpenVFS(loc.search->handle, &loc, "rb");
-	}
 
 	if (!f)
 		return NULL;
 
-	// FIXME: should we use loc.len instead?
 	len = VFS_GETLEN(f);
 	if (file_length)
 		*file_length = len;
@@ -972,12 +1034,12 @@ static byte *FS_LoadFile (char *path, void *allocator, int *file_length)
 	return buf;
 }
 
-byte *FS_LoadHunkFile (char *path, int *len)
+byte *FS_LoadGameHunkFile (const char *path, int *len)
 {
 	return FS_LoadFile (path, Hunk_AllocName, len);
 }
 
-byte *FS_LoadTempFile (char *path, int *len)
+byte *FS_LoadGameTempFile (const char *path, int *len)
 {
 	return FS_LoadFile (path, Hunk_TempAlloc, len);
 }

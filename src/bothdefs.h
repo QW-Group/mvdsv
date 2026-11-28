@@ -63,7 +63,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 // stats are integers communicated to the client by the server
 //
-#define	MAX_CL_STATS			256		// 0..31 engine-fixed, 32..255 CSQC (clientstat/pointerstat)
 #define	MAX_WIRE_STATS			32		// legacy stats stock clients understand (MVD/QTV default)
 #define	STAT_HEALTH				0
 //#define	STAT_FRAGS				1
@@ -171,6 +170,7 @@ typedef bool qbool;
 
 // not used anymore in mvdsv
 //#define	MAX_INFO_STRING			196
+#define	MAX_INFO_KEY		64
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
 #define	MAX_KEY_STRING			64
@@ -268,10 +268,12 @@ void	*Q_tryrealloc (void *ptr, size_t size);
 #define	Q_free(ptr)	if(ptr) { free(ptr); ptr = NULL; }
 
 char	*Q_strdup (const char *src);
+char	*Q_strdup_printf(const char *format, ...);
 
-char	*COM_StripExtension (char *str);
+void COM_StripExtension (const char *in, char *out, int out_size);
+unsigned int BuffLittleLong (const unsigned char *buffer);
 char	*COM_FileExtension (const char *in);
-void	COM_DefaultExtension (char *path, const char *extension);
+void	COM_DefaultExtension (char *path, const char *extension, size_t path_size);
 
 float	AdjustAngle(float current, float ideal, float fraction);
 

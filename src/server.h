@@ -26,8 +26,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pr2.h"
 #include "g_public.h"
 #endif
-#ifndef SERVERONLY
-#include "qtv.h"
+
+// The server can send CSQC stats in slots 32 through 255.
+#ifdef SV_HAS_CSQC
+#define MAX_SV_STATS 256
+#else
+#define MAX_SV_STATS MAX_WIRE_STATS
 #endif
 
 #define CHAT_ICON_EXPERIMENTAL 1
@@ -118,7 +122,7 @@ typedef struct
 	// the multicast buffer is used to send a message to a set of clients
 	sizebuf_t	multicast;
 	byte		multicast_buf[MAX_MSGLEN];
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// set when a mod's multicast starts with svc_fte_cgamepacket (the first
 	// byte of a fresh buffer); PF2_multicast then dispatches it through
 	// SV_CSQCMulticast so only CSQC clients receive it. Cleared on every
@@ -139,12 +143,12 @@ typedef struct
 
 	entity_state_t static_entities[MAX_STATIC_ENTITIES];
 	int            static_entity_count;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	unsigned int	csqcchecksum;
 #endif
 } server_t;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 
 #define MSG_CSQC		5		// for csqc (pr2_cmds.c WriteDest2)
 
@@ -240,7 +244,7 @@ typedef struct
 
 	sv_packet_entities_t	entities;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// outgoing sequence this frame was built for (0 if unused); lets
 	// SV_CSQC_DroppedPacket skip stale slots (FTE checks frame->sequence).
 	int				sequence;
@@ -344,11 +348,11 @@ typedef struct client_s
 	// client known data for deltas
 	int				old_frags;
 
-	int				stats[MAX_CL_STATS];
+	int				stats[MAX_SV_STATS];
 
-#ifdef FTE_PEXT_CSQC
-	float			statsf[MAX_CL_STATS];	// last emitted float stat value
-	char			*statss[MAX_CL_STATS];	// last emitted string stat (host copy, Q_strdup)
+#ifdef SV_HAS_CSQC
+	float			statsf[MAX_SV_STATS];	// last emitted float stat value
+	char			*statss[MAX_SV_STATS];	// last emitted string stat (host copy, Q_strdup)
 #endif
 
 	double			lastservertimeupdate;		// last realtime we sent STAT_TIME to the client
@@ -440,7 +444,7 @@ typedef struct client_s
 	} voice_target;
 #endif
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	qbool			csqcactive;
 	uint64_t		*pendingcsqcbits;	// per-entity CSQC delta bits, size max_net_ents
 	int				max_net_ents;		// actual size of pendingcsqcbits
@@ -494,7 +498,7 @@ typedef struct client_s
 	} safestrafe;
 } client_t;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 // sv_ents.c
 void SV_ProcessSendFlags (client_t *c);
 void SV_CleanupEnts (void);
@@ -552,7 +556,7 @@ typedef struct
 typedef struct mvdpendingdest_s
 {
 	qbool error; //disables writers, quit ASAP.
-	int socket;
+	socket_t socket;
 
 	char inbuffer[2048];
 	char outbuffer[2048];
@@ -584,8 +588,9 @@ typedef struct mvddest_s
 	socket_t socket;
 	FILE *file;
 
-	char name[MAX_QPATH];
-	char path[MAX_QPATH];
+	char *record_path; // owns the path used to open the MVD file
+	const char *record_relpath; // points into record_path after the game directory
+	char *name; // basename within record_path
 
 	char *cache;
 	int cacheused; // queued cache bytes
@@ -635,12 +640,12 @@ typedef struct
 
 	qbool			fixangle[MAX_CLIENTS];
 
-	int				stats[MAX_CLIENTS][MAX_CL_STATS];
+	int				stats[MAX_CLIENTS][MAX_SV_STATS];
 	qbool			resend_player_stats[MAX_CLIENTS]; // A new occupant or role needs full HUD stats.
 
-#ifdef FTE_PEXT_CSQC
-	float			statsf[MAX_CLIENTS][MAX_CL_STATS];
-	char			*statss[MAX_CLIENTS][MAX_CL_STATS];
+#ifdef SV_HAS_CSQC
+	float			statsf[MAX_CLIENTS][MAX_SV_STATS];
+	char			*statss[MAX_CLIENTS][MAX_SV_STATS];
 #endif
 
 	int				parsecount;  // current frame, to which we add demo data
@@ -694,7 +699,7 @@ typedef struct
 // TCPCONNECT -->
 typedef struct svtcpstream_s
 {
-	int                     socketnum;                         // socket
+	socket_t                socketnum;                         // socket
 	qbool                   waitingforprotocolconfirmation;    // wait for "qizmo\n", first 6 bytes before confirming that is tcpconnection
 	int                     inlen;                             // how much bytes we have in inbuffer
 	char                    inbuffer[1500];                    // recv buffer
@@ -868,6 +873,9 @@ extern	char		localmodels[MAX_MODELS][MODEL_NAME_LEN]; // inline model names for 
 extern  ctxinfo_t _localinfo_;
 
 extern	qbool		sv_error;
+#ifdef SERVERONLY
+extern cvar_t sys_restart_on_error;
+#endif
 
 extern char			master_rcon_password[128];
 
@@ -915,7 +923,7 @@ void SV_Frame (double time);
 void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 // sv_ents.c - CSQC loss recovery (FTE SV_AckEntityFrame / SV_CSQC_DroppedPacket)
 void SV_AckEntityFrame (client_t *client, int framenum);
 void SV_CSQC_DroppedPacket (client_t *client, int sequence);
@@ -975,6 +983,7 @@ void SV_SendBan (void);
 qbool GameStarted(void);
 //<-
 void SV_Script_f (void);
+void SV_RunScript(const char *arg_prefix);
 int SV_GenerateUserID (void);
 
 //
@@ -1013,7 +1022,7 @@ qbool SV_AddToRedirect(char *msg);
 
 void SV_Multicast(vec3_t origin, int to);
 void SV_MulticastEx(vec3_t origin, int to, const char *cl_reliable_key);
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 // dispatch a mod's CSQC multicast (svc_fte_cgamepacket) to CSQC clients only
 void SV_CSQCMulticast(vec3_t origin, int to);
 #endif
@@ -1030,8 +1039,6 @@ int SV_AmbientSoundIndex(const char *sample);
 /* Write a complete static sound record using the current coordinate format. */
 void SV_WriteStaticSound(sizebuf_t *msg, const float origin[3], int sound_id,
                          int volume, int attenuation);
-qbool SV_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
-                            int count, int cursor, int limit, int *next);
 void SV_StartSound(edict_t *entity, int channel, char *sample, int volume, float attenuation);
 void SV_ClientPrintf(client_t *cl, int level, char *fmt, ...);
 void SV_ClientPrintf2(client_t *cl, int level, char *fmt, ...);
@@ -1149,7 +1156,8 @@ void SV_MVD_FlushCurrentFrame(void);
 qbool SV_MVD_WriteRDMessage(sizebuf_t *msg, qbool initial);
 
 mvddest_t	*DestByName (char *name);
-void		DestClose (mvddest_t *d, qbool destroyfiles);
+qbool		DestClose (mvddest_t *d, qbool destroyfiles);
+const char *SV_GetAdvertisedGamedir(void);
 
 int DemoWriteDest (void *data, int len, mvddest_t *d);
 
@@ -1184,7 +1192,7 @@ char *SV_MVDNum(int num);
 //
 
 char	*SV_PrintTeams (void);
-void	Run_sv_demotxt_and_sv_onrecordfinish (const char *dest_name, const char *dest_path, qbool destroyfiles);
+void	SV_RunOnRecordFinish(char *relpath, qbool destroyfiles);
 qbool	SV_DirSizeCheck (void);
 char	*SV_CleanName (unsigned char *name);
 int     Dem_CountPlayers (void);
@@ -1218,12 +1226,15 @@ extern cvar_t	qtv_stream_max_queue_size;
 
 void SV_MVDStream_Poll(void);
 void SV_QTV_Init(void);
+void SV_QTV_ShutdownReverse(void);
 
 void DemoWriteQTV (sizebuf_t *msg);
 void QTVsv_FreeUserList(mvddest_t *d);
 void QTV_Streams_List (void);
 void QTV_Streams_UserList (void);
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 void QTV_Client_UserList (client_t *client);
+#endif
 const char* SV_MVDDemoName(void);
 
 //
@@ -1274,8 +1285,8 @@ double SV_ClientConnectedTime(client_t* client);    // real-world time passed
 double SV_ClientGameTime(client_t* client);         // affected by pause
 void SV_SetClientConnectionTime(client_t* client);
 
-#ifdef SERVERONLY
-// mvdsv not changed over to enums yet, which was more about documentation
+#ifndef EZQUAKE_CMDLINE_PARAMS_H
+// MVDSV looks up command-line parameters by name.
 #define SV_CommandLineEnableCheats() (COM_CheckParm("-cheats"))
 #define SV_CommandLineEnableLocalCommand() (COM_CheckParm("-enablelocalcommand"))
 #define SV_CommandLineDemoCacheArgument() (COM_CheckParm("-democache"))

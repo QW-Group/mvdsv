@@ -63,6 +63,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "cmd.h"
 #include "hash.h"
 #include "protocol.h"
+#ifdef FTE_PEXT_CSQC
+#define SV_HAS_CSQC
+#endif
 
 #include "common.h"
 #include "net.h"
@@ -76,12 +79,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sha1.h"
 #include "sha3.h"
 
+#define SV_HAS_LEGACY_QTV_VIEWERS
 #include "server.h"
 
 #include "sv_world.h"
 #include "pmove.h"
-#include "log.h"
+#include "sv_log.h"
 #include "sv_broadcast.h"
+#define SV_HAS_BROADCAST
+#ifndef _WIN32
+#define SV_POSIX_LEGACY_OPTIONS
+#endif
+#define SV_PREFERRED_STARTMAP "mvdsv-kg"
+#ifdef _WIN32
+#define SV_WINDOWS_MVDSV
+#ifndef _CONSOLE
+#define SV_WINDOWS_GUI
+#endif
+#endif
+
+// MVDSV has no client receiving cvar commands from a remote server.
+#define CVAR_NOTFROMSERVER CVAR_NONE
+#define CVAR_NOUNSAFEEXPAND CVAR_NONE
 
 #include "version.h"
 
@@ -103,7 +122,7 @@ extern	double	curtime; // not bounded or scaled, shared by local client and serv
 void SV_Error (char *error, ...);
 void SV_Init (void);
 void SV_Shutdown (char *finalmsg);
-#define Host_Error SV_Error // ezquake compatibility
+void Host_Error(char *error, ...);
 void Host_Init (int argc, char **argv, int default_memsize);
 void Host_ClearMemory (void);
 

@@ -35,6 +35,7 @@ set(SRC_COMMON
 	"${DIR_SRC}/build.c"
 	"${DIR_SRC}/cmd.c"
 	"${DIR_SRC}/cmodel.c"
+	"${DIR_SRC}/com_msg.c"
 	"${DIR_SRC}/common.c"
 	"${DIR_SRC}/crc.c"
 	"${DIR_SRC}/cvar.c"
@@ -83,7 +84,8 @@ set(SRC_COMMON
 # Check build target, and included sources
 if(UNIX)
 	list(APPEND SRC_COMMON
-		"${DIR_SRC}/sv_sys_unix.c"
+		"${DIR_SRC}/sv_sys_posix.c"
+		"${DIR_SRC}/sys_posix.c"
 	)
 	# Check for curl, and include sources and libs, if found
 	find_package(CURL)
@@ -97,6 +99,7 @@ if(UNIX)
 else()
 	list(APPEND SRC_COMMON
 		"${DIR_SRC}/sv_sys_win.c"
+		"${DIR_SRC}/sys_win_shared.c"
 		"${DIR_SRC}/sv_windows.c"
 		"${DIR_SRC}/winquake.rc"
 	)

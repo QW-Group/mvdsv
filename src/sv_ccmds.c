@@ -50,7 +50,10 @@ void SV_Quit (qbool restart)
 {
 	SV_Shutdown ("Server shutdown.\n");
 #ifdef SERVERONLY
-	Sys_Quit (restart);
+	if (restart) {
+		Sys_Restart();
+	}
+	Sys_Quit();
 #else
 	Host_Quit(); // will also call SV_Shutdown(), but it is not an issue.
 #endif
@@ -1677,12 +1680,6 @@ void SV_Gamedir_f (void)
 
 	dir = Cmd_Argv(1);
 
-	if (strstr(dir, "..") || strchr(dir, '/') || strchr(dir, '\\') || strchr(dir, ':') )
-	{
-		Con_Printf ("Gamedir should be a single filename, not a path\n");
-		return;
-	}
-
 #ifndef SERVERONLY
 	if (CL_ClientState())
 	{
@@ -1691,8 +1688,9 @@ void SV_Gamedir_f (void)
 	}
 #endif
 
-	FS_SetGamedir (dir, false);
-	Info_SetValueForStarKey (svs.info, "*gamedir", dir, MAX_SERVERINFO_STRING);
+	if (FS_SetGamedir(dir, false)) {
+		Info_SetValueForStarKey (svs.info, "*gamedir", dir, MAX_SERVERINFO_STRING);
+	}
 }
 
 /*
@@ -1830,7 +1828,9 @@ void SV_InitOperatorCommands (void)
 	for (i = MIN_LOG; i < MAX_LOG; ++i)
 		Cmd_AddCommand (logs[i].command, logs[i].function);
 
+#ifdef SERVERONLY
 	Cmd_AddCommand ("nslookup", SV_Nslookup_f);
+#endif
 	Cmd_AddCommand ("check_maps", SV_Check_maps_f);
 	Cmd_AddCommand ("snap", SV_Snap_f);
 	Cmd_AddCommand ("snapall", SV_SnapAll_f);
@@ -1840,10 +1840,12 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("status", SV_Status_f);
 	Cmd_AddCommand ("sv_status", SV_Status_f);
 
+#ifdef SERVERONLY
 	//bliP: init ->
 	Cmd_AddCommand ("rmdir", SV_RemoveDirectory_f);
 	Cmd_AddCommand ("rm", SV_RemoveFile_f);
 	Cmd_AddCommand ("ls", SV_ListFiles_f);
+#endif
 
 	Cmd_AddCommand ("mute", SV_Mute_f);
 	Cmd_AddCommand ("cuff", SV_Cuff_f);
@@ -1851,12 +1853,14 @@ void SV_InitOperatorCommands (void)
 	Cmd_AddCommand ("penaltylist", SV_ListPenalty_f);
 	Cmd_AddCommand ("penaltyremove", SV_RemovePenalty_f);
 
+#ifdef SERVERONLY
 #ifndef _WIN32
 	Cmd_AddCommand ("chmod", SV_ChmodFile_f);
 #endif //_WIN32
 	//<-
 	if (SV_CommandLineEnableLocalCommand())
 		Cmd_AddCommand ("localcommand", SV_LocalCommand_f);
+#endif
 
 	Cmd_AddCommand ("map", SV_Map_f);
 #ifdef SERVERONLY
@@ -1867,7 +1871,6 @@ void SV_InitOperatorCommands (void)
 	}
 #endif
 	Cmd_AddCommand ("setmaster", SV_SetMaster_f);
-	Cmd_AddCommand ("updatebroadcasts", SV_BroadcastUpdateServerList_f);
 
 	Cmd_AddCommand ("heartbeat", SV_Heartbeat_f);
 	Cmd_AddCommand ("save", SV_SaveGame_f); 

@@ -498,7 +498,7 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 
 		if (num_moved == MAX_LEGACY_EDICTS && !storage) {
 			/* Preserve this call's rollback before callbacks can reenter. */
-			storage = Q_malloc(sv.max_edicts * (sizeof(*moved_edict) + sizeof(*moved_from)));
+			storage = SV_AllocPhysicsScratch(sv.max_edicts * (sizeof(*moved_edict) + sizeof(*moved_from)));
 			moved_edict = storage;
 			moved_from = (vec3_t *)(moved_edict + sv.max_edicts);
 			memcpy(moved_edict, local_edict, sizeof(local_edict));
@@ -562,11 +562,11 @@ qbool SV_Push (edict_t *pusher, vec3_t move)
 			VectorCopy (moved_from[i], moved_edict[i]->v->origin);
 			SV_LinkEdict (moved_edict[i], false);
 		}
-		Q_free(storage);
+		SV_FreePhysicsScratch(storage);
 		return false;
 	}
 
-	Q_free(storage);
+	SV_FreePhysicsScratch(storage);
 	return true;
 }
 

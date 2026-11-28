@@ -599,15 +599,22 @@ char *Q_strdup (const char *src)
 COM_StripExtension
 ============
 */
-char *COM_StripExtension (char *str)
+void COM_StripExtension (const char *in, char *out, int out_size)
 {
-	char *p = strrchr(str, '.');
+	char *dot;
 
-    /* truncate extension */
-    if (p)
-        *p = '\0';
+	if (in != out)
+		strlcpy (out, in, out_size);
 
-    return str;
+	dot = strrchr (out, '.');
+	if (dot) {
+		*dot = 0;
+	}
+}
+
+unsigned int BuffLittleLong (const unsigned char *buffer)
+{
+	return ((unsigned int)buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | buffer[0];
 }
 
 /*
@@ -638,7 +645,7 @@ If path doesn't have a .EXT, append extension
 (extension should include the .)
 ==================
 */
-void COM_DefaultExtension (char *path, const char *extension)
+void COM_DefaultExtension (char *path, const char *extension, size_t path_size)
 {
 	char *src;
 
@@ -651,7 +658,7 @@ void COM_DefaultExtension (char *path, const char *extension)
 		src--;
 	}
 
-	strlcat (path, extension, MAX_OSPATH);
+	strlcat (path, extension, path_size);
 }
 
 //=====================================================
@@ -714,3 +721,22 @@ int wildcmp(char *wild, char *string)
 	return !*wild;
 }
 
+
+char *Q_strdup_printf(const char *format, ...)
+{
+	va_list args;
+	char *text;
+	int length;
+
+	va_start(args, format);
+	length = vsnprintf(NULL, 0, format, args);
+	va_end(args);
+	if (length < 0) {
+		Sys_Error("Q_strdup_printf: invalid format");
+	}
+	text = Q_malloc((size_t)length + 1);
+	va_start(args, format);
+	vsnprintf(text, (size_t)length + 1, format, args);
+	va_end(args);
+	return text;
+}

@@ -69,7 +69,7 @@ void PF_error (void)
 	ed = PROG_TO_EDICT(pr_global_struct->self);
 	ED_Print (ed);
 
-	SV_Error ("Program error");
+	SV_Error ("Program error (PF_error)");
 }
 
 /*
@@ -93,7 +93,7 @@ void PF_objerror (void)
 	ED_Print (ed);
 	ED_Free (ed);
 
-	SV_Error ("Program error");
+	SV_Error ("Program error (PF_objerror)");
 }
 
 
@@ -1127,6 +1127,7 @@ float cvar (string)
 void PF_cvar (void)
 {
 	char	*str;
+	cvar_t	*var;
 
 	str = G_STRING(OFS_PARM0);
 
@@ -1141,6 +1142,12 @@ void PF_cvar (void)
 	)
 	{
 		// workaround for NQ progs bug: timelimit and samelevel are checked in SP/coop
+		G_FLOAT(OFS_RETURN) = 0.0;
+		return;
+	}
+
+	var = Cvar_Find(str);
+	if (var && (var->flags & CVAR_NOUNSAFEEXPAND)) {
 		G_FLOAT(OFS_RETURN) = 0.0;
 		return;
 	}
@@ -1169,6 +1176,9 @@ void PF_cvar_set (void)
 		Con_Printf ("PF_cvar_set: variable %s not found\n", var_name);
 		return;
 	}
+
+	if (var->flags & CVAR_NOTFROMSERVER)
+		return;
 
 	Cvar_Set (var, val);
 }
@@ -2584,7 +2594,7 @@ static void PF_cvar_string (void)
 
 	str = G_STRING(OFS_PARM0);
 	var = Cvar_Find(str);
-	if (!var) {
+	if (!var || (var->flags & CVAR_NOUNSAFEEXPAND)) {
 		G_INT(OFS_RETURN) = 0;
 		return;
 	}

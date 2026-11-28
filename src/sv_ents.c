@@ -344,7 +344,7 @@ static edict_t *nails[MAX_NAILS];
 static int numnails;
 static int nailcount = 0;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 sizebuf_t csqcmsgbuffer;	// CSQC entity payload scratch buffer (per SendEntity call)
 #endif
 
@@ -908,7 +908,7 @@ static void SV_RD_BuildEntityState(rd_entity_state_t *state, edict_t *ent, int n
 SV_MVD_WritePlayersToClient
 =============
 */
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 static qbool SV_AddCSQCUpdate (client_t *client, edict_t *ent);
 #endif
 static void SV_MVD_WritePlayersToClient ( void )
@@ -931,7 +931,7 @@ static void SV_MVD_WritePlayersToClient ( void )
 
 		ent = cl->edict;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		// keep the recorder's CSQC PVS list complete: players are not visited by
 		// the entities loop (it starts at MAX_CLIENTS+1), so collect them here
 		// to avoid the CSQC remove pass dropping an existing player entity.
@@ -977,6 +977,15 @@ static void SV_MVD_WritePlayersToClient ( void )
 	}
 }
 
+static qbool SV_IgnorePVS(const edict_t *ent)
+{
+#ifdef SV_HAS_CSQC
+	return ((int)ent->xv.pvsflags & PVSF_MODE_MASK) == PVSF_IGNOREPVS;
+#else
+	return false;
+#endif
+}
+
 /*
 =============
 SV_PlayerVisibleToClient
@@ -994,7 +1003,7 @@ qbool SV_PlayerVisibleToClient (client_t* client, int j, byte* pvs, edict_t* sel
 		if (cl->spectator)
 			return false;
 
-		if (((int)ent->xv.pvsflags & PVSF_MODE_MASK) != PVSF_IGNOREPVS &&
+		if (!SV_IgnorePVS(ent) &&
 			pvs && ent->e.num_leafs >= 0) {
 			// ignore if not touching a PV leaf
 			for (i = 0; i < ent->e.num_leafs; i++) {
@@ -1011,7 +1020,7 @@ qbool SV_PlayerVisibleToClient (client_t* client, int j, byte* pvs, edict_t* sel
 	return true;
 }
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 // PVS-visible CSQC entities collected during one SV_WriteEntitiesToClient call
 // (ascending by entnum): the players loop appends client edicts, the PVS loop
 // appends the rest. SV_EmitCSQCUpdate walks this list so that only visible
@@ -1647,7 +1656,7 @@ static void SV_WritePlayersToClient (client_t *client, client_frame_t *frame, by
 			continue;
 		}
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		if (SV_AddCSQCUpdate(client, ent))
 			continue;
 #endif
@@ -1871,16 +1880,17 @@ qbool SV_EntityVisibleToClient (client_t* client, int e, byte* pvs)
 			return false;
 	}
 
-	// CSQC entities are exempt from the visible-model test: a SendEntity entity
-	// need not carry a model (beams, trails, HUD data carriers) and FTE sends
-	// it regardless. Everything else without a visible model is skipped.
-	if (!(ent->xv.sendentity && client->csqcactive) &&
+	// SendEntity can supply visible content without a model.
+	if (
+#ifdef SV_HAS_CSQC
+		!(ent->xv.sendentity && client->csqcactive) &&
+#endif
 		(!ent->v->modelindex || !*PR_GetEntityString(ent->v->model)))
 		return false;
 
 	// PVSF_IGNOREPVS entities are global (scoreboard/HUD/objectives): skip the
 	// PVS leaf test. PVSF_USEPHS is not implemented and falls back to PVS.
-	if (((int)ent->xv.pvsflags & PVSF_MODE_MASK) != PVSF_IGNOREPVS &&
+	if (!SV_IgnorePVS(ent) &&
 		pvs && ent->e.num_leafs >= 0 )
 	{
 		int i;
@@ -1956,7 +1966,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 	int position;
 	vec3_t org;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// lazily allocate the per-client CSQC delta bitset, but only for clients
 	// that actually run CSQC: a PR2 server with plain players must not pay for
 	// it. SV_EnableClientsCSQC arms it earlier on enablecsqc.
@@ -2090,7 +2100,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 				continue;
 			}
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 			if (SV_AddCSQCUpdate(client, ent))
 				continue;
 #endif
@@ -2191,7 +2201,7 @@ void SV_WriteEntitiesToClient (client_t *client, sizebuf_t *msg, qbool recorder)
 		msg->maxsize = max(msg->cursize, full_limit - datagram_bytes);
 	}
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// CSQC entity lump (delta-compressed), after the QW or RD entity stream.
 	// The sized (92) variant is only for live CSQC clients under sv_csqcdebug;
 	// recorded demos keep the plain (76) form so they play back elsewhere.
@@ -2219,7 +2229,7 @@ void SV_MVD_ClearRD(void)
 static void SV_MVD_CollectRD(void)
 {
 	int n;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	csqcnuments = 0;
 #endif
 	memset(demo.rd_current, 0, sv.max_edicts * sizeof(*demo.rd_current));
@@ -2231,7 +2241,7 @@ static void SV_MVD_CollectRD(void)
 			if (player->state != cs_spawned || player->spectator) {
 				continue;
 			}
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 			if (SV_AddCSQCUpdate(&demo.recorder, ent)) {
 				continue;
 			}
@@ -2248,7 +2258,7 @@ static void SV_MVD_CollectRD(void)
 			if (ent->e.free || !SV_EntityVisibleToClient(&demo.recorder, n, NULL)) {
 				continue;
 			}
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 			if (SV_AddCSQCUpdate(&demo.recorder, ent)) {
 				continue;
 			}
@@ -2334,7 +2344,7 @@ qbool SV_MVD_WriteRDEntities(qbool initial)
 	 * its first delta. Later destination snapshots must not replace that base. */
 	if (first_snapshot)
 		memcpy(demo.rd_previous, demo.rd_current, sv.max_edicts * sizeof(*demo.rd_previous));
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	/* Initial destinations receive the shared CSQC resend on the next frame,
 	 * just as legacy recording does, without consuming other destinations' state. */
 	if (!initial && demo.recorder.csqcactive) {

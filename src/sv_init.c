@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef SERVERONLY
 void CL_ClearState(void);
 void CL_ClearQueuedPackets(void);
+unsigned int CL_SupportedFTEExtensions2(void);
 #endif
 
 server_static_t	svs;				// persistent server info
@@ -187,7 +188,7 @@ static unsigned SV_CheckModel(char *mdl)
 	int mark;
 
 	mark = Hunk_LowMark ();
-	buf = (byte *) FS_LoadHunkFile (mdl, &filesize);
+	buf = (byte *) FS_LoadGameHunkFile (mdl, &filesize);
 	if (!buf)
 	{
 		if (!strcmp (mdl, "progs/player.mdl"))
@@ -206,7 +207,7 @@ static unsigned SV_CheckModel(char *mdl)
 	return crc;
 }
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 // CSQC is only meaningful for a PR2 mod (native/QVM). A PR1 classic progs.dat
 // cannot drive CSQC, so with it loaded we must not load/announce csprogs and
 // must not advertise FTE_PEXT_CSQC to clients.
@@ -231,7 +232,7 @@ static void SV_LoadCSQC(void)
 
 	// "no csprogs" state (checksum 0 + empty star keys) covers both the PR1
 	// (no CSQC at all) and the missing-csprogs-file cases; set it in one place.
-	if (!SV_CSQCActive() || !(file = FS_LoadTempFile(sv_csqc_progname.string, &size)))
+	if (!SV_CSQCActive() || !(file = FS_LoadGameTempFile(sv_csqc_progname.string, &size)))
 	{
 		sv.csqcchecksum = 0;
 		Info_SetValueForStarKey(svs.info, "*csprogs", "", MAX_SERVERINFO_STRING);
@@ -341,7 +342,7 @@ void SV_ShutdownGame(void)
 		Q_free(sv.edicts);
 	}
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	SV_FreeCSQCList();
 #endif
 
@@ -351,7 +352,7 @@ void SV_ShutdownGame(void)
 	{
 		SV_ClearEntityHistory(&svs.clients[i]);
 		svs.clients[i].edict = NULL;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		/* Each map must enable CSQC again. Keep negotiated capabilities so CSQC
 		 * can resume after switching from PR2 to PR1 and back. */
 		svs.clients[i].csqcactive = false;
@@ -387,6 +388,8 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 	char oldmap[MAP_NAME_LEN];
 	extern qbool	sv_allow_cheats;
 	extern cvar_t	sv_cheats, sv_paused, sv_bigcoords;
+
+	sv_error = false;
 
 	// store old map name
 	snprintf (oldmap, MAP_NAME_LEN, "%s", sv.mapname);
@@ -518,7 +521,7 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 #endif
 	PR_InitProg();
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// after progs are loaded we know whether the mod is PR2 (CSQC-capable) or
 	// PR1 (.dat, no CSQC); recompute the advertised extension and csprogs keys.
 	SV_UpdateCSQCExtension();
@@ -739,14 +742,14 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 		if (sv_loadentfiles_dir.string[0])
 		{
 			snprintf(ent_path, sizeof(ent_path), "maps/%s/%s.ent", sv_loadentfiles_dir.string, entityfile);
-			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
+			entitystring = (char *) FS_LoadGameHunkFile(ent_path, NULL);
 		}
 
 		// try maps/ if not loaded yet.
 		if (!entitystring)
 		{
 			snprintf(ent_path, sizeof(ent_path), "maps/%s.ent", entityfile);
-			entitystring = (char *) FS_LoadHunkFile(ent_path, NULL);
+			entitystring = (char *) FS_LoadGameHunkFile(ent_path, NULL);
 		}
 
 		if (entitystring) {
@@ -767,6 +770,14 @@ void SV_SpawnServer(char *mapname, qbool devmap, char* entityfile, qbool loading
 	for (i = 0; i < MAX_CLIENTS; ++i) {
 		client_t *client = &svs.clients[i];
 
+#ifndef SERVERONLY
+		/* A loopback client shares this process: select its supported RD codec
+		 * for new map serverdata without disconnecting the listen server. */
+		if (client->state >= cs_preconnected && SV_EntityCapacityRequiresRD()
+			&& client->netchan.remote_address.type == NA_LOOPBACK) {
+			client->fteprotocolextensions2 |= CL_SupportedFTEExtensions2() & FTE_PEXT2_REPLACEMENTDELTAS;
+		}
+#endif
 		/* Unsettled pext clients are checked by signon after negotiation. */
 		if (client->state >= cs_preconnected && !client->process_pext) {
 			SV_CheckClientMapSupport(client);

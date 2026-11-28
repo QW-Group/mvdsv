@@ -77,8 +77,10 @@ void MSG_WriteString (sizebuf_t *sb, const char *s);
 void MSG_WriteCoord (sizebuf_t *sb, const float f);
 void MSG_WriteAngle (sizebuf_t *sb, const float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, const float f);
+qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+                            int count, int cursor, int limit, int *next);
 void MSG_WriteLongCoord (sizebuf_t* sb, float f);
-void MSG_WriteDeltaUsercmd (sizebuf_t *sb, const struct usercmd_s *from, const struct usercmd_s *cmd, unsigned int mvdsv_extensions);
+int MSG_WriteDeltaUsercmd (sizebuf_t *sb, const struct usercmd_s *from, const struct usercmd_s *cmd, unsigned int mvdsv_extensions);
 
 extern int msg_readcount;
 extern qbool msg_badread; // set if a read goes beyond end of message
@@ -96,7 +98,7 @@ char *MSG_ReadStringLine (void);
 float MSG_ReadCoord (void);
 float MSG_ReadAngle (void);
 float MSG_ReadAngle16 (void);
-void MSG_ReadDeltaUsercmd (const struct usercmd_s *from, struct usercmd_s *cmd);
+void MSG_ReadDeltaUsercmd (const struct usercmd_s *from, struct usercmd_s *cmd, int protoversion);
 
 void MSG_ReadData (void *data, int len);
 void MSG_ReadSkip(int bytes);
@@ -142,6 +144,7 @@ char *COM_Argv (int arg); // range and null checked
 int COM_Argc (void);
 
 void COM_InitArgv (int argc, char **argv);
+void COM_Init(void);
 
 //============================================================
 // Alternative variant manipulation with info strings
