@@ -16,16 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+    $Id: com_msg.c,v 1.6 2006-07-24 15:13:28 disconn3ct Exp $
 */
+
+#ifdef SERVERONLY
 #include "qwsvdef.h"
+#else
+#include "quakedef.h"
+#endif
 
 /*
 ==============================================================================
-
-			MESSAGE IO FUNCTIONS
-
-Handles byte ordering and avoids alignment errors
+                          MESSAGE IO FUNCTIONS
 ==============================================================================
+Handles byte ordering and avoids alignment errors
 */
 
 #ifdef FTE_PEXT_FLOATCOORDS
@@ -42,7 +46,7 @@ float MSG_FromCoord(coorddata c, int bytes)
 	case 4:
 		return LittleFloat(c.f);
 	default:
-		Sys_Error("MSG_FromCoord: not a sane size");
+		Host_Error("MSG_FromCoord: not a sane size");
 		return 0;
 	}
 }
@@ -63,7 +67,7 @@ coorddata MSG_ToCoord(float f, int bytes)	//return value should be treated as (c
 		r.f = LittleFloat(f);
 		break;
 	default:
-		Sys_Error("MSG_ToCoord: not a sane size");
+		Host_Error("MSG_ToCoord: not a sane size");
 		r.b4 = 0;
 	}
 
@@ -93,7 +97,7 @@ coorddata MSG_ToAngle(float f, int bytes)	//return value is NOT byteswapped.
 //		r.f = LittleFloat(f);
 //		break;
 	default:
-		Sys_Error("MSG_ToAngle: not a sane size");
+		Host_Error("MSG_ToAngle: not a sane size");
 		r.b4 = 0;
 	}
 
@@ -102,9 +106,58 @@ coorddata MSG_ToAngle(float f, int bytes)	//return value is NOT byteswapped.
 
 #endif
 
-// writing functions
+/* Encode a bounded catalog chunk; zero continuation is reserved for completion.
+ * The caller supplies entries 1..count and slot 0 remains reserved. */
+qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+                            int count, int cursor, int limit, int *next)
+{
+	int end, size, index;
 
-void MSG_WriteChar (sizebuf_t *sb, const int c)
+	if (count < 0 || count > 65535 || cursor < 0 || cursor > count) {
+		return false;
+	}
+	limit = min(limit, msg->maxsize);
+	/* Opcode, cursor, empty string and continuation; preflight before writing. */
+	size = msg->cursize + (cursor > 255 ? 5 : 4);
+	if (size > limit) {
+		return false;
+	}
+	end = cursor;
+	while (end < count) {
+		size_t length = strlen(sounds[end + 1]) + 1;
+
+		if (length > (size_t)(limit - size)) {
+			break;
+		}
+		size += (int)length;
+		++end;
+	}
+	/* Zero is reserved for completion. Never publish a non-final 256 boundary. */
+	if (end < count && !(end & 255)) {
+		--end;
+	}
+	if (end < cursor || (end == cursor && cursor < count)) {
+		return false;
+	}
+
+	MSG_WriteByte(msg, cursor > 255 ? svc_fte_soundlistshort : svc_soundlist);
+	if (cursor > 255) {
+		MSG_WriteShort(msg, cursor);
+	}
+	else {
+		MSG_WriteByte(msg, cursor);
+	}
+	for (index = cursor + 1; index <= end; ++index) {
+		MSG_WriteString(msg, sounds[index]);
+	}
+	MSG_WriteByte(msg, 0);
+	MSG_WriteByte(msg, end < count ? end & 255 : 0);
+	*next = end < count ? end : 0;
+	return true;
+}
+
+// writing functions
+void MSG_WriteChar (sizebuf_t *sb, int c)
 {
 	byte *buf;
 
@@ -113,11 +166,11 @@ void MSG_WriteChar (sizebuf_t *sb, const int c)
 		Sys_Error ("MSG_WriteChar: range error");
 #endif
 
-	buf = (byte *) SZ_GetSpace (sb, 1);
+	buf = SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
 
-void MSG_WriteByte (sizebuf_t *sb, const int c)
+void MSG_WriteByte (sizebuf_t *sb, int c)
 {
 	byte *buf;
 
@@ -126,11 +179,11 @@ void MSG_WriteByte (sizebuf_t *sb, const int c)
 		Sys_Error ("MSG_WriteByte: range error");
 #endif
 
-	buf = (byte *) SZ_GetSpace (sb, 1);
+	buf = SZ_GetSpace (sb, 1);
 	buf[0] = c;
 }
 
-void MSG_WriteShort (sizebuf_t *sb, const int c)
+void MSG_WriteShort (sizebuf_t *sb, int c)
 {
 	byte *buf;
 
@@ -139,30 +192,28 @@ void MSG_WriteShort (sizebuf_t *sb, const int c)
 		Sys_Error ("MSG_WriteShort: range error");
 #endif
 
-	buf = (byte *) SZ_GetSpace (sb, 2);
-	buf[0] = c&0xff;
-	buf[1] = c>>8;
+	buf = SZ_GetSpace (sb, 2);
+	buf[0] = c & 0xff;
+	buf[1] = c >> 8;
 }
 
-void MSG_WriteLong (sizebuf_t *sb, const int c)
+void MSG_WriteLong (sizebuf_t *sb, int c)
 {
 	byte *buf;
 
-	buf = (byte *) SZ_GetSpace (sb, 4);
-	buf[0] = c&0xff;
-	buf[1] = (c>>8)&0xff;
-	buf[2] = (c>>16)&0xff;
-	buf[3] = c>>24;
+	buf = SZ_GetSpace (sb, 4);
+	buf[0] = c & 0xff;
+	buf[1] = (c >> 8) & 0xff;
+	buf[2] = (c >> 16) & 0xff;
+	buf[3] = c >> 24;
 }
 
-void MSG_WriteFloat (sizebuf_t *sb, const float f)
+void MSG_WriteFloat (sizebuf_t *sb, float f)
 {
-	union
-	{
-		float f;
-		int l;
+	union {
+		float	f;
+		int	l;
 	} dat;
-
 
 	dat.f = f;
 	dat.l = LittleLong (dat.l);
@@ -178,7 +229,15 @@ void MSG_WriteString (sizebuf_t *sb, const char *s)
 		SZ_Write (sb, s, strlen(s)+1);
 }
 
-void MSG_WriteCoord (sizebuf_t *sb, const float f)
+#ifndef SERVERONLY
+void MSG_WriteUnterminatedString (sizebuf_t *sb, char *s)
+{
+	if (s && *s)
+		SZ_Write (sb, s, strlen(s));
+}
+#endif
+
+void MSG_WriteCoord (sizebuf_t *sb, float f)
 {
 #ifdef FTE_PEXT_FLOATCOORDS
 	coorddata i = MSG_ToCoord(f, msg_coordsize);
@@ -188,14 +247,12 @@ void MSG_WriteCoord (sizebuf_t *sb, const float f)
 #endif
 }
 
-void MSG_WriteLongCoord(sizebuf_t* sb, float f)
+void MSG_WriteAngle16 (sizebuf_t *sb, float f)
 {
-	f = LittleFloat(f);
-
-	SZ_Write (sb, (void*)&f, sizeof(f));
+	MSG_WriteShort (sb, Q_rint(f * 65536.0 / 360.0) & 65535);
 }
 
-void MSG_WriteAngle (sizebuf_t *sb, const float f)
+void MSG_WriteAngle (sizebuf_t *sb, float f)
 {
 #ifdef FTE_PEXT_FLOATCOORDS
 	if (msg_anglesize == 2)
@@ -207,12 +264,7 @@ void MSG_WriteAngle (sizebuf_t *sb, const float f)
 		MSG_WriteByte (sb, Q_rint(f * 256.0 / 360.0) & 255);
 }
 
-void MSG_WriteAngle16 (sizebuf_t *sb, const float f)
-{
-	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
-}
-
-void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd, unsigned int mvdsv_extensions)
+int MSG_WriteDeltaUsercmd(sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd, unsigned int mvdsv_extensions)
 {
 	int bits;
 
@@ -253,14 +305,239 @@ void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd
 
 	if (bits & CM_BUTTONS)
 		MSG_WriteByte (buf, cmd->buttons);
-	if (bits & CM_IMPULSE)
-		MSG_WriteByte (buf, cmd->impulse);
-
+	if (bits & CM_IMPULSE) {
+		MSG_WriteByte(buf, cmd->impulse);
+	}
 	MSG_WriteByte (buf, cmd->msec);
+
+	return bits;
 }
 
+#ifndef SERVERONLY
+//Writes part of a packetentities message.
+//Can delta from either a baseline or a previous packet_entity
+void MSG_WriteDeltaEntity (entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbool force, unsigned int fte_extensions, unsigned int mvdsv_extensions)
+{
+	int bits, i;
+#ifdef PROTOCOL_VERSION_FTE
+	int evenmorebits = 0;
+	unsigned int required_extensions = 0;
+#endif
 
-// reading functions
+	// send an update
+	bits = 0;
+
+	for (i=0 ; i<3 ; i++)
+		if ( to->origin[i] != from->origin[i] )
+			bits |= U_ORIGIN1<<i;
+
+	if ( to->angles[0] != from->angles[0] )
+		bits |= U_ANGLE1;
+
+	if ( to->angles[1] != from->angles[1] )
+		bits |= U_ANGLE2;
+
+	if ( to->angles[2] != from->angles[2] )
+		bits |= U_ANGLE3;
+
+	if ( to->colormap != from->colormap )
+		bits |= U_COLORMAP;
+
+	if ( to->skinnum != from->skinnum )
+		bits |= U_SKIN;
+
+	if ( to->frame != from->frame )
+		bits |= U_FRAME;
+
+	if ( to->effects != from->effects )
+		bits |= U_EFFECTS;
+
+	if (to->modelindex != from->modelindex) {
+		bits |= U_MODEL;
+#ifdef FTE_PEXT_ENTITYDBL
+		if (to->modelindex > 255) {
+			if (to->modelindex >= 512) {
+				bits &= ~U_MODEL;
+			}
+			evenmorebits |= U_FTE_MODELDBL;
+			required_extensions |= FTE_PEXT_MODELDBL;
+		}
+#endif
+	}
+
+	if (bits & U_CHECKMOREBITS)
+		bits |= U_MOREBITS;
+
+	if (to->flags & U_SOLID)
+		bits |= U_SOLID;
+
+	// Taken from FTE
+	if (msg->cursize + 40 > msg->maxsize && !msg->overflow_handler)
+	{
+		//not enough space in the buffer, don't send the entity this frame. (not sending means nothing changes, and it takes no bytes!!)
+		int oldnum = to->number;
+		*to = *from;
+		if (oldnum && !from->number) {
+			to->number = oldnum;
+		}
+		return;
+	}
+
+	//
+	// write the message
+	//
+	if (!to->number) {
+		Sys_Error("Unset entity number");
+	}
+
+#ifdef PROTOCOL_VERSION_FTE
+	if (to->number >= 512)
+	{
+		if (to->number >= 1024)
+		{
+			if (to->number >= 1024 + 512) {
+				evenmorebits |= U_FTE_ENTITYDBL;
+				required_extensions |= FTE_PEXT_ENTITYDBL;
+			}
+
+			evenmorebits |= U_FTE_ENTITYDBL2;
+			required_extensions |= FTE_PEXT_ENTITYDBL2;
+			if (to->number >= 2048) {
+				Sys_Error("Entity number >= 2048");
+			}
+		}
+		else {
+			evenmorebits |= U_FTE_ENTITYDBL;
+			required_extensions |= FTE_PEXT_ENTITYDBL;
+		}
+	}
+
+#ifdef U_FTE_SCALE
+	if (to->scale != from->scale && (fte_extensions & FTE_PEXT_SCALE)) {
+		evenmorebits |= U_FTE_SCALE;
+		required_extensions |= FTE_PEXT_SCALE;
+	}
+#endif
+
+#ifdef U_FTE_TRANS
+	if (to->trans != from->trans && (fte_extensions & FTE_PEXT_TRANS)) {
+		evenmorebits |= U_FTE_TRANS;
+		required_extensions |= FTE_PEXT_TRANS;
+    }
+#endif
+
+#ifdef U_FTE_COLOURMOD
+	if ((to->colourmod[0] != from->colourmod[0] ||
+		 to->colourmod[1] != from->colourmod[1] ||
+		 to->colourmod[2] != from->colourmod[2]) && (fte_extensions & FTE_PEXT_COLOURMOD)) {
+		evenmorebits |= U_FTE_COLOURMOD;
+		required_extensions |= FTE_PEXT_COLOURMOD;
+    }
+#endif
+
+	if (evenmorebits&0xff00)
+		evenmorebits |= U_FTE_YETMORE;
+	if (evenmorebits&0x00ff)
+		bits |= U_FTE_EVENMORE;
+	if (bits & 511)
+		bits |= U_MOREBITS;
+#endif
+
+	if (to->number >= MAX_EDICTS)
+	{
+		/*SV_Error*/
+		Con_Printf ("Entity number >= MAX_EDICTS (%d), set to MAX_EDICTS - 1\n", MAX_EDICTS);
+		to->number = MAX_EDICTS - 1;
+	}
+
+#ifdef PROTOCOL_VERSION_FTE
+	if (evenmorebits && (fte_extensions & required_extensions) != required_extensions) {
+		return;
+	}
+#endif
+	if (!bits && !force) {
+		return;		// nothing to send!
+	}
+
+	i = (to->number & U_CHECKMOREBITS) | (bits&~U_CHECKMOREBITS);
+	if (i & U_REMOVE)
+		Sys_Error ("U_REMOVE");
+	MSG_WriteShort (msg, i);
+
+	if (bits & U_MOREBITS)
+		MSG_WriteByte (msg, bits&255);
+#ifdef PROTOCOL_VERSION_FTE
+	if (bits & U_FTE_EVENMORE)
+		MSG_WriteByte (msg, evenmorebits&255);
+	if (evenmorebits & U_FTE_YETMORE)
+		MSG_WriteByte (msg, (evenmorebits>>8)&255);
+#endif
+
+	if (bits & U_MODEL)
+		MSG_WriteByte (msg, to->modelindex & 255);
+	else if (evenmorebits & U_FTE_MODELDBL)
+		MSG_WriteShort(msg, to->modelindex);
+	if (bits & U_FRAME)
+		MSG_WriteByte (msg, to->frame);
+	if (bits & U_COLORMAP)
+		MSG_WriteByte (msg, to->colormap);
+	if (bits & U_SKIN)
+		MSG_WriteByte (msg, to->skinnum);
+	if (bits & U_EFFECTS)
+		MSG_WriteByte (msg, to->effects);
+	if (bits & U_ORIGIN1) {
+		if (mvdsv_extensions & MVD_PEXT1_FLOATCOORDS) {
+			MSG_WriteLongCoord(msg, to->origin[0]);
+		}
+		else {
+			MSG_WriteCoord(msg, to->origin[0]);
+		}
+	}
+	if (bits & U_ANGLE1)
+		MSG_WriteAngle(msg, to->angles[0]);
+	if (bits & U_ORIGIN2) {
+		if (mvdsv_extensions & MVD_PEXT1_FLOATCOORDS) {
+			MSG_WriteLongCoord(msg, to->origin[1]);
+		}
+		else {
+			MSG_WriteCoord(msg, to->origin[1]);
+		}
+	}
+	if (bits & U_ANGLE2)
+		MSG_WriteAngle(msg, to->angles[1]);
+	if (bits & U_ORIGIN3) {
+		if (mvdsv_extensions & MVD_PEXT1_FLOATCOORDS) {
+			MSG_WriteLongCoord(msg, to->origin[2]);
+		}
+		else {
+			MSG_WriteCoord(msg, to->origin[2]);
+		}
+	}
+	if (bits & U_ANGLE3)
+		MSG_WriteAngle(msg, to->angles[2]);
+
+#ifdef U_FTE_SCALE
+	if (evenmorebits & U_FTE_SCALE)
+		MSG_WriteByte (msg, to->scale);
+#endif
+
+#ifdef U_FTE_TRANS
+	if (evenmorebits & U_FTE_TRANS)
+		MSG_WriteByte (msg, to->trans);
+#endif
+
+#ifdef U_FTE_COLOURMOD
+	if (evenmorebits & U_FTE_COLOURMOD)
+	{
+		MSG_WriteByte (msg, to->colourmod[0]);
+		MSG_WriteByte (msg, to->colourmod[1]);
+		MSG_WriteByte (msg, to->colourmod[2]);
+	}
+#endif
+}
+#endif
+
+/********************************** READING **********************************/
 
 int msg_readcount;
 qbool msg_badread;
@@ -271,7 +548,7 @@ void MSG_BeginReading (void)
 	msg_badread = false;
 }
 
-int MSG_GetReadCount (void)
+int MSG_GetReadCount(void)
 {
 	return msg_readcount;
 }
@@ -279,15 +556,14 @@ int MSG_GetReadCount (void)
 // returns -1 and sets msg_badread if no more characters are available
 int MSG_ReadChar (void)
 {
-	int c;
+	int	c;
 
-	if (msg_readcount + 1 > net_message.cursize)
-	{
+	if (msg_readcount + 1 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (signed char) net_message.data[msg_readcount];
+	c = (signed char)net_message.data[msg_readcount];
 	msg_readcount++;
 
 	return c;
@@ -295,15 +571,14 @@ int MSG_ReadChar (void)
 
 int MSG_ReadByte (void)
 {
-	int c;
+	int	c;
 
-	if (msg_readcount + 1 > net_message.cursize)
-	{
+	if (msg_readcount + 1 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (unsigned char) net_message.data[msg_readcount];
+	c = (unsigned char)net_message.data[msg_readcount];
 	msg_readcount++;
 
 	return c;
@@ -311,16 +586,15 @@ int MSG_ReadByte (void)
 
 int MSG_ReadShort (void)
 {
-	int c;
+	int	c;
 
-	if (msg_readcount + 2 > net_message.cursize)
-	{
+	if (msg_readcount + 2 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (short) (net_message.data[msg_readcount]
-		+ (net_message.data[msg_readcount+1]<<8));
+	c = (short)(net_message.data[msg_readcount]
+		+ (net_message.data[msg_readcount + 1] << 8));
 
 	msg_readcount += 2;
 
@@ -329,18 +603,17 @@ int MSG_ReadShort (void)
 
 int MSG_ReadLong (void)
 {
-	int c;
+	int	c;
 
-	if (msg_readcount + 4 > net_message.cursize)
-	{
+	if (msg_readcount + 4 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
 
 	c = net_message.data[msg_readcount]
-		+ (net_message.data[msg_readcount+1]<<8)
-		+ (net_message.data[msg_readcount+2]<<16)
-		+ (net_message.data[msg_readcount+3]<<24);
+		+ (net_message.data[msg_readcount + 1] << 8)
+		+ (net_message.data[msg_readcount + 2] << 16)
+		+ ((unsigned int)net_message.data[msg_readcount + 3] << 24);
 
 	msg_readcount += 4;
 
@@ -349,27 +622,21 @@ int MSG_ReadLong (void)
 
 float MSG_ReadFloat (void)
 {
-	union
-	{
+	union {
 		byte b[4];
 		float f;
-		int l;
+		int	l;
 	} dat;
 
-	// MSG_ReadFloat was the only reader without a cursize
-	// bound - a truncated message read past net_message (up to 11 bytes into
-	// .bss at max packet size). Set msg_badread and return like the other
-	// readers (FTE does the same).
-	if (msg_readcount + 4 > net_message.cursize)
-	{
+	if (msg_readcount + 4 > net_message.cursize) {
 		msg_badread = true;
 		return -1;
 	}
 
-	dat.b[0] =	net_message.data[msg_readcount];
-	dat.b[1] =	net_message.data[msg_readcount+1];
-	dat.b[2] =	net_message.data[msg_readcount+2];
-	dat.b[3] =	net_message.data[msg_readcount+3];
+	dat.b[0] = net_message.data[msg_readcount];
+	dat.b[1] = net_message.data[msg_readcount + 1];
+	dat.b[2] = net_message.data[msg_readcount + 2];
+	dat.b[3] = net_message.data[msg_readcount + 3];
 	msg_readcount += 4;
 
 	dat.l = LittleLong (dat.l);
@@ -380,22 +647,22 @@ float MSG_ReadFloat (void)
 char *MSG_ReadString (void)
 {
 	static char string[2048];
+	unsigned int l;
 	int c;
-	size_t l = 0;
 
-	do
-	{
+	l = 0;
+	do {
 		c = MSG_ReadByte ();
 
 		if (c == 255) // skip these to avoid security problems
 			continue; // with old clients and servers
 
-		if (c == -1 || c == 0)
+		if (c == -1 || c == 0) // msg_badread or end of string
 			break;
 
 		string[l] = c;
 		l++;
-	} while (l < sizeof (string) - 1);
+	} while (l < sizeof(string)-1);
 
 	string[l] = 0;
 
@@ -404,23 +671,20 @@ char *MSG_ReadString (void)
 
 char *MSG_ReadStringLine (void)
 {
-	static char string[2048];
+	static char	string[2048];
+	unsigned int l;
 	int c;
-	size_t l = 0;
 
-	do
-	{
+	l = 0;
+	do {
 		c = MSG_ReadByte ();
-
 		if (c == 255)
 			continue;
-
 		if (c == -1 || c == 0 || c == '\n')
 			break;
-
 		string[l] = c;
 		l++;
-	} while (l < sizeof (string) - 1);
+	} while (l < sizeof(string) - 1);
 
 	string[l] = 0;
 
@@ -442,9 +706,23 @@ float MSG_ReadCoord (void)
 #endif // FTE_PEXT_FLOATCOORDS
 }
 
+#ifndef SERVERONLY
+float MSG_ReadFloatCoord(void)
+{
+	float f;
+	MSG_ReadData(&f, 4);
+	return LittleFloat(f);
+}
+#endif
+
+void MSG_WriteLongCoord(sizebuf_t *sb, float f)
+{
+	MSG_WriteFloat(sb, f);
+}
+
 float MSG_ReadAngle16 (void)
 {
-	return MSG_ReadShort () * (360.0 / 65536);
+	return MSG_ReadShort() * (360.0 / 65536);
 }
 
 float MSG_ReadAngle (void)
@@ -460,7 +738,7 @@ float MSG_ReadAngle (void)
 //	case 4:
 //		return MSG_ReadFloat();
 	default:
-		Sys_Error("MSG_ReadAngle: Bad angle size\n");
+		Host_Error("MSG_ReadAngle: Bad angle size\n");
 		return 0;
 	}
 
@@ -471,6 +749,10 @@ float MSG_ReadAngle (void)
 #endif // FTE_PEXT_FLOATCOORDS
 }
 
+#ifndef SERVERONLY
+#define CM_MSEC	(1 << 7) // same as CM_ANGLE2
+#endif
+
 void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move, int protoversion)
 {
 	int bits;
@@ -479,21 +761,41 @@ void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move, int protovers
 
 	bits = MSG_ReadByte ();
 
-	// read current angles
-	if (bits & CM_ANGLE1)
-		move->angles[0] = MSG_ReadAngle16 ();
-	if (bits & CM_ANGLE2)
-		move->angles[1] = MSG_ReadAngle16 ();
-	if (bits & CM_ANGLE3)
-		move->angles[2] = MSG_ReadAngle16 ();
+#ifndef SERVERONLY
+	if (protoversion <= 26) {
+		// read current angles
+		if (bits & CM_ANGLE1)
+			move->angles[0] = MSG_ReadAngle16 ();
+		move->angles[1] = MSG_ReadAngle16 (); // always sent
+		if (bits & CM_ANGLE3)
+			move->angles[2] = MSG_ReadAngle16 ();
 
-	// read movement
-	if (bits & CM_FORWARD)
-		move->forwardmove = MSG_ReadShort ();
-	if (bits & CM_SIDE)
-		move->sidemove = MSG_ReadShort ();
-	if (bits & CM_UP)
-		move->upmove = MSG_ReadShort ();
+		// read movement
+		if (bits & CM_FORWARD)
+			move->forwardmove = MSG_ReadChar() * 8;
+		if (bits & CM_SIDE)
+			move->sidemove = MSG_ReadChar() * 8;
+		if (bits & CM_UP)
+			move->upmove = MSG_ReadChar() * 8;
+	} else
+#endif
+	{
+		// read current angles
+		if (bits & CM_ANGLE1)
+			move->angles[0] = MSG_ReadAngle16 ();
+		if (bits & CM_ANGLE2)
+			move->angles[1] = MSG_ReadAngle16 ();
+		if (bits & CM_ANGLE3)
+			move->angles[2] = MSG_ReadAngle16 ();
+
+		// read movement
+		if (bits & CM_FORWARD)
+			move->forwardmove = MSG_ReadShort ();
+		if (bits & CM_SIDE)
+			move->sidemove = MSG_ReadShort ();
+		if (bits & CM_UP)
+			move->upmove = MSG_ReadShort ();
+	}
 
 	// read buttons
 	if (bits & CM_BUTTONS)
@@ -503,6 +805,10 @@ void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move, int protovers
 		move->impulse = MSG_ReadByte ();
 
 	// read time to run command
+#ifndef SERVERONLY
+	if (protoversion <= 26 && !(bits & CM_MSEC))
+		return;
+#endif
 	move->msec = MSG_ReadByte ();
 }
 
@@ -521,6 +827,53 @@ void MSG_ReadSkip(int bytes)
 		MSG_ReadByte ();
 	}
 }
+
+#ifndef SERVERONLY
+byte MSG_EncodeMVDSVWeaponFlags(int deathmatch, int weaponmode, int weaponhide, qbool weaponhide_axe, qbool forgetorder, qbool forgetondeath, int max_impulse)
+{
+	byte flags = clc_mvd_weapon_switching;
+	qbool hide = ((weaponhide == 1) || ((weaponhide == 2) && (deathmatch == 1)));
+
+	if (weaponmode == 3) {
+		weaponmode = (deathmatch == 1 ? 1 : 0);
+	}
+	else if (weaponmode == 4) {
+		weaponmode = (deathmatch == 1 ? 2 : 0);
+	}
+
+	if (weaponmode == 1) {
+		flags |= clc_mvd_weapon_mode_presel;
+	}
+	else if (weaponmode == 2) {
+		flags |= clc_mvd_weapon_mode_iffiring;
+	}
+
+	if (forgetorder) {
+		flags |= clc_mvd_weapon_forget_ranking;
+	}
+
+	if (hide) {
+		if (weaponhide_axe) {
+			flags |= clc_mvd_weapon_hide_axe;
+		}
+		else {
+			flags |= clc_mvd_weapon_hide_sg;
+		}
+	}
+
+	flags |= (forgetondeath ? clc_mvd_weapon_reset_on_death : 0);
+
+	flags |= (max_impulse >= 16 ? clc_mvd_weapon_full_impulse : 0);
+
+	return flags;
+}
+
+void MSG_DecodeMVDSVWeaponFlags(int flags, int* weaponmode, int* weaponhide, qbool* forgetorder, int* sequence)
+{
+
+}
+
+#endif
 
 /* FTE's null state uses identity appearance values, unlike legacy QW. */
 void MSG_RD_InitState(rd_entity_state_t *state)
@@ -866,6 +1219,19 @@ qbool MSG_RD_WriteEntityRef(sizebuf_t *msg, unsigned int number)
 	return true;
 }
 
+#ifndef SERVERONLY
+/* A truncated reference never becomes a usable entity number. */
+int MSG_RD_ReadEntityRef(void)
+{
+	unsigned int number = (unsigned short)MSG_ReadShort();
+
+	if (number & RD_ENTITYREF_EXTEND) {
+		number = ((number & RD_ENTITYREF_MASK) << 8) | MSG_ReadByte();
+	}
+	return msg_badread ? -1 : (int)number;
+}
+#endif
+
 /* RD update indices use 14 low bits and an optional high byte, independently
  * of the current map capacity. Write nothing when the whole index cannot fit. */
 qbool MSG_RD_WriteEntityIndex(sizebuf_t *msg, unsigned int number, qbool remove)
@@ -944,53 +1310,5 @@ qbool MSG_RD_WriteBaseline(sizebuf_t *msg, const rd_entity_state_t *state, qbool
 		return false;
 	}
 	SZ_Write(msg, record.data, record.cursize);
-	return true;
-}
-
-qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
-                            int count, int cursor, int limit, int *next)
-{
-	int end, size, index;
-
-	if (count < 0 || count > 65535 || cursor < 0 || cursor > count) {
-		return false;
-	}
-	limit = min(limit, msg->maxsize);
-	/* Opcode, cursor, empty string and continuation; preflight before writing. */
-	size = msg->cursize + (cursor > 255 ? 5 : 4);
-	if (size > limit) {
-		return false;
-	}
-	end = cursor;
-	while (end < count) {
-		size_t length = strlen(sounds[end + 1]) + 1;
-
-		if (length > (size_t)(limit - size)) {
-			break;
-		}
-		size += (int)length;
-		++end;
-	}
-	/* Zero is reserved for completion. Never publish a non-final 256 boundary. */
-	if (end < count && !(end & 255)) {
-		--end;
-	}
-	if (end < cursor || (end == cursor && cursor < count)) {
-		return false;
-	}
-
-	MSG_WriteByte(msg, cursor > 255 ? svc_fte_soundlistshort : svc_soundlist);
-	if (cursor > 255) {
-		MSG_WriteShort(msg, cursor);
-	}
-	else {
-		MSG_WriteByte(msg, cursor);
-	}
-	for (index = cursor + 1; index <= end; ++index) {
-		MSG_WriteString(msg, sounds[index]);
-	}
-	MSG_WriteByte(msg, 0);
-	MSG_WriteByte(msg, end < count ? end & 255 : 0);
-	*next = end < count ? end : 0;
 	return true;
 }
