@@ -474,7 +474,7 @@ void NET_ClearLoopback (void)
 //
 
 // allocate, may link it in, if requested
-svtcpstream_t *sv_tcp_connection_new(int sock, netadr_t from, char *buf, int buf_len, qbool link)
+svtcpstream_t *sv_tcp_connection_new(socket_t sock, netadr_t from, char *buf, int buf_len, qbool link)
 {
 	svtcpstream_t *st = NULL;
 
@@ -553,7 +553,7 @@ qbool NET_GetUDPPacket (netsrc_t netsrc, netadr_t *from_adr, sizebuf_t *message)
 	int ret, err;
 	struct sockaddr_storage from = {0};
 	socklen_t fromlen;
-	int socket = NET_GetSocket(netsrc, false);
+	socket_t socket = NET_GetSocket(netsrc, false);
 
 	if (socket == INVALID_SOCKET)
 		return false;
@@ -918,7 +918,7 @@ qbool NET_SendUDPPacket (netsrc_t netsrc, int length, void *data, netadr_t to)
 {
 	struct sockaddr_storage addr;
 	int ret;
-	int socket = NET_GetSocket(netsrc, false);
+	socket_t socket = NET_GetSocket(netsrc, false);
 
 	if (socket == INVALID_SOCKET)
 		return false;
@@ -933,7 +933,7 @@ qbool NET_SendUDPPacket (netsrc_t netsrc, int length, void *data, netadr_t to)
 		if (err == EWOULDBLOCK || err == ECONNREFUSED || err == EADDRNOTAVAIL)
 			; // nothing
 		else
-			Con_Printf ("NET_SendPacket: sendto: (%i): %s %i\n", err, strerror(err), socket);
+			Con_Printf ("NET_SendPacket: sendto: (%i): %s %llu\n", err, strerror(err), (unsigned long long)socket);
 	}
 
 	return true;
@@ -1054,7 +1054,7 @@ socket_t TCP_OpenStream (netadr_t remoteaddr)
 		return INVALID_SOCKET;
 	}
 
-	if (connect (newsocket, (struct sockaddr *)&qs, temp) == INVALID_SOCKET)
+	if (connect (newsocket, (struct sockaddr *)&qs, temp) == SOCKET_ERROR)
 	{
 		Con_Printf ("TCP_OpenStream: connect: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
@@ -1146,7 +1146,7 @@ socket_t TCP_OpenListenSocket (unsigned short int port)
 		return INVALID_SOCKET;
 	}
 
-	if (listen (newsocket, TCP_LISTEN_BACKLOG) == INVALID_SOCKET) {
+	if (listen (newsocket, TCP_LISTEN_BACKLOG) == SOCKET_ERROR) {
 		Con_Printf ("TCP_OpenListenSocket: listen: (%i): %s\n", qerrno, strerror(qerrno));
 		closesocket(newsocket);
 		return INVALID_SOCKET;
@@ -1231,7 +1231,9 @@ qbool NET_Sleep(int msec, qbool stdinissocket)
 #ifndef CLIENTONLY
 	if (svs.socketip != INVALID_SOCKET) {
 		FD_SET(svs.socketip, &fdset); // network socket
+#ifndef _WIN32
 		maxfd = max(svs.socketip, maxfd);
+#endif
 	}
 #endif
 
@@ -1256,7 +1258,7 @@ void NET_GetLocalAddress (socket_t socket, netadr_t *out)
 {
 	char buff[512];
 	struct sockaddr_storage address;
-	size_t namelen;
+	socklen_t namelen;
 	netadr_t adr = {0};
 	qbool notvalid = false;
 
@@ -1268,7 +1270,7 @@ void NET_GetLocalAddress (socket_t socket, netadr_t *out)
 		NET_StringToAdr ("127.0.0.1", &adr);
 
 	namelen = sizeof(address);
-	if (getsockname (socket, (struct sockaddr *)&address, (socklen_t *)&namelen) == -1)
+	if (getsockname (socket, (struct sockaddr *)&address, &namelen) == -1)
 	{
 		notvalid = true;
 		NET_StringToSockaddr("0.0.0.0", (struct sockaddr_storage *)&address);
