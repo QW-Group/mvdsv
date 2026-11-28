@@ -424,7 +424,7 @@ static void SV_MulticastExFiltered(vec3_t origin, int to, const char *cl_reliabl
 	qbool       reliable;
 	vec3_t      vieworg;
 	qbool       mvd_only = false;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	qbool       csqc_only = false;
 #endif
 	const sizebuf_t *message;
@@ -460,7 +460,7 @@ static void SV_MulticastExFiltered(vec3_t origin, int to, const char *cl_reliabl
 		SV_Error ("SV_Multicast: bad to:%i", to);
 	}
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// A CSQC packet (svc_fte_cgamepacket) is the whole multicast when it is the
 	// first byte of the buffer (the byte before any payload is always the svc
 	// code, so this can never false-positive on payload). Detect it here as well
@@ -487,7 +487,7 @@ static void SV_MulticastExFiltered(vec3_t origin, int to, const char *cl_reliabl
 			continue;
 		if (SV_SkipCommsBotMessage(client))
 			continue;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		// svc_fte_cgamepacket is CSQC-only: skip a client that did not enable
 		// CSQC (it may have negotiated the ext but never sent enablecsqc, so it
 		// has no csprogs to parse the packet).
@@ -549,7 +549,7 @@ inrange:
 			// sv_csqcdebug (MVD/hidden keep the plain form below).
 			byte *data = message->data;
 			int   len = message->cursize;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 			byte  sized[MAX_MSGLEN + 2];
 			if (csqc_only && (int)sv_csqcdebug.value && (client->fteprotocolextensions & FTE_PEXT_CSQC)
 				&& message->cursize + 2 <= (int)sizeof(sized))
@@ -590,7 +590,7 @@ inrange:
 				MVD_SZ_Write(message->data, message->cursize);
 			}
 		}
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		else if (csqc_only && !SV_WantsQCStats(&demo.recorder)) {
 			// CSQC-only message to a stock-compatible recorder: keep it out of
 			// the MVD/QTV stream
@@ -611,12 +611,12 @@ void SV_MulticastEx (vec3_t origin, int to, const char *cl_reliable_key)
 {
 	SV_MulticastExFiltered(origin, to, cl_reliable_key, false, &sv.multicast, NULL, false);
 	SZ_Clear(&sv.multicast);
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	sv.multicast_csqc = false;
 #endif
 }
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 /*
 =======================
 SV_CSQCMulticast
@@ -822,59 +822,12 @@ int SV_SoundPrecacheCount(char *const *sounds, int capacity)
 	return count;
 }
 
-qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
-                            int count, int cursor, int limit, int *next)
-{
-	int end, size;
-
-	if (count < 0 || count > 65535 || cursor < 0 || cursor > count) {
-		return false;
-	}
-	limit = min(limit, msg->maxsize);
-	/* Opcode, cursor, empty string and continuation; preflight before writing. */
-	size = msg->cursize + (cursor > 255 ? 5 : 4);
-	if (size > limit) {
-		return false;
-	}
-	end = cursor;
-	while (end < count) {
-		size_t length = strlen(sounds[end + 1]) + 1;
-
-		if (length > (size_t)(limit - size)) {
-			break;
-		}
-		size += (int)length;
-		++end;
-	}
-	/* Zero is reserved for completion. Never publish a non-final 256 boundary. */
-	if (end < count && !(end & 255)) {
-		--end;
-	}
-	if (end < cursor || (end == cursor && cursor < count)) {
-		return false;
-	}
-
-	MSG_WriteByte(msg, cursor > 255 ? svc_fte_soundlistshort : svc_soundlist);
-	if (cursor > 255) {
-		MSG_WriteShort(msg, cursor);
-	}
-	else {
-		MSG_WriteByte(msg, cursor);
-	}
-	for (int index = cursor + 1; index <= end; ++index) {
-		MSG_WriteString(msg, sounds[index]);
-	}
-	MSG_WriteByte(msg, 0);
-	MSG_WriteByte(msg, end < count ? end & 255 : 0);
-	*next = end < count ? end : 0;
-	return true;
-}
-
 static void SV_WriteSoundPacket(sizebuf_t *msg, int entity, int channel,
                          int sound_id, int volume, float attenuation,
                          const float origin[3], qbool extended)
 {
 	int packed = (entity << 3) | channel;
+	int index;
 
 	if (extended) {
 		/* A packed entity/channel word only has thirteen entity bits. */
@@ -921,7 +874,7 @@ static void SV_WriteSoundPacket(sizebuf_t *msg, int entity, int channel,
 	else {
 		MSG_WriteByte(msg, sound_id);
 	}
-	for (int index = 0; index < 3; ++index) {
+	for (index = 0; index < 3; ++index) {
 		MSG_WriteCoord(msg, origin[index]);
 	}
 }
@@ -1019,7 +972,7 @@ void SV_StartSound (edict_t *entity, int channel, char *sample, int volume, floa
 		SV_MulticastExFiltered (origin, reliable ? MULTICAST_ALL_R : MULTICAST_ALL, sv_reliable_sound.value ? "rsnd" : NULL,
 		                        extended, &legacy, extended ? &sv.multicast : NULL, false);
 	SZ_Clear(&sv.multicast);
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	sv.multicast_csqc = false;
 #endif
 }
@@ -1186,13 +1139,15 @@ Items stat for sbar, shared by client and demo stats so they stay in sync.
 */
 int SV_ItemsStat (edict_t *ent)
 {
-	// stuff the sigil bits into the high bits of items for sbar
-	int items = (int) ent->v->items | ((int) PR_GLOBAL(serverflags) << 28);
+	uint32_t items = (uint32_t)(int)ent->v->items;
 
-	if (fofs_items2)	// ZQ_ITEMS2 extension
-		items |= (int)EdictFieldFloat(ent, fofs_items2) << 23;
+	// Both the sigil bits and items2 can set bit 31.
+	items |= (uint32_t)(int)PR_GLOBAL(serverflags) << 28;
 
-	return items;
+	if (fofs_items2) // ZQ_ITEMS2 extension
+		items |= (uint32_t)(int)EdictFieldFloat(ent, fofs_items2) << 23;
+
+	return (int)items;
 }
 
 /*
@@ -1203,7 +1158,7 @@ Performs a delta update of the stats array.  This should only be performed
 when a reliable message can be delivered this frame.
 =======================
 */
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 // etype codes passed by mods (FTE convention; mvdsv's own etype_t lacks ev_integer)
 #define CSQC_EV_STRING		1
 #define CSQC_EV_FLOAT		2
@@ -1420,7 +1375,7 @@ void SV_UpdateClientStats (client_t *client)
 {
 	edict_t *ent;
 	int statsi[MAX_CL_STATS], i;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	float statsf[MAX_CL_STATS];
 	const char *statss[MAX_CL_STATS];
 
@@ -1464,7 +1419,7 @@ void SV_UpdateClientStats (client_t *client)
 	if (ent->v->health > 0 || client->spectator
 	    || (client->fteprotocolextensions2 & FTE_PEXT2_REPLACEMENTDELTAS))
 		statsi[STAT_VIEWHEIGHT] = ent->v->view_ofs[2];
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// clientstat/pointerstat registered stats (32..255), only for CSQC clients.
 	if (SV_WantsQCStats (client))
 		SV_UpdateQCStats (ent, statsi, statsf, statss);
@@ -1472,7 +1427,7 @@ void SV_UpdateClientStats (client_t *client)
 
 	for (i=0 ; i<MAX_CL_STATS ; i++)
 	{
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		// CSQC float/string stats use their own wire opcodes, and only a
 		// destination that negotiated the extension receives them: qcstat_kind[]
 		// is global, so without this gate a stock (non-CSQC) client of a CSQC
@@ -1553,7 +1508,7 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 {
 	byte		buf[MAX_DATAGRAM];
 	sizebuf_t	msg;
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	int sequence = client->netchan.outgoing_sequence;
 #endif
 #ifdef FTE_PEXT2_VOICECHAT
@@ -1609,7 +1564,7 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 		Con_Printf ("WARNING: msg overflowed for %s\n", client->name);
 		SV_RD_DroppedFrame(client, client->netchan.incoming_sequence);
 		SZ_Clear (&msg);
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		// The CSQC updates logged for this datagram were dropped with it, but
 		// the client still acks the (now empty) packet, so re-flag them here
 		// instead of waiting for an ack that will never report them lost.
@@ -1620,7 +1575,7 @@ void SV_SendClientDatagram (client_t *client, int client_num)
 	// send the datagram
 	if (!Netchan_Transmit(&client->netchan, msg.cursize, buf)) {
 		SV_RD_DroppedFrame(client, client->netchan.incoming_sequence);
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		/* Recover a pre-existing CSQC omission bug, independent of RD. */
 		SV_CSQC_DroppedPacket(client, sequence);
 #endif
@@ -1829,7 +1784,7 @@ void SV_SendClientMessages (void)
 		if (!c->state)
 			continue;
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		SV_ProcessSendFlags (c);
 #endif
 
@@ -1920,7 +1875,7 @@ void SV_SendClientMessages (void)
 		}
 	}
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	if (sv.mvdrecording)
 		SV_ProcessSendFlags (&demo.recorder);
 	SV_CleanupEnts ();
@@ -1986,7 +1941,7 @@ void MVD_WriteStats(void)
 	edict_t		*ent;
 	int			statsi[MAX_CL_STATS];
 	// legacy 32 stats unless the recorder is explicitly CSQC
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	float		statsf[MAX_CL_STATS];
 	const char	*statss[MAX_CL_STATS];
 	int			n = SV_WantsQCStats (&demo.recorder) ? MAX_CL_STATS : MAX_WIRE_STATS;
@@ -2004,7 +1959,7 @@ void MVD_WriteStats(void)
 
 		ent = c->edict;
 		memset (statsi, 0, sizeof(statsi));
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		memset (statsf, 0, sizeof(statsf));
 		memset (statss, 0, sizeof(statss));
 #endif
@@ -2026,7 +1981,7 @@ void MVD_WriteStats(void)
 
 		statsi[STAT_ITEMS] = SV_ItemsStat(ent);
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		// clientstat/pointerstat registered stats (32..255) for the recorder.
 		if (SV_WantsQCStats (&demo.recorder))
 			SV_UpdateQCStats (ent, statsi, statsf, statss);
@@ -2034,7 +1989,7 @@ void MVD_WriteStats(void)
 
 		for (j = 0 ; j < n; j++)
 		{
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 			// float/string stats use their own wire opcodes
 			if (SV_QCStatKind(j) == QCSTAT_KIND_FLOAT)
 			{

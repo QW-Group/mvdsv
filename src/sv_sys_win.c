@@ -19,60 +19,386 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "qwsvdef.h"
+#include <conio.h>
+#ifdef SV_WINDOWS_MVDSV
 #include <mmsystem.h>
-#include <io.h>
+#endif
 #include <process.h>
 
-extern cvar_t sys_restart_on_error;
-extern cvar_t sys_select_timeout, sys_simulation;
-
-cvar_t	sys_nostdout	= {"sys_nostdout", "0"};
-cvar_t	sys_sleep		= {"sys_sleep", "8"};
-
-static char title[16];
-
-static qbool	isdaemon = false;
-
-//==============================================================================
-// WINDOWS CMD LINE CRAP
-//==============================================================================
-
-static int			argc;
-static char			*argv[MAX_NUM_ARGVS];
-
-char *Sys_GetModuleName(void)
-{
-	static char	exename[1024] = {0}; // static
-	int i;
-
-	if (exename[0])
-		return exename;
-
-	if(!(i = GetModuleFileName(NULL, exename, sizeof(exename)-1))) // here we get loong string, with full path
-	{
-		exename[0] = 0; // oh, something bad
-	}
-	else 
-	{
-		exename[i] = 0; // ensure null terminator
-	}
-
-	return exename;
-}
-
-#ifdef _CONSOLE
-void ParseCommandLine (int ac, char **av)
-{
-	argc = 1;
-	argv[0] = Sys_GetModuleName();
-
-	for( ; argc < MAX_NUM_ARGVS && ac > 0; argc++, ac--)
-	{
-		argv[argc] = av[argc-1];
-	}
-}
+static HANDLE console_input;
+static DWORD console_input_type;
+static qbool console_keyboard;
+extern cvar_t sys_select_timeout;
+#ifdef SV_WINDOWS_MVDSV
+extern cvar_t sys_sleep, sys_simulation;
+#endif
+#ifdef SV_WINDOWS_GUI
+static qbool isdaemon;
 #else
-void ParseCommandLine (char *lpCmdLine)
+static volatile LONG server_done;
+
+static BOOL WINAPI Sys_StopServer(DWORD event)
+{
+	if (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT && event != CTRL_CLOSE_EVENT) {
+		return FALSE;
+	}
+	InterlockedExchange(&server_done, 1);
+	if (event == CTRL_CLOSE_EVENT) {
+		// Returning lets Windows terminate the process. Let main finish SV_Shutdown and exit.
+		Sleep(INFINITE);
+	}
+	return TRUE;
+}
+
+#endif // !SV_WINDOWS_GUI
+
+void Sys_Init(void)
+{
+	DWORD mode;
+
+#ifdef SV_WINDOWS_MVDSV
+	timeBeginPeriod(1);
+	Cvar_Register(&sys_nostdout);
+	Cvar_Register(&sys_sleep);
+	if (!COM_CheckParm("-nopriority")) {
+		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	}
+	Cvar_Set(&sys_sleep, "0");
+#endif
+#ifdef SV_WINDOWS_GUI
+	return; // the Windows dialog supplies input via the command buffer
+#endif
+
+#ifdef SV_WINDOWS_MVDSV
+	if (COM_CheckParm("-noconinput")) {
+#else
+	if (COM_CheckParm(cmdline_param_client_nostdinput)) {
+#endif
+		return;
+	}
+
+	console_input = GetStdHandle(STD_INPUT_HANDLE);
+	console_keyboard = GetConsoleMode(console_input, &mode) != FALSE;
+	console_input_type = GetFileType(console_input);
+}
+
+static int Sys_ReadConsoleChar(void)
+{
+	unsigned char ch;
+	DWORD length;
+
+	if (console_keyboard) {
+		int key;
+
+		if (!_kbhit()) {
+			return EOF;
+		}
+		key = _getch();
+		if (key == 0 || key == 224) {
+			_getch();
+			return EOF;
+		}
+		if (key >= 32 || key == '\r' || key == '\b' || key == '\t') {
+			_putch(key);
+			if (key == '\r') {
+				_putch('\n');
+				return '\n';
+			}
+			return key;
+		}
+		return EOF;
+	}
+
+	if (console_input_type == FILE_TYPE_PIPE) {
+		if (!PeekNamedPipe(console_input, NULL, 0, NULL, &length, NULL)) {
+			console_input_type = FILE_TYPE_UNKNOWN;
+			return EOF;
+		}
+		if (!length) {
+			return EOF;
+		}
+	}
+	else if (console_input_type != FILE_TYPE_DISK) {
+		return EOF;
+	}
+
+	if (!ReadFile(console_input, &ch, sizeof(ch), &length, NULL) || !length) {
+		console_input_type = FILE_TYPE_UNKNOWN;
+		return EOF;
+	}
+	return ch;
+}
+
+char *Sys_ConsoleInput(void)
+{
+	static char line[1024];
+	static size_t length;
+	static qbool too_long;
+	int ch;
+
+	while ((ch = Sys_ReadConsoleChar()) != EOF) {
+		if (ch == '\n') {
+			line[length] = '\0';
+			length = 0;
+			if (too_long) {
+				too_long = false;
+				Con_Printf("Console command is too long.\n");
+				continue;
+			}
+			return line;
+		}
+		if (console_keyboard && ch == '\b') {
+			if (length && !too_long) {
+				--length;
+				_putch(' ');
+				_putch('\b');
+			}
+		}
+		else if (ch != '\r') {
+			if (length < sizeof(line) - 1) {
+				line[length++] = ch;
+			}
+			else {
+				too_long = true;
+			}
+		}
+	}
+	if (!console_keyboard && console_input_type == FILE_TYPE_UNKNOWN && length && !too_long) {
+		line[length] = '\0';
+		length = 0;
+		return line;
+	}
+	return NULL;
+}
+
+void Sys_Printf(char *fmt, ...)
+{
+	va_list args;
+	char text[4096];
+
+#ifdef SV_WINDOWS_GUI
+	if (isdaemon) {
+		return;
+	}
+#else
+	if (sys_nostdout.value) {
+		return;
+	}
+#endif
+	va_start(args, fmt);
+	vsnprintf(text, sizeof(text), fmt, args);
+	va_end(args);
+	Q_normalizetext(text);
+#ifdef SV_WINDOWS_GUI
+	ConsoleAddText(text);
+#else
+	fputs(text, stdout);
+	fflush(stdout);
+#endif
+}
+
+void Sys_Exit(int code)
+{
+#ifdef SV_WINDOWS_GUI
+	RemoveNotifyIcon();
+#endif
+	exit(code);
+}
+
+void Sys_Quit(void)
+{
+	NET_Shutdown();
+	Sys_Exit(0);
+}
+
+void Sys_Error(const char *error, ...)
+{
+	static qbool shutting_down;
+	va_list args;
+	char text[1024];
+
+	va_start(args, error);
+	vsnprintf(text, sizeof(text), error, args);
+	va_end(args);
+	sv_error = true;
+#ifdef SV_WINDOWS_GUI
+	if (!isdaemon && !COM_CheckParm("-noerrormsgbox")) {
+		MessageBoxA(NULL, text, "Error", MB_OK);
+	}
+	else {
+		Sys_Printf("ERROR: %s\n", text);
+	}
+#else
+	fprintf(stderr, "Error: %s\n", text);
+#endif
+	if (!shutting_down) {
+		shutting_down = true;
+		SV_Write_Log(ERROR_LOG, 1, va("ERROR: %s\n", text));
+		SV_Shutdown(text);
+		if ((int)sys_restart_on_error.value) {
+			Sys_Restart();
+		}
+	}
+	Sys_Exit(1);
+}
+
+void Sys_Restart(void)
+{
+	STARTUPINFO startup = {0};
+	PROCESS_INFORMATION process;
+	char executable[MAX_OSPATH];
+	char *command_line;
+	DWORD length;
+
+	length = GetModuleFileNameA(NULL, executable, sizeof(executable));
+	if (!length || length >= sizeof(executable)) {
+		fprintf(stderr, "Could not restart: could not find the server executable\n");
+		Sys_Exit(1);
+	}
+	command_line = _strdup(GetCommandLineA());
+	if (!command_line) {
+		fprintf(stderr, "Could not restart: out of memory\n");
+		Sys_Exit(1);
+	}
+	NET_Shutdown();
+	startup.cb = sizeof(startup);
+	if (!CreateProcessA(executable, command_line, NULL, NULL, FALSE, 0, NULL, NULL, &startup, &process)) {
+		fprintf(stderr, "Could not restart (Windows error %lu)\n", GetLastError());
+		Sys_Exit(1);
+	}
+	free(command_line);
+	CloseHandle(process.hThread);
+	CloseHandle(process.hProcess);
+	Sys_Exit(0);
+}
+
+double Sys_DoubleTime(void)
+{
+	static LARGE_INTEGER start, frequency;
+	LARGE_INTEGER now;
+
+	if (!frequency.QuadPart) {
+		QueryPerformanceFrequency(&frequency);
+		QueryPerformanceCounter(&start);
+	}
+	QueryPerformanceCounter(&now);
+	return (now.QuadPart - start.QuadPart) / (double)frequency.QuadPart;
+}
+
+typedef struct {
+	int (*func)(void *);
+	void *data;
+} sys_thread_args_t;
+
+static unsigned __stdcall Sys_DetachedThreadMain(void *data)
+{
+	sys_thread_args_t args = *(sys_thread_args_t *)data;
+
+	free(data);
+	args.func(args.data);
+	return 0;
+}
+
+int Sys_CreateDetachedThread(int (*func)(void *), void *data)
+{
+	HANDLE thread;
+	sys_thread_args_t *args = malloc(sizeof(*args));
+
+	if (!args) {
+		return -1;
+	}
+	args->func = func;
+	args->data = data;
+	thread = (HANDLE)_beginthreadex(NULL, 0, Sys_DetachedThreadMain, args, 0, NULL);
+	if (!thread) {
+		free(args);
+		return -1;
+	}
+	CloseHandle(thread);
+	return 0;
+}
+
+qbool Sys_MutexInit(sys_mutex_t *mutex)
+{
+	return InitializeCriticalSectionAndSpinCount(mutex, 0) != FALSE;
+}
+
+void Sys_MutexLock(sys_mutex_t *mutex)
+{
+	EnterCriticalSection(mutex);
+}
+
+void Sys_MutexUnlock(sys_mutex_t *mutex)
+{
+	LeaveCriticalSection(mutex);
+}
+
+qbool Sys_MutexTryLock(sys_mutex_t *mutex)
+{
+	return TryEnterCriticalSection(mutex) != FALSE;
+}
+
+int Sys_Script(const char *path, const char *args)
+{
+	STARTUPINFO startup = {0};
+	PROCESS_INFORMATION process;
+	char *command_line;
+	BOOL started;
+	char shell[MAX_OSPATH];
+
+	DWORD length = GetFullPathNameA("sh.exe", sizeof(shell), shell, NULL);
+
+	if (!length || length >= sizeof(shell)) {
+		return 0;
+	}
+	command_line = Q_strdup_printf("\"%s\" %s.qws %s", shell, path, args);
+	startup.cb = sizeof(startup);
+	started = CreateProcessA(shell, command_line, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, fs_gamedir, &startup, &process);
+	Q_free(command_line);
+	if (!started) {
+		return 0;
+	}
+	CloseHandle(process.hThread);
+	CloseHandle(process.hProcess);
+	return 1;
+}
+
+#ifndef SV_WINDOWS_GUI
+int main(int argc, char **argv)
+{
+	double oldtime, now;
+
+	SetConsoleCtrlHandler(Sys_StopServer, TRUE);
+	Host_Init(argc, argv, 64 * 1024 * 1024);
+
+	oldtime = Sys_DoubleTime();
+	while (!InterlockedCompareExchange(&server_done, 0, 0)) {
+#ifdef SV_WINDOWS_MVDSV
+		int sleep_msec = (int)sys_sleep.value;
+
+		if (sleep_msec > 0) {
+			Sleep(min(sleep_msec, 13));
+		}
+		if (!sys_simulation.value)
+#endif
+			NET_Sleep((int)sys_select_timeout.value / 1000, false);
+		now = Sys_DoubleTime();
+		curtime += now - oldtime;
+		SV_Frame(now - oldtime);
+		oldtime = now;
+	}
+
+	SV_Shutdown("Server quit\n");
+	Sys_Quit();
+	return 0;
+}
+
+#else // SV_WINDOWS_GUI
+
+static int argc;
+static char *argv[MAX_NUM_ARGVS];
+
+static void ParseCommandLine (char *lpCmdLine)
 {
 	argc = 1;
 	argv[0] = Sys_GetModuleName();
@@ -111,762 +437,6 @@ void ParseCommandLine (char *lpCmdLine)
 		}
 	}
 }
-#endif
-
-/*
-================
-Sys_FileTime
-================
-*/
-int	Sys_FileTime (const char *path)
-{
-	struct _stat buf;
-	return _stat (path, &buf) == -1 ? -1 : buf.st_mtime;
-}
-
-/*
-================
-Sys_mkdir
-================
-*/
-void Sys_mkdir (const char *path)
-{
-	_mkdir(path);
-}
-
-/*
-================
-Sys_remove
-================
-*/
-int Sys_remove (const char *path)
-{
-	return remove(path);
-}
-
-//bliP: rmdir ->
-/*
-================
-Sys_rmdir
-================
-*/
-int Sys_rmdir (const char *path)
-{
-	return _rmdir(path);
-}
-//<-
-
-/*
-================
-Sys_listdir
-================
-*/
-
-static dir_t listdir_internal(const char *path, const char *ext,
-	int sort_type, qbool read_metadata)
-{
-	static file_t	list[MAX_DIRFILES];
-	dir_t	dir;
-	HANDLE	h;
-	WIN32_FIND_DATA fd;
-	char	pathname[MAX_DEMO_NAME];
-	qbool all;
-
-	int	r;
-	pcre	*preg;
-	const char	*errbuf;
-
-	memset(list, 0, sizeof(list));
-	memset(&dir, 0, sizeof(dir));
-
-	dir.files = list;
-	dir.is_metadata_valid = read_metadata;
-	all = !strncmp(ext, ".*", 3);
-	if (!all)
-		if (!(preg = pcre_compile(ext, PCRE_CASELESS, &errbuf, &r, NULL)))
-		{
-			Con_Printf("Sys_listdir: pcre_compile(%s) error: %s at offset %d\n",
-			           ext, errbuf, r);
-			Q_free(preg);
-			return dir;
-		}
-
-	snprintf(pathname, sizeof(pathname), "%s/*.*", path);
-	if ((h = FindFirstFile (pathname , &fd)) == INVALID_HANDLE_VALUE)
-	{
-		if (!all)
-			Q_free(preg);
-		return dir;
-	}
-
-	do
-	{
-		if (!strncmp(fd.cFileName, ".", 2) || !strncmp(fd.cFileName, "..", 3))
-			continue;
-		if (!all)
-		{
-			switch (r = pcre_exec(preg, NULL, fd.cFileName,
-			                      strlen(fd.cFileName), 0, 0, NULL, 0))
-			{
-			case 0: break;
-			case PCRE_ERROR_NOMATCH: continue;
-			default:
-				Con_Printf("Sys_listdir: pcre_exec(%s, %s) error code: %d\n",
-				           ext, fd.cFileName, r);
-				if (!all)
-					Q_free(preg);
-				return dir;
-			}
-		}
-
-		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) //bliP: list dir
-		{
-			dir.numdirs++;
-			list[dir.numfiles].isdir = true;
-			list[dir.numfiles].size = list[dir.numfiles].time = 0;
-		}
-		else
-		{
-			list[dir.numfiles].isdir = false;
-			if (read_metadata)
-			{
-				snprintf(pathname, sizeof(pathname), "%s/%s", path, fd.cFileName);
-				list[dir.numfiles].time = Sys_FileTime(pathname);
-				dir.size += (list[dir.numfiles].size = fd.nFileSizeLow);
-			}
-		}
-		strlcpy (list[dir.numfiles].name, fd.cFileName, sizeof(list[0].name));
-
-		if (dir.numfiles != MAX_DIRFILES - 1) dir.numfiles++;
-
-	}
-	while (FindNextFile(h, &fd));
-
-	FindClose (h);
-	if (!all)
-		Q_free(preg);
-
-	switch (sort_type)
-	{
-	case SORT_NO: break;
-	case SORT_BY_DATE:
-		qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_date);
-		break;
-	case SORT_BY_NAME:
-		qsort((void *)list, dir.numfiles, sizeof(file_t), Sys_compare_by_name);
-		break;
-	}
-	return dir;
-}
-
-dir_t Sys_listdir (const char *path, const char *ext, int sort_type)
-{
-	return listdir_internal(path, ext, sort_type, true);
-}
-
-dir_t Sys_listdir_no_metadata (const char *path, const char *ext)
-{
-	return listdir_internal(path, ext, SORT_NO, false);
-}
-
-int Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void *), void *parm)
-{
-	HANDLE r;
-	WIN32_FIND_DATA fd; 
-	char apath[MAX_OSPATH];
-	char apath2[MAX_OSPATH];
-	char file[MAX_OSPATH];
-	char *s;
-	int go;
-	if (!gpath)
-		return 0;
-
-	snprintf(apath, sizeof(apath), "%s/%s", gpath, match);
-	for (s = apath+strlen(apath)-1; s> apath; s--)
-	{
-		if (*s == '/') 
-			break;
-	}
-	*s = '\0';
-
-	// This is what we ask windows for.
-	snprintf(file, sizeof(file), "%s/*.*", apath);
-
-	// We need to make apath contain the path in match but not gpath
-	strlcpy(apath2, match, sizeof(apath));
-	match = s+1;
-	for (s = apath2+strlen(apath2)-1; s> apath2; s--)
-	{
-		if (*s == '/')
-			break;
-	}
-	*s = '\0';
-	if (s != apath2)
-		strlcat (apath2, "/", sizeof (apath2));
-
-	r = FindFirstFile(file, &fd);
-	if (r==(HANDLE)-1)
-		return 1;
-	go = true;
-	do
-	{
-		if (*fd.cFileName == '.');  // Don't ever find files with a name starting with '.'
-		else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)    //is a directory
-		{
-			if (wildcmp(match, fd.cFileName))
-			{
-				snprintf(file, sizeof(file), "%s%s/", apath2, fd.cFileName);
-				go = func(file, fd.nFileSizeLow, parm);
-			}
-		}
-		else
-		{
-			if (wildcmp(match, fd.cFileName))
-			{
-				snprintf(file, sizeof(file), "%s%s", apath2, fd.cFileName);
-				go = func(file, fd.nFileSizeLow, parm);
-			}
-		}
-	}
-	while(FindNextFile(r, &fd) && go);
-	FindClose(r);
-
-	return go;
-}
-
-/*
-================
-Sys_Exit
-================
-*/
-void Sys_Exit(int code)
-{
-#ifndef _CONSOLE
-	RemoveNotifyIcon();
-#endif
-	exit(code);
-}
-
-/*
-================
-Sys_Quit
-================
-*/
-
-void myInvalidParameterHandler(const wchar_t* expression,
-   const wchar_t* function, 
-   const wchar_t* file, 
-   unsigned int line, 
-   uintptr_t pReserved)
-{
-	// nothing
-}
-
-void Sys_Quit (void)
-{
-	Sys_Exit(0);
-}
-
-void Sys_Restart (void)
-{
-#ifndef __MINGW32__
-	int maxfd = 131072; // well, should be enough for everyone...
-
-	_set_invalid_parameter_handler(myInvalidParameterHandler); // so close() does not crash our program on invalid handle...
-
-	// close all file descriptors even stdin stdout and stderr, seems that not hurt...
-	for (; maxfd > -1; maxfd--)
-	{
-		close(maxfd);
-		closesocket(maxfd); // yeah, windows separate sockets and files, so you can't close socket with close() like on *nix.
-	}
-
-	execv(argv[0], com_argv);
-#endif
-#ifdef _CONSOLE
-	if (!((int)sys_nostdout.value || isdaemon))
-		printf("Restart failed: (%i): %s\n", qerrno, strerror(qerrno));
-#else
-	if (!(COM_CheckParm("-noerrormsgbox") || isdaemon))
-		MessageBox(NULL, strerror(qerrno), "Restart failed", 0 /* MB_OK */ );
-#endif
-	Sys_Exit(1);
-}
-
-/*
-================
-Sys_Error
-================
-*/
-void Sys_Error (const char *error, ...)
-{
-	static qbool inerror = false;
-	va_list argptr;
-	char text[1024];
-
-	sv_error = true;
-
-	if (inerror)
-		Sys_Exit (1);
-
-	inerror = true;
-
-	va_start (argptr, error);
-	vsnprintf (text, sizeof (text), error, argptr);
-	va_end (argptr);
-
-#ifdef _CONSOLE
-	if (!((int)sys_nostdout.value || isdaemon))
-		printf ("ERROR: %s\n", text);
-#else
-	if (!(COM_CheckParm ("-noerrormsgbox") || isdaemon))
-		MessageBox (NULL, text, "Error", 0 /* MB_OK */ );
-	else
-		Sys_Printf ("ERROR: %s\n", text);
-
-#endif
-
-	if (logs[ERROR_LOG].sv_logfile)
-	{
-		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", text));
-//		fclose (logs[ERROR_LOG].sv_logfile);
-	}
-
-// FIXME: hack - checking SV_Shutdown with svs.socketip set in -1 NET_Shutdown
-	if (svs.socketip != -1)
-		SV_Shutdown (va("ERROR: %s\n", text));
-
-	if ((int)sys_restart_on_error.value)
-		Sys_Restart ();
-
-	Sys_Exit (1);
-}
-
-static double pfreq;
-static qbool hwtimer = false;
-static __int64 startcount;
-void Sys_InitDoubleTime (void)
-{
-	__int64 freq;
-
-	if (!COM_CheckParm("-nohwtimer") &&
-		QueryPerformanceFrequency ((LARGE_INTEGER *)&freq) && freq > 0)
-	{
-		// hardware timer available
-		pfreq = (double)freq;
-		hwtimer = true;
-		QueryPerformanceCounter ((LARGE_INTEGER *)&startcount);
-	}
-	else
-	{
-		// make sure the timer is high precision, otherwise
-		// NT gets 18ms resolution
-		timeBeginPeriod (1);
-	}
-}
-
-double Sys_DoubleTime (void)
-{
-	__int64 pcount;
-
-	static DWORD starttime;
-	static qbool first = true;
-	DWORD now;
-
-	if (hwtimer)
-	{
-		QueryPerformanceCounter ((LARGE_INTEGER *)&pcount);
-		if (first) {
-			first = false;
-			startcount = pcount;
-			return 0.0;
-		}
-		// TODO: check for wrapping; is it necessary?
-		return (pcount - startcount) / pfreq;
-	}
-
-	now = timeGetTime();
-
-	if (first)
-	{
-		first = false;
-		starttime = now;
-		return 0.0;
-	}
-
-	if (now < starttime) // wrapped?
-		return (now / 1000.0) + (LONG_MAX - starttime / 1000.0);
-
-	if (now - starttime == 0)
-		return 0.0;
-
-	return (now - starttime) / 1000.0;
-}
-
-/*
-================
-Sys_TimestampMilliseconds
-================
-*/
-uint64_t Sys_TimestampMilliseconds(void)
-{
-	FILETIME ft;
-	ULARGE_INTEGER ticks;
-
-	GetSystemTimeAsFileTime(&ft);
-
-	ticks.LowPart = ft.dwLowDateTime;
-	ticks.HighPart = ft.dwHighDateTime;
-
-	return (uint64_t)((ticks.QuadPart - 116444736000000000ULL) / 10000ULL);
-}
-
-/*
-================
-Sys_ConsoleInput
-================
-*/
-char *Sys_ConsoleInput (void)
-{
-#ifdef _CONSOLE
-
-	static char	text[256], *t;
-	static int	len = 0;
-
-	int		c;
-
-	// read a line out
-	if (!isdaemon)
-		while (_kbhit())
-		{
-			c = _getch();
-
-			if (c == 224)
-			{
-				if (_kbhit())
-				{
-					// assume escape sequence (arrows etc), skip
-					_getch();
-					continue;
-				}
-				// assume character
-			}
-
-			if (c < 32 && c != '\r' && c != 8)
-				continue;
-
-			putch (c);
-			if (c == '\r')
-			{
-				text[len] = 0;
-				putch ('\n');
-				len = 0;
-				return text;
-			}
-			if (c == 8)
-			{
-				if (len)
-				{
-					putch (' ');
-					putch (c);
-					len--;
-					text[len] = 0;
-				}
-				continue;
-			}
-
-			text[len] = c;
-			len++;
-			text[len] = 0;
-			if (len == sizeof(text))
-				len = 0;
-		}
-#endif
-
-	// If you searching where input added under non console application, then you should check DialogFunc WM_COMMAND.
-
-	return NULL;
-}
-
-/*
-================
-Sys_Printf
-================
-*/
-void Sys_Printf(char* fmt, ...)
-{
-	va_list argptr;
-	char text[MAXCMDBUF];
-	char* startpos;
-	char* endpos;
-	date_t      date;
-
-#ifdef _CONSOLE
-	if ((int)sys_nostdout.value) {
-		return;
-	}
-#endif
-
-	if (isdaemon) {
-		return;
-	}
-
-	va_start(argptr, fmt);
-	vsnprintf(text, MAXCMDBUF, fmt, argptr);
-	va_end(argptr);
-
-	// normalize text before add to console.
-	Q_normalizetext((char*)text);
-
-#ifndef _CONSOLE
-	ConsoleAddText(text);
-#else
-	SV_TimeOfDay(&date, "%Y-%m-%d %H:%M:%S");
-	startpos = text;
-	while (startpos && startpos[0]) {
-		endpos = strchr(startpos, '\n');
-		if (endpos) {
-			*endpos = '\0';
-		}
-		fprintf(stdout, "[%s] %s\n", date.str, startpos);
-		fflush(stdout);
-		if (endpos) {
-			startpos = endpos + 1;
-			if (startpos[0] == (char)10) {
-				++startpos;
-			}
-		}
-		else {
-			break;
-		}
-	}
-#endif //_CONSOLE
-}
-
-/*
-=============
-Sys_Init
- 
-Quake calls this so the system can register variables before host_hunklevel
-is marked
-=============
-*/
-void Sys_Init (void)
-{
-	qbool	WinNT;
-	OSVERSIONINFO	vinfo;
-
-	// make sure the timer is high precision, otherwise
-	// NT gets 18ms resolution
-	timeBeginPeriod( 1 );
-
-	vinfo.dwOSVersionInfoSize = sizeof(vinfo);
-
-	if (!GetVersionEx (&vinfo))
-		Sys_Error ("Couldn't get OS info");
-
-	if (vinfo.dwMajorVersion < 4 || vinfo.dwPlatformId == VER_PLATFORM_WIN32s)
-		Sys_Error (SERVER_NAME " requires at least Win95 or NT 4.0");
-
-	WinNT = (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT ? true : false);
-
-	Cvar_Register (&sys_nostdout);
-	Cvar_Register (&sys_sleep);
-
-	if (COM_CheckParm ("-nopriority"))
-	{
-		Cvar_Set (&sys_sleep, "0");
-	}
-	else
-	{
-		if ( ! SetPriorityClass (GetCurrentProcess(), HIGH_PRIORITY_CLASS))
-			Con_Printf ("SetPriorityClass() failed\n");
-		else
-			Con_Printf ("Process priority class set to HIGH\n");
-
-		// sys_sleep > 0 seems to cause packet loss on WinNT (why?)
-		if (WinNT)
-			Cvar_Set (&sys_sleep, "0");
-	}
-
-	Sys_InitDoubleTime ();
-}
-
-void Sys_Sleep (unsigned long ms)
-{
-	Sleep (ms);
-}
-
-int Sys_Script (const char *path, const char *args)
-{
-	STARTUPINFO			si;
-	PROCESS_INFORMATION	pi;
-	char cmdline[1024], curdir[MAX_OSPATH];
-
-	memset (&si, 0, sizeof(si));
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESHOWWINDOW;
-	si.wShowWindow = SW_SHOWMINNOACTIVE;
-
-	GetCurrentDirectory(sizeof(curdir), curdir);
-
-
-	snprintf(cmdline, sizeof(cmdline), "%s\\sh.exe %s.qws %s", curdir, path, args);
-	strlcat(curdir, va("\\%s", fs_gamedir+2), MAX_OSPATH);
-
-	return CreateProcess (NULL, cmdline, NULL, NULL,
-	                      FALSE, 0/*DETACHED_PROCESS /*CREATE_NEW_CONSOLE*/ , NULL, curdir, &si, &pi);
-}
-
-DL_t Sys_DLOpen (const char *path)
-{
-	return LoadLibrary (path);
-}
-
-qbool Sys_DLClose (DL_t dl)
-{
-	return FreeLibrary (dl);
-}
-
-void *Sys_DLProc (DL_t dl, const char *name)
-{
-	return (void *) GetProcAddress (dl, name);
-}
-
-int Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param)
-{
-    DWORD threadid;
-    HANDLE thread;
-
-    thread = CreateThread (
-        NULL,               // pointer to security attributes
-        0,                  // initial thread stack size
-        func,               // pointer to thread function
-        param,              // argument for new thread
-        0,                  // creation flags
-        &threadid);         // pointer to receive thread ID
-
-    if (thread == NULL)
-        return (int)GetLastError();
-
-    CloseHandle(thread);
-
-    return 0;
-}
-
-typedef struct {
-	int (*func)(void *);
-	void *data;
-} sys_thread_args_t;
-
-static unsigned __stdcall Sys_DetachedThreadMain(void *data)
-{
-	sys_thread_args_t args = *(sys_thread_args_t *)data;
-
-	free(data);
-	args.func(args.data);
-	return 0;
-}
-
-int Sys_CreateDetachedThread(int (*func)(void *), void *data)
-{
-	HANDLE thread;
-	sys_thread_args_t *args = malloc(sizeof(*args));
-
-	if (!args) {
-		return -1;
-	}
-	args->func = func;
-	args->data = data;
-	thread = (HANDLE)_beginthreadex(NULL, 0, Sys_DetachedThreadMain, args, 0, NULL);
-	if (!thread) {
-		free(args);
-		return -1;
-	}
-	CloseHandle(thread);
-	return 0;
-}
-
-qbool Sys_MutexInit(mutex_t *m)
-{
-	return InitializeCriticalSectionAndSpinCount(&m->lock, 0) != FALSE;
-}
-
-void Sys_MutexLock(mutex_t *m)
-{
-	EnterCriticalSection(&m->lock);
-}
-
-void Sys_MutexUnlock(mutex_t *m)
-{
-	LeaveCriticalSection(&m->lock);
-}
-
-qbool Sys_MutexTryLock(mutex_t *m)
-{
-	return TryEnterCriticalSection(&m->lock) != 0;
-}
-
-#ifdef _CONSOLE
-/*
-==================
-main
- 
-==================
-*/
-
-int main(int ac, char *av[])
-{
-	double			newtime, time, oldtime;
-	int				sleep_msec;
-
-	ParseCommandLine (ac, av);
-
-	COM_InitArgv (argc, argv);
-
-	GetConsoleTitle(title, sizeof(title));
-
-	Host_Init(argc, argv, DEFAULT_MEM_SIZE);
-
-	// run one frame immediately for first heartbeat
-	SV_Frame (0.1);
-
-	//
-	// main loop
-	//
-	oldtime = Sys_DoubleTime () - 0.1;
-
-	while (1)
-	{
-		sleep_msec = (int)sys_sleep.value;
-		if (sleep_msec > 0)
-		{
-			if (sleep_msec > 13)
-				sleep_msec = 13;
-			Sleep (sleep_msec);
-		}
-
-		// select on the net socket and stdin
-		// the only reason we have a timeout at all is so that if the last
-		// connected client times out, the message would not otherwise
-		// be printed until the next event.
-		if (!sys_simulation.value) {
-			NET_Sleep((int)sys_select_timeout.value / 1000, false);
-		}
-
-		// find time passed since last cycle
-		newtime = Sys_DoubleTime ();
-		time = newtime - oldtime;
-		oldtime = newtime;
-
-		curtime = newtime;
-		SV_Frame (time);
-	}
-
-	return true;
-}
-
-#else  // _CONSOLE
 
 int APIENTRY WinMain(   HINSTANCE   hInstance,
 						HINSTANCE   hPrevInstance,
@@ -901,8 +471,9 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
 		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
 	}
-	
+
 	Host_Init(argc, argv, DEFAULT_MEM_SIZE);
+	SetWindowText_(va(SERVER_NAME ":%d - QuakeWorld server", NET_UDPSVPort()));
 
 	// if stared miminize update notify icon message (with correct port)
 	if (minimized)
@@ -960,9 +531,11 @@ int APIENTRY WinMain(   HINSTANCE   hInstance,
 	}
 
 
-	Sys_Exit(msg.wParam);
+	SV_Shutdown("Server quit\n");
+	NET_Shutdown();
+	Sys_Exit((int)msg.wParam);
 
 	return msg.wParam;
 }
 
-#endif // _CONSOLE
+#endif // SV_WINDOWS_GUI

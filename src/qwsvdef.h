@@ -87,6 +87,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sv_broadcast.h"
 #define SV_HAS_BROADCAST
 #define SV_HAS_LEGACY_QTV_VIEWERS
+#define SV_PREFERRED_STARTMAP "mvdsv-kg"
+#ifdef _WIN32
+#define SV_WINDOWS_MVDSV
+#ifndef _CONSOLE
+#define SV_WINDOWS_GUI
+#endif
+#endif
 
 // MVDSV has no client receiving cvar commands from a remote server.
 #define CVAR_NOTFROMSERVER CVAR_NONE
@@ -112,7 +119,7 @@ extern	double	curtime; // not bounded or scaled, shared by local client and serv
 void SV_Error (char *error, ...);
 void SV_Init (void);
 void SV_Shutdown (char *finalmsg);
-#define Host_Error SV_Error // ezquake compatibility
+void Host_Error(char *error, ...);
 void Host_Init (int argc, char **argv, int default_memsize);
 void Host_ClearMemory (void);
 

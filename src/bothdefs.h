@@ -269,6 +269,7 @@ void	*Q_tryrealloc (void *ptr, size_t size);
 #define	Q_free(ptr)	if(ptr) { free(ptr); ptr = NULL; }
 
 char	*Q_strdup (const char *src);
+char	*Q_strdup_printf(const char *format, ...);
 
 char	*COM_StripExtension (char *str);
 char	*COM_FileExtension (const char *in);

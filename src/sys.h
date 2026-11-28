@@ -71,6 +71,7 @@ int		Sys_compare_by_name (const void *a, const void *b);
 //
 // system IO
 //
+extern cvar_t sys_restart_on_error;
 void Sys_Error (const char *error, ...); // an error will cause the entire program to exit
 
 void Sys_Printf (char *fmt, ...); // send text to the console
@@ -91,6 +92,7 @@ char *Sys_ConsoleInput (void);
 void Sys_Init (void);
 
 void Sys_Sleep (unsigned long ms);
+#define Sys_MSleep Sys_Sleep
 
 #ifdef _WIN32
 #define Sys_OpenSocket(family, type, protocol) \
@@ -170,14 +172,14 @@ int  Sys_CreateThread(DWORD (WINAPI *func)(void *), void *param);
 int  Sys_CreateDetachedThread(int (*func)(void *), void *data);
 
 
+#ifdef _WIN32
+typedef CRITICAL_SECTION mutex_t;
+#else
 typedef struct
 {
-#ifdef _WIN32
-	CRITICAL_SECTION lock;
-#else
 	pthread_mutex_t lock;
-#endif
 } mutex_t;
+#endif
 typedef mutex_t sys_mutex_t;
 
 qbool Sys_MutexInit(mutex_t *l);

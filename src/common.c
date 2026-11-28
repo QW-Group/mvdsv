@@ -481,7 +481,7 @@ float MSG_ReadAngle (void)
 #endif // FTE_PEXT_FLOATCOORDS
 }
 
-void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move)
+void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move, int protoversion)
 {
 	int bits;
 
@@ -2352,4 +2352,61 @@ qbool Sys_MutexTryLockWithTimeout(mutex_t *m, unsigned long timeout_ms)
 	}
 
 	return false;
+}
+
+cvar_t developer = {"developer", "0"};
+cvar_t sys_simulation = {"sys_simulation", "0"};
+
+void COM_Init(void)
+{
+	Cvar_Register(&developer);
+	Cvar_Register(&sys_simulation);
+}
+
+qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+                            int count, int cursor, int limit, int *next)
+{
+	int end, size, index;
+
+	if (count < 0 || count > 65535 || cursor < 0 || cursor > count) {
+		return false;
+	}
+	limit = min(limit, msg->maxsize);
+	/* Opcode, cursor, empty string and continuation; preflight before writing. */
+	size = msg->cursize + (cursor > 255 ? 5 : 4);
+	if (size > limit) {
+		return false;
+	}
+	end = cursor;
+	while (end < count) {
+		size_t length = strlen(sounds[end + 1]) + 1;
+
+		if (length > (size_t)(limit - size)) {
+			break;
+		}
+		size += (int)length;
+		++end;
+	}
+	/* Zero is reserved for completion. Never publish a non-final 256 boundary. */
+	if (end < count && !(end & 255)) {
+		--end;
+	}
+	if (end < cursor || (end == cursor && cursor < count)) {
+		return false;
+	}
+
+	MSG_WriteByte(msg, cursor > 255 ? svc_fte_soundlistshort : svc_soundlist);
+	if (cursor > 255) {
+		MSG_WriteShort(msg, cursor);
+	}
+	else {
+		MSG_WriteByte(msg, cursor);
+	}
+	for (index = cursor + 1; index <= end; ++index) {
+		MSG_WriteString(msg, sounds[index]);
+	}
+	MSG_WriteByte(msg, 0);
+	MSG_WriteByte(msg, end < count ? end & 255 : 0);
+	*next = end < count ? end : 0;
+	return true;
 }

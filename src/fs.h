@@ -38,7 +38,8 @@ FUNCTION PROTOTYPES
 =============================================================================
 */
 
-void FS_Init (void);
+void FS_InitFilesystem (void);
+extern char com_gamedirfile[];
 void FS_ShutDown(void);
 long FS_FileLength (FILE *f);
 void FS_FileBase (const char *in, char *out);

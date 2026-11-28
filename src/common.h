@@ -96,7 +96,7 @@ char *MSG_ReadStringLine (void);
 float MSG_ReadCoord (void);
 float MSG_ReadAngle (void);
 float MSG_ReadAngle16 (void);
-void MSG_ReadDeltaUsercmd (const struct usercmd_s *from, struct usercmd_s *cmd);
+void MSG_ReadDeltaUsercmd (const struct usercmd_s *from, struct usercmd_s *cmd, int protoversion);
 
 void MSG_ReadData (void *data, int len);
 void MSG_ReadSkip(int bytes);
@@ -142,6 +142,7 @@ char *COM_Argv (int arg); // range and null checked
 int COM_Argc (void);
 
 void COM_InitArgv (int argc, char **argv);
+void COM_Init(void);
 
 //============================================================
 // Alternative variant manipulation with info strings

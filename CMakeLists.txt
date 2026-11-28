@@ -97,6 +97,7 @@ if(UNIX)
 else()
 	list(APPEND SRC_COMMON
 		"${DIR_SRC}/sv_sys_win.c"
+		"${DIR_SRC}/sys_win_shared.c"
 		"${DIR_SRC}/sv_windows.c"
 		"${DIR_SRC}/winquake.rc"
 	)

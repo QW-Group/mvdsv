@@ -26,7 +26,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "vm_local.h"
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 static void SV_ClientDownloadComplete(client_t* cl);
+
+#ifdef SV_HAS_CSQC
+extern cvar_t sv_csqc_progname;
+#endif
 
 edict_t	*sv_player;
 
@@ -73,8 +81,10 @@ static struct {
 	antilag_client_info_t antilag_clients[MAX_CLIENTS];
 } debug_info;
 
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
 static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse);
 static void SV_DebugServerSideWeaponInstruction(client_t* cl);
+#endif
 cvar_t sv_debug_weapons = { "sv_debug_weapons", "0" };
 #endif
 
@@ -82,7 +92,10 @@ cvar_t sv_debug_weapons = { "sv_debug_weapons", "0" };
 cvar_t sv_debug_usercmd = { "sv_debug_usercmd", "0" };
 cvar_t sv_debug_antilag = { "sv_debug_antilag", "0" };
 
+
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
 static void SV_UserSetWeaponRank(client_t* cl, const char* new_wrank);
+#endif
 static void SV_DebugClientCommand(byte playernum, const usercmd_t* cmd, int dropnum_);
 
 extern	vec3_t	player_mins;
@@ -246,7 +259,6 @@ This will be sent on the initial connection and upon each server load.
 int SV_VIPbyIP (netadr_t adr);
 static void Cmd_New_f (void)
 {
-	char		*gamedir;
 	int			playernum;
 	extern cvar_t sv_serverip;
 	extern cvar_t sv_getrealip;
@@ -363,11 +375,7 @@ static void Cmd_New_f (void)
 	//	SV_FullClientUpdate (sv_client, &sv.reliable_datagram);
 	//	sv_client->sendinfo = true;
 
-	gamedir = Info_ValueForKey (svs.info, "*gamedir");
-	if (!gamedir[0])
-		gamedir = "qw";
-
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	if (sv.csqcchecksum && !(sv_client->fteprotocolextensions & FTE_PEXT_CSQC))
 	{
 		SV_ClientPrintf(sv_client, PRINT_HIGH, "\n\n\n\n"
@@ -490,7 +498,7 @@ static void Cmd_New_f (void)
 #endif
 	MSG_WriteLong  (&sv_client->netchan.message, PROTOCOL_VERSION);
 	MSG_WriteLong  (&sv_client->netchan.message, svs.spawncount);
-	MSG_WriteString(&sv_client->netchan.message, gamedir);
+	MSG_WriteString(&sv_client->netchan.message, SV_GetAdvertisedGamedir());
 
 	playernum = NUM_FOR_EDICT(sv_client->edict)-1;
 	if (sv_client->spectator)
@@ -968,7 +976,7 @@ static void Cmd_Spawn_f (void)
 	//
 	memset (sv_client->stats, 0, sizeof(sv_client->stats));
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// CSQC float/string stat caches are per-level too: free the host string
 	// copies and clear the float cache so a fresh signon (map change / respawn)
 	// re-sends them. The client shuts CSQC down on map change and reloads
@@ -1478,14 +1486,120 @@ static void SV_NextUpload (void)
 	}
 }
 
-static void SV_UserCleanFilename(char* name)
+static void SV_NormalizeDownloadName(char *name)
 {
-	char* p;
+	char *p;
 
-	// lowercase name (needed for casesen file systems)
-	for (p = name; *p; p++) {
-		*p = (char)tolower(*p);
+	SV_ReplaceChar(name, '\\', '/');
+	// Demo files are opened directly from disk, so preserve their spelling.
+	if (!strncasecmp(name, "demos/", 6)) {
+		memcpy(name, "demos/", 6);
+		return;
 	}
+
+	for (p = name; *p; p++) {
+		*p = (char)tolower((unsigned char)*p);
+	}
+}
+
+#ifdef _WIN32
+static qbool SV_IsDownloadDeviceName(const char *component, size_t length)
+{
+	const char *extension = memchr(component, '.', length);
+	WCHAR digit;
+
+	if (extension) {
+		length = extension - component;
+	}
+	while (length && component[length - 1] == ' ') {
+		length--;
+	}
+	if (length == 3) {
+		return !strncasecmp(component, "con", 3) || !strncasecmp(component, "prn", 3)
+			|| !strncasecmp(component, "aux", 3) || !strncasecmp(component, "nul", 3);
+	}
+	if ((length == 6 && !strncasecmp(component, "conin$", 6))
+		|| (length == 7 && !strncasecmp(component, "conout$", 7))) {
+		return true;
+	}
+	if (length > 3 && (!strncasecmp(component, "com", 3) || !strncasecmp(component, "lpt", 3))) {
+		UINT codepage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
+
+		// Use fopen's filename encoding to recognize superscript digits.
+		if (MultiByteToWideChar(codepage, 0, component + 3, (int)(length - 3), &digit, 1) == 1) {
+			return (digit >= '0' && digit <= '9') || digit == 0x00b9 || digit == 0x00b2 || digit == 0x00b3;
+		}
+	}
+	return false;
+}
+#endif
+
+static qbool SV_IsDownloadPath(const char *name)
+{
+	const char *component = name;
+	const char *end;
+	size_t length;
+
+	if (*name == '.' || strchr(name, ':')) {
+		return false;
+	}
+#ifdef _WIN32
+	if (strpbrk(name, "<>\"|?*")) {
+		return false;
+	}
+#endif
+
+	for (;;) {
+		length = strcspn(component, "/");
+		end = component + length;
+		if (!length || (length == 1 && component[0] == '.')
+			|| (length == 2 && component[0] == '.' && component[1] == '.')) {
+			return false;
+		}
+#ifdef _WIN32
+		// Reject names Win32 can interpret differently from the checked path.
+		if (end[-1] == '.' || end[-1] == ' ' || SV_IsDownloadDeviceName(component, length)) {
+			return false;
+		}
+#endif
+		if (!*end) {
+			return length < 4 || strcasecmp(end - 4, ".log") != 0;
+		}
+		component = end + 1;
+	}
+}
+
+static vfsfile_t *SV_OpenDemoDownload(const char *directory, const char *filename)
+{
+	// Download demos from the recording directory even when userdir is set.
+	char *fullname = Q_strdup_printf("%s/%s/%s", fs_gamedir, directory, filename);
+	vfsfile_t *file = FS_OpenVFS(fullname, "rb", FS_NONE_OS);
+
+	Q_free(fullname);
+	return file;
+}
+
+static qbool SV_ParseDemoNumber(const char *selector, int *num)
+{
+	size_t dots = strspn(selector, ".");
+	const char *digits = selector + (*selector == '-' || *selector == '+');
+	long number;
+
+	if (dots && !selector[dots]) {
+		*num = (int)(dots & 0xF) << 24;
+		return true;
+	}
+	if (!*digits || digits[strspn(digits, "0123456789")]) {
+		return false;
+	}
+
+	// SV_MVDNum stores a signed demo number in the low 24 bits.
+	number = strtol(selector, NULL, 10);
+	if (number < -0x800000L || number > 0x7FFFFFL) {
+		return false;
+	}
+	*num = (int)number & 0x00FFFFFF;
+	return true;
 }
 
 /*
@@ -1493,11 +1607,9 @@ static void SV_UserCleanFilename(char* name)
 Cmd_Download_f
 ==================
 */
-//void SV_ReplaceChar(char *s, char from, char to);
 static void Cmd_Download_f(void)
 {
 	char	*name, n[MAX_OSPATH], *val;
-	char alternative_path[MAX_OSPATH];
 	extern	cvar_t	allow_download;
 	extern	cvar_t	allow_download_skins;
 	extern	cvar_t	allow_download_models;
@@ -1508,7 +1620,7 @@ static void Cmd_Download_f(void)
 	extern	cvar_t	allow_download_other;
 	extern  cvar_t  download_map_url; //bliP: download url
 	extern	cvar_t	sv_demoDir;
-	int i;
+	qbool by_number;
 	qbool allow_dl = false;
 
 	if (Cmd_Argc() != 2)
@@ -1518,32 +1630,20 @@ static void Cmd_Download_f(void)
 	}
 
 	name = Cmd_Argv(1);
-
-	SV_ReplaceChar(name, '\\', '/');
-
-	// couple of checks to not allow dl-ing anything except in quake dir
-	if (
-		//TODO: split name to pathname and filename and check for 'bad symbols' only in pathname
-		*name == '/' // no absolute
-		|| !strncmp(name, "../", 3) // no leading ../
-		|| strstr(name, "/../") // no /../
-		|| ((i = strlen(name)) < 3 ? 0 : !strncmp(name + i - 3, "/..", 4)) // no /.. at end
-		|| *name == '.' //relative is pointless
-		|| ((i = strlen(name)) < 4 ? 0 : !strncasecmp(name + i - 4, ".log", 5)) // no logs
-#ifdef _WIN32
-		// no leading X:
-	   	|| ( name[0] && name[1] == ':' && ((*name >= 'a' && *name <= 'z') || (*name >= 'A' && *name <= 'Z')))
-#endif //_WIN32
-	   )
+	SV_NormalizeDownloadName(name);
+	// Numbered demo requests use the demo list, where dots select recent recordings.
+	by_number = !strncmp(name, "demonum/", 8);
+	if (!by_number && !SV_IsDownloadPath(name)) {
 		goto deny_download;
+	}
 
 	if (sv_client->special)
 		allow_dl = true; // NOTE: user used techlogin, allow dl anything in quake dir in such case!
 	else if (!(int)allow_download.value)
 		allow_dl = false; // global allow check
-#ifdef FTE_PEXT_CSQC
-	else if (!strncmp(name, "csprogs.dat", 11))
-		allow_dl = true; // we always allow csprogs.dat to be downloaded (if downloads are permitted).
+#ifdef SV_HAS_CSQC
+	else if (!strcasecmp(name, sv_csqc_progname.string))
+		allow_dl = true; // Allow the active CSQC program when downloads are enabled.
 #endif
 	else if (!strstr(name, "/"))
 		allow_dl = false; // should be in subdir
@@ -1555,7 +1655,7 @@ static void Cmd_Download_f(void)
 		allow_dl = allow_download_sounds.value; // sounds
 	else if (!strncmp(name, "maps/", 5)) // maps, note usage of allow_download_pakmaps a bit below
 		allow_dl = allow_download_maps.value; // maps
-	else if (!strncmp(name, "demos/", 6) || !strncmp(name, "demonum/", 8))
+	else if (by_number || !strncmp(name, "demos/", 6))
 		allow_dl = allow_download_demos.value; // demos
 	else
 		allow_dl = allow_download_other.value; // all other stuff
@@ -1565,69 +1665,39 @@ static void Cmd_Download_f(void)
 
 	SV_ClientDownloadComplete(sv_client);
 
-	memset(alternative_path, 0, sizeof(alternative_path));
-	if ( !strncmp(name, "demos/", 6) && sv_demoDir.string[0])
-	{
-		snprintf(n,sizeof(n), "%s/%s", sv_demoDir.string, name + 6);
-		name = n;
+	if (by_number) {
+		char *demo_name;
+		int num;
 
-		if (sv_demoDirAlt.string[0]) {
-			strlcpy(alternative_path, sv_demoDirAlt.string, sizeof(alternative_path));
-			strlcat(alternative_path, "/", sizeof(alternative_path));
-			strlcat(alternative_path, name + 6, sizeof(alternative_path));
+		if (!SV_ParseDemoNumber(name + 8, &num)) {
+			Con_Printf("usage: download demonum/num\n"
+			           "if num is negative then download the Nth to last recorded demo, "
+			           "also can type any quantity of dots and "
+			           "where N dots is the Nth to last recorded demo\n");
+			goto deny_download;
 		}
-	}
-	else if (!strncmp(name, "demonum/", 8))
-	{
-		int num = Q_atoi(name + 8);
-		if (num == 0 && name[8] != '0')
-		{
-			char *num_s = name + 8;
-			int num_s_len = strlen(num_s);
-			for (num = 0; num < num_s_len; num++)
-				if (num_s[num] != '.')
-				{
-					Con_Printf("usage: download demonum/num\n"
-					           "if num is negative then download the Nth to last recorded demo, "
-					           "also can type any quantity of dots and "
-					           "where N dots is the Nth to last recorded demo\n");
-
-					goto deny_download;
-				}
-			num &= 0xF;
-			num <<= 24;
-		}
-		else
-			num &= 0x00FFFFFF;
-		name = SV_MVDNum(num);
-		if (!name)
-		{
+		demo_name = SV_MVDNum(num);
+		if (!demo_name) {
 			Con_Printf((char *)Q_yelltext((unsigned char*)va("Demo number %d not found.\n",
 				(num & 0xFF000000) ? -(num >> 24) : ((num & 0x00800000) ? (num | 0xFF000000) : num) )));
 			goto deny_download;
 		}
-		//Con_Printf("downloading demos/%s\n",name);
-		snprintf(n, sizeof(n), "download demos/%s\n", name);
+		snprintf(n, sizeof(n), "download demos/%s\n", demo_name);
 
 		ClientReliableWrite_Begin (sv_client, svc_stufftext,strlen(n) + 2);
 		ClientReliableWrite_String (sv_client, n);
 		return;
 	}
 
-	SV_UserCleanFilename(name);
-	SV_UserCleanFilename(alternative_path);
-
 	sv_client->downloadcount = 0;
 
-#ifdef SERVERONLY
-#define CLIENT_DOWNLOAD_RELATIVE_BASE FS_GAME // FIXME: Should we use FS_BASE ???
-#else
-#define CLIENT_DOWNLOAD_RELATIVE_BASE FS_BASE
-#endif
-
-	sv_client->download = FS_OpenVFS(name, "rb", CLIENT_DOWNLOAD_RELATIVE_BASE);
-	if (!sv_client->download && alternative_path[0]) {
-		sv_client->download = FS_OpenVFS(alternative_path, "rb", CLIENT_DOWNLOAD_RELATIVE_BASE);
+	if (!strncmp(name, "demos/", 6)) {
+		sv_client->download = SV_OpenDemoDownload(sv_demoDir.string, name + 6);
+		if (!sv_client->download && sv_demoDirAlt.string[0]) {
+			sv_client->download = SV_OpenDemoDownload(sv_demoDirAlt.string, name + 6);
+		}
+	} else {
+		sv_client->download = FS_OpenVFS(name, "rb", FS_GAME);
 	}
 	if (sv_client->download) {
 		sv_client->downloadsize = VFS_GETLEN(sv_client->download);
@@ -1725,8 +1795,7 @@ static void Cmd_StopDownload_f(void);
 
 static void Cmd_DemoDownload_f(void)
 {
-	int		i, num, cmd_argv_i_len;
-	char		*cmd_argv_i;
+	int		i, num;
 	unsigned char	download_queue_cleared[] = "Download queue cleared.\n";
 	unsigned char	download_queue_empty[] = "Download queue empty.\n";
 	unsigned char	download_queue_already_exists[]	= "Download queue already exists.\n";
@@ -1785,25 +1854,9 @@ static void Cmd_DemoDownload_f(void)
 	sv_client->demolist = ((sv_client->demonum[0] = Cmd_Argc()) > 2);
 	for (i = 1; i < sv_client->demonum[0]; i++)
 	{
-		cmd_argv_i = Cmd_Argv(i);
-		cmd_argv_i_len = strlen(cmd_argv_i);
-		num = Q_atoi(cmd_argv_i);
-		if (num == 0 && cmd_argv_i[0] != '0')
-		{
-			for (num = 0; num < cmd_argv_i_len; num++)
-				if (cmd_argv_i[num] != '.')
-				{
-					num = 0;
-					break;
-				}
-			if (num)
-			{
-				num &= 0xF;
-				num <<= 24;
-			}
+		if (!SV_ParseDemoNumber(Cmd_Argv(i), &num)) {
+			num = 0;
 		}
-		else
-			num &= 0x00FFFFFF;
 		sv_client->demonum[sv_client->demonum[0] - i] = num;
 	}
 	SV_DownloadNextFile();
@@ -1892,6 +1945,7 @@ static void SV_Say (qbool team)
 		snprintf(text, sizeof(text), "%s\n", p);
 	}
 
+#ifdef SV_HAS_BROADCAST
 	if (!team && strncmp(text, BROADCAST_PREFIX, BROADCAST_PREFIX_LEN) == 0)
 	{
 		if (!SV_Broadcast(text+BROADCAST_PREFIX_LEN))
@@ -1899,6 +1953,7 @@ static void SV_Say (qbool team)
 			return;
 		}
 	}
+#endif
 
 	if (!sv_client->logged && !sv_client->logged_in_via_web)
 	{
@@ -2539,7 +2594,9 @@ static void Cmd_SetInfo_f (void)
 void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* old_value)
 {
 	int i;
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 	char *s;
+#endif
 
 	// process any changed values
 	SV_ExtractFromUserinfo (sv_client, !strcmp(key, "name"));
@@ -2571,10 +2628,12 @@ void ProcessUserInfoChange (client_t* sv_client, const char* key, const char* ol
 		}
 	}
 
+#ifdef SV_HAS_LEGACY_QTV_VIEWERS
 	if (strcmp(key, "qul") == 0 && (s = Info_Get(&sv_client->_userinfo_ctx_, key)) && *s == '1')
 	{
 		QTV_Client_UserList(sv_client);
 	}
+#endif
 }
 
 /*
@@ -2731,7 +2790,7 @@ static void SetUpClientEdict (client_t *cl, edict_t *ent)
 	cl->maxspeed = sv_maxspeed.value;
 	if (fofs_maxspeed)
 		EdictFieldFloat(ent, fofs_maxspeed) = (int)sv_maxspeed.value;
-	
+
 	// Reset safestrafe state on spawn/respawn
 	memset(&cl->safestrafe, 0, sizeof(cl->safestrafe));
 }
@@ -3195,7 +3254,7 @@ void SV_Voice_UnmuteAll_f(void)
 
 #endif // FTE_PEXT2_VOICECHAT
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 void SV_EnableClientsCSQC(void)
 {
 	int e;
@@ -3488,7 +3547,7 @@ static ucmd_t ucmds[] =
 	{"unmuteall", SV_Voice_UnmuteAll_f, false}, /*reenables*/
 #endif
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	{"enablecsqc",	SV_EnableClientsCSQC, false},
 	{"disablecsqc",	SV_DisableClientsCSQC, false},
 #endif
@@ -3501,7 +3560,9 @@ static ucmd_t ucmds[] =
 	{"logout", Cmd_Logout_f, false},
 #endif
 
+#ifdef SV_HAS_BROADCAST
 	{"lastbroadcasts", SV_BroadcastPrintLog_f, false},
+#endif
 	{NULL, NULL}
 };
 
@@ -3688,31 +3749,31 @@ static void SV_ApplySafestrafe(client_t *cl, usercmd_t *ucmd)
 	int required_frames;
 	float current_move;
 	int current_dir, previous_dir;
-	
+
 	// Check if feature is enabled
 	required_frames = (int)sv_safestrafe.value;
 	if (required_frames <= 0 || cl->spectator)
 		return;
-	
+
 	current_move = ucmd->sidemove;
-	
+
 	// Handle pending stop frames
 	if (cl->safestrafe.pending_frames > 0) {
 		ucmd->sidemove = 0;
 		cl->safestrafe.pending_frames--;
 		cl->safestrafe.stop_frames++;
 		cl->safestrafe.last_sidemove = 0;
-		
+
 		return;
 	}
-	
+
 	// Determine directions (-1, 0, 1)
 	current_dir = (current_move > 0) - (current_move < 0);
-	previous_dir = (cl->safestrafe.last_sidemove > 0) - 
+	previous_dir = (cl->safestrafe.last_sidemove > 0) -
 	               (cl->safestrafe.last_sidemove < 0);
-	
+
 	// Check for direction change
-	if (current_dir != 0 && previous_dir != 0 && 
+	if (current_dir != 0 && previous_dir != 0 &&
 	    current_dir != previous_dir) {
 		// Direct direction change - enforce stop frames
 		cl->safestrafe.pending_frames = required_frames - 1;
@@ -3728,7 +3789,7 @@ static void SV_ApplySafestrafe(client_t *cl, usercmd_t *ucmd)
 			// Not enough stop frames
 			cl->safestrafe.pending_direction = current_move;
 			cl->safestrafe.stop_frames++;
-			cl->safestrafe.pending_frames = 
+			cl->safestrafe.pending_frames =
 				required_frames - cl->safestrafe.stop_frames;
 			if (cl->safestrafe.pending_frames < 0)
 				cl->safestrafe.pending_frames = 0;
@@ -3743,7 +3804,7 @@ static void SV_ApplySafestrafe(client_t *cl, usercmd_t *ucmd)
 		// Currently stopped
 		cl->safestrafe.stop_frames++;
 	}
-	
+
 	// Update last move for next frame
 	cl->safestrafe.last_sidemove = ucmd->sidemove;
 }
@@ -4338,6 +4399,7 @@ void SV_PostRunCmd(void)
 SV_UserSetWeaponRank
 Sets wrank userinfo for mods to pick best weapon based on user's preferences
 */
+#ifdef MVD_PEXT1_SERVERSIDEWEAPON
 static void SV_UserSetWeaponRank(client_t* cl, const char* new_wrank)
 {
 	char old_wrank[128] = { 0 };
@@ -4351,6 +4413,7 @@ static void SV_UserSetWeaponRank(client_t* cl, const char* new_wrank)
 		}
 	}
 }
+#endif
 
 // SV_RotateCmd
 // Rotates client command so a high-ping player can better control direction as they exit teleporters on high-ping
@@ -4563,7 +4626,6 @@ static void SV_DebugServerSideWeaponInstruction(client_t* cl)
 		}
 	}
 }
-#endif
 
 static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 {
@@ -4589,7 +4651,9 @@ static void SV_DebugServerSideWeaponScript(client_t* cl, int best_impulse)
 }
 #endif
 
-#ifdef FTE_PEXT_CSQC
+#endif // MVD_PEXT1_DEBUG_WEAPON
+
+#ifdef SV_HAS_CSQC
 // sendevent argument value type codes delivered to the mod via qcrequestarg;
 // engine and mod must agree on these values.
 #define QCREQ_T_FLOAT	0
@@ -5120,15 +5184,9 @@ void SV_ExecuteClientMessage (client_t *cl)
 			}*/
 			//<-
 
-#ifndef SERVERONLY
 			MSG_ReadDeltaUsercmd (&nullcmd, &oldest, PROTOCOL_VERSION);
 			MSG_ReadDeltaUsercmd (&oldest, &oldcmd, PROTOCOL_VERSION);
 			MSG_ReadDeltaUsercmd (&oldcmd, &newcmd, PROTOCOL_VERSION);
-#else
-			MSG_ReadDeltaUsercmd (&nullcmd, &oldest);
-			MSG_ReadDeltaUsercmd (&oldest, &oldcmd);
-			MSG_ReadDeltaUsercmd (&oldcmd, &newcmd);
-#endif
 
 			if ( cl->state != cs_spawned )
 				break;
@@ -5219,7 +5277,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 			break;
 #endif
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 		case clcfte_qcrequest:
 			if (!SV_CSQCActive())
 			{
@@ -5251,7 +5309,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 	}
 #endif
 
-#ifdef FTE_PEXT_CSQC
+#ifdef SV_HAS_CSQC
 	// frames this packet implicitly acknowledges are not lost (FTE sv_user.c,
 	// after the clc parse loop)
 	SV_AckEntityFrame (cl, cl->netchan.incoming_acknowledged);

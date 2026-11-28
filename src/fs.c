@@ -59,7 +59,7 @@ VARIABLES
 static char		fs_basedir[MAX_OSPATH];		// c:/quake
 
 char			fs_gamedir[MAX_OSPATH];		// c:/quake/qw
-static char		fs_gamedirfile[MAX_QPATH];	// qw tf ctf and etc. In other words single dir name without path
+char			com_gamedirfile[MAX_QPATH];	// qw tf ctf and etc. In other words single dir name without path
 
 static searchpath_t	*fs_searchpaths = NULL;
 static searchpath_t	*fs_base_searchpaths = NULL;	// without gamedirs
@@ -425,9 +425,9 @@ static void FS_AddGameDirectory (char *dir, FS_Load_File_Types loadstuff)
 	searchpath_t *search;
 
 	if ((p = strrchr(dir, '/')))
-		strlcpy (fs_gamedirfile, ++p, sizeof (fs_gamedirfile));
+		strlcpy (com_gamedirfile, ++p, sizeof (com_gamedirfile));
 	else
-		strlcpy (fs_gamedirfile, dir, sizeof (fs_gamedirfile));
+		strlcpy (com_gamedirfile, dir, sizeof (com_gamedirfile));
 
 	strlcpy (fs_gamedir, dir, sizeof (fs_gamedir));
 
@@ -461,8 +461,8 @@ qbool FS_SetGamedir (char *dir, qbool force)
 		dir = "qw";
 	}
 
-	if (strlen(dir) >= sizeof(fs_gamedirfile)) {
-		Con_Printf("Gamedir name too long (maximum %d bytes)\n", (int)sizeof(fs_gamedirfile) - 1);
+	if (strlen(dir) >= sizeof(com_gamedirfile)) {
+		Con_Printf("Gamedir name too long (maximum %d bytes)\n", (int)sizeof(com_gamedirfile) - 1);
 		return false;
 	}
 
@@ -472,7 +472,7 @@ qbool FS_SetGamedir (char *dir, qbool force)
 		return false;
 	}
 
-	if (!force && !strcmp(fs_gamedirfile, dir))
+	if (!force && !strcmp(com_gamedirfile, dir))
 		return true;		// Still the same, unless we forced.
 
 	length = snprintf(path, sizeof(path), "%s/%s", fs_basedir, dir);
@@ -573,7 +573,7 @@ void FS_InitEx(void)
 		if (!FS_SetGamedir(COM_Argv(i + 1), true)) {
 			Sys_Error("Invalid game directory for %s: %s", COM_Argv(i), COM_Argv(i + 1));
 		}
-		Info_SetValueForStarKey (svs.info, "*gamedir", fs_gamedirfile, MAX_SERVERINFO_STRING);
+		Info_SetValueForStarKey (svs.info, "*gamedir", com_gamedirfile, MAX_SERVERINFO_STRING);
 	}
 }
 
@@ -583,7 +583,7 @@ FS_Init
 
 ================
 */
-void FS_Init( void )
+void FS_InitFilesystem( void )
 {
 	FS_InitModule(); // init commands and variables.
 	FS_InitEx();
@@ -614,7 +614,7 @@ void FS_ShutDown( void )
 	fs_base_searchpaths = fs_searchpaths = NULL;
 
 	fs_gamedir[0]		= 0;
-	fs_gamedirfile[0]	= 0;
+	com_gamedirfile[0]	= 0;
 
 	fs_basedir[0]		= 0;
 
@@ -657,13 +657,13 @@ vfsfile_t *FS_OpenVFS(const char *filename, char *mode, relativeto_t relativeto)
 		return VFSOS_Open(fullname, mode);
 
 	case FS_GAME_OS:	//OS access only, no paks
-		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, fs_gamedirfile, filename);
+		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, com_gamedirfile, filename);
 		if (strchr(mode, 'w') || strchr(mode, 'a'))
 			FS_CreatePath(fullname); // FIXME: It should be moved to VFSOS_Open() itself? 
 		return VFSOS_Open(fullname, mode);
 
 	case FS_GAME:
-//		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, fs_gamedirfile, filename);
+//		snprintf(fullname, sizeof(fullname), "%s/%s/%s", fs_basedir, com_gamedirfile, filename);
 
 		// That an error attempt to write with FS_GAME, since file can be in pack file. redirect.
 		if (strchr(mode, 'w') || strchr(mode, 'a'))
