@@ -1,0 +1,996 @@
+/*
+Copyright (C) 1996-1997 Id Software, Inc.
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
+#include "qwsvdef.h"
+
+/*
+==============================================================================
+
+			MESSAGE IO FUNCTIONS
+
+Handles byte ordering and avoids alignment errors
+==============================================================================
+*/
+
+#ifdef FTE_PEXT_FLOATCOORDS
+
+int msg_coordsize = 2; // 2 or 4.
+int msg_anglesize = 1; // 1 or 2.
+
+float MSG_FromCoord(coorddata c, int bytes)
+{
+	switch(bytes)
+	{
+	case 2:	//encode 1/8th precision, giving -4096 to 4096 map sizes
+		return LittleShort(c.b2)/8.0f;
+	case 4:
+		return LittleFloat(c.f);
+	default:
+		Sys_Error("MSG_FromCoord: not a sane size");
+		return 0;
+	}
+}
+
+coorddata MSG_ToCoord(float f, int bytes)	//return value should be treated as (char*)&ret;
+{
+	coorddata r;
+	switch(bytes)
+	{
+	case 2:
+		r.b4 = 0;
+		if (f >= 0)
+			r.b2 = LittleShort((short)(f*8+0.5f));
+		else
+			r.b2 = LittleShort((short)(f*8-0.5f));
+		break;
+	case 4:
+		r.f = LittleFloat(f);
+		break;
+	default:
+		Sys_Error("MSG_ToCoord: not a sane size");
+		r.b4 = 0;
+	}
+
+	return r;
+}
+
+coorddata MSG_ToAngle(float f, int bytes)	//return value is NOT byteswapped.
+{
+	coorddata r;
+	switch(bytes)
+	{
+	case 1:
+		r.b4 = 0;
+		if (f >= 0)
+			r.b[0] = (int)(f*(256.0f/360.0f) + 0.5f) & 255;
+		else
+			r.b[0] = (int)(f*(256.0f/360.0f) - 0.5f) & 255;
+		break;
+	case 2:
+		r.b4 = 0;
+		if (f >= 0)
+			r.b2 = LittleShort((int)(f*(65536.0f/360.0f) + 0.5f) & 65535);
+		else
+			r.b2 = LittleShort((int)(f*(65536.0f/360.0f) - 0.5f) & 65535);
+		break;
+//	case 4:
+//		r.f = LittleFloat(f);
+//		break;
+	default:
+		Sys_Error("MSG_ToAngle: not a sane size");
+		r.b4 = 0;
+	}
+
+	return r;
+}
+
+#endif
+
+// writing functions
+
+void MSG_WriteChar (sizebuf_t *sb, const int c)
+{
+	byte *buf;
+
+#ifdef PARANOID
+	if (c < -128 || c > 127)
+		Sys_Error ("MSG_WriteChar: range error");
+#endif
+
+	buf = (byte *) SZ_GetSpace (sb, 1);
+	buf[0] = c;
+}
+
+void MSG_WriteByte (sizebuf_t *sb, const int c)
+{
+	byte *buf;
+
+#ifdef PARANOID
+	if (c < 0 || c > 255)
+		Sys_Error ("MSG_WriteByte: range error");
+#endif
+
+	buf = (byte *) SZ_GetSpace (sb, 1);
+	buf[0] = c;
+}
+
+void MSG_WriteShort (sizebuf_t *sb, const int c)
+{
+	byte *buf;
+
+#ifdef PARANOID
+	if (c < ((short)0x8000) || c > (short)0x7fff)
+		Sys_Error ("MSG_WriteShort: range error");
+#endif
+
+	buf = (byte *) SZ_GetSpace (sb, 2);
+	buf[0] = c&0xff;
+	buf[1] = c>>8;
+}
+
+void MSG_WriteLong (sizebuf_t *sb, const int c)
+{
+	byte *buf;
+
+	buf = (byte *) SZ_GetSpace (sb, 4);
+	buf[0] = c&0xff;
+	buf[1] = (c>>8)&0xff;
+	buf[2] = (c>>16)&0xff;
+	buf[3] = c>>24;
+}
+
+void MSG_WriteFloat (sizebuf_t *sb, const float f)
+{
+	union
+	{
+		float f;
+		int l;
+	} dat;
+
+
+	dat.f = f;
+	dat.l = LittleLong (dat.l);
+
+	SZ_Write (sb, &dat.l, 4);
+}
+
+void MSG_WriteString (sizebuf_t *sb, const char *s)
+{
+	if (!s || !*s)
+		SZ_Write (sb, "", 1);
+	else
+		SZ_Write (sb, s, strlen(s)+1);
+}
+
+void MSG_WriteCoord (sizebuf_t *sb, const float f)
+{
+#ifdef FTE_PEXT_FLOATCOORDS
+	coorddata i = MSG_ToCoord(f, msg_coordsize);
+	SZ_Write (sb, (void*)&i, msg_coordsize);
+#else
+	MSG_WriteShort (sb, (int)(f * 8));
+#endif
+}
+
+void MSG_WriteLongCoord(sizebuf_t* sb, float f)
+{
+	f = LittleFloat(f);
+
+	SZ_Write (sb, (void*)&f, sizeof(f));
+}
+
+void MSG_WriteAngle (sizebuf_t *sb, const float f)
+{
+#ifdef FTE_PEXT_FLOATCOORDS
+	if (msg_anglesize == 2)
+		MSG_WriteAngle16(sb, f);
+//	else if (msg_anglesize==4)
+//		MSG_WriteFloat(sb, f);
+	else
+#endif
+		MSG_WriteByte (sb, Q_rint(f * 256.0 / 360.0) & 255);
+}
+
+void MSG_WriteAngle16 (sizebuf_t *sb, const float f)
+{
+	MSG_WriteShort (sb, Q_rint(f*65536.0/360.0) & 65535);
+}
+
+void MSG_WriteDeltaUsercmd (sizebuf_t *buf, const usercmd_t *from, const usercmd_t *cmd, unsigned int mvdsv_extensions)
+{
+	int bits;
+
+	// send the movement message
+	bits = 0;
+	if (cmd->angles[0] != from->angles[0])
+		bits |= CM_ANGLE1;
+	if (cmd->angles[1] != from->angles[1])
+		bits |= CM_ANGLE2;
+	if (cmd->angles[2] != from->angles[2])
+		bits |= CM_ANGLE3;
+	if (cmd->forwardmove != from->forwardmove)
+		bits |= CM_FORWARD;
+	if (cmd->sidemove != from->sidemove)
+		bits |= CM_SIDE;
+	if (cmd->upmove != from->upmove)
+		bits |= CM_UP;
+	if (cmd->buttons != from->buttons)
+		bits |= CM_BUTTONS;
+	if (cmd->impulse != from->impulse)
+		bits |= CM_IMPULSE;
+
+	MSG_WriteByte (buf, bits);
+
+	if (bits & CM_ANGLE1)
+		MSG_WriteAngle16 (buf, cmd->angles[0]);
+	if (bits & CM_ANGLE2)
+		MSG_WriteAngle16 (buf, cmd->angles[1]);
+	if (bits & CM_ANGLE3)
+		MSG_WriteAngle16 (buf, cmd->angles[2]);
+
+	if (bits & CM_FORWARD)
+		MSG_WriteShort (buf, cmd->forwardmove);
+	if (bits & CM_SIDE)
+		MSG_WriteShort (buf, cmd->sidemove);
+	if (bits & CM_UP)
+		MSG_WriteShort (buf, cmd->upmove);
+
+	if (bits & CM_BUTTONS)
+		MSG_WriteByte (buf, cmd->buttons);
+	if (bits & CM_IMPULSE)
+		MSG_WriteByte (buf, cmd->impulse);
+
+	MSG_WriteByte (buf, cmd->msec);
+}
+
+
+// reading functions
+
+int msg_readcount;
+qbool msg_badread;
+
+void MSG_BeginReading (void)
+{
+	msg_readcount = 0;
+	msg_badread = false;
+}
+
+int MSG_GetReadCount (void)
+{
+	return msg_readcount;
+}
+
+// returns -1 and sets msg_badread if no more characters are available
+int MSG_ReadChar (void)
+{
+	int c;
+
+	if (msg_readcount + 1 > net_message.cursize)
+	{
+		msg_badread = true;
+		return -1;
+	}
+
+	c = (signed char) net_message.data[msg_readcount];
+	msg_readcount++;
+
+	return c;
+}
+
+int MSG_ReadByte (void)
+{
+	int c;
+
+	if (msg_readcount + 1 > net_message.cursize)
+	{
+		msg_badread = true;
+		return -1;
+	}
+
+	c = (unsigned char) net_message.data[msg_readcount];
+	msg_readcount++;
+
+	return c;
+}
+
+int MSG_ReadShort (void)
+{
+	int c;
+
+	if (msg_readcount + 2 > net_message.cursize)
+	{
+		msg_badread = true;
+		return -1;
+	}
+
+	c = (short) (net_message.data[msg_readcount]
+		+ (net_message.data[msg_readcount+1]<<8));
+
+	msg_readcount += 2;
+
+	return c;
+}
+
+int MSG_ReadLong (void)
+{
+	int c;
+
+	if (msg_readcount + 4 > net_message.cursize)
+	{
+		msg_badread = true;
+		return -1;
+	}
+
+	c = net_message.data[msg_readcount]
+		+ (net_message.data[msg_readcount+1]<<8)
+		+ (net_message.data[msg_readcount+2]<<16)
+		+ (net_message.data[msg_readcount+3]<<24);
+
+	msg_readcount += 4;
+
+	return c;
+}
+
+float MSG_ReadFloat (void)
+{
+	union
+	{
+		byte b[4];
+		float f;
+		int l;
+	} dat;
+
+	// MSG_ReadFloat was the only reader without a cursize
+	// bound - a truncated message read past net_message (up to 11 bytes into
+	// .bss at max packet size). Set msg_badread and return like the other
+	// readers (FTE does the same).
+	if (msg_readcount + 4 > net_message.cursize)
+	{
+		msg_badread = true;
+		return -1;
+	}
+
+	dat.b[0] =	net_message.data[msg_readcount];
+	dat.b[1] =	net_message.data[msg_readcount+1];
+	dat.b[2] =	net_message.data[msg_readcount+2];
+	dat.b[3] =	net_message.data[msg_readcount+3];
+	msg_readcount += 4;
+
+	dat.l = LittleLong (dat.l);
+
+	return dat.f;
+}
+
+char *MSG_ReadString (void)
+{
+	static char string[2048];
+	int c;
+	size_t l = 0;
+
+	do
+	{
+		c = MSG_ReadByte ();
+
+		if (c == 255) // skip these to avoid security problems
+			continue; // with old clients and servers
+
+		if (c == -1 || c == 0)
+			break;
+
+		string[l] = c;
+		l++;
+	} while (l < sizeof (string) - 1);
+
+	string[l] = 0;
+
+	return string;
+}
+
+char *MSG_ReadStringLine (void)
+{
+	static char string[2048];
+	int c;
+	size_t l = 0;
+
+	do
+	{
+		c = MSG_ReadByte ();
+
+		if (c == 255)
+			continue;
+
+		if (c == -1 || c == 0 || c == '\n')
+			break;
+
+		string[l] = c;
+		l++;
+	} while (l < sizeof (string) - 1);
+
+	string[l] = 0;
+
+	return string;
+}
+
+float MSG_ReadCoord (void)
+{
+#ifdef FTE_PEXT_FLOATCOORDS
+
+	coorddata c = {0};
+	MSG_ReadData(&c, msg_coordsize);
+	return MSG_FromCoord(c, msg_coordsize);
+
+#else // FTE_PEXT_FLOATCOORDS
+
+	return MSG_ReadShort() * (1.0 / 8);
+
+#endif // FTE_PEXT_FLOATCOORDS
+}
+
+float MSG_ReadAngle16 (void)
+{
+	return MSG_ReadShort () * (360.0 / 65536);
+}
+
+float MSG_ReadAngle (void)
+{
+#ifdef FTE_PEXT_FLOATCOORDS
+
+	switch(msg_anglesize)
+	{
+	case 1:
+		return MSG_ReadChar() * (360.0/256);
+	case 2:
+		return MSG_ReadAngle16();
+//	case 4:
+//		return MSG_ReadFloat();
+	default:
+		Sys_Error("MSG_ReadAngle: Bad angle size\n");
+		return 0;
+	}
+
+#else // FTE_PEXT_FLOATCOORDS
+
+	return MSG_ReadChar() * (360.0 / 256);
+
+#endif // FTE_PEXT_FLOATCOORDS
+}
+
+void MSG_ReadDeltaUsercmd (const usercmd_t *from, usercmd_t *move, int protoversion)
+{
+	int bits;
+
+	memcpy (move, from, sizeof(*move));
+
+	bits = MSG_ReadByte ();
+
+	// read current angles
+	if (bits & CM_ANGLE1)
+		move->angles[0] = MSG_ReadAngle16 ();
+	if (bits & CM_ANGLE2)
+		move->angles[1] = MSG_ReadAngle16 ();
+	if (bits & CM_ANGLE3)
+		move->angles[2] = MSG_ReadAngle16 ();
+
+	// read movement
+	if (bits & CM_FORWARD)
+		move->forwardmove = MSG_ReadShort ();
+	if (bits & CM_SIDE)
+		move->sidemove = MSG_ReadShort ();
+	if (bits & CM_UP)
+		move->upmove = MSG_ReadShort ();
+
+	// read buttons
+	if (bits & CM_BUTTONS)
+		move->buttons = MSG_ReadByte ();
+
+	if (bits & CM_IMPULSE)
+		move->impulse = MSG_ReadByte ();
+
+	// read time to run command
+	move->msec = MSG_ReadByte ();
+}
+
+void MSG_ReadData (void *data, int len)
+{
+	int	i;
+
+	for (i = 0 ; i < len ; i++)
+		((byte *)data)[i] = MSG_ReadByte ();
+}
+
+void MSG_ReadSkip(int bytes)
+{
+	for ( ; !msg_badread && bytes > 0; bytes--)
+	{
+		MSG_ReadByte ();
+	}
+}
+
+/* FTE's null state uses identity appearance values, unlike legacy QW. */
+void MSG_RD_InitState(rd_entity_state_t *state)
+{
+	memset(state, 0, sizeof(*state));
+	state->trans = 255;
+	state->scale = 16;
+	state->drawflags = SCALE_ORIGIN_ORIGIN;
+	memset(state->colourmod, 32, sizeof(state->colourmod));
+	memset(state->glowmod, 32, sizeof(state->glowmod));
+}
+
+/* Select fields once; retained prediction fields need their own dirty mask. */
+rd_delta_t MSG_RD_SelectDelta(const rd_entity_state_t *from, const rd_entity_state_t *to, qbool remote)
+{
+	rd_delta_t delta = {0, 0};
+	unsigned int bits = 0;
+	if (from->origin[0] != to->origin[0] || from->origin[1] != to->origin[1]) {
+		bits |= UF_ORIGINXY;
+	}
+	if (from->origin[2] != to->origin[2]) {
+		bits |= UF_ORIGINZ;
+	}
+	if (from->angles[0] != to->angles[0] || from->angles[2] != to->angles[2]) {
+		bits |= UF_ANGLESXZ;
+	}
+	if (from->angles[1] != to->angles[1]) {
+		bits |= UF_ANGLESY;
+	}
+	if (from->frame != to->frame) {
+		bits |= UF_FRAME;
+	}
+	if (from->effects != to->effects) {
+		bits |= UF_EFFECTS;
+	}
+	if (from->modelindex != to->modelindex) {
+		bits |= UF_MODEL;
+	}
+	if (from->modelindex2 != to->modelindex2) {
+		bits |= UF_MODELINDEX2;
+	}
+	if (from->skinnum != to->skinnum) {
+		bits |= UF_SKIN;
+	}
+	if (from->colormap != to->colormap) {
+		bits |= UF_COLORMAP;
+	}
+	if (from->solidsize != to->solidsize) {
+		bits |= UF_SOLID;
+	}
+	if (from->dpflags != to->dpflags) {
+		bits |= UF_FLAGS;
+	}
+	if (from->trans != to->trans) {
+		bits |= UF_ALPHA;
+	}
+	if (from->scale != to->scale) {
+		bits |= UF_SCALE;
+	}
+	if (from->fatness != to->fatness) {
+		bits |= UF_FATNESS;
+	}
+	if (from->drawflags != to->drawflags || from->abslight != to->abslight) {
+		bits |= UF_DRAWFLAGS;
+	}
+	if (from->tagentity != to->tagentity || from->tagindex != to->tagindex) {
+		bits |= UF_TAGINFO;
+	}
+	if (memcmp(from->light, to->light, sizeof(to->light)) || from->lightstyle != to->lightstyle || from->lightpflags != to->lightpflags) {
+		bits |= UF_LIGHT;
+	}
+	if (from->traileffect != to->traileffect || from->emiteffect != to->emiteffect) {
+		bits |= UF_TRAILEFFECT;
+	}
+	if (memcmp(from->colourmod, to->colourmod, sizeof(to->colourmod))) {
+		bits |= UF_COLORMOD;
+	}
+	if (from->glowsize != to->glowsize || from->glowcolour != to->glowcolour || memcmp(from->glowmod, to->glowmod, sizeof(to->glowmod))) {
+		bits |= UF_GLOW;
+	}
+	if (memcmp(from->gravitydir, to->gravitydir, sizeof(to->gravitydir))) {
+		bits |= UF_GRAVITYDIR;
+	}
+	if (from->pmovetype != to->pmovetype) {
+		delta.pred_fields |= UFP_MOVETYPE;
+	}
+	if (from->weaponframe != to->weaponframe) {
+		delta.pred_fields |= UFP_WEAPONFRAME_OLD;
+	}
+	if (delta.pred_fields || memcmp(from->velocity, to->velocity, sizeof(to->velocity))
+		|| memcmp(from->movement, to->movement, sizeof(to->movement)) || from->msec != to->msec
+		|| (to->pmovetype && (to->msec || to->velocity[0] || to->velocity[1] || to->velocity[2]
+			|| to->movement[0] || to->movement[1] || to->movement[2]))) {
+		bits |= UF_PREDINFO;
+		/* Prediction can have advanced the previous moving state. Refresh its
+		 * origin, and remote players' angle basis, as in FTE's base profile. */
+		if (to->pmovetype && (from->velocity[0] || from->velocity[1] || from->velocity[2])) {
+			bits |= UF_ORIGINXY | UF_ORIGINZ;
+			if (remote) {
+				bits |= UF_ANGLESXZ | UF_ANGLESY;
+			}
+		}
+	}
+	/* Refresh the camera basis when entering or leaving server control. */
+	if ((from->pmovetype & RD_MOVETYPE_MASK) != (to->pmovetype & RD_MOVETYPE_MASK)
+		&& ((from->pmovetype & RD_MOVETYPE_MASK) == RD_MOVETYPE_LOCK || (to->pmovetype & RD_MOVETYPE_MASK) == RD_MOVETYPE_LOCK)) {
+		bits |= UF_ORIGINXY | UF_ORIGINZ | UF_ANGLESXZ | UF_ANGLESY | UF_PREDINFO;
+	}
+	delta.fields = bits;
+	return delta;
+}
+
+/* Encode one complete base-RD payload into a bounded temporary message. */
+static void MSG_RD_WritePayload(sizebuf_t *msg, const rd_entity_state_t *s, unsigned int bits, unsigned int pred, qbool floatcoords)
+{
+	int i;
+	if (((bits & UF_MODEL) && s->modelindex > 255) || ((bits & UF_MODELINDEX2) && s->modelindex2 > 255)
+		|| ((bits & UF_FRAME) && s->frame > 255) || ((bits & UF_SKIN) && (s->skinnum < 0 || s->skinnum > 255)))
+		bits |= UF_16BIT_LERPTIME;
+	if (bits & UF_EFFECTS) {
+		if (s->effects & 0xffff0000u) {
+			bits |= UF_EFFECTS2_OLD;
+		} else if (s->effects & 0xff00u) {
+			bits = (bits & ~UF_EFFECTS) | UF_EFFECTS2_OLD;
+		}
+	}
+	if (bits & 0xff000000u) {
+		bits |= UF_EXTEND3;
+	}
+	if (bits & 0x00ff0000u) {
+		bits |= UF_EXTEND2;
+	}
+	if (bits & 0x0000ff00u) {
+		bits |= UF_EXTEND1;
+	}
+	MSG_WriteByte(msg, bits);
+	if (bits & UF_EXTEND1) {
+		MSG_WriteByte(msg, bits >> 8);
+	}
+	if (bits & UF_EXTEND2) {
+		MSG_WriteByte(msg, bits >> 16);
+	}
+	if (bits & UF_EXTEND3) {
+		MSG_WriteByte(msg, bits >> 24);
+	}
+	if (bits & UF_FRAME) {
+		if (bits & UF_16BIT_LERPTIME) {
+			MSG_WriteShort(msg, s->frame);
+		} else {
+			MSG_WriteByte(msg, s->frame);
+		}
+	}
+	if (bits & UF_ORIGINXY) {
+		if (floatcoords) {
+			MSG_WriteFloat(msg, s->origin[0]);
+			MSG_WriteFloat(msg, s->origin[1]);
+		} else {
+			MSG_WriteCoord(msg, s->origin[0]);
+			MSG_WriteCoord(msg, s->origin[1]);
+		}
+	}
+	if (bits & UF_ORIGINZ) {
+		if (floatcoords) {
+			MSG_WriteFloat(msg, s->origin[2]);
+		} else {
+			MSG_WriteCoord(msg, s->origin[2]);
+		}
+	}
+	if (bits & UF_ANGLESXZ) {
+		if (bits & UF_PREDINFO) {
+			MSG_WriteAngle16(msg, s->angles[0]);
+			MSG_WriteAngle16(msg, s->angles[2]);
+		} else {
+			MSG_WriteAngle(msg, s->angles[0]);
+			MSG_WriteAngle(msg, s->angles[2]);
+		}
+	}
+	if (bits & UF_ANGLESY) {
+		if (bits & UF_PREDINFO) {
+			MSG_WriteAngle16(msg, s->angles[1]);
+		} else {
+			MSG_WriteAngle(msg, s->angles[1]);
+		}
+	}
+	if ((bits & (UF_EFFECTS | UF_EFFECTS2_OLD)) == (UF_EFFECTS | UF_EFFECTS2_OLD)) {
+		MSG_WriteLong(msg, s->effects);
+	} else if (bits & UF_EFFECTS2_OLD) {
+		MSG_WriteShort(msg, s->effects);
+	} else if (bits & UF_EFFECTS) {
+		MSG_WriteByte(msg, s->effects);
+	}
+	if (bits & UF_PREDINFO) {
+		if (s->movement[0]) {
+			pred |= UFP_FORWARD;
+		}
+		if (s->movement[1]) {
+			pred |= UFP_SIDE;
+		}
+		if (s->movement[2]) {
+			pred |= UFP_UP;
+		}
+		if (s->velocity[0] || s->velocity[1]) {
+			pred |= UFP_VELOCITYXY;
+		}
+		if (s->velocity[2]) {
+			pred |= UFP_VELOCITYZ;
+		}
+		if (s->msec) {
+			pred |= UFP_MSEC;
+		}
+		MSG_WriteByte(msg, pred);
+		for (i = 0; i < 3; ++i) {
+			if (pred & (UFP_FORWARD << i)) {
+				MSG_WriteShort(msg, s->movement[i]);
+			}
+		}
+		if (pred & UFP_MOVETYPE) {
+			MSG_WriteByte(msg, s->pmovetype);
+		}
+		if (pred & UFP_VELOCITYXY) {
+			MSG_WriteShort(msg, s->velocity[0]);
+			MSG_WriteShort(msg, s->velocity[1]);
+		}
+		if (pred & UFP_VELOCITYZ) {
+			MSG_WriteShort(msg, s->velocity[2]);
+		}
+		if (pred & UFP_MSEC) {
+			MSG_WriteByte(msg, s->msec);
+		}
+		if (pred & UFP_WEAPONFRAME_OLD) {
+			MSG_WriteByte(msg, (s->weaponframe & 127) | (s->weaponframe > 127 ? 128 : 0));
+			if (s->weaponframe > 127) {
+				MSG_WriteByte(msg, s->weaponframe >> 7);
+			}
+		}
+	}
+	if (bits & UF_MODEL) {
+		if (bits & UF_16BIT_LERPTIME) {
+			MSG_WriteShort(msg, s->modelindex);
+		} else {
+			MSG_WriteByte(msg, s->modelindex);
+		}
+	}
+	if (bits & UF_SKIN) {
+		if (bits & UF_16BIT_LERPTIME) {
+			MSG_WriteShort(msg, s->skinnum);
+		} else {
+			MSG_WriteByte(msg, s->skinnum);
+		}
+	}
+	if (bits & UF_COLORMAP) {
+		MSG_WriteByte(msg, s->colormap);
+	}
+	if (bits & UF_SOLID) {
+		MSG_WriteShort(msg, s->solidsize);
+	}
+	if (bits & UF_FLAGS) {
+		MSG_WriteByte(msg, s->dpflags);
+	}
+	if (bits & UF_ALPHA) {
+		MSG_WriteByte(msg, s->trans);
+	}
+	if (bits & UF_SCALE) {
+		MSG_WriteByte(msg, s->scale);
+	}
+	if (bits & UF_DRAWFLAGS) {
+		MSG_WriteByte(msg, s->drawflags);
+		if ((s->drawflags & MLS_MASK) >= MLS_ADDLIGHT) {
+			MSG_WriteByte(msg, s->abslight);
+		}
+	}
+	if (bits & UF_TAGINFO) {
+		MSG_RD_WriteEntityRef(msg, s->tagentity);
+		MSG_WriteByte(msg, s->tagindex);
+	}
+	if (bits & UF_LIGHT) {
+		for (i = 0; i < 4; ++i) {
+			MSG_WriteShort(msg, s->light[i]);
+		}
+		MSG_WriteByte(msg, s->lightstyle);
+		MSG_WriteByte(msg, s->lightpflags);
+	}
+	if (bits & UF_TRAILEFFECT) {
+		MSG_WriteShort(msg, s->traileffect | (s->emiteffect ? RD_TRAILEFFECT_EMIT : 0));
+		if (s->emiteffect) {
+			MSG_WriteShort(msg, s->emiteffect);
+		}
+	}
+	if (bits & UF_COLORMOD) {
+		for (i = 0; i < 3; ++i) {
+			MSG_WriteByte(msg, s->colourmod[i]);
+		}
+	}
+	if (bits & UF_GLOW) {
+		MSG_WriteByte(msg, s->glowsize);
+		MSG_WriteByte(msg, s->glowcolour);
+		for (i = 0; i < 3; ++i) {
+			MSG_WriteByte(msg, s->glowmod[i]);
+		}
+	}
+	if (bits & UF_FATNESS) {
+		MSG_WriteChar(msg, s->fatness);
+	}
+	if (bits & UF_MODELINDEX2) {
+		if (bits & UF_16BIT_LERPTIME) {
+			MSG_WriteShort(msg, s->modelindex2);
+		} else {
+			MSG_WriteByte(msg, s->modelindex2);
+		}
+	}
+	if (bits & UF_GRAVITYDIR) {
+		MSG_WriteByte(msg, s->gravitydir[0]);
+		MSG_WriteByte(msg, s->gravitydir[1]);
+	}
+}
+
+/* Bounded base format: fields requiring other PEXT2 capabilities are rejected. */
+static qbool MSG_RD_ValidState(const rd_entity_state_t *s, unsigned int bits)
+{
+	return !(bits & (UF_BONEDATA | UF_UNUSED1 | UF_EXTEND4))
+		&& s->tagentity < MAX_EDICTS && s->weaponframe <= 32767
+		&& s->modelindex >= 0 && s->modelindex < MAX_MODELS
+		&& s->modelindex2 >= 0 && s->modelindex2 < MAX_MODELS
+		&& s->frame >= 0 && s->frame <= 65535
+		&& s->skinnum >= -32768 && s->skinnum <= 32767
+		&& s->colormap >= 0 && s->colormap <= 255
+		&& s->traileffect <= RD_TRAILEFFECT_MASK && s->emiteffect <= RD_TRAILEFFECT_MASK;
+}
+
+/* Ordinary RD references use a 15-bit short or 15 high bits plus a low byte.
+ * This is deliberately separate from update/removal index framing. */
+qbool MSG_RD_WriteEntityRef(sizebuf_t *msg, unsigned int number)
+{
+	int size = number < RD_ENTITYREF_EXTEND ? 2 : 3;
+
+	if (number > RD_ENTITYREF_MAX || msg->maxsize - msg->cursize < size) {
+		return false;
+	}
+	MSG_WriteShort(msg, size == 2 ? number : (number >> 8) | RD_ENTITYREF_EXTEND);
+	if (size == 3) {
+		MSG_WriteByte(msg, number & 0xff);
+	}
+	return true;
+}
+
+/* RD update indices use 14 low bits and an optional high byte, independently
+ * of the current map capacity. Write nothing when the whole index cannot fit. */
+qbool MSG_RD_WriteEntityIndex(sizebuf_t *msg, unsigned int number, qbool remove)
+{
+	unsigned int word, size;
+
+	if (number > RD_ENTITYINDEX_MAX) {
+		return false;
+	}
+	size = number < RD_ENTITYINDEX_EXTEND ? 2 : 3;
+	if (msg->maxsize - msg->cursize < size) {
+		return false;
+	}
+	word = (number & RD_ENTITYINDEX_MASK) | (remove ? RD_ENTITYINDEX_REMOVE : 0);
+	if (size == 3) {
+		word |= RD_ENTITYINDEX_EXTEND;
+	}
+	MSG_WriteShort(msg, word);
+	if (size == 3) {
+		MSG_WriteByte(msg, number >> 14);
+	}
+	return true;
+}
+
+/* Copy only a complete record; callers retain pending bits on failure. */
+qbool MSG_RD_WriteEntity(sizebuf_t *msg, const rd_entity_state_t *state, rd_delta_t delta, qbool floatcoords)
+{
+	byte data[256];
+	sizebuf_t record;
+	if (delta.pred_fields & ~(UFP_MOVETYPE | UFP_WEAPONFRAME_OLD)) {
+		return false;
+	}
+	if (delta.pred_fields) {
+		delta.fields |= UF_PREDINFO;
+	}
+	if (state->number <= 0 || state->number >= MAX_EDICTS || !MSG_RD_ValidState(state, delta.fields)) {
+		return false;
+	}
+	SZ_Init(&record, data, sizeof(data));
+	MSG_RD_WriteEntityIndex(&record, state->number, false);
+	MSG_RD_WritePayload(&record, state, delta.fields, delta.pred_fields, floatcoords);
+	if (record.cursize > msg->maxsize - msg->cursize) {
+		return false;
+	}
+	SZ_Write(msg, record.data, record.cursize);
+	return true;
+}
+
+/* World removal is FTE's reset-all marker; other removals identify one slot. */
+qbool MSG_RD_WriteRemove(sizebuf_t *msg, int number)
+{
+	if (number < 0 || number >= MAX_EDICTS) {
+		return false;
+	}
+	return MSG_RD_WriteEntityIndex(msg, number, true);
+}
+
+/* Static payloads omit the entity reference; baselines include it. */
+qbool MSG_RD_WriteBaseline(sizebuf_t *msg, const rd_entity_state_t *state, qbool numbered, qbool floatcoords)
+{
+	byte data[256];
+	sizebuf_t record;
+	rd_entity_state_t nullstate;
+	rd_delta_t delta;
+	MSG_RD_InitState(&nullstate);
+	if ((numbered && (state->number < 0 || state->number >= MAX_EDICTS)) || !MSG_RD_ValidState(state, 0)) {
+		return false;
+	}
+	SZ_Init(&record, data, sizeof(data));
+	if (numbered) {
+		MSG_RD_WriteEntityRef(&record, state->number);
+	}
+	delta = MSG_RD_SelectDelta(&nullstate, state, true);
+	MSG_RD_WritePayload(&record, state, delta.fields | UF_RESET, delta.pred_fields, floatcoords);
+	if (record.cursize > msg->maxsize - msg->cursize) {
+		return false;
+	}
+	SZ_Write(msg, record.data, record.cursize);
+	return true;
+}
+
+qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+                            int count, int cursor, int limit, int *next)
+{
+	int end, size, index;
+
+	if (count < 0 || count > 65535 || cursor < 0 || cursor > count) {
+		return false;
+	}
+	limit = min(limit, msg->maxsize);
+	/* Opcode, cursor, empty string and continuation; preflight before writing. */
+	size = msg->cursize + (cursor > 255 ? 5 : 4);
+	if (size > limit) {
+		return false;
+	}
+	end = cursor;
+	while (end < count) {
+		size_t length = strlen(sounds[end + 1]) + 1;
+
+		if (length > (size_t)(limit - size)) {
+			break;
+		}
+		size += (int)length;
+		++end;
+	}
+	/* Zero is reserved for completion. Never publish a non-final 256 boundary. */
+	if (end < count && !(end & 255)) {
+		--end;
+	}
+	if (end < cursor || (end == cursor && cursor < count)) {
+		return false;
+	}
+
+	MSG_WriteByte(msg, cursor > 255 ? svc_fte_soundlistshort : svc_soundlist);
+	if (cursor > 255) {
+		MSG_WriteShort(msg, cursor);
+	}
+	else {
+		MSG_WriteByte(msg, cursor);
+	}
+	for (index = cursor + 1; index <= end; ++index) {
+		MSG_WriteString(msg, sounds[index]);
+	}
+	MSG_WriteByte(msg, 0);
+	MSG_WriteByte(msg, end < count ? end & 255 : 0);
+	*next = end < count ? end : 0;
+	return true;
+}

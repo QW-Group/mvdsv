@@ -35,6 +35,7 @@ set(SRC_COMMON
 	"${DIR_SRC}/build.c"
 	"${DIR_SRC}/cmd.c"
 	"${DIR_SRC}/cmodel.c"
+	"${DIR_SRC}/com_msg.c"
 	"${DIR_SRC}/common.c"
 	"${DIR_SRC}/crc.c"
 	"${DIR_SRC}/cvar.c"
