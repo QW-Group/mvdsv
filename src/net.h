@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-	
+
 */
 
 // net.h -- quake's interface to the networking layer
@@ -70,14 +70,14 @@ typedef SOCKET socket_t;
 #undef EAFNOSUPPORT
 #endif
 
-#define EWOULDBLOCK		WSAEWOULDBLOCK
-#define EMSGSIZE		WSAEMSGSIZE
-#define ECONNRESET		WSAECONNRESET
-#define ECONNABORTED	WSAECONNABORTED
-#define ECONNREFUSED	WSAECONNREFUSED
-#define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
-#define EAFNOSUPPORT	WSAEAFNOSUPPORT
-#define qerrno 			WSAGetLastError()
+#define EWOULDBLOCK     WSAEWOULDBLOCK
+#define EMSGSIZE        WSAEMSGSIZE
+#define ECONNRESET      WSAECONNRESET
+#define ECONNABORTED    WSAECONNABORTED
+#define ECONNREFUSED    WSAECONNREFUSED
+#define EADDRNOTAVAIL   WSAEADDRNOTAVAIL
+#define EAFNOSUPPORT    WSAEAFNOSUPPORT
+#define qerrno          WSAGetLastError()
 #else //_WIN32
 
 //
@@ -126,11 +126,11 @@ typedef int socket_t;
 //
 
 #ifndef INVALID_SOCKET
-#define INVALID_SOCKET	-1
+#define INVALID_SOCKET  -1
 #endif
 
 #ifndef SOCKET_ERROR
-#define SOCKET_ERROR -1
+#define SOCKET_ERROR    -1
 #endif
 
 #define PORT_ANY ((unsigned short int)0xFFFF)
@@ -139,13 +139,12 @@ typedef enum {NA_INVALID, NA_LOOPBACK, NA_IP} netadrtype_t;
 
 typedef enum {NS_CLIENT, NS_SERVER} netsrc_t;
 
-typedef struct
-{
-	netadrtype_t	type;
+typedef struct {
+	netadrtype_t    type;
 
-	byte ip[4];
+	byte            ip[4];
 
-	unsigned short	port;
+	unsigned short  port;
 } netadr_t;
 
 extern	netadr_t	net_local_sv_ipadr;
@@ -154,6 +153,8 @@ extern	netadr_t	net_local_cl_ipadr;
 
 extern	netadr_t	net_from; // address of who sent the packet
 extern	sizebuf_t	net_message;
+
+#define MAX_UDP_PACKET (MAX_MSGLEN*2) // one more than msg + header
 
 // convert netadrt_t to sockaddr_storage.
 void	NetadrToSockadr (const netadr_t *a, struct sockaddr_storage *s);
@@ -173,8 +174,10 @@ qbool	NET_StringToAdr (const char *s, netadr_t *a);
 
 void	NET_Init (void);
 void	NET_Shutdown (void);
+#ifndef SERVERONLY
 void	NET_InitClient (void);
 void	NET_CloseClient (void);
+#endif
 void	NET_InitServer (void);
 void	NET_CloseServer (void);
 qbool	NET_GetPacket (netsrc_t sock);
@@ -212,8 +215,7 @@ socket_t	UDP_OpenSocket (unsigned short int port);
 
 #define	MAX_LATENT	32
 
-typedef struct
-{
+typedef struct {
 	netsrc_t	sock;
 
 	qbool		fatal_error;
@@ -271,5 +273,20 @@ void Netchan_Setup (netsrc_t sock, netchan_t *chan, netadr_t adr, int qport, int
 
 qbool Netchan_CanPacket (netchan_t *chan);
 qbool Netchan_CanReliable (netchan_t *chan);
+
+#ifndef SERVERONLY
+typedef enum {
+	PORTPINGPROBE_READY,
+	PORTPINGPROBE_PROBING,
+	PORTPINGPROBE_COMPLETED,
+	PORTPINGPROBE_ABORT
+} portpingprobe_status_t;
+
+qbool IsPortPingProbeEnabled(void);
+void NET_PortPingProbe(const char *target_addr, const char *original_addr);
+void NET_SetPortPingProbeStatus(const portpingprobe_status_t status);
+portpingprobe_status_t NET_GetPortPingProbeStatus(void);
+int NET_GetPortPingProbeProgress(void);
+#endif
 
 #endif /* !__NET_H__ */
