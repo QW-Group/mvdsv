@@ -68,6 +68,7 @@ static intptr_t EXT_pointerstat(intptr_t *args);
 static intptr_t EXT_globalstat(intptr_t *args);
 static intptr_t EXT_QCRequestArg(intptr_t *args);
 #endif
+static intptr_t EXT_SkipEntityPhysics(intptr_t *args);
 static intptr_t EXT_MapExtFieldPtr(intptr_t *args);
 static intptr_t EXT_SetExtFieldPtr(intptr_t *args);
 static intptr_t EXT_GetExtFieldPtr(intptr_t *args);
@@ -90,6 +91,7 @@ struct
 	{"globalstat",			EXT_globalstat},
 	{"qcrequestarg",		EXT_QCRequestArg},
 #endif
+	{"SkipEntityPhysics",	EXT_SkipEntityPhysics},
 };
 ext_syscall_t ext_syscall_tbl[256];
 
@@ -1631,7 +1633,9 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 
 			if (   !strcmp(key, "date_str")
 				|| !strcmp(key, "ip") || !strncmp(key, "realip", 7) || !strncmp(key, "download", 9)
-				|| !strcmp(key, "ping") || !strcmp(key, "*userid") || !strncmp(key, "login", 6)
+				|| !strcmp(key, "ping") || !strcmp(key, "*antilag_rewind")
+				|| !strcmp(key, "*ping_current")
+				|| !strcmp(key, "*userid") || !strncmp(key, "login", 6)
 				|| !strcmp(key, "*VIP") || !strcmp(key, "*state")
 				|| !strcmp(key, "netname")
 				|| !strcmp(key, "mapname") || !strcmp(key, "modelname")
@@ -1670,10 +1674,24 @@ void PF2_infokey(int e1, char *key, char *valbuff, int sizebuff)
 			strlcpy(ov, NET_BaseAdrToString (cl->realip), sizeof(ov));
 		else if (!strncmp(key, "download", 9))
 			snprintf(ov, sizeof(ov), "%d", cl->file_percent ? cl->file_percent : -1); //bliP: file percent
+		else if (!strcmp(key, "*antilag_rewind")) {
+			snprintf(ov, sizeof(ov), "%.6f", SV_ClientAntilagRewindMsec(cl));
+		}
+		else if (!strcmp(key, "*ping_current")) {
+			// the acknowledged frame's ping, not the averaged one SV_CalcPing returns
+			client_frame_t *frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
+
+			if (frame->ping_time > 0) {
+				snprintf(ov, sizeof(ov), "%.6f", frame->ping_time * 1000);
+			}
+			else {
+				snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
+			}
+		}
 		else if (!strcmp(key, "ping"))
 			snprintf(ov, sizeof(ov), "%d", (int)SV_CalcPing(cl));
 #ifdef FTE_PEXT_CSQC
-		else if (!strcmp(key, "csqcactive") || !strcmp(key, "*csqcactive") || !strcmp(key, "ezcsqc"))
+		else if (!strcmp(key, "csqcactive") || !strcmp(key, "*csqcactive"))
 		{
 			snprintf(ov, sizeof(ov), "%d", (int)cl->csqcactive);
 		}
@@ -2156,6 +2174,23 @@ intptr_t EXT_QCRequestArg(intptr_t *args)
 	return SV_QCRequestArg(args[1], VMA(2), args[3]);
 }
 #endif
+
+/*
+ * Marks the entity as already run for the current server frame, making
+ * SV_RunEntity skip its physics and think. For mods that step an entity
+ * themselves (e.g. antilagged projectiles) and do not want the engine to
+ * run it again this frame.
+ */
+intptr_t EXT_SkipEntityPhysics(intptr_t *args)
+{
+	int entnum = (int)args[1];
+
+	if (entnum <= 0 || entnum >= sv.num_edicts)
+		return 0;
+
+	EDICT_NUM(entnum)->e.lastruntime = sv.time;
+	return 0;
+}
 
 // To prevent mods from hardcoding field offsets which would cause engine incompatibilities.
 static uint32_t GetExtFieldCookie(void)

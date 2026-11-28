@@ -4876,10 +4876,59 @@ done:
 }
 #endif
 
+#define MAX_PREDICTION 0.02
+#define MAX_EXTRAPOLATE 0.02
+
+/*
+===================
+SV_AntilagTargetTime
+
+The server time sv_antilag rewinds the world to for a client whose last
+acknowledged frame is 'frame': when that frame was sent, plus what the client
+is assumed to have predicted on top of it.
+===================
+*/
+static double SV_AntilagTargetTime (const client_frame_t *frame)
+{
+	double max_physfps = sv_maxfps.value;
+
+	if (max_physfps < 20 || max_physfps > 1000) {
+		max_physfps = 77.0;
+	}
+
+	if (sv_antilag_no_pred.value) {
+		return frame->sv_time;
+	}
+
+	// try to figure out what time client is currently predicting, basically this is just 6.5ms with 13ms ping and 13.5ms with higher
+	// might be off with different max_physfps values
+	return min(frame->sv_time + (frame->ping_time < MAX_PREDICTION ? 1/max_physfps : MAX_PREDICTION), sv.time);
+}
+
+/*
+===================
+SV_ClientAntilagRewindMsec
+
+How many milliseconds sv_antilag rewinds the world for this client. A mod
+that does its own rewinding reads it through infokey "*antilag_rewind". Falls
+back to the averaged ping until the acknowledged frame has a ping measurement.
+===================
+*/
+double SV_ClientAntilagRewindMsec (client_t *cl)
+{
+	client_frame_t *frame = &cl->frames[cl->netchan.incoming_acknowledged & UPDATE_MASK];
+
+	if (frame->ping_time <= 0) {
+		return SV_CalcPing(cl);
+	}
+
+	return max(sv.time - SV_AntilagTargetTime(frame), 0) * 1000;
+}
+
 /*
 ===================
 SV_ExecuteClientMessage
- 
+
 The current net_message is parsed for the given client
 ===================
 */
@@ -4935,21 +4984,7 @@ void SV_ExecuteClientMessage (client_t *cl)
 	{
 //#pragma msg("FIXME: make antilag optionally support non-player ents too")
 
-#define MAX_PREDICTION 0.02
-#define MAX_EXTRAPOLATE 0.02
-
-		double target_time, max_physfps = sv_maxfps.value;
-
-		if (max_physfps < 20 || max_physfps > 1000)
-			max_physfps = 77.0;
-
-		if (sv_antilag_no_pred.value) {
-			target_time = frame->sv_time;
-		} else {
-			// try to figure out what time client is currently predicting, basically this is just 6.5ms with 13ms ping and 13.5ms with higher
-			// might be off with different max_physfps values
-			target_time = min(frame->sv_time + (frame->ping_time < MAX_PREDICTION ? 1/max_physfps : MAX_PREDICTION), sv.time);
-		}
+		double target_time = SV_AntilagTargetTime(frame);
 
 		for (i = 0; i < MAX_CLIENTS; i++)
 		{
