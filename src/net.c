@@ -1226,7 +1226,7 @@ qbool NET_Sleep(int msec, qbool stdinissocket)
 	return stdin_ready;
 }
 
-void NET_GetLocalAddress (int socket, netadr_t *out)
+void NET_GetLocalAddress (socket_t socket, netadr_t *out)
 {
 	char buff[512];
 	struct sockaddr_storage address;

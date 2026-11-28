@@ -71,7 +71,6 @@ int		Sys_compare_by_name (const void *a, const void *b);
 //
 // system IO
 //
-extern cvar_t sys_restart_on_error;
 void Sys_Error (const char *error, ...); // an error will cause the entire program to exit
 
 void Sys_Printf (char *fmt, ...); // send text to the console

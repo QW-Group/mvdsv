@@ -77,6 +77,8 @@ void MSG_WriteString (sizebuf_t *sb, const char *s);
 void MSG_WriteCoord (sizebuf_t *sb, const float f);
 void MSG_WriteAngle (sizebuf_t *sb, const float f);
 void MSG_WriteAngle16 (sizebuf_t *sb, const float f);
+qbool MSG_WriteSoundListChunk(sizebuf_t *msg, char *const *sounds,
+                            int count, int cursor, int limit, int *next);
 void MSG_WriteLongCoord (sizebuf_t* sb, float f);
 void MSG_WriteDeltaUsercmd (sizebuf_t *sb, const struct usercmd_s *from, const struct usercmd_s *cmd, unsigned int mvdsv_extensions);
 

@@ -180,7 +180,7 @@ void	NET_CloseServer (void);
 qbool	NET_GetPacket (netsrc_t sock);
 void	NET_SendPacket (netsrc_t sock, int length, void *data, netadr_t to);
 
-void	NET_GetLocalAddress (int socket, netadr_t *out);
+void	NET_GetLocalAddress (socket_t socket, netadr_t *out);
 
 void	NET_ClearLoopback (void);
 qbool	NET_Sleep(int msec, qbool stdinissocket);
