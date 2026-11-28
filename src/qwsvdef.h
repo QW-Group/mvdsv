@@ -83,10 +83,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sv_world.h"
 #include "pmove.h"
-#include "log.h"
+#include "sv_log.h"
 #include "sv_broadcast.h"
 #define SV_HAS_BROADCAST
+#define SV_BROADCAST_DEFAULT "1"
 #define SV_HAS_LEGACY_QTV_VIEWERS
+#ifndef _WIN32
+#define SV_POSIX_LEGACY_OPTIONS
+#endif
 #define SV_PREFERRED_STARTMAP "mvdsv-kg"
 #ifdef _WIN32
 #define SV_WINDOWS_MVDSV

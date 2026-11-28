@@ -78,6 +78,10 @@ void Sys_Printf (char *fmt, ...); // send text to the console
 
 void Sys_Quit (void);
 void Sys_Restart (void);
+#ifndef _WIN32
+void Sys_ExecServer(char **argv);
+qbool Sys_PreparePosixServer(void);
+#endif
 
 double Sys_DoubleTime (void);
 
@@ -186,6 +190,5 @@ qbool Sys_MutexInit(mutex_t *l);
 void Sys_MutexLock(mutex_t *l);
 void Sys_MutexUnlock(mutex_t *l);
 qbool Sys_MutexTryLock(mutex_t *m);
-qbool Sys_MutexTryLockWithTimeout(mutex_t *m, unsigned long timeout_ms);
 
 #endif /* !__SYS_H__ */

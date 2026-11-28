@@ -83,7 +83,8 @@ set(SRC_COMMON
 # Check build target, and included sources
 if(UNIX)
 	list(APPEND SRC_COMMON
-		"${DIR_SRC}/sv_sys_unix.c"
+		"${DIR_SRC}/sv_sys_posix.c"
+		"${DIR_SRC}/sys_posix.c"
 	)
 	# Check for curl, and include sources and libs, if found
 	find_package(CURL)

@@ -29,15 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static pthread_mutex_t sys_spawn_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-extern cvar_t sys_restart_on_error;
-extern cvar_t sys_select_timeout, sys_simulation;
-
 cvar_t sys_nostdout = {"sys_nostdout", "0"};
 cvar_t sys_extrasleep = {"sys_extrasleep", "0"};
-
-static qbool	stdin_ready = false;
-//static qbool	isdaemon = false;
-static qbool	do_stdin = true;
 
 /*
 ===============================================================================
@@ -311,83 +304,25 @@ int Sys_EnumerateFiles (char *gpath, char *match, int (*func)(char *, int, void 
 	return true;
 }
 
-/*
-================
-Sys_Exit
-================
-*/
-void Sys_Exit (int code)
+void Sys_ExecServer(char **argv)
 {
-	exit(code);		// appkit isn't running
-}
-
-/*
-================
-Sys_Quit
-================
-*/
-void Sys_Quit (void)
-{
-	Sys_Exit(0);
-}
-
-void Sys_Restart (void)
-{
-	int maxfd = getdtablesize() - 1;
+	int fd, error;
+	int maxfd = getdtablesize();
 
 #ifndef SOCK_CLOEXEC
-	// No worker may add a descriptor while we close them and replace the process.
 	pthread_mutex_lock(&sys_spawn_mutex);
 #endif
-
-	// Close all file descriptors besides stdin, stdout and stderr.
-	for (; maxfd > 2; maxfd--)
-		close(maxfd);
-
-	execv(com_argv[0], com_argv);
-	Sys_Printf("Restart failed: %s\n", strerror(qerrno));
-	Sys_Exit(1);
-}
-
-/*
-================
-Sys_Error
-================
-*/
-void Sys_Error (const char *error, ...)
-{
-	static qbool inerror = false;
-	va_list argptr;
-	char text[1024];
-
-	sv_error = true;
-
-	if (inerror)
-		Sys_Exit (1);
-
-	inerror = true;
-
-	va_start (argptr,error);
-	vsnprintf (text, sizeof(text), error, argptr);
-	va_end (argptr);
-
-	if (!(int)sys_nostdout.value)
-		Sys_Printf ("ERROR: %s\n", text);
-
-	if (logs[ERROR_LOG].sv_logfile)
-	{
-		SV_Write_Log (ERROR_LOG, 1, va ("ERROR: %s\n", text));
-//		fclose (logs[ERROR_LOG].sv_logfile);
+	// Pack files and QTV connections must not carry over to the new process.
+	for (fd = STDERR_FILENO + 1; fd < maxfd; ++fd) {
+		fcntl(fd, F_SETFD, FD_CLOEXEC);
 	}
-
-// FIXME: hack - checking SV_Shutdown with net_socket set in -1 NET_Shutdown
-	if (svs.socketip != -1)
-		SV_Shutdown (va("ERROR: %s\n", text));
-
-	if ((int)sys_restart_on_error.value)
-		Sys_Restart ();
-
-	Sys_Exit (1);
+	execvp(argv[0], argv);
+	error = errno;
+#ifndef SOCK_CLOEXEC
+	pthread_mutex_unlock(&sys_spawn_mutex);
+#endif
+	fprintf(stderr, "Could not restart: %s\n", strerror(error));
+	exit(1);
 }
 
 /*
@@ -395,14 +330,18 @@ void Sys_Error (const char *error, ...)
 Sys_DoubleTime
 ================
 */
-#if (_POSIX_TIMERS > 0) && defined(_POSIX_MONOTONIC_CLOCK)
+// macOS exposes clock_gettime independently of _POSIX_TIMERS.
+#if defined(__APPLE__) || (_POSIX_TIMERS > 0 && defined(_POSIX_MONOTONIC_CLOCK))
 #include <time.h>
 double Sys_DoubleTime(void)
 {
 	static unsigned int secbase;
 	struct timespec ts;
 
-#if defined __linux__ && defined CLOCK_MONOTONIC_RAW
+#if defined(__APPLE__)
+	// Like the Linux raw monotonic clock, this stops during suspend.
+	clock_gettime(CLOCK_UPTIME_RAW, &ts);
+#elif defined(__linux__)
 	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 #else
 	clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -445,40 +384,6 @@ uint64_t Sys_TimestampMilliseconds(void)
 	gettimeofday(&tv, NULL);
 
 	return (uint64_t)tv.tv_sec * 1000ULL + (uint64_t)tv.tv_usec / 1000ULL;
-}
-
-/*
-================
-Sys_ConsoleInput
- 
-Checks for a complete line of text typed in at the console, then forwards
-it to the host command processor
-================
-*/
-char *Sys_ConsoleInput (void)
-{
-	static char text[256];
-	ssize_t len = 0;
-
-	if (!do_stdin || !stdin_ready)
-		return NULL; // the select didn't say it was ready
-
-	stdin_ready = false;
-
-	len = read (STDIN_FILENO, text, sizeof(text));
-
-	if (len < 0)
-		return NULL; // error.
-
-	if (len == 0)
-	{	// end of file
-		do_stdin = false;
-		return NULL;
-	}
-
-	text[len - 1] = 0;	// rip off the /n and terminate
-
-	return text;
 }
 
 /*
@@ -809,9 +714,10 @@ static int only_digits(const char *s)
 // Init unix related stuff.
 // Daemon, chroot, setgid and setuid code (-d, -t, -g, -u)
 // was copied from bind (DNS server) sources.
-static void SV_System_Init(void)
+qbool Sys_PreparePosixServer(void)
 {
 	int j;
+	qbool do_stdin = !COM_CheckParm("-noconinput");
 	qbool ind;
 	uid_t user_id = 0;
 	gid_t group_id = 0;
@@ -939,52 +845,6 @@ static void SV_System_Init(void)
 			Sys_Printf("WARNING: Can't setuid to user \"%s\": %s\n",
 						user_name, strerror(qerrno));
 	}
-}
 
-/*
-=============
-main
-=============
-*/
-int main (int argc, char *argv[])
-{
-	double time1, oldtime, newtime;
-
-// Without signal(SIGPIPE, SIG_IGN); MVDSV crashes on *nix when qtvproxy will be disconnect.
-	signal(SIGPIPE, SIG_IGN);
-
-	COM_InitArgv (argc, argv);
-	SV_System_Init(); // daemonize and so...
-	Host_Init(argc, argv, DEFAULT_MEM_SIZE);
-
-	// run one frame immediately for first heartbeat
-	SV_Frame (0.1);
-
-	// main loop
-	oldtime = Sys_DoubleTime () - 0.1;
-
-	while (1)
-	{
-		// select on the net socket and stdin
-		// the only reason we have a timeout at all is so that if the last
-		// connected client times out, the message would not otherwise
-		// be printed until the next event.
-		if (!sys_simulation.value) {
-			stdin_ready = NET_Sleep((int)sys_select_timeout.value / 1000, do_stdin);
-		}
-
-		// find time passed since last cycle
-		newtime = Sys_DoubleTime ();
-		time1 = newtime - oldtime;
-		oldtime = newtime;
-
-		curtime = newtime;
-		SV_Frame (time1);
-
-		// extrasleep is just a way to generate a fucked up connection on purpose
-		if ((int)sys_extrasleep.value)
-			usleep ((unsigned long)sys_extrasleep.value);
-	}
-
-	return 0;
+	return do_stdin;
 }

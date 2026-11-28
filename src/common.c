@@ -2330,30 +2330,6 @@ int Q_namecmp(const char* s1, const char* s2)
 	return 0;
 }
 
-qbool Sys_MutexTryLockWithTimeout(mutex_t *m, unsigned long timeout_ms)
-{
-	unsigned long elapsed = 0;
-	unsigned long sleep_interval = 1;
-
-	while (elapsed < timeout_ms)
-	{
-		if (Sys_MutexTryLock(m))
-		{
-			return true;
-		}
-
-		Sys_Sleep(sleep_interval);
-		elapsed += sleep_interval;
-
-		if (sleep_interval < 32)
-		{
-			sleep_interval *= 2;
-		}
-	}
-
-	return false;
-}
-
 cvar_t developer = {"developer", "0"};
 cvar_t sys_simulation = {"sys_simulation", "0"};
 

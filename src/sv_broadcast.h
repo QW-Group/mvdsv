@@ -19,8 +19,6 @@
 #ifndef __SV_BROADCAST_H__
 #define __SV_BROADCAST_H__
 
-#include "qwsvdef.h"
-
 // The message prefix used by clients to trigger a broadcast.
 #define BROADCAST_PREFIX ".qw "
 #define BROADCAST_PREFIX_LEN (sizeof(BROADCAST_PREFIX) - 1)
